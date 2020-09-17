@@ -9,7 +9,7 @@ from .stix1_package_generator import Stix1PackageGenerator
 class Stix1ExportParser(ExportParser):
     def __init__(self, return_format, namespace, org):
         self.return_format = return_format
-        self.namespace = namespace
+        self.baseurl = namespace
         self.orgname = org
         try:
             idgen.set_id_namespace({namespace: self.orgname})
@@ -18,7 +18,7 @@ class Stix1ExportParser(ExportParser):
                 idgen.set_id_namespace(Namespace(namespace, self.orgname))
             except TypeError:
                 idgen.set_id_namespace(Namespace(namespace, self.orgname, 'MISP'))
-        self.namespace_prefix = idgen.get_id_namespace_alias()
+        self.namespace = idgen.get_id_namespace_alias()
 
     def generate_stix1_package(self, version):
         package_generator = Stix1PackageGenerator()
