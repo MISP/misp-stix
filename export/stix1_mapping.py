@@ -155,26 +155,6 @@ hash_type_attributes = {
 }
 
 # mapping for the attributes that can go through the simpleobservable script
-misp_cybox_name = {
-    "domain": "DomainName",
-    "hostname": "Hostname",
-    "url": "URI",
-    "AS": "AutonomousSystem",
-    "mutex": "Mutex",
-    "named pipe": "Pipe",
-    "link": "URI",
-    "network-connection": "NetworkConnection",
-    "windows-service-name": "WinService"
-}
-cybox_name_attribute = {
-    "DomainName": "value",
-    "Hostname": "hostname_value",
-    "URI": "value",
-    "AutonomousSystem": "number",
-    "Pipe": "name",
-    "Mutex": "name",
-    "WinService": "name"
-}
 misp_indicator_type = {
     "email-attachment": "Malicious E-mail",
     "filename": "File Hash Watchlist",
@@ -227,29 +207,47 @@ misp_indicator_type.update(
         "Host Characteristics"
     )
 )
+
 cybox_validation = {"AutonomousSystem": "isInt"}
 
 ## ATTRIBUTES MAPPING
+email_attribute_mapping = {
+    'email-src': 'from_',
+    'email-dst': 'to',
+    'email-reply-to': 'reply_to',
+    'email-subject': 'subject'
+}
+
 simple_type_to_method = {
-    'attachment': 'resolve_attachment',
-    'domain|ip': 'generate_domain_ip_observable',
-    'email-attachment': 'generate_email_attachment_observable',
-    'filename': 'resolve_file_observable',
-    'mac-address': 'resolve_system_observable',
-    'malware-sample': 'resolve_malware_sample',
-    'named pipe': 'generate_pipe_observable',
-    'port': 'generate_port_observable',
+    'AS': '_parse_autonomous_system_attribute',
+    'attachment': '_parse_attachment',
+    'domain': '_parse_domain_attribute',
+    'domain|ip': '_parse_domain_ip_attribute',
+    'email-attachment': '_parse_email_attachment',
+    'filename': '_parse_file_attribute',
+    'hostname': '_parse_hostname_attribute',
+    'hostname|port': '_parse_hostname_port_attribute',
+    'http-method': '_parse_http_method_attribute',
+    'mac-address': '_parse_mac_address',
+    'malware-sample': '_parse_malware_sample',
+    'mutex': '_parse_mutex_attribute',
+    'named pipe': '_parse_named_pipe',
+    'pattern-in-file': '_parse_pattern_attribute',
+    'port': '_parse_port_attribute',
+    'regkey': '_parse_regkey_attribute',
+    'regkey|value': '_parse_regkey_value_attribute',
+    'user-agent': '_parse_user_agent_attribute'
 }
 simple_type_to_method.update(
     dict.fromkeys(
         list(hash_type_attributes["single"]),
-        'resolve_file_observable'
+        '_parse_hash_attribute'
     )
 )
 simple_type_to_method.update(
     dict.fromkeys(
         list(hash_type_attributes["composite"]),
-        'resolve_file_observable'
+        '_parse_hash_composite_attribute'
     )
 )
 simple_type_to_method.update(
@@ -258,41 +256,34 @@ simple_type_to_method.update(
             "ip-src",
             "ip-dst"
         ],
-        'generate_ip_observable'
+        '_parse_ip_attribute'
     )
 )
 simple_type_to_method.update(
     dict.fromkeys(
         [
             "ip-src|port",
-            "ip-dst|port",
-            "hostname|port"
+            "ip-dst|port"
         ],
-        'generate_socket_address_observable'
+        '_parse_ip_port_attribute'
     )
 )
 simple_type_to_method.update(
     dict.fromkeys(
         [
-            "regkey",
-            "regkey|value"
-        ],
-        'generate_regkey_observable'
-    )
-)
-simple_type_to_method.update(
-    dict.fromkeys(
-        [
-            "hostname",
-            "domain",
-            "url",
-            "AS",
-            "mutex",
-            "named pipe",
-            "link",
+            "windows-service-displayname",
             "windows-service-name"
         ],
-        'generate_simple_observable'
+        '_parse_windows_service_attribute'
+    )
+)
+simple_type_to_method.update(
+    dict.fromkeys(
+        [
+            "url",
+            "link"
+        ],
+        '_parse_url_attribute'
     )
 )
 simple_type_to_method.update(
@@ -303,26 +294,7 @@ simple_type_to_method.update(
             "email-subject",
             "email-reply-to"
         ],
-        'resolve_email_observable'
-    )
-)
-simple_type_to_method.update(
-    dict.fromkeys(
-        [
-            "http-method",
-            "user-agent"
-        ],
-        'resolve_http_observable'
-    )
-)
-simple_type_to_method.update(
-    dict.fromkeys(
-        [
-            "pattern-in-file",
-            "pattern-in-traffic",
-            "pattern-in-memory"
-        ],
-        'resolve_pattern_observable'
+        '_parse_email_attribute'
     )
 )
 simple_type_to_method.update(
@@ -332,7 +304,7 @@ simple_type_to_method.update(
             'x509-fingerprint-sha1',
             'x509-fingerprint-sha256'
         ],
-        'parse_x509_object'
+        '_parse_x509_fingerprint_attribute'
     )
 )
 
@@ -546,3 +518,7 @@ x509_object_keys = (
     'issuer',
     'subject'
 )
+
+# Descriptions
+
+confidence_description = "Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none"
