@@ -358,6 +358,37 @@ class Stix1PackageGenerator():
         observable = self._create_observable(uri_object, attribute.uuid, 'URI')
         self._handle_attribute(attribute, observable)
 
+    def _parse_undefined_attribute(self, attribute):
+        if hasattr(attribute, 'comment') and attribute.comment == 'Imported from STIX header descrption':
+            self.header_comment.append(attribute.value)
+        elif attribute.category == 'Payload type':
+            ttp = self._create_ttp(attribute)
+            malware = MalwareInstance()
+            malware.add_name(attribute.value)
+            ttp.behavior = Behavior()
+            ttp.behavior.add_malware_instance(malware)
+            if hasattr(attribute, 'comment') and attribute.comment:
+                ttp.description = attribute.comment
+            self._append_ttp(ttp, attribute.category, attribute.uuid)
+        elif attribute.category == 'Attribution':
+            threat_actor = ThreatActor(timestamp=attribute.timestamp)
+            threat_actor.id_ = f"{self.namespace}:ThreatActor-{attribute.uuid}"
+            threat_actor.title = f"{attribute.category}: {attribute.value} (MISP Attribute)"
+            description = attribute.value
+            if hasattr(attribute, 'comment') and attribute.comment:
+                description = f"{descrption} ({attribute.comment})"
+            threat_actor.description = description
+            try:
+                self.attributed_threat_actors.append(threat_actor)
+            except AttributeError:
+                self.attributed_threat_actors = AttributedThreatActors()
+                self.attributed_threat_actors.append(threat_actor)
+            rta = ThreatActor(idref=threat_actor.id_, timestamp=attribute.timestamp)
+            related_threat_actor = RelatedThreatActor(rta, relationship=attribute.category)
+            self.stix_package.add_threat_actor(related_threat_actor)
+        else:
+            self._add_journal_entry(f"Attribute ({attribute.category} - {attribute.type}): {attribute.value}")
+
     def _parse_user_agent_attribute(self, attribute):
         http_client_request = HTTPClientRequest()
         http_request_header = HTTPRequestHeader()
@@ -367,6 +398,20 @@ class Stix1PackageGenerator():
         http_request_header.parsed_header = header_fields
         http_client_request.http_request_header = http_request_header
         self._parse_http_session(attribute, http_client_request)
+
+    def _parse_vulnerability_attribute(self, attribute):
+        ttp = self._create_ttp(attribute)
+        vulnerability = Vulnerability()
+        vulnerability.cve_id = attribute.value
+        exploit_target = ExploitTarget(timestamp=attribute.timestamp)
+        exploit_target.id_ = f"{self.namespace}:ExploitTarget-{attribute.uuid}"
+        if hasattr(attribute, 'comment') and attribute.comment != "Imported via the freetext import.":
+            exploit_target.title = attribute.comment
+        else:
+            exploit_target.title = f"Vulnerability {attribute.value}"
+        exploit_target.add_vulnerability(vulnerability)
+        ttp.add_exploit_target(exploit_target)
+        self._append_ttp(ttp, 'vulnerability', attribute.uuid)
 
     def _parse_windows_service_attribute(self, attribute):
         windows_service = WinService()
@@ -500,6 +545,12 @@ class Stix1PackageGenerator():
         history_item.journal_entry = entryline
         self.history.append(history_item)
 
+    def _append_ttp(self, ttp, category, uuid):
+        rttp = TTP(idref=ttp.id_, timestamp=ttp.timestamp)
+        related_ttp = RelatedTTP(rttp, relationship=category)
+        self.incident.add_leveraged_ttps(related_ttp)
+        self.ttps[uuid] = ttp
+
     @staticmethod
     def _create_address_object(attribute_type, attribute_value):
         address_object = Address()
@@ -612,6 +663,15 @@ class Stix1PackageGenerator():
         socket_address = SocketAddress()
         socket_address.port = self._create_port_object(port)
         return value, socket_address
+
+    def _create_ttp(self, attribute):
+        ttp = TTP(timestamp=attribute.timestamp)
+        ttp.id_ = f"{self.namespace}:TTP-{attribute.uuid}"
+        if attribute.tags:
+            tags = tuple(tag.name for tag in attribute.tags)
+            ttp.handling = self._set_handling(tags)
+        ttp.title = f"{attribute.category}: {attribute.value} (MISP Attribute)"
+        return ttp
 
     def _create_ttp_from_galaxy(self, uuid, galaxy_name):
         ttp = TTP()

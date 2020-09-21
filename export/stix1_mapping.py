@@ -236,7 +236,8 @@ simple_type_to_method = {
     'port': '_parse_port_attribute',
     'regkey': '_parse_regkey_attribute',
     'regkey|value': '_parse_regkey_value_attribute',
-    'user-agent': '_parse_user_agent_attribute'
+    'user-agent': '_parse_user_agent_attribute',
+    'vulnerability': '_parse_vulnerability_attribute'
 }
 simple_type_to_method.update(
     dict.fromkeys(
@@ -305,6 +306,16 @@ simple_type_to_method.update(
             'x509-fingerprint-sha256'
         ],
         '_parse_x509_fingerprint_attribute'
+    )
+)
+simple_type_to_method.update(
+    dict.fromkeys(
+        [
+            'comment',
+            'other',
+            'text'
+        ],
+        '_parse_undefined_attribute'
     )
 )
 
