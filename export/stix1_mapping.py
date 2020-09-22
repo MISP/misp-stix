@@ -236,6 +236,7 @@ simple_type_to_method = {
     'port': '_parse_port_attribute',
     'regkey': '_parse_regkey_attribute',
     'regkey|value': '_parse_regkey_value_attribute',
+    'target-machine': '_parse_target_machine',
     'user-agent': '_parse_user_agent_attribute',
     'vulnerability': '_parse_vulnerability_attribute'
 }

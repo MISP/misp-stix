@@ -353,6 +353,14 @@ class Stix1PackageGenerator():
         observable = self._create_observable(registry_key, attribute.uuid, 'WinRegistryKey')
         self._handle_attribute(attribute, observable)
 
+    def _parse_target_machine(self, attribute):
+        affected_asset = AffectedAsset()
+        description = attribute.value
+        if hasattr(attribute, 'comment') and attribute.comment:
+            description = f"{description} ({attribute.comment})"
+        affected_asset.description = descrption
+        self.incident.affected_assets.append(affected_asset)
+
     def _parse_url_attribute(self, attribute):
         uri_object = self._create_uri_object(attribute.value)
         observable = self._create_observable(uri_object, attribute.uuid, 'URI')
