@@ -106,20 +106,6 @@ confidence_mapping = {False: 'None', True: 'High'}
 
 not_implemented_attributes = ('yara', 'snort', 'pattern-in-traffic', 'pattern-in-memory')
 
-non_indicator_attributes = (
-    'text',
-    'comment',
-    'other',
-    'link',
-    'target-user',
-    'target-email',
-    'target-machine',
-    'target-org',
-    'target-location',
-    'target-external',
-    'vulnerability'
-)
-
 hash_type_attributes = {
     "single": (
         "md5",
@@ -236,7 +222,12 @@ simple_type_to_method = {
     'port': '_parse_port_attribute',
     'regkey': '_parse_regkey_attribute',
     'regkey|value': '_parse_regkey_value_attribute',
+    'target-email': '_parse_target_email',
+    'target-external': '_parse_target_external',
+    'target-location': '_parse_target_location',
     'target-machine': '_parse_target_machine',
+    'target-org': '_parse_target_org',
+    'target-user': '_parse_target_user',
     'user-agent': '_parse_user_agent_attribute',
     'vulnerability': '_parse_vulnerability_attribute'
 }

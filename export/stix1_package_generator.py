@@ -353,6 +353,28 @@ class Stix1PackageGenerator():
         observable = self._create_observable(registry_key, attribute.uuid, 'WinRegistryKey')
         self._handle_attribute(attribute, observable)
 
+    def _parse_target_attribute(self, attribute, identity_spec):
+        ciq_identity = CIQIdentity3_0Instance()
+        ciq_identity.specification = identity_spec
+        ciq_identity.id_ = f"{self.namespace}:Identity-{attribute.uuid}"
+        ciq_identity.name = f"{attribute.category}: {attribute.value} (MISP Attribute)"
+        self.incident.add_victim(ciq_identity)
+
+    def _parse_target_email(self, attribute):
+        identity_spec = STIXCIQIdentity3_0()
+        identity_spec.add_electronic_address_identifier(ElectronicAddressIdentifier(value=attribute.value))
+        self._parse_target_attribute(attribute, identity_spec)
+
+    def _parse_target_external(self, attribute):
+        identity_spec = STIXCIQIdentity3_0()
+        identity_spec.party_name = PartyName(name_lines=[f"External target: {attribute.value}"])
+        self._parse_target_attribute(attribute, identity_spec)
+
+    def _parse_target_location(self, attribute):
+        identity_spec = STIXCIQIdentity3_0()
+        identity_spec.add_address(ciq_Address(FreeTextAddress(address_lines=[attribute.value])))
+        self._parse_target_attribute(attribute, identity_spec)
+
     def _parse_target_machine(self, attribute):
         affected_asset = AffectedAsset()
         description = attribute.value
@@ -360,6 +382,16 @@ class Stix1PackageGenerator():
             description = f"{description} ({attribute.comment})"
         affected_asset.description = descrption
         self.incident.affected_assets.append(affected_asset)
+
+    def _parse_target_org(self, attribute):
+        identity_spec = STIXCIQIdentity3_0()
+        identity_spec.party_name = PartyName(organisation_names=[attribute.value])
+        self._parse_target_attribute(attribute, identity_spec)
+
+    def _parse_target_user(self, attribute):
+        identity_spec = STIXCIQIdentity3_0()
+        identity_spec.party_name = PartyName(person_names=[attribute.value])
+        self._parse_target_attribute(attribute, identity_spec)
 
     def _parse_url_attribute(self, attribute):
         uri_object = self._create_uri_object(attribute.value)
