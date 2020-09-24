@@ -81,6 +81,12 @@ class Stix1PackageGenerator():
         self.stix_package = self._create_stix_package(version)
         self.incident = self._create_incident()
         self._generate_stix_objects()
+        self.stix_package.add_incident(self.incident)
+        stix_header = STIXHeader()
+        stix_header.title = f"Export from {self.namespace} MISP"
+        if self.header_comment and len(self.header_comment) == 1:
+            stix_header.description = self.header_comment[0]
+        self.stix_package.stix_header = stix_header
 
     ################################################################################
     ##                    MAIN STIX PACKAGE CREATION FUNCTIONS                    ##
@@ -107,7 +113,6 @@ class Stix1PackageGenerator():
         return stix_package
 
     def _generate_stix_objects(self):
-        self.history = History()
         if hasattr(self.misp_event, 'threat_level_id'):
             threat_level = stix1_mapping.threat_level_mapping[self.misp_event.threat_level_id]
             self._add_journal_entry(f'Event Threat Level: {threat_level}')
@@ -451,10 +456,10 @@ class Stix1PackageGenerator():
                 description = f"{descrption} ({attribute.comment})"
             threat_actor.description = description
             try:
-                self.attributed_threat_actors.append(threat_actor)
+                self.incident.attributed_threat_actors.append(threat_actor)
             except AttributeError:
-                self.attributed_threat_actors = AttributedThreatActors()
-                self.attributed_threat_actors.append(threat_actor)
+                self.incident.attributed_threat_actors = AttributedThreatActors()
+                self.incident.attributed_threat_actors.append(threat_actor)
             rta = ThreatActor(idref=threat_actor.id_, timestamp=attribute.timestamp)
             related_threat_actor = RelatedThreatActor(rta, relationship=attribute.category)
             self.stix_package.add_threat_actor(related_threat_actor)
@@ -623,7 +628,11 @@ class Stix1PackageGenerator():
     def _add_journal_entry(self, entry_line):
         history_item = HistoryItem()
         history_item.journal_entry = entryline
-        self.history.append(history_item)
+        try:
+            self.incident.history.append(history_item)
+        except AttributeError:
+            self.incident.history = History()
+            self.incident.history.append(history_item)
 
     def _append_ttp(self, ttp, category, uuid):
         rttp = TTP(idref=ttp.id_, timestamp=ttp.timestamp)
