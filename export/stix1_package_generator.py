@@ -52,6 +52,7 @@ from stix.extensions.identity.ciq_identity_3_0 import Address as ciq_Address
 from stix.extensions.marking.simple_marking import SimpleMarkingStructure
 from stix.extensions.marking.tlp import TLPMarkingStructure
 from stix.extensions.test_mechanism.snort_test_mechanism import SnortTestMechanism
+from stix.extensions.test_mechanism.yara_test_mechanism import YaraTestMechanism
 from stix.incident import Incident, Time, ExternalID, AffectedAsset, AttributedThreatActors, COATaken
 from stix.incident.history import History, HistoryItem
 from stix.indicator import Indicator
@@ -68,11 +69,12 @@ class Stix1PackageGenerator():
         self.namespace = namespace
         self.orgname = orgname
         self.errors = defaultdict(set)
+        self.warnings = defaultdict(set)
         self.header_comment = []
         self.misp_event = MISPEvent()
         self.objects_to_parse = defaultdict(dict)
         self.ttps = {}
-        self.ttps_references = {}
+        self.ttp_references = {}
 
     def parse_misp_event(self, misp_event, version):
         self.misp_event.from_dict(**misp_event)
@@ -125,11 +127,15 @@ class Stix1PackageGenerator():
 
     def _resolve_attributes(self):
         for attribute in self.misp_event.attributes:
-            attribute_type = attribute['type']
-            if attribute_type in stix1_mapping.attribute_types_mapping:
-                getattr(self, stix1_mapping.attribute_types_mapping[attribute_type])(attribute)
-            else:
-                self.errors['attribute'].add(f'Unmapped attribute type: {attribute_type}')
+            attribute_type = attribute.type
+            try:
+                if attribute_type in stix1_mapping.attribute_types_mapping:
+                    getattr(self, stix1_mapping.attribute_types_mapping[attribute_type])(attribute)
+                else:
+                    self._parse_custom_attribute(attribute)
+                    self.warnings['attribute'].add(f'{attribute_type} - {attribute.value}')
+            except Exception:
+                self.errors['attribute'].add(f'{attribute_type} - {attribute.value}')
 
     def _resolve_galaxies(self):
         for galaxy in self.misp_event.get('Galaxy', []):
@@ -179,6 +185,16 @@ class Stix1PackageGenerator():
     def _parse_autonomous_system_attribute(self, attribute):
         autonomous_system = self._create_autonomous_system_object(attribute.value)
         observable = self._create_observable(autonomous_system, attribute.uuid, 'AS')
+        self._handle_attribute(attribute, observable)
+
+    def _parse_custom_attribute(self, attribute):
+        custom_object = Custom()
+        custom_object.custom_properties = CustomProperties()
+        property = Property()
+        property.name = attribute.type
+        property.value = attribute.value
+        custom_object.custom_properties.append(property)
+        observable = self._create_observable(custom_object, attribute.uuid, 'Custom')
         self._handle_attribute(attribute, observable)
 
     def _parse_domain_attribute(self, attribute):
@@ -353,6 +369,14 @@ class Stix1PackageGenerator():
         observable = self._create_observable(registry_key, attribute.uuid, 'WinRegistryKey')
         self._handle_attribute(attribute, observable)
 
+    def _parse_snort_attribute(self, attribute):
+        if attribute.to_ids:
+            test_mechanism = SnortTestMechanism()
+            test_mechanism.rule = attribute.value.encode('utf-8')
+            self._parse_test_mechanism(attribute, test_mechanism)
+        else:
+            self._parse_custom_attribute(self, attribute)
+
     def _parse_target_attribute(self, attribute, identity_spec):
         ciq_identity = CIQIdentity3_0Instance()
         ciq_identity.specification = identity_spec
@@ -392,6 +416,14 @@ class Stix1PackageGenerator():
         identity_spec = STIXCIQIdentity3_0()
         identity_spec.party_name = PartyName(person_names=[attribute.value])
         self._parse_target_attribute(attribute, identity_spec)
+
+    def _parse_test_mechanism(self, attribute, test_mechanism):
+        indicator = self._create_indicator(attribute)
+        indicator.add_indicator_type("Malware Artifacts")
+        indicator.add_valid_time_position(ValidTime())
+        indicator.add_test_mechanism(test_mechanism)
+        related_indicator = RelatedIndicator(indicator, relationship=attribute.categpory)
+        self.incident.related_indicators.append(related_indicator)
 
     def _parse_url_attribute(self, attribute):
         uri_object = self._create_uri_object(attribute.value)
@@ -470,6 +502,14 @@ class Stix1PackageGenerator():
         x509_certificate.certificate_signature = x509_signature
         observable = self._create_observable(x509_certificate, attribute.uuid, 'X509Certificate')
         self._handle_attribute(attribute, observable)
+
+    def _parse_yara_attribute(self, attribute):
+        if attribute.to_ids:
+            test_mechanism = YaraTestMechanism()
+            test_mechanism.rule = attribute.value.encode('utf-8')
+            self._parse_test_mechanism(attribute, test_mechanism)
+        else:
+            self._parse_custom_attribute(self, attribute)
 
     ################################################################################
     ##                         GALAXIES PARSING FUNCTIONS                         ##

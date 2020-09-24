@@ -222,6 +222,7 @@ simple_type_to_method = {
     'port': '_parse_port_attribute',
     'regkey': '_parse_regkey_attribute',
     'regkey|value': '_parse_regkey_value_attribute',
+    'snort': '_parse_snort_attribute',
     'target-email': '_parse_target_email',
     'target-external': '_parse_target_external',
     'target-location': '_parse_target_location',
@@ -229,7 +230,8 @@ simple_type_to_method = {
     'target-org': '_parse_target_org',
     'target-user': '_parse_target_user',
     'user-agent': '_parse_user_agent_attribute',
-    'vulnerability': '_parse_vulnerability_attribute'
+    'vulnerability': '_parse_vulnerability_attribute',
+    'yara': '_parse_yara_attribute'
 }
 simple_type_to_method.update(
     dict.fromkeys(
