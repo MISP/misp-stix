@@ -104,8 +104,6 @@ threat_level_mapping = {1: 'High', 2: 'Medium', 3: 'Low', 4: 'Undefined'}
 TLP_order = {'RED': 4, 'AMBER': 3, 'AMBER NATO ALLIANCE': 3, 'GREEN': 2, 'WHITE': 1}
 confidence_mapping = {False: 'None', True: 'High'}
 
-not_implemented_attributes = ('yara', 'snort', 'pattern-in-traffic', 'pattern-in-memory')
-
 hash_type_attributes = {
     "single": (
         "md5",
