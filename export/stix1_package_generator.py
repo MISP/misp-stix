@@ -73,7 +73,7 @@ class Stix1PackageGenerator():
         self.header_comment = []
         self.misp_event = MISPEvent()
         self.objects_to_parse = defaultdict(dict)
-        self.ttps = {}
+        self.contextualised_data = defaultdict(dict)
         self.ttp_references = {}
 
     def parse_misp_event(self, misp_event, version):
@@ -488,7 +488,7 @@ class Stix1PackageGenerator():
             exploit_target.title = f"Vulnerability {attribute.value}"
         exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
-        self._append_ttp(ttp, 'vulnerability', attribute.uuid)
+        self._append_ttp(ttp, attribute.type, attribute.uuid)
 
     def _parse_windows_service_attribute(self, attribute):
         windows_service = WinService()
@@ -521,10 +521,8 @@ class Stix1PackageGenerator():
     ################################################################################
 
     def _parse_attack_pattern_galaxy(self, galaxy):
-        ttp = self._create_ttp_from_galaxy(
-            galaxy['GalaxyCluster'][0]['collection_uuid'],
-            galaxy['name']
-        )
+        collection_uuid = galaxy['GalaxyCluster'][0]['collection_uuid']
+        ttp = self._create_ttp_from_galaxy(collection_uuid, galaxy['name'])
         behavior = Behavior()
         for cluster in galaxy['GalaxyCluster']:
             attack_pattern = AttackPattern()
@@ -537,7 +535,7 @@ class Stix1PackageGenerator():
                     attack_pattern.capec_id = external_id
             behavior.add_attack_pattern(attack_pattern)
         ttp.behavior = behavior
-        self.stix_package.add_ttp(ttp)
+        self._append_ttp(ttp, galaxy['name'], collection_uuid)
 
     def _parse_course_of_action_galaxy(self, galaxy):
         for cluster in galaxy['GalaxyCluster']:
@@ -545,13 +543,11 @@ class Stix1PackageGenerator():
             course_of_action.id_ = f"{self.namespace}:CourseOfAction-{cluster['uuid']}"
             course_of_action.title = cluster['value']
             course_of_action.description = cluster['description']
-            self.stix_package.add_course_of_action(course_of_action)
+            self._append_course_of_action(course_of_action, galaxy['name'], cluster['uuid'])
 
     def _parse_malware_galaxy(self, galaxy):
-        ttp = self._create_ttp_from_galaxy(
-            galaxy['GalaxyCluster'][0]['collection_uuid'],
-            galaxy['name']
-        )
+        collection_uuid = galaxy['GalaxyCluster'][0]['collection_uuid']
+        ttp = self._create_ttp_from_galaxy(collection_uuid, galaxy['name'])
         behavior = Behavior()
         for cluster in galaxy['GalaxyCluster']:
             malware = MalwareInstance()
@@ -564,7 +560,7 @@ class Stix1PackageGenerator():
                     malware.add_name(synonym)
             behavior.add_malware_instance(malware)
         ttp.behavior = behavior
-        self.stix_package.add_ttp(ttp)
+        self._append_ttp(ttp, galaxy['name'], collection_uuid)
 
     def _parse_threat_actor_galaxy(self, galaxy):
         for cluster in galaxy['GalaxyCluster']:
@@ -581,13 +577,11 @@ class Stix1PackageGenerator():
                         threat_actor.add_intended_effect(effect)
                 else:
                     threat_actor.add_intended_effect(intended_effect)
-            self.stix_package.add_threat_actor(threat_actor)
+            self._append_threat_actor(threat_actor, galaxy['name'], cluster['uuid'])
 
     def _parse_tool_galaxy(self, galaxy):
-        ttp = self.create_ttp_from_galaxy(
-            galaxy['GalaxyCluster'][0]['collection_uuid'],
-            galaxy['name']
-        )
+        collection_uuid = galaxy['GalaxyCluster'][0]['collection_uuid']
+        ttp = self._create_ttp_from_galaxy(collection_uuid, galaxy['name'])
         tools = Tools()
         for cluster in galaxy['GalaxyCluster']:
             tool = ToolInformation()
@@ -599,13 +593,11 @@ class Stix1PackageGenerator():
         resource = Resource()
         resource.tools = tools
         ttp.resources = resource
-        self.stix_package.add_ttp(ttp)
+        self._append_ttp(ttp, galaxy['name'], collection_uuid)
 
     def _parse_vulnerability_galaxy(self, galaxy):
-        ttp = self.create_ttp_from_galaxy(
-            galaxy['GalaxyCluster'][0]['collection_uuid'],
-            galaxy['name']
-        )
+        collection_uuid = galaxy['GalaxyCluster'][0]['collection_uuid']
+        ttp = self._create_ttp_from_galaxy(collection_uuid, galaxy['name'])
         exploit_target = ExploitTarget()
         for cluster in galaxy['GalaxyCluster']:
             vulnerability = Vulnerability()
@@ -619,7 +611,7 @@ class Stix1PackageGenerator():
                     vulnerability.add_reference(reference)
             exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
-        self.stix_package.add_ttp(ttp)
+        self._append_ttp(ttp, galaxy['name'], collection_uuid)
 
     ################################################################################
     ##                     OBJECTS CREATION HELPER FUNCTIONS.                     ##
@@ -634,11 +626,36 @@ class Stix1PackageGenerator():
             self.incident.history = History()
             self.incident.history.append(history_item)
 
-    def _append_ttp(self, ttp, category, uuid):
-        rttp = TTP(idref=ttp.id_, timestamp=ttp.timestamp)
+    def _append_course_of_action(self, course_of_action, uuid, timestamp=None):
+        coa = CourseOfAction(idref=course_of_action.id_)
+        if timestamp is not None:
+            coa.timestamp = timestamp
+        coa_taken = COATaken(coa)
+        self.incident.add_coa_taken(coa_taken)
+        if uuid not in self.contextualised_data['course_of_action']:
+            self.contextualised_data['course_of_action'][uuid] = course_of_action
+
+    def _append_ttp(self, ttp, category, uuid, timestamp=None):
+        rttp = TTP(idref=ttp.id_)
+        if timestamp is not None:
+            rttp.timestamp = timestamp
         related_ttp = RelatedTTP(rttp, relationship=category)
         self.incident.add_leveraged_ttps(related_ttp)
-        self.ttps[uuid] = ttp
+        if uuid not in self.contextualised_data['ttp']:
+            self.contextualised_data['ttp'][uuid] = ttp
+
+    def _append_threat_actor(self, threat_actor, category, uuid, timestamp=None):
+        rta = ThreatActor(idref=threat_actor.id_)
+        if timestamp is not None:
+            rta.timestamp = timestamp
+        related_ta = RelatedThreatActor(rta, relationship=category)
+        try:
+            self.incident.attributed_threat_actors.append(related_ta)
+        except AttributeError:
+            self.incident.attributed_threat_actors = AttributedThreatActors()
+            self.incident.attributed_threat_actors.append(related_ta)
+        if uuid not in self.contextualised_data['threat_actor']:
+            self.contextualised_data['threat_actor'][uuid] = threat_actor
 
     @staticmethod
     def _create_address_object(attribute_type, attribute_value):
