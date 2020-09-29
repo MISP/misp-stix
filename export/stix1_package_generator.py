@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
-import datetime
 import socket
 import .stix1_mapping
 from collections import defaultdict
@@ -37,7 +36,9 @@ from cybox.objects.win_service_object import WinService
 from cybox.objects.win_user_account_object import WinUser
 from cybox.objects.x509_certificate_object import X509Certificate, X509CertificateSignature, X509Cert, SubjectPublicKey, RSAPublicKey, Validity
 from cybox.utils import Namespace
+from datetime import datetime
 from mixbox import idgen
+from pymisp import MISPAttribute
 from stix.coa import CourseOfAction
 from stix.common import InformationSource, Identity, ToolInformation
 from stix.common.confidence import Confidence
@@ -62,10 +63,17 @@ from stix.ttp import TTP, Behavior
 from stix.ttp.attack_pattern import AttackPattern
 from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
+from typing import List, Optional, Union
+
+_OBSERVABLE_OBJECT_TYPES = Union[
+    Address, Artifact, AutonomousSystem, Custom, DomainName, EmailMessage,
+    File, Hostname, HTTP_Session, Mutex, Pipe, Port, SocketAddress, System,
+    URI, WinRegistryKey, WinService, X509Certificate
+],
 
 
 class Stix1PackageGenerator():
-    def __init__(self, namespace, orgname):
+    def __init__(self, namespace: str, orgname: str):
         self.namespace = namespace
         self.orgname = orgname
         self.errors = defaultdict(set)
@@ -74,9 +82,12 @@ class Stix1PackageGenerator():
         self.misp_event = MISPEvent()
         self.objects_to_parse = defaultdict(dict)
         self.contextualised_data = defaultdict(dict)
+        self.courses_of_action = {}
+        self.threat_actors = {}
+        self.ttps = {}
         self.ttp_references = {}
 
-    def parse_misp_event(self, misp_event, version):
+    def parse_misp_event(self, misp_event: dict, version: str):
         self.misp_event.from_dict(**misp_event)
         self.stix_package = self._create_stix_package(version)
         self.incident = self._create_incident()
@@ -89,10 +100,10 @@ class Stix1PackageGenerator():
         self.stix_package.stix_header = stix_header
 
     ################################################################################
-    ##                    MAIN STIX PACKAGE CREATION FUNCTIONS                    ##
+    #                     MAIN STIX PACKAGE CREATION FUNCTIONS                     #
     ################################################################################
 
-    def _create_incident(self):
+    def _create_incident(self) -> Incident:
         incident_id = f'{self.orgname}:Incident-{self.misp_event.uuid}'
         incident = Incident(id_=incident_id, title=self.misp_event.info)
         incident_time = Time()
@@ -105,7 +116,7 @@ class Stix1PackageGenerator():
         incident.time = incident_time
         return incident
 
-    def _create_stix_package(self, version):
+    def _create_stix_package(self, version: str) -> STIXPackage:
         package_id = f'{self.orgname}:STIXPackage-{self.misp_event.uuid}'
         timestamp = self.misp_event.timestamp
         stix_package = STIXPackage(id_=package_id, timestamp=timestamp)
@@ -151,10 +162,10 @@ class Stix1PackageGenerator():
                 self.errors['galaxy'].add(f'Unknown galaxy type: {galaxy_type}')
 
     ################################################################################
-    ##                        ATTRIBUTES PARSING FUNCTIONS                        ##
+    #                         ATTRIBUTES PARSING FUNCTIONS                         #
     ################################################################################
 
-    def _handle_attribute(self, attribute, observable):
+    def _handle_attribute(self, attribute: MISPAttribute, observable: Observable):
         if attribute.to_ids:
             indicator = self._create_indicator(attribute)
             indicator.add_indicator_type(self._set_indicator_type(attribute.type))
@@ -172,13 +183,13 @@ class Stix1PackageGenerator():
             )
             self.incident.related_observables.append(related_observable)
 
-    def _handle_file_observable(self, attribute, file_object):
+    def _handle_file_observable(self, attribute: MISPAttribute, file_object: File):
         observable = self._create_observable(file_object, attribute.uuid, 'File')
         observable = Observable(file_object)
         observable.id_ = f"{self.namespace}:File-{attribute.uuid}"
         self._handle_attribute(attribute, observable)
 
-    def _parse_attachment(self, attribute):
+    def _parse_attachment(self, attribute: MISPAttribute):
         if attribute.data:
             artifact_object = self._create_artifact_object(attribute.data)
             observable = self._create_observable(artifact_object, attribute.uuid, 'Artifact')
@@ -187,12 +198,12 @@ class Stix1PackageGenerator():
         else:
             self._parse_file_attribute(attribute)
 
-    def _parse_autonomous_system_attribute(self, attribute):
+    def _parse_autonomous_system_attribute(self, attribute: MISPAttribute):
         autonomous_system = self._create_autonomous_system_object(attribute.value)
         observable = self._create_observable(autonomous_system, attribute.uuid, 'AS')
         self._handle_attribute(attribute, observable)
 
-    def _parse_custom_attribute(self, attribute):
+    def _parse_custom_attribute(self, attribute: MISPAttribute):
         custom_object = Custom()
         custom_object.custom_properties = CustomProperties()
         property = Property()
@@ -202,12 +213,12 @@ class Stix1PackageGenerator():
         observable = self._create_observable(custom_object, attribute.uuid, 'Custom')
         self._handle_attribute(attribute, observable)
 
-    def _parse_domain_attribute(self, attribute):
+    def _parse_domain_attribute(self, attribute: MISPAttribute):
         domain_object = self._create_domain_object(attribute.value)
         observable = self._create_observable(domain_object, attribute.uuid, 'DomainName')
         self._handle_attribute(attribute, observable)
 
-    def _parse_domain_ip_attribute(self, attribute):
+    def _parse_domain_ip_attribute(self, attribute: MISPAttribute):
         domain, ip = attribute.value.split('|')
         address_object = self._create_address_object(attribute.type, ip)
         address_observable = self._create_observable(address_object, attribute.uuid, 'Address')
@@ -223,7 +234,7 @@ class Stix1PackageGenerator():
         observable.observable_composition = composite_object
         self._handle_attribute(attribute, observable)
 
-    def _parse_email_attachment(self, attribute):
+    def _parse_email_attachment(self, attribute: MISPAttribute):
         file_object = File()
         file_object.file_name = attribute.value
         file_object.file_name.condition = "Equals"
@@ -235,7 +246,7 @@ class Stix1PackageGenerator():
         observable = self._create_observable(email, attribute.uuid, 'EmailMessage')
         self._handle_attribute(attribute, observable)
 
-    def _parse_email_attribute(self, attribute):
+    def _parse_email_attribute(self, attribute: MISPAttribute):
         email_object = EmailMessage()
         email_header = EmailHeader()
         feature = stix1_mapping.email_attribute_mapping[attribute.type]
@@ -245,26 +256,26 @@ class Stix1PackageGenerator():
         observable = self._create_observable(email_object, attribute.uuid, 'EmailMessage')
         self._handle_attribute(attribute, observable)
 
-    def _parse_file_attribute(self, attribute):
-        file_object = self._create_file_object(attribute.value, attribute.uuid)
+    def _parse_file_attribute(self, attribute: MISPAttribute):
+        file_object = self._create_file_object(attribute.value)
         self._handle_file_observable(attribute, file_object)
 
-    def _parse_hash_attribute(self, attribute):
+    def _parse_hash_attribute(self, attribute: MISPAttribute):
         hash = self._parse_hash_value(attribute.type, attribute.value)
         file_object = File()
         file_object.add_hash(hash)
         self._handle_file_observable(attribute, file_object)
 
-    def _parse_hash_composite_attribute(self, attribute):
+    def _parse_hash_composite_attribute(self, attribute: MISPAttribute):
         filename, hash_value = attribute.value.split('|')
-        file_object = self._create_file_object(filename, attribute.uuid)
+        file_object = self._create_file_object(filename)
         attribute_type = attribute.type.split('|')[1] if '|' in attribute.type else 'filename|md5'
         hash = self._parse_hash_value(attribute_type, hash_value)
         file_object.add_hash(hash)
         self._handle_file_observable(attribute, file_object)
 
     @staticmethod
-    def _parse_hash_value(attribute_type, attribute_value):
+    def _parse_hash_value(attribute_type, attribute_value: MISPAttribute):
         args = {'hash_value': attribute_value, 'exact': True}
         if hasattr(Hash, f'TYPE_{attribute_type.upper()}'):
             args['type_'] = getattr(Hash, f'TYPE_{attribute_type.upper()}')
@@ -273,18 +284,18 @@ class Stix1PackageGenerator():
         _set_hash_type(hash, attribute_value)
         return hash
 
-    def _parse_hostname_attribute(self, attribute):
+    def _parse_hostname_attribute(self, attribute: MISPAttribute):
         hostname_object = self._create_hostname_object(attribute.value)
         observable = self._create_observable(hostname_object, attribute.uuid, 'Hostname')
         self._handle_attribute(attribute, observable)
 
-    def _parse_hostname_port_attribute(self, attribute):
+    def _parse_hostname_port_attribute(self, attribute: MISPAttribute):
         hostname, socket_address = self._create_socket_address_object(attribute)
         socket_address.hostname = self._create_hostname_object(hostname)
         observable = self._create_observable(socket_address, attribute.uuid, 'SocketAddress')
         self._handle_attribute(attribute, observable)
 
-    def _parse_http_method_attribute(self, attribute):
+    def _parse_http_method_attribute(self, attribute: MISPAttribute):
         http_client_request = HTTPClientRequest()
         http_request_line = HTTPRequestLine()
         http_request_line.http_method = attribute.value
@@ -292,7 +303,7 @@ class Stix1PackageGenerator():
         http_client_request.http_request_line = http_request_line
         self._parse_http_session(attribute, http_client_request)
 
-    def _parse_http_session(self, attribute, http_client_request):
+    def _parse_http_session(self, attribute: MISPAttribute, http_client_request: HTTPClientRequest):
         http_request_response = HTTPRequestResponse()
         request_response.http_client_request = http_client_request
         http_session_object = HTTPSession()
@@ -300,18 +311,18 @@ class Stix1PackageGenerator():
         observable = self._create_observable(http_session_object, attribute.uuid, 'HTTPSession')
         self._handle_attribute(attribute, observable)
 
-    def _parse_ip_attribute(self, attribute):
+    def _parse_ip_attribute(self, attribute: MISPAttribute):
         address_object = self._create_address_object(attribute.type, attribute.value)
         observable = self._create_observable(address_object, attribute.uuid, 'Address')
         self._handle_attribute(attribute, observable)
 
-    def _parse_ip_port_attribute(self, attribute):
+    def _parse_ip_port_attribute(self, attribute: MISPAttribute):
         ip, socket_address = self._create_socket_address_object(attribute)
         socket_address.ip_address = self._create_address_object(attribute.type.split('|')[0], ip)
         observable = self._create_observable(socket_address, attribute.uuid, 'SocketAddress')
         self._handle_attribute(attribute, observable)
 
-    def _parse_mac_address(self, attribute):
+    def _parse_mac_address(self, attribute: MISPAttribute):
         network_interface = NetworkInterface()
         network_interface.mac = attribute.value
         network_interface_list = NetworkInterfaceList()
@@ -321,7 +332,7 @@ class Stix1PackageGenerator():
         observable = self._create_observable(system_object, attribute.uuid, 'System')
         self._handle_attribute(attribute, observable)
 
-    def _parse_malware_sample(self, attribute):
+    def _parse_malware_sample(self, attribute: MISPAttribute):
         if attribute.data:
             filename, hash_value = attribute.value.split('|')
             artifact_object = self.create_artifact_object(attribute.data)
@@ -332,12 +343,12 @@ class Stix1PackageGenerator():
         else:
             self._parse_hash_composite_attribute(attribute)
 
-    def _parse_mutex_attribute(self, attribute):
+    def _parse_mutex_attribute(self, attribute: MISPAttribute):
         mutex_object = self._create_mutex_object(attribute.value)
         observable = self._create_observable(mutex_object, attribute.value, 'Mutex')
         self._handle_attribute(attribute, observable)
 
-    def _parse_named_pipe(self, attribute):
+    def _parse_named_pipe(self, attribute: MISPAttribute):
         pipe_object = Pipe()
         pipe_object.named = True
         pipe_object.name = attribute.value
@@ -345,7 +356,7 @@ class Stix1PackageGenerator():
         observable = self._create_observable(pipe_object, attribute.uuid, 'Pipe')
         self._handle_attribute(attribute, observable)
 
-    def _parse_pattern_attribute(self, attribute):
+    def _parse_pattern_attribute(self, attribute: MISPAttribute):
         byte_run = ByteRun()
         byte_run.byte_run_data = attribute.value
         byte_run.byte_run_data.condition = "Equals"
@@ -354,17 +365,17 @@ class Stix1PackageGenerator():
         observable = self._create_observable(file_object, attribute.uuid, 'File')
         self._handle_attribute(attribute, observable)
 
-    def _parse_port_attribute(self, attribute):
+    def _parse_port_attribute(self, attribute: MISPAttribute):
         port_object = self._create_port_object(attribute.value)
         observable = self._create_observable(port_object, attribute.uuid, 'Port')
         self._handle_attribute(attribute, observable)
 
-    def _parse_regkey_attribute(self, attribute):
+    def _parse_regkey_attribute(self, attribute: MISPAttribute):
         registry_key = self._create_registry_key_object(attribute.value)
         observable = self._create_observable(registry_key, attribute.uuid, 'WinRegistryKey')
         self._handle_attribute(attribute, observable)
 
-    def _parse_regkey_value_attribute(self, attribute):
+    def _parse_regkey_value_attribute(self, attribute: MISPAttribute):
         regkey, value = attribute.value.split('|')
         registry_key = self._create_registry_key_object(regkey)
         registry_value = RegistryValue()
@@ -374,7 +385,7 @@ class Stix1PackageGenerator():
         observable = self._create_observable(registry_key, attribute.uuid, 'WinRegistryKey')
         self._handle_attribute(attribute, observable)
 
-    def _parse_snort_attribute(self, attribute):
+    def _parse_snort_attribute(self, attribute: MISPAttribute):
         if attribute.to_ids:
             test_mechanism = SnortTestMechanism()
             test_mechanism.rule = attribute.value.encode('utf-8')
@@ -382,29 +393,29 @@ class Stix1PackageGenerator():
         else:
             self._parse_custom_attribute(self, attribute)
 
-    def _parse_target_attribute(self, attribute, identity_spec):
+    def _parse_target_attribute(self, attribute: MISPAttribute, identity_spec: STIXCIQIdentity3_0):
         ciq_identity = CIQIdentity3_0Instance()
         ciq_identity.specification = identity_spec
         ciq_identity.id_ = f"{self.namespace}:Identity-{attribute.uuid}"
         ciq_identity.name = f"{attribute.category}: {attribute.value} (MISP Attribute)"
         self.incident.add_victim(ciq_identity)
 
-    def _parse_target_email(self, attribute):
+    def _parse_target_email(self, attribute: MISPAttribute):
         identity_spec = STIXCIQIdentity3_0()
         identity_spec.add_electronic_address_identifier(ElectronicAddressIdentifier(value=attribute.value))
         self._parse_target_attribute(attribute, identity_spec)
 
-    def _parse_target_external(self, attribute):
+    def _parse_target_external(self, attribute: MISPAttribute):
         identity_spec = STIXCIQIdentity3_0()
         identity_spec.party_name = PartyName(name_lines=[f"External target: {attribute.value}"])
         self._parse_target_attribute(attribute, identity_spec)
 
-    def _parse_target_location(self, attribute):
+    def _parse_target_location(self, attribute: MISPAttribute):
         identity_spec = STIXCIQIdentity3_0()
         identity_spec.add_address(ciq_Address(FreeTextAddress(address_lines=[attribute.value])))
         self._parse_target_attribute(attribute, identity_spec)
 
-    def _parse_target_machine(self, attribute):
+    def _parse_target_machine(self, attribute: MISPAttribute):
         affected_asset = AffectedAsset()
         description = attribute.value
         if hasattr(attribute, 'comment') and attribute.comment:
@@ -412,17 +423,17 @@ class Stix1PackageGenerator():
         affected_asset.description = descrption
         self.incident.affected_assets.append(affected_asset)
 
-    def _parse_target_org(self, attribute):
+    def _parse_target_org(self, attribute: MISPAttribute):
         identity_spec = STIXCIQIdentity3_0()
         identity_spec.party_name = PartyName(organisation_names=[attribute.value])
         self._parse_target_attribute(attribute, identity_spec)
 
-    def _parse_target_user(self, attribute):
+    def _parse_target_user(self, attribute: MISPAttribute):
         identity_spec = STIXCIQIdentity3_0()
         identity_spec.party_name = PartyName(person_names=[attribute.value])
         self._parse_target_attribute(attribute, identity_spec)
 
-    def _parse_test_mechanism(self, attribute, test_mechanism):
+    def _parse_test_mechanism(self, attribute: MISPAttribute, test_mechanism: Union[SnortTestMechanism, YaraTestMechanism]):
         indicator = self._create_indicator(attribute)
         indicator.add_indicator_type("Malware Artifacts")
         indicator.add_valid_time_position(ValidTime())
@@ -430,12 +441,12 @@ class Stix1PackageGenerator():
         related_indicator = RelatedIndicator(indicator, relationship=attribute.categpory)
         self.incident.related_indicators.append(related_indicator)
 
-    def _parse_url_attribute(self, attribute):
+    def _parse_url_attribute(self, attribute: MISPAttribute):
         uri_object = self._create_uri_object(attribute.value)
         observable = self._create_observable(uri_object, attribute.uuid, 'URI')
         self._handle_attribute(attribute, observable)
 
-    def _parse_undefined_attribute(self, attribute):
+    def _parse_undefined_attribute(self, attribute: MISPAttribute):
         if hasattr(attribute, 'comment') and attribute.comment == 'Imported from STIX header descrption':
             self.header_comment.append(attribute.value)
         elif attribute.category == 'Payload type':
@@ -466,7 +477,7 @@ class Stix1PackageGenerator():
         else:
             self._add_journal_entry(f"Attribute ({attribute.category} - {attribute.type}): {attribute.value}")
 
-    def _parse_user_agent_attribute(self, attribute):
+    def _parse_user_agent_attribute(self, attribute: MISPAttribute):
         http_client_request = HTTPClientRequest()
         http_request_header = HTTPRequestHeader()
         header_fields = HTTPRequestHeaderFields()
@@ -476,7 +487,7 @@ class Stix1PackageGenerator():
         http_client_request.http_request_header = http_request_header
         self._parse_http_session(attribute, http_client_request)
 
-    def _parse_vulnerability_attribute(self, attribute):
+    def _parse_vulnerability_attribute(self, attribute: MISPAttribute):
         ttp = self._create_ttp(attribute)
         vulnerability = Vulnerability()
         vulnerability.cve_id = attribute.value
@@ -490,14 +501,14 @@ class Stix1PackageGenerator():
         ttp.add_exploit_target(exploit_target)
         self._append_ttp(ttp, attribute.type, attribute.uuid)
 
-    def _parse_windows_service_attribute(self, attribute):
+    def _parse_windows_service_attribute(self, attribute: MISPAttribute):
         windows_service = WinService()
         feature = 'service_name' if attribute.type == 'windows-service-name' else 'display_name'
         setttr(windows_service, feature, attribute.value)
         observable = self._create_observable(windows_service, attribute.uuid, 'WinService')
         self._handle_attribute(attribute, observable)
 
-    def _parse_x509_fingerprint_attribute(self, attribute):
+    def _parse_x509_fingerprint_attribute(self, attribute: MISPAttribute):
         x509_signature = X509CertificateSignature()
         signature_algorithm = attribute.type.split('-')[-1].upper()
         for feature, value in zip(('signature', 'signature_algorithm'), (attribute.value, signature_algorithm)):
@@ -508,7 +519,7 @@ class Stix1PackageGenerator():
         observable = self._create_observable(x509_certificate, attribute.uuid, 'X509Certificate')
         self._handle_attribute(attribute, observable)
 
-    def _parse_yara_attribute(self, attribute):
+    def _parse_yara_attribute(self, attribute: MISPAttribute):
         if attribute.to_ids:
             test_mechanism = YaraTestMechanism()
             test_mechanism.rule = attribute.value.encode('utf-8')
@@ -517,10 +528,10 @@ class Stix1PackageGenerator():
             self._parse_custom_attribute(self, attribute)
 
     ################################################################################
-    ##                         GALAXIES PARSING FUNCTIONS                         ##
+    #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
 
-    def _parse_attack_pattern_galaxy(self, galaxy):
+    def _parse_attack_pattern_galaxy(self, galaxy: dict):
         collection_uuid = galaxy['GalaxyCluster'][0]['collection_uuid']
         ttp = self._create_ttp_from_galaxy(collection_uuid, galaxy['name'])
         behavior = Behavior()
@@ -537,7 +548,7 @@ class Stix1PackageGenerator():
         ttp.behavior = behavior
         self._append_ttp(ttp, galaxy['name'], collection_uuid)
 
-    def _parse_course_of_action_galaxy(self, galaxy):
+    def _parse_course_of_action_galaxy(self, galaxy: dict):
         for cluster in galaxy['GalaxyCluster']:
             course_of_action = CourseOfAction()
             course_of_action.id_ = f"{self.namespace}:CourseOfAction-{cluster['uuid']}"
@@ -545,7 +556,7 @@ class Stix1PackageGenerator():
             course_of_action.description = cluster['description']
             self._append_course_of_action(course_of_action, galaxy['name'], cluster['uuid'])
 
-    def _parse_malware_galaxy(self, galaxy):
+    def _parse_malware_galaxy(self, galaxy: dict):
         collection_uuid = galaxy['GalaxyCluster'][0]['collection_uuid']
         ttp = self._create_ttp_from_galaxy(collection_uuid, galaxy['name'])
         behavior = Behavior()
@@ -562,7 +573,7 @@ class Stix1PackageGenerator():
         ttp.behavior = behavior
         self._append_ttp(ttp, galaxy['name'], collection_uuid)
 
-    def _parse_threat_actor_galaxy(self, galaxy):
+    def _parse_threat_actor_galaxy(self, galaxy: dict):
         for cluster in galaxy['GalaxyCluster']:
             threat_actor = ThreatActor()
             threat_actor.id_ = f"{self.namespace}:ThreatActor-{cluster['uuid']}"
@@ -579,7 +590,7 @@ class Stix1PackageGenerator():
                     threat_actor.add_intended_effect(intended_effect)
             self._append_threat_actor(threat_actor, galaxy['name'], cluster['uuid'])
 
-    def _parse_tool_galaxy(self, galaxy):
+    def _parse_tool_galaxy(self, galaxy: dict):
         collection_uuid = galaxy['GalaxyCluster'][0]['collection_uuid']
         ttp = self._create_ttp_from_galaxy(collection_uuid, galaxy['name'])
         tools = Tools()
@@ -595,7 +606,7 @@ class Stix1PackageGenerator():
         ttp.resources = resource
         self._append_ttp(ttp, galaxy['name'], collection_uuid)
 
-    def _parse_vulnerability_galaxy(self, galaxy):
+    def _parse_vulnerability_galaxy(self, galaxy: dict):
         collection_uuid = galaxy['GalaxyCluster'][0]['collection_uuid']
         ttp = self._create_ttp_from_galaxy(collection_uuid, galaxy['name'])
         exploit_target = ExploitTarget()
@@ -614,10 +625,10 @@ class Stix1PackageGenerator():
         self._append_ttp(ttp, galaxy['name'], collection_uuid)
 
     ################################################################################
-    ##                     OBJECTS CREATION HELPER FUNCTIONS.                     ##
+    #                      OBJECTS CREATION HELPER FUNCTIONS.                      #
     ################################################################################
 
-    def _add_journal_entry(self, entry_line):
+    def _add_journal_entry(self, entry_line: str):
         history_item = HistoryItem()
         history_item.journal_entry = entryline
         try:
@@ -626,7 +637,7 @@ class Stix1PackageGenerator():
             self.incident.history = History()
             self.incident.history.append(history_item)
 
-    def _append_course_of_action(self, course_of_action, uuid, timestamp=None):
+    def _append_course_of_action(self, course_of_action: CourseOfAction, uuid: str, timestamp: Optional[datetime] = None):
         coa = CourseOfAction(idref=course_of_action.id_)
         if timestamp is not None:
             coa.timestamp = timestamp
@@ -635,7 +646,7 @@ class Stix1PackageGenerator():
         if uuid not in self.contextualised_data['course_of_action']:
             self.contextualised_data['course_of_action'][uuid] = course_of_action
 
-    def _append_ttp(self, ttp, category, uuid, timestamp=None):
+    def _append_ttp(self, ttp: TTP, category: str, uuid: str, timestamp: Optional[datetime] = None):
         rttp = TTP(idref=ttp.id_)
         if timestamp is not None:
             rttp.timestamp = timestamp
@@ -644,7 +655,7 @@ class Stix1PackageGenerator():
         if uuid not in self.contextualised_data['ttp']:
             self.contextualised_data['ttp'][uuid] = ttp
 
-    def _append_threat_actor(self, threat_actor, category, uuid, timestamp=None):
+    def _append_threat_actor(self, threat_actor: ThreatActor, category: str, uuid: str, timestamp: Optional[datetime] = None):
         rta = ThreatActor(idref=threat_actor.id_)
         if timestamp is not None:
             rta.timestamp = timestamp
@@ -658,7 +669,7 @@ class Stix1PackageGenerator():
             self.contextualised_data['threat_actor'][uuid] = threat_actor
 
     @staticmethod
-    def _create_address_object(attribute_type, attribute_value):
+    def _create_address_object(attribute_type: str, attribute_value: str):
         address_object = Address()
         if '/' in attribute_value:
             address_object.category = "cidr"
@@ -680,7 +691,7 @@ class Stix1PackageGenerator():
         return address_object
 
     @staticmethod
-    def _create_artifact_object(data):
+    def _create_artifact_object(data: str) -> Artifact:
         raw_artifact = RawArtifact(data)
         artifact = Artifact()
         artifact.raw_artifact = raw_artifact
@@ -688,7 +699,7 @@ class Stix1PackageGenerator():
         return artifact
 
     @staticmethod
-    def _create_autonomous_system_object(AS):
+    def _create_autonomous_system_object(AS: str) -> AutonomousSystem:
         autonomous_system = AutonomousSystem()
         feature = 'handle' is AS.stratswith('AS') else 'number'
         setattr(autonomous_system, feature, AS)
@@ -696,27 +707,27 @@ class Stix1PackageGenerator():
         return autonomous_system
 
     @staticmethod
-    def _create_domain_object(domain):
+    def _create_domain_object(domain: str) -> DomainName:
         domain_object = DomainName()
         domain_object.value = domain
         domain_object.value.condition = "Equals"
         return domain_object
 
     @staticmethod
-    def _create_file_object(attribute_value, attribute_uuid):
+    def _create_file_object(filename: str) -> File:
         file_object = File()
-        file_object.file_name = attribute_value
+        file_object.file_name = filename
         file_object.file_name.condition = "Equals"
         return file_object
 
     @staticmethod
-    def _create_hostname_object(hostname):
+    def _create_hostname_object(hostname: str) -> Hostname:
         hostname_object = Hostname()
         hostname_object.hostname_value = hostname
         hostname_object.hostname_value.condition = "Equals"
         return hostname_object
 
-    def _create_indicator(self, attribute):
+    def _create_indicator(self, attribute: MISPAttribute) -> Indicator:
         indicator = Indicator(timestamp=attribute.timestamp)
         indicator.id_ = f"{self.namespace}:indicator-{attribute.uuid}"
         indicator.producer = self._set_producer()
@@ -733,44 +744,44 @@ class Stix1PackageGenerator():
         return indicator
 
     @staticmethod
-    def _create_information_source(identity):
+    def _create_information_source(identity: Identity) -> InformationSource:
         information_source = InformationSource(identity=identity)
         return information_source
 
     @staticmethod
-    def _create_mutex_object(name):
+    def _create_mutex_object(name: str) -> Mutex:
         mutex_object = Mutex()
         mutex_object.name = name
         mutex_object.name.condition = "Equals"
         return mutex_object
 
-    def _create_observable(self, stix_object, attribute_uuid, feature):
+    def _create_observable(self, stix_object: _OBSERVABLE_OBJECT_TYPES, attribute_uuid: str, feature: str) -> Observable:
         stix_object.parent.id_ = f"{self.namespace}:{feature}Object-{attribute_uuid}"
         observable = Observable(stix_object)
         observable.id_ = f"{self.namespace}:{feature}-{attribute_uuid}"
         return observable
 
     @staticmethod
-    def _create_port_object(port):
+    def _create_port_object(port: str) -> Port:
         port_object = Port()
         port_object.port_value = port
         port_object.port_value.condition = "Equals"
         return port_object
 
     @staticmethod
-    def _create_registry_key_object(regkey):
+    def _create_registry_key_object(regkey: str) -> WinRegistryKey:
         registry_key = WinRegistryKey()
         registry_key.key = regkey.strip()
         registry_key.key.condition = "Equals"
         return registry_key
 
-    def _create_socket_address_object(self, attribute):
+    def _create_socket_address_object(self, attribute: MISPAttribute) -> List[str, SocketAddress]:
         value, port = attribute.value.split('|')
         socket_address = SocketAddress()
         socket_address.port = self._create_port_object(port)
         return value, socket_address
 
-    def _create_ttp(self, attribute):
+    def _create_ttp(self, attribute: MISPAttribute) -> TTP:
         ttp = TTP(timestamp=attribute.timestamp)
         ttp.id_ = f"{self.namespace}:TTP-{attribute.uuid}"
         if attribute.tags:
@@ -779,24 +790,24 @@ class Stix1PackageGenerator():
         ttp.title = f"{attribute.category}: {attribute.value} (MISP Attribute)"
         return ttp
 
-    def _create_ttp_from_galaxy(self, uuid, galaxy_name):
+    def _create_ttp_from_galaxy(self, galaxy_name: str, uuid: str) -> TTP:
         ttp = TTP()
         ttp.id_ = f'{self.namespace}:TTP-{uuid}'
         ttp.title = f'{galaxy_name} (MISP Galaxy)'
         return ttp
 
     @staticmethod
-    def _create_uri_object(url):
+    def _create_uri_object(url: str) -> URI:
         uri_object = URI(value=url, type_='URL')
         uri_object.value.condition = "Equals"
         return uri_object
 
     @staticmethod
-    def _fetch_colors(tags):
+    def _fetch_colors(tags: list) -> tuple:
         return (tag.split(':')[-1].upper() for tag in tags)
 
     @staticmethod
-    def _set_color(tags):
+    def _set_color(tags: list) -> str:
         tlp_color = 0
         for color in colors:
             color_num = stix1_mapping.TLP_order[color]
@@ -805,12 +816,12 @@ class Stix1PackageGenerator():
                 color_value = color
         return color_value
 
-    def _set_creator(self):
+    def _set_creator(self) -> str:
         if not hasattr(self.misp_event, 'orgc'):
             return self.orgname
         return self.misp_event.orgc.name
 
-    def _set_handling(self, tags):
+    def _set_handling(self, tags: list) -> Marking:
         sorted_tags = defaultdict(list)
         for tag in tags:
             feature = 'tlp_tags' if tag.startswith('tlp:') else 'simple_tags'
