@@ -338,7 +338,7 @@ objects_mapping = {
 }
 
 ## GALAXIES MAPPING
-galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_galaxy'}
+galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
 galaxy_types_mapping.update(
     dict.fromkeys(
         [
@@ -347,7 +347,7 @@ galaxy_types_mapping.update(
             'mitre-mobile-attack-attack-pattern',
             'mitre-pre-attack-attack-pattern'
         ],
-        '_parse_attack_pattern_galaxy'
+        '_parse_attack_pattern_{}_galaxy'
     )
 )
 galaxy_types_mapping.update(
@@ -357,7 +357,7 @@ galaxy_types_mapping.update(
             'mitre-enterprise-attack-course-of-action',
             'mitre-mobile-attack-course-of-action'
         ],
-        '_parse_course_of_action_galaxy'
+        '_parse_course_of_action_{}_galaxy'
     )
 )
 galaxy_types_mapping.update(
@@ -373,7 +373,7 @@ galaxy_types_mapping.update(
             'mitre-enterprise-attack-malware',
             'mitre-mobile-attack-malware'
         ],
-        '_parse_malware_galaxy'
+        '_parse_malware_{}_galaxy'
     )
 )
 galaxy_types_mapping.update(
@@ -397,7 +397,7 @@ galaxy_types_mapping.update(
             'mitre-enterprise-attack-tool',
             'mitre-mobile-attack-tool'
         ],
-        '_parse_tool_galaxy'
+        '_parse_tool_{}_galaxy'
     )
 )
 
