@@ -72,7 +72,7 @@ _OBSERVABLE_OBJECT_TYPES = Union[
 ],
 
 
-class Stix1PackageGenerator():
+class MISPtoSTIX1Parser():
     def __init__(self, namespace: str, orgname: str):
         self.namespace = namespace
         self.orgname = orgname
@@ -102,6 +102,9 @@ class Stix1PackageGenerator():
         if 'ttp' in self.contextualised_data:
             for ttp in self.contextualised_data['ttp'].values():
                 self.incident.add_leveraged_ttps(ttp)
+        # for uuid, ttp in self.ttps.items():
+        #     self.parse_ttp_references(uuid, ttp)
+        #     self.stix_package.add_ttp(ttp)
         self.stix_package.add_incident(self.incident)
         stix_header = STIXHeader()
         stix_header.title = f"Export from {self.namespace} MISP"
@@ -109,20 +112,25 @@ class Stix1PackageGenerator():
             stix_header.description = self.header_comment[0]
         self.stix_package.stix_header = stix_header
 
+    @property
+    def stix_package(self) -> STIXPackage:
+        return self.stix_package
+
     ################################################################################
     #                     MAIN STIX PACKAGE CREATION FUNCTIONS                     #
     ################################################################################
 
     def _create_incident(self) -> Incident:
         incident_id = f'{self.orgname}:Incident-{self.misp_event.uuid}'
-        incident = Incident(id_=incident_id, title=self.misp_event.info)
+        incident = Incident(
+            id_=incident_id,
+            title=self.misp_event.info,
+            timestamp=self.misp_event.timestamp
+        )
         incident_time = Time()
         incident_time.incident_discovery = self.misp_event.date
         if self.misp_event.published:
-            incident.timestamp = self.misp_event.publish_timestamp
             incident_time.incident_reported = self.misp_event.publish_timestamp
-        else:
-            incident.timestamp = self.misp_event.timestamp
         incident.time = incident_time
         return incident
 
@@ -610,6 +618,17 @@ class Stix1PackageGenerator():
                 if cluster_uuid not in self.courses_of_action:
                     self.courses_of_action[cluster_uuid] = course_of_action
 
+    # def _parse_course_of_action_galaxy(self, galaxy: dict) -> dict:
+    #     coa_taken = {}
+    #     for cluster in galaxy['GalaxyCluster']:
+    #         cluster_uuid = cluster['uuid']
+    #         course_of_action = CourseOfAction()
+    #         course_of_action.id_ = f"{self.namespace}:CourseOfAction-{cluster_uuid}"
+    #         course_of_action.title = cluster['value']
+    #         course_of_action.description = cluster['description']
+    #         coa_taken[cluster_uuid] = self._append_course_of_action(course_of_action, galaxy['name'], cluster_uuid)
+    #     return coa_taken
+
     def _parse_malware_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         related_ttps = self._parse_malware_galaxy(galaxy)
         for related_ttp in related_ttps.values():
@@ -728,6 +747,16 @@ class Stix1PackageGenerator():
         except AttributeError:
             self.incident.history = History()
             self.incident.history.append(history_item)
+
+    # def _append_course_of_action(self, course_of_action: CourseOfAction, uuid: str, timestamp: Optional[datetime] = None) -> COATaken:
+    #     coa = CourseOfAction(idref=course_of_action.id_)
+    #     if timestamp is not None:
+    #         coa.timestamp = timestamp
+    #     coa_taken = COATaken(coa)
+    #     # self.incident.add_coa_taken(coa_taken)
+    #     if uuid not in self.courses_of_action:
+    #         self.courses_of_action[uuid] = course_of_action
+    #     return coa_taken
 
     def _append_threat_actor(self, threat_actor: ThreatActor, category: str, uuid: str, timestamp: Optional[datetime] = None) -> RelatedThreatActor:
         rta = ThreatActor(idref=threat_actor.id_)

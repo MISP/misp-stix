@@ -3,7 +3,7 @@
 
 from .exportparser import ExportParser
 from .framing import stix_framing
-from .stix1_package_generator import Stix1PackageGenerator
+from .misp_to_stix1 import MISPtoStix1Parser
 
 
 class Stix1ExportParser(ExportParser):
@@ -21,15 +21,14 @@ class Stix1ExportParser(ExportParser):
         self.namespace = idgen.get_id_namespace_alias()
 
     def generate_stix1_package(self, version):
-        package_generator = Stix1PackageGenerator()
         stix_package = STIXPackage()
         if self.json_event.get('response'):
             for event in self.json_event['response']:
-                package_generator = Stix1PackageGenerator(self.namespace, self.orgname)
+                package_generator = MISPtoSTIX1Parser(self.namespace, self.orgname)
                 package_generator.parse_misp_event(event['Event'], version)
                 stix_package.add_related_package(package_generator.get_package())
         else:
-            package_generator = Stix1PackageGenerator(self.namespace, self.orgname)
+            package_generator = MISPtoStix1Parser(self.namespace, self.orgname)
             package_generator.parse_misp_event(self.json_event['Event'], version)
             stix_package.add_related_package(package_generator.get_package())
 
