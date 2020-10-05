@@ -938,7 +938,7 @@ class MISPtoSTIX1Parser():
         sorted_tags = defaultdict(list)
         for tag in tags:
             feature = 'tlp_tags' if tag.startswith('tlp:') else 'simple_tags'
-            ordered_tags[feature].append(tag)
+            sorted_tags[feature].append(tag)
         handling = Marking()
         if 'tlp_tags' in sorted_tags:
             handling.add_marking(self._set_tlp(sorted_tags['tlp_tags']))
