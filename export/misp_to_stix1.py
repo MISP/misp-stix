@@ -940,10 +940,16 @@ class MISPtoSTIX1Parser():
             feature = 'tlp_tags' if tag.startswith('tlp:') else 'simple_tags'
             sorted_tags[feature].append(tag)
         handling = Marking()
+        marking_specification = MarkingSpecification()
         if 'tlp_tags' in sorted_tags:
-            handling.add_marking(self._set_tlp(sorted_tags['tlp_tags']))
+            tlp_marking = TLPMarkingStructure()
+            tlp_marking.color = self._set_color(self._fetch_colors(sorted_tags['tlp_tags']))
+            marking_specification.marking_structures.append(tlp_marking)
         for tag in sorted_tags['simple_tags']:
-            handling.add_marking(self._set_tag(tag))
+            simple_marking = SimpleMarkingStructure()
+            simple_marking.statement = tag
+            marking_specification.marking_structures.append(simple_marking)
+        handling.add_marking(marking_specification)
         return handling
 
     @staticmethod
@@ -965,22 +971,6 @@ class MISPtoSTIX1Parser():
     def _set_source(self) -> Identity:
         identity = Identity(name=self.orgc_name)
         return self._create_information_source(identity)
-
-    @staticmethod
-    def _set_tag(tag: str) -> MarkingSpecification:
-        simple_marking = SimpleMarkingStructure()
-        simple_marking.statement = tag
-        marking_specification = MarkingSpecification()
-        marking_specification.marking_structures.append(simple)
-        return marking_specification
-
-    def _set_tlp(self, tags: list) -> MarkingSpecification:
-        tlp = TLPMarkingStructure()
-        tlp.color = self._set_color(self._fetch_colors(tags))
-        marking_specification = MarkingSpecification()
-        marking_specification.controlled_structure = "../../../descendant-or-self::node()"
-        marking_specification.marking_structures.append(tlp)
-        return marking_specification
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
