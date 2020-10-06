@@ -105,6 +105,12 @@ class MISPtoSTIX1Parser():
         # for uuid, ttp in self.ttps.items():
         #     self.parse_ttp_references(uuid, ttp)
         #     self.stix_package.add_ttp(ttp)
+        for course_of_action in self.courses_of_action.values():
+            self.stix_package.add_course_of_action(course_of_action)
+        for threat_actor in self.threat_actors.values():
+            self.stix_package.add_threat_actor(threat_actor)
+        for ttp in self.ttps.values():
+            self.stix_package.add_ttp(ttp)
         self.stix_package.add_incident(self.incident)
         stix_header = STIXHeader()
         stix_header.title = f"Export from {self.namespace} MISP"
