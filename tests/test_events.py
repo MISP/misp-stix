@@ -42,6 +42,38 @@ _TEST_ATTACK_PATTERN = {
     ]
 }
 
+_TEST_COURSE_OF_ACTION = {
+    "uuid": "6fcb4472-6de4-11e7-b5f7-37771619e14e",
+    "name": "Course of Action",
+    "type": "mitre-course-of-action",
+    "description": "ATT&CK Mitigation",
+    "GalaxyCluster": [
+        {
+            "uuid": "2497ac92-e751-4391-82c6-1b86e34d0294",
+            "value": "Automated Exfiltration Mitigation - T1020",
+            "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network"
+        }
+    ]
+}
+
+_TEST_MALWARE = {
+    "uuid": "d752161c-78f6-11e7-a0ea-bfa79b407ce4",
+    "name": "Malware",
+    "type": "mitre-malware",
+    "description": "Name of ATT&CK software",
+    "GalaxyCluster": [
+        {
+            "uuid": "b8eb28e4-48a6-40ae-951a-328714f75eda",
+            "value": "BISCUIT - S0017",
+            "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+            "meta": {
+                "synonyms": [
+                    "BISCUIT"
+                ]
+            }
+        }
+    ]
+}
 
 def get_base_event():
     return deepcopy(_BASE_EVENT)
@@ -73,3 +105,16 @@ def get_event_with_attack_pattern_galaxy():
         deepcopy(_TEST_ATTACK_PATTERN)
     ]
     return event
+
+def get_event_with_course_of_action_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Galaxy'] = [
+        deepcopy(_TEST_COURSE_OF_ACTION)
+    ]
+    return event
+
+def get_event_with_malware_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Galaxy'] = [
+        deepcopy(_TEST_MALWARE)
+    ]

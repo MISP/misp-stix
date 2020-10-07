@@ -3,9 +3,9 @@
 
 import unittest
 import json
-from misp_stix_converter.export import MISPtoSTIX1Parser
+from misp_stix_converter import MISPtoSTIX1Parser
 from pymisp import MISPEvent
-from test_events import *
+from .test_events import *
 
 _DEFAULT_NAMESPACE = 'MISP'
 _DEFAULT_ORGNAME = 'MISP-Project'
@@ -17,7 +17,7 @@ class TestStix1Export(unittest.TestCase):
 
     @staticmethod
     def get_marking_value(marking):
-        if marking._XSI_TYPE == 'tlpMarking:TLPMarkingStructureType')
+        if marking._XSI_TYPE == 'tlpMarking:TLPMarkingStructureType':
             return marking.color
         return marking.statement
 
@@ -60,7 +60,7 @@ class TestStix1Export(unittest.TestCase):
     def test_event_with_attack_pattern_galaxy(self):
         event = get_event_with_attack_pattern_galaxy()
         galaxy = event['Galaxy'][0]
-        cluster = galaxy['GalaxyCluster'][]0
+        cluster = galaxy['GalaxyCluster'][0]
         self.parser.parse_misp_event(event, '1.1.1')
         stix_package = self.parser.stix_package
         self.assertEqual(len(stix_package.ttps.ttp), 1)
@@ -71,6 +71,37 @@ class TestStix1Export(unittest.TestCase):
         attack_pattern = ttp.behavior.attack_patterns[0]
         self.assertEqual(attack_pattern.id_, f"{_DEFAULT_NAMESPACE}:AttackPattern-{cluster['uuid']}")
         self.assertEqual(attack_pattern.title, cluster['value'])
+        self.assertEqual(attack_pattern.description.value, cluster['description'])
         related_ttp = stix_package.incidents[0].leveraged_ttps.ttp[0]
-        self.assertEqual(related_ttp.relationship, galaxy['name'])
+        self.assertEqual(related_ttp.relationship.value, galaxy['name'])
+        self.assertEqual(related_ttp.item.idref, ttp_id)
+
+    def test_event_with_course_of_action_galaxy(self):
+        event = get_event_with_course_of_action_galaxy()
+        cluster = event['Galaxy'][0]['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        self.assertEqual(len(stix_package.courses_of_action), 1)
+        course_of_action = stix_package.courses_of_action[0]
+        self.assertEqual(course_of_action.id_, f"{_DEFAULT_NAMESPACE}:CourseOfAction-{cluster['uuid']}")
+        self.assertEqual(course_of_action.title, cluster['value'])
+        self.assertEqual(course_of_action.description.value, cluster['description'])
+
+    def test_event_with_malware_galaxy(self):
+        event = get_event_with_malware_galaxy()
+        galaxy = event['Galaxy'][0]
+        cluster = galaxy['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        self.assertEqual(len(stix_package.ttps.ttp), 1)
+        ttp = stix_package.ttps.ttp[0]
+        ttp_id = f"{_DEFAULT_NAMESPACE}:TTP-{cluster['uuid']}"
+        self.assertEqual(ttp.id_, ttp_id)
+        self.assertEqual(ttp.title, f"{galaxy['name']} (MISP Galaxy)")
+        malware = ttp.behavior.malware_instances[0]
+        self.assertEqual(malware.id_, f"{_DEFAULT_NAMESPACE}:AttackPattern-{cluster['uuid']}")
+        self.assertEqual(malware.title, cluster['value'])
+        self.assertEqual(malware.description.value, cluster['description'])
+        related_ttp = stix_package.incidents[0].leveraged_ttps.ttp[0]
+        self.assertEqual(related_ttp.relationship.value, galaxy['name'])
         self.assertEqual(related_ttp.item.idref, ttp_id)
