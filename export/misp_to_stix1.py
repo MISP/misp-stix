@@ -574,6 +574,11 @@ class MISPtoSTIX1Parser():
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
 
+    def _handle_related_ttps(self, related_ttps):
+        for uuid, related_ttp in related_ttps.items():
+            if uuid not in self.contextualised_data['ttp']:
+                self.contextualised_data['ttp'][uuid] = related_ttp
+
     def _parse_attack_pattern_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         related_ttps = self._parse_attack_pattern_galaxy(galaxy)
         for related_ttp in related_ttps.values():
@@ -581,9 +586,7 @@ class MISPtoSTIX1Parser():
 
     def _parse_attack_pattern_event_galaxy(self, galaxy:dict):
         related_ttps = self._parse_attack_pattern_galaxy(galaxy)
-        for uuid, related_ttp in related_ttps.items():
-            if uuid not in self.contextualised_data['ttp']:
-                self.contextualised_data['ttp'][uuid] = related_ttp
+        self._handle_related_ttps(related_ttps)
 
     def _parse_attack_pattern_galaxy(self, galaxy: dict) -> dict:
         related_ttps = {}
@@ -642,8 +645,7 @@ class MISPtoSTIX1Parser():
 
     def _parse_malware_event_galaxy(self, galaxy: dict):
         related_ttps = self._parse_malware_galaxy(galaxy)
-        for related_ttp in related_ttps:
-            self.incident.add_leveraged_ttps(related_ttp)
+        self._handle_related_ttps(related_ttps)
 
     def _parse_malware_galaxy(self, galaxy: dict) -> dict:
         related_ttps = {}
@@ -690,8 +692,7 @@ class MISPtoSTIX1Parser():
 
     def _parse_tool_event_galaxy(self, galaxy: dict):
         related_ttps = self._parse_tool_galaxy(galaxy)
-        for related_ttp in related_ttps:
-            self.incident.add_leveraged_ttps(related_ttp)
+        self._handle_related_ttps(related_ttps)
 
     def _parse_tool_galaxy(self, galaxy: dict) -> dict:
         related_ttps = {}
@@ -718,8 +719,7 @@ class MISPtoSTIX1Parser():
 
     def _parse_vulnerability_event_galaxy(self, galaxy: dict):
         related_ttps = self._parse_vulnerability_galaxy(galaxy)
-        for related_ttp in related_ttps:
-            self.incident.add_leveraged_ttps(related_ttp)
+        self._handle_related_ttps(related_ttps)
 
     def _parse_vulnerability_galaxy(self, galaxy: dict) -> dict:
         related_ttps = {}
