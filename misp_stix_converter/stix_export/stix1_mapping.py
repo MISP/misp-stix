@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 # STIX header
 NS_DICT = {
     "http://cybox.mitre.org/common-2" : 'cyboxCommon',

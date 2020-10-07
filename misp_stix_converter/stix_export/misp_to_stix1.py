@@ -2,7 +2,7 @@
 #!/usr/bin/env python3
 
 import socket
-import .stix1_mapping
+from . import stix1_mapping
 from collections import defaultdict
 from cybox.core import Object, Observable, ObservableComposition, RelatedObject
 from cybox.common import Hash, HashList, ByteRun, ByteRuns
@@ -38,7 +38,7 @@ from cybox.objects.x509_certificate_object import X509Certificate, X509Certifica
 from cybox.utils import Namespace
 from datetime import datetime
 from mixbox import idgen
-from pymisp import MISPAttribute
+from pymisp import MISPAttribute, MISPEvent
 from stix.coa import CourseOfAction
 from stix.common import InformationSource, Identity, ToolInformation
 from stix.common.confidence import Confidence
@@ -67,7 +67,7 @@ from typing import List, Optional, Union
 
 _OBSERVABLE_OBJECT_TYPES = Union[
     Address, Artifact, AutonomousSystem, Custom, DomainName, EmailMessage,
-    File, Hostname, HTTP_Session, Mutex, Pipe, Port, SocketAddress, System,
+    File, Hostname, HTTPSession, Mutex, Pipe, Port, SocketAddress, System,
     URI, WinRegistryKey, WinService, X509Certificate
 ],
 
@@ -816,7 +816,7 @@ class MISPtoSTIX1Parser():
     @staticmethod
     def _create_autonomous_system_object(AS: str) -> AutonomousSystem:
         autonomous_system = AutonomousSystem()
-        feature = 'handle' is AS.stratswith('AS') else 'number'
+        feature = 'handle' if AS.startswith('AS') else 'number'
         setattr(autonomous_system, feature, AS)
         setattr(getattr(autonomous_system, feature), 'condition', 'Equals')
         return autonomous_system
@@ -894,7 +894,7 @@ class MISPtoSTIX1Parser():
         registry_key.key.condition = "Equals"
         return registry_key
 
-    def _create_socket_address_object(self, attribute: MISPAttribute) -> List[str, SocketAddress]:
+    def _create_socket_address_object(self, attribute: MISPAttribute) -> list([str, SocketAddress]):
         value, port = attribute.value.split('|')
         socket_address = SocketAddress()
         socket_address.port = self._create_port_object(port)

@@ -3,7 +3,7 @@
 
 import datetime
 import json
-from stix1_mapping import NS_DICT, SCHEMALOC_DICT
+from .stix1_mapping import NS_DICT, SCHEMALOC_DICT
 
 json_footer = ']}\n'
 
@@ -45,7 +45,7 @@ def _stix_xml_framing(stix_package, namespaces, schemaloc):
     s_related = "stix:Related_Package"
     header = stix_package.to_xml(auto_namespace=False, ns_dict=namespaces, schemaloc_dict=schemaloc)
     header = header.decode()
-    header = f"{header}    <{s_related}s>\n        <{header}>\n"replace(s_stix, "")
+    header = f"{header}    <{s_related}s>\n        <{header}>\n".replace(s_stix, "")
     footer = f"        </{s_related}>\n    </{s_related}s>\n{s_stix}"
     separator = f"        </{s_related}>\n        <{s_related}>\n"
     return header, separator, footer

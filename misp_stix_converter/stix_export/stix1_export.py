@@ -3,7 +3,7 @@
 
 from .exportparser import ExportParser
 from .framing import stix_framing
-from .misp_to_stix1 import MISPtoStix1Parser
+from .misp_to_stix1 import MISPtoSTIX1Parser
 
 
 class Stix1ExportParser(ExportParser):
@@ -28,7 +28,7 @@ class Stix1ExportParser(ExportParser):
                 package_generator.parse_misp_event(event['Event'], version)
                 stix_package.add_related_package(package_generator.get_package())
         else:
-            package_generator = MISPtoStix1Parser(self.namespace, self.orgname)
+            package_generator = MISPtoSTIX1Parser(self.namespace, self.orgname)
             package_generator.parse_misp_event(self.json_event['Event'], version)
             stix_package.add_related_package(package_generator.get_package())
 
