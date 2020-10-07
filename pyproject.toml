@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "misp_stix_converter"
+version = "0.1.0"
+description = "Python scripts used by MISP to export MISP format into STIX and to import STIX into MISP format."
+authors = ["Christian Studer <christian.studer@circl.lu>"]
+maintainers = ["Christian Studer <christian.studer@circl.lu>"]
+license = "BSD-2-Clause"
+repository = "https://github.com/chrisr3d/MISP-STIX-Converter"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+pymisp = "^2.4.131"
+stix = "^1.2.0"
+cybox = "^2.1.0"
+mixbox = "^1.0.3"
+maec = "^4.1.0"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^3.8.3"
+codecov = "^2.1.9"
+mypy = "^0.782"
+nose = "^1.3.7"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
