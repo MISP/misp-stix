@@ -151,19 +151,33 @@ class MISPtoSTIX1Parser():
         if hasattr(self.misp_event, 'threat_level_id'):
             threat_level = stix1_mapping.threat_level_mapping[self.misp_event.threat_level_id]
             self._add_journal_entry(f'Event Threat Level: {threat_level}')
-        if self.misp_event.tags:
-            tags = tuple(tag.name for tag in self.misp_event.tags)
+        tags = self._handle_tags_and_galaxies()
+        if tags:
             self.incident.handling = self._set_handling(tags)
-        external_id = ExternalID(value=self.misp_event.id, source='MISP Event')
-        self.incident.add_external_id(external_id)
+        if hasattr(self.misp_event, 'id'):
+            external_id = ExternalID(value=self.misp_event.id, source='MISP Event')
+            self.incident.add_external_id(external_id)
         if hasattr(self.misp_event, 'analysis'):
             status = stix1_mapping.status_mapping[self.misp_event.analysis]
             self.incident.status = IncidentStatus(status)
         self.orgc_name = self._set_creator()
         self.incident.information_source = self._set_source()
         self.incident.reporter = self._set_reporter()
-        self._resolve_galaxies()
         self._resolve_attributes()
+
+    def _handle_tags_and_galaxies(self):
+        if self.misp_event.get('Galaxy'):
+            tag_names = []
+            for galaxy in self.misp_event['Galaxy']:
+                galaxy_type = galaxy['type']
+                if galaxy_type in stix1_mapping.galaxy_types_mapping:
+                    to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
+                    getattr(self, to_call.format('event'))(galaxy)
+                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
+                else:
+                    self.errors['galaxy'].add(f'Unknown galaxy type in event: {galaxy_type}')
+            return tuple(tag.name for tag in self.misp_event.tags if tag.name not in tag_names)
+        return tuple(tag.name for tag in self.misp_event.tags)
 
     def _resolve_attributes(self):
         for attribute in self.misp_event.attributes:
@@ -176,15 +190,6 @@ class MISPtoSTIX1Parser():
                     self.warnings['attribute'].add(f'{attribute_type} - {attribute.value}')
             except Exception:
                 self.errors['attribute'].add(f'{attribute_type} - {attribute.value}')
-
-    def _resolve_galaxies(self):
-        for galaxy in self.misp_event.get('Galaxy', []):
-            galaxy_type = galaxy['type']
-            if galaxy_type in stix1_mapping.galaxy_types_mapping:
-                to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
-                getattr(self, to_call.format('event'))(galaxy)
-            else:
-                self.errors['galaxy'].add(f'Unknown galaxy type: {galaxy_type}')
 
     ################################################################################
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
@@ -213,14 +218,16 @@ class MISPtoSTIX1Parser():
 
     def _handle_attribute_tags_and_galaxies(self, attribute, indicator):
         if attribute.get('Galaxy'):
-            attribute_galaxies = []
+            tag_names = []
             for galaxy in attribute['Galaxy']:
-                attribute_galaxies.extend(self._quick_fetch_tag_names(galaxy))
                 galaxy_type = galaxy['type']
                 if galaxy_type in stix1_mapping.galaxy_types_mapping:
                     to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
                     getattr(self, to_call.format('attribute'))(galaxy, indicator)
-            return tuple(tag.name for tag in attribute.tags if tag not in attribute_galaxies)
+                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
+                else:
+                    self.errors['galaxy'].add(f'Unknown galaxy type in attribute: {galaxy_type}')
+            return tuple(tag.name for tag in attribute.tags if tag.name not in tag_names)
         return tuple(tag.name for tag in attribute.tags)
 
     def _handle_file_observable(self, attribute: MISPAttribute, file_object: File):
