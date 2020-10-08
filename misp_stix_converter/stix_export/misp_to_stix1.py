@@ -89,7 +89,7 @@ class MISPtoSTIX1Parser():
 
     def parse_misp_event(self, misp_event: dict, version: str):
         self.misp_event.from_dict(**misp_event)
-        self.stix_package = self._create_stix_package(version)
+        self._stix_package = self._create_stix_package(version)
         self.incident = self._create_incident()
         self._generate_stix_objects()
         if 'course_of_action' in self.contextualised_data:
@@ -104,23 +104,23 @@ class MISPtoSTIX1Parser():
                 self.incident.add_leveraged_ttps(ttp)
         # for uuid, ttp in self.ttps.items():
         #     self.parse_ttp_references(uuid, ttp)
-        #     self.stix_package.add_ttp(ttp)
+        #     self._stix_package.add_ttp(ttp)
         for course_of_action in self.courses_of_action.values():
-            self.stix_package.add_course_of_action(course_of_action)
+            self._stix_package.add_course_of_action(course_of_action)
         for threat_actor in self.threat_actors.values():
-            self.stix_package.add_threat_actor(threat_actor)
+            self._stix_package.add_threat_actor(threat_actor)
         for ttp in self.ttps.values():
-            self.stix_package.add_ttp(ttp)
-        self.stix_package.add_incident(self.incident)
+            self._stix_package.add_ttp(ttp)
+        self._stix_package.add_incident(self.incident)
         stix_header = STIXHeader()
         stix_header.title = f"Export from {self.namespace} MISP"
         if self.header_comment and len(self.header_comment) == 1:
             stix_header.description = self.header_comment[0]
-        self.stix_package.stix_header = stix_header
+        self._stix_package.stix_header = stix_header
 
     @property
     def stix_package(self) -> STIXPackage:
-        return self.stix_package
+        return self._stix_package
 
     ################################################################################
     #                     MAIN STIX PACKAGE CREATION FUNCTIONS                     #
@@ -516,7 +516,7 @@ class MISPtoSTIX1Parser():
                 self.incident.attributed_threat_actors.append(threat_actor)
             rta = ThreatActor(idref=threat_actor.id_, timestamp=attribute.timestamp)
             related_threat_actor = RelatedThreatActor(rta, relationship=attribute.category)
-            self.stix_package.add_threat_actor(related_threat_actor)
+            self._stix_package.add_threat_actor(related_threat_actor)
         else:
             self._add_journal_entry(f"Attribute ({attribute.category} - {attribute.type}): {attribute.value}")
 
