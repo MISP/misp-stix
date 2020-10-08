@@ -7,7 +7,7 @@ from misp_stix_converter import MISPtoSTIX1Parser
 from pymisp import MISPEvent
 from .test_events import *
 
-_DEFAULT_NAMESPACE = 'MISP'
+_DEFAULT_NAMESPACE = 'MISP-Project'
 _DEFAULT_ORGNAME = 'MISP-Project'
 
 
@@ -25,6 +25,7 @@ class TestStix1Export(unittest.TestCase):
         event = get_base_event()
         uuid = event['Event']['uuid']
         timestamp = int(event['Event']['timestamp'])
+        info = event['Event']['info']
         self.parser.parse_misp_event(event, '1.1.1')
         stix_package = self.parser.stix_package
         self.assertEqual(stix_package.id_, f"{_DEFAULT_NAMESPACE}:STIXPackage-{uuid}")
@@ -32,8 +33,8 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(stix_package.version, '1.1.1')
         self.assertEqual(stix_package.stix_header.title, f'Export from {_DEFAULT_NAMESPACE} MISP')
         incident = stix_package.incidents[0]
-        self.assertEqual(incident.id_, f"{_DEFAULT_NAMESPACE}:STIXPackage-{uuid}")
-        self.assertEqual(incident.title, event['Event']['info'])
+        self.assertEqual(incident.id_, f"{_DEFAULT_NAMESPACE}:Incident-{uuid}")
+        self.assertEqual(incident.title, info)
         self.assertEqual(incident.information_source.identity.name, _DEFAULT_ORGNAME)
         self.assertEqual(incident.reporter.identity.name, _DEFAULT_ORGNAME)
 
@@ -41,10 +42,11 @@ class TestStix1Export(unittest.TestCase):
         event = get_published_event()
         timestamp = int(event['Event']['timestamp'])
         publish_timestamp = int(event['Event']['publish_timestamp'])
+        date = event['Event']['date']
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         self.assertEqual(int(incident.timestamp.timestamp()), timestamp)
-        self.assertEqual(incident.time.incident_discovery.value.strftime("%Y-%m-%d"), event['Event']['date'])
+        self.assertEqual(incident.time.incident_discovery.value.strftime("%Y-%m-%d"), date)
         self.assertEqual(int(incident.time.incident_reported.value.timestamp()), publish_timestamp)
 
     def test_event_with_tags(self):
@@ -59,7 +61,7 @@ class TestStix1Export(unittest.TestCase):
 
     def test_event_with_attack_pattern_galaxy(self):
         event = get_event_with_attack_pattern_galaxy()
-        galaxy = event['Galaxy'][0]
+        galaxy = event['Event']['Galaxy'][0]
         cluster = galaxy['GalaxyCluster'][0]
         self.parser.parse_misp_event(event, '1.1.1')
         stix_package = self.parser.stix_package
@@ -78,7 +80,7 @@ class TestStix1Export(unittest.TestCase):
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
-        cluster = event['Galaxy'][0]['GalaxyCluster'][0]
+        cluster = event['Event']['Galaxy'][0]['GalaxyCluster'][0]
         self.parser.parse_misp_event(event, '1.1.1')
         stix_package = self.parser.stix_package
         self.assertEqual(len(stix_package.courses_of_action), 1)
@@ -89,7 +91,7 @@ class TestStix1Export(unittest.TestCase):
 
     def test_event_with_malware_galaxy(self):
         event = get_event_with_malware_galaxy()
-        galaxy = event['Galaxy'][0]
+        galaxy = event['Event']['Galaxy'][0]
         cluster = galaxy['GalaxyCluster'][0]
         self.parser.parse_misp_event(event, '1.1.1')
         stix_package = self.parser.stix_package
@@ -99,7 +101,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(ttp.id_, ttp_id)
         self.assertEqual(ttp.title, f"{galaxy['name']} (MISP Galaxy)")
         malware = ttp.behavior.malware_instances[0]
-        self.assertEqual(malware.id_, f"{_DEFAULT_NAMESPACE}:AttackPattern-{cluster['uuid']}")
+        self.assertEqual(malware.id_, f"{_DEFAULT_NAMESPACE}:MalwareInstance-{cluster['uuid']}")
         self.assertEqual(malware.title, cluster['value'])
         self.assertEqual(malware.description.value, cluster['description'])
         related_ttp = stix_package.incidents[0].leveraged_ttps.ttp[0]

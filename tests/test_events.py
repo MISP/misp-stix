@@ -81,40 +81,41 @@ def get_base_event():
 
 def get_published_event():
     base_event = deepcopy(_BASE_EVENT)
-    base_event['published'] = True,
-    base_event['publish_timestamp'] = str(int(datetime.now().timestamp()))
+    base_event['Event']['published'] = True
+    base_event['Event']['publish_timestamp'] = str(int(datetime.now().timestamp()))
     return base_event
 
 
 def get_event_with_tags():
     event = deepcopy(_BASE_EVENT)
-    event['Tag'] = [
+    event['Event']['Tag'] = [
         {"name": "tlp:white"},
         {"name": 'misp:tool="misp2stix"'},
         {"name": 'misp-galaxy:mitre-attack-pattern="Code Signing - T1116"'},
         {"name": 'misp-galaxy:mitre-attack-pattern="Access Token Manipulation - T1134"'}
     ]
-    event['Galaxy'] = [
+    event['Event']['Galaxy'] = [
         deepcopy(_TEST_ATTACK_PATTERN)
     ]
     return event
 
 def get_event_with_attack_pattern_galaxy():
     event = deepcopy(_BASE_EVENT)
-    event['Galaxy'] = [
+    event['Event']['Galaxy'] = [
         deepcopy(_TEST_ATTACK_PATTERN)
     ]
     return event
 
 def get_event_with_course_of_action_galaxy():
     event = deepcopy(_BASE_EVENT)
-    event['Galaxy'] = [
+    event['Event']['Galaxy'] = [
         deepcopy(_TEST_COURSE_OF_ACTION)
     ]
     return event
 
 def get_event_with_malware_galaxy():
     event = deepcopy(_BASE_EVENT)
-    event['Galaxy'] = [
+    event['Event']['Galaxy'] = [
         deepcopy(_TEST_MALWARE)
     ]
+    return event
