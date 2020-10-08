@@ -134,7 +134,7 @@ class MISPtoSTIX1Parser():
             timestamp=self.misp_event.timestamp
         )
         incident_time = Time()
-        incident_time.incident_discovery = self.misp_event.date
+        incident_time.incident_discovery = self._from_datetime_to_str(self.misp_event.date)
         if self.misp_event.published:
             incident_time.incident_reported = self.misp_event.publish_timestamp
         incident.time = incident_time
@@ -926,7 +926,7 @@ class MISPtoSTIX1Parser():
         return (tag.split(':')[-1].upper() for tag in tags)
 
     @staticmethod
-    def _set_color(tags: list) -> str:
+    def _set_color(colors: list) -> str:
         tlp_color = 0
         for color in colors:
             color_num = stix1_mapping.TLP_order[color]
@@ -981,6 +981,10 @@ class MISPtoSTIX1Parser():
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
+
+    @staticmethod
+    def _from_datetime_to_str(date):
+        return date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
     @staticmethod
     def _quick_fetch_tag_names(galaxy: dict) -> list:
