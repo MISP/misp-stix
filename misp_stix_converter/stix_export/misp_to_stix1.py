@@ -734,6 +734,7 @@ class MISPtoSTIX1Parser():
             cluster_uuid = cluster['uuid']
             ttp = self._create_ttp_from_galaxy(galaxy['name'], cluster_uuid)
             exploit_target = ExploitTarget()
+            exploit_target.id_ = f"{self.namespace}:ExploitTarget-{cluster_uuid}"
             vulnerability = Vulnerability()
             vulnerability.id_ = f"{self.namespace}:Vulnerability-{cluster_uuid}"
             vulnerability.title = cluster['value']
