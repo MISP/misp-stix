@@ -75,6 +75,59 @@ _TEST_MALWARE = {
     ]
 }
 
+_TEST_THREAT_ACTOR = {
+    "uuid": "698774c7-8022-42c4-917f-8d6e4f06ada3",
+    "name": "Threat Actor",
+    "type": "threat-actor",
+    "description": "Threat actors are characteristics of malicious actors.",
+    "GalaxyCluster": [
+        {
+            "uuid": "11e17436-6ede-4733-8547-4ce0254ea19e",
+            "value": "Cutting Kitten",
+            "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
+            "meta": {
+                "cfr-type-of-incident": [
+                    "Denial of service"
+                ]
+            }
+        }
+    ]
+}
+
+_TEST_TOOL = {
+    "uuid": "d5cbd1a2-78f6-11e7-a833-7b9bccca9649",
+    "name": "Tool",
+    "type": "mitre-tool",
+    "description": "Name of ATT&CK software",
+    "GalaxyCluster": [
+        {
+            "uuid": "bba595da-b73a-4354-aa6c-224d4de7cb4e",
+            "value": "cmd - S0106",
+            "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities."
+        }
+    ]
+}
+
+_TEST_VULNERABILITY = {
+    "uuid": "fda8c7c2-f45a-11e7-9713-e75dac0492df",
+    "name": "Branded Vulnerability",
+    "type": "branded-vulnerability",
+    "description": "List of known vulnerabilities and exploits",
+    "GalaxyCluster": [
+        {
+            "uuid": "a1640081-aa8d-4070-84b2-d23e2ae82799",
+            "value": "Ghost",
+            "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
+            "meta": {
+                "aliases": [
+                    "CVE-2015–0235"
+                ]
+            }
+        }
+    ]
+
+}
+
 def get_base_event():
     return deepcopy(_BASE_EVENT)
 
@@ -117,5 +170,26 @@ def get_event_with_malware_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_MALWARE)
+    ]
+    return event
+
+def get_event_with_threat_actor_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_THREAT_ACTOR)
+    ]
+    return event
+
+def get_event_with_tool_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_TOOL)
+    ]
+    return event
+
+def get_event_with_vulnerability_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_VULNERABILITY)
     ]
     return event
