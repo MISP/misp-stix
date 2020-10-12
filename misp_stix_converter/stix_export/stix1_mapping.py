@@ -205,7 +205,7 @@ email_attribute_mapping = {
     'email-subject': 'subject'
 }
 
-simple_type_to_method = {
+attribute_types_mapping = {
     'AS': '_parse_autonomous_system_attribute',
     'attachment': '_parse_attachment',
     'domain': '_parse_domain_attribute',
@@ -234,19 +234,19 @@ simple_type_to_method = {
     'vulnerability': '_parse_vulnerability_attribute',
     'yara': '_parse_yara_attribute'
 }
-simple_type_to_method.update(
+attribute_types_mapping.update(
     dict.fromkeys(
         list(hash_type_attributes["single"]),
         '_parse_hash_attribute'
     )
 )
-simple_type_to_method.update(
+attribute_types_mapping.update(
     dict.fromkeys(
         list(hash_type_attributes["composite"]),
         '_parse_hash_composite_attribute'
     )
 )
-simple_type_to_method.update(
+attribute_types_mapping.update(
     dict.fromkeys(
         [
             "ip-src",
@@ -255,7 +255,7 @@ simple_type_to_method.update(
         '_parse_ip_attribute'
     )
 )
-simple_type_to_method.update(
+attribute_types_mapping.update(
     dict.fromkeys(
         [
             "ip-src|port",
@@ -264,7 +264,7 @@ simple_type_to_method.update(
         '_parse_ip_port_attribute'
     )
 )
-simple_type_to_method.update(
+attribute_types_mapping.update(
     dict.fromkeys(
         [
             "windows-service-displayname",
@@ -273,7 +273,7 @@ simple_type_to_method.update(
         '_parse_windows_service_attribute'
     )
 )
-simple_type_to_method.update(
+attribute_types_mapping.update(
     dict.fromkeys(
         [
             "url",
@@ -282,7 +282,7 @@ simple_type_to_method.update(
         '_parse_url_attribute'
     )
 )
-simple_type_to_method.update(
+attribute_types_mapping.update(
     dict.fromkeys(
         [
             "email-src",
@@ -293,7 +293,7 @@ simple_type_to_method.update(
         '_parse_email_attribute'
     )
 )
-simple_type_to_method.update(
+attribute_types_mapping.update(
     dict.fromkeys(
         [
             'x509-fingerprint-md5',
@@ -303,7 +303,7 @@ simple_type_to_method.update(
         '_parse_x509_fingerprint_attribute'
     )
 )
-simple_type_to_method.update(
+attribute_types_mapping.update(
     dict.fromkeys(
         [
             'comment',

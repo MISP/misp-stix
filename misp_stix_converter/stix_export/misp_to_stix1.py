@@ -267,12 +267,12 @@ class MISPtoSTIX1Parser():
 
     def _parse_domain_ip_attribute(self, attribute: MISPAttribute):
         domain, ip = attribute.value.split('|')
-        address_object = self._create_address_object(attribute.type, ip)
-        address_observable = self._create_observable(address_object, attribute.uuid, 'Address')
         domain_object = self._create_domain_object(domain)
         domain_observable = self._create_observable(domain_object, attribute.uuid, 'DomainName')
+        address_object = self._create_address_object(attribute.type, ip)
+        address_observable = self._create_observable(address_object, attribute.uuid, 'Address')
         composite_object = ObservableComposition(
-            observables=[address_observable, domain_observable]
+            observables=[domain_observable, address_observable]
         )
         composite_object.operator = "AND"
         observable = Observable(
@@ -796,14 +796,14 @@ class MISPtoSTIX1Parser():
         address_object = Address()
         if '/' in attribute_value:
             address_object.category = "cidr"
-            address_object.condition = "Contains"
+            condition = "Contains"
         else:
             try:
                 socket.inet_aton(attribute_value)
                 address_object.category = "ipv4-addr"
             except socket.error:
                 address_object.category = "ipv6-addr"
-            address_object.condition = "Equals"
+            condition = "Equals"
         if 'src' in attribute_type:
             address_object.is_source = True
             address_object.is_destination = False
@@ -811,6 +811,7 @@ class MISPtoSTIX1Parser():
             address_object.is_source = False
             address_object.is_destination = True
         address_object.address_value = attribute_value
+        address_object.address_value.condition = condition
         return address_object
 
     @staticmethod
@@ -859,10 +860,10 @@ class MISPtoSTIX1Parser():
 
     def _create_indicator(self, attribute: MISPAttribute) -> Indicator:
         indicator = Indicator(timestamp=attribute.timestamp)
-        indicator.id_ = f"{self.namespace}:indicator-{attribute.uuid}"
+        indicator.id_ = f"{self.namespace}:Indicator-{attribute.uuid}"
         indicator.producer = self._set_producer()
         indicator.title = f"{attribute.category}: {attribute.value} (MISP Attribute)"
-        indicator.description = attribute.comment if attribute.comment else indicator.title
+        indicator.description = attribute.comment if attribute.get('comment') else indicator.title
         indicator.confidence = Confidence(
             value=stix1_mapping.confidence_mapping[attribute.to_ids],
             description=stix1_mapping.confidence_description,
@@ -885,7 +886,7 @@ class MISPtoSTIX1Parser():
     def _create_observable(self, stix_object: _OBSERVABLE_OBJECT_TYPES, attribute_uuid: str, feature: str) -> Observable:
         stix_object.parent.id_ = f"{self.namespace}:{feature}Object-{attribute_uuid}"
         observable = Observable(stix_object)
-        observable.id_ = f"{self.namespace}:{feature}-{attribute_uuid}"
+        observable.id_ = f"{self.namespace}:Observable-{attribute_uuid}"
         return observable
 
     @staticmethod
