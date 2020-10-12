@@ -193,3 +193,77 @@ def get_event_with_vulnerability_galaxy():
         deepcopy(_TEST_VULNERABILITY)
     ]
     return event
+
+def get_event_with_as_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "AS",
+            "category": "Network activity",
+            "value": "AS174"
+        }
+    ]
+    return event
+
+def get_event_with_domain_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "domain",
+            "category": "Network activity",
+            "value": "circl.lu",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Domain test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_domain_ip_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "domain|ip",
+            "category": "Network activity",
+            "value": "circl.lu|149.13.33.14",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Domain|ip test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_email_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "email-src",
+            "category": "Payload delivery",
+            "value": "src@email.test",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Source email address test attribute"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "email-dst",
+            "category": "Payload delivery",
+            "value": "dst@email.test",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Destination email address test attribute"
+        },
+        {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "type": "email-subject",
+            "category": "Payload delivery",
+            "value": "Test Subject"
+        },
+        {
+            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "type": "email-reply-to",
+            "category": "Payload delivery",
+            "value": "reply-to@email.test"
+        }
+    ]
+    return event

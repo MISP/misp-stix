@@ -15,15 +15,62 @@ class TestStix1Export(unittest.TestCase):
     def setUp(self):
         self.parser = MISPtoSTIX1Parser(_DEFAULT_NAMESPACE, _DEFAULT_ORGNAME)
 
-    def _check_related_ttp(self, stix_package, galaxy_name, cluster_uuid):
-        related_ttp = stix_package.incidents[0].leveraged_ttps.ttp[0]
-        self.assertEqual(related_ttp.relationship.value, galaxy_name)
-        self.assertEqual(related_ttp.item.idref, f"{_DEFAULT_NAMESPACE}:TTP-{cluster_uuid}")
+    ################################################################################
+    #                              UTILITY FUNCTIONS.                              #
+    ################################################################################
+
+    def _check_destination_address(self, properties, category='ipv4-addr'):
+        self.assertEqual(properties.category, category)
+        self.assertFalse(properties.is_source)
+        self.assertTrue(properties.is_destination)
+
+    def _check_email_indicator(self, related_indicator, attribute, orgc):
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        return self._check_email_observable(indicator.observable, attribute)
+
+    def _check_email_observable(self, observable, attribute):
+        self.assertEqual(observable.id_, f"{_DEFAULT_NAMESPACE}:Observable-{attribute['uuid']}")
+        observable_object = observable.object_
+        self.assertEqual(observable_object.id_, f"{_DEFAULT_NAMESPACE}:EmailMessageObject-{attribute['uuid']}")
+        properties = observable_object.properties
+        self.assertEqual(properties._XSI_TYPE, 'EmailMessageObjectType')
+        return properties
 
     def _check_embedded_features(self, embedded_object, cluster, name, feature='title'):
         self.assertEqual(embedded_object.id_, f"{_DEFAULT_NAMESPACE}:{name}-{cluster['uuid']}")
         self.assertEqual(getattr(embedded_object, feature), cluster['value'])
         self.assertEqual(embedded_object.description.value, cluster['description'])
+
+    def _check_indicator_features(self, related_indicator, attribute, orgc):
+        self.assertEqual(related_indicator.relationship, attribute['category'])
+        indicator = related_indicator.item
+        self.assertEqual(indicator.id_, f"{_DEFAULT_NAMESPACE}:Indicator-{attribute['uuid']}")
+        self.assertEqual(indicator.title, f"{attribute['category']}: {attribute['value']} (MISP Attribute)")
+        self.assertEqual(indicator.description.value, attribute['comment'])
+        self.assertEqual(int(indicator.timestamp.timestamp()), int(attribute['timestamp']))
+        self.assertEqual(indicator.producer.identity.name, orgc)
+        return indicator
+
+    def _check_observable_features(self, observable, attribute, name, feature='value'):
+        self.assertEqual(observable.id_, f"{_DEFAULT_NAMESPACE}:Observable-{attribute['uuid']}")
+        observable_object = observable.object_
+        self.assertEqual(observable_object.id_, f"{_DEFAULT_NAMESPACE}:{name}Object-{attribute['uuid']}")
+        properties = observable_object.properties
+        self.assertEqual(properties._XSI_TYPE, f'{name}ObjectType')
+        try:
+            self.assertEqual(getattr(properties, feature).value, attribute['value'])
+        except AssertionError:
+            self.assertIn(getattr(properties, feature).value, attribute['value'])
+
+    def _check_related_ttp(self, stix_package, galaxy_name, cluster_uuid):
+        related_ttp = stix_package.incidents[0].leveraged_ttps.ttp[0]
+        self.assertEqual(related_ttp.relationship.value, galaxy_name)
+        self.assertEqual(related_ttp.item.idref, f"{_DEFAULT_NAMESPACE}:TTP-{cluster_uuid}")
+
+    def _check_source_address(self, properties, category='ipv4-addr'):
+        self.assertEqual(properties.category, category)
+        self.assertTrue(properties.is_source)
+        self.assertFalse(properties.is_destination)
 
     def _check_ttp_fields(self, stix_package, cluster_uuid, galaxy_name):
         self.assertEqual(len(stix_package.ttps.ttp), 1)
@@ -37,6 +84,10 @@ class TestStix1Export(unittest.TestCase):
         if marking._XSI_TYPE == 'tlpMarking:TLPMarkingStructureType':
             return marking.color
         return marking.statement
+
+    ################################################################################
+    #                              EVENT FIELDS TESTS                              #
+    ################################################################################
 
     def test_base_event(self):
         event = get_base_event()
@@ -75,6 +126,68 @@ class TestStix1Export(unittest.TestCase):
         self.assertIn('WHITE', markings)
         self.assertIn('misp:tool="misp2stix"', markings)
         self.assertIn('misp-galaxy:mitre-attack-pattern="Code Signing - T1116"', markings)
+
+    ################################################################################
+    #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
+    ################################################################################
+
+    def test_event_with_as_attribute(self):
+        event = get_event_with_as_attribute()
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, attribute['category'])
+        self._check_observable_features(observable.item, attribute, 'AS', feature='handle')
+
+    def test_event_with_domain_attribute(self):
+        event = get_event_with_domain_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        self._check_observable_features(indicator.observable, attribute, 'DomainName')
+
+    def test_event_with_domain_ip_attribute(self):
+        event = get_event_with_domain_ip_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        observable = indicator.observable
+        self.assertEqual(observable.id_, f"{_DEFAULT_NAMESPACE}:ObservableComposition-{attribute['uuid']}")
+        domain, address = observable.observable_composition.observables
+        self._check_observable_features(domain, attribute, 'DomainName')
+        self._check_observable_features(address, attribute, 'Address', feature='address_value')
+        self._check_destination_address(address.object_.properties)
+
+    def test_event_with_email_attributes(self):
+        event = get_event_with_email_attributes()
+        source, destination, subject, reply_to = event['Event']['Attribute']
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        src_indicator, dst_indicator = incident.related_indicators.indicator
+        source_properties = self._check_email_indicator(src_indicator, source, orgc)
+        self.assertEqual(source_properties.from_.address_value.value, source['value'])
+        self.assertEqual(source_properties.from_.category, 'e-mail')
+        destination_properties = self._check_email_indicator(dst_indicator, destination, orgc)
+        self.assertEqual(destination_properties.to[0].address_value.value, destination['value'])
+        self.assertEqual(destination_properties.to[0].category, 'e-mail')
+        subject_observable, reply_to_observable = incident.related_observables.observable
+        subject_properties = self._check_email_observable(subject_observable.item, subject)
+        self.assertEqual(subject_properties.subject.value, subject['value'])
+        reply_to_properties = self._check_email_observable(reply_to_observable.item, reply_to)
+        self.assertEqual(reply_to_properties.reply_to.address_value.value, reply_to['value'])
+        self.assertEqual(reply_to_properties.reply_to.category, 'e-mail')
+
+    ################################################################################
+    #                            GALAXIES EXPORT TESTS.                            #
+    ################################################################################
 
     def test_event_with_attack_pattern_galaxy(self):
         event = get_event_with_attack_pattern_galaxy()
