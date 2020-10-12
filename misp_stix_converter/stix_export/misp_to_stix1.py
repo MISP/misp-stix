@@ -230,12 +230,6 @@ class MISPtoSTIX1Parser():
             return tuple(tag.name for tag in attribute.tags if tag.name not in tag_names)
         return tuple(tag.name for tag in attribute.tags)
 
-    def _handle_file_observable(self, attribute: MISPAttribute, file_object: File):
-        observable = self._create_observable(file_object, attribute.uuid, 'File')
-        observable = Observable(file_object)
-        observable.id_ = f"{self.namespace}:File-{attribute.uuid}"
-        self._handle_attribute(attribute, observable)
-
     def _parse_attachment(self, attribute: MISPAttribute):
         if attribute.data:
             artifact_object = self._create_artifact_object(attribute.data)
@@ -305,13 +299,15 @@ class MISPtoSTIX1Parser():
 
     def _parse_file_attribute(self, attribute: MISPAttribute):
         file_object = self._create_file_object(attribute.value)
-        self._handle_file_observable(attribute, file_object)
+        observable = self._create_observable(file_object, attribute.uuid, 'File')
+        self._handle_attribute(attribute, observable)
 
     def _parse_hash_attribute(self, attribute: MISPAttribute):
         hash = self._parse_hash_value(attribute.type, attribute.value)
         file_object = File()
         file_object.add_hash(hash)
-        self._handle_file_observable(attribute, file_object)
+        observable = self._create_observable(file_object, attribute.uuid, 'File')
+        self._handle_attribute(attribute, observable)
 
     def _parse_hash_composite_attribute(self, attribute: MISPAttribute):
         filename, hash_value = attribute.value.split('|')
@@ -319,7 +315,8 @@ class MISPtoSTIX1Parser():
         attribute_type = attribute.type.split('|')[1] if '|' in attribute.type else 'filename|md5'
         hash = self._parse_hash_value(attribute_type, hash_value)
         file_object.add_hash(hash)
-        self._handle_file_observable(attribute, file_object)
+        observable = self._create_observable(file_object, attribute.uuid, 'File')
+        self._handle_attribute(attribute, observable)
 
     @staticmethod
     def _parse_hash_value(attribute_type, attribute_value: MISPAttribute):
