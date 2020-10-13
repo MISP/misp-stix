@@ -24,18 +24,6 @@ class TestStix1Export(unittest.TestCase):
         self.assertFalse(properties.is_source)
         self.assertTrue(properties.is_destination)
 
-    def _check_email_indicator(self, related_indicator, attribute, orgc):
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
-        return self._check_email_observable(indicator.observable, attribute)
-
-    def _check_email_observable(self, observable, attribute):
-        self.assertEqual(observable.id_, f"{_DEFAULT_NAMESPACE}:Observable-{attribute['uuid']}")
-        observable_object = observable.object_
-        self.assertEqual(observable_object.id_, f"{_DEFAULT_NAMESPACE}:EmailMessageObject-{attribute['uuid']}")
-        properties = observable_object.properties
-        self.assertEqual(properties._XSI_TYPE, 'EmailMessageObjectType')
-        return properties
-
     def _check_embedded_features(self, embedded_object, cluster, name, feature='title'):
         self.assertEqual(embedded_object.id_, f"{_DEFAULT_NAMESPACE}:{name}-{cluster['uuid']}")
         self.assertEqual(getattr(embedded_object, feature), cluster['value'])
@@ -51,16 +39,13 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(indicator.producer.identity.name, orgc)
         return indicator
 
-    def _check_observable_features(self, observable, attribute, name, feature='value'):
+    def _check_observable_features(self, observable, attribute, name):
         self.assertEqual(observable.id_, f"{_DEFAULT_NAMESPACE}:Observable-{attribute['uuid']}")
         observable_object = observable.object_
         self.assertEqual(observable_object.id_, f"{_DEFAULT_NAMESPACE}:{name}Object-{attribute['uuid']}")
         properties = observable_object.properties
         self.assertEqual(properties._XSI_TYPE, f'{name}ObjectType')
-        try:
-            self.assertEqual(getattr(properties, feature).value, attribute['value'])
-        except AssertionError:
-            self.assertIn(getattr(properties, feature).value, attribute['value'])
+        return properties
 
     def _check_related_ttp(self, stix_package, galaxy_name, cluster_uuid):
         related_ttp = stix_package.incidents[0].leveraged_ttps.ttp[0]
@@ -138,7 +123,8 @@ class TestStix1Export(unittest.TestCase):
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, attribute['category'])
-        self._check_observable_features(observable.item, attribute, 'AS', feature='handle')
+        properties = self._check_observable_features(observable.item, attribute, 'AS')
+        self.assertEqual(properties.handle.value, attribute['value'])
 
     def test_event_with_domain_attribute(self):
         event = get_event_with_domain_attribute()
@@ -148,7 +134,8 @@ class TestStix1Export(unittest.TestCase):
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_features(related_indicator, attribute, orgc)
-        self._check_observable_features(indicator.observable, attribute, 'DomainName')
+        properties = self._check_observable_features(indicator.observable, attribute, 'DomainName')
+        self.assertEqual(properties.value.value, attribute['value'])
 
     def test_event_with_domain_ip_attribute(self):
         event = get_event_with_domain_ip_attribute()
@@ -160,10 +147,13 @@ class TestStix1Export(unittest.TestCase):
         indicator = self._check_indicator_features(related_indicator, attribute, orgc)
         observable = indicator.observable
         self.assertEqual(observable.id_, f"{_DEFAULT_NAMESPACE}:ObservableComposition-{attribute['uuid']}")
-        domain, address = observable.observable_composition.observables
-        self._check_observable_features(domain, attribute, 'DomainName')
-        self._check_observable_features(address, attribute, 'Address', feature='address_value')
-        self._check_destination_address(address.object_.properties)
+        domain_name, address = observable.observable_composition.observables
+        domain, ip = attribute['value'].split('|')
+        domain_properties = self._check_observable_features(domain_name, attribute, 'DomainName')
+        self.assertEqual(domain_properties.value.value, domain)
+        address_properties = self._check_observable_features(address, attribute, 'Address')
+        self.assertEqual(address_properties.address_value.value, ip)
+        self._check_destination_address(address_properties)
 
     def test_event_with_email_attributes(self):
         event = get_event_with_email_attributes()
@@ -172,16 +162,34 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         src_indicator, dst_indicator = incident.related_indicators.indicator
-        source_properties = self._check_email_indicator(src_indicator, source, orgc)
+        source_indicator = self._check_indicator_features(src_indicator, source, orgc)
+        source_properties = self._check_observable_features(
+            source_indicator.observable,
+            source,
+            'EmailMessage'
+        )
         self.assertEqual(source_properties.from_.address_value.value, source['value'])
         self.assertEqual(source_properties.from_.category, 'e-mail')
-        destination_properties = self._check_email_indicator(dst_indicator, destination, orgc)
+        destination_indicator = self._check_indicator_features(dst_indicator, destination, orgc)
+        destination_properties = self._check_observable_features(
+            destination_indicator.observable,
+            destination,
+            'EmailMessage'
+        )
         self.assertEqual(destination_properties.to[0].address_value.value, destination['value'])
         self.assertEqual(destination_properties.to[0].category, 'e-mail')
         subject_observable, reply_to_observable = incident.related_observables.observable
-        subject_properties = self._check_email_observable(subject_observable.item, subject)
+        subject_properties = self._check_observable_features(
+            subject_observable.item,
+            subject,
+            'EmailMessage'
+        )
         self.assertEqual(subject_properties.subject.value, subject['value'])
-        reply_to_properties = self._check_email_observable(reply_to_observable.item, reply_to)
+        reply_to_properties = self._check_observable_features(
+            reply_to_observable.item,
+            reply_to,
+            'EmailMessage'
+        )
         self.assertEqual(reply_to_properties.reply_to.address_value.value, reply_to['value'])
         self.assertEqual(reply_to_properties.reply_to.category, 'e-mail')
 
