@@ -349,7 +349,7 @@ class MISPtoSTIX1Parser():
 
     def _parse_http_session(self, attribute: MISPAttribute, http_client_request: HTTPClientRequest):
         http_request_response = HTTPRequestResponse()
-        request_response.http_client_request = http_client_request
+        http_request_response.http_client_request = http_client_request
         http_session_object = HTTPSession()
         http_session_object.http_request_response = http_request_response
         observable = self._create_observable(http_session_object, attribute.uuid, 'HTTPSession')
@@ -389,7 +389,7 @@ class MISPtoSTIX1Parser():
 
     def _parse_mutex_attribute(self, attribute: MISPAttribute):
         mutex_object = self._create_mutex_object(attribute.value)
-        observable = self._create_observable(mutex_object, attribute.value, 'Mutex')
+        observable = self._create_observable(mutex_object, attribute.uuid, 'Mutex')
         self._handle_attribute(attribute, observable)
 
     def _parse_named_pipe(self, attribute: MISPAttribute):
@@ -403,7 +403,6 @@ class MISPtoSTIX1Parser():
     def _parse_pattern_attribute(self, attribute: MISPAttribute):
         byte_run = ByteRun()
         byte_run.byte_run_data = attribute.value
-        byte_run.byte_run_data.condition = "Equals"
         file_object = File()
         file_object.byte_runs = ByteRuns(byte_run)
         observable = self._create_observable(file_object, attribute.uuid, 'File')
@@ -416,7 +415,7 @@ class MISPtoSTIX1Parser():
 
     def _parse_regkey_attribute(self, attribute: MISPAttribute):
         registry_key = self._create_registry_key_object(attribute.value)
-        observable = self._create_observable(registry_key, attribute.uuid, 'WinRegistryKey')
+        observable = self._create_observable(registry_key, attribute.uuid, 'WindowsRegistryKey')
         self._handle_attribute(attribute, observable)
 
     def _parse_regkey_value_attribute(self, attribute: MISPAttribute):
@@ -426,7 +425,7 @@ class MISPtoSTIX1Parser():
         registry_value.data = value.strip()
         registry_value.data.condition = "Equals"
         registry_key.values = RegistryValues(registry_value)
-        observable = self._create_observable(registry_key, attribute.uuid, 'WinRegistryKey')
+        observable = self._create_observable(registry_key, attribute.uuid, 'WindowsRegistryKey')
         self._handle_attribute(attribute, observable)
 
     def _parse_snort_attribute(self, attribute: MISPAttribute):
@@ -464,7 +463,7 @@ class MISPtoSTIX1Parser():
         description = attribute.value
         if hasattr(attribute, 'comment') and attribute.comment:
             description = f"{description} ({attribute.comment})"
-        affected_asset.description = descrption
+        affected_asset.description = description
         self.incident.affected_assets.append(affected_asset)
 
     def _parse_target_org(self, attribute: MISPAttribute):
@@ -485,7 +484,7 @@ class MISPtoSTIX1Parser():
         indicator.add_indicator_type("Malware Artifacts")
         indicator.add_valid_time_position(ValidTime())
         indicator.add_test_mechanism(test_mechanism)
-        related_indicator = RelatedIndicator(indicator, relationship=attribute.categpory)
+        related_indicator = RelatedIndicator(indicator, relationship=attribute.category)
         self.incident.related_indicators.append(related_indicator)
 
     def _parse_url_attribute(self, attribute: MISPAttribute):
