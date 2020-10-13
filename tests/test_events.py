@@ -267,3 +267,293 @@ def get_event_with_email_attributes():
         }
     ]
     return event
+
+def get_event_with_filename_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "filename",
+            "category": "Payload delivery",
+            "value": "test_file_name",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Filename test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_hash_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "md5",
+            "category": "Payload delivery",
+            "value": "b2a5abfeef9e36964281a31e17b57c97",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "MD5 test attribute"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "tlsh",
+            "category": "Payload delivery",
+            "value": "1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "TLSH test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_hash_composite_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "filename|md5",
+            "category": "Payload delivery",
+            "value": "test_file_name|b2a5abfeef9e36964281a31e17b57c97",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Filename|md5 test attribute"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "filename|tlsh",
+            "category": "Payload delivery",
+            "value": "test_file_name|1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Filename|tlsh test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_hostname_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "hostname",
+            "category": "Network activity",
+            "value": "circl.lu",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Hostname test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_hostname_port_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "hostname|port",
+            "category": "Network activity",
+            "value": "circl.lu|8443",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Hostname|port test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_http_method_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "http-method",
+            "category": "Network activity",
+            "value": "POST"
+        }
+    ]
+    return event
+
+def get_event_with_ip_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "ip-src",
+            "category": "Network activity",
+            "value": "1.2.3.4",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Source IP test attribute"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "ip-dst",
+            "category": "Network activity",
+            "value": "5.6.7.8",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Destination IP test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_ip_port_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "ip-src|port",
+            "category": "Network activity",
+            "value": "1.2.3.4|1234",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Source IP | Port test attribute"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "ip-dst|port",
+            "category": "Network activity",
+            "value": "5.6.7.8|5678",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Destination IP | Port test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_mac_address_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "mac-address",
+            "category": "Payload delivery",
+            "value": "12:34:56:78:90:AB"
+        }
+    ]
+    return event
+
+def get_event_with_mutex_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "mutex",
+            "category": "Artifacts dropped",
+            "value": "MutexTest",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Mutex test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_named_pipe_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "named pipe",
+            "category": "Artifacts dropped",
+            "value": "\\.\pipe\testpipe"
+        }
+    ]
+    return event
+
+def get_event_with_pattern_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "pattern-in-file",
+            "category": "Artifacts dropped",
+            "value": "P4tt3rn_1n_f1l3_t3st",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Named pipe test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_port_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "port",
+            "category": "Network activity",
+            "value": "8443"
+        }
+    ]
+    return event
+
+def get_event_with_regkey_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "regkey",
+            "category": "Persistence mechanism",
+            "value": "HKLM\Software\mthjk",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Regkey test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_regkey_value_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "regkey|value",
+            "category": "Persistence mechanism",
+            "value": "HKLM\Software\mthjk|1234567890",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Regkey | value test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_snort_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "snort",
+            "category": "Network activity",
+            "value": 'alert tcp any any -> any any (msg:"oui")',
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Snort test attribute"
+        }
+    ]
+    return event
+
+def get_event_with_target_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "target-email",
+            "value": "target@email.test",
+            "category": "Targeting data"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "target-external",
+            "value": "external.target",
+            "category": "Targeting data"
+        },
+        {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "type": "target-location",
+            "value": "Luxembourg",
+            "category": "Targeting data"
+        },
+        {
+            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "type": "target-machine",
+            "value": "target.machine",
+            "comment": "Target machine test attribute"
+        },
+        {
+            "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+            "type": "target-org",
+            "value": "Blizzard",
+            "category": "Targeting data"
+        },
+        {
+            "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
+            "type": "target-user",
+            "value": "iglocska",
+            "category": "Targeting data"
+        }
+    ]
+    return event

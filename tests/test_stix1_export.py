@@ -29,6 +29,10 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(getattr(embedded_object, feature), cluster['value'])
         self.assertEqual(embedded_object.description.value, cluster['description'])
 
+    def _check_identity_features(self, identity, attribute):
+        self.assertEqual(identity.id_, f"{_DEFAULT_NAMESPACE}:Identity-{attribute['uuid']}")
+        self.assertEqual(identity.name, f"{attribute['category']}: {attribute['value']} (MISP Attribute)")
+
     def _check_indicator_features(self, related_indicator, attribute, orgc):
         self.assertEqual(related_indicator.relationship, attribute['category'])
         indicator = related_indicator.item
@@ -192,6 +196,256 @@ class TestStix1Export(unittest.TestCase):
         )
         self.assertEqual(reply_to_properties.reply_to.address_value.value, reply_to['value'])
         self.assertEqual(reply_to_properties.reply_to.category, 'e-mail')
+
+    def test_event_with_filename_attribute(self):
+        event = get_event_with_filename_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        properties = self._check_observable_features(indicator.observable, attribute, 'File')
+        self.assertEqual(properties.file_name.value, attribute['value'])
+
+    def test_event_with_hash_attributes(self):
+        event = get_event_with_hash_attributes()
+        md5, tlsh = event['Event']['Attribute']
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        md5_r_indicator, tlsh_r_indicator = incident.related_indicators.indicator
+        md5_indicator = self._check_indicator_features(md5_r_indicator, md5, orgc)
+        md5_properties = self._check_observable_features(md5_indicator.observable, md5, 'File')
+        self.assertEqual(md5_properties.hashes[0].type_.value, 'MD5')
+        self.assertEqual(md5_properties.hashes[0].simple_hash_value.value, md5['value'])
+        tlsh_indicator = self._check_indicator_features(tlsh_r_indicator, tlsh, orgc)
+        tlsh_properties = self._check_observable_features(tlsh_indicator.observable, tlsh, 'File')
+        self.assertEqual(tlsh_properties.hashes[0].type_.value, 'Other')
+        self.assertEqual(tlsh_properties.hashes[0].simple_hash_value.value, tlsh['value'])
+
+    def test_event_with_hash_composite_attributes(self):
+        event = get_event_with_hash_composite_attributes()
+        md5, tlsh = event['Event']['Attribute']
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        md5_r_indicator, tlsh_r_indicator = incident.related_indicators.indicator
+        md5_indicator = self._check_indicator_features(md5_r_indicator, md5, orgc)
+        md5_properties = self._check_observable_features(md5_indicator.observable, md5, 'File')
+        filename, md5_value = md5['value'].split('|')
+        self.assertEqual(md5_properties.file_name.value, filename)
+        self.assertEqual(md5_properties.hashes[0].type_.value, 'MD5')
+        self.assertEqual(md5_properties.hashes[0].simple_hash_value.value, md5_value)
+        tlsh_indicator = self._check_indicator_features(tlsh_r_indicator, tlsh, orgc)
+        tlsh_properties = self._check_observable_features(tlsh_indicator.observable, tlsh, 'File')
+        filename, tlsh_value = tlsh['value'].split('|')
+        self.assertEqual(tlsh_properties.file_name.value, filename)
+        self.assertEqual(tlsh_properties.hashes[0].type_.value, 'Other')
+        self.assertEqual(tlsh_properties.hashes[0].simple_hash_value.value, tlsh_value)
+
+    def test_event_with_hostname_attribute(self):
+        event = get_event_with_hostname_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        properties = self._check_observable_features(indicator.observable, attribute, 'Hostname')
+        self.assertEqual(properties.hostname_value.value, attribute['value'])
+
+    def test_event_with_hostname_port_attribute(self):
+        event = get_event_with_hostname_port_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        properties = self._check_observable_features(indicator.observable, attribute, 'SocketAddress')
+        hostname, port = attribute['value'].split('|')
+        self.assertEqual(properties.hostname.hostname_value.value, hostname)
+        self.assertEqual(properties.port.port_value.value, int(port))
+
+    def test_event_with_http_method_attribute(self):
+        event = get_event_with_http_method_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, attribute['category'])
+        properties = self._check_observable_features(observable.item, attribute, 'HTTPSession')
+        request_response = properties.http_request_response[0]
+        self.assertEqual(
+            request_response.http_client_request.http_request_line.http_method.value,
+            attribute['value']
+        )
+
+    def test_event_with_ip_attributes(self):
+        event = get_event_with_ip_attributes()
+        ip_src, ip_dst = event['Event']['Attribute']
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_src, related_dst = incident.related_indicators.indicator
+        src_indicator = self._check_indicator_features(related_src, ip_src, orgc)
+        src_properties = self._check_observable_features(src_indicator.observable, ip_src, 'Address')
+        self.assertEqual(src_properties.address_value.value, ip_src['value'])
+        self._check_source_address(src_properties)
+        dst_indicator = self._check_indicator_features(related_dst, ip_dst, orgc)
+        dst_properties = self._check_observable_features(dst_indicator.observable, ip_dst, 'Address')
+        self.assertEqual(dst_properties.address_value.value, ip_dst['value'])
+        self._check_destination_address(dst_properties)
+
+    def test_event_with_ip_port_attributes(self):
+        event = get_event_with_ip_port_attributes()
+        ip_src, ip_dst = event['Event']['Attribute']
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_src, related_dst = incident.related_indicators.indicator
+        src_indicator = self._check_indicator_features(related_src, ip_src, orgc)
+        src_properties = self._check_observable_features(src_indicator.observable, ip_src, 'SocketAddress')
+        ip, port = ip_src['value'].split('|')
+        self.assertEqual(src_properties.port.port_value.value, int(port))
+        self.assertEqual(src_properties.ip_address.address_value.value, ip)
+        self._check_source_address(src_properties.ip_address)
+        dst_indicator = self._check_indicator_features(related_dst, ip_dst, orgc)
+        dst_properties = self._check_observable_features(dst_indicator.observable, ip_dst, 'SocketAddress')
+        ip, port = ip_dst['value'].split('|')
+        self.assertEqual(dst_properties.port.port_value.value, int(port))
+        self.assertEqual(dst_properties.ip_address.address_value.value, ip)
+        self._check_destination_address(dst_properties.ip_address)
+
+    def test_event_with_mac_address_attribute(self):
+        event = get_event_with_mac_address_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, attribute['category'])
+        properties = self._check_observable_features(observable.item, attribute, 'System')
+        self.assertEqual(properties.network_interface_list[0].mac, attribute['value'])
+
+    def test_event_with_mutex_attribute(self):
+        event = get_event_with_mutex_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        properties = self._check_observable_features(indicator.observable, attribute, 'Mutex')
+        self.assertEqual(properties.name.value, attribute['value'])
+
+    def test_event_with_named_pipe_attribute(self):
+        event = get_event_with_named_pipe_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, attribute['category'])
+        properties = self._check_observable_features(observable.item, attribute, 'Pipe')
+        self.assertTrue(properties.named)
+        self.assertEqual(properties.name.value, attribute['value'])
+
+    def test_event_with_pattern_attribute(self):
+        event = get_event_with_pattern_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        properties = self._check_observable_features(indicator.observable, attribute, 'File')
+        self.assertEqual(properties.byte_runs[0].byte_run_data, attribute['value'])
+
+    def test_event_with_port_attribute(self):
+        event = get_event_with_port_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, attribute['category'])
+        properties = self._check_observable_features(observable.item, attribute, 'Port')
+        self.assertEqual(properties.port_value.value, int(attribute['value']))
+
+    def test_event_with_regkey_attribute(self):
+        event = get_event_with_regkey_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        properties = self._check_observable_features(indicator.observable, attribute, 'WindowsRegistryKey')
+        self.assertEqual(properties.key.value, attribute['value'])
+
+    def test_event_with_regkey_value_attribute(self):
+        event = get_event_with_regkey_value_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        properties = self._check_observable_features(indicator.observable, attribute, 'WindowsRegistryKey')
+        regkey, value = attribute['value'].split('|')
+        self.assertEqual(properties.key.value, regkey)
+        self.assertEqual(properties.values[0].data.value, value)
+
+    def test_event_with_snort_attribute(self):
+        event = get_event_with_snort_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        test_mechanism = indicator.test_mechanisms[0]
+        self.assertEqual(test_mechanism._XSI_TYPE, 'snortTM:SnortTestMechanismType')
+        self.assertEqual(test_mechanism.rule.decode(), attribute['value'])
+
+    def test_event_with_target_attributes(self):
+        event = get_event_with_target_attributes()
+        email, external, location, machine, org, user = event['Event']['Attribute']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        self.assertEqual(
+            incident.affected_assets[0].description.value,
+            f"{machine['value']} ({machine['comment']})"
+        )
+        email_victim, external_victim, victim_location, victim_org, victim_user = incident.victims
+        self._check_identity_features(email_victim, email)
+        self.assertEqual(
+            email_victim.specification.electronic_address_identifiers[0].value,
+            email['value']
+        )
+        self._check_identity_features(external_victim, external)
+        self.assertEqual(
+            external_victim.specification.party_name.name_lines[0].value,
+            f"External target: {external['value']}"
+        )
+        self._check_identity_features(victim_location, location)
+        self.assertEqual(
+            victim_location.specification.addresses[0].free_text_address.address_lines[0],
+            location['value']
+        )
+        self._check_identity_features(victim_org, org)
+        self.assertEqual(
+            victim_org.specification.party_name.organisation_names[0].name_elements[0].value,
+            org['value']
+        )
+        self._check_identity_features(victim_user, user)
+        self.assertEqual(
+            victim_user.specification.party_name.person_names[0].name_elements[0].value,
+            user['value']
+        )
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
