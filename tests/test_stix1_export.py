@@ -268,19 +268,35 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(properties.hostname.hostname_value.value, hostname)
         self.assertEqual(properties.port.port_value.value, int(port))
 
-    def test_event_with_http_method_attribute(self):
-        event = get_event_with_http_method_attribute()
-        attribute = event['Event']['Attribute'][0]
+    def test_event_with_http_attributes(self):
+        event = get_event_with_http_attributes()
+        http_method, user_agent = event['Event']['Attribute']
         orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
-        observable = incident.related_observables.observable[0]
-        self.assertEqual(observable.relationship, attribute['category'])
-        properties = self._check_observable_features(observable.item, attribute, 'HTTPSession')
-        request_response = properties.http_request_response[0]
+        print(json.dumps(incident.to_dict(), indent=4))
+        r_http_method, r_user_agent = incident.related_observables.observable
+        self.assertEqual(r_http_method.relationship, http_method['category'])
+        http_method_properties = self._check_observable_features(
+            r_http_method.item,
+            http_method,
+            'HTTPSession'
+        )
+        request_response = http_method_properties.http_request_response[0]
         self.assertEqual(
             request_response.http_client_request.http_request_line.http_method.value,
-            attribute['value']
+            http_method['value']
+        )
+        self.assertEqual(r_user_agent.relationship, user_agent['category'])
+        user_agent_properties = self._check_observable_features(
+            r_user_agent.item,
+            user_agent,
+            'HTTPSession'
+        )
+        request = user_agent_properties.http_request_response[0].http_client_request
+        self.assertEqual(
+            request.http_request_header.parsed_header.user_agent.value,
+            user_agent['value']
         )
 
     def test_event_with_ip_attributes(self):
@@ -399,18 +415,6 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(properties.key.value, regkey)
         self.assertEqual(properties.values[0].data.value, value)
 
-    def test_event_with_snort_attribute(self):
-        event = get_event_with_snort_attribute()
-        attribute = event['Event']['Attribute'][0]
-        orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
-        incident = self.parser.stix_package.incidents[0]
-        related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
-        test_mechanism = indicator.test_mechanisms[0]
-        self.assertEqual(test_mechanism._XSI_TYPE, 'snortTM:SnortTestMechanismType')
-        self.assertEqual(test_mechanism.rule.decode(), attribute['value'])
-
     def test_event_with_target_attributes(self):
         event = get_event_with_target_attributes()
         email, external, location, machine, org, user = event['Event']['Attribute']
@@ -446,6 +450,58 @@ class TestStix1Export(unittest.TestCase):
             victim_user.specification.party_name.person_names[0].name_elements[0].value,
             user['value']
         )
+
+    def test_event_with_test_mechanism_attributes(self):
+        event = get_event_with_test_mechanism_attributes()
+        snort, yara = event['Event']['Attribute']
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        print(incident.to_xml().decode())
+        print(json.dumps(incident.to_dict(), indent=4))
+        r_snort, r_yara = incident.related_indicators.indicator
+        snort_indicator = self._check_indicator_features(r_snort, snort, orgc)
+        snort_tm = snort_indicator.test_mechanisms[0]
+        self.assertEqual(snort_tm._XSI_TYPE, 'snortTM:SnortTestMechanismType')
+        self.assertEqual(snort_tm.rules[0].value['value'], snort['value'])
+        yara_indicator = self._check_indicator_features(r_yara, yara, orgc)
+        yara_tm = yara_indicator.test_mechanisms[0]
+        self.assertEqual(yara_tm._XSI_TYPE, 'yaraTM:YaraTestMechanismType')
+        self.assertEqual(yara_tm.rule.value['value'], yara['value'])
+
+    def test_event_with_url_attribute(self):
+        event = get_event_with_url_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        properties = self._check_observable_features(indicator.observable, attribute, 'URI')
+        self.assertEqual(properties.value.value, attribute['value'])
+
+    def test_event_with_x509_fingerprint_attributes(self):
+        event = get_event_with_x509_fingerprint_attributes()
+        md5, sha1, sha256 = event['Event']['Attribute']
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        r_x509_md5, r_x509_sha1, r_x509_sha256 = incident.related_indicators.indicator
+        x509_md5 = self._check_indicator_features(r_x509_md5, md5, orgc)
+        md5_properties = self._check_observable_features(x509_md5.observable, md5, 'X509Certificate')
+        md5_signature = md5_properties.certificate_signature
+        self.assertEqual(md5_signature.signature_algorithm.value, "MD5")
+        self.assertEqual(md5_signature.signature.value, md5['value'])
+        x509_sha1 = self._check_indicator_features(r_x509_sha1, sha1, orgc)
+        sha1_properties = self._check_observable_features(x509_sha1.observable, sha1, 'X509Certificate')
+        sha1_signature = sha1_properties.certificate_signature
+        self.assertEqual(sha1_signature.signature_algorithm.value, "SHA1")
+        self.assertEqual(sha1_signature.signature.value, sha1['value'])
+        x509_sha256 = self._check_indicator_features(r_x509_sha256, sha256, orgc)
+        sha256_properties = self._check_observable_features(x509_sha256.observable, sha256, 'X509Certificate')
+        sha256_signature = sha256_properties.certificate_signature
+        self.assertEqual(sha256_signature.signature_algorithm.value, "SHA256")
+        self.assertEqual(sha256_signature.signature.value, sha256['value'])
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #

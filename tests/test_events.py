@@ -128,6 +128,7 @@ _TEST_VULNERABILITY = {
 
 }
 
+
 def get_base_event():
     return deepcopy(_BASE_EVENT)
 
@@ -152,12 +153,14 @@ def get_event_with_tags():
     ]
     return event
 
+
 def get_event_with_attack_pattern_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_ATTACK_PATTERN)
     ]
     return event
+
 
 def get_event_with_course_of_action_galaxy():
     event = deepcopy(_BASE_EVENT)
@@ -166,12 +169,14 @@ def get_event_with_course_of_action_galaxy():
     ]
     return event
 
+
 def get_event_with_malware_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_MALWARE)
     ]
     return event
+
 
 def get_event_with_threat_actor_galaxy():
     event = deepcopy(_BASE_EVENT)
@@ -180,6 +185,7 @@ def get_event_with_threat_actor_galaxy():
     ]
     return event
 
+
 def get_event_with_tool_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
@@ -187,12 +193,14 @@ def get_event_with_tool_galaxy():
     ]
     return event
 
+
 def get_event_with_vulnerability_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_VULNERABILITY)
     ]
     return event
+
 
 def get_event_with_as_attribute():
     event = deepcopy(_BASE_EVENT)
@@ -205,6 +213,7 @@ def get_event_with_as_attribute():
         }
     ]
     return event
+
 
 def get_event_with_domain_attribute():
     event = deepcopy(_BASE_EVENT)
@@ -220,6 +229,7 @@ def get_event_with_domain_attribute():
     ]
     return event
 
+
 def get_event_with_domain_ip_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -233,6 +243,7 @@ def get_event_with_domain_ip_attribute():
         }
     ]
     return event
+
 
 def get_event_with_email_attributes():
     event = deepcopy(_BASE_EVENT)
@@ -268,6 +279,7 @@ def get_event_with_email_attributes():
     ]
     return event
 
+
 def get_event_with_filename_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -281,6 +293,7 @@ def get_event_with_filename_attribute():
         }
     ]
     return event
+
 
 def get_event_with_hash_attributes():
     event = deepcopy(_BASE_EVENT)
@@ -304,6 +317,7 @@ def get_event_with_hash_attributes():
     ]
     return event
 
+
 def get_event_with_hash_composite_attributes():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -326,6 +340,7 @@ def get_event_with_hash_composite_attributes():
     ]
     return event
 
+
 def get_event_with_hostname_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -339,6 +354,7 @@ def get_event_with_hostname_attribute():
         }
     ]
     return event
+
 
 def get_event_with_hostname_port_attribute():
     event = deepcopy(_BASE_EVENT)
@@ -354,7 +370,8 @@ def get_event_with_hostname_port_attribute():
     ]
     return event
 
-def get_event_with_http_method_attribute():
+
+def get_event_with_http_attributes():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
         {
@@ -362,9 +379,18 @@ def get_event_with_http_method_attribute():
             "type": "http-method",
             "category": "Network activity",
             "value": "POST"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "user-agent",
+            "category": "Network activity",
+            "value": "Mozilla Firefox",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Destination IP | Port test attribute"
         }
     ]
     return event
+
 
 def get_event_with_ip_attributes():
     event = deepcopy(_BASE_EVENT)
@@ -388,6 +414,7 @@ def get_event_with_ip_attributes():
     ]
     return event
 
+
 def get_event_with_ip_port_attributes():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -410,6 +437,7 @@ def get_event_with_ip_port_attributes():
     ]
     return event
 
+
 def get_event_with_mac_address_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -421,6 +449,7 @@ def get_event_with_mac_address_attribute():
         }
     ]
     return event
+
 
 def get_event_with_mutex_attribute():
     event = deepcopy(_BASE_EVENT)
@@ -436,6 +465,7 @@ def get_event_with_mutex_attribute():
     ]
     return event
 
+
 def get_event_with_named_pipe_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -447,6 +477,7 @@ def get_event_with_named_pipe_attribute():
         }
     ]
     return event
+
 
 def get_event_with_pattern_attribute():
     event = deepcopy(_BASE_EVENT)
@@ -462,6 +493,7 @@ def get_event_with_pattern_attribute():
     ]
     return event
 
+
 def get_event_with_port_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -473,6 +505,7 @@ def get_event_with_port_attribute():
         }
     ]
     return event
+
 
 def get_event_with_regkey_attribute():
     event = deepcopy(_BASE_EVENT)
@@ -488,6 +521,7 @@ def get_event_with_regkey_attribute():
     ]
     return event
 
+
 def get_event_with_regkey_value_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -502,19 +536,6 @@ def get_event_with_regkey_value_attribute():
     ]
     return event
 
-def get_event_with_snort_attribute():
-    event = deepcopy(_BASE_EVENT)
-    event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "snort",
-            "category": "Network activity",
-            "value": 'alert tcp any any -> any any (msg:"oui")',
-            "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Snort test attribute"
-        }
-    ]
-    return event
 
 def get_event_with_target_attributes():
     event = deepcopy(_BASE_EVENT)
@@ -554,6 +575,75 @@ def get_event_with_target_attributes():
             "type": "target-user",
             "value": "iglocska",
             "category": "Targeting data"
+        }
+    ]
+    return event
+
+
+def get_event_with_test_mechanism_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "snort",
+            "category": "Network activity",
+            "value": 'alert tcp any any -> any any (msg:"oui")',
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Snort test attribute"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "yara",
+            "category": "Payload installation",
+            "value": 'import "pe" rule single_section{condition:pe.number_of_sections == 1}',
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Yara test attribute"
+        }
+    ]
+    return event
+
+
+def get_event_with_url_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "url",
+            "category": "Network activity",
+            "value": "https://misp-project.org/download/",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "URL test attribute"
+        }
+    ]
+    return event
+
+
+def get_event_with_x509_fingerprint_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "x509-fingerprint-md5",
+            "category": "Payload delivery",
+            "value": "8764605c6f388c89096b534d33565802",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "X509 MD5 fingerprint test attribute"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "x509-fingerprint-sha1",
+            "category": "Payload delivery",
+            "value": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "X509 SHA1 fingerprint test attribute"
+        },
+        {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "type": "x509-fingerprint-sha256",
+            "category": "Payload delivery",
+            "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "X509 SHA256 fingerprint test attribute"
         }
     ]
     return event
