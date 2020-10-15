@@ -618,6 +618,25 @@ def get_event_with_url_attribute():
     return event
 
 
+def get_event_with_windows_service_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "windows-service-displayname",
+            "category": "Artifacts dropped",
+            "value": 'Report for bugs'
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "windows-service-name",
+            "category": "Artifacts dropped",
+            "value": 'BUGREPORT'
+        }
+    ]
+    return event
+
+
 def get_event_with_x509_fingerprint_attributes():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [

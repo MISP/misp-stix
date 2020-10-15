@@ -457,8 +457,6 @@ class TestStix1Export(unittest.TestCase):
         orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
-        print(incident.to_xml().decode())
-        print(json.dumps(incident.to_dict(), indent=4))
         r_snort, r_yara = incident.related_indicators.indicator
         snort_indicator = self._check_indicator_features(r_snort, snort, orgc)
         snort_tm = snort_indicator.test_mechanisms[0]
@@ -479,6 +477,20 @@ class TestStix1Export(unittest.TestCase):
         indicator = self._check_indicator_features(related_indicator, attribute, orgc)
         properties = self._check_observable_features(indicator.observable, attribute, 'URI')
         self.assertEqual(properties.value.value, attribute['value'])
+
+    def test_event_with_windows_service_attributes(self):
+        event = get_event_with_windows_service_attributes()
+        displayname, name = event['Event']['Attribute']
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        r_displayname, r_name = incident.related_observables.observable
+        self.assertEqual(r_displayname.relationship, displayname['category'])
+        displayname_properties = self._check_observable_features(r_displayname.item, displayname, 'WindowsService')
+        self.assertEqual(displayname_properties.display_name, displayname['value'])
+        self.assertEqual(r_name.relationship, name['category'])
+        name_properties = self._check_observable_features(r_name.item, name, 'WindowsService')
+        self.assertEqual(name_properties.service_name, name['value'])
 
     def test_event_with_x509_fingerprint_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
