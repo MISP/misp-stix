@@ -431,7 +431,12 @@ class MISPtoSTIX1Parser():
     def _parse_snort_attribute(self, attribute: MISPAttribute):
         if attribute.to_ids:
             test_mechanism = SnortTestMechanism()
-            test_mechanism.rule = attribute.value.encode('utf-8')
+            test_mechanism.rules = [
+                {
+                    "value": attribute.value,
+                    "encoded": True
+                }
+            ]
             self._parse_test_mechanism(attribute, test_mechanism)
         else:
             self._parse_custom_attribute(self, attribute)
@@ -568,7 +573,10 @@ class MISPtoSTIX1Parser():
     def _parse_yara_attribute(self, attribute: MISPAttribute):
         if attribute.to_ids:
             test_mechanism = YaraTestMechanism()
-            test_mechanism.rule = attribute.value.encode('utf-8')
+            test_mechanism.rule = {
+                "value": attribute.value,
+                "encoded": True
+            }
             self._parse_test_mechanism(attribute, test_mechanism)
         else:
             self._parse_custom_attribute(self, attribute)
