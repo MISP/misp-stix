@@ -32,6 +32,7 @@ NS_DICT = {
     "http://cybox.mitre.org/objects#UnixUserAccountObject-2": "UnixUserAccountObj",
     "http://cybox.mitre.org/objects#UserAccountObject-2": "UserAccountObj",
     "http://cybox.mitre.org/objects#WinUserAccountObject-2": "WinUserAccountObj",
+    "http://cybox.mitre.org/objects#CustomObject-1": "CustomObj",
     "http://data-marking.mitre.org/Marking-1" : 'marking',
     "http://data-marking.mitre.org/extensions/MarkingStructure#Simple-1": 'simpleMarking',
     "http://data-marking.mitre.org/extensions/MarkingStructure#TLP-1" : 'tlpMarking',
@@ -45,11 +46,12 @@ NS_DICT = {
     "http://stix.mitre.org/default_vocabularies-1" : 'stixVocabs',
     "http://stix.mitre.org/extensions/Identity#CIQIdentity3.0-1" : 'ciqIdentity',
     "http://stix.mitre.org/extensions/TestMechanism#Snort-1" : 'snortTM',
+    "http://stix.mitre.org/extensions/TestMechanism#YARA-1": 'yaraTM',
     "http://stix.mitre.org/stix-1" : 'stix',
     "http://www.w3.org/2001/XMLSchema-instance" : 'xsi',
     "urn:oasis:names:tc:ciq:xal:3" : 'xal',
     "urn:oasis:names:tc:ciq:xnl:3" : 'xnl',
-    "urn:oasis:names:tc:ciq:xpil:3" : 'xpil',
+    "urn:oasis:names:tc:ciq:xpil:3" : 'xpil'
 }
 
 SCHEMALOC_DICT = {
@@ -82,6 +84,7 @@ SCHEMALOC_DICT = {
     'http://cybox.mitre.org/objects#UnixUserAccountObject-2': 'http://cybox.mitre.org/XMLSchema/objects/Unix_User_Account/2.1/Unix_User_Account_Object.xsd',
     'http://cybox.mitre.org/objects#UserAccountObject-2': 'http://cybox.mitre.org/XMLSchema/objects/User_Account/2.1/User_Account_Object.xsd',
     'http://cybox.mitre.org/objects#WinUserAccountObject-2': 'http://cybox.mitre.org/XMLSchema/objects/Win_User_Account/2.1/Win_User_Account_Object.xsd',
+    'http://cybox.mitre.org/objects#CustomObject-1': 'http://cybox.mitre.org/XMLSchema/objects/Custom/1.1/Custom_Object.xsd',
     'http://data-marking.mitre.org/Marking-1': 'http://stix.mitre.org/XMLSchema/data_marking/1.1.1/data_marking.xsd',
     'http://data-marking.mitre.org/extensions/MarkingStructure#Simple-1': 'http://stix.mitre.org/XMLSchema/extensions/marking/simple/1.1.1/simple_marking.xsd',
     'http://data-marking.mitre.org/extensions/MarkingStructure#TLP-1': 'http://stix.mitre.org/XMLSchema/extensions/marking/tlp/1.1.1/tlp_marking.xsd',
@@ -95,10 +98,10 @@ SCHEMALOC_DICT = {
     'http://stix.mitre.org/default_vocabularies-1': 'http://stix.mitre.org/XMLSchema/default_vocabularies/1.1.1/stix_default_vocabularies.xsd',
     'http://stix.mitre.org/extensions/Identity#CIQIdentity3.0-1': 'http://stix.mitre.org/XMLSchema/extensions/identity/ciq_3.0/1.1.1/ciq_3.0_identity.xsd',
     'http://stix.mitre.org/extensions/TestMechanism#Snort-1': 'http://stix.mitre.org/XMLSchema/extensions/test_mechanism/snort/1.1.1/snort_test_mechanism.xsd',
+    'http://stix.mitre.org/extensions/TestMechanism#YARA-1': 'http://stix.mitre.org/XMLSchema/extensions/test_mechanism/yara/1.2/yara_test_mechanism.xsd',
     'http://stix.mitre.org/stix-1': 'http://stix.mitre.org/XMLSchema/core/1.1.1/stix_core.xsd',
     'urn:oasis:names:tc:ciq:xal:3': 'http://stix.mitre.org/XMLSchema/external/oasis_ciq_3.0/xAL.xsd',
     'urn:oasis:names:tc:ciq:xnl:3': 'http://stix.mitre.org/XMLSchema/external/oasis_ciq_3.0/xNL.xsd',
-    'urn:oasis:names:tc:ciq:xpil:3': 'http://stix.mitre.org/XMLSchema/external/oasis_ciq_3.0/xPIL.xsd',
 }
 
 # mappings
