@@ -555,8 +555,8 @@ class MISPtoSTIX1Parser():
     def _parse_windows_service_attribute(self, attribute: MISPAttribute):
         windows_service = WinService()
         feature = 'service_name' if attribute.type == 'windows-service-name' else 'display_name'
-        setttr(windows_service, feature, attribute.value)
-        observable = self._create_observable(windows_service, attribute.uuid, 'WinService')
+        setattr(windows_service, feature, attribute.value)
+        observable = self._create_observable(windows_service, attribute.uuid, 'WindowsService')
         self._handle_attribute(attribute, observable)
 
     def _parse_x509_fingerprint_attribute(self, attribute: MISPAttribute):
