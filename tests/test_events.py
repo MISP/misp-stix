@@ -215,6 +215,20 @@ def get_event_with_as_attribute():
     return event
 
 
+def get_event_with_attachment_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "attachment",
+            "category": "Payload delivery",
+            "value": "attachment.test",
+            "data": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK"
+        }
+    ]
+    return event
+
+
 def get_event_with_domain_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -446,6 +460,22 @@ def get_event_with_mac_address_attribute():
             "type": "mac-address",
             "category": "Payload delivery",
             "value": "12:34:56:78:90:AB"
+        }
+    ]
+    return event
+
+
+def get_event_with_malware_sample_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "malware-sample",
+            "category": "Payload delivery",
+            "value": "oui|8764605c6f388c89096b534d33565802",
+            "data": "UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Malware Sample test attribute"
         }
     ]
     return event

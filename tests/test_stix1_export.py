@@ -130,6 +130,17 @@ class TestStix1Export(unittest.TestCase):
         properties = self._check_observable_features(observable.item, attribute, 'AS')
         self.assertEqual(properties.handle.value, attribute['value'])
 
+    def test_event_with_attachment_attribute(self):
+        event = get_event_with_attachment_attribute()
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, attribute['category'])
+        self.assertEqual(observable.item.title, attribute['value'])
+        properties = self._check_observable_features(observable.item, attribute, 'Artifact')
+        self.assertEqual(properties.raw_artifact.value, attribute['data'])
+
     def test_event_with_domain_attribute(self):
         event = get_event_with_domain_attribute()
         attribute = event['Event']['Attribute'][0]
@@ -274,7 +285,6 @@ class TestStix1Export(unittest.TestCase):
         orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
-        print(json.dumps(incident.to_dict(), indent=4))
         r_http_method, r_user_agent = incident.related_observables.observable
         self.assertEqual(r_http_method.relationship, http_method['category'])
         http_method_properties = self._check_observable_features(
@@ -345,6 +355,21 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(observable.relationship, attribute['category'])
         properties = self._check_observable_features(observable.item, attribute, 'System')
         self.assertEqual(properties.network_interface_list[0].mac, attribute['value'])
+
+    def test_event_with_malware_sample_attribute(self):
+        event = get_event_with_malware_sample_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        filename, md5 = attribute['value'].split('|')
+        self.assertEqual(indicator.observable.title, filename)
+        properties = self._check_observable_features(indicator.observable, attribute, 'Artifact')
+        self.assertEqual(properties.raw_artifact.value, attribute['data'])
+        self.assertEqual(properties.hashes[0].type_.value, 'MD5')
+        self.assertEqual(properties.hashes[0].simple_hash_value.value, md5)
 
     def test_event_with_mutex_attribute(self):
         event = get_event_with_mutex_attribute()
