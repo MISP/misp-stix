@@ -3,6 +3,7 @@
 
 import socket
 from . import stix1_mapping
+from base64 import b64encode
 from collections import defaultdict
 from cybox.core import Object, Observable, ObservableComposition, RelatedObject
 from cybox.common import Hash, HashList, ByteRun, ByteRuns
@@ -232,7 +233,7 @@ class MISPtoSTIX1Parser():
 
     def _parse_attachment(self, attribute: MISPAttribute):
         if attribute.data:
-            artifact_object = self._create_artifact_object(attribute.data)
+            artifact_object = self._create_artifact_object(self._get_b64encoded(attribute.data))
             observable = self._create_observable(artifact_object, attribute.uuid, 'Artifact')
             observable.title = attribute.value
             self._handle_attribute(attribute, observable)
@@ -379,7 +380,7 @@ class MISPtoSTIX1Parser():
     def _parse_malware_sample(self, attribute: MISPAttribute):
         if attribute.data:
             filename, hash_value = attribute.value.split('|')
-            artifact_object = self.create_artifact_object(attribute.data)
+            artifact_object = self._create_artifact_object(self._get_b64encoded(attribute.data))
             artifact_object.hashes = HashList(self._parse_hash_value('md5', hash_value))
             observable = self._create_observable(artifact_object, attribute.uuid, 'Artifact')
             observable.title = filename
@@ -994,6 +995,10 @@ class MISPtoSTIX1Parser():
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
+
+    @staticmethod
+    def _get_b64encoded(data):
+        return b64encode(data.getvalue()).decode()
 
     @staticmethod
     def _from_datetime_to_str(date):
