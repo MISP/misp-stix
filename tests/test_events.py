@@ -259,6 +259,21 @@ def get_event_with_domain_ip_attribute():
     return event
 
 
+def get_event_with_email_attachment_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "email-attachment",
+            "category": "Payload delivery",
+            "value": "email_attachment.test",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Email attachment test attribute"
+        }
+    ]
+    return event
+
+
 def get_event_with_email_attributes():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -633,6 +648,26 @@ def get_event_with_test_mechanism_attributes():
     return event
 
 
+def get_event_with_undefined_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "comment",
+            "category": "Other",
+            "value": "Test comment from a STIX header",
+            "comment": "Imported from STIX header description"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "comment",
+            "category": "Other",
+            "value": "Test comment for the journal entry"
+        }
+    ]
+    return event
+
+
 def get_event_with_url_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -643,6 +678,21 @@ def get_event_with_url_attribute():
             "value": "https://misp-project.org/download/",
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "URL test attribute"
+        }
+    ]
+    return event
+
+
+def get_event_with_vulnerability_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "vulnerability",
+            "category": "External analysis",
+            "value": "CVE-2017-11774",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Vulnerability test attribute"
         }
     ]
     return event

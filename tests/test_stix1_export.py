@@ -43,12 +43,14 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(indicator.producer.identity.name, orgc)
         return indicator
 
-    def _check_observable_features(self, observable, attribute, name):
+    def _check_observable_features(self, observable, attribute, name, object_type=None):
+        if not object_type:
+            object_type = name
         self.assertEqual(observable.id_, f"{_DEFAULT_NAMESPACE}:Observable-{attribute['uuid']}")
         observable_object = observable.object_
-        self.assertEqual(observable_object.id_, f"{_DEFAULT_NAMESPACE}:{name}Object-{attribute['uuid']}")
+        self.assertEqual(observable_object.id_, f"{_DEFAULT_NAMESPACE}:{name}-{attribute['uuid']}")
         properties = observable_object.properties
-        self.assertEqual(properties._XSI_TYPE, f'{name}ObjectType')
+        self.assertEqual(properties._XSI_TYPE, f'{object_type}ObjectType')
         return properties
 
     def _check_related_ttp(self, stix_package, galaxy_name, cluster_uuid):
@@ -61,12 +63,21 @@ class TestStix1Export(unittest.TestCase):
         self.assertTrue(properties.is_source)
         self.assertFalse(properties.is_destination)
 
-    def _check_ttp_fields(self, stix_package, cluster_uuid, galaxy_name):
-        self.assertEqual(len(stix_package.ttps.ttp), 1)
-        ttp = stix_package.ttps.ttp[0]
+    def _check_ttp_fields_from_attribute(self, stix_package, attribute):
+        ttp = self._check_ttp_length(stix_package)
+        self.assertEqual(ttp.id_, f"{_DEFAULT_NAMESPACE}:TTP-{attribute['uuid']}")
+        self.assertEqual(ttp.title, f"{attribute['category']}: {attribute['value']} (MISP Attribute)")
+        return ttp
+
+    def _check_ttp_fields_from_galaxy(self, stix_package, cluster_uuid, galaxy_name):
+        ttp = self._check_ttp_length(stix_package)
         self.assertEqual(ttp.id_, f"{_DEFAULT_NAMESPACE}:TTP-{cluster_uuid}")
         self.assertEqual(ttp.title, f"{galaxy_name} (MISP Galaxy)")
         return ttp
+
+    def _check_ttp_length(self, stix_package):
+        self.assertEqual(len(stix_package.ttps.ttp), 1)
+        return stix_package.ttps.ttp[0]
 
     @staticmethod
     def _get_marking_value(marking):
@@ -127,7 +138,12 @@ class TestStix1Export(unittest.TestCase):
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, attribute['category'])
-        properties = self._check_observable_features(observable.item, attribute, 'AS')
+        properties = self._check_observable_features(
+            observable.item,
+            attribute,
+            'AutonomousSystem',
+            object_type='AS'
+        )
         self.assertEqual(properties.handle.value, attribute['value'])
 
     def test_event_with_attachment_attribute(self):
@@ -169,6 +185,22 @@ class TestStix1Export(unittest.TestCase):
         address_properties = self._check_observable_features(address, attribute, 'Address')
         self.assertEqual(address_properties.address_value.value, ip)
         self._check_destination_address(address_properties)
+
+    def test_event_with_email_attachment_attribute(self):
+        event = get_event_with_email_attachment_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        properties = self._check_observable_features(indicator.observable, attribute, 'EmailMessage')
+        referenced_uuid = f"{_DEFAULT_NAMESPACE}:File-{attribute['uuid']}"
+        self.assertEqual(properties.attachments[0].object_reference, referenced_uuid)
+        related_object = indicator.observable.object_.related_objects[0]
+        self.assertEqual(related_object.id_, referenced_uuid)
+        self.assertEqual(related_object.properties.file_name.value, attribute['value'])
+        self.assertEqual(related_object.relationship.value, 'Contains')
 
     def test_event_with_email_attributes(self):
         event = get_event_with_email_attributes()
@@ -424,7 +456,12 @@ class TestStix1Export(unittest.TestCase):
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_features(related_indicator, attribute, orgc)
-        properties = self._check_observable_features(indicator.observable, attribute, 'WindowsRegistryKey')
+        properties = self._check_observable_features(
+            indicator.observable,
+            attribute,
+            'WinRegistryKey',
+            object_type='WindowsRegistryKey'
+        )
         self.assertEqual(properties.key.value, attribute['value'])
 
     def test_event_with_regkey_value_attribute(self):
@@ -435,7 +472,12 @@ class TestStix1Export(unittest.TestCase):
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_features(related_indicator, attribute, orgc)
-        properties = self._check_observable_features(indicator.observable, attribute, 'WindowsRegistryKey')
+        properties = self._check_observable_features(
+            indicator.observable,
+            attribute,
+            'WinRegistryKey',
+            object_type='WindowsRegistryKey'
+        )
         regkey, value = attribute['value'].split('|')
         self.assertEqual(properties.key.value, regkey)
         self.assertEqual(properties.values[0].data.value, value)
@@ -492,6 +534,16 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(yara_tm._XSI_TYPE, 'yaraTM:YaraTestMechanismType')
         self.assertEqual(yara_tm.rule.value['value'], yara['value'])
 
+    def test_event_with_undefined_attributes(self):
+        event = get_event_with_undefined_attributes()
+        header, comment = event['Event']['Attribute']
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        self.assertEqual(stix_package.stix_header.description.value, header['value'])
+        incident = self.parser.stix_package.incidents[0]
+        journal_entry = incident.history.history_items[0].journal_entry
+        self.assertEqual(journal_entry.value, f"Attribute ({comment['category']} - {comment['type']}): {comment['value']}")
+
     def test_event_with_url_attribute(self):
         event = get_event_with_url_attribute()
         attribute = event['Event']['Attribute'][0]
@@ -503,6 +555,18 @@ class TestStix1Export(unittest.TestCase):
         properties = self._check_observable_features(indicator.observable, attribute, 'URI')
         self.assertEqual(properties.value.value, attribute['value'])
 
+    def test_event_with_vulnerability_attribute(self):
+        event = get_event_with_vulnerability_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        ttp = self._check_ttp_fields_from_attribute(stix_package, attribute)
+        exploit_target = ttp.exploit_targets.exploit_target[0].item
+        self.assertEqual(exploit_target.id_, f"{_DEFAULT_NAMESPACE}:ExploitTarget-{attribute['uuid']}")
+        vulnerability = exploit_target.vulnerabilities[0]
+        self.assertEqual(vulnerability.cve_id, attribute['value'])
+
     def test_event_with_windows_service_attributes(self):
         event = get_event_with_windows_service_attributes()
         displayname, name = event['Event']['Attribute']
@@ -511,10 +575,20 @@ class TestStix1Export(unittest.TestCase):
         incident = self.parser.stix_package.incidents[0]
         r_displayname, r_name = incident.related_observables.observable
         self.assertEqual(r_displayname.relationship, displayname['category'])
-        displayname_properties = self._check_observable_features(r_displayname.item, displayname, 'WindowsService')
+        displayname_properties = self._check_observable_features(
+            r_displayname.item,
+            displayname,
+            'WinService',
+            object_type='WindowsService'
+        )
         self.assertEqual(displayname_properties.display_name, displayname['value'])
         self.assertEqual(r_name.relationship, name['category'])
-        name_properties = self._check_observable_features(r_name.item, name, 'WindowsService')
+        name_properties = self._check_observable_features(
+            r_name.item,
+            name,
+            'WinService',
+            object_type='WindowsService'
+        )
         self.assertEqual(name_properties.service_name, name['value'])
 
     def test_event_with_x509_fingerprint_attributes(self):
@@ -550,7 +624,7 @@ class TestStix1Export(unittest.TestCase):
         cluster = galaxy['GalaxyCluster'][0]
         self.parser.parse_misp_event(event, '1.1.1')
         stix_package = self.parser.stix_package
-        ttp = self._check_ttp_fields(stix_package, cluster['uuid'], galaxy['name'])
+        ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         attack_pattern = ttp.behavior.attack_patterns[0]
         self._check_embedded_features(attack_pattern, cluster, 'AttackPattern')
         self._check_related_ttp(stix_package, galaxy['name'], cluster['uuid'])
@@ -570,7 +644,7 @@ class TestStix1Export(unittest.TestCase):
         cluster = galaxy['GalaxyCluster'][0]
         self.parser.parse_misp_event(event, '1.1.1')
         stix_package = self.parser.stix_package
-        ttp = self._check_ttp_fields(stix_package, cluster['uuid'], galaxy['name'])
+        ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         malware = ttp.behavior.malware_instances[0]
         self._check_embedded_features(malware, cluster, 'MalwareInstance')
         self._check_related_ttp(stix_package, galaxy['name'], cluster['uuid'])
@@ -599,7 +673,7 @@ class TestStix1Export(unittest.TestCase):
         cluster = galaxy['GalaxyCluster'][0]
         self.parser.parse_misp_event(event, '1.1.1')
         stix_package = self.parser.stix_package
-        ttp = self._check_ttp_fields(stix_package, cluster['uuid'], galaxy['name'])
+        ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         tool = ttp.resources.tools[0]
         self._check_embedded_features(tool, cluster, 'ToolInformation', feature='name')
         self._check_related_ttp(stix_package, galaxy['name'], cluster['uuid'])
@@ -610,7 +684,7 @@ class TestStix1Export(unittest.TestCase):
         cluster = galaxy['GalaxyCluster'][0]
         self.parser.parse_misp_event(event, '1.1.1')
         stix_package = self.parser.stix_package
-        ttp = self._check_ttp_fields(stix_package, cluster['uuid'], galaxy['name'])
+        ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         exploit_target = ttp.exploit_targets.exploit_target[0].item
         self.assertEqual(exploit_target.id_, f"{_DEFAULT_NAMESPACE}:ExploitTarget-{cluster['uuid']}")
         vulnerability = exploit_target.vulnerabilities[0]
