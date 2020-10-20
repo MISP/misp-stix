@@ -242,7 +242,7 @@ class MISPtoSTIX1Parser():
 
     def _parse_autonomous_system_attribute(self, attribute: MISPAttribute):
         autonomous_system = self._create_autonomous_system_object(attribute.value)
-        observable = self._create_observable(autonomous_system, attribute.uuid, 'AS')
+        observable = self._create_observable(autonomous_system, attribute.uuid, 'AutonomousSystem')
         self._handle_attribute(attribute, observable)
 
     def _parse_custom_attribute(self, attribute: MISPAttribute):
@@ -280,11 +280,12 @@ class MISPtoSTIX1Parser():
         file_object = File()
         file_object.file_name = attribute.value
         file_object.file_name.condition = "Equals"
-        file_object.parent.id_ = f"{self.namespace}:FileObject-{attribute.uuid}"
+        file_object.parent.id_ = f"{self.namespace}:File-{attribute.uuid}"
         email = EmailMessage()
         email.attachments = Attachments()
-        email.add_related(file_object, "Contains", inline=True)
         email.attachments.append(file_object.parent.id_)
+        email.add_related(file_object, "Contains", inline=True)
+        email.parent.related_objects[0].id_ = f"{self.namespace}:File-{attribute.uuid}"
         observable = self._create_observable(email, attribute.uuid, 'EmailMessage')
         self._handle_attribute(attribute, observable)
 
@@ -416,7 +417,7 @@ class MISPtoSTIX1Parser():
 
     def _parse_regkey_attribute(self, attribute: MISPAttribute):
         registry_key = self._create_registry_key_object(attribute.value)
-        observable = self._create_observable(registry_key, attribute.uuid, 'WindowsRegistryKey')
+        observable = self._create_observable(registry_key, attribute.uuid, 'WinRegistryKey')
         self._handle_attribute(attribute, observable)
 
     def _parse_regkey_value_attribute(self, attribute: MISPAttribute):
@@ -426,7 +427,7 @@ class MISPtoSTIX1Parser():
         registry_value.data = value.strip()
         registry_value.data.condition = "Equals"
         registry_key.values = RegistryValues(registry_value)
-        observable = self._create_observable(registry_key, attribute.uuid, 'WindowsRegistryKey')
+        observable = self._create_observable(registry_key, attribute.uuid, 'WinRegistryKey')
         self._handle_attribute(attribute, observable)
 
     def _parse_snort_attribute(self, attribute: MISPAttribute):
@@ -499,33 +500,8 @@ class MISPtoSTIX1Parser():
         self._handle_attribute(attribute, observable)
 
     def _parse_undefined_attribute(self, attribute: MISPAttribute):
-        if hasattr(attribute, 'comment') and attribute.comment == 'Imported from STIX header descrption':
+        if hasattr(attribute, 'comment') and attribute.comment == 'Imported from STIX header description':
             self.header_comment.append(attribute.value)
-        elif attribute.category == 'Payload type':
-            ttp = self._create_ttp(attribute)
-            malware = MalwareInstance()
-            malware.add_name(attribute.value)
-            ttp.behavior = Behavior()
-            ttp.behavior.add_malware_instance(malware)
-            if hasattr(attribute, 'comment') and attribute.comment:
-                ttp.description = attribute.comment
-            self._append_ttp(ttp, attribute.category, attribute.uuid)
-        elif attribute.category == 'Attribution':
-            threat_actor = ThreatActor(timestamp=attribute.timestamp)
-            threat_actor.id_ = f"{self.namespace}:ThreatActor-{attribute.uuid}"
-            threat_actor.title = f"{attribute.category}: {attribute.value} (MISP Attribute)"
-            description = attribute.value
-            if hasattr(attribute, 'comment') and attribute.comment:
-                description = f"{descrption} ({attribute.comment})"
-            threat_actor.description = description
-            try:
-                self.incident.attributed_threat_actors.append(threat_actor)
-            except AttributeError:
-                self.incident.attributed_threat_actors = AttributedThreatActors()
-                self.incident.attributed_threat_actors.append(threat_actor)
-            rta = ThreatActor(idref=threat_actor.id_, timestamp=attribute.timestamp)
-            related_threat_actor = RelatedThreatActor(rta, relationship=attribute.category)
-            self._stix_package.add_threat_actor(related_threat_actor)
         else:
             self._add_journal_entry(f"Attribute ({attribute.category} - {attribute.type}): {attribute.value}")
 
@@ -557,7 +533,7 @@ class MISPtoSTIX1Parser():
         windows_service = WinService()
         feature = 'service_name' if attribute.type == 'windows-service-name' else 'display_name'
         setattr(windows_service, feature, attribute.value)
-        observable = self._create_observable(windows_service, attribute.uuid, 'WindowsService')
+        observable = self._create_observable(windows_service, attribute.uuid, 'WinService')
         self._handle_attribute(attribute, observable)
 
     def _parse_x509_fingerprint_attribute(self, attribute: MISPAttribute):
@@ -758,7 +734,7 @@ class MISPtoSTIX1Parser():
     #                      OBJECTS CREATION HELPER FUNCTIONS.                      #
     ################################################################################
 
-    def _add_journal_entry(self, entry_line: str):
+    def _add_journal_entry(self, entryline: str):
         history_item = HistoryItem()
         history_item.journal_entry = entryline
         try:
@@ -889,7 +865,7 @@ class MISPtoSTIX1Parser():
         return mutex_object
 
     def _create_observable(self, stix_object: _OBSERVABLE_OBJECT_TYPES, attribute_uuid: str, feature: str) -> Observable:
-        stix_object.parent.id_ = f"{self.namespace}:{feature}Object-{attribute_uuid}"
+        stix_object.parent.id_ = f"{self.namespace}:{feature}-{attribute_uuid}"
         observable = Observable(stix_object)
         observable.id_ = f"{self.namespace}:Observable-{attribute_uuid}"
         return observable
@@ -950,9 +926,9 @@ class MISPtoSTIX1Parser():
         return color_value
 
     def _set_creator(self) -> str:
-        if not hasattr(self.misp_event, 'orgc'):
-            return self.orgname
-        return self.misp_event.orgc.name
+        if hasattr(self.misp_event, 'orgc'):
+            return self.misp_event.orgc.name
+        return self.orgname
 
     def _set_handling(self, tags: list) -> Marking:
         sorted_tags = defaultdict(list)
