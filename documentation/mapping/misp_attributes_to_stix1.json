@@ -4,9 +4,10 @@
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "AS",
             "category": "Network activity",
-            "value": "AS174"
+            "value": "AS174",
+            "to_ids": false
         },
-        "STIX1.1": ""
+        "STIX": "<cybox:ObservableType id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n    <cybox:Object id=\"MISP:AutonomousSystem-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Properties xsi:type=\"ASObj:ASObjectType\">\n            <ASObj:Handle condition=\"Equals\">AS174</ASObj:Handle>\n        </cybox:Properties>\n    </cybox:Object>\n</cybox:ObservableType>"
     },
     "attachment": {
         "MISP": {
@@ -14,9 +15,10 @@
             "type": "attachment",
             "category": "Payload delivery",
             "value": "attachment.test",
-            "data": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK"
+            "data": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK",
+            "to_ids": false
         },
-        "STIX1.1": ""
+        "STIX": "<cybox:ObservableType id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n    <cybox:Title>attachment.test</cybox:Title>\n    <cybox:Object id=\"MISP:Artifact-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Properties xsi:type=\"ArtifactObj:ArtifactObjectType\">\n            <ArtifactObj:Raw_Artifact condition=\"Equals\"><![CDATA[ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK]]></ArtifactObj:Raw_Artifact>\n        </cybox:Properties>\n    </cybox:Object>\n</cybox:ObservableType>"
     },
     "domain": {
         "MISP": {
@@ -25,9 +27,10 @@
             "category": "Network activity",
             "value": "circl.lu",
             "timestamp": "1603642920",
-            "comment": "Domain test attribute"
+            "comment": "Domain test attribute",
+            "to_ids": true
         },
-        "STIX1.1": ""
+        "STIX": "<indicator:Indicator id=\"MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2020-11-06T17:00:14+00:00\" xsi:type='indicator:IndicatorType'>\n    <indicator:Title>Network activity: circl.lu (MISP Attribute)</indicator:Title>\n    <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Domain Watchlist</indicator:Type>\n    <indicator:Description>Domain test attribute</indicator:Description>\n    <indicator:Valid_Time_Position/>\n    <indicator:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Object id=\"MISP:DomainName-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Properties xsi:type=\"DomainNameObj:DomainNameObjectType\">\n                <DomainNameObj:Value condition=\"Equals\">circl.lu</DomainNameObj:Value>\n            </cybox:Properties>\n        </cybox:Object>\n    </indicator:Observable>\n    <indicator:Confidence timestamp=\"2020-11-06T17:00:14+00:00\">\n        <stixCommon:Value>High</stixCommon:Value>\n        <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n    </indicator:Confidence>\n    <indicator:Producer>\n        <stixCommon:Identity>\n            <stixCommon:Name>MISP</stixCommon:Name>\n        </stixCommon:Identity>\n    </indicator:Producer>\n</indicator:Indicator>"
     },
     "domain|ip": {
         "MISP": {
@@ -36,9 +39,10 @@
             "category": "Network activity",
             "value": "circl.lu|149.13.33.14",
             "timestamp": "1603642920",
-            "comment": "Domain|ip test attribute"
+            "comment": "Domain|ip test attribute",
+            "to_ids": true
         },
-        "STIX1.1": ""
+        "STIX": "<indicator:Indicator id=\"MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2020-11-06T17:07:20+00:00\" xsi:type='indicator:IndicatorType'>\n    <indicator:Title>Network activity: circl.lu|149.13.33.14 (MISP Attribute)</indicator:Title>\n    <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Domain Watchlist</indicator:Type>\n    <indicator:Description>Domain|ip test attribute</indicator:Description>\n    <indicator:Valid_Time_Position/>\n    <indicator:Observable id=\"MISP:ObservableComposition-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Observable_Composition operator=\"AND\">\n            <cybox:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n <cybox:Object id=\"MISP:DomainName-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                    <cybox:Properties xsi:type=\"DomainNameObj:DomainNameObjectType\">\n                        <DomainNameObj:Value condition=\"Equals\">circl.lu</DomainNameObj:Value>\n                    </cybox:Properties>\n                </cybox:Object>\n            </cybox:Observable>\n            <cybox:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                <cybox:Object id=\"MISP:Address-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                    <cybox:Properties xsi:type=\"AddressObj:AddressObjectType\" category=\"ipv4-addr\" is_source=\"false\" is_destination=\"true\">\n                        <AddressObj:Address_Value condition=\"Equals\">149.13.33.14</AddressObj:Address_Value>\n                    </cybox:Properties>\n                </cybox:Object>\n            </cybox:Observable>\n        </cybox:Observable_Composition>\n    </indicator:Observable>\n    <indicator:Confidence timestamp=\"2020-11-06T17:07:20+00:00\">\n        <stixCommon:Value>High</stixCommon:Value>\n     <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n    </indicator:Confidence>\n    <indicator:Producer>\n        <stixCommon:Identity>\n            <stixCommon:Name>MISP</stixCommon:Name>\n        </stixCommon:Identity>\n    </indicator:Producer>\n</indicator:Indicator>"
     },
     "email-attachment": {
         "MISP": {
@@ -47,9 +51,10 @@
             "category": "Payload delivery",
             "value": "email_attachment.test",
             "timestamp": "1603642920",
-            "comment": "Email attachment test attribute"
+            "comment": "Email attachment test attribute",
+            "to_ids": true
         },
-        "STIX1.1": ""
+        "STIX": "<indicator:Indicator id=\"MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2020-11-06T17:07:20+00:00\" xsi:type='indicator:IndicatorType'>\n    <indicator:Title>Payload delivery: email_attachment.test (MISP Attribute)</indicator:Title>\n    <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malicious E-mail</indicator:Type>\n    <indicator:Description>Email attachment test attribute</indicator:Description>\n    <indicator:Valid_Time_Position/>\n    <indicator:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Object id=\"MISP:EmailMessage-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Properties xsi:type=\"EmailMessageObj:EmailMessageObjectType\">\n                <EmailMessageObj:Attachments>\n                    <EmailMessageObj:File object_reference=\"MISP:File-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\"/>\n                </EmailMessageObj:Attachments>\n            </cybox:Properties>\n            <cybox:Related_Objects>\n                <cybox:Related_Object id=\"MISP:File-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                    <cybox:Properties xsi:type=\"FileObj:FileObjectType\">\n                        <FileObj:File_Name condition=\"Equals\">email_attachment.test</FileObj:File_Name>\n                    </cybox:Properties>\n                    <cybox:Relationship xsi:type=\"cyboxVocabs:ObjectRelationshipVocab-1.1\">Contains</cybox:Relationship>\n  </cybox:Related_Object>\n            </cybox:Related_Objects>\n        </cybox:Object>\n    </indicator:Observable>\n    <indicator:Confidence timestamp=\"2020-11-06T17:07:20+00:00\">\n        <stixCommon:Value>High</stixCommon:Value>\n        <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n    </indicator:Confidence>\n    <indicator:Producer>\n        <stixCommon:Identity>\n            <stixCommon:Name>MISP</stixCommon:Name>\n        </stixCommon:Identity>\n    </indicator:Producer>\n</indicator:Indicator>"
     },
     "email-dst": {
         "MISP": {
@@ -58,9 +63,10 @@
             "category": "Payload delivery",
             "value": "dst@email.test",
             "timestamp": "1603642920",
-            "comment": "Destination email address test attribute"
+            "comment": "Destination email address test attribute",
+            "to_ids": true
         },
-        "STIX1.1": ""
+        "STIX": "<indicator:Indicator id=\"MISP:Indicator-518b4bcb-a86b-4783-9457-391d548b605b\" timestamp=\"2020-11-06T17:10:45+00:00\" xsi:type='indicator:IndicatorType'>\n    <indicator:Title>Payload delivery: dst@email.test (MISP Attribute)</indicator:Title>\n    <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malicious E-mail</indicator:Type>\n    <indicator:Description>Destination email address test attribute</indicator:Description>\n    <indicator:Valid_Time_Position/>\n    <indicator:Observable id=\"MISP:Observable-518b4bcb-a86b-4783-9457-391d548b605b\">\n        <cybox:Object id=\"MISP:EmailMessage-518b4bcb-a86b-4783-9457-391d548b605b\">\n            <cybox:Properties xsi:type=\"EmailMessageObj:EmailMessageObjectType\">\n                <EmailMessageObj:Header>\n                    <EmailMessageObj:To>\n                        <EmailMessageObj:Recipient xsi:type=\"AddressObj:AddressObjectType\" category=\"e-mail\">\n                            <AddressObj:Address_Value>dst@email.test</AddressObj:Address_Value>\n                        </EmailMessageObj:Recipient>\n       </EmailMessageObj:To>\n                </EmailMessageObj:Header>\n            </cybox:Properties>\n        </cybox:Object>\n    </indicator:Observable>\n    <indicator:Confidence timestamp=\"2020-11-06T17:10:45+00:00\">\n        <stixCommon:Value>High</stixCommon:Value>\n        <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n    </indicator:Confidence>\n    <indicator:Producer>\n        <stixCommon:Identity>\n            <stixCommon:Name>MISP</stixCommon:Name>\n        </stixCommon:Identity>\n    </indicator:Producer>\n</indicator:Indicator>\n"
     },
     "email-src": {
         "MISP": {
@@ -69,27 +75,30 @@
             "category": "Payload delivery",
             "value": "src@email.test",
             "timestamp": "1603642920",
-            "comment": "Source email address test attribute"
+            "comment": "Source email address test attribute",
+            "to_ids": true
         },
-        "STIX1.1": ""
+        "STIX": "<indicator:Indicator id=\"MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2020-11-06T17:10:45+00:00\" xsi:type='indicator:IndicatorType'>\n    <indicator:Title>Payload delivery: src@email.test (MISP Attribute)</indicator:Title>\n    <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malicious E-mail</indicator:Type>\n    <indicator:Description>Source email address test attribute</indicator:Description>\n    <indicator:Valid_Time_Position/>\n    <indicator:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Object id=\"MISP:EmailMessage-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Properties xsi:type=\"EmailMessageObj:EmailMessageObjectType\">\n               <EmailMessageObj:Header>\n                    <EmailMessageObj:From xsi:type=\"AddressObj:AddressObjectType\" category=\"e-mail\">\n                        <AddressObj:Address_Value condition=\"Equals\">src@email.test</AddressObj:Address_Value>\n                    </EmailMessageObj:From>\n                </EmailMessageObj:Header>\n            </cybox:Properties>\n        </cybox:Object>\n    </indicator:Observable>\n    <indicator:Confidence timestamp=\"2020-11-06T17:10:45+00:00\">\n        <stixCommon:Value>High</stixCommon:Value>\n        <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n </indicator:Confidence>\n    <indicator:Producer>\n        <stixCommon:Identity>\n            <stixCommon:Name>MISP</stixCommon:Name>\n        </stixCommon:Identity>\n    </indicator:Producer>\n</indicator:Indicator>"
     },
     "email-reply-to": {
         "MISP": {
             "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
             "type": "email-reply-to",
             "category": "Payload delivery",
-            "value": "reply-to@email.test"
+            "value": "reply-to@email.test",
+            "to_ids": false
         },
-        "STIX1.1": ""
+        "STIX": "<cybox:ObservableType id=\"MISP:Observable-94a2b00f-bec3-4f8a-bea4-e4ccf0de776f\">\n    <cybox:Object id=\"MISP:EmailMessage-94a2b00f-bec3-4f8a-bea4-e4ccf0de776f\">\n        <cybox:Properties xsi:type=\"EmailMessageObj:EmailMessageObjectType\">\n            <EmailMessageObj:Header>\n                <EmailMessageObj:Reply_To xsi:type=\"AddressObj:AddressObjectType\" category=\"e-mail\">\n                    <AddressObj:Address_Value condition=\"Equals\">reply-to@email.test</AddressObj:Address_Value>\n                </EmailMessageObj:Reply_To>\n            </EmailMessageObj:Header>\n        </cybox:Properties>\n    </cybox:Object>\n</cybox:ObservableType>"
     },
     "email-subject": {
         "MISP": {
             "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
             "type": "email-subject",
             "category": "Payload delivery",
-            "value": "Test Subject"
+            "value": "Test Subject",
+            "to_ids": false
         },
-        "STIX1.1": ""
+        "STIX": "<cybox:ObservableType id=\"MISP:Observable-34cb1a7c-55ec-412a-8684-ba4a88d83a45\">\n    <cybox:Object id=\"MISP:EmailMessage-34cb1a7c-55ec-412a-8684-ba4a88d83a45\">\n        <cybox:Properties xsi:type=\"EmailMessageObj:EmailMessageObjectType\">\n            <EmailMessageObj:Header>\n                <EmailMessageObj:Subject condition=\"Equals\">Test Subject</EmailMessageObj:Subject>\n            </EmailMessageObj:Header>\n        </cybox:Properties>\n    </cybox:Object>\n</cybox:ObservableType>"
     },
     "filename": {
         "MISP": {
@@ -98,8 +107,57 @@
             "category": "Payload delivery",
             "value": "test_file_name",
             "timestamp": "1603642920",
-            "comment": "Filename test attribute"
+            "comment": "Filename test attribute",
+            "to_ids": true
         },
-        "STIX1.1": ""
+        "STIX": "<indicator:Indicator id=\"MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2020-11-06T17:10:45+00:00\" xsi:type='indicator:IndicatorType'>\n    <indicator:Title>Payload delivery: test_file_name (MISP Attribute)</indicator:Title>\n    <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">File Hash Watchlist</indicator:Type>\n    <indicator:Description>Filename test attribute</indicator:Description>\n    <indicator:Valid_Time_Position/>\n    <indicator:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Object id=\"MISP:File-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Properties xsi:type=\"FileObj:FileObjectType\">\n                <FileObj:File_Name condition=\"Equals\">test_file_name</FileObj:File_Name>\n            </cybox:Properties>\n        </cybox:Object>\n    </indicator:Observable>\n    <indicator:Confidence timestamp=\"2020-11-06T17:10:45+00:00\">\n        <stixCommon:Value>High</stixCommon:Value>\n        <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n    </indicator:Confidence>\n    <indicator:Producer>\n        <stixCommon:Identity>\n            <stixCommon:Name>MISP</stixCommon:Name>\n        </stixCommon:Identity>\n    </indicator:Producer>\n</indicator:Indicator>"
+    },
+    "filename|md5": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "filename|md5",
+            "category": "Payload delivery",
+            "value": "test_file_name|b2a5abfeef9e36964281a31e17b57c97",
+            "timestamp": "1603642920",
+            "comment": "Filename|md5 test attribute",
+            "to_ids": true
+        },
+        "STIX": "<indicator:Indicator id=\"MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2020-11-06T17:10:45+00:00\" xsi:type='indicator:IndicatorType'>\n    <indicator:Title>Payload delivery: test_file_name|b2a5abfeef9e36964281a31e17b57c97 (MISP Attribute)</indicator:Title>\n    <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">File Hash Watchlist</indicator:Type>\n    <indicator:Description>Filename|md5 test attribute</indicator:Description>\n    <indicator:Valid_Time_Position/>\n    <indicator:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Object id=\"MISP:File-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Properties xsi:type=\"FileObj:FileObjectType\">\n                <FileObj:File_Name condition=\"Equals\">test_file_name</FileObj:File_Name>\n                <FileObj:Hashes>\n                    <cyboxCommon:Hash>\n                        <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">MD5</cyboxCommon:Type>\n                        <cyboxCommon:Simple_Hash_Value condition=\"Equals\">b2a5abfeef9e36964281a31e17b57c97</cyboxCommon:Simple_Hash_Value>\n                    </cyboxCommon:Hash>\n                </FileObj:Hashes>\n            </cybox:Properties>\n        </cybox:Object>\n    </indicator:Observable>\n    <indicator:Confidence timestamp=\"2020-11-06T17:10:45+00:00\">\n        <stixCommon:Value>High</stixCommon:Value>\n        <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n    </indicator:Confidence>\n    <indicator:Producer>\n        <stixCommon:Identity>\n            <stixCommon:Name>MISP</stixCommon:Name>\n        </stixCommon:Identity>\n    </indicator:Producer>\n</indicator:Indicator>"
+    },
+    "filename|tlsh": {
+        "MISP": {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "filename|tlsh",
+            "category": "Payload delivery",
+            "value": "test_file_name|1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1",
+            "timestamp": "1603642920",
+            "comment": "Filename|tlsh test attribute",
+            "to_ids": true
+        },
+        "STIX": "<indicator:Indicator id=\"MISP:Indicator-518b4bcb-a86b-4783-9457-391d548b605b\" timestamp=\"2020-11-06T17:10:45+00:00\" xsi:type='indicator:IndicatorType'>\n    <indicator:Title>Payload delivery: test_file_name|1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1 (MISP Attribute)</indicator:Title>\n    <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">File Hash Watchlist</indicator:Type>\n    <indicator:Description>Filename|tlsh test attribute</indicator:Description>\n    <indicator:Valid_Time_Position/>\n    <indicator:Observable id=\"MISP:Observable-518b4bcb-a86b-4783-9457-391d548b605b\">\n        <cybox:Object id=\"MISP:File-518b4bcb-a86b-4783-9457-391d548b605b\">\n            <cybox:Properties xsi:type=\"FileObj:FileObjectType\">\n                <FileObj:File_Name condition=\"Equals\">test_file_name</FileObj:File_Name>\n                <FileObj:Hashes>\n                    <cyboxCommon:Hash>\n                        <cyboxCommon:Type condition=\"Equals\">Other</cyboxCommon:Type>\n                        <cyboxCommon:Simple_Hash_Value condition=\"Equals\">1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1</cyboxCommon:Simple_Hash_Value>\n                    </cyboxCommon:Hash>\n                </FileObj:Hashes>\n            </cybox:Properties>\n        </cybox:Object>\n    </indicator:Observable>\n    <indicator:Confidence timestamp=\"2020-11-06T17:10:45+00:00\">\n        <stixCommon:Value>High</stixCommon:Value>\n        <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n    </indicator:Confidence>\n    <indicator:Producer>\n        <stixCommon:Identity>\n            <stixCommon:Name>MISP</stixCommon:Name>\n        </stixCommon:Identity>\n    </indicator:Producer>\n</indicator:Indicator>"
+    },
+    "md5": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "md5",
+            "category": "Payload delivery",
+            "value": "b2a5abfeef9e36964281a31e17b57c97",
+            "timestamp": "1603642920",
+            "comment": "MD5 test attribute",
+            "to_ids": true
+        },
+        "STIX": "<indicator:Indicator id=\"MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2020-11-06T17:10:45+00:00\" xsi:type='indicator:IndicatorType'>\n    <indicator:Title>Payload delivery: b2a5abfeef9e36964281a31e17b57c97 (MISP Attribute)</indicator:Title>\n    <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">File Hash Watchlist</indicator:Type>\n    <indicator:Description>MD5 test attribute</indicator:Description>\n    <indicator:Valid_Time_Position/>\n    <indicator:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Object id=\"MISP:File-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Properties xsi:type=\"FileObj:FileObjectType\">\n                <FileObj:Hashes>\n                    <cyboxCommon:Hash>\n                        <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">MD5</cyboxCommon:Type>\n                        <cyboxCommon:Simple_Hash_Value condition=\"Equals\">b2a5abfeef9e36964281a31e17b57c97</cyboxCommon:Simple_Hash_Value>\n                    </cyboxCommon:Hash>\n                </FileObj:Hashes>\n            </cybox:Properties>\n        </cybox:Object>\n    </indicator:Observable>\n    <indicator:Confidence timestamp=\"2020-11-06T17:10:45+00:00\">\n        <stixCommon:Value>High</stixCommon:Value>\n        <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n    </indicator:Confidence>\n    <indicator:Producer>\n        <stixCommon:Identity>\n            <stixCommon:Name>MISP</stixCommon:Name>\n        </stixCommon:Identity>\n    </indicator:Producer>\n</indicator:Indicator>\n"
+    },
+    "tlsh": {
+        "MISP": {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "tlsh",
+            "category": "Payload delivery",
+            "value": "1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1",
+            "timestamp": "1603642920",
+            "comment": "TLSH test attribute",
+            "to_ids": true
+        },
+        "STIX": "<indicator:Indicator id=\"MISP:Indicator-518b4bcb-a86b-4783-9457-391d548b605b\" timestamp=\"2020-11-06T17:10:45+00:00\" xsi:type='indicator:IndicatorType'>\n    <indicator:Title>Payload delivery: 1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1 (MISP Attribute)</indicator:Title>\n    <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">File Hash Watchlist</indicator:Type>\n    <indicator:Description>TLSH test attribute</indicator:Description>\n    <indicator:Valid_Time_Position/>\n    <indicator:Observable id=\"MISP:Observable-518b4bcb-a86b-4783-9457-391d548b605b\">\n        <cybox:Object id=\"MISP:File-518b4bcb-a86b-4783-9457-391d548b605b\">\n            <cybox:Properties xsi:type=\"FileObj:FileObjectType\">\n                <FileObj:Hashes>\n                    <cyboxCommon:Hash>\n                        <cyboxCommon:Type condition=\"Equals\">Other</cyboxCommon:Type>\n                        <cyboxCommon:Simple_Hash_Value condition=\"Equals\">1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1</cyboxCommon:Simple_Hash_Value>\n                    </cyboxCommon:Hash>\n                </FileObj:Hashes>\n            </cybox:Properties>\n        </cybox:Object>\n    </indicator:Observable>\n    <indicator:Confidence timestamp=\"2020-11-06T17:10:45+00:00\">\n        <stixCommon:Value>High</stixCommon:Value>\n        <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n    </indicator:Confidence>\n    <indicator:Producer>\n        <stixCommon:Identity>\n            <stixCommon:Name>MISP</stixCommon:Name>\n        </stixCommon:Identity>\n    </indicator:Producer>\n</indicator:Indicator>"
     }
 }
