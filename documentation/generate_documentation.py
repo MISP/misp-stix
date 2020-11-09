@@ -45,8 +45,7 @@ class DocumentationGenerator():
         self._misp_to_stix1 = f"{introduction}\n\n{misp2stix_mapping}"
 
     def _parse_mapping(self, header, misp2stix_mapping):
-        header_labels = ' </td> <td class="block" style="width:45%"> '
-        table = [f"<td> {header_labels.join(header)} </td>"]
+        table = []
         for attribute_type, mapping in misp2stix_mapping.items():
             table.append(self._parse_table_line(
                 attribute_type,
@@ -54,15 +53,15 @@ class DocumentationGenerator():
                 mapping,
                 'xml'
             ))
-        table = '\n</tr>\n<tr>\n'.join(table)
-        return f'<table style="white-space:nowrap;width:100%;">\n<tr>\n{table}\n</tr>\n</table>'
+        return '\n'.join(table)
 
     @staticmethod
     def _parse_table_line(attribute_type, header, mapping, format):
-        line = f'<td> {attribute_type} </td>'
-        misp_blob = f"<td>\n\n```json\n{json.dumps(mapping['MISP'], indent=4)}\n```\n\n</td>"
-        stix_blob = '\n\n</td>\n<td>\n\n'.join(f"\n```{format}\n{mapping[key]}\n```\n" for key in header)
-        return f'{line}\n{misp_blob}\n<td>\n{stix_blob}\n</td>'
+        line = f'- {attribute_type}'
+        misp_blob = '\n'.join(f'    {blob}' for blob in json.dumps(mapping['MISP'], indent=4).split('\n'))
+        misp_blob = f"  - MISP\n    ```json\n{misp_blob}\n    ```"
+        stix_blob = '\n'.join(f"  - {key}\n    ```{format}\n{mapping[key]}\n    ```" for key in header)
+        return f'{line}\n{misp_blob}\n{stix_blob}\n'
 
 
 if __name__ == '__main__':
