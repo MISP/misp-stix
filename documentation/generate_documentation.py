@@ -41,8 +41,12 @@ class DocumentationGenerator():
         with open(self._misp_to_stix1_mapping, 'rt', encoding='utf-8') as f:
             mapping = json.loads(f.read())
         header = ('Attribute type', 'MISP', 'STIX')
-        misp2stix_mapping = self._parse_mapping(header, mapping)
-        self._misp_to_stix1 = f"{introduction}\n\n{misp2stix_mapping}"
+        attributes_mapping = self._parse_mapping(header, mapping)
+        content = (
+            introduction,
+            f'##### Attributes mapping:\n{attributes_mapping}'
+        )
+        self._misp_to_stix1 = '\n\n'.join(content)
 
     def _parse_mapping(self, header, misp2stix_mapping):
         table = []
