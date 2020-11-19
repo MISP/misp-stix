@@ -125,7 +125,9 @@ hash_type_attributes = {
         "authentihash",
         "pehash",
         "tlsh",
-        "cdhash"
+        "cdhash",
+        "vhash",
+        "impfuzzy"
     ),
     "composite": (
         "filename|md5",
@@ -140,7 +142,9 @@ hash_type_attributes = {
         "filename|ssdeep",
         "filename|tlsh",
         "filename|imphash",
-        "filename|pehash"
+        "filename|pehash",
+        "filename|vhash",
+        "filename|impfuzzy"
     )
 }
 
