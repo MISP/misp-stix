@@ -6,10 +6,15 @@ import json
 
 class DocumentationGenerator():
     def __init__(self):
+        # content
         self._introduction_filename = 'content/introduction.md'
         self._misp2stix_intro_filename = 'content/misp_to_stix_intro.md'
         self._misp_to_stix1_filename = 'content/misp_to_stix1.md'
-        self._misp_to_stix1_mapping = 'mapping/misp_attributes_to_stix1.json'
+        self._attributes_to_stix1_content = 'content/attributes_to_stix1_details.md'
+        # mapping
+        self._misp_attributes_to_stix1_mapping = 'mapping/misp_attributes_to_stix1.json'
+        # documentation results
+        self._misp_attributes_to_stix1 = 'misp_attributes_to_stix1.md'
         self._output_filename = 'README.md'
 
     def generate_documentation(self):
@@ -37,16 +42,15 @@ class DocumentationGenerator():
 
     def _generate_misp_to_stix1_documentation(self):
         with open(self._misp_to_stix1_filename, 'rt', encoding='utf-8') as f:
-            introduction = f.read()
-        with open(self._misp_to_stix1_mapping, 'rt', encoding='utf-8') as f:
+            self._misp_to_stix1 = f.read()
+        with open(self._misp_attributes_to_stix1_mapping, 'rt', encoding='utf-8') as f:
             mapping = json.loads(f.read())
         header = ('Attribute type', 'MISP', 'STIX')
-        attributes_mapping = self._parse_mapping(header, mapping)
-        content = (
-            introduction,
-            f'##### Attributes mapping:\n{attributes_mapping}'
-        )
-        self._misp_to_stix1 = '\n\n'.join(content)
+        mapping = self._parse_mapping(header, mapping)
+        with open(self._attributes_to_stix1_content, 'rt', encoding='utf-8') as f:
+            attributes_mapping = f.read().format(_attributes_to_stix1_mapping_=mapping)
+        with open(self._misp_attributes_to_stix1, 'wt', encoding='utf-8') as f:
+            f.write(attributes_mapping)
 
     def _parse_mapping(self, header, misp2stix_mapping):
         table = []
