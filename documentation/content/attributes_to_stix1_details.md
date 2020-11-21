@@ -1,4 +1,4 @@
-# Attributes mapping
+# MISP Attributes to STIX1 mapping
 
 In most of the cases, a MISP Attribute is exported to STIX as `Indicator` if its `to_ids` flag is set, or as `Observable` if its `to_ids` flag is false.But there are also some other examples where none of those two situations happen. This documentation gives all the details about the single attributes mapping into STIX objects, depending on the type of the attributes.
 

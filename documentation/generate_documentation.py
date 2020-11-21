@@ -11,10 +11,16 @@ class DocumentationGenerator():
         self._misp2stix_intro_filename = 'content/misp_to_stix_intro.md'
         self._misp_to_stix1_filename = 'content/misp_to_stix1.md'
         self._attributes_to_stix1_content = 'content/attributes_to_stix1_details.md'
+        self._objects_to_stix1_content = 'content/objects_to_stix1_details.md'
+        self._galaxies_to_stix1_content = 'content/galaxies_to_stix1_details.md'
         # mapping
         self._misp_attributes_to_stix1_mapping = 'mapping/misp_attributes_to_stix1.json'
+        self._misp_objects_to_stix1_mapping = 'mapping/misp_objects_to_stix1.json'
+        self._misp_galaxies_to_stix1_mapping = 'mapping/misp_galaxies_to_stix1.json'
         # documentation results
         self._misp_attributes_to_stix1 = 'misp_attributes_to_stix1.md'
+        self._misp_objects_to_stix1 = 'misp_objects_to_stix1.md'
+        self._misp_galaxies_to_stix1 = 'misp_galaxies_to_stix1.md'
         self._output_filename = 'README.md'
 
     def generate_documentation(self):
@@ -43,6 +49,7 @@ class DocumentationGenerator():
     def _generate_misp_to_stix1_documentation(self):
         with open(self._misp_to_stix1_filename, 'rt', encoding='utf-8') as f:
             self._misp_to_stix1 = f.read()
+        # Attributes documentation
         with open(self._misp_attributes_to_stix1_mapping, 'rt', encoding='utf-8') as f:
             mapping = json.loads(f.read())
         header = ('Attribute type', 'MISP', 'STIX')
@@ -51,6 +58,24 @@ class DocumentationGenerator():
             attributes_mapping = f.read().format(_attributes_to_stix1_mapping_=mapping)
         with open(self._misp_attributes_to_stix1, 'wt', encoding='utf-8') as f:
             f.write(attributes_mapping)
+        # Objects documentation
+        with open(self._misp_objects_to_stix1_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        header = ('Object name', 'MISP', 'STIX')
+        mapping = self._parse_mapping(header, mapping)
+        with open(self._objects_to_stix1_content, 'rt', encoding='utf-8') as f:
+            objects_mapping = f.read().format(_objects_to_stix1_mapping_=mapping)
+        with open(self._misp_objects_to_stix1, 'wt', encoding='utf-8') as f:
+            f.write(objects_mapping)
+        # Galaxies documentation
+        with open(self._misp_galaxies_to_stix1_mapping, 'rt', encoding='utf-8') as f:
+            mapping = json.loads(f.read())
+        header = ('Galaxy name', 'MISP', 'STIX')
+        mapping = self._parse_mapping(header, mapping)
+        with open(self._galaxies_to_stix1_content, 'rt', encoding='utf-8') as f:
+            galaxies_mapping = f.read().format(_galaxies_to_stix1_mapping_=mapping)
+        with open(self._misp_galaxies_to_stix1, 'wt', encoding='utf-8') as f:
+            f.write(galaxies_mapping)
 
     def _parse_mapping(self, header, misp2stix_mapping):
         table = []

@@ -1,4 +1,4 @@
-# Attributes mapping
+# MISP Attributes to STIX1 mapping
 
 In most of the cases, a MISP Attribute is exported to STIX as `Indicator` if its `to_ids` flag is set, or as `Observable` if its `to_ids` flag is false.But there are also some other examples where none of those two situations happen. This documentation gives all the details about the single attributes mapping into STIX objects, depending on the type of the attributes.
 
@@ -2192,7 +2192,8 @@ So fot he rest of this documentation, in order to keep the content clear enough 
     ```
   - STIX
     ```xml
-    <!--To_ids flag must be true since Observables have no Test_mechanisms field-->    <indicator:Indicator id="MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" timestamp="2020-10-25T16:22:00+00:00" xsi:type='indicator:IndicatorType'>
+    <!--To_ids flag must be true since Observables have no Test_mechanisms field-->
+    <indicator:Indicator id="MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" timestamp="2020-10-25T16:22:00+00:00" xsi:type='indicator:IndicatorType'>
         <indicator:Title>Network activity: alert tcp any any -&gt; any any (msg:"oui") (MISP Attribute)</indicator:Title>
         <indicator:Type xsi:type="stixVocabs:IndicatorTypeVocab-1.1">Malware Artifacts</indicator:Type>
         <indicator:Description>Snort test attribute</indicator:Description>
@@ -2270,7 +2271,8 @@ So fot he rest of this documentation, in order to keep the content clear enough 
     ```
   - STIX
     ```xml
-    <!--Embedded within the Incident's field named Victims-->    <incident:Victim id="MISP:Identity-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
+    <!--Embedded within the Incident's field named Victims-->
+    <incident:Victim id="MISP:Identity-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
         <stix-ciqidentity:CIQIdentity3.0InstanceType id="MISP:Identity-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
             <stixCommon:Name>Targeting data: target@email.test (MISP Attribute)</stixCommon:Name>
             <stix-ciqidentity:Specification xmlns:stix-ciqidentity="http://stix.mitre.org/extensions/Identity#CIQIdentity3.0-1">
@@ -2294,7 +2296,8 @@ So fot he rest of this documentation, in order to keep the content clear enough 
     ```
   - STIX
     ```xml
-    <!--Embedded within the Incident's field named Victims-->    <incident:Victim id="MISP:Identity-518b4bcb-a86b-4783-9457-391d548b605b" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
+    <!--Embedded within the Incident's field named Victims-->
+    <incident:Victim id="MISP:Identity-518b4bcb-a86b-4783-9457-391d548b605b" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
         <stix-ciqidentity:CIQIdentity3.0InstanceType id="MISP:Identity-518b4bcb-a86b-4783-9457-391d548b605b" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
             <stixCommon:Name>Targeting data: external.target (MISP Attribute)</stixCommon:Name>
             <stix-ciqidentity:Specification xmlns:stix-ciqidentity="http://stix.mitre.org/extensions/Identity#CIQIdentity3.0-1">
@@ -2318,7 +2321,8 @@ So fot he rest of this documentation, in order to keep the content clear enough 
     ```
   - STIX
     ```xml
-    <!--Embedded within the Incident's field named Victims-->    <incident:Victim id="MISP:Identity-34cb1a7c-55ec-412a-8684-ba4a88d83a45" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
+    <!--Embedded within the Incident's field named Victims-->
+    <incident:Victim id="MISP:Identity-34cb1a7c-55ec-412a-8684-ba4a88d83a45" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
         <stix-ciqidentity:CIQIdentity3.0InstanceType id="MISP:Identity-34cb1a7c-55ec-412a-8684-ba4a88d83a45" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
             <stixCommon:Name>Targeting data: Luxembourg (MISP Attribute)</stixCommon:Name>
             <stix-ciqidentity:Specification xmlns:stix-ciqidentity="http://stix.mitre.org/extensions/Identity#CIQIdentity3.0-1">
@@ -2346,7 +2350,8 @@ So fot he rest of this documentation, in order to keep the content clear enough 
     ```
   - STIX
     ```xml
-    <!--Embedded within the Incident's field named Victims-->    <incident:Affected_Assets>
+    <!--Embedded within the Incident's field named Victims-->
+    <incident:Affected_Assets>
         <incident:Affected_Asset>
             <incident:Description>target.machine (Target machine test attribute)</incident:Description>
         </incident:Affected_Asset>
@@ -2365,7 +2370,8 @@ So fot he rest of this documentation, in order to keep the content clear enough 
     ```
   - STIX
     ```xml
-    <!--Embedded within the Incident's field named Victims-->    <incident:Victim id="MISP:Identity-f2259650-bc33-4b64-a3a8-a324aa7ea6bb" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
+    <!--Embedded within the Incident's field named Victims-->
+    <incident:Victim id="MISP:Identity-f2259650-bc33-4b64-a3a8-a324aa7ea6bb" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
         <stix-ciqidentity:CIQIdentity3.0InstanceType id="MISP:Identity-f2259650-bc33-4b64-a3a8-a324aa7ea6bb" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
             <stixCommon:Name>Targeting data: Blizzard (MISP Attribute)</stixCommon:Name>
             <stix-ciqidentity:Specification xmlns:stix-ciqidentity="http://stix.mitre.org/extensions/Identity#CIQIdentity3.0-1">
@@ -2391,7 +2397,8 @@ So fot he rest of this documentation, in order to keep the content clear enough 
     ```
   - STIX
     ```xml
-    <!--Embedded within the Incident's field named Victims-->    <incident:Victim id="MISP:Identity-90bd7dae-b78c-4025-9073-568950c780fb" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
+    <!--Embedded within the Incident's field named Victims-->
+    <incident:Victim id="MISP:Identity-90bd7dae-b78c-4025-9073-568950c780fb" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
         <stix-ciqidentity:CIQIdentity3.0InstanceType id="MISP:Identity-90bd7dae-b78c-4025-9073-568950c780fb" xsi:type="stix-ciqidentity:CIQIdentity3.0InstanceType">
             <stixCommon:Name>Targeting data: iglocska (MISP Attribute)</stixCommon:Name>
             <stix-ciqidentity:Specification xmlns:stix-ciqidentity="http://stix.mitre.org/extensions/Identity#CIQIdentity3.0-1">
@@ -2578,7 +2585,8 @@ So fot he rest of this documentation, in order to keep the content clear enough 
     ```
   - STIX
     ```xml
-    <!--To_ids flag by default is true here, but does not affect the result being a TTP-->    <ttp:TTP id="MISP:TTP-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" timestamp="2020-10-25T16:22:00+00:00" xsi:type='ttp:TTPType'>
+    <!--To_ids flag by default is true here, but does not affect the result being a TTP-->
+    <ttp:TTP id="MISP:TTP-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" timestamp="2020-10-25T16:22:00+00:00" xsi:type='ttp:TTPType'>
         <ttp:Title>External analysis: CVE-2017-11774 (MISP Attribute)</ttp:Title>
         <ttp:Exploit_Targets>
             <ttp:Exploit_Target>
@@ -2778,7 +2786,8 @@ So fot he rest of this documentation, in order to keep the content clear enough 
     ```
   - STIX
     ```xml
-    <!--To_ids flag must be true since Observables have no Test_mechanisms field-->    <indicator:Indicator id="MISP:Indicator-518b4bcb-a86b-4783-9457-391d548b605b" timestamp="2020-10-25T16:22:00+00:00" xsi:type='indicator:IndicatorType'>
+    <!--To_ids flag must be true since Observables have no Test_mechanisms field-->
+    <indicator:Indicator id="MISP:Indicator-518b4bcb-a86b-4783-9457-391d548b605b" timestamp="2020-10-25T16:22:00+00:00" xsi:type='indicator:IndicatorType'>
         <indicator:Title>Payload installation: import "pe" rule single_section{condition:pe.number_of_sections == 1} (MISP Attribute)</indicator:Title>
         <indicator:Type xsi:type="stixVocabs:IndicatorTypeVocab-1.1">Malware Artifacts</indicator:Type>
         <indicator:Description>Yara test attribute</indicator:Description>
