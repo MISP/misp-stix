@@ -321,7 +321,7 @@ class MISPtoSTIX1Parser():
         self._handle_attribute(attribute, observable)
 
     @staticmethod
-    def _parse_hash_value(attribute_type, attribute_value: MISPAttribute):
+    def _parse_hash_value(attribute_type: str, attribute_value: str):
         args = {'hash_value': attribute_value, 'exact': True}
         if hasattr(Hash, f'TYPE_{attribute_type.upper()}'):
             args['type_'] = getattr(Hash, f'TYPE_{attribute_type.upper()}')
