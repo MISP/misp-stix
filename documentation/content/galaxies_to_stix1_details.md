@@ -1,5 +1,11 @@
 # MISP Galaxies to STIX1 mapping
 
+MISP galaxies are exported to STIX as `Course of Action`, `Threat actor` or as one of the different fields embedded within `TTPs`.
+
+Since not all the fields of the galaxies and their clusters are exported into STIX, and some Galaxies are mapped into the same STIX object, the following examples don't show each Galaxy type, but only one for each resulting STIX object. If you want to see the complete mapping, the [MISP Galaxies to STIX1 mapping summary](README.md#Galaxies-to-STIX1-mapping) gives all the Galaxy types that are mapped into each STIX object type
+
+The following examples are given with the fields that are exported only, if you want to have a look at the full definitions, you can visit the [MISP Galaxies repository](https://github.com/MISP/misp-galaxy).
+
 {_galaxies_to_stix1_mapping_}
 
 ## The other detailed mappings

@@ -144,6 +144,23 @@ So fot he rest of this documentation, in order to keep the content clear enough 
     </indicator:Indicator>
     ```
 
+- comment
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "comment",
+        "category": "Other",
+        "value": "Test comment"
+    }
+    ```
+  - STIX
+    ```xml
+    <incident:HistoryItemType>
+        <incident:Journal_Entry time_precision="second">Attribute (Other - comment): Test comment</incident:Journal_Entry>
+    </incident:HistoryItemType>
+    ```
+
 - domain
   - MISP
     ```json
@@ -1677,6 +1694,23 @@ So fot he rest of this documentation, in order to keep the content clear enough 
     </cybox:ObservableType>
     ```
 
+- other
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "other",
+        "category": "Other",
+        "value": "Test undefined attribute"
+    }
+    ```
+  - STIX
+    ```xml
+    <incident:HistoryItemType>
+        <incident:Journal_Entry time_precision="second">Attribute (Other - other): Test undefined attribute</incident:Journal_Entry>
+    </incident:HistoryItemType>
+    ```
+
 - pattern-in-file
   - MISP
     ```json
@@ -2410,6 +2444,23 @@ So fot he rest of this documentation, in order to keep the content clear enough 
         </stix-ciqidentity:Specification>
         </stix-ciqidentity:CIQIdentity3.0InstanceType>
     </incident:Victim>
+    ```
+
+- text
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "text",
+        "category": "Other",
+        "value": "Test text"
+    }
+    ```
+  - STIX
+    ```xml
+    <incident:HistoryItemType>
+        <incident:Journal_Entry time_precision="second">Attribute (Other - text): Test text</incident:Journal_Entry>
+    </incident:HistoryItemType>
     ```
 
 - tlsh

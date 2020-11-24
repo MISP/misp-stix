@@ -8,6 +8,10 @@ Thus, it gives a detailed description of the inputs and outputs that are to expe
 * [Introduction](#Introduction)
 * [MISP to STIX](#MISP-to-STIX)
     * [MISP to STIX1](#MISP-to-STIX1)
+        * [Events to STIX1](#Events-to-STIX1-mapping)
+        * [Attributes to STIX1](#Attributes-to-STIX1-mapping)
+        * [Objects to STIX1](#Objects-to-STIX1-mapping)
+        * [Galaxies to STIX1](#Galaxies-to-STIX1-mapping)
 * [Future improvements](#Future-Improvements)
 
 ## Introduction

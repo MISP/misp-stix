@@ -20,6 +20,27 @@
         },
         "STIX": "    <ttp:TTP id=\"MISP:TTP-dcaa092b-7de9-4a21-977f-7fcb77e89c48\" timestamp=\"2020-11-21T12:46:33.151602+00:00\" xsi:type='ttp:TTPType'>\n        <ttp:Title>Attack Pattern (MISP Galaxy)</ttp:Title>\n        <ttp:Behavior>\n            <ttp:Attack_Patterns>\n                <ttp:Attack_Pattern capec_id=\"CAPEC-633\" id=\"MISP:AttackPattern-dcaa092b-7de9-4a21-977f-7fcb77e89c48\">\n                    <ttp:Title>Access Token Manipulation - T1134</ttp:Title>\n                    <ttp:Description>Windows uses access tokens to determine the ownership of a running process.</ttp:Description>\n                </ttp:Attack_Pattern>\n            </ttp:Attack_Patterns>\n        </ttp:Behavior>\n    </ttp:TTP>"
     },
+    "Branded Vulnerability": {
+        "MISP": {
+            "uuid": "fda8c7c2-f45a-11e7-9713-e75dac0492df",
+            "name": "Branded Vulnerability",
+            "type": "branded-vulnerability",
+            "description": "List of known vulnerabilities and exploits",
+            "GalaxyCluster": [
+                {
+                    "uuid": "a1640081-aa8d-4070-84b2-d23e2ae82799",
+                    "value": "Ghost",
+                    "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
+                    "meta": {
+                        "aliases": [
+                            "CVE-2015\u20130235"
+                        ]
+                    }
+                }
+            ]
+        },
+        "STIX": "    <ttp:TTP id=\"MISP:TTP-a1640081-aa8d-4070-84b2-d23e2ae82799\" timestamp=\"2020-11-21T12:46:33.159077+00:00\" xsi:type='ttp:TTPType'>\n        <ttp:Title>Branded Vulnerability (MISP Galaxy)</ttp:Title>\n        <ttp:Exploit_Targets>\n            <ttp:Exploit_Target>\n                <stixCommon:Exploit_Target id=\"MISP:ExploitTarget-a1640081-aa8d-4070-84b2-d23e2ae82799\" timestamp=\"2020-11-21T12:46:33.159137+00:00\" xsi:type='et:ExploitTargetType'>\n                    <et:Vulnerability>\n                        <et:Title>Ghost</et:Title>\n                        <et:Description>The GHOST vulnerability is a serious weakness in the Linux glibc library.</et:Description>\n                        <et:CVE_ID>CVE-2015\u20130235</et:CVE_ID>\n                    </et:Vulnerability>\n                </stixCommon:Exploit_Target>\n            </ttp:Exploit_Target>\n        </ttp:Exploit_Targets>\n    </ttp:TTP>"
+    },
     "Course of Action": {
         "MISP": {
             "uuid": "6fcb4472-6de4-11e7-b5f7-37771619e14e",
@@ -93,26 +114,5 @@
             ]
         },
         "STIX": "    <ttp:TTP id=\"MISP:TTP-bba595da-b73a-4354-aa6c-224d4de7cb4e\" timestamp=\"2020-11-21T12:46:33.157528+00:00\" xsi:type='ttp:TTPType'>\n        <ttp:Title>Tool (MISP Galaxy)</ttp:Title>\n        <ttp:Resources>\n            <ttp:Tools>\n                <ttp:Tool id=\"MISP:ToolInformation-bba595da-b73a-4354-aa6c-224d4de7cb4e\">\n                    <cyboxCommon:Name>cmd - S0106</cyboxCommon:Name>\n                    <cyboxCommon:Description>cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.</cyboxCommon:Description>\n                </ttp:Tool>\n            </ttp:Tools>\n        </ttp:Resources>\n    </ttp:TTP>"
-    },
-    "Branded Vulnerability": {
-        "MISP": {
-            "uuid": "fda8c7c2-f45a-11e7-9713-e75dac0492df",
-            "name": "Branded Vulnerability",
-            "type": "branded-vulnerability",
-            "description": "List of known vulnerabilities and exploits",
-            "GalaxyCluster": [
-                {
-                    "uuid": "a1640081-aa8d-4070-84b2-d23e2ae82799",
-                    "value": "Ghost",
-                    "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
-                    "meta": {
-                        "aliases": [
-                            "CVE-2015\u20130235"
-                        ]
-                    }
-                }
-            ]
-        },
-        "STIX": "    <ttp:TTP id=\"MISP:TTP-a1640081-aa8d-4070-84b2-d23e2ae82799\" timestamp=\"2020-11-21T12:46:33.159077+00:00\" xsi:type='ttp:TTPType'>\n        <ttp:Title>Branded Vulnerability (MISP Galaxy)</ttp:Title>\n        <ttp:Exploit_Targets>\n            <ttp:Exploit_Target>\n                <stixCommon:Exploit_Target id=\"MISP:ExploitTarget-a1640081-aa8d-4070-84b2-d23e2ae82799\" timestamp=\"2020-11-21T12:46:33.159137+00:00\" xsi:type='et:ExploitTargetType'>\n                    <et:Vulnerability>\n                        <et:Title>Ghost</et:Title>\n                        <et:Description>The GHOST vulnerability is a serious weakness in the Linux glibc library.</et:Description>\n                        <et:CVE_ID>CVE-2015\u20130235</et:CVE_ID>\n                    </et:Vulnerability>\n                </stixCommon:Exploit_Target>\n            </ttp:Exploit_Target>\n        </ttp:Exploit_Targets>\n    </ttp:TTP>"
     }
 }

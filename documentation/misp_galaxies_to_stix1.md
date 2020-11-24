@@ -1,5 +1,11 @@
 # MISP Galaxies to STIX1 mapping
 
+MISP galaxies are exported to STIX as `Course of Action`, `Threat actor` or as one of the different fields embedded within `TTPs`.
+
+Since not all the fields of the galaxies and their clusters are exported into STIX, and some Galaxies are mapped into the same STIX object, the following examples don't show each Galaxy type, but only one for each resulting STIX object. If you want to see the complete mapping, the [MISP Galaxies to STIX1 mapping summary](README.md#Galaxies-to-STIX1-mapping) gives all the Galaxy types that are mapped into each STIX object type
+
+The following examples are given with the fields that are exported only, if you want to have a look at the full definitions, you can visit the [MISP Galaxies repository](https://github.com/MISP/misp-galaxy).
+
 - Attack Pattern
   - MISP
     ```json
@@ -34,6 +40,46 @@
                 </ttp:Attack_Pattern>
             </ttp:Attack_Patterns>
         </ttp:Behavior>
+    </ttp:TTP>
+    ```
+
+- Branded Vulnerability
+  - MISP
+    ```json
+    {
+        "uuid": "fda8c7c2-f45a-11e7-9713-e75dac0492df",
+        "name": "Branded Vulnerability",
+        "type": "branded-vulnerability",
+        "description": "List of known vulnerabilities and exploits",
+        "GalaxyCluster": [
+            {
+                "uuid": "a1640081-aa8d-4070-84b2-d23e2ae82799",
+                "value": "Ghost",
+                "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
+                "meta": {
+                    "aliases": [
+                        "CVE-2015\u20130235"
+                    ]
+                }
+            }
+        ]
+    }
+    ```
+  - STIX
+    ```xml
+    <ttp:TTP id="MISP:TTP-a1640081-aa8d-4070-84b2-d23e2ae82799" timestamp="2020-11-21T12:46:33.159077+00:00" xsi:type='ttp:TTPType'>
+        <ttp:Title>Branded Vulnerability (MISP Galaxy)</ttp:Title>
+        <ttp:Exploit_Targets>
+            <ttp:Exploit_Target>
+                <stixCommon:Exploit_Target id="MISP:ExploitTarget-a1640081-aa8d-4070-84b2-d23e2ae82799" timestamp="2020-11-21T12:46:33.159137+00:00" xsi:type='et:ExploitTargetType'>
+                    <et:Vulnerability>
+                        <et:Title>Ghost</et:Title>
+                        <et:Description>The GHOST vulnerability is a serious weakness in the Linux glibc library.</et:Description>
+                        <et:CVE_ID>CVE-2015–0235</et:CVE_ID>
+                    </et:Vulnerability>
+                </stixCommon:Exploit_Target>
+            </ttp:Exploit_Target>
+        </ttp:Exploit_Targets>
     </ttp:TTP>
     ```
 
@@ -162,46 +208,6 @@
                 </ttp:Tool>
             </ttp:Tools>
         </ttp:Resources>
-    </ttp:TTP>
-    ```
-
-- Branded Vulnerability
-  - MISP
-    ```json
-    {
-        "uuid": "fda8c7c2-f45a-11e7-9713-e75dac0492df",
-        "name": "Branded Vulnerability",
-        "type": "branded-vulnerability",
-        "description": "List of known vulnerabilities and exploits",
-        "GalaxyCluster": [
-            {
-                "uuid": "a1640081-aa8d-4070-84b2-d23e2ae82799",
-                "value": "Ghost",
-                "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
-                "meta": {
-                    "aliases": [
-                        "CVE-2015\u20130235"
-                    ]
-                }
-            }
-        ]
-    }
-    ```
-  - STIX
-    ```xml
-    <ttp:TTP id="MISP:TTP-a1640081-aa8d-4070-84b2-d23e2ae82799" timestamp="2020-11-21T12:46:33.159077+00:00" xsi:type='ttp:TTPType'>
-        <ttp:Title>Branded Vulnerability (MISP Galaxy)</ttp:Title>
-        <ttp:Exploit_Targets>
-            <ttp:Exploit_Target>
-                <stixCommon:Exploit_Target id="MISP:ExploitTarget-a1640081-aa8d-4070-84b2-d23e2ae82799" timestamp="2020-11-21T12:46:33.159137+00:00" xsi:type='et:ExploitTargetType'>
-                    <et:Vulnerability>
-                        <et:Title>Ghost</et:Title>
-                        <et:Description>The GHOST vulnerability is a serious weakness in the Linux glibc library.</et:Description>
-                        <et:CVE_ID>CVE-2015–0235</et:CVE_ID>
-                    </et:Vulnerability>
-                </stixCommon:Exploit_Target>
-            </ttp:Exploit_Target>
-        </ttp:Exploit_Targets>
     </ttp:TTP>
     ```
 

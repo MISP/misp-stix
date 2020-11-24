@@ -44,6 +44,15 @@
         },
         "STIX": "    <indicator:Indicator id=\"MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2020-10-25T16:22:00+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>Payload delivery: 38b01861f223a9ae2cc2a0388cef222a9730d438 (MISP Attribute)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">File Hash Watchlist</indicator:Type>\n        <indicator:Description>cdhash test attribute</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Object id=\"MISP:File-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                <cybox:Properties xsi:type=\"FileObj:FileObjectType\">\n                    <FileObj:Hashes>\n                        <cyboxCommon:Hash>\n                            <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">SHA1</cyboxCommon:Type>\n                            <cyboxCommon:Simple_Hash_Value condition=\"Equals\">68b01861f223a9ae2cc2a0688cef222a9730d468</cyboxCommon:Simple_Hash_Value>\n                        </cyboxCommon:Hash>\n                    </FileObj:Hashes>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2020-10-25T16:22:00+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
     },
+    "comment": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "comment",
+            "category": "Other",
+            "value": "Test comment"
+        },
+        "STIX": "    <incident:HistoryItemType>\n        <incident:Journal_Entry time_precision=\"second\">Attribute (Other - comment): Test comment</incident:Journal_Entry>\n    </incident:HistoryItemType>"
+    },
     "domain": {
         "MISP": {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -479,6 +488,15 @@
         },
         "STIX": "    <cybox:ObservableType id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Object id=\"MISP:Pipe-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Properties xsi:type=\"PipeObj:PipeObjectType\" named=\"true\">\n                <PipeObj:Name condition=\"Equals\">\\.\\pipe\testpipe</PipeObj:Name>\n            </cybox:Properties>\n        </cybox:Object>\n    </cybox:ObservableType>"
     },
+    "other": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "other",
+            "category": "Other",
+            "value": "Test undefined attribute"
+        },
+        "STIX": "    <incident:HistoryItemType>\n        <incident:Journal_Entry time_precision=\"second\">Attribute (Other - other): Test undefined attribute</incident:Journal_Entry>\n    </incident:HistoryItemType>"
+    },
     "pattern-in-file": {
         "MISP": {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -698,6 +716,15 @@
             "category": "Targeting data"
         },
         "STIX": "    <!--Embedded within the Incident's field named Victims-->\n    <incident:Victim id=\"MISP:Identity-90bd7dae-b78c-4025-9073-568950c780fb\" xsi:type=\"stix-ciqidentity:CIQIdentity3.0InstanceType\">\n        <stix-ciqidentity:CIQIdentity3.0InstanceType id=\"MISP:Identity-90bd7dae-b78c-4025-9073-568950c780fb\" xsi:type=\"stix-ciqidentity:CIQIdentity3.0InstanceType\">\n            <stixCommon:Name>Targeting data: iglocska (MISP Attribute)</stixCommon:Name>\n            <stix-ciqidentity:Specification xmlns:stix-ciqidentity=\"http://stix.mitre.org/extensions/Identity#CIQIdentity3.0-1\">\n          <xpil:PartyName xmlns:xpil=\"urn:oasis:names:tc:ciq:xpil:3\">\n            <xnl:PersonName xmlns:xnl=\"urn:oasis:names:tc:ciq:xnl:3\">\n              <xnl:NameElement>iglocska</xnl:NameElement>\n            </xnl:PersonName>\n          </xpil:PartyName>\n        </stix-ciqidentity:Specification>\n        </stix-ciqidentity:CIQIdentity3.0InstanceType>\n    </incident:Victim>"
+    },
+    "text": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "text",
+            "category": "Other",
+            "value": "Test text"
+        },
+        "STIX": "    <incident:HistoryItemType>\n        <incident:Journal_Entry time_precision=\"second\">Attribute (Other - text): Test text</incident:Journal_Entry>\n    </incident:HistoryItemType>"
     },
     "tlsh": {
         "MISP": {

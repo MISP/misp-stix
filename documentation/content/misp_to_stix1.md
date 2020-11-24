@@ -1,6 +1,6 @@
 ### MISP to STIX1
 
-#### Events mapping
+#### Events to STIX1 mapping
 
 ##### Summary
 
@@ -15,7 +15,7 @@
 
 The detailed mapping for events and its contained structures, with explanations and examples, is available [here](misp_events_to_stix1.md)
 
-#### Attributes mapping
+#### Attributes to STIX1 mapping
 
 ##### Summary
 
@@ -29,6 +29,7 @@ When they are exported neither as indicator nor as observable, the top level obj
 | attachment | **ArtifactObjectType** - Raw_Artifact |
 | authentihash | **FileObjectType** - Hashes -> Hash - Simple_Hash_Value |
 | cdhash | **FileObjectType** - Hashes -> Hash - Simple_Hash_Value |
+| comment | *incident: History* -> HistoryItem - Journal_Entry |
 | domain | **DomainNameObjectType** - Value |
 | domain \| ip | ObservableComposition -> **DomainNameObjectType** - Value \| **AddressObjectType** - Address_Value |
 | email-attachment | **EmailMessageObjectType** - Attachments *referencing* **FileObjectType** - File_Name |
@@ -66,6 +67,7 @@ When they are exported neither as indicator nor as observable, the top level obj
 | md5 | **FileObjectType** - Hashes -> Hash - Simple_Hash_Value |
 | mutex | **MutexObjectType** - Name |
 | named pipe | **PipeObjectType** - Name |
+| other | *incident: History* -> HistoryItem - Journal_Entry |
 | pattern-in-file | **FileObjectType** - Byte_Runs -> Byte_Run - Byte_Run_Data |
 | pehash | **FileObjectType** - Hashes -> Hash - Simple_Hash_Value |
 | port | **PortObjectType** - Port_Value |
@@ -86,6 +88,7 @@ When they are exported neither as indicator nor as observable, the top level obj
 | target-machine | *incident: Affected_Assets* -> Affected_Asset - Description |
 | target-org | *incident: Victim* -> **CIQIdentity3.0InstanceType** - PartyName -> OrganisationName - NameElement |
 | target-user | *incident: Victim* -> **CIQIdentity3.0InstanceType** - PartyName -> PersonName - NameElement |
+| text | *incident: History* -> HistoryItem - Journal_Entry |
 | tlsh | **FileObjectType** - Hashes -> Hash - Simple_Hash_Value |
 | url | **URIObjectType** - Value |
 | user-agent | **HTTPSessionObjectType** - HTTP_Request_Response -> HTTP_Client_Request -> HTTP_Request_Header -> Parsed_Header - User_Agent |
@@ -102,7 +105,7 @@ When they are exported neither as indicator nor as observable, the top level obj
 
 The detailed mapping for attributes, with explanations and examples, is available [here](misp_attributes_to_stix1.md)
 
-#### Objects mapping
+#### Objects to STIX1 mapping
 
 ##### Summary
 
@@ -114,7 +117,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 
 The detailed mapping for objects, with explanations and examples, is available [here](misp_objects_to_stix1.md)
 
-#### Galaxies mapping
+#### Galaxies to STIX1 mapping
 
 ##### Summary
 
