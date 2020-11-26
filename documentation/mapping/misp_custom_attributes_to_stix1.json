@@ -1,0 +1,46 @@
+{
+    "btc": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "btc",
+            "category": "Financial fraud",
+            "value": " 1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE ",
+            "timestamp": "1603642920",
+            "comment": "Btc test attribute",
+            "to_ids": true
+        },
+        "STIX": "    <stixCommon:Indicator id=\"MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2020-10-25T16:22:00+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>Financial fraud:  1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE  (MISP Attribute)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malware Artifacts</indicator:Type>\n        <indicator:Description>Btc test attribute</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Object id=\"MISP:Custom-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                <cybox:Properties xsi:type=\"CustomObj:CustomObjectType\">\n                    <cyboxCommon:Custom_Properties>\n                        <cyboxCommon:Property name=\"btc\"> 1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE </cyboxCommon:Property>\n                    </cyboxCommon:Custom_Properties>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2020-10-25T16:22:00+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </stixCommon:Indicator>"
+    },
+    "iban": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "iban",
+            "category": "Financial fraud",
+            "value": "LU1234567890ABCDEF1234567890",
+            "timestamp": "1603642920",
+            "comment": "IBAN test attribute",
+            "to_ids": true
+        },
+        "STIX": "    <stixCommon:Indicator id=\"MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2020-10-25T16:22:00+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>Financial fraud: LU1234567890ABCDEF1234567890 (MISP Attribute)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malware Artifacts</indicator:Type>\n        <indicator:Description>IBAN test attribute</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Object id=\"MISP:Custom-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                <cybox:Properties xsi:type=\"CustomObj:CustomObjectType\">\n                    <cyboxCommon:Custom_Properties>\n                        <cyboxCommon:Property name=\"iban\">LU1234567890ABCDEF1234567890</cyboxCommon:Property>\n                    </cyboxCommon:Custom_Properties>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2020-10-25T16:22:00+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </stixCommon:Indicator>"
+    },
+    "phone-number": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "phone-number",
+            "category": "Person",
+            "value": "0123456789",
+            "to_ids": false
+        },
+        "STIX": "    <cybox:ObservableType id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Object id=\"MISP:Custom-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Properties xsi:type=\"CustomObj:CustomObjectType\">\n                <cyboxCommon:Custom_Properties>\n                    <cyboxCommon:Property name=\"phone-number\">0123456789</cyboxCommon:Property>\n                </cyboxCommon:Custom_Properties>\n            </cybox:Properties>\n        </cybox:Object>\n    </cybox:ObservableType>"
+    },
+    "weakness": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "weakness",
+            "category": "External analysis",
+            "value": "CWE-20",
+            "to_ids": false
+        },
+        "STIX": "    <cybox:ObservableType id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Object id=\"MISP:Custom-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Properties xsi:type=\"CustomObj:CustomObjectType\">\n                <cyboxCommon:Custom_Properties>\n                    <cyboxCommon:Property name=\"weakness\">CWE-20</cyboxCommon:Property>\n                </cyboxCommon:Custom_Properties>\n            </cybox:Properties>\n        </cybox:Object>\n    </cybox:ObservableType>"
+    }
+}

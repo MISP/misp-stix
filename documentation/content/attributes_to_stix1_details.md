@@ -10,7 +10,15 @@ So fot he rest of this documentation, in order to keep the content clear enough 
 - Switching the `to_ids` flag value would simply change the result from Indicator to Observable or from Observable to indicator
 - More details given about the `to_ids` flag if necessary, case by case
 
+### Current mapping
+
 {_attributes_to_stix1_mapping_}
+
+### Unmapped attribute types
+
+You may have noticed we are very far from having all the attribute types supported. This is due to the various use cases that MISP can be used for.  
+Nonetheless, every attribute whose type is not in the list, is exported as `Custom` object. Let us see some examples of custom objects exported from attributes:
+{_custom_attributes_to_stix1_mapping_}
 
 ## The other detailed mappings
 

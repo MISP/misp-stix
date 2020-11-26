@@ -10,6 +10,8 @@ So fot he rest of this documentation, in order to keep the content clear enough 
 - Switching the `to_ids` flag value would simply change the result from Indicator to Observable or from Observable to indicator
 - More details given about the `to_ids` flag if necessary, case by case
 
+### Current mapping
+
 - AS
   - MISP
     ```json
@@ -2858,6 +2860,141 @@ So fot he rest of this documentation, in order to keep the content clear enough 
             </stixCommon:Identity>
         </indicator:Producer>
     </indicator:Indicator>
+    ```
+
+
+### Unmapped attribute types
+
+You may have noticed we are very far from having all the attribute types supported. This is due to the various use cases that MISP can be used for.  
+Nonetheless, every attribute whose type is not in the list, is exported as `Custom` object. Let us see some examples of custom objects exported from attributes:
+- btc
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "btc",
+        "category": "Financial fraud",
+        "value": " 1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE ",
+        "timestamp": "1603642920",
+        "comment": "Btc test attribute",
+        "to_ids": true
+    }
+    ```
+  - STIX
+    ```xml
+    <stixCommon:Indicator id="MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" timestamp="2020-10-25T16:22:00+00:00" xsi:type='indicator:IndicatorType'>
+        <indicator:Title>Financial fraud:  1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE  (MISP Attribute)</indicator:Title>
+        <indicator:Type xsi:type="stixVocabs:IndicatorTypeVocab-1.1">Malware Artifacts</indicator:Type>
+        <indicator:Description>Btc test attribute</indicator:Description>
+        <indicator:Valid_Time_Position/>
+        <indicator:Observable id="MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+            <cybox:Object id="MISP:Custom-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+                <cybox:Properties xsi:type="CustomObj:CustomObjectType">
+                    <cyboxCommon:Custom_Properties>
+                        <cyboxCommon:Property name="btc"> 1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE </cyboxCommon:Property>
+                    </cyboxCommon:Custom_Properties>
+                </cybox:Properties>
+            </cybox:Object>
+        </indicator:Observable>
+        <indicator:Confidence timestamp="2020-10-25T16:22:00+00:00">
+            <stixCommon:Value>High</stixCommon:Value>
+            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>
+        </indicator:Confidence>
+        <indicator:Producer>
+            <stixCommon:Identity>
+                <stixCommon:Name>MISP</stixCommon:Name>
+            </stixCommon:Identity>
+        </indicator:Producer>
+    </stixCommon:Indicator>
+    ```
+
+- iban
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "iban",
+        "category": "Financial fraud",
+        "value": "LU1234567890ABCDEF1234567890",
+        "timestamp": "1603642920",
+        "comment": "IBAN test attribute",
+        "to_ids": true
+    }
+    ```
+  - STIX
+    ```xml
+    <stixCommon:Indicator id="MISP:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" timestamp="2020-10-25T16:22:00+00:00" xsi:type='indicator:IndicatorType'>
+        <indicator:Title>Financial fraud: LU1234567890ABCDEF1234567890 (MISP Attribute)</indicator:Title>
+        <indicator:Type xsi:type="stixVocabs:IndicatorTypeVocab-1.1">Malware Artifacts</indicator:Type>
+        <indicator:Description>IBAN test attribute</indicator:Description>
+        <indicator:Valid_Time_Position/>
+        <indicator:Observable id="MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+            <cybox:Object id="MISP:Custom-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+                <cybox:Properties xsi:type="CustomObj:CustomObjectType">
+                    <cyboxCommon:Custom_Properties>
+                        <cyboxCommon:Property name="iban">LU1234567890ABCDEF1234567890</cyboxCommon:Property>
+                    </cyboxCommon:Custom_Properties>
+                </cybox:Properties>
+            </cybox:Object>
+        </indicator:Observable>
+        <indicator:Confidence timestamp="2020-10-25T16:22:00+00:00">
+            <stixCommon:Value>High</stixCommon:Value>
+            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>
+        </indicator:Confidence>
+        <indicator:Producer>
+            <stixCommon:Identity>
+                <stixCommon:Name>MISP</stixCommon:Name>
+            </stixCommon:Identity>
+        </indicator:Producer>
+    </stixCommon:Indicator>
+    ```
+
+- phone-number
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "phone-number",
+        "category": "Person",
+        "value": "0123456789",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+        <cybox:Object id="MISP:Custom-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+            <cybox:Properties xsi:type="CustomObj:CustomObjectType">
+                <cyboxCommon:Custom_Properties>
+                    <cyboxCommon:Property name="phone-number">0123456789</cyboxCommon:Property>
+                </cyboxCommon:Custom_Properties>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
+    ```
+
+- weakness
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "weakness",
+        "category": "External analysis",
+        "value": "CWE-20",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+        <cybox:Object id="MISP:Custom-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+            <cybox:Properties xsi:type="CustomObj:CustomObjectType">
+                <cyboxCommon:Custom_Properties>
+                    <cyboxCommon:Property name="weakness">CWE-20</cyboxCommon:Property>
+                </cyboxCommon:Custom_Properties>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
     ```
 
 
