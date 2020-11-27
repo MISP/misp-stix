@@ -39,7 +39,7 @@ from cybox.objects.x509_certificate_object import X509Certificate, X509Certifica
 from cybox.utils import Namespace
 from datetime import datetime
 from mixbox import idgen
-from pymisp import MISPAttribute, MISPEvent
+from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix.coa import CourseOfAction
 from stix.common import InformationSource, Identity, ToolInformation
 from stix.common.confidence import Confidence
@@ -557,6 +557,24 @@ class MISPtoSTIX1Parser():
             self._parse_test_mechanism(attribute, test_mechanism)
         else:
             self._parse_custom_attribute(self, attribute)
+
+    ################################################################################
+    #                        MISP OBJECTS PARSING FUNCTIONS                        #
+    ################################################################################
+
+    @staticmethod
+    def _fetch_ids_flags(attributes):
+        for attribute in attributes:
+            if attribute.to_ids:
+                return True
+        return False
+
+    def _parse_asn_object(self, misp_object: MISPObject):
+        to_ids, attributes = self._create_attributes_dict(misp_object.attributes)
+        as_object = self._create_autonomous_system_object(attributes['asn'])
+        if 'description' in attributes:
+            as_object.name = attributes['description']
+        observable = self._create_observable(as_object, misp_object.uuid, 'AS')
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
