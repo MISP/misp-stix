@@ -530,7 +530,9 @@ class MISPtoSTIX1Parser():
             exploit_target.title = f"Vulnerability {attribute.value}"
         exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
-        self._append_ttp(ttp, attribute.type, attribute.uuid)
+        related_ttp = self._create_related_ttp(ttp.id_, attribute.type)
+        self._handle_related_ttps({attribute.uuid: related_ttp})
+        self.ttps[attribute.uuid] = ttp
 
     def _parse_windows_service_attribute(self, attribute: MISPAttribute):
         windows_service = WinService()
@@ -583,38 +585,48 @@ class MISPtoSTIX1Parser():
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
 
-    def _handle_related_ttps(self, related_ttps):
+    def _get_related_ttps(self, galaxy: dict, feature: str) -> dict:
+        related_ttps = {}
+        for cluster in galaxy['GalaxyCluster']:
+            cluster_uuid = cluster['uuid']
+            if cluster_uuid in self.ttps:
+                related_ttps[cluster_uuid] = self._create_related_ttp(
+                    self.ttps[cluster_uuid].id_,
+                    galaxy['name']
+                )
+                continue
+            ttp = self._create_ttp_from_galaxy(galaxy['name'], cluster_uuid)
+            getattr(self, f'_parse_{feature}_galaxy')(cluster, ttp)
+            related_ttps[cluster_uuid] = self._create_related_ttp(ttp.id_, galaxy['name'])
+            self.ttps[cluster_uuid] = ttp
+        return related_ttps
+
+    def _handle_related_ttps(self, related_ttps: dict):
         for uuid, related_ttp in related_ttps.items():
             if uuid not in self.contextualised_data['ttp']:
                 self.contextualised_data['ttp'][uuid] = related_ttp
 
     def _parse_attack_pattern_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        related_ttps = self._parse_attack_pattern_galaxy(galaxy)
+        related_ttps = self._get_related_ttps(galaxy, 'attack_pattern')
         for related_ttp in related_ttps.values():
             indicator.add_indicated_ttp(related_ttp)
 
     def _parse_attack_pattern_event_galaxy(self, galaxy:dict):
-        related_ttps = self._parse_attack_pattern_galaxy(galaxy)
+        related_ttps = self._get_related_ttps(galaxy, 'attack_pattern')
         self._handle_related_ttps(related_ttps)
 
-    def _parse_attack_pattern_galaxy(self, galaxy: dict) -> dict:
-        related_ttps = {}
-        for cluster in galaxy['GalaxyCluster']:
-            cluster_uuid = cluster['uuid']
-            ttp = self._create_ttp_from_galaxy(galaxy['name'], cluster_uuid)
-            behavior = Behavior()
-            attack_pattern = AttackPattern()
-            attack_pattern.id_ = f"{self.namespace}:AttackPattern-{cluster_uuid}"
-            attack_pattern.title = cluster['value']
-            attack_pattern.description = cluster['description']
-            if cluster['meta'].get('external_id'):
-                external_id = cluster['meta']['external_id'][0]
-                if external_id.startswith('CAPEC'):
-                    attack_pattern.capec_id = external_id
-            behavior.add_attack_pattern(attack_pattern)
-            ttp.behavior = behavior
-            related_ttps[cluster_uuid] = self._append_ttp(ttp, galaxy['name'], cluster_uuid)
-        return related_ttps
+    def _parse_attack_pattern_galaxy(self, cluster: dict, ttp: TTP):
+        behavior = Behavior()
+        attack_pattern = AttackPattern()
+        attack_pattern.id_ = f"{self.namespace}:AttackPattern-{cluster['uuid']}"
+        attack_pattern.title = cluster['value']
+        attack_pattern.description = cluster['description']
+        if cluster['meta'].get('external_id'):
+            external_id = cluster['meta']['external_id'][0]
+            if external_id.startswith('CAPEC'):
+                attack_pattern.capec_id = external_id
+        behavior.add_attack_pattern(attack_pattern)
+        ttp.behavior = behavior
 
     def _parse_course_of_action_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         for cluster in galaxy['GalaxyCluster']:
@@ -648,32 +660,26 @@ class MISPtoSTIX1Parser():
     #     return coa_taken
 
     def _parse_malware_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        related_ttps = self._parse_malware_galaxy(galaxy)
+        related_ttps = self._get_related_ttps(galaxy, 'malware')
         for related_ttp in related_ttps.values():
             indicator.add_indicated_ttp(related_ttp)
 
     def _parse_malware_event_galaxy(self, galaxy: dict):
-        related_ttps = self._parse_malware_galaxy(galaxy)
+        related_ttps = self._get_related_ttps(galaxy, 'malware')
         self._handle_related_ttps(related_ttps)
 
-    def _parse_malware_galaxy(self, galaxy: dict) -> dict:
-        related_ttps = {}
-        for cluster in galaxy['GalaxyCluster']:
-            cluster_uuid = cluster['uuid']
-            ttp = self._create_ttp_from_galaxy(galaxy['name'], cluster_uuid)
-            behavior = Behavior()
-            malware = MalwareInstance()
-            malware.id_ = f"{self.namespace}:MalwareInstance-{cluster_uuid}"
-            malware.title = cluster['value']
-            if cluster.get('description'):
-                malware.description = cluster['description']
-            if cluster['meta'].get('synonyms'):
-                for synonym in cluster['meta']['synonyms']:
-                    malware.add_name(synonym)
-            behavior.add_malware_instance(malware)
-            ttp.behavior = behavior
-            related_ttps[cluster_uuid] = self._append_ttp(ttp, galaxy['name'], cluster_uuid)
-        return related_ttps
+    def _parse_malware_galaxy(self, cluster: dict, ttp: TTP):
+        behavior = Behavior()
+        malware = MalwareInstance()
+        malware.id_ = f"{self.namespace}:MalwareInstance-{cluster['uuid']}"
+        malware.title = cluster['value']
+        if cluster.get('description'):
+            malware.description = cluster['description']
+        if cluster['meta'].get('synonyms'):
+            for synonym in cluster['meta']['synonyms']:
+                malware.add_name(synonym)
+        behavior.add_malware_instance(malware)
+        ttp.behavior = behavior
 
     def _parse_threat_actor_galaxy(self, galaxy: dict):
         for cluster in galaxy['GalaxyCluster']:
@@ -695,61 +701,49 @@ class MISPtoSTIX1Parser():
                 self._append_threat_actor(threat_actor, galaxy['name'], cluster_uuid)
 
     def _parse_tool_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        related_ttps = self._parse_tool_galaxy(galaxy)
+        related_ttps = self._get_related_ttps(galaxy, 'tool')
         for related_ttp in related_ttps.values():
             indicator.add_indicated_ttp(related_ttp)
 
     def _parse_tool_event_galaxy(self, galaxy: dict):
-        related_ttps = self._parse_tool_galaxy(galaxy)
+        related_ttps = self._get_related_ttps(galaxy, 'tool')
         self._handle_related_ttps(related_ttps)
 
-    def _parse_tool_galaxy(self, galaxy: dict) -> dict:
-        related_ttps = {}
-        for cluster in galaxy['GalaxyCluster']:
-            cluster_uuid = cluster['uuid']
-            ttp = self._create_ttp_from_galaxy(galaxy['name'], cluster_uuid)
-            tools = Tools()
-            tool = ToolInformation()
-            tool.id_ = f"{self.namespace}:ToolInformation-{cluster_uuid}"
-            tool.name = cluster['value']
-            if cluster.get('description'):
-                tool.description = cluster['description']
-            tools.append(tool)
-            resource = Resource()
-            resource.tools = tools
-            ttp.resources = resource
-            related_ttps[cluster_uuid] = self._append_ttp(ttp, galaxy['name'], cluster_uuid)
-        return related_ttps
+    def _parse_tool_galaxy(self, cluster: dict, ttp: TTP):
+        tools = Tools()
+        tool = ToolInformation()
+        tool.id_ = f"{self.namespace}:ToolInformation-{cluster['uuid']}"
+        tool.name = cluster['value']
+        if cluster.get('description'):
+            tool.description = cluster['description']
+        tools.append(tool)
+        resource = Resource()
+        resource.tools = tools
+        ttp.resources = resource
 
     def _parse_vulnerability_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        related_ttps = self._parse_vulnerability_galaxy(galaxy)
+        related_ttps = self._get_related_ttps(galaxy, 'vulnerability')
         for related_ttp in related_ttps.values():
             indicator.add_indicated_ttp(related_ttp)
 
     def _parse_vulnerability_event_galaxy(self, galaxy: dict):
-        related_ttps = self._parse_vulnerability_galaxy(galaxy)
+        related_ttps = self._get_related_ttps(galaxy, 'vulnerability')
         self._handle_related_ttps(related_ttps)
 
-    def _parse_vulnerability_galaxy(self, galaxy: dict) -> dict:
-        related_ttps = {}
-        for cluster in galaxy['GalaxyCluster']:
-            cluster_uuid = cluster['uuid']
-            ttp = self._create_ttp_from_galaxy(galaxy['name'], cluster_uuid)
-            exploit_target = ExploitTarget()
-            exploit_target.id_ = f"{self.namespace}:ExploitTarget-{cluster_uuid}"
-            vulnerability = Vulnerability()
-            vulnerability.id_ = f"{self.namespace}:Vulnerability-{cluster_uuid}"
-            vulnerability.title = cluster['value']
-            vulnerability.description = cluster['description']
-            if cluster['meta'].get('aliases'):
-                vulnerability.cve_id = cluster['meta']['aliases'][0]
-            if cluster['meta'].get('refs'):
-                for reference in cluster['meta']['refs']:
-                    vulnerability.add_reference(reference)
-            exploit_target.add_vulnerability(vulnerability)
-            ttp.add_exploit_target(exploit_target)
-            related_ttps[cluster_uuid] = self._append_ttp(ttp, galaxy['name'], cluster_uuid)
-        return related_ttps
+    def _parse_vulnerability_galaxy(self, cluster: dict, ttp: TTP):
+        exploit_target = ExploitTarget()
+        exploit_target.id_ = f"{self.namespace}:ExploitTarget-{cluster['uuid']}"
+        vulnerability = Vulnerability()
+        vulnerability.id_ = f"{self.namespace}:Vulnerability-{cluster['uuid']}"
+        vulnerability.title = cluster['value']
+        vulnerability.description = cluster['description']
+        if cluster['meta'].get('aliases'):
+            vulnerability.cve_id = cluster['meta']['aliases'][0]
+        if cluster['meta'].get('refs'):
+            for reference in cluster['meta']['refs']:
+                vulnerability.add_reference(reference)
+        exploit_target.add_vulnerability(vulnerability)
+        ttp.add_exploit_target(exploit_target)
 
     ################################################################################
     #                      OBJECTS CREATION HELPER FUNCTIONS.                      #
@@ -783,15 +777,6 @@ class MISPtoSTIX1Parser():
         if uuid not in self.threat_actors:
             self.threat_actors[uuid] = threat_actor
         return related_ta
-
-    def _append_ttp(self, ttp: TTP, category: str, uuid: str, timestamp: Optional[datetime] = None) -> RelatedTTP:
-        rttp = TTP(idref=ttp.id_)
-        if timestamp is not None:
-            rttp.timestamp = timestamp
-        related_ttp = RelatedTTP(rttp, relationship=category)
-        if uuid not in self.ttps:
-            self.ttps[uuid] = ttp
-        return related_ttp
 
     @staticmethod
     def _create_address_object(attribute_type: str, attribute_value: str) -> Address:
@@ -904,6 +889,13 @@ class MISPtoSTIX1Parser():
         registry_key.key = regkey.strip()
         registry_key.key.condition = "Equals"
         return registry_key
+
+    def _create_related_ttp(self, ttp_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedTTP:
+        rttp = TTP(idref=ttp_id)
+        if timestamp is not None:
+            rttp.timestamp = timestamp
+        related_ttp = RelatedTTP(rttp, relationship=category)
+        return related_ttp
 
     def _create_socket_address_object(self, attribute: MISPAttribute) -> list([str, SocketAddress]):
         value, port = attribute.value.split('|')
