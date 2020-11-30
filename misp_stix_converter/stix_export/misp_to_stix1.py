@@ -242,7 +242,7 @@ class MISPtoSTIX1Parser():
 
     def _parse_autonomous_system_attribute(self, attribute: MISPAttribute):
         autonomous_system = self._create_autonomous_system_object(attribute.value)
-        observable = self._create_observable(autonomous_system, attribute.uuid, 'AutonomousSystem')
+        observable = self._create_observable(autonomous_system, attribute.uuid, 'AS')
         self._handle_attribute(attribute, observable)
 
     def _parse_custom_attribute(self, attribute: MISPAttribute):

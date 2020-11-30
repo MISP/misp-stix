@@ -141,7 +141,7 @@ class TestStix1Export(unittest.TestCase):
         properties = self._check_observable_features(
             observable.item,
             attribute,
-            'AutonomousSystem',
+            'AS',
             object_type='AS'
         )
         self.assertEqual(properties.handle.value, attribute['value'])
