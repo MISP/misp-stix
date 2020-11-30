@@ -108,7 +108,6 @@ SCHEMALOC_DICT = {
 status_mapping = {0: 'New', 1: 'Open', 2: 'Closed'}
 threat_level_mapping = {1: 'High', 2: 'Medium', 3: 'Low', 4: 'Undefined'}
 TLP_order = {'RED': 4, 'AMBER': 3, 'AMBER NATO ALLIANCE': 3, 'GREEN': 2, 'WHITE': 1}
-confidence_mapping = {False: 'None', True: 'High'}
 
 hash_type_attributes = {
     "single": (
@@ -535,3 +534,4 @@ x509_object_keys = (
 # Descriptions
 
 confidence_description = "Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none"
+confidence_value = "High"

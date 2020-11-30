@@ -864,7 +864,7 @@ class MISPtoSTIX1Parser():
         indicator.title = f"{attribute.category}: {attribute.value} (MISP Attribute)"
         indicator.description = attribute.comment if attribute.get('comment') else indicator.title
         indicator.confidence = Confidence(
-            value=stix1_mapping.confidence_mapping[attribute.to_ids],
+            value=stix1_mapping.confidence_value,
             description=stix1_mapping.confidence_description,
             timestamp=attribute.timestamp
         )
