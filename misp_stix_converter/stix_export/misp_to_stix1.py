@@ -70,15 +70,15 @@ _OBSERVABLE_OBJECT_TYPES = Union[
     Address, Artifact, AutonomousSystem, Custom, DomainName, EmailMessage,
     File, Hostname, HTTPSession, Mutex, Pipe, Port, SocketAddress, System,
     URI, WinRegistryKey, WinService, X509Certificate
-],
+]
 
 
 class MISPtoSTIX1Parser():
     def __init__(self, namespace: str, orgname: str):
         self.namespace = namespace
         self.orgname = orgname
-        self.errors = defaultdict(set)
-        self.warnings = defaultdict(set)
+        self.errors = []
+        self.warnings = set()
         self.header_comment = []
         self.misp_event = MISPEvent()
         self.objects_to_parse = defaultdict(dict)
@@ -164,7 +164,10 @@ class MISPtoSTIX1Parser():
         self.orgc_name = self._set_creator()
         self.incident.information_source = self._set_source()
         self.incident.reporter = self._set_reporter()
-        self._resolve_attributes()
+        if self.misp_event.get('Attribute'):
+            self._resolve_attributes()
+        if self.misp_event.get('Object'):
+            self._resolve_objects()
 
     def _handle_tags_and_galaxies(self):
         if self.misp_event.get('Galaxy'):
@@ -176,9 +179,13 @@ class MISPtoSTIX1Parser():
                     getattr(self, to_call.format('event'))(galaxy)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
-                    self.errors['galaxy'].add(f'Unknown galaxy type in event: {galaxy_type}')
+                    self.warnings.add(f'Unmapped galaxy type in event: {galaxy_type}')
             return tuple(tag.name for tag in self.misp_event.tags if tag.name not in tag_names)
         return tuple(tag.name for tag in self.misp_event.tags)
+
+    ################################################################################
+    #                         ATTRIBUTES PARSING FUNCTIONS                         #
+    ################################################################################
 
     def _resolve_attributes(self):
         for attribute in self.misp_event.attributes:
@@ -188,13 +195,9 @@ class MISPtoSTIX1Parser():
                     getattr(self, stix1_mapping.attribute_types_mapping[attribute_type])(attribute)
                 else:
                     self._parse_custom_attribute(attribute)
-                    self.warnings['attribute'].add(f'{attribute_type} - {attribute.value}')
+                    self.warnings.add(f'MISP Attribute type {attribute_type} not mapped.')
             except Exception:
-                self.errors['attribute'].add(f'{attribute_type} - {attribute.value}')
-
-    ################################################################################
-    #                         ATTRIBUTES PARSING FUNCTIONS                         #
-    ################################################################################
+                self.errors.append(f'Error with the {attribute_type} attribute: {attribute.value}.')
 
     def _handle_attribute(self, attribute: MISPAttribute, observable: Observable):
         if attribute.to_ids:
@@ -217,7 +220,7 @@ class MISPtoSTIX1Parser():
             )
             self.incident.related_observables.append(related_observable)
 
-    def _handle_attribute_tags_and_galaxies(self, attribute, indicator):
+    def _handle_attribute_tags_and_galaxies(self, attribute: MISPAttribute, indicator: Indicator) -> tuple:
         if attribute.get('Galaxy'):
             tag_names = []
             for galaxy in attribute['Galaxy']:
@@ -227,7 +230,7 @@ class MISPtoSTIX1Parser():
                     getattr(self, to_call.format('attribute'))(galaxy, indicator)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
-                    self.errors['galaxy'].add(f'Unknown galaxy type in attribute: {galaxy_type}')
+                    self.warnings.add(f'Unmapped galaxy type in {attribute.type} attribute: {galaxy_type}')
             return tuple(tag.name for tag in attribute.tags if tag.name not in tag_names)
         return tuple(tag.name for tag in attribute.tags)
 
