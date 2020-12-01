@@ -179,7 +179,7 @@ class MISPtoSTIX1Parser():
                     getattr(self, to_call.format('event'))(galaxy)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
-                    self.warnings.add(f'Unmapped galaxy type in event: {galaxy_type}')
+                    self.warnings.add(f'{galaxy_type} galaxy in event not mapped.')
             return tuple(tag.name for tag in self.misp_event.tags if tag.name not in tag_names)
         return tuple(tag.name for tag in self.misp_event.tags)
 
@@ -230,7 +230,7 @@ class MISPtoSTIX1Parser():
                     getattr(self, to_call.format('attribute'))(galaxy, indicator)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
-                    self.warnings.add(f'Unmapped galaxy type in {attribute.type} attribute: {galaxy_type}')
+                    self.warnings.add(f'{galaxy_type} galaxy in {attribute.type} attribute not mapped.')
             return tuple(tag.name for tag in attribute.tags if tag.name not in tag_names)
         return tuple(tag.name for tag in attribute.tags)
 
@@ -630,34 +630,30 @@ class MISPtoSTIX1Parser():
 
     def _parse_course_of_action_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         for cluster in galaxy['GalaxyCluster']:
+            cluster_uuid = cluster['uuid']
+            if cluster_uuid in self.courses_of_action:
+                related_coa = self._create_related_coa(
+                    self.courses_of_action[cluster_uuid].id_,
+                    galaxy['name']
+                )
+                indicator.suggested_coas.append(related_coa)
+                continue
             course_of_action = self._create_course_of_action_from_galaxy(cluster)
-            coa = CourseOfAction(idref=course_of_action.id_)
-            related_coa = RelatedCOA(coa)
+            related_coa = self._create_related_coa(course_of_action.id_, galaxy['name'])
             indicator.suggested_coas.append(related_coa)
-            if cluster_uuid not in self.courses_of_action:
-                self.courses_of_action[cluster_uuid] = course_of_action
+            self.courses_of_action[cluster_uuid] = course_of_action
 
     def _parse_course_of_action_event_galaxy(self, galaxy: dict):
         for cluster in galaxy['GalaxyCluster']:
             cluster_uuid = cluster['uuid']
-            if cluster_uuid not in self.contextualised_data['course_of_action']:
-                course_of_action = self._create_course_of_action_from_galaxy(cluster)
-                coa = CourseOfAction(idref=course_of_action.id_)
-                coa_taken = COATaken(coa)
+            if cluster_uuid in self.courses_of_action:
+                coa_taken = self._create_coa_taken(self.courses_of_action[cluster_uuid].id_)
                 self.contextualised_data['course_of_action'][cluster_uuid] = coa_taken
-                if cluster_uuid not in self.courses_of_action:
-                    self.courses_of_action[cluster_uuid] = course_of_action
-
-    # def _parse_course_of_action_galaxy(self, galaxy: dict) -> dict:
-    #     coa_taken = {}
-    #     for cluster in galaxy['GalaxyCluster']:
-    #         cluster_uuid = cluster['uuid']
-    #         course_of_action = CourseOfAction()
-    #         course_of_action.id_ = f"{self.namespace}:CourseOfAction-{cluster_uuid}"
-    #         course_of_action.title = cluster['value']
-    #         course_of_action.description = cluster['description']
-    #         coa_taken[cluster_uuid] = self._append_course_of_action(course_of_action, galaxy['name'], cluster_uuid)
-    #     return coa_taken
+                continue
+            course_of_action = self._create_course_of_action_from_galaxy(cluster)
+            coa_taken = self._create_coa_taken(course_of_action.id_)
+            self.contextualised_data['course_of_action'][cluster_uuid] = coa_taken
+            self.courses_of_action[cluster_uuid] = course_of_action
 
     def _parse_malware_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         related_ttps = self._get_related_ttps(galaxy, 'malware')
@@ -685,20 +681,20 @@ class MISPtoSTIX1Parser():
         for cluster in galaxy['GalaxyCluster']:
             cluster_uuid = cluster['uuid']
             if cluster_uuid not in self.contextualised_data['threat_actor']:
-                threat_actor = ThreatActor()
-                threat_actor.id_ = f"{self.namespace}:ThreatActor-{cluster_uuid}"
-                threat_actor.title = cluster['value']
-                if cluster.get('description'):
-                    threat_actor.description = cluster['description']
-                meta = cluster['meta']
-                if meta.get('cfr-type-of-incident'):
-                    intended_effect = meta['cfr-type-of-incident']
-                    if isinstance(intended_effect, list):
-                        for effect in intended_effect:
-                            threat_actor.add_intended_effect(effect)
-                    else:
-                        threat_actor.add_intended_effect(intended_effect)
-                self._append_threat_actor(threat_actor, galaxy['name'], cluster_uuid)
+                if cluster_uuid in self.threat_actors:
+                    related_threat_actor = self._create_related_threat_actor(
+                        self.threat_actors[cluster_uuid].id_,
+                        galaxy['name']
+                    )
+                    self.contextualised_data['threat_actor'][cluster_uuid] = related_threat_actor
+                    continue
+                threat_actor = self._create_threat_actor_from_galaxy(cluster)
+                related_threat_actor = self._create_related_threat_actor(
+                    threat_actor.id_,
+                    galaxy['name']
+                )
+                self.contextualised_data['threat_actor'][cluster_uuid] = related_threat_actor
+                self.threat_actors[cluster_uuid] = threat_actor
 
     def _parse_tool_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         related_ttps = self._get_related_ttps(galaxy, 'tool')
@@ -758,26 +754,6 @@ class MISPtoSTIX1Parser():
             self.incident.history = History()
             self.incident.history.append(history_item)
 
-    # def _append_course_of_action(self, course_of_action: CourseOfAction, uuid: str, timestamp: Optional[datetime] = None) -> COATaken:
-    #     coa = CourseOfAction(idref=course_of_action.id_)
-    #     if timestamp is not None:
-    #         coa.timestamp = timestamp
-    #     coa_taken = COATaken(coa)
-    #     # self.incident.add_coa_taken(coa_taken)
-    #     if uuid not in self.courses_of_action:
-    #         self.courses_of_action[uuid] = course_of_action
-    #     return coa_taken
-
-    def _append_threat_actor(self, threat_actor: ThreatActor, category: str, uuid: str, timestamp: Optional[datetime] = None) -> RelatedThreatActor:
-        rta = ThreatActor(idref=threat_actor.id_)
-        if timestamp is not None:
-            rta.timestamp = timestamp
-        related_ta = RelatedThreatActor(rta, relationship=category)
-        self.contextualised_data['threat_actor'][uuid] = related_ta
-        if uuid not in self.threat_actors:
-            self.threat_actors[uuid] = threat_actor
-        return related_ta
-
     @staticmethod
     def _create_address_object(attribute_type: str, attribute_value: str) -> Address:
         address_object = Address()
@@ -816,6 +792,14 @@ class MISPtoSTIX1Parser():
         setattr(autonomous_system, feature, AS)
         setattr(getattr(autonomous_system, feature), 'condition', 'Equals')
         return autonomous_system
+
+    @staticmethod
+    def _create_coa_taken(coa_id: str, timestamp: Optional[datetime] = None) -> COATaken:
+        coa = CourseOfAction(idref=coa_id)
+        if timestamp is not None:
+            coa.timestamp = timestamp
+        coa_taken = COATaken(coa)
+        return coa_taken
 
     def _create_course_of_action_from_galaxy(self, cluster: dict) -> CourseOfAction:
         course_of_action = CourseOfAction()
@@ -890,7 +874,24 @@ class MISPtoSTIX1Parser():
         registry_key.key.condition = "Equals"
         return registry_key
 
-    def _create_related_ttp(self, ttp_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedTTP:
+    @staticmethod
+    def _create_related_coa(coa_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedCOA:
+        coa = CourseOfAction(idref=coa_id)
+        if timestamp is not None:
+            coa.timestamp = timestamp
+        related_coa = RelatedCOA(coa, relationship=category)
+        return related_coa
+
+    @staticmethod
+    def _create_related_threat_actor(ta_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedThreatActor:
+        rta = ThreatActor(idref=ta_id)
+        if timestamp is not None:
+            rta.timestamp = timestamp
+        related_ta = RelatedThreatActor(rta, relationship=category)
+        return related_ta
+
+    @staticmethod
+    def _create_related_ttp(ttp_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedTTP:
         rttp = TTP(idref=ttp_id)
         if timestamp is not None:
             rttp.timestamp = timestamp
@@ -902,6 +903,22 @@ class MISPtoSTIX1Parser():
         socket_address = SocketAddress()
         socket_address.port = self._create_port_object(port)
         return value, socket_address
+
+    def _create_threat_actor_from_galaxy(self, cluster: dict) -> ThreatActor:
+        threat_actor = ThreatActor()
+        threat_actor.id_ = f"{self.namespace}:ThreatActor-{cluster['uuid']}"
+        threat_actor.title = cluster['value']
+        if cluster.get('description'):
+            threat_actor.description = cluster['description']
+        meta = cluster['meta']
+        if meta.get('cfr-type-of-incident'):
+            intended_effect = meta['cfr-type-of-incident']
+            if isinstance(intended_effect, list):
+                for effect in intended_effect:
+                    threat_actor.add_intended_effect(effect)
+            else:
+                threat_actor.add_intended_effect(intended_effect)
+        return threat_actor
 
     def _create_ttp(self, attribute: MISPAttribute) -> TTP:
         ttp = TTP(timestamp=attribute.timestamp)
