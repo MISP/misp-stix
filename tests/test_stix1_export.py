@@ -19,6 +19,11 @@ class TestStix1Export(unittest.TestCase):
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
 
+    @staticmethod
+    def _add_ids_flag(event):
+        for misp_object in event['Event']['Object']:
+            misp_object['Attribute'][0]['to_ids'] = True
+
     def _check_destination_address(self, properties, category='ipv4-addr'):
         self.assertEqual(properties.category, category)
         self.assertFalse(properties.is_source)
@@ -33,13 +38,23 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(identity.id_, f"{_DEFAULT_NAMESPACE}:Identity-{attribute['uuid']}")
         self.assertEqual(identity.name, f"{attribute['category']}: {attribute['value']} (MISP Attribute)")
 
-    def _check_indicator_features(self, related_indicator, attribute, orgc):
+    def _check_indicator_attribute_features(self, related_indicator, attribute, orgc):
         self.assertEqual(related_indicator.relationship, attribute['category'])
         indicator = related_indicator.item
         self.assertEqual(indicator.id_, f"{_DEFAULT_NAMESPACE}:Indicator-{attribute['uuid']}")
         self.assertEqual(indicator.title, f"{attribute['category']}: {attribute['value']} (MISP Attribute)")
         self.assertEqual(indicator.description.value, attribute['comment'])
         self.assertEqual(int(indicator.timestamp.timestamp()), int(attribute['timestamp']))
+        self.assertEqual(indicator.producer.identity.name, orgc)
+        return indicator
+
+    def _check_indicator_object_features(self, related_indicator, misp_object, orgc):
+        self.assertEqual(related_indicator.relationship, misp_object['meta-category'])
+        indicator = related_indicator.item
+        self.assertEqual(indicator.id_, f"{_DEFAULT_NAMESPACE}:Indicator-{misp_object['uuid']}")
+        self.assertEqual(indicator.title, f"{misp_object['meta-category']}: {misp_object['name']} (MISP Object)")
+        self.assertEqual(indicator.description.value, misp_object['description'])
+        self.assertEqual(int(indicator.timestamp.timestamp()), int(misp_object['timestamp']))
         self.assertEqual(indicator.producer.identity.name, orgc)
         return indicator
 
@@ -82,6 +97,16 @@ class TestStix1Export(unittest.TestCase):
         if marking._XSI_TYPE == 'tlpMarking:TLPMarkingStructureType':
             return marking.color
         return marking.statement
+
+    @staticmethod
+    def _get_test_printing(stix_object):
+        return stix_object.to_xml(include_namespaces=False).decode().replace('"', '\"').encode()
+
+    @staticmethod
+    def _remove_ids_flags(event):
+        for misp_object in event['Event']['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = False
 
     ################################################################################
     #                              EVENT FIELDS TESTS                              #
@@ -136,11 +161,7 @@ class TestStix1Export(unittest.TestCase):
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, attribute['category'])
-        properties = self._check_observable_features(
-            observable.item,
-            attribute,
-            'AS'
-        )
+        properties = self._check_observable_features(observable.item, attribute, 'AS')
         self.assertEqual(properties.handle.value, attribute['value'])
 
     def test_event_with_attachment_attribute(self):
@@ -161,7 +182,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         properties = self._check_observable_features(indicator.observable, attribute, 'DomainName')
         self.assertEqual(properties.value.value, attribute['value'])
 
@@ -172,7 +193,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         observable = indicator.observable
         self.assertEqual(observable.id_, f"{_DEFAULT_NAMESPACE}:ObservableComposition-{attribute['uuid']}")
         domain_name, address = observable.observable_composition.observables
@@ -190,7 +211,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         properties = self._check_observable_features(indicator.observable, attribute, 'EmailMessage')
         referenced_uuid = f"{_DEFAULT_NAMESPACE}:File-{attribute['uuid']}"
         self.assertEqual(properties.attachments[0].object_reference, referenced_uuid)
@@ -206,7 +227,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         src_indicator, dst_indicator = incident.related_indicators.indicator
-        source_indicator = self._check_indicator_features(src_indicator, source, orgc)
+        source_indicator = self._check_indicator_attribute_features(src_indicator, source, orgc)
         source_properties = self._check_observable_features(
             source_indicator.observable,
             source,
@@ -214,7 +235,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self.assertEqual(source_properties.from_.address_value.value, source['value'])
         self.assertEqual(source_properties.from_.category, 'e-mail')
-        destination_indicator = self._check_indicator_features(dst_indicator, destination, orgc)
+        destination_indicator = self._check_indicator_attribute_features(dst_indicator, destination, orgc)
         destination_properties = self._check_observable_features(
             destination_indicator.observable,
             destination,
@@ -244,7 +265,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         properties = self._check_observable_features(indicator.observable, attribute, 'File')
         self.assertEqual(properties.file_name.value, attribute['value'])
 
@@ -255,11 +276,11 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         md5_r_indicator, tlsh_r_indicator = incident.related_indicators.indicator
-        md5_indicator = self._check_indicator_features(md5_r_indicator, md5, orgc)
+        md5_indicator = self._check_indicator_attribute_features(md5_r_indicator, md5, orgc)
         md5_properties = self._check_observable_features(md5_indicator.observable, md5, 'File')
         self.assertEqual(md5_properties.hashes[0].type_.value, 'MD5')
         self.assertEqual(md5_properties.hashes[0].simple_hash_value.value, md5['value'])
-        tlsh_indicator = self._check_indicator_features(tlsh_r_indicator, tlsh, orgc)
+        tlsh_indicator = self._check_indicator_attribute_features(tlsh_r_indicator, tlsh, orgc)
         tlsh_properties = self._check_observable_features(tlsh_indicator.observable, tlsh, 'File')
         self.assertEqual(tlsh_properties.hashes[0].type_.value, 'Other')
         self.assertEqual(tlsh_properties.hashes[0].simple_hash_value.value, tlsh['value'])
@@ -271,13 +292,13 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         md5_r_indicator, tlsh_r_indicator = incident.related_indicators.indicator
-        md5_indicator = self._check_indicator_features(md5_r_indicator, md5, orgc)
+        md5_indicator = self._check_indicator_attribute_features(md5_r_indicator, md5, orgc)
         md5_properties = self._check_observable_features(md5_indicator.observable, md5, 'File')
         filename, md5_value = md5['value'].split('|')
         self.assertEqual(md5_properties.file_name.value, filename)
         self.assertEqual(md5_properties.hashes[0].type_.value, 'MD5')
         self.assertEqual(md5_properties.hashes[0].simple_hash_value.value, md5_value)
-        tlsh_indicator = self._check_indicator_features(tlsh_r_indicator, tlsh, orgc)
+        tlsh_indicator = self._check_indicator_attribute_features(tlsh_r_indicator, tlsh, orgc)
         tlsh_properties = self._check_observable_features(tlsh_indicator.observable, tlsh, 'File')
         filename, tlsh_value = tlsh['value'].split('|')
         self.assertEqual(tlsh_properties.file_name.value, filename)
@@ -291,7 +312,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         properties = self._check_observable_features(indicator.observable, attribute, 'Hostname')
         self.assertEqual(properties.hostname_value.value, attribute['value'])
 
@@ -302,7 +323,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         properties = self._check_observable_features(indicator.observable, attribute, 'SocketAddress')
         hostname, port = attribute['value'].split('|')
         self.assertEqual(properties.hostname.hostname_value.value, hostname)
@@ -345,11 +366,11 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_src, related_dst = incident.related_indicators.indicator
-        src_indicator = self._check_indicator_features(related_src, ip_src, orgc)
+        src_indicator = self._check_indicator_attribute_features(related_src, ip_src, orgc)
         src_properties = self._check_observable_features(src_indicator.observable, ip_src, 'Address')
         self.assertEqual(src_properties.address_value.value, ip_src['value'])
         self._check_source_address(src_properties)
-        dst_indicator = self._check_indicator_features(related_dst, ip_dst, orgc)
+        dst_indicator = self._check_indicator_attribute_features(related_dst, ip_dst, orgc)
         dst_properties = self._check_observable_features(dst_indicator.observable, ip_dst, 'Address')
         self.assertEqual(dst_properties.address_value.value, ip_dst['value'])
         self._check_destination_address(dst_properties)
@@ -361,13 +382,13 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_src, related_dst = incident.related_indicators.indicator
-        src_indicator = self._check_indicator_features(related_src, ip_src, orgc)
+        src_indicator = self._check_indicator_attribute_features(related_src, ip_src, orgc)
         src_properties = self._check_observable_features(src_indicator.observable, ip_src, 'SocketAddress')
         ip, port = ip_src['value'].split('|')
         self.assertEqual(src_properties.port.port_value.value, int(port))
         self.assertEqual(src_properties.ip_address.address_value.value, ip)
         self._check_source_address(src_properties.ip_address)
-        dst_indicator = self._check_indicator_features(related_dst, ip_dst, orgc)
+        dst_indicator = self._check_indicator_attribute_features(related_dst, ip_dst, orgc)
         dst_properties = self._check_observable_features(dst_indicator.observable, ip_dst, 'SocketAddress')
         ip, port = ip_dst['value'].split('|')
         self.assertEqual(dst_properties.port.port_value.value, int(port))
@@ -392,7 +413,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         filename, md5 = attribute['value'].split('|')
         self.assertEqual(indicator.observable.title, filename)
         properties = self._check_observable_features(indicator.observable, attribute, 'Artifact')
@@ -407,7 +428,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         properties = self._check_observable_features(indicator.observable, attribute, 'Mutex')
         self.assertEqual(properties.name.value, attribute['value'])
 
@@ -430,7 +451,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         properties = self._check_observable_features(indicator.observable, attribute, 'File')
         self.assertEqual(properties.byte_runs[0].byte_run_data, attribute['value'])
 
@@ -452,7 +473,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         properties = self._check_observable_features(
             indicator.observable,
             attribute,
@@ -467,7 +488,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         properties = self._check_observable_features(
             indicator.observable,
             attribute,
@@ -520,11 +541,11 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         r_snort, r_yara = incident.related_indicators.indicator
-        snort_indicator = self._check_indicator_features(r_snort, snort, orgc)
+        snort_indicator = self._check_indicator_attribute_features(r_snort, snort, orgc)
         snort_tm = snort_indicator.test_mechanisms[0]
         self.assertEqual(snort_tm._XSI_TYPE, 'snortTM:SnortTestMechanismType')
         self.assertEqual(snort_tm.rules[0].value['value'], snort['value'])
-        yara_indicator = self._check_indicator_features(r_yara, yara, orgc)
+        yara_indicator = self._check_indicator_attribute_features(r_yara, yara, orgc)
         yara_tm = yara_indicator.test_mechanisms[0]
         self.assertEqual(yara_tm._XSI_TYPE, 'yaraTM:YaraTestMechanismType')
         self.assertEqual(yara_tm.rule.value['value'], yara['value'])
@@ -546,7 +567,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_features(related_indicator, attribute, orgc)
+        indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         properties = self._check_observable_features(indicator.observable, attribute, 'URI')
         self.assertEqual(properties.value.value, attribute['value'])
 
@@ -591,21 +612,58 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         r_x509_md5, r_x509_sha1, r_x509_sha256 = incident.related_indicators.indicator
-        x509_md5 = self._check_indicator_features(r_x509_md5, md5, orgc)
+        x509_md5 = self._check_indicator_attribute_features(r_x509_md5, md5, orgc)
         md5_properties = self._check_observable_features(x509_md5.observable, md5, 'X509Certificate')
         md5_signature = md5_properties.certificate_signature
         self.assertEqual(md5_signature.signature_algorithm.value, "MD5")
         self.assertEqual(md5_signature.signature.value, md5['value'])
-        x509_sha1 = self._check_indicator_features(r_x509_sha1, sha1, orgc)
+        x509_sha1 = self._check_indicator_attribute_features(r_x509_sha1, sha1, orgc)
         sha1_properties = self._check_observable_features(x509_sha1.observable, sha1, 'X509Certificate')
         sha1_signature = sha1_properties.certificate_signature
         self.assertEqual(sha1_signature.signature_algorithm.value, "SHA1")
         self.assertEqual(sha1_signature.signature.value, sha1['value'])
-        x509_sha256 = self._check_indicator_features(r_x509_sha256, sha256, orgc)
+        x509_sha256 = self._check_indicator_attribute_features(r_x509_sha256, sha256, orgc)
         sha256_properties = self._check_observable_features(x509_sha256.observable, sha256, 'X509Certificate')
         sha256_signature = sha256_properties.certificate_signature
         self.assertEqual(sha256_signature.signature_algorithm.value, "SHA256")
         self.assertEqual(sha256_signature.signature.value, sha256['value'])
+
+    ################################################################################
+    #                          MISP OBJECTS EXPORT TESTS.                          #
+    ################################################################################
+
+    def test_event_with_asn_object_indicator(self):
+        event = get_event_with_asn_object()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
+        properties = self._check_observable_features(indicator.observable, misp_object, 'AS')
+        self._check_asn_properties(properties, misp_object['Attribute'])
+
+    def test_event_with_asn_object_observable(self):
+        event = get_event_with_asn_object()
+        self._remove_ids_flags(event)
+        misp_object = event['Event']['Object'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, misp_object['meta-category'])
+        properties = self._check_observable_features(observable.item, misp_object, 'AS')
+        self._check_asn_properties(properties, misp_object['Attribute'])
+
+    def _check_asn_properties(self, properties, attributes):
+        asn, description, subnet1, subnet2 = attributes
+        self.assertEqual(properties.handle.value, asn['value'])
+        self.assertEqual(properties.name.value, description['value'])
+        custom_properties = properties.custom_properties
+        self.assertEqual(len(custom_properties), 2)
+        for attribute, custom in zip((subnet1, subnet2), custom_properties):
+            self.assertEqual(custom.name, attribute['object_relation'])
+            self.assertEqual(custom.value, attribute['value'])
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #

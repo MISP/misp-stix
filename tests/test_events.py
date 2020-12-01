@@ -4,6 +4,10 @@
 from copy import deepcopy
 from datetime import date, datetime
 
+################################################################################
+#                           DATA STRUCTURES EXAMPLES                           #
+################################################################################
+
 _BASE_EVENT = {
     "Event": {
         "uuid": "91b18402-618a-4818-8432-4ab41ec8b890",
@@ -125,9 +129,88 @@ _TEST_VULNERABILITY = {
             }
         }
     ]
-
 }
 
+
+_TEST_ASN = {
+    "name": "asn",
+    "meta-category": "network",
+    "description": "Autonomous system object describing an autonomous system",
+    "uuid": "5b23c82b-6508-4bdc-b580-045b0a00020f",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "AS",
+            "object_relation": "asn",
+            "value": "AS66642"
+        },
+        {
+            "type": "text",
+            "object_relation": "description",
+            "value": "AS name"
+        },
+        {
+            "type": "ip-src",
+            "object_relation": "subnet-announced",
+            "value": "1.2.3.4"
+        },
+        {
+            "type": "ip-src",
+            "object_relation": "subnet-announced",
+            "value": "8.8.8.8"
+        }
+    ]
+}
+
+_TEST_CREDENTIAL = {
+    "name": "credential",
+    "meta-category": "misc",
+    "description": "Credential describes one or more credential(s)",
+    "uuid": "5b1f9378-46d4-494b-a4c1-044e0a00020f",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "text",
+            "value": "MISP default credentials"
+        },
+        {
+            "type": "text",
+            "object_relation": "username",
+            "value": "misp"
+        },
+        {
+            "type": "text",
+            "object_relation": "password",
+            "value": "Password1234"
+        },
+        {
+            "type": "text",
+            "object_relation": "type",
+            "value": "password"
+        },
+        {
+            "type": "text",
+            "object_relation": "origin",
+            "value": "malware-analysis"
+        },
+        {
+            "type": "text",
+            "object_relation": "format",
+            "value": "clear-text"
+        },
+        {
+            "type": "text",
+            "object_relation": "notification",
+            "value": "victim-notified"
+        }
+    ]
+}
+
+
+################################################################################
+#                               BASE EVENT TESTS                               #
+################################################################################
 
 def get_base_event():
     return deepcopy(_BASE_EVENT)
@@ -153,6 +236,10 @@ def get_event_with_tags():
     ]
     return event
 
+
+################################################################################
+#                                GALAXIES TESTS                                #
+################################################################################
 
 def get_event_with_attack_pattern_galaxy():
     event = deepcopy(_BASE_EVENT)
@@ -201,6 +288,10 @@ def get_event_with_vulnerability_galaxy():
     ]
     return event
 
+
+################################################################################
+#                               ATTRIBUTES TESTS                               #
+################################################################################
 
 def get_event_with_as_attribute():
     event = deepcopy(_BASE_EVENT)
@@ -744,5 +835,24 @@ def get_event_with_x509_fingerprint_attributes():
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "X509 SHA256 fingerprint test attribute"
         }
+    ]
+    return event
+
+
+################################################################################
+#                              MISP OBJECTS TESTS                              #
+################################################################################
+
+def get_event_with_asn_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_ASN)
+    ]
+    return event
+
+def get_event_with_credential_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_CREDENTIAL)
     ]
     return event
