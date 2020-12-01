@@ -201,7 +201,7 @@ class MISPtoSTIX1Parser():
 
     def _handle_attribute(self, attribute: MISPAttribute, observable: Observable):
         if attribute.to_ids:
-            indicator = self._create_indicator(attribute)
+            indicator = self._create_indicator_from_attribute(attribute)
             indicator.add_indicator_type(self._set_indicator_type(attribute.type))
             indicator.add_valid_time_position(ValidTime())
             indicator.add_observable(observable)
@@ -487,7 +487,7 @@ class MISPtoSTIX1Parser():
         self._parse_target_attribute(attribute, identity_spec)
 
     def _parse_test_mechanism(self, attribute: MISPAttribute, test_mechanism: Union[SnortTestMechanism, YaraTestMechanism]):
-        indicator = self._create_indicator(attribute)
+        indicator = self._create_indicator_from_attribute(attribute)
         tags = self._handle_attribute_tags_and_galaxies(attribute, indicator)
         if tags:
             indicator.handling = self._set_handling(tags)
@@ -567,19 +567,124 @@ class MISPtoSTIX1Parser():
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
     ################################################################################
 
+    def _resolve_objects(self):
+        for misp_object in self.misp_event.objects:
+            object_name = misp_object.name
+            if object_name == 'original-imported-file':
+                continue
+            # try:
+            to_ids = self._fetch_ids_flags(misp_object.attributes)
+            to_call = self._fetch_objects_mapping_function(object_name)
+            observable = getattr(self, to_call)(misp_object)
+            if to_ids:
+                self._handle_misp_object_with_context(misp_object, observable)
+            else:
+                self._handle_misp_object(observable, misp_object.get('meta-category'))
+            # except Exception:
+            #     self.errors.append(f'Error with the {object_name} object: {misp_object.uuid}.')
+
     @staticmethod
-    def _fetch_ids_flags(attributes):
+    def _extract_multiple_object_attributes(attributes):
+        attributes_dict = defaultdict(list)
+        for attribute in attributes:
+            attributes_dict[attribute.object_relation].append(attribute.value)
+        return attributes_dict
+
+    @staticmethod
+    def _extract_object_attributes(attributes):
+        return {attribute.object_relation: attribute.value for attribute in attributes}
+
+    @staticmethod
+    def _fetch_ids_flags(attributes: list) -> bool:
         for attribute in attributes:
             if attribute.to_ids:
                 return True
         return False
 
-    def _parse_asn_object(self, misp_object: MISPObject):
-        to_ids, attributes = self._create_attributes_dict(misp_object.attributes)
-        as_object = self._create_autonomous_system_object(attributes['asn'])
+    @staticmethod
+    def _fetch_objects_mapping_function(object_name: str) -> str:
+        if object_name in stix1_mapping.objects_mapping:
+            return stix1_mapping.objects_mapping[object_name]
+        return '_parse_custom_object'
+
+    def _handle_misp_object(self, observable: Observable, category: str):
+        related_observable = RelatedObservable(
+            observable,
+            relationship=category
+        )
+        self.incident.related_observables.append(related_observable)
+
+    def _handle_misp_object_with_context(self, misp_object: MISPObject, observable: Observable):
+        indicator = self._create_indicator_from_object(misp_object)
+        indicator.add_indicator_type(self._set_indicator_type(misp_object.name))
+        indicator.add_valid_time_position(ValidTime())
+        indicator.add_observable(observable)
+        tags = self._handle_object_tags_and_galaxies(misp_object, indicator)
+        if tags:
+            indicator.handling = self._set_handling(tags)
+        related_indicator = RelatedIndicator(
+            indicator,
+            relationship=misp_object.get('meta-category')
+        )
+        self.incident.related_indicators.append(related_indicator)
+
+    def _handle_object_tags_and_galaxies(self, misp_object: MISPObject, indicator: Indicator) -> tuple:
+        tags = defaultdict(set)
+        galaxies = defaultdict(list)
+        for attribute in misp_object.attributes:
+            if attribute.get('Galaxy'):
+                galaxy_type = galaxy['type']
+                if galaxy_type in stix1_mapping.galaxy_types_mapping:
+                    galaxies[galaxy_type].append(galaxy)
+            if attribute.tags:
+                tags['tags'].update(tag.name for tag in attribute.tags)
+        if galaxies:
+            for galaxy_type, galaxy in galaxies.items():
+                if galaxy_type in stix1_mapping.galaxy_types_mapping:
+                    to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
+                    getattr(self, to_call.format('attribute'))(galaxy, indicator)
+                    tags['tag_names'].update(self._quick_fetch_tag_names(galaxy))
+                else:
+                    self.warnings.add(f'{galaxy_type} galaxy in {misp_object.name} object not mapped.')
+            return tuple(tag for tag in tags['tags'] if tag not in tags['tag_names'])
+        return tuple(tag for tag in tags['tags'])
+
+    def _parse_asn_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_multiple_object_attributes(misp_object.attributes)
+        as_object = self._create_autonomous_system_object(attributes.pop('asn')[0])
         if 'description' in attributes:
-            as_object.name = attributes['description']
+            as_object.name = attributes.pop('description')[0]
+        if attributes:
+            as_object.custom_properties = CustomProperties()
+            for object_relation, values in attributes.items():
+                for value in values:
+                    prop = Property()
+                    prop.name = object_relation
+                    prop.value = value
+                    as_object.custom_properties.append(prop)
         observable = self._create_observable(as_object, misp_object.uuid, 'AS')
+        return observable
+
+    def _parse_credential_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_multiple_object_attributes(misp_object.attributes)
+        account_object = self._create_account_object()
+        if 'username' in attributes:
+            account_object.username = attributes.pop('username')
+
+    def _parse_custom_object(self, misp_object: MISPObject) -> Observable:
+        custom_object = Custom()
+        custom_object.custom_name = misp_object.name
+        if misp_object.get('description'):
+            custom_object.description = misp_object.description
+        custom_object.custom_properties = CustomProperties()
+        for attribute in misp_object.attributes:
+            prop = Property()
+            prop.name = attribute.object_relation
+            prop.value = attribute.value
+            custom_object.custom_properties.append(prop)
+        observable = self._create_observable(custom_object, misp_object.uuid, 'Custom')
+        self.warnings.add(f'MISP Object name {misp_object.name} not mapped.')
+        return observable
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
@@ -829,7 +934,7 @@ class MISPtoSTIX1Parser():
         hostname_object.hostname_value.condition = "Equals"
         return hostname_object
 
-    def _create_indicator(self, attribute: MISPAttribute) -> Indicator:
+    def _create_indicator_from_attribute(self, attribute: MISPAttribute) -> Indicator:
         indicator = Indicator(timestamp=attribute.timestamp)
         indicator.id_ = f"{self.namespace}:Indicator-{attribute.uuid}"
         indicator.producer = self._set_producer()
@@ -839,6 +944,19 @@ class MISPtoSTIX1Parser():
             value=stix1_mapping.confidence_value,
             description=stix1_mapping.confidence_description,
             timestamp=attribute.timestamp
+        )
+        return indicator
+
+    def _create_indicator_from_object(self, misp_object: MISPObject) -> Indicator:
+        indicator = Indicator(timestamp=misp_object.timestamp)
+        indicator.id_ = f"{self.namespace}:Indicator-{misp_object.uuid}"
+        indicator.producer = self._set_producer()
+        indicator.title = f"{misp_object.get('meta-category')}: {misp_object.name} (MISP Object)"
+        indicator.description = misp_object.comment if misp_object.get('comment') else misp_object.description
+        indicator.confidence = Confidence(
+            value=stix1_mapping.confidence_value,
+            description=stix1_mapping.confidence_description,
+            timestamp=misp_object.timestamp
         )
         return indicator
 
