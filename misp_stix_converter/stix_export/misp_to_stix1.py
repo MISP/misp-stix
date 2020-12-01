@@ -420,7 +420,7 @@ class MISPtoSTIX1Parser():
 
     def _parse_regkey_attribute(self, attribute: MISPAttribute):
         registry_key = self._create_registry_key_object(attribute.value)
-        observable = self._create_observable(registry_key, attribute.uuid, 'WinRegistryKey')
+        observable = self._create_observable(registry_key, attribute.uuid, 'WindowsRegistryKey')
         self._handle_attribute(attribute, observable)
 
     def _parse_regkey_value_attribute(self, attribute: MISPAttribute):
@@ -430,7 +430,7 @@ class MISPtoSTIX1Parser():
         registry_value.data = value.strip()
         registry_value.data.condition = "Equals"
         registry_key.values = RegistryValues(registry_value)
-        observable = self._create_observable(registry_key, attribute.uuid, 'WinRegistryKey')
+        observable = self._create_observable(registry_key, attribute.uuid, 'WindowsRegistryKey')
         self._handle_attribute(attribute, observable)
 
     def _parse_snort_attribute(self, attribute: MISPAttribute):
@@ -538,7 +538,7 @@ class MISPtoSTIX1Parser():
         windows_service = WinService()
         feature = 'service_name' if attribute.type == 'windows-service-name' else 'display_name'
         setattr(windows_service, feature, attribute.value)
-        observable = self._create_observable(windows_service, attribute.uuid, 'WinService')
+        observable = self._create_observable(windows_service, attribute.uuid, 'WindowsService')
         self._handle_attribute(attribute, observable)
 
     def _parse_x509_fingerprint_attribute(self, attribute: MISPAttribute):

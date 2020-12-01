@@ -43,14 +43,12 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(indicator.producer.identity.name, orgc)
         return indicator
 
-    def _check_observable_features(self, observable, attribute, name, object_type=None):
-        if not object_type:
-            object_type = name
+    def _check_observable_features(self, observable, attribute, name):
         self.assertEqual(observable.id_, f"{_DEFAULT_NAMESPACE}:Observable-{attribute['uuid']}")
         observable_object = observable.object_
         self.assertEqual(observable_object.id_, f"{_DEFAULT_NAMESPACE}:{name}-{attribute['uuid']}")
         properties = observable_object.properties
-        self.assertEqual(properties._XSI_TYPE, f'{object_type}ObjectType')
+        self.assertEqual(properties._XSI_TYPE, f'{name}ObjectType')
         return properties
 
     def _check_related_ttp(self, stix_package, galaxy_name, cluster_uuid):
@@ -141,8 +139,7 @@ class TestStix1Export(unittest.TestCase):
         properties = self._check_observable_features(
             observable.item,
             attribute,
-            'AS',
-            object_type='AS'
+            'AS'
         )
         self.assertEqual(properties.handle.value, attribute['value'])
 
@@ -459,8 +456,7 @@ class TestStix1Export(unittest.TestCase):
         properties = self._check_observable_features(
             indicator.observable,
             attribute,
-            'WinRegistryKey',
-            object_type='WindowsRegistryKey'
+            'WindowsRegistryKey'
         )
         self.assertEqual(properties.key.value, attribute['value'])
 
@@ -475,8 +471,7 @@ class TestStix1Export(unittest.TestCase):
         properties = self._check_observable_features(
             indicator.observable,
             attribute,
-            'WinRegistryKey',
-            object_type='WindowsRegistryKey'
+            'WindowsRegistryKey'
         )
         regkey, value = attribute['value'].split('|')
         self.assertEqual(properties.key.value, regkey)
@@ -578,16 +573,14 @@ class TestStix1Export(unittest.TestCase):
         displayname_properties = self._check_observable_features(
             r_displayname.item,
             displayname,
-            'WinService',
-            object_type='WindowsService'
+            'WindowsService'
         )
         self.assertEqual(displayname_properties.display_name, displayname['value'])
         self.assertEqual(r_name.relationship, name['category'])
         name_properties = self._check_observable_features(
             r_name.item,
             name,
-            'WinService',
-            object_type='WindowsService'
+            'WindowsService'
         )
         self.assertEqual(name_properties.service_name, name['value'])
 
