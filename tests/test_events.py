@@ -207,6 +207,28 @@ _TEST_CREDENTIAL = {
     ]
 }
 
+_TEST_DOMAIN_IP = {
+    "name": "domain-ip",
+    "meta-category": "network",
+    "description": "A domain and IP address seen as a tuple",
+    "uuid": "5ac337df-e078-4e99-8b17-02550a00020f",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "domain",
+            "object_relation": "domain",
+            "value": "circl.lu"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "ip-dst",
+            "object_relation": "ip",
+            "value": "149.13.33.14"
+        }
+    ]
+}
+
 
 ################################################################################
 #                               BASE EVENT TESTS                               #
@@ -854,5 +876,12 @@ def get_event_with_credential_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_CREDENTIAL)
+    ]
+    return event
+
+def get_event_with_domain_ip_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_DOMAIN_IP)
     ]
     return event

@@ -665,6 +665,77 @@ class TestStix1Export(unittest.TestCase):
             self.assertEqual(custom.name, attribute['object_relation'])
             self.assertEqual(custom.value, attribute['value'])
 
+    def test_event_with_credential_object_indicator(self):
+        event = get_event_with_credential_object()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
+        properties = self._check_observable_features(indicator.observable, misp_object, 'UserAccount')
+        self._check_credential_properties(properties, misp_object['Attribute'])
+
+    def test_event_with_credential_object_observable(self):
+        event = get_event_with_credential_object()
+        self._remove_ids_flags(event)
+        misp_object = event['Event']['Object'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, misp_object['meta-category'])
+        properties = self._check_observable_features(observable.item, misp_object, 'UserAccount')
+        self._check_credential_properties(properties, misp_object['Attribute'])
+
+    def _check_credential_properties(self, properties, attributes):
+        text, username, password, _type, origin, _format, notification = attributes
+        self.assertEqual(properties.description.value, text['value'])
+        self.assertEqual(properties.username.value, username['value'])
+        self.assertEqual(len(properties.authentication), 1)
+        authentication = properties.authentication[0]
+        self.assertEqual(authentication.authentication_type.value, _type['value'])
+        self.assertEqual(authentication.authentication_data.value, password['value'])
+        struct_auth_meca = authentication.structured_authentication_mechanism
+        self.assertEqual(struct_auth_meca.description.value, _format['value'])
+        custom_properties = properties.custom_properties
+        self.assertEqual(len(custom_properties), 2)
+        for attribute, custom in zip((origin, notification), custom_properties):
+            self.assertEqual(custom.name, attribute['object_relation'])
+            self.assertEqual(custom.value, attribute['value'])
+
+    def test_event_with_domain_ip_object_indicator(self):
+        event = get_event_with_domain_ip_object()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
+        observables = indicator.observable.observable_composition.observables
+        self._check_domain_ip_observables(observables, misp_object['Attribute'])
+
+    def test_event_with_domain_ip_object_observable(self):
+        event = get_event_with_domain_ip_object()
+        self._remove_ids_flags(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.item.id_, f"{_DEFAULT_NAMESPACE}:{misp_object['name']}_ObservableComposition-{misp_object['uuid']}")
+        observables = observable.item.observable_composition.observables
+        self._check_domain_ip_observables(observables, misp_object['Attribute'])
+
+    def _check_domain_ip_observables(self, observables, attributes):
+        self.assertEqual(len(observables), len(attributes))
+        domain, ip = attributes
+        domain_observable, ip_observable = observables
+        domain_properties = self._check_observable_features(domain_observable, domain, "DomainName")
+        self.assertEqual(domain_properties.value.value, domain['value'])
+        ip_properties = self._check_observable_features(ip_observable, ip, 'Address')
+        self.assertEqual(ip_properties.address_value.value, ip['value'])
+
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
     ################################################################################
