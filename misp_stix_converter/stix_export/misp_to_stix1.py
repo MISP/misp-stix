@@ -584,14 +584,26 @@ class MISPtoSTIX1Parser():
             #     self.errors.append(f'Error with the {object_name} object: {misp_object.uuid}.')
 
     @staticmethod
-    def _extract_multiple_object_attributes(attributes):
+    def _extract_multiple_object_attributes(attributes: list) -> dict:
         attributes_dict = defaultdict(list)
         for attribute in attributes:
             attributes_dict[attribute.object_relation].append(attribute.value)
         return attributes_dict
 
     @staticmethod
-    def _extract_object_attributes(attributes):
+    def _extract_multiple_object_attributes_with_uuid(attributes: list) -> dict:
+        attributes_dict = defaultdict(list)
+        for attribute in attributes:
+            attributes_dict[attribute.object_relation].append(
+                (
+                    attribute.value,
+                    attribute.uuid
+                )
+            )
+        return attributes_dict
+
+    @staticmethod
+    def _extract_object_attributes(attributes: list) -> dict:
         return {attribute.object_relation: attribute.value for attribute in attributes}
 
     @staticmethod
@@ -606,6 +618,17 @@ class MISPtoSTIX1Parser():
         if object_name in stix1_mapping.objects_mapping:
             return stix1_mapping.objects_mapping[object_name]
         return '_parse_custom_object'
+
+    @staticmethod
+    def _handle_custom_properties(attributes: dict) -> CustomProperties:
+        custom_properties = CustomProperties()
+        for object_relation, values in attributes.items():
+            for value in values:
+                prop = Property()
+                prop.name = object_relation
+                prop.value = value
+                custom_properties.append(prop)
+        return custom_properties
 
     def _handle_misp_object(self, observable: Observable, category: str):
         related_observable = RelatedObservable(
@@ -655,21 +678,45 @@ class MISPtoSTIX1Parser():
         if 'description' in attributes:
             as_object.name = attributes.pop('description')[0]
         if attributes:
-            as_object.custom_properties = CustomProperties()
-            for object_relation, values in attributes.items():
-                for value in values:
-                    prop = Property()
-                    prop.name = object_relation
-                    prop.value = value
-                    as_object.custom_properties.append(prop)
+            as_object.custom_properties = self._handle_custom_properties(attributes)
         observable = self._create_observable(as_object, misp_object.uuid, 'AS')
         return observable
 
+    def _parse_credential_arguments(self, attributes: dict) -> dict:
+        args = {}
+        if 'format' in attributes:
+            struct_auth_meca = StructuredAuthenticationMechanism()
+            struct_auth_meca.description = attributes.pop('format')[0]
+            args['auth_format'] = struct_auth_meca
+        if 'type' in attributes:
+            args['auth_type'] = attributes.pop('type')[0]
+        return args
+
+    def _parse_credential_authentication(self, attributes: dict) -> list:
+        args = self._parse_credential_arguments(attributes)
+        authentication_list = []
+        if 'password' in attributes:
+            for password in attributes.pop('password'):
+                authentication = self._create_authentication_object(password=password, **args)
+                authentication_list.append(authentication)
+            return authentication_list
+        if args:
+            return [self._create_authentication_object(**args)]
+        return []
+
     def _parse_credential_object(self, misp_object: MISPObject) -> Observable:
         attributes = self._extract_multiple_object_attributes(misp_object.attributes)
-        account_object = self._create_account_object()
-        if 'username' in attributes:
-            account_object.username = attributes.pop('username')
+        account_object = UserAccount()
+        for feature, field in zip(('username', 'text'), ('username', 'description')):
+            if feature in attributes:
+                setattr(account_object, field, attributes.pop(feature)[0])
+        authentication_list = self._parse_credential_authentication(attributes)
+        if authentication_list:
+            account_object.authentication = authentication_list
+        if attributes:
+            account_object.custom_properties = self._handle_custom_properties(attributes)
+        observable = self._create_observable(account_object, misp_object.uuid, 'UserAccount')
+        return observable
 
     def _parse_custom_object(self, misp_object: MISPObject) -> Observable:
         custom_object = Custom()
@@ -685,6 +732,34 @@ class MISPtoSTIX1Parser():
         observable = self._create_observable(custom_object, misp_object.uuid, 'Custom')
         self.warnings.add(f'MISP Object name {misp_object.name} not mapped.')
         return observable
+
+    def _parse_domain_ip_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_multiple_object_attributes_with_uuid(misp_object.attributes)
+        observables = []
+        if 'domain' in attributes:
+            for domain_attribute in attributes['domain']:
+                domain_value, domain_uuid = domain_attribute
+                domain_object = self._create_domain_object(domain_value)
+                domain_observable = self._create_observable(domain_object, domain_uuid, 'DomainName')
+                observables.append(domain_observable)
+        if 'ip' in attributes:
+            for ip_attribute in attributes['ip']:
+                ip_value, ip_uuid = ip_attribute
+                address_object = self._create_address_object('ip-dst', ip_value)
+                ip_observable = self._create_observable(address_object, ip_uuid, 'Address')
+                observables.append(ip_observable)
+        if 'port' in attributes:
+            for port_attribute in attributes['port']:
+                port_value, port_uuid = port_attribute
+                port_object = self._create_port_object(port_value)
+                port_observable = self._create_observable(port_object, port_uuid, 'Port')
+                observables.append(port_observable)
+        observable_composition = self._create_observable_composition(
+            observables,
+            misp_object.name,
+            misp_object.uuid
+        )
+        return observable_composition
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
@@ -891,6 +966,18 @@ class MISPtoSTIX1Parser():
         return artifact
 
     @staticmethod
+    def _create_authentication_object(auth_type: str = None, auth_format: str = None, password: str = None) -> Authentication:
+        authentication = Authentication()
+        # At least one of the params is not None, otherwise we do not actually call the function
+        if auth_type is not None:
+            authentication.authentication_type = auth_type
+        if auth_format is not None:
+            authentication.structured_authentication_mechanism = auth_format
+        if password is not None:
+            authentication.authentication_data = password
+        return authentication
+
+    @staticmethod
     def _create_autonomous_system_object(AS: str) -> AutonomousSystem:
         autonomous_system = AutonomousSystem()
         feature = 'handle' if AS.startswith('AS') else 'number'
@@ -976,6 +1063,13 @@ class MISPtoSTIX1Parser():
         stix_object.parent.id_ = f"{self.namespace}:{feature}-{attribute_uuid}"
         observable = Observable(stix_object)
         observable.id_ = f"{self.namespace}:Observable-{attribute_uuid}"
+        return observable
+
+    def _create_observable_composition(self, observables: list, name: str, uuid: str) -> Observable:
+        observable_composition = ObservableComposition(observables=observables)
+        observable_composition.operator = 'AND'
+        observable = Observable(id_=f'{self.namespace}:{name}_ObservableComposition-{uuid}')
+        observable.observable_composition = observable_composition
         return observable
 
     @staticmethod
