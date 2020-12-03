@@ -569,19 +569,31 @@ class MISPtoSTIX1Parser():
 
     def _resolve_objects(self):
         for misp_object in self.misp_event.objects:
-            object_name = misp_object.name
-            if object_name == 'original-imported-file':
+            if self._check_object_name(misp_object):
                 continue
-            # try:
-            to_ids = self._fetch_ids_flags(misp_object.attributes)
-            to_call = self._fetch_objects_mapping_function(object_name)
-            observable = getattr(self, to_call)(misp_object)
-            if to_ids:
-                self._handle_misp_object_with_context(misp_object, observable)
-            else:
-                self._handle_misp_object(observable, misp_object.get('meta-category'))
-            # except Exception:
-            #     self.errors.append(f'Error with the {object_name} object: {misp_object.uuid}.')
+            try:
+                to_ids = self._fetch_ids_flags(misp_object.attributes)
+                to_call = self._fetch_objects_mapping_function(misp_object.name)
+                observable = getattr(self, to_call)(misp_object)
+                if to_ids:
+                    self._handle_misp_object_with_context(misp_object, observable)
+                else:
+                    self._handle_misp_object(observable, misp_object.get('meta-category'))
+            except Exception:
+                self.errors.append(f'Error with the {misp_object.name} object: {misp_object.uuid}.')
+
+    def _check_object_name(self, misp_object: MISPObject) -> bool:
+        object_name = misp_object.name
+        if object_name == 'original-imported-file':
+            return True
+        if object_name in ('pe', 'pe-section'):
+            self.objects_to_parse[object_name][misp_object.uuid] = misp_object
+            return True
+        if object_name == 'file' and misp_object.get('ObjectReference'):
+            for reference in misp_object.references:
+                if reference.relationship_type in ('includes', 'included-in') and reference.Object['name'] == 'pe':
+                    return True
+        return False
 
     @staticmethod
     def _extract_multiple_object_attributes(attributes: list) -> dict:
