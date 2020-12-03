@@ -603,8 +603,14 @@ class MISPtoSTIX1Parser():
         return attributes_dict
 
     @staticmethod
-    def _extract_multiple_object_attributes_with_uuid(attributes: list) -> dict:
+    def _extract_multiple_object_attributes_with_uuid(attributes: list, with_uuid: Optional[list] = None) -> dict:
         attributes_dict = defaultdict(list)
+        if with_uuid is not None:
+            for attribute in attributes:
+                relation = attribute.object_relation
+                value = (attribute.value, attribute.uuid) if relation in with_uuid else attribute.value
+                attributes_dict[relation].append(value)
+            return attributes_dict
         for attribute in attributes:
             attributes_dict[attribute.object_relation].append(
                 (
@@ -772,6 +778,43 @@ class MISPtoSTIX1Parser():
             misp_object.uuid
         )
         return observable_composition
+
+    def _parse_email_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_multiple_object_attributes_with_uuid(
+            misp_object.attributes,
+            with_uuid=['attachment']
+        )
+        email_object = EmailMessage()
+        email_header = EmailHeader()
+        for feature in ('to', 'cc'):
+            if feature in attributes:
+                recipients = EmailRecipients()
+                for value in attributes.pop(feature):
+                    recipients.append(value)
+                setattr(email_header, feature, recipients)
+        for feature, key in stix1_mapping.email_object_mapping.items():
+            if feature in attributes:
+                setattr(email_header, key, attributes.pop(feature)[0])
+                setattr(getattr(email_header, key), 'condition', 'Equals')
+        email_object.header = email_header
+        if 'attachment' in attributes:
+            email_object.attachments = Attachments()
+            for attachment in attributes.pop('attachment'):
+                filename, uuid = attachment
+                file = self._create_file_object(filename)
+                file.parent.id_ = f"{self.namespace}:FileObject-{uuid}"
+                related_file = RelatedObject(
+                    relationship='Contains',
+                    inline=True,
+                    id_=file.parent.id_,
+                    properties=file
+                )
+                email_object.parent.related_objects.append(related_file)
+                email_object.attachments.append(related_file.id_)
+        if attributes:
+            email_object.custom_properties = self._handle_custom_properties(attributes)
+        observable = self._create_observable(email_object, misp_object.uuid, 'EmailMessage')
+        return observable
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
