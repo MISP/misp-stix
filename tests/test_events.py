@@ -229,6 +229,71 @@ _TEST_DOMAIN_IP = {
     ]
 }
 
+_TEST_EMAIL = {
+    "name": "email",
+    "meta-category": "network",
+    "description": "Email object describing an email with meta-information",
+    "uuid": "5e396622-2a54-4c8d-b61d-159da964451a",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "email-src",
+            "object_relation": "from",
+            "value": "source@email.test"
+        },
+        {
+            "type": "email-dst",
+            "object_relation": "to",
+            "value": "destination@email.test"
+        },
+        {
+            "type": "email-dst",
+            "object_relation": "cc",
+            "value": "cc1@email.test"
+        },
+        {
+            "type": "email-dst",
+            "object_relation": "cc",
+            "value": "cc2@email.test"
+        },
+        {
+            "type": "email-reply-to",
+            "object_relation": "reply-to",
+            "value": "reply-to@email.test"
+        },
+        {
+            "type": "email-subject",
+            "object_relation": "subject",
+            "value": "Email test subject"
+        },
+        {
+            "type": "email-attachment",
+            "object_relation": "attachment",
+            "value": "attachment1.file"
+        },
+        {
+            "type": "email-attachment",
+            "object_relation": "attachment",
+            "value": "attachment2.file"
+        },
+        {
+            "type": "email-x-mailer",
+            "object_relation": "x-mailer",
+            "value": "x-mailer-test"
+        },
+        {
+            "type": "text",
+            "object_relation": "user-agent",
+            "value": "Test user agent"
+        },
+        {
+            "type": "email-mime-boundary",
+            "object_relation": "mime-boundary",
+            "value": "Test mime boundary"
+        }
+    ]
+}
+
 
 ################################################################################
 #                               BASE EVENT TESTS                               #
@@ -885,3 +950,11 @@ def get_event_with_domain_ip_object():
         deepcopy(_TEST_DOMAIN_IP)
     ]
     return event
+
+def get_event_with_email_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_EMAIL)
+    ]
+    return event
+

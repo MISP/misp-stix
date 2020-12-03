@@ -736,6 +736,53 @@ class TestStix1Export(unittest.TestCase):
         ip_properties = self._check_observable_features(ip_observable, ip, 'Address')
         self.assertEqual(ip_properties.address_value.value, ip['value'])
 
+    def test_event_with_email_object_indicator(self):
+        event = get_event_with_email_object()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
+        properties = self._check_observable_features(indicator.observable, misp_object, 'EmailMessage')
+        related_objects = indicator.observable.object_.related_objects
+        self._check_email_properties(properties, related_objects, misp_object['Attribute'])
+
+    def test_event_with_email_object_observable(self):
+        event = get_event_with_email_object()
+        self._remove_ids_flags(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, misp_object['meta-category'])
+        properties = self._check_observable_features(observable.item, misp_object, 'EmailMessage')
+        related_objects = observable.item.object_.related_objects
+        self._check_email_properties(properties, related_objects, misp_object['Attribute'])
+
+    def _check_email_properties(self, properties, related_objects, attributes):
+        from_, to_, cc1, cc2, reply_to, subject, attachment1, attachment2, x_mailer, user_agent, boundary = attributes
+        header = properties.header
+        self.assertEqual(header.from_.address_value.value, from_['value'])
+        self.assertEqual(len(header.to), 1)
+        self.assertEqual(header.to[0].address_value.value, to_['value'])
+        self.assertEqual(len(header.cc), 2)
+        self.assertEqual(header.cc[0].address_value.value, cc1['value'])
+        self.assertEqual(header.cc[1].address_value.value, cc2['value'])
+        self.assertEqual(header.reply_to.address_value.value, reply_to['value'])
+        self.assertEqual(header.subject.value, subject['value'])
+        self.assertEqual(header.x_mailer.value, x_mailer['value'])
+        self.assertEqual(header.user_agent.value, user_agent['value'])
+        self.assertEqual(header.boundary.value, boundary['value'])
+        attachments = properties.attachments
+        self.assertEqual(len(attachments), 2)
+        self.assertEqual(len(related_objects), 2)
+        for attachment, related_object, attribute in zip(attachments, related_objects, (attachment1, attachment2)):
+            self.assertEqual(attachment.object_reference, related_object.id_)
+            self.assertEqual(related_object.relationship, 'Contains')
+            self.assertEqual(related_object.properties.file_name.value, attribute['value'])
+
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
     ################################################################################
