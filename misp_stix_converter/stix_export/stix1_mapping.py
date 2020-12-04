@@ -458,9 +458,10 @@ email_object_mapping = {
     'user-agent': 'user_agent'
 }
 file_object_mapping = {
-    'path': 'full_path',
-    'size-in-bytes': 'size_in_bytes',
-    'entropy': 'peak_entropy'
+    'entropy': 'peak_entropy',
+    'fullpath': 'full_path',
+    'path': 'file_path',
+    'size-in-bytes': 'size_in_bytes'
 }
 process_object_keys = (
     'creation-time',

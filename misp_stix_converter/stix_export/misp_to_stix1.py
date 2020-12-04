@@ -38,6 +38,7 @@ from cybox.objects.win_user_account_object import WinUser
 from cybox.objects.x509_certificate_object import X509Certificate, X509CertificateSignature, X509Cert, SubjectPublicKey, RSAPublicKey, Validity
 from cybox.utils import Namespace
 from datetime import datetime
+from io import BytesIO
 from mixbox import idgen
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix.coa import CourseOfAction
@@ -236,9 +237,11 @@ class MISPtoSTIX1Parser():
 
     def _parse_attachment(self, attribute: MISPAttribute):
         if attribute.data:
-            artifact_object = self._create_artifact_object(self._get_b64encoded(attribute.data))
-            observable = self._create_observable(artifact_object, attribute.uuid, 'Artifact')
-            observable.title = attribute.value
+            observable = self._create_attachment_observable(
+                attribute.value,
+                attribute.data,
+                attribute.uuid
+            )
             self._handle_attribute(attribute, observable)
         else:
             self._parse_file_attribute(attribute)
@@ -383,11 +386,11 @@ class MISPtoSTIX1Parser():
 
     def _parse_malware_sample(self, attribute: MISPAttribute):
         if attribute.data:
-            filename, hash_value = attribute.value.split('|')
-            artifact_object = self._create_artifact_object(self._get_b64encoded(attribute.data))
-            artifact_object.hashes = HashList(self._parse_hash_value('md5', hash_value))
-            observable = self._create_observable(artifact_object, attribute.uuid, 'Artifact')
-            observable.title = filename
+            observable = self._create_malware_sample_observable(
+                attribute.value,
+                attribute.data,
+                attribute.uuid
+            )
             self._handle_attribute(attribute, observable)
         else:
             self._parse_hash_composite_attribute(attribute)
@@ -581,6 +584,17 @@ class MISPtoSTIX1Parser():
                     self._handle_misp_object(observable, misp_object.get('meta-category'))
             except Exception:
                 self.errors.append(f'Error with the {misp_object.name} object: {misp_object.uuid}.')
+
+    @staticmethod
+    def _add_custom_property(stix_object, name, value):
+        prop = Property()
+        prop.name = name
+        prop.value = value
+        try:
+            stix_object.custom_properties.append(prop)
+        except AttributeError:
+            stix_object.custom_properties = CustomProperties()
+            stix_object.custom_properties.append(prop)
 
     def _check_object_name(self, misp_object: MISPObject) -> bool:
         object_name = misp_object.name
@@ -816,6 +830,44 @@ class MISPtoSTIX1Parser():
         observable = self._create_observable(email_object, misp_object.uuid, 'EmailMessage')
         return observable
 
+    def _parse_file_object(self, misp_object: MISPObject) -> Observable:
+        attributes = {}
+        for attribute in misp_object.attributes:
+            value = attribute.value
+            if attribute.get('data'):
+                value = (value, attribute.data, attribute.uuid)
+            attributes[attribute.object_relation] = value
+        observables = []
+        if 'malware-sample' in attributes and isinstance(attributes['malware-sample'], tuple):
+            value, data, uuid = attributes.pop('malware-sample')
+            malware_observable = self._create_malware_sample_observable(value, data, uuid)
+            observables.append(malware_observable)
+        if 'attachment' in attributes and isinstance(attributes['attachment'], tuple):
+            filename, data, uuid = attributes.pop('attachment')
+            attachment_observable = self._create_attachment_observable(filename, data, uuid)
+            observables.append(attachment_observable)
+        file_object = self._create_file_object(attributes.pop('filename')) if 'filename' in attributes else File()
+        for feature, key in stix1_mapping.file_object_mapping.items():
+            if feature in attributes:
+                setattr(file_object, key, attributes.pop(feature))
+                setattr(getattr(file_object, key), 'condition', 'Equals')
+        for object_relation, value in attributes.items():
+            if object_relation in stix1_mapping.hash_type_attributes['single']:
+                hash = self._parse_hash_value(object_relation, value)
+                file_object.add_hash(hash)
+            else:
+                self._add_custom_property(file_object, object_relation, value)
+        file_observable = self._create_observable(file_object, misp_object.uuid, 'File')
+        if observables:
+            observables.append(file_observable)
+            observable_composition = self._create_observable_composition(
+                observables,
+                misp_object.name,
+                misp_object.uuid
+            )
+            return observable_composition
+        return file_observable
+
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
@@ -1012,13 +1064,18 @@ class MISPtoSTIX1Parser():
         address_object.address_value.condition = condition
         return address_object
 
-    @staticmethod
-    def _create_artifact_object(data: str) -> Artifact:
-        raw_artifact = RawArtifact(data)
+    def _create_artifact_object(self, data: BytesIO) -> Artifact:
+        raw_artifact = RawArtifact(self._get_b64encoded(data))
         artifact = Artifact()
         artifact.raw_artifact = raw_artifact
         artifact.raw_artifact.condition = "Equals"
         return artifact
+
+    def _create_attachment_observable(self, filename: str, data: BytesIO, uuid: str) -> Observable:
+        artifact_object = self._create_artifact_object(data)
+        observable = self._create_observable(artifact_object, uuid, 'Artifact')
+        observable.title = filename
+        return observable
 
     @staticmethod
     def _create_authentication_object(auth_type: str = None, auth_format: str = None, password: str = None) -> Authentication:
@@ -1106,6 +1163,14 @@ class MISPtoSTIX1Parser():
     def _create_information_source(identity: Identity) -> InformationSource:
         information_source = InformationSource(identity=identity)
         return information_source
+
+    def _create_malware_sample_observable(self, value: str, data: BytesIO, uuid: str) -> Observable:
+        filename, hash_value = value.split('|')
+        artifact_object = self._create_artifact_object(data)
+        artifact_object.hashes = HashList(self._parse_hash_value('md5', hash_value))
+        observable = self._create_observable(artifact_object, uuid, 'Artifact')
+        observable.title = filename
+        return observable
 
     @staticmethod
     def _create_mutex_object(name: str) -> Mutex:
@@ -1270,7 +1335,7 @@ class MISPtoSTIX1Parser():
     ################################################################################
 
     @staticmethod
-    def _get_b64encoded(data):
+    def _get_b64encoded(data: BytesIO) -> str:
         return b64encode(data.getvalue()).decode()
 
     @staticmethod
