@@ -294,6 +294,65 @@ _TEST_EMAIL = {
     ]
 }
 
+_TEST_FILE = {
+    "name": "file",
+    "meta-category": "file",
+    "description": "File object describing a file with meta-information",
+    "uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "malware-sample",
+            "object_relation": "malware-sample",
+            "value": "oui|8764605c6f388c89096b534d33565802",
+            "data": "UEsDBAoACQAAAPKLQ1AvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAA+dKOF7nSjhedXgLAAEEIQAAAAQhAAAA7ukeownnAQsmsimPVT3qvMUSCRqPjj3xfZpK3MTLpCrssX1AVtxZoMh3ucu5mCxQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAPKLQ1BAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAPnSjhe50o4XnV4CwABBCEAAAAEIQAAAFHTwHeSOtOjQMWS6+0aN1BLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAADyi0NQL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAA+dKOF51eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAADyi0NQQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAPnSjhedXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA=="
+        },
+        {
+            "type": "filename",
+            "object_relation": "filename",
+            "value": "oui"
+        },
+        {
+            "type": "md5",
+            "object_relation": "md5",
+            "value": "8764605c6f388c89096b534d33565802"
+        },
+        {
+            "type": "sha1",
+            "object_relation": "sha1",
+            "value": "46aba99aa7158e4609aaa72b50990842fd22ae86"
+        },
+        {
+            "type": "sha256",
+            "object_relation": "sha256",
+            "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+        },
+        {
+            "type": "size-in-bytes",
+            "object_relation": "size-in-bytes",
+            "value": "35"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "attachment",
+            "object_relation": "attachment",
+            "value": "non",
+            "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+        },
+        {
+            "type": "text",
+            "object_relation": "path",
+            "value": "/var/www/MISP/app/files/scripts/tmp"
+        },
+        {
+            "type": "text",
+            "object_relation": "file-encoding",
+            "value": "UTF-8"
+        }
+    ]
+}
+
 
 ################################################################################
 #                               BASE EVENT TESTS                               #
@@ -958,3 +1017,18 @@ def get_event_with_email_object():
     ]
     return event
 
+def get_event_with_file_object_with_artifact():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_FILE)
+    ]
+    return event
+
+def get_event_with_file_object():
+    event = deepcopy(_BASE_EVENT)
+    file_object = deepcopy(_TEST_FILE)
+    file_object['Attribute'] = [{field: value for field, value in attribute.items() if field != 'data'} for attribute in file_object['Attribute']]
+    event['Event']['Object'] = [
+        file_object
+    ]
+    return event
