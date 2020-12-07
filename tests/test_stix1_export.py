@@ -154,12 +154,41 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(indicator.producer.identity.name, orgc)
         return indicator
 
+    def _check_ip_port_observables(self, observables, misp_object):
+        attributes = misp_object['Attribute']
+        self.assertEqual(len(observables), len(attributes))
+        ip, port, domain = attributes
+        ip_observable, port_observable, domain_observable = observables
+        ip_properties = self._check_observable_features(ip_observable, ip, 'Address')
+        self.assertEqual(ip_properties.address_value.value, ip['value'])
+        self.assertEqual(port_observable.id_, f"{_DEFAULT_NAMESPACE}:Observable-{port['uuid']}")
+        port_object = port_observable.object_
+        self.assertEqual(port_object.id_, f"{_DEFAULT_NAMESPACE}:dstPort-{port['uuid']}")
+        port_properties = port_object.properties
+        self.assertEqual(port_properties._XSI_TYPE, 'PortObjectType')
+        self.assertEqual(port_properties.port_value.value, int(port['value']))
+        domain_properties = self._check_observable_features(domain_observable, domain, "DomainName")
+        self.assertEqual(domain_properties.value.value, domain['value'])
+
     def _check_malware_sample_properties(self, observable, attribute):
         filename, md5 = attribute['value'].split('|')
         self.assertEqual(observable.title, filename)
         properties = self._check_observable_features(observable, attribute, 'Artifact')
         self.assertEqual(properties.raw_artifact.value, attribute['data'])
         self._check_hash_property(properties.hashes[0], md5, 'MD5')
+
+    def _check_network_connection_properties(self, properties, attributes):
+        ip_src, ip_dst, src_port, dst_port, hostname, layer3, layer4, layer7 = attributes
+        src_socket = properties.source_socket_address
+        self.assertEqual(src_socket.ip_address.address_value.value, ip_src['value'])
+        self.assertEqual(src_socket.port.port_value.value, int(src_port['value']))
+        dst_socket = properties.destination_socket_address
+        self.assertEqual(dst_socket.ip_address.address_value.value, ip_dst['value'])
+        self.assertEqual(dst_socket.hostname.hostname_value.value, hostname['value'])
+        self.assertEqual(dst_socket.port.port_value.value, int(dst_port['value']))
+        self.assertEqual(properties.layer3_protocol.value, layer3['value'])
+        self.assertEqual(properties.layer4_protocol.value, layer4['value'])
+        self.assertEqual(properties.layer7_protocol.value, layer7['value'])
 
     def _check_observable_features(self, observable, attribute, name):
         self.assertEqual(observable.id_, f"{_DEFAULT_NAMESPACE}:Observable-{attribute['uuid']}")
@@ -863,6 +892,52 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(observable.item.id_, f"{_DEFAULT_NAMESPACE}:{misp_object['name']}_ObservableComposition-{misp_object['uuid']}")
         observables = observable.item.observable_composition.observables
         self._check_file_observables(observables, misp_object)
+
+    def test_event_with_ip_port_object_indicator(self):
+        event = get_event_with_ip_port_object()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
+        observables = indicator.observable.observable_composition.observables
+        self._check_ip_port_observables(observables, misp_object)
+
+    def test_event_with_ip_port_object_observable(self):
+        event = get_event_with_ip_port_object()
+        self._remove_ids_flags(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.item.id_, f"{_DEFAULT_NAMESPACE}:{misp_object['name']}_ObservableComposition-{misp_object['uuid']}")
+        observables = observable.item.observable_composition.observables
+        self._check_ip_port_observables(observables, misp_object)
+
+    def test_event_with_network_connection_object_indicator(self):
+        event = get_event_with_network_connection_object()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
+        properties = self._check_observable_features(indicator.observable, misp_object, 'NetworkConnection')
+        self._check_network_connection_properties(properties, misp_object['Attribute'])
+
+    def test_event_with_network_connection_object_observable(self):
+        event = get_event_with_network_connection_object()
+        self._remove_ids_flags(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, misp_object['meta-category'])
+        properties = self._check_observable_features(observable.item, misp_object, 'NetworkConnection')
+        self._check_network_connection_properties(properties, misp_object['Attribute'])
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #

@@ -353,6 +353,84 @@ _TEST_FILE = {
     ]
 }
 
+_TEST_IP_PORT = {
+    "name": "ip-port",
+    "meta-category": "network",
+    "description": "An IP address (or domain) and a port",
+    "uuid": "5ac47edc-31e4-4402-a7b6-040d0a00020f",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "ip-dst",
+            "object_relation": "ip",
+            "value": "149.13.33.14"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "port",
+            "object_relation": "dst-port",
+            "value": "443"
+        },
+        {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "type": "domain",
+            "object_relation": "domain",
+            "value": "circl.lu"
+        }
+    ]
+}
+
+_TEST_NETWORK_CONNECTION = {
+    "name": "network-connection",
+    "meta-category": "network",
+    "description": "A local or remote network connection",
+    "uuid": "5afacc53-c0b0-4825-a6ee-03c80a00020f",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "ip-src",
+            "object_relation": "ip-src",
+            "value": "1.2.3.4"
+        },
+        {
+            "type": "ip-dst",
+            "object_relation": "ip-dst",
+            "value": "5.6.7.8"
+        },
+        {
+            "type": "port",
+            "object_relation": "src-port",
+            "value": "8080"
+        },
+        {
+            "type": "port",
+            "object_relation": "dst-port",
+            "value": "8080"
+        },
+        {
+            "type": "hostname",
+            "object_relation": "hostname-dst",
+            "value": "circl.lu"
+        },
+        {
+            "type": "text",
+            "object_relation": "layer3-protocol",
+            "value": "IP"
+        },
+        {
+            "type": "text",
+            "object_relation": "layer4-protocol",
+            "value": "TCP"
+        },
+        {
+            "type": "text",
+            "object_relation": "layer7-protocol",
+            "value": "HTTP"
+        }
+    ]
+}
+
 
 ################################################################################
 #                               BASE EVENT TESTS                               #
@@ -1030,5 +1108,19 @@ def get_event_with_file_object():
     file_object['Attribute'] = [{field: value for field, value in attribute.items() if field != 'data'} for attribute in file_object['Attribute']]
     event['Event']['Object'] = [
         file_object
+    ]
+    return event
+
+def get_event_with_ip_port_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_IP_PORT)
+    ]
+    return event
+
+def get_event_with_network_connection_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_NETWORK_CONNECTION)
     ]
     return event
