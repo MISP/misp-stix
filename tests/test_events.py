@@ -431,6 +431,60 @@ _TEST_NETWORK_CONNECTION = {
     ]
 }
 
+_TEST_NETWORK_SOCKET = {
+    "name": "network-socket",
+    "meta-category": "network",
+    "description": "Network socket object describes a local or remote network connections based on the socket data structure",
+    "uuid": "5afb3223-0988-4ef1-a920-02070a00020f",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "ip-src",
+            "object_relation": "ip-src",
+            "value": "1.2.3.4"
+        },
+        {
+            "type": "ip-dst",
+            "object_relation": "ip-dst",
+            "value": "5.6.7.8"
+        },
+        {
+            "type": "port",
+            "object_relation": "src-port",
+            "value": "8080"
+        },
+        {
+            "type": "port",
+            "object_relation": "dst-port",
+            "value": "8080"
+        },
+        {
+            "type": "hostname",
+            "object_relation": "hostname-dst",
+            "value": "circl.lu"
+        },
+        {
+            "type": "text",
+            "object_relation": "address-family",
+            "value": "AF_FILE"
+        },
+        {
+            "type": "text",
+            "object_relation": "domain-family",
+            "value": "PF_INET"
+        },
+        {
+            "type": "text",
+            "object_relation": "state",
+            "value": "listening"
+        },
+        {
+            "type": "text",
+            "object_relation": "protocol",
+            "value": "TCP"
+        }
+    ]
+}
 
 ################################################################################
 #                               BASE EVENT TESTS                               #
@@ -1122,5 +1176,12 @@ def get_event_with_network_connection_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_NETWORK_CONNECTION)
+    ]
+    return event
+
+def get_event_with_network_socket_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_NETWORK_SOCKET)
     ]
     return event
