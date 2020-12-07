@@ -476,6 +476,11 @@ file_object_mapping = {
     'path': 'file_path',
     'size-in-bytes': 'size_in_bytes'
 }
+network_socket_mapping = {
+    'address-family': 'address_family',
+    'domain-family': 'domain',
+    'protocol': 'protocol'
+}
 process_object_keys = (
     'creation-time',
     'start-time',

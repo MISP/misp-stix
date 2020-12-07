@@ -611,8 +611,16 @@ class MISPtoSTIX1Parser():
         return False
 
     @staticmethod
-    def _extract_multiple_object_attributes(attributes: list) -> dict:
+    def _extract_multiple_object_attributes(attributes: list, force_single: Optional[tuple] = None) -> dict:
         attributes_dict = defaultdict(list)
+        if force_single is not None:
+            for attribute in attributes:
+                relation = attribute.object_relation
+                if relation in force_single:
+                    attributes_dict[relation] = attribute.value
+                else:
+                    attributes_dict[relation].append(attribute.value)
+            return attributes_dict
         for attribute in attributes:
             attributes_dict[attribute.object_relation].append(attribute.value)
         return attributes_dict
@@ -706,10 +714,13 @@ class MISPtoSTIX1Parser():
         return tuple(tag for tag in tags['tags'])
 
     def _parse_asn_object(self, misp_object: MISPObject) -> Observable:
-        attributes = self._extract_multiple_object_attributes(misp_object.attributes)
-        as_object = self._create_autonomous_system_object(attributes.pop('asn')[0])
+        attributes = self._extract_multiple_object_attributes(
+            misp_object.attributes,
+            force_single=('asn', 'description')
+        )
+        as_object = self._create_autonomous_system_object(attributes.pop('asn'))
         if 'description' in attributes:
-            as_object.name = attributes.pop('description')[0]
+            as_object.name = attributes.pop('description')
         if attributes:
             as_object.custom_properties = self._handle_custom_properties(attributes)
         observable = self._create_observable(as_object, misp_object.uuid, 'AS')
@@ -738,11 +749,15 @@ class MISPtoSTIX1Parser():
         return []
 
     def _parse_credential_object(self, misp_object: MISPObject) -> Observable:
-        attributes = self._extract_multiple_object_attributes(misp_object.attributes)
+        single_attributes = ('username', 'text')
+        attributes = self._extract_multiple_object_attributes(
+            misp_object.attributes,
+            force_single=single_attributes
+        )
         account_object = UserAccount()
-        for feature, field in zip(('username', 'text'), ('username', 'description')):
+        for feature, field in zip(single_attributes, ('username', 'description')):
             if feature in attributes:
-                setattr(account_object, field, attributes.pop(feature)[0])
+                setattr(account_object, field, attributes.pop(feature))
         authentication_list = self._parse_credential_authentication(attributes)
         if authentication_list:
             account_object.authentication = authentication_list
@@ -898,21 +913,11 @@ class MISPtoSTIX1Parser():
     def _parse_network_connection_object(self, misp_object: MISPObject) -> Observable:
         attributes = self._extract_object_attributes(misp_object.attributes)
         connection_object = NetworkConnection()
-        for key, field in zip(('src', 'dst'), ('source', 'destination')):
-            args = {}
-            if f'ip-{key}' in attributes:
-                attribute_type = f'ip-{key}'
-                args['ip'] = (attribute_type, attributes.pop(attribute_type))
-            if f'hostname-{key}' in attributes:
-                args['hostname'] = attributes.pop(f'hostname-{key}')
-            if f'{key}-port' in attributes:
-                args['port'] = attributes.pop(f'{key}-port')
-            if args:
-                setattr(
-                    connection_object,
-                    f'{field}_socket_address',
-                    self._create_socket_address_object(**args)
-                )
+        self._parse_socket_addresses(
+            connection_object,
+            attributes,
+            ('source_socket', 'destination_socket')
+        )
         for feature in ('layer3-protocol', 'layer4-protocol', 'layer7-protocol'):
             if feature in attributes:
                 setattr(
@@ -928,6 +933,46 @@ class MISPtoSTIX1Parser():
             'NetworkConnection'
         )
         return observable
+
+    def _parse_network_socket_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_multiple_object_attributes(
+            misp_object.attributes,
+            force_single=(
+                'ip-src', 'ip-dst', 'src-port', 'dst-port', 'hostname-src',
+                'hostname-dst', 'ptotocol', 'address-family', 'domain-family'
+            )
+        )
+        socket_object = NetworkSocket()
+        self._parse_socket_addresses(socket_object, attributes, ('local', 'remote'))
+        for key, feature in stix1_mapping.network_socket_mapping.items():
+            if key in attributes:
+                setattr(socket_object, feature, attributes.pop(key))
+                setattr(getattr(socket_object, feature), 'condition', 'Equals')
+        if 'state' in attributes:
+            states = attributes.pop('state')
+            socket_object.is_listening = True if 'listening' in states else False
+            socket_object.is_blocking = True if 'blocking' in states else False
+        if attributes:
+            socket_object.custom_properties = self._handle_custom_properties(attributes)
+        observable = self._create_observable(socket_object, misp_object.uuid, 'NetworkSocket')
+        return observable
+
+    def _parse_socket_addresses(self, stix_object: Union[NetworkConnection, NetworkSocket], attributes: dict, fields: tuple):
+        for key, field in zip(('src', 'dst'), fields):
+            args = {}
+            if f'ip-{key}' in attributes:
+                attribute_type = f'ip-{key}'
+                args['ip'] = (attribute_type, attributes.pop(attribute_type))
+            if f'hostname-{key}' in attributes:
+                args['hostname'] = attributes.pop(f'hostname-{key}')
+            if f'{key}-port' in attributes:
+                args['port'] = attributes.pop(f'{key}-port')
+            if args:
+                setattr(
+                    stix_object,
+                    f'{field}_address',
+                    self._create_socket_address_object(**args)
+                )
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
