@@ -342,8 +342,8 @@ class MISPtoSTIX1Parser():
         self._handle_attribute(attribute, observable)
 
     def _parse_hostname_port_attribute(self, attribute: MISPAttribute):
-        hostname, socket_address = self._create_socket_address_object(attribute)
-        socket_address.hostname = self._create_hostname_object(hostname)
+        hostname, port = attribute.value.split('|')
+        socket_address = self._create_socket_address_object(hostname=hostname, port=port)
         observable = self._create_observable(socket_address, attribute.uuid, 'SocketAddress')
         self._handle_attribute(attribute, observable)
 
@@ -369,8 +369,9 @@ class MISPtoSTIX1Parser():
         self._handle_attribute(attribute, observable)
 
     def _parse_ip_port_attribute(self, attribute: MISPAttribute):
-        ip, socket_address = self._create_socket_address_object(attribute)
-        socket_address.ip_address = self._create_address_object(attribute.type.split('|')[0], ip)
+        ip, port = attribute.value.split('|')
+        ip_type = attribute.type.split('|')[0]
+        socket_address = self._create_socket_address_object(ip=(ip_type, ip), port=port)
         observable = self._create_observable(socket_address, attribute.uuid, 'SocketAddress')
         self._handle_attribute(attribute, observable)
 
@@ -769,23 +770,14 @@ class MISPtoSTIX1Parser():
         attributes = self._extract_multiple_object_attributes_with_uuid(misp_object.attributes)
         observables = []
         if 'domain' in attributes:
-            for domain_attribute in attributes['domain']:
-                domain_value, domain_uuid = domain_attribute
-                domain_object = self._create_domain_object(domain_value)
-                domain_observable = self._create_observable(domain_object, domain_uuid, 'DomainName')
-                observables.append(domain_observable)
+            for attribute in attributes['domain']:
+                observables.append(self._create_domain_observable(attribute))
         if 'ip' in attributes:
-            for ip_attribute in attributes['ip']:
-                ip_value, ip_uuid = ip_attribute
-                address_object = self._create_address_object('ip-dst', ip_value)
-                ip_observable = self._create_observable(address_object, ip_uuid, 'Address')
-                observables.append(ip_observable)
+            for attribute in attributes['ip']:
+                observables.append(self._create_address_observable(attribute, 'ip-dst'))
         if 'port' in attributes:
-            for port_attribute in attributes['port']:
-                port_value, port_uuid = port_attribute
-                port_object = self._create_port_object(port_value)
-                port_observable = self._create_observable(port_object, port_uuid, 'Port')
-                observables.append(port_observable)
+            for attribute in attributes['port']:
+                observables.append(self._create_port_observable(attribute))
         observable_composition = self._create_observable_composition(
             observables,
             misp_object.name,
@@ -867,6 +859,75 @@ class MISPtoSTIX1Parser():
             )
             return observable_composition
         return file_observable
+
+    def _parse_ip_port_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_multiple_object_attributes_with_uuid(misp_object.attributes)
+        observables = []
+        for feature in ('ip-src', 'ip-dst'):
+            if feature in attributes:
+                for attribute in attributes[feature]:
+                    observables.append(self._create_address_observable(attribute, feature))
+        if 'ip' in attributes:
+            for attribute in attributes['ip']:
+                observables.append(self._create_address_observable(attribute, 'ip-dst'))
+        for feature in ('src-port', 'dst-port'):
+            if feature in attributes:
+                for attribute in attributes[feature]:
+                    observables.append(self._create_port_observable(
+                        attribute,
+                        feature=feature.split('-')[0]
+                    ))
+        if 'domain' in attributes:
+            for attribute in attributes['domain']:
+                observables.append(self._create_domain_observable(attribute))
+        if 'hostname' in attributes:
+            for attribute in attributes['hostname']:
+                hostname, uuid = attribute
+                hostname_object = self._create_hostname_object(hostname)
+                observable = self._create_observable(hostname_object, uuid, 'Hostname')
+                observables.append(observable)
+        if len(observables) == 1:
+            return observables[0]
+        observable_composition = self._create_observable_composition(
+            observables,
+            misp_object.name,
+            misp_object.uuid
+        )
+        return observable_composition
+
+    def _parse_network_connection_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_object_attributes(misp_object.attributes)
+        connection_object = NetworkConnection()
+        for key, field in zip(('src', 'dst'), ('source', 'destination')):
+            args = {}
+            if f'ip-{key}' in attributes:
+                attribute_type = f'ip-{key}'
+                args['ip'] = (attribute_type, attributes.pop(attribute_type))
+            if f'hostname-{key}' in attributes:
+                args['hostname'] = attributes.pop(f'hostname-{key}')
+            if f'{key}-port' in attributes:
+                args['port'] = attributes.pop(f'{key}-port')
+            if args:
+                setattr(
+                    connection_object,
+                    f'{field}_socket_address',
+                    self._create_socket_address_object(**args)
+                )
+        for feature in ('layer3-protocol', 'layer4-protocol', 'layer7-protocol'):
+            if feature in attributes:
+                setattr(
+                    connection_object,
+                    feature.replace('-', '_'),
+                    attributes.pop(feature)
+                )
+        if attributes:
+            connection_object.custom_properties = self._handle_custom_properties(attributes)
+        observable = self._create_observable(
+            connection_object,
+            misp_object.uuid,
+            'NetworkConnection'
+        )
+        return observable
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
@@ -1064,6 +1125,12 @@ class MISPtoSTIX1Parser():
         address_object.address_value.condition = condition
         return address_object
 
+    def _create_address_observable(self, attribute: tuple, feature:str) -> Observable:
+        value, uuid = attribute
+        address_object = self._create_address_object(feature, value)
+        observable = self._create_observable(address_object, uuid, 'Address')
+        return observable
+
     def _create_artifact_object(self, data: BytesIO) -> Artifact:
         raw_artifact = RawArtifact(self._get_b64encoded(data))
         artifact = Artifact()
@@ -1118,6 +1185,12 @@ class MISPtoSTIX1Parser():
         domain_object.value = domain
         domain_object.value.condition = "Equals"
         return domain_object
+
+    def _create_domain_observable(self, attribute: tuple) -> Observable:
+        value, uuid = attribute
+        domain_object = self._create_domain_object(value)
+        observable = self._create_observable(domain_object, uuid, 'DomainName')
+        return observable
 
     @staticmethod
     def _create_file_object(filename: str) -> File:
@@ -1199,6 +1272,15 @@ class MISPtoSTIX1Parser():
         port_object.port_value.condition = "Equals"
         return port_object
 
+    def _create_port_observable(self, attribute: tuple, feature: str = None) -> Observable:
+        value, uuid = attribute
+        object_type = 'Port'
+        if feature is not None:
+            object_type = f'{feature}{object_type}'
+        port_object = self._create_port_object(value)
+        observable = self._create_observable(port_object, uuid, object_type)
+        return observable
+
     @staticmethod
     def _create_registry_key_object(regkey: str) -> WinRegistryKey:
         registry_key = WinRegistryKey()
@@ -1230,11 +1312,15 @@ class MISPtoSTIX1Parser():
         related_ttp = RelatedTTP(rttp, relationship=category)
         return related_ttp
 
-    def _create_socket_address_object(self, attribute: MISPAttribute) -> list([str, SocketAddress]):
-        value, port = attribute.value.split('|')
-        socket_address = SocketAddress()
-        socket_address.port = self._create_port_object(port)
-        return value, socket_address
+    def _create_socket_address_object(self, hostname: Optional[str] = None, ip: Optional[tuple] = None, port: Optional[str] = None) -> SocketAddress:
+        socket_address_object = SocketAddress()
+        if hostname is not None:
+            socket_address_object.hostname = self._create_hostname_object(hostname)
+        if ip is not None:
+            socket_address_object.ip_address = self._create_address_object(*ip)
+        if port is not None:
+            socket_address_object.port = self._create_port_object(port)
+        return socket_address_object
 
     def _create_threat_actor_from_galaxy(self, cluster: dict) -> ThreatActor:
         threat_actor = ThreatActor()
