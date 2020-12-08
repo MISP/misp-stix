@@ -1,14 +1,35 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import datetime
 import unittest
 import json
 from misp_stix_converter import MISPtoSTIX1Parser
-from pymisp import MISPEvent
 from .test_events import *
 
 _DEFAULT_NAMESPACE = 'MISP-Project'
 _DEFAULT_ORGNAME = 'MISP-Project'
+
+misp_reghive = {
+    "HKEY_CLASSES_ROOT": "HKEY_CLASSES_ROOT",
+    "HKCR": "HKEY_CLASSES_ROOT",
+    "HKEY_CURRENT_CONFIG": "HKEY_CURRENT_CONFIG",
+    "HKCC": "HKEY_CURRENT_CONFIG",
+    "HKEY_CURRENT_USER": "HKEY_CURRENT_USER",
+    "HKCU": "HKEY_CURRENT_USER",
+    "HKEY_LOCAL_MACHINE": "HKEY_LOCAL_MACHINE",
+    "HKLM": "HKEY_LOCAL_MACHINE",
+    "HKEY_USERS": "HKEY_USERS",
+    "HKU": "HKEY_USERS",
+    "HKEY_CURRENT_USER_LOCAL_SETTINGS": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
+    "HKCULS": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
+    "HKEY_PERFORMANCE_DATA": "HKEY_PERFORMANCE_DATA",
+    "HKPD": "HKEY_PERFORMANCE_DATA",
+    "HKEY_PERFORMANCE_NLSTEXT": "HKEY_PERFORMANCE_NLSTEXT",
+    "HKPN": "HKEY_PERFORMANCE_NLSTEXT",
+    "HKEY_PERFORMANCE_TEXT": "HKEY_PERFORMANCE_TEXT",
+    "HKPT": "HKEY_PERFORMANCE_TEXT",
+}
 
 
 class TestStix1Export(unittest.TestCase):
@@ -211,6 +232,29 @@ class TestStix1Export(unittest.TestCase):
         properties = observable_object.properties
         self.assertEqual(properties._XSI_TYPE, f'{name}ObjectType')
         return properties
+
+    def _check_process_properties(self, properties, attributes):
+        pid, child, parent, name, image, port = attributes
+        self.assertEqual(properties.pid.value, int(pid['value']))
+        self.assertEqual(properties.parent_pid.value, int(parent['value']))
+        self.assertEqual(properties.name.value, name['value'])
+        self.assertEqual(len(properties.child_pid_list), 1)
+        self.assertEqual(properties.child_pid_list[0].value, int(child['value']))
+        self.assertEqual(properties.image_info.file_name.value, image['value'])
+        self.assertEqual(len(properties.port_list), 1)
+        self.assertEqual(properties.port_list[0].port_value.value, int(port['value']))
+
+    def _check_registry_key_properties(self, properties, attributes):
+        regkey, hive, name, data, datatype, modified = attributes
+        self.assertEqual(properties.key.value, regkey['value'])
+        self.assertEqual(properties.hive.value, misp_reghive[hive['value'].lstrip('\\').upper()])
+        values = properties.values
+        self.assertEqual(len(values), 1)
+        key_value = values.value[0]
+        self.assertEqual(key_value.name.value, name['value'])
+        self.assertEqual(key_value.data.value, data['value'])
+        self.assertEqual(key_value.datatype.value, datatype['value'])
+        self.assertEqual(properties.modified_time.value, datetime.strptime(modified['value'], '%Y-%m-%dT%H:%M:%S'))
 
     def _check_related_ttp(self, stix_package, galaxy_name, cluster_uuid):
         related_ttp = stix_package.incidents[0].leveraged_ttps.ttp[0]
@@ -975,6 +1019,52 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(observable.relationship, misp_object['meta-category'])
         properties = self._check_observable_features(observable.item, misp_object, 'NetworkSocket')
         self._check_network_socket_prooperties(properties, misp_object['Attribute'])
+
+    def test_event_with_process_object_indicator(self):
+        event = get_event_with_process_object()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
+        properties = self._check_observable_features(indicator.observable, misp_object, 'Process')
+        self._check_process_properties(properties, misp_object['Attribute'])
+
+    def test_event_with_process_object_observable(self):
+        event = get_event_with_process_object()
+        self._remove_ids_flags(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, misp_object['meta-category'])
+        properties = self._check_observable_features(observable.item, misp_object, 'Process')
+        self._check_process_properties(properties, misp_object['Attribute'])
+
+    def test_event_with_registry_key_object_indicator(self):
+        event = get_event_with_registry_key_object()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
+        properties = self._check_observable_features(indicator.observable, misp_object, 'WindowsRegistryKey')
+        self._check_registry_key_properties(properties, misp_object['Attribute'])
+
+    def test_event_with_registry_key_object_observable(self):
+        event = get_event_with_registry_key_object()
+        self._remove_ids_flags(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, misp_object['meta-category'])
+        properties = self._check_observable_features(observable.item, misp_object, 'WindowsRegistryKey')
+        self._check_registry_key_properties(properties, misp_object['Attribute'])
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #

@@ -486,6 +486,86 @@ _TEST_NETWORK_SOCKET = {
     ]
 }
 
+_TEST_PROCESS = {
+    "name": "process",
+    "meta-category": "misc",
+    "description": "Object describing a system process.",
+    "uuid": "5e39776a-b284-40b3-8079-22fea964451a",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "pid",
+            "value": "2510"
+        },
+        {
+            "type": "text",
+            "object_relation": "child-pid",
+            "value": "1401"
+        },
+        {
+            "type": "text",
+            "object_relation": "parent-pid",
+            "value": "2107"
+        },
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "test_process.exe"
+        },
+        {
+            "type": "filename",
+            "object_relation": "image",
+            "value": "TestProcess"
+        },
+        {
+            "type": "port",
+            "object_relation": "port",
+            "value": "1234"
+        }
+    ]
+}
+
+_TEST_REGISTRY_KEY = {
+    "name": "registry-key",
+    "meta-category": "file",
+    "description": "Registry key object describing a Windows registry key",
+    "uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "regkey",
+            "object_relation": "key",
+            "value": "hkey_local_machine\\system\\bar\\foo"
+        },
+        {
+            "type": "text",
+            "object_relation": "hive",
+            "value": "hklm"
+        },
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "RegistryName"
+        },
+        {
+            "type": "text",
+            "object_relation": "data",
+            "value": "qwertyuiop"
+        },
+        {
+            "type": "text",
+            "object_relation": "data-type",
+            "value": "REG_SZ"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "last-modified",
+            "value": "2020-10-25T16:22:00"
+        }
+    ]
+}
+
 ################################################################################
 #                               BASE EVENT TESTS                               #
 ################################################################################
@@ -1183,5 +1263,19 @@ def get_event_with_network_socket_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_NETWORK_SOCKET)
+    ]
+    return event
+
+def get_event_with_process_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_PROCESS)
+    ]
+    return event
+
+def get_event_with_registry_key_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_REGISTRY_KEY)
     ]
     return event
