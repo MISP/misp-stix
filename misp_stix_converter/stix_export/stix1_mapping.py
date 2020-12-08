@@ -341,22 +341,20 @@ ttp_names = {
     'weakness': 'parse_weakness'
 }
 objects_mapping = {
-    "asn": 'parse_asn_object',
-    "credential": 'parse_credential_object',
-    "domain-ip": 'parse_domain_ip_object',
-    "email": 'parse_email_object',
-    "file": 'parse_file_object',
-    "ip-port": 'parse_ip_port_object',
-    "network-connection": 'parse_network_connection_object',
-    "network-socket": 'parse_network_socket_object',
-    "pe": 'store_pe',
-    "pe-section": 'store_pe',
-    "process": 'parse_process_object',
-    "registry-key": 'parse_regkey_object',
-    "url": 'parse_url_object',
-    "user-account": 'parse_user_account_object',
-    "whois": 'parse_whois',
-    "x509": 'parse_x509_object'
+    "asn": '_parse_asn_object',
+    "credential": '_parse_credential_object',
+    "domain-ip": '_parse_domain_ip_object',
+    "email": '_parse_email_object',
+    "file": '_parse_file_object',
+    "ip-port": '_parse_ip_port_object',
+    "network-connection": '_parse_network_connection_object',
+    "network-socket": '_parse_network_socket_object',
+    "process": '_parse_process_object',
+    "registry-key": '_parse_registry_key_object',
+    "url": '_parse_url_object',
+    "user-account": '_parse_user_account_object',
+    "whois": '_parse_whois',
+    "x509": '_parse_x509_object'
 }
 
 ## GALAXIES MAPPING
@@ -427,24 +425,24 @@ galaxy_types_mapping.update(
 # see https://cybox.mitre.org/language/version2.1/xsddocs/objects/Win_Registry_Key_Object_xsd.html#RegistryHiveEnum
 # the dict keys must be UPPER CASE and end with \\
 misp_reghive = {
-    "HKEY_CLASSES_ROOT\\": "HKEY_CLASSES_ROOT",
-    "HKCR\\": "HKEY_CLASSES_ROOT",
-    "HKEY_CURRENT_CONFIG\\": "HKEY_CURRENT_CONFIG",
-    "HKCC\\": "HKEY_CURRENT_CONFIG",
-    "HKEY_CURRENT_USER\\": "HKEY_CURRENT_USER",
-    "HKCU\\": "HKEY_CURRENT_USER",
-    "HKEY_LOCAL_MACHINE\\": "HKEY_LOCAL_MACHINE",
-    "HKLM\\": "HKEY_LOCAL_MACHINE",
-    "HKEY_USERS\\": "HKEY_USERS",
-    "HKU\\": "HKEY_USERS",
-    "HKEY_CURRENT_USER_LOCAL_SETTINGS\\": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
-    "HKCULS\\": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
-    "HKEY_PERFORMANCE_DATA\\": "HKEY_PERFORMANCE_DATA",
-    "HKPD\\": "HKEY_PERFORMANCE_DATA",
-    "HKEY_PERFORMANCE_NLSTEXT\\": "HKEY_PERFORMANCE_NLSTEXT",
-    "HKPN\\": "HKEY_PERFORMANCE_NLSTEXT",
-    "HKEY_PERFORMANCE_TEXT\\": "HKEY_PERFORMANCE_TEXT",
-    "HKPT\\": "HKEY_PERFORMANCE_TEXT",
+    "HKEY_CLASSES_ROOT": "HKEY_CLASSES_ROOT",
+    "HKCR": "HKEY_CLASSES_ROOT",
+    "HKEY_CURRENT_CONFIG": "HKEY_CURRENT_CONFIG",
+    "HKCC": "HKEY_CURRENT_CONFIG",
+    "HKEY_CURRENT_USER": "HKEY_CURRENT_USER",
+    "HKCU": "HKEY_CURRENT_USER",
+    "HKEY_LOCAL_MACHINE": "HKEY_LOCAL_MACHINE",
+    "HKLM": "HKEY_LOCAL_MACHINE",
+    "HKEY_USERS": "HKEY_USERS",
+    "HKU": "HKEY_USERS",
+    "HKEY_CURRENT_USER_LOCAL_SETTINGS": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
+    "HKCULS": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
+    "HKEY_PERFORMANCE_DATA": "HKEY_PERFORMANCE_DATA",
+    "HKPD": "HKEY_PERFORMANCE_DATA",
+    "HKEY_PERFORMANCE_NLSTEXT": "HKEY_PERFORMANCE_NLSTEXT",
+    "HKPN": "HKEY_PERFORMANCE_NLSTEXT",
+    "HKEY_PERFORMANCE_TEXT": "HKEY_PERFORMANCE_TEXT",
+    "HKPT": "HKEY_PERFORMANCE_TEXT",
 }
 
 
@@ -481,13 +479,13 @@ network_socket_mapping = {
     'domain-family': 'domain',
     'protocol': 'protocol'
 }
-process_object_keys = (
-    'creation-time',
-    'start-time',
-    'name',
-    'pid',
-    'parent-pid'
-)
+process_object_mapping = {
+    'creation-time': 'creation_time',
+    'start-time': 'start_time',
+    'name': 'name',
+    'pid': 'pid',
+    'parent-pid': 'parent_pid'
+}
 regkey_object_mapping = {
     'name': 'name',
     'data': 'data',

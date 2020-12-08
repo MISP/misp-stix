@@ -254,10 +254,10 @@ class MISPtoSTIX1Parser():
     def _parse_custom_attribute(self, attribute: MISPAttribute):
         custom_object = Custom()
         custom_object.custom_properties = CustomProperties()
-        property = Property()
-        property.name = attribute.type
-        property.value = attribute.value
-        custom_object.custom_properties.append(property)
+        custom_object.custom_properties.append(self._create_property(
+            attribute.type,
+            attribute.value
+        ))
         observable = self._create_observable(custom_object, attribute.uuid, 'Custom')
         self._handle_attribute(attribute, observable)
 
@@ -586,11 +586,8 @@ class MISPtoSTIX1Parser():
             except Exception:
                 self.errors.append(f'Error with the {misp_object.name} object: {misp_object.uuid}.')
 
-    @staticmethod
-    def _add_custom_property(stix_object, name, value):
-        prop = Property()
-        prop.name = name
-        prop.value = value
+    def _add_custom_property(self, stix_object: File, name: str, value: str):
+        prop = self._create_property(name, value)
         try:
             stix_object.custom_properties.append(prop)
         except AttributeError:
@@ -660,15 +657,15 @@ class MISPtoSTIX1Parser():
             return stix1_mapping.objects_mapping[object_name]
         return '_parse_custom_object'
 
-    @staticmethod
-    def _handle_custom_properties(attributes: dict) -> CustomProperties:
+    def _handle_custom_properties(self, attributes: dict, multiple: Optional[bool] = True) -> CustomProperties:
         custom_properties = CustomProperties()
+        if not multiple:
+            for object_relation, value in attributes.items():
+                custom_properties.append(self._create_property(object_relation, value))
+            return custom_properties
         for object_relation, values in attributes.items():
             for value in values:
-                prop = Property()
-                prop.name = object_relation
-                prop.value = value
-                custom_properties.append(prop)
+                custom_properties.append(self._create_property(object_relation, value))
         return custom_properties
 
     def _handle_misp_object(self, observable: Observable, category: str):
@@ -773,10 +770,10 @@ class MISPtoSTIX1Parser():
             custom_object.description = misp_object.description
         custom_object.custom_properties = CustomProperties()
         for attribute in misp_object.attributes:
-            prop = Property()
-            prop.name = attribute.object_relation
-            prop.value = attribute.value
-            custom_object.custom_properties.append(prop)
+            custom_object.custom_properties.append(self._create_property(
+                attribute.object_relation,
+                attribute.value
+            ))
         observable = self._create_observable(custom_object, misp_object.uuid, 'Custom')
         self.warnings.add(f'MISP Object name {misp_object.name} not mapped.')
         return observable
@@ -920,11 +917,9 @@ class MISPtoSTIX1Parser():
         )
         for feature in ('layer3-protocol', 'layer4-protocol', 'layer7-protocol'):
             if feature in attributes:
-                setattr(
-                    connection_object,
-                    feature.replace('-', '_'),
-                    attributes.pop(feature)
-                )
+                field = feature.replace('-', '_')
+                setattr(connection_object, field, attributes.pop(feature))
+                setattr(getattr(connection_object, field), 'condition', 'Equals')
         if attributes:
             connection_object.custom_properties = self._handle_custom_properties(attributes)
         observable = self._create_observable(
@@ -955,6 +950,71 @@ class MISPtoSTIX1Parser():
         if attributes:
             socket_object.custom_properties = self._handle_custom_properties(attributes)
         observable = self._create_observable(socket_object, misp_object.uuid, 'NetworkSocket')
+        return observable
+
+    def _parse_process_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_multiple_object_attributes(
+            misp_object.attributes,
+            force_single=(
+                'command-line', 'creation-time', 'image',
+                'name', 'parent-pid', 'pid', 'start-time'
+            )
+        )
+        process_object = Process()
+        for key, feature in stix1_mapping.process_object_mapping.items():
+            if key in attributes:
+                setattr(process_object, feature, attributes.pop(key))
+                setattr(getattr(process_object, feature), 'condition', 'Equals')
+        if 'child-pid' in attributes:
+            process_object.child_pid_list = ChildPIDList()
+            for child in attributes.pop('child-pid'):
+                process_object.child_pid_list.append(child)
+        if 'port' in attributes:
+            process_object.port_list = PortList()
+            for port in attributes.pop('port'):
+                port_object = self._create_port_object(port)
+                process_object.port_list.append(port_object)
+        image_info_keys = ('image', 'command-line')
+        if any(key in attributes for key in image_info_keys):
+            process_object.image_info = ImageInfo()
+            for key, feature in zip(image_info_keys, ('file_name', 'command_line')):
+                if key in attributes:
+                    setattr(process_object.image_info, feature, attributes.pop(key))
+                    setattr(getattr(process_object.image_info, feature), 'condition', 'Equals')
+        if attributes:
+            process_object.custom_properties = self._handle_custom_properties(attributes)
+        observable = self._create_observable(process_object, misp_object.uuid, 'Process')
+        return observable
+
+    def _parse_registry_key_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_object_attributes(misp_object.attributes)
+        registry_object = self._create_registry_key_object(attributes.pop('key')) if 'key' in attributes else WinRegistryKey()
+        if 'hive' in attributes:
+            hive = attributes.pop('hive').lstrip('\\').upper()
+            if hive in stix1_mapping.misp_reghive:
+                hive = stix1_mapping.misp_reghive[hive]
+            registry_object.hive = hive
+            registry_object.hive.condition = 'Equals'
+        if any(key in attributes for key in stix1_mapping.regkey_object_mapping.keys()):
+            value_object = RegistryValue()
+            for key, feature in stix1_mapping.regkey_object_mapping.items():
+                if key in attributes:
+                    setattr(value_object, feature, attributes.pop(key))
+                    setattr(getattr(value_object, feature), 'condition', 'Equals')
+            registry_object.values = RegistryValues(value_object)
+        if 'last-modified' in attributes:
+            registry_object.modified_time = attributes.pop('last-modified')
+            registry_object.modified_time.condition = 'Equals'
+        if attributes:
+            registry_object.custom_properties = self._handle_custom_properties(
+                attributes,
+                multiple=False
+            )
+        observable = self._create_observable(
+            registry_object,
+            misp_object.uuid,
+            'WindowsRegistryKey'
+        )
         return observable
 
     def _parse_socket_addresses(self, stix_object: Union[NetworkConnection, NetworkSocket], attributes: dict, fields: tuple):
@@ -1325,6 +1385,13 @@ class MISPtoSTIX1Parser():
         port_object = self._create_port_object(value)
         observable = self._create_observable(port_object, uuid, object_type)
         return observable
+
+    @staticmethod
+    def _create_property(name: str, value: str) -> Property:
+        prop = Property()
+        prop.name = name
+        prop.value = value
+        return prop
 
     @staticmethod
     def _create_registry_key_object(regkey: str) -> WinRegistryKey:
