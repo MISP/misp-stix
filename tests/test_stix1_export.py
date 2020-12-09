@@ -282,6 +282,62 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(len(stix_package.ttps.ttp), 1)
         return stix_package.ttps.ttp[0]
 
+    def _check_url_observables(self, observables, misp_object):
+        attributes = misp_object['Attribute']
+        self.assertEqual(len(observables), len(attributes))
+        url, domain, hostname, ip, port = attributes
+        url_observable, domain_observable, hostname_observable, ip_observable, port_observable = observables
+        url_properties = self._check_observable_features(url_observable, url, 'URI')
+        self.assertEqual(url_properties.value.value, url['value'])
+        domain_properties = self._check_observable_features(domain_observable, domain, 'DomainName')
+        self.assertEqual(domain_properties.value.value, domain['value'])
+        hostname_properties = self._check_observable_features(hostname_observable, hostname, 'Hostname')
+        self.assertEqual(hostname_properties.hostname_value.value, hostname['value'])
+        ip_properties = self._check_observable_features(ip_observable, ip, 'Address')
+        self.assertEqual(ip_properties.address_value.value, ip['value'])
+        port_properties = self._check_observable_features(port_observable, port, 'Port')
+        self.assertEqual(port_properties.port_value.value, int(port['value']))
+
+    def _check_unix_user_account_properties(self, properties, attributes):
+        username, user_id, display_name, password, group1, group2, group_id, home_dir, _ = attributes
+        self.assertEqual(properties.username.value, username['value'])
+        self.assertEqual(properties.full_name.value, display_name['value'])
+        self.assertEqual(len(properties.authentication), 1)
+        authentication = properties.authentication[0]
+        self.assertEqual(authentication.authentication_type.value, 'password')
+        self.assertEqual(authentication.authentication_data.value, password['value'])
+        self.assertEqual(properties.group_id.value, int(group_id['value']))
+        self.assertEqual(properties.home_directory.value, home_dir['value'])
+        self._check_custom_properties((user_id, group1, group2), properties.custom_properties)
+
+    def _check_user_account_properties(self, properties, attributes):
+        username, user_id, display_name, password, group1, group2, group_id, home_dir = attributes
+        self.assertEqual(properties.username.value, username['value'])
+        self.assertEqual(properties.full_name.value, display_name['value'])
+        self.assertEqual(len(properties.authentication), 1)
+        authentication = properties.authentication[0]
+        self.assertEqual(authentication.authentication_type.value, 'password')
+        self.assertEqual(authentication.authentication_data.value, password['value'])
+        self.assertEqual(properties.home_directory.value, home_dir['value'])
+        self._check_custom_properties((user_id, group1, group2, group_id), properties.custom_properties)
+
+    def _check_windows_user_account_properties(self, properties, attributes):
+        username, user_id, display_name, password, group1, group2, group_id, home_dir, account_type = attributes
+        self.assertEqual(properties.username.value, username['value'])
+        self.assertEqual(properties.security_id.value, user_id['value'])
+        self.assertEqual(properties.full_name.value, display_name['value'])
+        self.assertEqual(len(properties.authentication), 1)
+        authentication = properties.authentication[0]
+        self.assertEqual(authentication.authentication_type.value, 'password')
+        self.assertEqual(authentication.authentication_data.value, password['value'])
+        self.assertEqual(properties.home_directory.value, home_dir['value'])
+        group_list = properties.group_list
+        self.assertEqual(len(group_list), 2)
+        group1_properties, group2_properties = group_list
+        self.assertEqual(group1_properties.name.value, group1['value'])
+        self.assertEqual(group2_properties.name.value, group2['value'])
+        self._check_custom_properties((group_id, account_type), properties.custom_properties)
+
     @staticmethod
     def _get_marking_value(marking):
         if marking._XSI_TYPE == 'tlpMarking:TLPMarkingStructureType':
@@ -1065,6 +1121,64 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(observable.relationship, misp_object['meta-category'])
         properties = self._check_observable_features(observable.item, misp_object, 'WindowsRegistryKey')
         self._check_registry_key_properties(properties, misp_object['Attribute'])
+
+    def test_event_with_url_object_indicator(self):
+        event = get_event_with_url_object()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
+        observables = indicator.observable.observable_composition.observables
+        self._check_url_observables(observables, misp_object)
+
+    def test_event_with_url_object_observable(self):
+        event = get_event_with_url_object()
+        self._remove_ids_flags(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.item.id_, f"{_DEFAULT_NAMESPACE}:{misp_object['name']}_ObservableComposition-{misp_object['uuid']}")
+        observables = observable.item.observable_composition.observables
+        self._check_url_observables(observables, misp_object)
+
+    def test_event_with_user_account_objects_indicator(self):
+        event = get_event_with_user_account_objects()
+        self._add_ids_flag(event)
+        user, unix, windows = deepcopy(event['Event']['Object'])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        user_rindicator, unix_rindicator, windows_rindicator = incident.related_indicators.indicator
+        user_indicator = self._check_indicator_object_features(user_rindicator, user, orgc)
+        user_properties = self._check_observable_features(user_indicator.observable, user, 'UserAccount')
+        self._check_user_account_properties(user_properties, user['Attribute'])
+        unix_indicator = self._check_indicator_object_features(unix_rindicator, unix, orgc)
+        unix_properties = self._check_observable_features(unix_indicator.observable, unix, 'UnixUserAccount')
+        self._check_unix_user_account_properties(unix_properties, unix['Attribute'])
+        windows_indicator = self._check_indicator_object_features(windows_rindicator, windows, orgc)
+        windows_properties = self._check_observable_features(windows_indicator.observable, windows, 'WindowsUserAccount')
+        self._check_windows_user_account_properties(windows_properties, windows['Attribute'])
+
+    def test_event_with_user_account_objects_observable(self):
+        event = get_event_with_user_account_objects()
+        self._remove_ids_flags(event)
+        user, unix, windows = deepcopy(event['Event']['Object'])
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        user_observable, unix_observable, windows_observable = incident.related_observables.observable
+        self.assertEqual(user_observable.relationship, user['meta-category'])
+        user_properties = self._check_observable_features(user_observable.item, user, 'UserAccount')
+        self._check_user_account_properties(user_properties, user['Attribute'])
+        self.assertEqual(unix_observable.relationship, unix['meta-category'])
+        unix_properties = self._check_observable_features(unix_observable.item, unix, 'UnixUserAccount')
+        self._check_unix_user_account_properties(unix_properties, unix['Attribute'])
+        self.assertEqual(windows_observable.relationship, windows['meta-category'])
+        windows_properties = self._check_observable_features(windows_observable.item, windows, 'WindowsUserAccount')
+        self._check_windows_user_account_properties(windows_properties, windows['Attribute'])
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #

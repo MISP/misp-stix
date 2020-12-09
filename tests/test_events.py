@@ -566,6 +566,96 @@ _TEST_REGISTRY_KEY = {
     ]
 }
 
+_TEST_URL = {
+    "name": "url",
+    "meta-category": "network",
+    "description": "url object describes an url along with its normalized field",
+    "uuid": "5ac347ca-dac4-4562-9775-04120a00020f",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "url",
+            "object_relation": "url",
+            "value": "https://www.circl.lu/team"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "domain",
+            "object_relation": "domain",
+            "value": "circl.lu"
+        },
+        {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "type": "hostname",
+            "object_relation": "host",
+            "value": "www.circl.lu"
+        },
+        {
+            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "type": "ip-dst",
+            "object_relation": "ip",
+            "value": "149.13.33.14"
+        },
+        {
+            "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+            "type": "port",
+            "object_relation": "port",
+            "value": "443"
+        }
+    ]
+}
+
+_TEST_USER_ACCOUNT = {
+    "name": "user-account",
+    "meta-category": "misc",
+    "description": "Object describing an user account",
+    "uuid": "5d234f25-539c-4d12-bf93-2c46a964451a",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "username",
+            "value": "iglocska"
+        },
+        {
+            "type": "text",
+            "object_relation": "user-id",
+            "value": "iglocska"
+        },
+        {
+            "type": "text",
+            "object_relation": "display-name",
+            "value": "Code Monkey"
+        },
+        {
+            "type": "text",
+            "object_relation": "password",
+            "value": "P4ssw0rd1234!"
+        },
+        {
+            "type": "text",
+            "object_relation": "group",
+            "value": "viktor-fan"
+        },
+        {
+            "type": "text",
+            "object_relation": "group",
+            "value": "donald-fan"
+        },
+        {
+            "type": "text",
+            "object_relation": "group-id",
+            "value": "2004"
+        },
+        {
+            "type": "text",
+            "object_relation": "home_dir",
+            "value": "/home/iglocska"
+        },
+    ]
+}
+
 ################################################################################
 #                               BASE EVENT TESTS                               #
 ################################################################################
@@ -1277,5 +1367,37 @@ def get_event_with_registry_key_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_REGISTRY_KEY)
+    ]
+    return event
+
+def get_event_with_url_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_URL)
+    ]
+    return event
+
+def get_event_with_user_account_objects():
+    event = deepcopy(_BASE_EVENT)
+    unix_user_account = deepcopy(_TEST_USER_ACCOUNT)
+    unix_user_account['Attribute'].append(
+        {
+            "type": "text",
+            "object_relation": "account-type",
+            "value": "unix"
+        }
+    )
+    windows_user_account = deepcopy(_TEST_USER_ACCOUNT)
+    windows_user_account['Attribute'].append(
+        {
+            "type": "text",
+            "object_relation": "account-type",
+            "value": "windows-local"
+        },
+    )
+    event['Event']['Object'] = [
+        deepcopy(_TEST_USER_ACCOUNT),
+        unix_user_account,
+        windows_user_account
     ]
     return event
