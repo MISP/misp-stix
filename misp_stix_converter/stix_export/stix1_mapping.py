@@ -491,11 +491,6 @@ regkey_object_mapping = {
     'data': 'data',
     'data-type': 'datatype'
 }
-user_account_id_mapping = {
-    'unix': 'user_id',
-    'windows-domain': 'security_id',
-    'windows-local': 'security_id'
-}
 user_account_object_mapping = {
     'username': 'username',
     'display-name': 'full_name',

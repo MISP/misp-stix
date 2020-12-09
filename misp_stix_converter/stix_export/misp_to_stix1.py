@@ -27,14 +27,14 @@ from cybox.objects.port_object import Port
 from cybox.objects.process_object import ChildPIDList, ImageInfo, PortList, Process
 from cybox.objects.socket_address_object import SocketAddress
 from cybox.objects.system_object import System, NetworkInterface, NetworkInterfaceList
-from cybox.objects.unix_user_account_object import UnixUserAccount
+from cybox.objects.unix_user_account_object import UnixGroup, UnixGroupList, UnixUserAccount
 from cybox.objects.uri_object import URI
 from cybox.objects.user_account_object import UserAccount
 from cybox.objects.whois_object import WhoisEntry, WhoisRegistrants, WhoisRegistrant, WhoisRegistrar, WhoisNameservers
 from cybox.objects.win_executable_file_object import WinExecutableFile, PEHeaders, PEFileHeader, PESectionList, PESection, PESectionHeaderStruct, Entropy
 from cybox.objects.win_registry_key_object import RegistryValue, RegistryValues, WinRegistryKey
 from cybox.objects.win_service_object import WinService
-from cybox.objects.win_user_account_object import WinUser
+from cybox.objects.win_user_account_object import WinGroup, WinGroupList, WinUser
 from cybox.objects.x509_certificate_object import X509Certificate, X509CertificateSignature, X509Cert, SubjectPublicKey, RSAPublicKey, Validity
 from cybox.utils import Namespace
 from datetime import datetime
@@ -262,16 +262,13 @@ class MISPtoSTIX1Parser():
         self._handle_attribute(attribute, observable)
 
     def _parse_domain_attribute(self, attribute: MISPAttribute):
-        domain_object = self._create_domain_object(attribute.value)
-        observable = self._create_observable(domain_object, attribute.uuid, 'DomainName')
+        observable = self._create_domain_observable(attribute.value, attribute.uuid)
         self._handle_attribute(attribute, observable)
 
     def _parse_domain_ip_attribute(self, attribute: MISPAttribute):
         domain, ip = attribute.value.split('|')
-        domain_object = self._create_domain_object(domain)
-        domain_observable = self._create_observable(domain_object, attribute.uuid, 'DomainName')
-        address_object = self._create_address_object(attribute.type, ip)
-        address_observable = self._create_observable(address_object, attribute.uuid, 'Address')
+        domain_observable = self._create_domain_observable(domain, attribute.uuid)
+        address_observable = self._create_address_observable(attribute.type, ip, attribute.uuid)
         composite_object = ObservableComposition(
             observables=[domain_observable, address_observable]
         )
@@ -337,8 +334,7 @@ class MISPtoSTIX1Parser():
         return hash
 
     def _parse_hostname_attribute(self, attribute: MISPAttribute):
-        hostname_object = self._create_hostname_object(attribute.value)
-        observable = self._create_observable(hostname_object, attribute.uuid, 'Hostname')
+        observable = self._create_hostname_observable(attribute.value, attribute.uuid)
         self._handle_attribute(attribute, observable)
 
     def _parse_hostname_port_attribute(self, attribute: MISPAttribute):
@@ -418,8 +414,7 @@ class MISPtoSTIX1Parser():
         self._handle_attribute(attribute, observable)
 
     def _parse_port_attribute(self, attribute: MISPAttribute):
-        port_object = self._create_port_object(attribute.value)
-        observable = self._create_observable(port_object, attribute.uuid, 'Port')
+        observable = self._create_port_observable(attribute.value, attribute.uuid)
         self._handle_attribute(attribute, observable)
 
     def _parse_regkey_attribute(self, attribute: MISPAttribute):
@@ -502,8 +497,7 @@ class MISPtoSTIX1Parser():
         self.incident.related_indicators.append(related_indicator)
 
     def _parse_url_attribute(self, attribute: MISPAttribute):
-        uri_object = self._create_uri_object(attribute.value)
-        observable = self._create_observable(uri_object, attribute.uuid, 'URI')
+        observable = self._create_uri_observable(attribute.value, attribute.uuid)
         self._handle_attribute(attribute, observable)
 
     def _parse_undefined_attribute(self, attribute: MISPAttribute):
@@ -645,6 +639,10 @@ class MISPtoSTIX1Parser():
         return {attribute.object_relation: attribute.value for attribute in attributes}
 
     @staticmethod
+    def _extract_object_attributes_with_uuid(attributes: list) -> dict:
+        return {attribute.object_relation: (attribute.value, attribute.uuid) for attribute in attributes}
+
+    @staticmethod
     def _fetch_ids_flags(attributes: list) -> bool:
         for attribute in attributes:
             if attribute.to_ids:
@@ -783,13 +781,13 @@ class MISPtoSTIX1Parser():
         observables = []
         if 'domain' in attributes:
             for attribute in attributes['domain']:
-                observables.append(self._create_domain_observable(attribute))
+                observables.append(self._create_domain_observable(*attribute))
         if 'ip' in attributes:
             for attribute in attributes['ip']:
-                observables.append(self._create_address_observable(attribute, 'ip-dst'))
+                observables.append(self._create_address_observable('ip-dst', *attribute))
         if 'port' in attributes:
             for attribute in attributes['port']:
-                observables.append(self._create_port_observable(attribute))
+                observables.append(self._create_port_observable(*attribute))
         observable_composition = self._create_observable_composition(
             observables,
             misp_object.name,
@@ -878,28 +876,23 @@ class MISPtoSTIX1Parser():
         for feature in ('ip-src', 'ip-dst'):
             if feature in attributes:
                 for attribute in attributes[feature]:
-                    observables.append(self._create_address_observable(attribute, feature))
+                    observables.append(self._create_address_observable(feature, *attribute))
         if 'ip' in attributes:
             for attribute in attributes['ip']:
-                observables.append(self._create_address_observable(attribute, 'ip-dst'))
+                observables.append(self._create_address_observable('ip-dst', *attribute))
         for feature in ('src-port', 'dst-port'):
             if feature in attributes:
                 for attribute in attributes[feature]:
                     observables.append(self._create_port_observable(
-                        attribute,
+                        *attribute,
                         feature=feature.split('-')[0]
                     ))
         if 'domain' in attributes:
             for attribute in attributes['domain']:
-                observables.append(self._create_domain_observable(attribute))
+                observables.append(self._create_domain_observable(*attribute))
         if 'hostname' in attributes:
             for attribute in attributes['hostname']:
-                hostname, uuid = attribute
-                hostname_object = self._create_hostname_object(hostname)
-                observable = self._create_observable(hostname_object, uuid, 'Hostname')
-                observables.append(observable)
-        if len(observables) == 1:
-            return observables[0]
+                observables.append(self._create_hostname_observable(*attributes))
         observable_composition = self._create_observable_composition(
             observables,
             misp_object.name,
@@ -1034,6 +1027,53 @@ class MISPtoSTIX1Parser():
                     self._create_socket_address_object(**args)
                 )
 
+    def _parse_url_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_object_attributes_with_uuid(misp_object.attributes)
+        observables = []
+        if 'url' in attributes:
+            observables.append(self._create_uri_observable(*attributes['url']))
+        if 'domain' in attributes:
+            observables.append(self._create_domain_observable(*attributes['domain']))
+        if 'host' in attributes:
+            observables.append(self._create_hostname_observable(*attributes['host']))
+        if 'ip' in attributes:
+            observables.append(self._create_address_observable('ip-dst', *attributes['ip']))
+        if 'port' in attributes:
+            observables.append(self._create_port_observable(*attributes['port']))
+        observable_composition = self._create_observable_composition(
+            observables,
+            misp_object.name,
+            misp_object.uuid
+        )
+        return observable_composition
+
+    def _parse_user_account_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_multiple_object_attributes(
+            misp_object.attributes,
+            force_single=(
+                'account-type', 'created', 'disabled', 'display-name', 'home_dir',
+                'last_login', 'password', 'shell', 'text', 'username'
+            )
+        )
+        account_object = self._create_user_account_object(attributes)
+        if 'password' in attributes:
+            account_object.authentication = self._create_authentication_object(
+                auth_type='password',
+                password=attributes.pop('password')
+            )
+        for key, feature in stix1_mapping.user_account_object_mapping.items():
+            if key in attributes:
+                setattr(account_object, feature, attributes.pop(key))
+                setattr(getattr(account_object, feature), 'condition', 'Equals')
+        if attributes:
+            account_object.custom_properties = self._handle_custom_properties(attributes)
+        observable = self._create_observable(
+            account_object,
+            misp_object.uuid,
+            account_object._XSI_TYPE.split('ObjectType')[0]
+        )
+        return observable
+
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
@@ -1064,7 +1104,7 @@ class MISPtoSTIX1Parser():
         for related_ttp in related_ttps.values():
             indicator.add_indicated_ttp(related_ttp)
 
-    def _parse_attack_pattern_event_galaxy(self, galaxy:dict):
+    def _parse_attack_pattern_event_galaxy(self, galaxy: dict):
         related_ttps = self._get_related_ttps(galaxy, 'attack_pattern')
         self._handle_related_ttps(related_ttps)
 
@@ -1230,8 +1270,7 @@ class MISPtoSTIX1Parser():
         address_object.address_value.condition = condition
         return address_object
 
-    def _create_address_observable(self, attribute: tuple, feature:str) -> Observable:
-        value, uuid = attribute
+    def _create_address_observable(self, feature: str, value: str, uuid: str) -> Observable:
         address_object = self._create_address_object(feature, value)
         observable = self._create_observable(address_object, uuid, 'Address')
         return observable
@@ -1291,9 +1330,8 @@ class MISPtoSTIX1Parser():
         domain_object.value.condition = "Equals"
         return domain_object
 
-    def _create_domain_observable(self, attribute: tuple) -> Observable:
-        value, uuid = attribute
-        domain_object = self._create_domain_object(value)
+    def _create_domain_observable(self, domain: str, uuid: str) -> Observable:
+        domain_object = self._create_domain_object(domain)
         observable = self._create_observable(domain_object, uuid, 'DomainName')
         return observable
 
@@ -1310,6 +1348,11 @@ class MISPtoSTIX1Parser():
         hostname_object.hostname_value = hostname
         hostname_object.hostname_value.condition = "Equals"
         return hostname_object
+
+    def _create_hostname_observable(self, hostname: str, uuid: str) -> Observable:
+        hostname_object = self._create_hostname_object(hostname)
+        observable = self._create_observable(hostname_object, uuid, 'Hostname')
+        return observable
 
     def _create_indicator_from_attribute(self, attribute: MISPAttribute) -> Indicator:
         indicator = Indicator(timestamp=attribute.timestamp)
@@ -1377,12 +1420,11 @@ class MISPtoSTIX1Parser():
         port_object.port_value.condition = "Equals"
         return port_object
 
-    def _create_port_observable(self, attribute: tuple, feature: str = None) -> Observable:
-        value, uuid = attribute
+    def _create_port_observable(self, port: str, uuid: str, feature: str = None) -> Observable:
         object_type = 'Port'
         if feature is not None:
             object_type = f'{feature}{object_type}'
-        port_object = self._create_port_object(value)
+        port_object = self._create_port_object(port)
         observable = self._create_observable(port_object, uuid, object_type)
         return observable
 
@@ -1471,6 +1513,51 @@ class MISPtoSTIX1Parser():
         uri_object.value.condition = "Equals"
         return uri_object
 
+    def _create_uri_observable(self, url: str, uuid: str) -> Observable:
+        uri_object = self._create_uri_object(url)
+        observable = self._create_observable(uri_object, uuid, 'URI')
+        return observable
+
+    def _create_unix_user_account_object(self, attributes: dict) -> UnixUserAccount:
+        account_object = UnixUserAccount()
+        if 'user-id' in attributes:
+            self._set_user_id(account_object, attributes, 'user_id')
+        if 'group-id' in attributes:
+            account_object.group_id = attributes.pop('group-id')[0]
+            account_object.group_id.condition = 'Equals'
+        if 'group' in attributes:
+            self._set_group_list(account_object, attributes, UnixGroupList, UnixGroup, 'group_id')
+            group_list = UnixGroupList()
+            groups = attributes.pop('group')
+            try:
+                for group in groups:
+                    unix_group = UnixGroup()
+                    unix_group.group_id = group
+                    group_list.append(unix_group)
+                account_object.group_list = group_list
+            except ValueError:
+                attributes['group'] = groups
+        return account_object
+
+    def _create_user_account_object(self, attributes: dict) -> Union[UnixUserAccount, UserAccount, WinUser]:
+        account_types = ('unix', 'windows-domain', 'windows-local')
+        if 'account-type' in attributes and attributes['account-type'] in account_types:
+            account_type = attributes.pop('account-type')
+            if account_type == 'unix':
+                return self._create_unix_user_account_object(attributes)
+            attributes['account-type'] = [account_type]
+            return self._create_windows_user_account_object(attributes)
+        account_object = UserAccount()
+        return account_object
+
+    def _create_windows_user_account_object(self, attributes: dict) -> WinUser:
+        account_object = WinUser()
+        if 'user-id' in attributes:
+            self._set_user_id(account_object, attributes, 'security_id')
+        if 'group' in attributes:
+            self._set_group_list(account_object, attributes, WinGroupList, WinGroup, 'name')
+        return account_object
+
     @staticmethod
     def _fetch_colors(tags: list) -> tuple:
         return (tag.split(':')[-1].upper() for tag in tags)
@@ -1489,6 +1576,25 @@ class MISPtoSTIX1Parser():
         if hasattr(self.misp_event, 'orgc'):
             return self.misp_event.orgc.name
         return self.orgname
+
+    @staticmethod
+    def _set_group_list(
+        account_object: Union[UnixUserAccount, WinUser],
+        attributes: dict,
+        group_list_class: Union[UnixGroupList, WinGroupList],
+        group_class: Union[UnixGroup, WinGroup],
+        feature: str
+    ):
+        group_list = group_list_class()
+        groups = attributes.pop('group')
+        try:
+            for grp in groups:
+                group = group_class()
+                setattr(group, feature, grp)
+                group_list.append(group)
+            account_object.group_list = group_list
+        except ValueError:
+            attributes['group'] = groups
 
     def _set_handling(self, tags: list) -> Marking:
         sorted_tags = defaultdict(list)
@@ -1527,6 +1633,15 @@ class MISPtoSTIX1Parser():
     def _set_source(self) -> Identity:
         identity = Identity(name=self.orgc_name)
         return self._create_information_source(identity)
+
+    @staticmethod
+    def _set_user_id(account_object: Union[UnixUserAccount, WinUser], attributes: dict, feature: str):
+        user_id = attributes.pop('user-id')[0]
+        try:
+            setattr(account_object, feature, user_id)
+            setattr(getattr(account_object, feature), 'condition', 'Equals')
+        except ValueError:
+            attributes['user-id'] = [user_id]
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
