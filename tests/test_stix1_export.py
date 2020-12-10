@@ -338,6 +338,25 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(group2_properties.name.value, group2['value'])
         self._check_custom_properties((group_id, account_type), properties.custom_properties)
 
+    def _check_whois_properties(self, properties, attributes):
+        registrar, email, org, name, phone, creation, modification, expiration, domain, nameserver, ip = attributes
+        self.assertEqual(properties.registrar_info.name.value, registrar['value'])
+        registrants = properties.registrants
+        self.assertEqual(len(registrants), 1)
+        registrant = registrants[0]
+        self.assertEqual(registrant.email_address.address_value.value, email['value'])
+        self.assertEqual(registrant.organization.value, org['value'])
+        self.assertEqual(registrant.name.value, name['value'])
+        self.assertEqual(registrant.phone_number.value, phone['value'])
+        self.assertEqual(properties.creation_date.value, datetime.strptime(creation['value'], '%Y-%m-%dT%H:%M:%S'))
+        self.assertEqual(properties.updated_date.value, datetime.strptime(modification['value'], '%Y-%m-%dT%H:%M:%S'))
+        self.assertEqual(properties.expiration_date.value, datetime.strptime(expiration['value'], '%Y-%m-%dT%H:%M:%S'))
+        self.assertEqual(properties.domain_name.value.value, domain['value'])
+        nameservers = properties.nameservers
+        self.assertEqual(len(nameservers), 1)
+        self.assertEqual(nameservers[0].value.value, nameserver['value'])
+        self.assertEqual(properties.ip_address.address_value.value, ip['value'])
+
     @staticmethod
     def _get_marking_value(marking):
         if marking._XSI_TYPE == 'tlpMarking:TLPMarkingStructureType':
@@ -1179,6 +1198,29 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(windows_observable.relationship, windows['meta-category'])
         windows_properties = self._check_observable_features(windows_observable.item, windows, 'WindowsUserAccount')
         self._check_windows_user_account_properties(windows_properties, windows['Attribute'])
+
+    def test_event_with_whois_object_indicator(self):
+        event = get_event_with_whois_object()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
+        properties = self._check_observable_features(indicator.observable, misp_object, 'Whois')
+        self._check_whois_properties(properties, misp_object['Attribute'])
+
+    def test_event_with_whois_object_observable(self):
+        event = get_event_with_whois_object()
+        self._remove_ids_flags(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, misp_object['meta-category'])
+        properties = self._check_observable_features(observable.item, misp_object, 'Whois')
+        self._check_whois_properties(properties, misp_object['Attribute'])
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #

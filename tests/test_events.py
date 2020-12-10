@@ -656,6 +656,71 @@ _TEST_USER_ACCOUNT = {
     ]
 }
 
+_TEST_WHOIS = {
+    "name": "whois",
+    "meta-category": "network",
+    "description": "Whois records information for a domain name or an IP address.",
+    "uuid": "5b0d1b61-6c00-4387-a5fa-04370a00020f",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "whois-registrar",
+            "object_relation": "registrar",
+            "value": "Registrar"
+        },
+        {
+            "type": "whois-registrant-email",
+            "object_relation": "registrant-email",
+            "value": "registrant@email.com"
+        },
+        {
+            "type": "whois-registrant-org",
+            "object_relation": "registrant-org",
+            "value": "Registrant Org"
+        },
+        {
+            "type": "whois-registrant-name",
+            "object_relation": "registrant-name",
+            "value": "Registrant Name"
+        },
+        {
+            "type": "whois-registrant-phone",
+            "object_relation": "registrant-phone",
+            "value": "0123456789"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "creation-date",
+            "value": "2017-10-01T08:00:00"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "modification-date",
+            "value": "2020-10-25T16:22:00"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "expiration-date",
+            "value": "2021-01-01T00:00:00"
+        },
+        {
+            "type": "domain",
+            "object_relation": "domain",
+            "value": "circl.lu"
+        },
+        {
+            "type": "hostname",
+            "object_relation": "nameserver",
+            "value": "www.circl.lu"
+        },
+        {
+            "type": "ip-src",
+            "object_relation": "ip-address",
+            "value": "1.2.3.4"
+        },
+    ]
+}
+
 ################################################################################
 #                               BASE EVENT TESTS                               #
 ################################################################################
@@ -1399,5 +1464,12 @@ def get_event_with_user_account_objects():
         deepcopy(_TEST_USER_ACCOUNT),
         unix_user_account,
         windows_user_account
+    ]
+    return event
+
+def get_event_with_whois_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_WHOIS)
     ]
     return event
