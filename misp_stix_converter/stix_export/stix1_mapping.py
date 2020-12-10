@@ -353,7 +353,7 @@ objects_mapping = {
     "registry-key": '_parse_registry_key_object',
     "url": '_parse_url_object',
     "user-account": '_parse_user_account_object',
-    "whois": '_parse_whois',
+    "whois": '_parse_whois_object',
     "x509": '_parse_x509_object'
 }
 

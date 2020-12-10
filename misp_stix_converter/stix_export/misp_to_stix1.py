@@ -1074,6 +1074,53 @@ class MISPtoSTIX1Parser():
         )
         return observable
 
+    def _parse_whois_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_multiple_object_attributes(
+            misp_object.attributes,
+            force_single=(
+                'comment', 'creation-date', 'expiration-date', 'modification-date',
+                'registrant-email', 'registrant-name', 'registrant-org',
+                'registrant-phone', 'registrar', 'text'
+            )
+        )
+        whois_object = WhoisEntry()
+        if 'registrar' in attributes:
+            whois_registrar = WhoisRegistrar()
+            whois_registrar.name = attributes.pop('registrar')
+            whois_object.registrar_info = whois_registrar
+        if any(key.startswith('registrant-') for key in attributes.keys()):
+            registrants = WhoisRegistrants()
+            registrant = WhoisRegistrant()
+            for key, feature in stix1_mapping.whois_registrant_mapping.items():
+                if key in attributes:
+                    setattr(registrant, feature, attributes.pop(key))
+                    setattr(getattr(registrant, feature), 'condition', 'Equals')
+            registrants.append(registrant)
+            whois_object.registrants = registrants
+        for key, feature in stix1_mapping.whois_object_mapping.items():
+            if key in attributes:
+                setattr(whois_object, feature, attributes.pop(key))
+                setattr(getattr(whois_object, feature), 'condition', 'Equals')
+        if 'nameserver' in attributes:
+            nameservers = WhoisNameservers()
+            for nameserver in attributes.pop('nameserver'):
+                nameservers.append(URI(value=nameserver))
+            whois_object.nameservers = nameservers
+        if 'domain' in attributes:
+            domain_name = attributes.pop('domain')[0] if len(attributes['domain']) == 1 else attributes['domain'].pop(0)
+            whois_object.domain_name = URI(value=domain_name)
+        if 'ip-address' in attributes:
+            ip_address = attributes.pop('ip-address')[0] if len(attributes['ip-address']) == 1 else attribute['ip-address'].pop(0)
+            whois_object.ip_address = Address(address_value=ip_address)
+        if 'comment' in attributes:
+            whois_object.remarks = attributes.pop('comment')
+        elif 'text' in attributes:
+            whois_object.remarks = attributes.pop('text')
+        if attributes:
+            whois_object.custom_properties = self._handle_custom_properties(attributes)
+        observable = self._create_observable(whois_object, misp_object.uuid, 'Whois')
+        return observable
+
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
