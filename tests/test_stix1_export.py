@@ -357,6 +357,28 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(nameservers[0].value.value, nameserver['value'])
         self.assertEqual(properties.ip_address.address_value.value, ip['value'])
 
+    def _check_x509_properties(self, properties, attributes):
+        issuer, pem, pubkey_algo, exponent, modulus, serial, signature_algo, subject, before, after, version, md5, sha1 = attributes
+        certificate = properties.certificate
+        self.assertEqual(certificate.issuer.value, issuer['value'])
+        self.assertEqual(certificate.serial_number.value, serial['value'])
+        self.assertEqual(certificate.signature_algorithm.value, signature_algo['value'])
+        self.assertEqual(certificate.subject.value, subject['value'])
+        self.assertEqual(certificate.version.value, int(version['value']))
+        validity = certificate.validity
+        self.assertEqual(validity.not_before.value, datetime.strptime(before['value'], '%Y-%m-%dT%H:%M:%S'))
+        self.assertEqual(validity.not_after.value, datetime.strptime(after['value'], '%Y-%m-%dT%H:%M:%S'))
+        pubkey = certificate.subject_public_key
+        self.assertEqual(pubkey.public_key_algorithm.value, pubkey_algo['value'])
+        rsa_pubkey = pubkey.rsa_public_key
+        self.assertEqual(rsa_pubkey.exponent.value, int(exponent['value']))
+        self.assertEqual(rsa_pubkey.modulus.value, modulus['value'])
+        self.assertEqual(properties.raw_certificate.value, pem['value'])
+        signature = properties.certificate_signature
+        self.assertEqual(signature.signature_algorithm.value, 'SHA1')
+        self.assertEqual(signature.signature.value, sha1['value'])
+        self._check_custom_properties([md5], properties.custom_properties)
+
     @staticmethod
     def _get_marking_value(marking):
         if marking._XSI_TYPE == 'tlpMarking:TLPMarkingStructureType':
@@ -1221,6 +1243,29 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(observable.relationship, misp_object['meta-category'])
         properties = self._check_observable_features(observable.item, misp_object, 'Whois')
         self._check_whois_properties(properties, misp_object['Attribute'])
+
+    def test_event_with_x509_object_indicator(self):
+        event = get_event_with_x509_object()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
+        properties = self._check_observable_features(indicator.observable, misp_object, 'X509Certificate')
+        self._check_x509_properties(properties, misp_object['Attribute'])
+
+    def test_event_with_x509_object_observable(self):
+        event = get_event_with_x509_object()
+        self._remove_ids_flags(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, misp_object['meta-category'])
+        properties = self._check_observable_features(observable.item, misp_object, 'X509Certificate')
+        self._check_x509_properties(properties, misp_object['Attribute'])
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #

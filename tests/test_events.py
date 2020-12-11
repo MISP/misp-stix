@@ -721,6 +721,81 @@ _TEST_WHOIS = {
     ]
 }
 
+_TEST_X509 = {
+    "name": "x509",
+    "meta-category": "network",
+    "description": "x509 object describing a X.509 certificate",
+    "uuid": "5ac3444e-145c-4749-8467-02550a00020f",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "issuer",
+            "value": "Issuer Name"
+        },
+        {
+            "type": "text",
+            "object_relation": "pem",
+            "value": "RawCertificateInPEMFormat"
+        },
+        {
+            "type": "text",
+            "object_relation": "pubkey-info-algorithm",
+            "value": "PublicKeyAlgorithm"
+        },
+        {
+            "type": "text",
+            "object_relation": "pubkey-info-exponent",
+            "value": "2"
+        },
+        {
+            "type": "text",
+            "object_relation": "pubkey-info-modulus",
+            "value": "C5"
+        },
+        {
+            "type": "text",
+            "object_relation": "serial-number",
+            "value": "1234567890"
+        },
+        {
+            "type": "text",
+            "object_relation": "signature-algorithm",
+            "value": "SHA1_WITH_RSA_ENCRYPTION"
+        },
+        {
+            "type": "text",
+            "object_relation": "subject",
+            "value": "CertificateSubject"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "validity-not-before",
+            "value": "2020-01-01T00:00:00"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "validity-not-after",
+            "value": "2021-01-01T00:00:00"
+        },
+        {
+            "type": "text",
+            "object_relation": "version",
+            "value": "1"
+        },
+        {
+            "type": "x509-fingerprint-md5",
+            "object_relation": "x509-fingerprint-md5",
+            "value": "b2a5abfeef9e36964281a31e17b57c97"
+        },
+        {
+            "type": "x509-fingerprint-sha1",
+            "object_relation": "x509-fingerprint-sha1",
+            "value": "5898fc860300e228dcd54c0b1045b5fa0dcda502"
+        },
+    ]
+}
+
 ################################################################################
 #                               BASE EVENT TESTS                               #
 ################################################################################
@@ -1471,5 +1546,12 @@ def get_event_with_whois_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_WHOIS)
+    ]
+    return event
+
+def get_event_with_x509_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_X509)
     ]
     return event
