@@ -521,27 +521,29 @@ whois_registrant_mapping = {
     'registrant-org': 'organization'
 }
 x509_creation_mapping = {
-    'version': 'contents',
-    'serial-number': 'contents',
-    'issuer': 'contents',
-    'subject': 'contents',
+    'version': 'certificate',
+    'serial-number': 'certificate',
+    'issuer': 'certificate',
+    'subject': 'certificate',
+    'signature-algorithm': 'certificate',
     'validity-not-before': 'validity',
     'validity-not-after': 'validity',
-    'pubkey-info-exponent': 'rsa_pubkey',
-    'pubkey-info-modulus': 'rsa_pubkey',
+    'pubkey-info-algorithm': 'pubkey',
+    'pubkey-info-exponent': 'pubkey',
+    'pubkey-info-modulus': 'pubkey',
     'raw-base64': 'raw_certificate',
     'pem': 'raw_certificate',
     'x509-fingerprint-md5': 'signature',
     'x509-fingerprint-sha1': 'signature',
-    'x509-fingerprint-sha256': 'signature',
-    'pubkey-info-algorithm': 'subject_pubkey'
+    'x509-fingerprint-sha256': 'signature'
 }
-x509_object_keys = (
-    'version',
-    'serial-number',
-    'issuer',
-    'subject'
-)
+x509_object_mapping = {
+    'version': 'version',
+    'serial-number': 'serial_number',
+    'issuer': 'issuer',
+    'signature-algorithm': 'signature_algorithm',
+    'subject': 'subject'
+}
 
 # Descriptions
 

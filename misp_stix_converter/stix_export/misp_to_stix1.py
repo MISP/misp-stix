@@ -1121,6 +1121,76 @@ class MISPtoSTIX1Parser():
         observable = self._create_observable(whois_object, misp_object.uuid, 'Whois')
         return observable
 
+    def _parse_x509_object(self, misp_object: MISPObject) -> Observable:
+        single_attributes = tuple(stix1_mapping.x509_creation_mapping.keys())
+        attributes = defaultdict(list)
+        content = defaultdict(bool)
+        for attribute in misp_object.attributes:
+            relation = attribute.object_relation
+            if relation in single_attributes:
+                attributes[relation] = attribute.value
+                content[stix1_mapping.x509_creation_mapping[relation]] = True
+            else:
+                attributes[relation].append(attribute.value)
+        x509_object = X509Certificate()
+        if any(content[feature] for feature in ('certificate', 'validity', 'pubkey')):
+            x509_cert = X509Cert()
+            if content['certificate']:
+                for key, feature in stix1_mapping.x509_object_mapping.items():
+                    if key in attributes:
+                        setattr(x509_cert, feature, attributes.pop(key))
+                        setattr(getattr(x509_cert, feature), 'condition', 'Equals')
+            if content['validity']:
+                validity = Validity()
+                for key in ('before', 'after'):
+                    if f'validity-not-{key}' in attributes:
+                        setattr(validity, f'not_{key}', attributes.pop(f'validity-not-{key}'))
+                        setattr(getattr(validity, f'not_{key}'), 'condition', 'Equals')
+                x509_cert.validity = validity
+            if content['pubkey']:
+                pubkey = SubjectPublicKey()
+                if 'pubkey-info-algorithm' in attributes:
+                    pubkey.public_key_algorithm = attributes.pop('pubkey-info-algorithm')
+                    pubkey.public_key_algorithm.condition = 'Equals'
+                pubkey_keys = ('exponent', 'modulus')
+                if any(f'pubkey-info-{key}' in attributes for key in pubkey_keys):
+                    rsa_pubkey = RSAPublicKey()
+                    for key in pubkey_keys:
+                        if f'pubkey-info-{key}' in attributes:
+                            setattr(rsa_pubkey, key, attributes.pop(f'pubkey-info-{key}'))
+                            setattr(getattr(rsa_pubkey, key), 'condition', 'Equals')
+                    pubkey.rsa_public_key = rsa_pubkey
+                x509_cert.subject_public_key = pubkey
+            x509_object.certificate = x509_cert
+        if content['raw_certificate']:
+            if 'pem' in attributes:
+                x509_object.raw_certificate = attributes.pop('pem')
+                if 'raw-base64' in attributes:
+                    attributes['raw-base64'] = [attributes['raw-base64']]
+            elif 'raw-base64' in attributes:
+                x509_object.raw_certificate = attributes.pop('raw-base64')
+            x509_object.raw_certificate.condition = 'Equals'
+        if content['signature']:
+            signature = X509CertificateSignature()
+            signature_set = False
+            for algo in ('sha256', 'sha1', 'md5'):
+                key = f'x509-fingerprint-{algo}'
+                if signature_set:
+                    if key in attributes:
+                        attributes[key] = [attributes[key]]
+                    continue
+                if key in attributes:
+                    signature.signature_algorithm = algo.upper()
+                    signature.signature_algorithm.condition = 'Equals'
+                    signature.signature = attributes.pop(key)
+                    signature.signature.condition = 'Equals'
+                    signature_set = True
+            x509_object.certificate_signature = signature
+        if attributes:
+            x509_object.custom_properties = self._handle_custom_properties(attributes)
+        observable = self._create_observable(x509_object, misp_object.uuid, 'X509Certificate')
+        return observable
+
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
