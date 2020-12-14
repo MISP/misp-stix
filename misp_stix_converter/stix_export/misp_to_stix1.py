@@ -598,6 +598,7 @@ class MISPtoSTIX1Parser():
         if object_name == 'file' and misp_object.get('ObjectReference'):
             for reference in misp_object.references:
                 if reference.relationship_type in ('includes', 'included-in') and reference.Object['name'] == 'pe':
+                    self._objects_to_parse[object_name][misp_object.uuid] = misp_object
                     return True
         return False
 
