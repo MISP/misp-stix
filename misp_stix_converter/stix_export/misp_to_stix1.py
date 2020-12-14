@@ -603,6 +603,20 @@ class MISPtoSTIX1Parser():
         return False
 
     @staticmethod
+    def _extract_file_attributes(attributes: list) -> dict:
+        attributes_dict = defaultdict(list)
+        for attribute in attributes:
+            value = attribute.value
+            relation = attribute.object_relation
+            if relation in _FILE_SINGLE_ATTRIBUTES:
+                if attribute.get('data'):
+                    value = (value, attribute.data, attribute.uuid)
+                attributes_dict[relation] = value
+            else:
+                attributes_dict[relation].append(value)
+        return attributes_dict
+
+    @staticmethod
     def _extract_multiple_object_attributes(attributes: list, force_single: Optional[tuple] = None) -> dict:
         attributes_dict = defaultdict(list)
         if force_single is not None:
@@ -833,23 +847,11 @@ class MISPtoSTIX1Parser():
         observable = self._create_observable(email_object, misp_object.uuid, 'EmailMessage')
         return observable
 
-    def _parse_file_object(self, misp_object: MISPObject) -> Observable:
-        attributes = {}
-        for attribute in misp_object.attributes:
-            value = attribute.value
-            if attribute.get('data'):
-                value = (value, attribute.data, attribute.uuid)
-            attributes[attribute.object_relation] = value
-        observables = []
-        if 'malware-sample' in attributes and isinstance(attributes['malware-sample'], tuple):
-            value, data, uuid = attributes.pop('malware-sample')
-            malware_observable = self._create_malware_sample_observable(value, data, uuid)
-            observables.append(malware_observable)
-        if 'attachment' in attributes and isinstance(attributes['attachment'], tuple):
-            filename, data, uuid = attributes.pop('attachment')
-            attachment_observable = self._create_attachment_observable(filename, data, uuid)
-            observables.append(attachment_observable)
-        file_object = self._create_file_object(attributes.pop('filename')) if 'filename' in attributes else File()
+    def _parse_file_attributes(self, attributes: dict, file_object: Union[File, WinExecutableFile]):
+        if 'filename' in attributes:
+            filename = attributes.pop('filename')[0] if len(attributes['filename']) == 1 else attributes['filename'].pop(0)
+            file_object.file_name = filename
+            file_object.file_name.condition = 'Equals'
         for feature, key in stix1_mapping.file_object_mapping.items():
             if feature in attributes:
                 setattr(file_object, key, attributes.pop(feature))
@@ -859,7 +861,14 @@ class MISPtoSTIX1Parser():
                 hash = self._parse_hash_value(object_relation, value)
                 file_object.add_hash(hash)
             else:
-                self._add_custom_property(file_object, object_relation, value)
+                for single_value in value:
+                    self._add_custom_property(file_object, object_relation, value)
+
+    def _parse_file_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_file_attributes(misp_object.attributes)
+        observables = self._parse_file_observables(attributes)
+        file_object = File()
+        self._parse_file_attributes(attributes, file_object)
         file_observable = self._create_observable(file_object, misp_object.uuid, 'File')
         if observables:
             observables.append(file_observable)
@@ -870,6 +879,18 @@ class MISPtoSTIX1Parser():
             )
             return observable_composition
         return file_observable
+
+    def _parse_file_observables(self, attributes: dict) -> list:
+        observables = []
+        if 'malware-sample' in attributes and isinstance(attributes['malware-sample'], tuple):
+            value, data, uuid = attributes.pop('malware-sample')
+            malware_observable = self._create_malware_sample_observable(value, data, uuid)
+            observables.append(malware_observable)
+        if 'attachment' in attributes and isinstance(attributes['attachment'], tuple):
+            filename, data, uuid = attributes.pop('attachment')
+            attachment_observable = self._create_attachment_observable(filename, data, uuid)
+            observables.append(attachment_observable)
+        return observables
 
     def _parse_ip_port_object(self, misp_object: MISPObject) -> Observable:
         attributes = self._extract_multiple_object_attributes_with_uuid(misp_object.attributes)
