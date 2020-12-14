@@ -67,6 +67,11 @@ from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
 from typing import List, Optional, Union
 
+_FILE_SINGLE_ATTRIBUTES = (
+    "attachment", "authentihash", "entropy", "imphash", "malware-sample", "md5",
+    "sha1", "sha224", "sha256", "sha384", "sha512", "sha512/224", "sha512/256",
+    "size-in-bytes", "ssdeep", "tlsh", "vhash"
+)
 _OBSERVABLE_OBJECT_TYPES = Union[
     Address, Artifact, AutonomousSystem, Custom, DomainName, EmailMessage,
     File, Hostname, HTTPSession, Mutex, Pipe, Port, SocketAddress, System,
