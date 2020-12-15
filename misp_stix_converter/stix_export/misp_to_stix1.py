@@ -40,7 +40,7 @@ from cybox.utils import Namespace
 from datetime import datetime
 from io import BytesIO
 from mixbox import idgen
-from pymisp import MISPAttribute, MISPEvent, MISPObject
+from pymisp import MISPAttribute, MISPEvent, MISPObject, MISPObjectReference
 from stix.coa import CourseOfAction
 from stix.common import InformationSource, Identity, ToolInformation
 from stix.common.confidence import Confidence
@@ -77,6 +77,7 @@ _OBSERVABLE_OBJECT_TYPES = Union[
     File, Hostname, HTTPSession, Mutex, Pipe, Port, SocketAddress, System,
     URI, WinRegistryKey, WinService, X509Certificate
 ]
+_PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
 
 
 class MISPtoSTIX1Parser():
@@ -584,6 +585,9 @@ class MISPtoSTIX1Parser():
                     self._handle_misp_object(observable, misp_object.get('meta-category'))
             except Exception:
                 self._errors.append(f'Error with the {misp_object.name} object: {misp_object.uuid}.')
+        if self._objects_to_parse:
+            if 'file' in self._objects_to_parse:
+                self._resolve_files_to_parse()
 
     def _add_custom_property(self, stix_object: File, name: str, value: str):
         prop = self._create_property(name, value)
@@ -605,6 +609,15 @@ class MISPtoSTIX1Parser():
                 if reference.relationship_type in ('includes', 'included-in') and reference.Object['name'] == 'pe':
                     self._objects_to_parse[object_name][misp_object.uuid] = misp_object
                     return True
+        return False
+
+    def _check_reference(self, reference: MISPObjectReference, relationship_types: tuple, object_name: str) -> bool:
+        if reference.relationship_type in relationship_types:
+            if reference.Objcect['name'] == object_name:
+                if reference.referenced_uuid not in self._objects_to_parse[object_name]:
+                    self.warnings.add(f'Reference to a non existing {object_name} object: {reference.referenced_uuid}')
+                    return False
+                return True
         return False
 
     @staticmethod
@@ -861,6 +874,10 @@ class MISPtoSTIX1Parser():
             if feature in attributes:
                 setattr(file_object, key, attributes.pop(feature))
                 setattr(getattr(file_object, key), 'condition', 'Equals')
+        if attributes:
+            self._parse_file_hashes_attributes(attributes, file_object)
+
+    def _parse_file_hashes_attributes(self, attributes: dict, file_object: Union[File, WinExecutableFile]):
         for object_relation, value in attributes.items():
             if object_relation in stix1_mapping.hash_type_attributes['single']:
                 hash = self._parse_hash_value(object_relation, value)
@@ -896,6 +913,27 @@ class MISPtoSTIX1Parser():
             attachment_observable = self._create_attachment_observable(filename, data, uuid)
             observables.append(attachment_observable)
         return observables
+
+    def _parse_file_with_pe_object(self, misp_object: MISPObject) -> Observable:
+        attributes = self._extract_file_attributes(misp_object.attributes)
+        observables = self._parse_file_observables(attributes)
+        file_object = WinExecutableFile()
+        self._parse_file_attributes(attributes, file_object)
+        for reference in misp_file.references:
+            if self._check_reference(reference, _PE_RELATIONSHIP_TYPES, 'pe'):
+                misp_pe = self._objects_to_parse['pe'].pop(reference.referenced_uuid)
+                self._parse_pe_object(file_object, misp_pe)
+                break
+        file_observable = self._create_observable(file_object, misp_file.uuid, 'WindowsExecutableFile')
+        if observables:
+            observables.append(file_observable)
+            observable_composition = self._create_observable_composition(
+                observables,
+                misp_file.name,
+                misp_file.uuid
+            )
+            return observable_composition
+        return file_observable
 
     def _parse_ip_port_object(self, misp_object: MISPObject) -> Observable:
         attributes = self._extract_multiple_object_attributes_with_uuid(misp_object.attributes)
@@ -971,6 +1009,74 @@ class MISPtoSTIX1Parser():
             socket_object.custom_properties = self._handle_custom_properties(attributes)
         observable = self._create_observable(socket_object, misp_object.uuid, 'NetworkSocket')
         return observable
+
+    def _parse_pe_object(self, file_object: WinExecutableFile, misp_pe: MISPObject):
+        attributes = self._extract_multiple_object_attributes(
+            misp_pe.attributes,
+            force_single=(
+                'company-name', 'entrypoint-address', 'file-description',
+                'file-version', 'impfuzzy', 'imphash', 'internal-filename',
+                'lang-id', 'legal-copyright', 'number-sections', 'type',
+                'original-filename', 'pehash', 'product-name', 'product-version'
+            )
+        )
+        if any(feature in attributes for feature in stix1_mapping.pe_resource_mapping):
+            resource = PEVersionInfoResource()
+            for key, feature in stix1_mapping.pe_resource_mapping.items():
+                if key in attributes:
+                    setattr(resource, feature, attributes.pop(key))
+                    setattr(getattr(resource, feature), 'condition', 'Equals')
+            resource_list = PEResourceList()
+            resource_list.append(resource)
+            file_object.resources = resource_list
+        if any(feature in attributes for feature in ('entrypoint-address', 'number-sections')):
+            pe_headers = PEHeaders()
+            if 'entrypoint-address' in attributes:
+                optional_header = PEOptionalHeader()
+                optional_header.address_of_entry_point = attributes.pop('entry-point')
+                optional_header.address_of_entry_point.condition = 'Equals'
+                pe_headers.optional_header = optional_header
+            if 'number-sections' in attributes:
+                file_header = PEFileHeader()
+                file_header.number_of_sections = attributes.pop('number-sections')
+                file_header.number_of_sections.condition = 'Equals'
+                pe_headers.file_header = file_header
+            file_object.headers = pe_headers
+        if attributes:
+            self._parse_file_hashes_attributes(attributes, file_object)
+        if misp_pe.get('references'):
+            for reference in misp_pe.references:
+                if self._check_reference(reference, _PE_RELATIONSHIP_TYPES, 'pe-section'):
+                    misp_pe_section = self._objects_to_parse['pe-section'][reference.referenced_uuid]
+                    pe_section = self._parse_pe_section_object(misp_pe_section)
+                    try:
+                        file_object.sections.append(pe_section)
+                    except AttributeError:
+                        file_object.sections = PESectionList()
+                        file_object.sections.append(pe_section)
+
+    def _parse_pe_section_object(self, misp_pe_section: MISPObject) -> PESection:
+        section_attributes = self._extract_object_attributes(misp_pe_section.attributes)
+        pe_section = PESection()
+        if 'entropy' in section_attributes:
+            pe_section.entropy = Entropy()
+            pe_section.entropy.value = section_attributes.pop('entropy')
+        if any(feature in section_attributes for feature in ('name', 'size-in-bytes')):
+            pe_section.section_header = PESectionHeaderStruct()
+            if 'name' in section_attributes:
+                pe_section.section_header.name = section_attributes.pop('name')
+                pe_section.section_header.name.condition = 'Equals'
+            if 'size-in-bytes' in section_attributes:
+                pe_section.section_header.size_of_raw_data = section_attributes.pop('size-in-bytes')
+                pe_section.section_header.size_of_raw_data.condition = 'Equals'
+        hashlist = []
+        for key, value in section_attributes.items():
+            if key in stix1_mapping.hash_type_attributes['single']:
+                hashlist.append(Hash(hash_value=value, exact=True))
+        if hashlist:
+            section.data_hashes = HashList()
+            section.data_hashes.hashes = hashlist
+        return pe_section
 
     def _parse_process_object(self, misp_object: MISPObject) -> Observable:
         attributes = self._extract_multiple_object_attributes(
@@ -1217,6 +1323,18 @@ class MISPtoSTIX1Parser():
             x509_object.custom_properties = self._handle_custom_properties(attributes)
         observable = self._create_observable(x509_object, misp_object.uuid, 'X509Certificate')
         return observable
+
+    def _resolve_files_to_parse(self):
+        for uuid, misp_object in self._objects_to_parse.pop('file').items():
+            try:
+                to_ids = self._fetch_ids_flags(misp_object.attributes)
+                observable = self._parse_file_with_pe_object(misp_object)
+                if to_ids:
+                    self._handle_misp_object_with_context(misp_object, observable)
+                else:
+                    self._handle_misp_object(observable, misp_object.get('meta-category'))
+            except Exception:
+                self._errors.append(f'Error with the {misp_object.name} object: {misp_object.uuid}.')
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
