@@ -131,7 +131,6 @@ _TEST_VULNERABILITY = {
     ]
 }
 
-
 _TEST_ASN = {
     "name": "asn",
     "meta-category": "network",
@@ -353,6 +352,57 @@ _TEST_FILE = {
     ]
 }
 
+_TEST_FILE_FOR_PE = {
+    "name": "file",
+    "meta-category": "file",
+    "description": "File object describing a file with meta-information",
+    "uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "filename",
+            "object_relation": "filename",
+            "value": "oui"
+        },
+        {
+            "type": "md5",
+            "object_relation": "md5",
+            "value": "b2a5abfeef9e36964281a31e17b57c97"
+        },
+        {
+            "type": "sha1",
+            "object_relation": "sha1",
+            "value": "5898fc860300e228dcd54c0b1045b5fa0dcda502"
+        },
+        {
+            "type": "sha256",
+            "object_relation": "sha256",
+            "value": "3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8"
+        },
+        {
+            "type": "size-in-bytes",
+            "object_relation": "size-in-bytes",
+            "value": "1234"
+        },
+        {
+            "type": "float",
+            "object_relation": "entropy",
+            "value": "1.234"
+        }
+    ],
+    "ObjectReference": [
+        {
+            "referenced_uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
+            "relationship_type": "includes",
+            "Object": {
+                "uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
+                "name": "pe",
+                "meta-category": "file"
+            }
+        }
+    ]
+}
+
 _TEST_IP_PORT = {
     "name": "ip-port",
     "meta-category": "network",
@@ -482,6 +532,152 @@ _TEST_NETWORK_SOCKET = {
             "type": "text",
             "object_relation": "protocol",
             "value": "TCP"
+        }
+    ]
+}
+
+_TEST_PE = {
+    "name": "pe",
+    "meta-category": "file",
+    "description": "Object describing a Portable Executable",
+    "uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "type",
+            "value": "exe"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "compilation-timestamp",
+            "value": "2019-03-16T12:31:22"
+        },
+        {
+            "type": "text",
+            "object_relation": "entrypoint-address",
+            "value": "5369222868"
+        },
+        {
+            "type": "filename",
+            "object_relation": "original-filename",
+            "value": "PuTTy"
+        },
+        {
+            "type": "filename",
+            "object_relation": "internal-filename",
+            "value": "PuTTy"
+        },
+        {
+            "type": "text",
+            "object_relation": "file-description",
+            "value": "SSH, Telnet and Rlogin client"
+        },
+        {
+            "type": "text",
+            "object_relation": "file-version",
+            "value": "Release 0.71 (with embedded help)"
+        },
+        {
+            "type": "text",
+            "object_relation": "lang-id",
+            "value": "080904B0"
+        },
+        {
+            "type": "text",
+            "object_relation": "product-name",
+            "value": "PuTTy suite"
+        },
+        {
+            "type": "text",
+            "object_relation": "product-version",
+            "value": "Release 0.71"
+        },
+        {
+            "type": "text",
+            "object_relation": "company-name",
+            "value": "Simoe Tatham"
+        },
+        {
+            "type": "text",
+            "object_relation": "legal-copyright",
+            "value": "Copyright \u00a9 1997-2019 Simon Tatham."
+        },
+        {
+            "type": "counter",
+            "object_relation": "number-sections",
+            "value": "8"
+        },
+        {
+            "type": "imphash",
+            "object_relation": "imphash",
+            "value": "23ea835ab4b9017c74dfb023d2301c99"
+        },
+        {
+            "type": "impfuzzy",
+            "object_relation": "impfuzzy",
+            "value": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt"
+        }
+    ],
+    "ObjectReference": [
+        {
+            "referenced_uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
+            "relationship_type": "includes",
+            "Object": {
+                "uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
+                "name": "pe-section",
+                "meta-category": "file"
+            }
+        }
+    ]
+}
+
+_TEST_PE_SECTION = {
+    "name": "pe-section",
+    "meta-category": "file",
+    "description": "Object describing a section of a Portable Executable",
+    "uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": ".rsrc"
+        },
+        {
+            "type": "size-in-bytes",
+            "object_relation": "size-in-bytes",
+            "value": "305152"
+        },
+        {
+            "type": "float",
+            "object_relation": "entropy",
+            "value": "7.836462238824369"
+        },
+        {
+            "type": "md5",
+            "object_relation": "md5",
+            "value": "8a2a5fc2ce56b3b04d58539a95390600",
+        },
+        {
+            "type": "sha1",
+            "object_relation": "sha1",
+            "value": "0aeb9def096e9f73e9460afe6f8783a32c7eabdf",
+        },
+        {
+            "type": "sha256",
+            "object_relation": "sha256",
+            "value": "c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b",
+        },
+        {
+            "type": "sha512",
+            "object_relation": "sha512",
+            "value": "98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f",
+        },
+        {
+            "type": "ssdeep",
+            "object_relation": "ssdeep",
+            "value": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ\/UjHSEuSvK",
         }
     ]
 }
@@ -1463,6 +1659,15 @@ def get_event_with_file_object_with_artifact():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_FILE)
+    ]
+    return event
+
+def get_event_with_file_and_pe_objects():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_FILE_FOR_PE),
+        deepcopy(_TEST_PE),
+        deepcopy(_TEST_PE_SECTION)
     ]
     return event
 
