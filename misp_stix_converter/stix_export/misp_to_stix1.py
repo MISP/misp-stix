@@ -876,7 +876,8 @@ class MISPtoSTIX1Parser():
             file_object.file_name.condition = 'Equals'
         for feature, key in stix1_mapping.file_object_mapping.items():
             if feature in attributes:
-                setattr(file_object, key, attributes.pop(feature))
+                value = attributes[feature].pop(0) if isinstance(attributes[feature], list) else attributes.pop(feature)
+                setattr(file_object, key, value)
                 setattr(getattr(file_object, key), 'condition', 'Equals')
         if attributes:
             for object_relation, value in attributes.items():
@@ -905,14 +906,20 @@ class MISPtoSTIX1Parser():
 
     def _parse_file_observables(self, attributes: dict) -> list:
         observables = []
-        if 'malware-sample' in attributes and isinstance(attributes['malware-sample'], tuple):
-            value, data, uuid = attributes.pop('malware-sample')
-            malware_observable = self._create_malware_sample_observable(value, data, uuid)
-            observables.append(malware_observable)
-        if 'attachment' in attributes and isinstance(attributes['attachment'], tuple):
-            filename, data, uuid = attributes.pop('attachment')
-            attachment_observable = self._create_attachment_observable(filename, data, uuid)
-            observables.append(attachment_observable)
+        if 'malware-sample' in attributes:
+            if isinstance(attributes['malware-sample'], tuple):
+                value, data, uuid = attributes.pop('malware-sample')
+                malware_observable = self._create_malware_sample_observable(value, data, uuid)
+                observables.append(malware_observable)
+            else:
+                attributes['malware-sample'] = [attributes['malware-sample']]
+        if 'attachment' in attributes:
+            if isinstance(attributes['attachment'], tuple):
+                filename, data, uuid = attributes.pop('attachment')
+                attachment_observable = self._create_attachment_observable(filename, data, uuid)
+                observables.append(attachment_observable)
+            else:
+                attributes['attachment'] = [attributes['attachment']]
         return observables
 
     def _parse_file_with_pe_object(self, misp_object: MISPObject) -> Observable:
@@ -1062,7 +1069,7 @@ class MISPtoSTIX1Parser():
                 hashlist = HashList()
                 hashlist.hashes = hashes
                 file_object.headers.file_header.hashes = hashlist
-        if misp_pe.get('references'):
+        if misp_pe.get('ObjectReference'):
             for reference in misp_pe.references:
                 if self._check_reference(reference, _PE_RELATIONSHIP_TYPES, 'pe-section'):
                     misp_pe_section = self._objects_to_parse['pe-section'][reference.referenced_uuid]
@@ -1092,8 +1099,8 @@ class MISPtoSTIX1Parser():
             if key in stix1_mapping.hash_type_attributes['single']:
                 hashlist.append(self._parse_hash_value(key, value))
         if hashlist:
-            section.data_hashes = HashList()
-            section.data_hashes.hashes = hashlist
+            pe_section.data_hashes = HashList()
+            pe_section.data_hashes.hashes = hashlist
         return pe_section
 
     def _parse_process_object(self, misp_object: MISPObject) -> Observable:
