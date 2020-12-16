@@ -479,6 +479,17 @@ network_socket_mapping = {
     'domain-family': 'domain',
     'protocol': 'protocol'
 }
+pe_resource_mapping = {
+    'company-name': 'companyname',
+    'file-description': 'filedescription',
+    'file-version': 'fileversion',
+    'internal-filename': 'internalname',
+    'lang-id': 'langid',
+    'legal-copyright': 'legalcopyright',
+    'original-filename': 'originalfilename',
+    'product-name': 'productname',
+    'product-version': 'productversion'
+}
 process_object_mapping = {
     'creation-time': 'creation_time',
     'start-time': 'start_time',

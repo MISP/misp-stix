@@ -31,7 +31,11 @@ from cybox.objects.unix_user_account_object import UnixGroup, UnixGroupList, Uni
 from cybox.objects.uri_object import URI
 from cybox.objects.user_account_object import UserAccount
 from cybox.objects.whois_object import WhoisEntry, WhoisRegistrants, WhoisRegistrant, WhoisRegistrar, WhoisNameservers
-from cybox.objects.win_executable_file_object import WinExecutableFile, PEHeaders, PEFileHeader, PESectionList, PESection, PESectionHeaderStruct, Entropy
+from cybox.objects.win_executable_file_object import (
+    Entropy, PEHeaders, PEFileHeader, PEOptionalHeader, PEResourceList,
+    PESectionHeaderStruct, PESection, PESectionList, PEVersionInfoResource,
+    WinExecutableFile
+)
 from cybox.objects.win_registry_key_object import RegistryValue, RegistryValues, WinRegistryKey
 from cybox.objects.win_service_object import WinService
 from cybox.objects.win_user_account_object import WinGroup, WinGroupList, WinUser
@@ -613,7 +617,7 @@ class MISPtoSTIX1Parser():
 
     def _check_reference(self, reference: MISPObjectReference, relationship_types: tuple, object_name: str) -> bool:
         if reference.relationship_type in relationship_types:
-            if reference.Objcect['name'] == object_name:
+            if reference.Object['name'] == object_name:
                 if reference.referenced_uuid not in self._objects_to_parse[object_name]:
                     self.warnings.add(f'Reference to a non existing {object_name} object: {reference.referenced_uuid}')
                     return False
@@ -875,16 +879,13 @@ class MISPtoSTIX1Parser():
                 setattr(file_object, key, attributes.pop(feature))
                 setattr(getattr(file_object, key), 'condition', 'Equals')
         if attributes:
-            self._parse_file_hashes_attributes(attributes, file_object)
-
-    def _parse_file_hashes_attributes(self, attributes: dict, file_object: Union[File, WinExecutableFile]):
-        for object_relation, value in attributes.items():
-            if object_relation in stix1_mapping.hash_type_attributes['single']:
-                hash = self._parse_hash_value(object_relation, value)
-                file_object.add_hash(hash)
-            else:
-                for single_value in value:
-                    self._add_custom_property(file_object, object_relation, value)
+            for object_relation, value in attributes.items():
+                if object_relation in stix1_mapping.hash_type_attributes['single']:
+                    hash = self._parse_hash_value(object_relation, value)
+                    file_object.add_hash(hash)
+                else:
+                    for single_value in value:
+                        self._add_custom_property(file_object, object_relation, single_value)
 
     def _parse_file_object(self, misp_object: MISPObject) -> Observable:
         attributes = self._extract_file_attributes(misp_object.attributes)
@@ -919,18 +920,18 @@ class MISPtoSTIX1Parser():
         observables = self._parse_file_observables(attributes)
         file_object = WinExecutableFile()
         self._parse_file_attributes(attributes, file_object)
-        for reference in misp_file.references:
+        for reference in misp_object.references:
             if self._check_reference(reference, _PE_RELATIONSHIP_TYPES, 'pe'):
                 misp_pe = self._objects_to_parse['pe'].pop(reference.referenced_uuid)
                 self._parse_pe_object(file_object, misp_pe)
                 break
-        file_observable = self._create_observable(file_object, misp_file.uuid, 'WindowsExecutableFile')
+        file_observable = self._create_observable(file_object, misp_object.uuid, 'WindowsExecutableFile')
         if observables:
             observables.append(file_observable)
             observable_composition = self._create_observable_composition(
                 observables,
-                misp_file.name,
-                misp_file.uuid
+                misp_object.name,
+                misp_object.uuid
             )
             return observable_composition
         return file_observable
@@ -1014,12 +1015,15 @@ class MISPtoSTIX1Parser():
         attributes = self._extract_multiple_object_attributes(
             misp_pe.attributes,
             force_single=(
-                'company-name', 'entrypoint-address', 'file-description',
-                'file-version', 'impfuzzy', 'imphash', 'internal-filename',
-                'lang-id', 'legal-copyright', 'number-sections', 'type',
+                'company-name', 'compilation-timestamp', 'entrypoint-address',
+                'file-description', 'file-version', 'impfuzzy', 'imphash', 'type',
+                'internal-filename', 'lang-id', 'legal-copyright', 'number-sections',
                 'original-filename', 'pehash', 'product-name', 'product-version'
             )
         )
+        if 'compilation-timestamp' in attributes:
+            timestamp = attributes.pop('compilation-timestamp')
+            attributes['compilation-timestamp'] = [datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S')]
         if any(feature in attributes for feature in stix1_mapping.pe_resource_mapping):
             resource = PEVersionInfoResource()
             for key, feature in stix1_mapping.pe_resource_mapping.items():
@@ -1029,11 +1033,12 @@ class MISPtoSTIX1Parser():
             resource_list = PEResourceList()
             resource_list.append(resource)
             file_object.resources = resource_list
-        if any(feature in attributes for feature in ('entrypoint-address', 'number-sections')):
+        headers_fields = ('entrypoint-address', 'impfuzzy', 'imphash', 'number-sections', 'pehash')
+        if any(feature in attributes for feature in headers_fields):
             pe_headers = PEHeaders()
             if 'entrypoint-address' in attributes:
                 optional_header = PEOptionalHeader()
-                optional_header.address_of_entry_point = attributes.pop('entry-point')
+                optional_header.address_of_entry_point = attributes.pop('entrypoint-address')
                 optional_header.address_of_entry_point.condition = 'Equals'
                 pe_headers.optional_header = optional_header
             if 'number-sections' in attributes:
@@ -1042,8 +1047,21 @@ class MISPtoSTIX1Parser():
                 file_header.number_of_sections.condition = 'Equals'
                 pe_headers.file_header = file_header
             file_object.headers = pe_headers
+        if 'type' in attributes:
+            file_object.type_ = attributes.pop('type')
+            file_object.type_.condition = 'Equals'
         if attributes:
-            self._parse_file_hashes_attributes(attributes, file_object)
+            hashes = []
+            for object_relation, value in attributes.items():
+                if object_relation in stix1_mapping.hash_type_attributes['single']:
+                    hashes.append(self._parse_hash_value(object_relation, value))
+                else:
+                    for single_value in value:
+                        self._add_custom_property(file_object, object_relation, single_value)
+            if hashes:
+                hashlist = HashList()
+                hashlist.hashes = hashes
+                file_object.headers.file_header.hashes = hashlist
         if misp_pe.get('references'):
             for reference in misp_pe.references:
                 if self._check_reference(reference, _PE_RELATIONSHIP_TYPES, 'pe-section'):
@@ -1072,7 +1090,7 @@ class MISPtoSTIX1Parser():
         hashlist = []
         for key, value in section_attributes.items():
             if key in stix1_mapping.hash_type_attributes['single']:
-                hashlist.append(Hash(hash_value=value, exact=True))
+                hashlist.append(self._parse_hash_value(key, value))
         if hashlist:
             section.data_hashes = HashList()
             section.data_hashes.hashes = hashlist
