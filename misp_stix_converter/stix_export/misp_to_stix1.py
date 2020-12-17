@@ -163,7 +163,7 @@ class MISPtoSTIX1Parser():
         if hasattr(self._misp_event, 'threat_level_id'):
             threat_level = stix1_mapping.threat_level_mapping[self._misp_event.threat_level_id]
             self._add_journal_entry(f'Event Threat Level: {threat_level}')
-        tags = self._handle_tags_and_galaxies()
+        tags = self._handle_event_tags_and_galaxies()
         if tags:
             self._incident.handling = self._set_handling(tags)
         if hasattr(self._misp_event, 'id'):
@@ -180,7 +180,7 @@ class MISPtoSTIX1Parser():
         if self._misp_event.get('Object'):
             self._resolve_objects()
 
-    def _handle_tags_and_galaxies(self):
+    def _handle_event_tags_and_galaxies(self) -> tuple:
         if self._misp_event.get('Galaxy'):
             tag_names = []
             for galaxy in self._misp_event['Galaxy']:
@@ -538,7 +538,7 @@ class MISPtoSTIX1Parser():
             exploit_target.title = f"Vulnerability {attribute.value}"
         exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
-        related_ttp = self._create_related_ttp(ttp.id_, attribute.type)
+        related_ttp = self._create_related_ttp(ttp.id_, attribute.type, timestamp=attribute.timestamp)
         self._handle_related_ttps({attribute.uuid: related_ttp})
         self._ttps[attribute.uuid] = ttp
 
@@ -580,13 +580,16 @@ class MISPtoSTIX1Parser():
             if self._check_object_name(misp_object):
                 continue
             try:
-                to_ids = self._fetch_ids_flags(misp_object.attributes)
-                to_call = self._fetch_objects_mapping_function(misp_object.name)
-                observable = getattr(self, to_call)(misp_object)
-                if to_ids:
-                    self._handle_misp_object_with_context(misp_object, observable)
+                if misp_object.name in stix1_mapping.ttp_names:
+                    getattr(self, stix1_mapping.ttp_names[misp_object.name])(misp_object)
                 else:
-                    self._handle_misp_object(observable, misp_object.get('meta-category'))
+                    to_ids = self._fetch_ids_flags(misp_object.attributes)
+                    to_call = self._fetch_objects_mapping_function(misp_object.name)
+                    observable = getattr(self, to_call)(misp_object)
+                    if to_ids:
+                        self._handle_misp_object_with_context(misp_object, observable)
+                    else:
+                        self._handle_misp_object(observable, misp_object.get('meta-category'))
             except Exception:
                 self._errors.append(f'Error with the {misp_object.name} object: {misp_object.uuid}.')
         if self._objects_to_parse:
@@ -671,6 +674,20 @@ class MISPtoSTIX1Parser():
             )
         return attributes_dict
 
+    def _extract_object_attribute_tags_and_galaxies(self, misp_object: MISPObject) -> tuple:
+        tags = defaultdict(set)
+        galaxies = defaultdict(list)
+        for attribute in misp_object.attributes:
+            if attribute.get('Galaxy'):
+                galaxy_type = galaxy['type']
+                if galaxy_type in stix1_mapping.galaxy_types_mapping:
+                    galaxies[galaxy['type']].append(galaxy)
+                else:
+                    self._warnings.add(f'{galaxy_type} galaxy in {misp_object.name} object not mapped.')
+            if attribute.tags:
+                tags['tags'].update(tag.name for tag in attribute.tags)
+        return tags, galaxies
+
     @staticmethod
     def _extract_object_attributes(attributes: list) -> dict:
         return {attribute.object_relation: attribute.value for attribute in attributes}
@@ -724,26 +741,33 @@ class MISPtoSTIX1Parser():
         )
         self._incident.related_indicators.append(related_indicator)
 
-    def _handle_object_tags_and_galaxies(self, misp_object: MISPObject, indicator: Indicator) -> tuple:
-        tags = defaultdict(set)
-        galaxies = defaultdict(list)
-        for attribute in misp_object.attributes:
-            if attribute.get('Galaxy'):
-                galaxy_type = galaxy['type']
-                if galaxy_type in stix1_mapping.galaxy_types_mapping:
-                    galaxies[galaxy_type].append(galaxy)
-            if attribute.tags:
-                tags['tags'].update(tag.name for tag in attribute.tags)
+    def _handle_non_indicator_object_tags_and_galaxies(self, misp_object: MISPObject) -> tuple:
+        tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
         if galaxies:
-            for galaxy_type, galaxy in galaxies.items():
-                if galaxy_type in stix1_mapping.galaxy_types_mapping:
-                    to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
-                    getattr(self, to_call.format('attribute'))(galaxy, indicator)
-                    tags['tag_names'].update(self._quick_fetch_tag_names(galaxy))
-                else:
-                    self._warnings.add(f'{galaxy_type} galaxy in {misp_object.name} object not mapped.')
+            # For now we handle tags and will see how it goes with the input of
+            # this function once we parse some other non indicator objects
+            for galaxy in galaxies.values():
+                tags['tag_names'].update(self._quick_fetch_tag_names(galaxy))
             return tuple(tag for tag in tags['tags'] if tag not in tags['tag_names'])
         return tuple(tag for tag in tags['tags'])
+
+    def _handle_object_tags_and_galaxies(self, misp_object: MISPObject, indicator: Indicator) -> tuple:
+        tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
+        if galaxies:
+            for galaxy_type, galaxy in galaxies.items():
+                to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
+                getattr(self, to_call.format('attribute'))(galaxy, indicator)
+                tags['tag_names'].update(self._quick_fetch_tag_names(galaxy))
+            return tuple(tag for tag in tags['tags'] if tag not in tags['tag_names'])
+        return tuple(tag for tag in tags['tags'])
+
+    def _handle_ttp_from_object(self, misp_object: MISPObject, ttp: TTP):
+        tags = self._handle_non_indicator_object_tags_and_galaxies(misp_object)
+        if tags:
+            ttp.handling = self._set_handling(tags)
+        related_ttp = self._create_related_ttp(ttp.id_, misp_object.name, timestamp=misp_object.timestamp)
+        self._contextualised_data['ttp'][misp_object.uuid] = related_ttp
+        self._ttps[misp_object.uuid] = ttp
 
     def _parse_asn_object(self, misp_object: MISPObject) -> Observable:
         attributes = self._extract_multiple_object_attributes(
@@ -757,6 +781,37 @@ class MISPtoSTIX1Parser():
             as_object.custom_properties = self._handle_custom_properties(attributes)
         observable = self._create_observable(as_object, misp_object.uuid, 'AS')
         return observable
+
+    def _parse_attack_pattern_object(self, misp_object: MISPObject):
+        ttp = self._create_ttp_from_object(misp_object)
+        attack_pattern = AttackPattern()
+        attack_pattern.id_ = f'{self._namespace}:AttackPattern-{misp_object.uuid}'
+        attributes = self._extract_object_attributes(misp_object.attributes)
+        for key, feature in stix1_mapping.attack_pattern_object_mapping.items():
+            if key in attributes:
+                setattr(attack_pattern, feature, attributes.pop(key))
+        if attack_pattern.capec_id and not attack_pattern.capec_id.startswith('CAPEC'):
+            attack_pattern.capec_id = f'CAPEC-{attack_pattern.capec_id}'
+        if misp_object.get('ObjectReference'):
+            references = ((reference.referenced_uuid, reference.relationship_type) for reference in misp_object.references)
+            self._ttp_references[misp_object.uuid] = references
+        behavior = Behavior()
+        behavior.add_attack_pattern(attack_pattern)
+        ttp.behavior = behavior
+        self._handle_ttp_from_object(misp_object, ttp)
+
+    def _parse_course_of_action_object(self, misp_object: MISPObject):
+        course_of_action = CourseOfAction()
+        uuid = misp_object.uuid
+        course_of_action.id_ = f'{self._namespace}:CourseOfAction-{uuid}'
+        attributes = self._extract_object_attributes(misp_object.attributes)
+        for key, feature in stix1_mapping.course_of_action_object_mapping.items():
+            if key in attributes:
+                setattr(course_of_action, feature, attributes.pop(key))
+                setattr(getattr(course_of_action, feature), 'condition', 'Equals')
+        coa_taken = self._create_coa_taken(course_of_action.id_, timestamp=misp_object.timestamp)
+        self._contextualised_data['course_of_action'][uuid] = coa_taken
+        self._courses_of_action[uuid] = course_of_action
 
     def _parse_credential_arguments(self, attributes: dict) -> dict:
         args = {}
@@ -1792,6 +1847,12 @@ class MISPtoSTIX1Parser():
         ttp = TTP()
         ttp.id_ = f'{self._namespace}:TTP-{uuid}'
         ttp.title = f'{galaxy_name} (MISP Galaxy)'
+        return ttp
+
+    def _create_ttp_from_object(self, misp_object: MISPObject) -> TTP:
+        ttp = TTP(timestamp=misp_object.timestamp)
+        ttp.id_ = f'{self._namespace}:TTP-{misp_object.uuid}'
+        ttp.title = f"{misp_object['meta-category']}: {misp_object.name} (MISP Object)"
         return ttp
 
     @staticmethod

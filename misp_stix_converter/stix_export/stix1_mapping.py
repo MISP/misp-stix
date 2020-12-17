@@ -335,10 +335,10 @@ attribute_types_mapping.update(
 
 ## OBJECTS MAPPING
 ttp_names = {
-    'attack-pattern': 'parse_attack_pattern',
-    'course-of-action': 'parse_course_of_action',
-    'vulnerability': 'parse_vulnerability',
-    'weakness': 'parse_weakness'
+    'attack-pattern': '_parse_attack_pattern_object',
+    'course-of-action': '_parse_course_of_action_object',
+    'vulnerability': '_parse_vulnerability_object',
+    'weakness': '_parse_weakness_object'
 }
 objects_mapping = {
     "asn": '_parse_asn_object',
