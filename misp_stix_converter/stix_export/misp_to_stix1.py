@@ -1287,6 +1287,55 @@ class MISPtoSTIX1Parser():
         )
         return observable
 
+    def _parse_vulnerability_object(self, misp_object: MISPObject):
+        ttp = self._create_ttp_from_object(misp_object)
+        vulnerability = Vulnerability()
+        attributes = self._extract_multiple_object_attributes(
+            misp_object.attributes,
+            force_single=(
+                'created', 'cvss-score', 'published', 'summary'
+            )
+        )
+        if 'id' in attributes:
+            cve_id = attributes.pop('id')[0] if len(attributes['id']) == 1 else attributes['id'].pop(0)
+            vulnerability.cve_id = cve_id
+            vulnerability.cve_id.condition = 'Equals'
+        if 'cvss-score' in attributes:
+            cvss = CVSSVector()
+            cvss.overall_score = attribute.pop('cvss-score')
+            vulnerability.cvss_score = cvss
+        for key, feature in stix1_mapping.vulnerability_object_mapping.items():
+            if key in attributes:
+                setattr(vulnerability, feature, attributes.pop(key))
+                setattr(getattr(vulnerability, feature), 'condition', 'Equals')
+        if 'references' in attributes:
+            for reference in attributes.pop('references'):
+                vulnerability.add_reference(reference)
+        if misp_object.get('ObjectReference'):
+            references = ((reference.referenced_uuid, reference.relationship_type) for reference in misp_object.references)
+            self._ttp_references[misp_object.uuid] = references
+        exploit_target = ExploitTarget(timestamp=misp_object.timestamp)
+        exploit_target.id_ = f'{self._namespace}:ExploitTarget-{misp_object.uuid}'
+        exploit_target.add_vulnerability(exploit_target)
+        ttp.add_exploit_taget(exploit_target)
+        self._handle_ttp_from_object(misp_object, tpp)
+
+    def _parse_weakness_object(self, misp_object: MISPObject):
+        ttp = elf._create_ttp_from_object(misp_object)
+        weakness = Weakness()
+        attributes = self._extract_object_attributes(misp_object.attributes)
+        for key, feature in stix1_mapping.weakness_object_mapping.items():
+            if key in attributes:
+                setattr(weakness, feature, attributes.pop(key))
+        if misp_object.get('ObjectReference'):
+            references = ((reference.referenced_uuid, reference.relationship_type) for reference in misp_object.references)
+            self._ttp_references[misp_object.uuid] = references
+        exploit_target = ExploitTarget(timestamp=misp_object.timestamp)
+        exploit_target.id_ = f'{self._namespace}:ExploitTarget-{misp_object.uuid}'
+        exploit_target.add_weakness(weakness)
+        ttp.add_exploit_taget(exploit_target)
+        self._handle_ttp_from_object(misp_object, tpp)
+
     def _parse_whois_object(self, misp_object: MISPObject) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object.attributes,
