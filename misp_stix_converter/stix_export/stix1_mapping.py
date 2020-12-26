@@ -451,15 +451,16 @@ attack_pattern_object_mapping = {
     'name': 'title',
     'summary': 'description'
 }
-course_of_action_object_keys = (
-    'type',
-    'description',
-    'objective',
-    'stage',
-    'cost',
-    'impact',
-    'efficacy'
-)
+course_of_action_object_mapping = {
+    'name': 'title',
+    'type': 'type_',
+    'description': 'description',
+    'objective': 'objective',
+    'stage': 'stage',
+    'cost': 'cost',
+    'impact': 'impact',
+    'efficacy': 'efficacy'
+}
 email_object_mapping = {
     'from': 'from_',
     'reply-to': 'reply_to',
@@ -513,6 +514,7 @@ user_account_object_mapping = {
 }
 vulnerability_object_mapping = {
     'id': 'cve_id',
+    'created': 'discovered_datetime',
     'summary': 'description',
     'published': 'published_datetime'
 }
