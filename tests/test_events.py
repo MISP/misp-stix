@@ -27,7 +27,7 @@ _BASE_EVENT = {
     }
 }
 
-_TEST_ATTACK_PATTERN = {
+_TEST_ATTACK_PATTERN_GALAXY = {
     "uuid": "c4e851fa-775f-11e7-8163-b774922098cd",
     "name": "Attack Pattern",
     "type": "mitre-attack-pattern",
@@ -46,7 +46,7 @@ _TEST_ATTACK_PATTERN = {
     ]
 }
 
-_TEST_COURSE_OF_ACTION = {
+_TEST_COURSE_OF_ACTION_GALAXY = {
     "uuid": "6fcb4472-6de4-11e7-b5f7-37771619e14e",
     "name": "Course of Action",
     "type": "mitre-course-of-action",
@@ -60,7 +60,7 @@ _TEST_COURSE_OF_ACTION = {
     ]
 }
 
-_TEST_MALWARE = {
+_TEST_MALWARE_GALAXY = {
     "uuid": "d752161c-78f6-11e7-a0ea-bfa79b407ce4",
     "name": "Malware",
     "type": "mitre-malware",
@@ -79,7 +79,7 @@ _TEST_MALWARE = {
     ]
 }
 
-_TEST_THREAT_ACTOR = {
+_TEST_THREAT_ACTOR_GALAXY = {
     "uuid": "698774c7-8022-42c4-917f-8d6e4f06ada3",
     "name": "Threat Actor",
     "type": "threat-actor",
@@ -98,7 +98,7 @@ _TEST_THREAT_ACTOR = {
     ]
 }
 
-_TEST_TOOL = {
+_TEST_TOOL_GALAXY = {
     "uuid": "d5cbd1a2-78f6-11e7-a833-7b9bccca9649",
     "name": "Tool",
     "type": "mitre-tool",
@@ -112,7 +112,7 @@ _TEST_TOOL = {
     ]
 }
 
-_TEST_VULNERABILITY = {
+_TEST_VULNERABILITY_GALAXY = {
     "uuid": "fda8c7c2-f45a-11e7-9713-e75dac0492df",
     "name": "Branded Vulnerability",
     "type": "branded-vulnerability",
@@ -131,7 +131,7 @@ _TEST_VULNERABILITY = {
     ]
 }
 
-_TEST_ASN = {
+_TEST_ASN_OBJECT = {
     "name": "asn",
     "meta-category": "network",
     "description": "Autonomous system object describing an autonomous system",
@@ -161,7 +161,77 @@ _TEST_ASN = {
     ]
 }
 
-_TEST_CREDENTIAL = {
+_TEST_ATTACK_PATTERN_OBJECT = {
+    "name": "attack-pattern",
+    "meta-category": "vulnerability",
+    "description": "Attack pattern describing a common attack pattern enumeration and classification.",
+    "uuid": "7205da54-70de-4fa7-9b34-e14e63fe6787",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "id",
+            "value": "9"
+        },
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "Buffer Overflow in Local Command-Line Utilities"
+        },
+        {
+            "type": "text",
+            "object_relation": "summary",
+            "value": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root."
+        }
+    ]
+}
+
+_TEST_COURSE_OF_ACTION_OBJECT = {
+    "name": "course-of-action",
+    "meta-category": "misc",
+    "description": "An object describing a specific measure taken to prevent or respond to an attack.",
+    "uuid": "5d514ff9-ac30-4fb5-b9e7-3eb4a964451a",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "Block traffic to PIVY C2 Server (10.10.10.10)"
+        },
+        {
+            "type": "text",
+            "object_relation": "type",
+            "value": "Perimeter Blocking"
+        },
+        {
+            "type": "text",
+            "object_relation": "objective",
+            "value": "Block communication between the PIVY agents and the C2 Server"
+        },
+        {
+            "type": "text",
+            "object_relation": "stage",
+            "value": "Response"
+        },
+        {
+            "type": "text",
+            "object_relation": "cost",
+            "value": "Low"
+        },
+        {
+            "type": "text",
+            "object_relation": "impact",
+            "value": "Low"
+        },
+        {
+            "type": "text",
+            "object_relation": "efficacy",
+            "value": "High"
+        },
+    ]
+}
+
+_TEST_CREDENTIAL_OBJECT = {
     "name": "credential",
     "meta-category": "misc",
     "description": "Credential describes one or more credential(s)",
@@ -206,7 +276,7 @@ _TEST_CREDENTIAL = {
     ]
 }
 
-_TEST_DOMAIN_IP = {
+_TEST_DOMAIN_IP_OBJECT = {
     "name": "domain-ip",
     "meta-category": "network",
     "description": "A domain and IP address seen as a tuple",
@@ -228,7 +298,7 @@ _TEST_DOMAIN_IP = {
     ]
 }
 
-_TEST_EMAIL = {
+_TEST_EMAIL_OBJECT = {
     "name": "email",
     "meta-category": "network",
     "description": "Email object describing an email with meta-information",
@@ -293,7 +363,7 @@ _TEST_EMAIL = {
     ]
 }
 
-_TEST_FILE = {
+_TEST_FILE_OBJECT = {
     "name": "file",
     "meta-category": "file",
     "description": "File object describing a file with meta-information",
@@ -352,7 +422,7 @@ _TEST_FILE = {
     ]
 }
 
-_TEST_FILE_FOR_PE = {
+_TEST_FILE_FOR_PE_OBJECT = {
     "name": "file",
     "meta-category": "file",
     "description": "File object describing a file with meta-information",
@@ -403,7 +473,7 @@ _TEST_FILE_FOR_PE = {
     ]
 }
 
-_TEST_IP_PORT = {
+_TEST_IP_PORT_OBJECT = {
     "name": "ip-port",
     "meta-category": "network",
     "description": "An IP address (or domain) and a port",
@@ -431,7 +501,7 @@ _TEST_IP_PORT = {
     ]
 }
 
-_TEST_NETWORK_CONNECTION = {
+_TEST_NETWORK_CONNECTION_OBJECT = {
     "name": "network-connection",
     "meta-category": "network",
     "description": "A local or remote network connection",
@@ -481,7 +551,7 @@ _TEST_NETWORK_CONNECTION = {
     ]
 }
 
-_TEST_NETWORK_SOCKET = {
+_TEST_NETWORK_SOCKET_OBJECT = {
     "name": "network-socket",
     "meta-category": "network",
     "description": "Network socket object describes a local or remote network connections based on the socket data structure",
@@ -536,7 +606,7 @@ _TEST_NETWORK_SOCKET = {
     ]
 }
 
-_TEST_PE = {
+_TEST_PE_OBJECT = {
     "name": "pe",
     "meta-category": "file",
     "description": "Object describing a Portable Executable",
@@ -632,7 +702,7 @@ _TEST_PE = {
     ]
 }
 
-_TEST_PE_SECTION = {
+_TEST_PE_SECTION_OBJECT = {
     "name": "pe-section",
     "meta-category": "file",
     "description": "Object describing a section of a Portable Executable",
@@ -682,7 +752,7 @@ _TEST_PE_SECTION = {
     ]
 }
 
-_TEST_PROCESS = {
+_TEST_PROCESS_OBJECT = {
     "name": "process",
     "meta-category": "misc",
     "description": "Object describing a system process.",
@@ -722,7 +792,7 @@ _TEST_PROCESS = {
     ]
 }
 
-_TEST_REGISTRY_KEY = {
+_TEST_REGISTRY_KEY_OBJECT = {
     "name": "registry-key",
     "meta-category": "file",
     "description": "Registry key object describing a Windows registry key",
@@ -762,7 +832,7 @@ _TEST_REGISTRY_KEY = {
     ]
 }
 
-_TEST_URL = {
+_TEST_URL_OBJECT = {
     "name": "url",
     "meta-category": "network",
     "description": "url object describes an url along with its normalized field",
@@ -802,7 +872,7 @@ _TEST_URL = {
     ]
 }
 
-_TEST_USER_ACCOUNT = {
+_TEST_USER_ACCOUNT_OBJECT = {
     "name": "user-account",
     "meta-category": "misc",
     "description": "Object describing an user account",
@@ -852,7 +922,7 @@ _TEST_USER_ACCOUNT = {
     ]
 }
 
-_TEST_WHOIS = {
+_TEST_WHOIS_OBJECT = {
     "name": "whois",
     "meta-category": "network",
     "description": "Whois records information for a domain name or an IP address.",
@@ -917,7 +987,72 @@ _TEST_WHOIS = {
     ]
 }
 
-_TEST_X509 = {
+_TEST_VULNERABILITY_OBJECT = {
+    "name": "vulnerability",
+    "meta-category": "vulnerability",
+    "description": "Vulnerability object describing a common vulnerability",
+    "uuid": "5e579975-e9cc-46c6-a6ad-1611a964451a",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "id",
+            "value": "CVE-2017-11774"
+        },
+        {
+            "type": "float",
+            "object_relation": "cvss-score",
+            "value": "6.8"
+        },
+        {
+            "type": "text",
+            "object_relation": "summary",
+            "value": "Microsoft Outlook allow an attacker to execute arbitrary commands"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "created",
+            "value": "2017-10-13T07:29:00"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "published",
+            "value": "2017-10-13T07:29:00"
+        },
+        {
+            "type": "link",
+            "object_relation": "references",
+            "value": "http://www.securityfocus.com/bid/101098"
+        },
+        {
+            "type": "link",
+            "object_relation": "references",
+            "value": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
+        },
+    ]
+}
+
+_TEST_WEAKNESS_OBJECT = {
+    "name": "weakness",
+    "meta-category": "vulnerability",
+    "description": "Weakness object describing a common weakness",
+    "uuid": "a1285743-3962-40e3-a824-0f21f10f3e19",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "text": "text",
+            "object_relation": "id",
+            "value": "CWE-119"
+        },
+        {
+            "text": "text",
+            "object_relation": "description",
+            "value": "The software performs operations on a memory buffer, but it can read from or write to a memory location that is outside of the intended boundary of the buffer"
+        }
+    ]
+}
+
+_TEST_X509_OBJECT = {
     "name": "x509",
     "meta-category": "network",
     "description": "x509 object describing a X.509 certificate",
@@ -1016,7 +1151,7 @@ def get_event_with_tags():
         {"name": 'misp-galaxy:mitre-attack-pattern="Access Token Manipulation - T1134"'}
     ]
     event['Event']['Galaxy'] = [
-        deepcopy(_TEST_ATTACK_PATTERN)
+        deepcopy(_TEST_ATTACK_PATTERN_GALAXY)
     ]
     return event
 
@@ -1028,7 +1163,7 @@ def get_event_with_tags():
 def get_event_with_attack_pattern_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
-        deepcopy(_TEST_ATTACK_PATTERN)
+        deepcopy(_TEST_ATTACK_PATTERN_GALAXY)
     ]
     return event
 
@@ -1036,7 +1171,7 @@ def get_event_with_attack_pattern_galaxy():
 def get_event_with_course_of_action_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
-        deepcopy(_TEST_COURSE_OF_ACTION)
+        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
     ]
     return event
 
@@ -1044,7 +1179,7 @@ def get_event_with_course_of_action_galaxy():
 def get_event_with_malware_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
-        deepcopy(_TEST_MALWARE)
+        deepcopy(_TEST_MALWARE_GALAXY)
     ]
     return event
 
@@ -1052,7 +1187,7 @@ def get_event_with_malware_galaxy():
 def get_event_with_threat_actor_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
-        deepcopy(_TEST_THREAT_ACTOR)
+        deepcopy(_TEST_THREAT_ACTOR_GALAXY)
     ]
     return event
 
@@ -1060,7 +1195,7 @@ def get_event_with_threat_actor_galaxy():
 def get_event_with_tool_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
-        deepcopy(_TEST_TOOL)
+        deepcopy(_TEST_TOOL_GALAXY)
     ]
     return event
 
@@ -1068,7 +1203,7 @@ def get_event_with_tool_galaxy():
 def get_event_with_vulnerability_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
-        deepcopy(_TEST_VULNERABILITY)
+        deepcopy(_TEST_VULNERABILITY_GALAXY)
     ]
     return event
 
@@ -1630,50 +1765,64 @@ def get_event_with_x509_fingerprint_attributes():
 def get_event_with_asn_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_ASN)
+        deepcopy(_TEST_ASN_OBJECT)
+    ]
+    return event
+
+def get_event_with_attack_pattern_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_ATTACK_PATTERN_OBJECT)
+    ]
+    return event
+
+def get_event_with_course_of_action_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_COURSE_OF_ACTION_OBJECT)
     ]
     return event
 
 def get_event_with_credential_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_CREDENTIAL)
+        deepcopy(_TEST_CREDENTIAL_OBJECT)
     ]
     return event
 
 def get_event_with_domain_ip_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_DOMAIN_IP)
+        deepcopy(_TEST_DOMAIN_IP_OBJECT)
     ]
     return event
 
 def get_event_with_email_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_EMAIL)
+        deepcopy(_TEST_EMAIL_OBJECT)
     ]
     return event
 
 def get_event_with_file_object_with_artifact():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_FILE)
+        deepcopy(_TEST_FILE_OBJECT)
     ]
     return event
 
 def get_event_with_file_and_pe_objects():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_FILE_FOR_PE),
-        deepcopy(_TEST_PE),
-        deepcopy(_TEST_PE_SECTION)
+        deepcopy(_TEST_FILE_FOR_PE_OBJECT),
+        deepcopy(_TEST_PE_OBJECT),
+        deepcopy(_TEST_PE_SECTION_OBJECT)
     ]
     return event
 
 def get_event_with_file_object():
     event = deepcopy(_BASE_EVENT)
-    file_object = deepcopy(_TEST_FILE)
+    file_object = deepcopy(_TEST_FILE_OBJECT)
     file_object['Attribute'] = [{field: value for field, value in attribute.items() if field != 'data'} for attribute in file_object['Attribute']]
     event['Event']['Object'] = [
         file_object
@@ -1683,48 +1832,48 @@ def get_event_with_file_object():
 def get_event_with_ip_port_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_IP_PORT)
+        deepcopy(_TEST_IP_PORT_OBJECT)
     ]
     return event
 
 def get_event_with_network_connection_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_NETWORK_CONNECTION)
+        deepcopy(_TEST_NETWORK_CONNECTION_OBJECT)
     ]
     return event
 
 def get_event_with_network_socket_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_NETWORK_SOCKET)
+        deepcopy(_TEST_NETWORK_SOCKET_OBJECT)
     ]
     return event
 
 def get_event_with_process_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_PROCESS)
+        deepcopy(_TEST_PROCESS_OBJECT)
     ]
     return event
 
 def get_event_with_registry_key_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_REGISTRY_KEY)
+        deepcopy(_TEST_REGISTRY_KEY_OBJECT)
     ]
     return event
 
 def get_event_with_url_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_URL)
+        deepcopy(_TEST_URL_OBJECT)
     ]
     return event
 
 def get_event_with_user_account_objects():
     event = deepcopy(_BASE_EVENT)
-    unix_user_account = deepcopy(_TEST_USER_ACCOUNT)
+    unix_user_account = deepcopy(_TEST_USER_ACCOUNT_OBJECT)
     unix_user_account['Attribute'].append(
         {
             "type": "text",
@@ -1732,7 +1881,7 @@ def get_event_with_user_account_objects():
             "value": "unix"
         }
     )
-    windows_user_account = deepcopy(_TEST_USER_ACCOUNT)
+    windows_user_account = deepcopy(_TEST_USER_ACCOUNT_OBJECT)
     windows_user_account['Attribute'].append(
         {
             "type": "text",
@@ -1741,22 +1890,36 @@ def get_event_with_user_account_objects():
         },
     )
     event['Event']['Object'] = [
-        deepcopy(_TEST_USER_ACCOUNT),
+        deepcopy(_TEST_USER_ACCOUNT_OBJECT),
         unix_user_account,
         windows_user_account
+    ]
+    return event
+
+def get_event_with_vulnerability_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_VULNERABILITY_OBJECT)
+    ]
+    return event
+
+def get_event_with_weakness_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_WEAKNESS_OBJECT)
     ]
     return event
 
 def get_event_with_whois_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_WHOIS)
+        deepcopy(_TEST_WHOIS_OBJECT)
     ]
     return event
 
 def get_event_with_x509_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        deepcopy(_TEST_X509)
+        deepcopy(_TEST_X509_OBJECT)
     ]
     return event

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import datetime
 import unittest
 import json
+from datetime import datetime, timezone
 from misp_stix_converter import MISPtoSTIX1Parser
 from .test_events import *
 
@@ -72,6 +72,11 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(struct_auth_meca.description.value, _format['value'])
         custom_properties = properties.custom_properties
         self._check_custom_properties((origin, notification), custom_properties)
+
+    def _check_coa_taken(self, coa_taken, uuid, timestamp=None):
+        self.assertEqual(coa_taken.course_of_action.idref, f'{_DEFAULT_NAMESPACE}:CourseOfAction-{uuid}')
+        if timestamp is not None:
+            self.assertEqual(coa_taken.course_of_action.timestamp, datetime.fromtimestamp(int(timestamp), timezone.utc))
 
     def _check_custom_properties(self, attributes, custom_properties):
         self.assertEqual(len(custom_properties), len(attributes))
@@ -300,10 +305,11 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(key_value.datatype.value, datatype['value'])
         self.assertEqual(properties.modified_time.value, datetime.strptime(modified['value'], '%Y-%m-%dT%H:%M:%S'))
 
-    def _check_related_ttp(self, stix_package, galaxy_name, cluster_uuid):
-        related_ttp = stix_package.incidents[0].leveraged_ttps.ttp[0]
+    def _check_related_ttp(self, related_ttp, galaxy_name, cluster_uuid, timestamp=None):
         self.assertEqual(related_ttp.relationship.value, galaxy_name)
         self.assertEqual(related_ttp.item.idref, f"{_DEFAULT_NAMESPACE}:TTP-{cluster_uuid}")
+        if timestamp is not None:
+            self.assertEqual(related_ttp.item.timestamp, datetime.fromtimestamp(int(timestamp), timezone.utc))
 
     def _check_source_address(self, properties, category='ipv4-addr'):
         self.assertEqual(properties.category, category)
@@ -320,6 +326,12 @@ class TestStix1Export(unittest.TestCase):
         ttp = self._check_ttp_length(stix_package)
         self.assertEqual(ttp.id_, f"{_DEFAULT_NAMESPACE}:TTP-{cluster_uuid}")
         self.assertEqual(ttp.title, f"{galaxy_name} (MISP Galaxy)")
+        return ttp
+
+    def _check_ttp_fields_from_object(self, stix_package, misp_object):
+        ttp = self._check_ttp_length(stix_package)
+        self.assertEqual(ttp.id_, f"{_DEFAULT_NAMESPACE}:TTP-{misp_object['uuid']}")
+        self.assertEqual(ttp.title, f"{misp_object['meta-category']}: {misp_object['name']} (MISP Object)")
         return ttp
 
     def _check_ttp_length(self, stix_package):
@@ -975,6 +987,47 @@ class TestStix1Export(unittest.TestCase):
         properties = self._check_observable_features(observable.item, misp_object, 'AS')
         self._check_asn_properties(properties, misp_object['Attribute'])
 
+    def test_event_with_attack_pattern_object(self):
+        event = get_event_with_attack_pattern_object()
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        ttp = self._check_ttp_fields_from_object(stix_package, misp_object)
+        attack_pattern = ttp.behavior.attack_patterns[0]
+        self.assertEqual(attack_pattern.id_, f"{_DEFAULT_NAMESPACE}:AttackPattern-{misp_object['uuid']}")
+        id_, name, summary = misp_object['Attribute']
+        self.assertEqual(attack_pattern.capec_id, f"CAPEC-{id_['value']}")
+        self.assertEqual(attack_pattern.title, name['value'])
+        self.assertEqual(attack_pattern.description.value, summary['value'])
+        self._check_related_ttp(
+            stix_package.incidents[0].leveraged_ttps.ttp[0],
+            misp_object['name'],
+            misp_object['uuid'],
+            timestamp=misp_object['timestamp']
+        )
+
+    def test_event_with_course_of_action_object(self):
+        event = get_event_with_course_of_action_object()
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        self.assertEqual(len(stix_package.courses_of_action), 1)
+        course_of_action = stix_package.courses_of_action[0]
+        self.assertEqual(course_of_action.id_, f"{_DEFAULT_NAMESPACE}:CourseOfAction-{misp_object['uuid']}")
+        name, type_, objective, stage, cost, impact, efficacy = misp_object['Attribute']
+        self.assertEqual(course_of_action.title, name['value'])
+        self.assertEqual(course_of_action.type_.value, type_['value'])
+        self.assertEqual(course_of_action.objective.description.value, objective['value'])
+        self.assertEqual(course_of_action.stage.value, stage['value'])
+        self.assertEqual(course_of_action.cost.value, cost['value'])
+        self.assertEqual(course_of_action.impact.value, impact['value'])
+        self.assertEqual(course_of_action.efficacy.value, efficacy['value'])
+        self._check_coa_taken(
+            stix_package.incidents[0].coa_taken[0],
+            misp_object['uuid'],
+            timestamp=misp_object['timestamp']
+        )
+
     def test_event_with_credential_object_indicator(self):
         event = get_event_with_credential_object()
         self._add_ids_flag(event)
@@ -1290,6 +1343,51 @@ class TestStix1Export(unittest.TestCase):
         windows_properties = self._check_observable_features(windows_observable.item, windows, 'WindowsUserAccount')
         self._check_windows_user_account_properties(windows_properties, windows['Attribute'])
 
+    def test_event_with_vulnerability_object(self):
+        event = get_event_with_vulnerability_object()
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        ttp = self._check_ttp_fields_from_object(stix_package, misp_object)
+        exploit_target = ttp.exploit_targets.exploit_target[0].item
+        self.assertEqual(exploit_target.id_, f"{_DEFAULT_NAMESPACE}:ExploitTarget-{misp_object['uuid']}")
+        vulnerability = exploit_target.vulnerabilities[0]
+        id_, cvss, summary, created, published, reference1, reference2 = misp_object['Attribute']
+        self.assertEqual(vulnerability.cve_id, id_['value'])
+        self.assertEqual(vulnerability.cvss_score.overall_score, cvss['value'])
+        self.assertEqual(vulnerability.description.value, summary['value'])
+        self.assertEqual(vulnerability.discovered_datetime.value, datetime.strptime(created['value'], '%Y-%m-%dT%H:%M:%S'))
+        self.assertEqual(vulnerability.published_datetime.value, datetime.strptime(published['value'], '%Y-%m-%dT%H:%M:%S'))
+        references = vulnerability.references
+        self.assertEqual(len(references), 2)
+        self.assertEqual(references[0], reference1['value'])
+        self.assertEqual(references[1], reference2['value'])
+        self._check_related_ttp(
+            stix_package.incidents[0].leveraged_ttps.ttp[0],
+            misp_object['name'],
+            misp_object['uuid'],
+            timestamp=misp_object['timestamp']
+        )
+
+    def test_event_with_weakness_object(self):
+        event = get_event_with_weakness_object()
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        ttp = self._check_ttp_fields_from_object(stix_package, misp_object)
+        exploit_target = ttp.exploit_targets.exploit_target[0].item
+        self.assertEqual(exploit_target.id_, f"{_DEFAULT_NAMESPACE}:ExploitTarget-{misp_object['uuid']}")
+        weakness = exploit_target.weaknesses[0]
+        id_, description = misp_object['Attribute']
+        self.assertEqual(weakness.cwe_id, id_['value'])
+        self.assertEqual(weakness.description.value, description['value'])
+        self._check_related_ttp(
+            stix_package.incidents[0].leveraged_ttps.ttp[0],
+            misp_object['name'],
+            misp_object['uuid'],
+            timestamp=misp_object['timestamp']
+        )
+
     def test_event_with_whois_object_indicator(self):
         event = get_event_with_whois_object()
         self._add_ids_flag(event)
@@ -1349,7 +1447,7 @@ class TestStix1Export(unittest.TestCase):
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         attack_pattern = ttp.behavior.attack_patterns[0]
         self._check_embedded_features(attack_pattern, cluster, 'AttackPattern')
-        self._check_related_ttp(stix_package, galaxy['name'], cluster['uuid'])
+        self._check_related_ttp(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
@@ -1359,6 +1457,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(len(stix_package.courses_of_action), 1)
         course_of_action = stix_package.courses_of_action[0]
         self._check_embedded_features(course_of_action, cluster, 'CourseOfAction')
+        self._check_coa_taken(stix_package.incidents[0].coa_taken[0], cluster['uuid'])
 
     def test_event_with_malware_galaxy(self):
         event = get_event_with_malware_galaxy()
@@ -1369,7 +1468,7 @@ class TestStix1Export(unittest.TestCase):
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         malware = ttp.behavior.malware_instances[0]
         self._check_embedded_features(malware, cluster, 'MalwareInstance')
-        self._check_related_ttp(stix_package, galaxy['name'], cluster['uuid'])
+        self._check_related_ttp(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
 
     def test_event_with_threat_actor_galaxy(self):
         event = get_event_with_threat_actor_galaxy()
@@ -1398,7 +1497,7 @@ class TestStix1Export(unittest.TestCase):
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         tool = ttp.resources.tools[0]
         self._check_embedded_features(tool, cluster, 'ToolInformation', feature='name')
-        self._check_related_ttp(stix_package, galaxy['name'], cluster['uuid'])
+        self._check_related_ttp(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
 
     def test_event_with_vulnerability_galaxy(self):
         event = get_event_with_vulnerability_galaxy()
@@ -1412,4 +1511,4 @@ class TestStix1Export(unittest.TestCase):
         vulnerability = exploit_target.vulnerabilities[0]
         self._check_embedded_features(vulnerability, cluster, 'Vulnerability')
         self.assertEqual(vulnerability.cve_id, cluster['meta']['aliases'][0])
-        self._check_related_ttp(stix_package, galaxy['name'], cluster['uuid'])
+        self._check_related_ttp(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
