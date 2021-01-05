@@ -334,7 +334,7 @@ attribute_types_mapping.update(
 )
 
 ## OBJECTS MAPPING
-ttp_names = {
+non_indicator_names = {
     'attack-pattern': '_parse_attack_pattern_object',
     'course-of-action': '_parse_course_of_action_object',
     'vulnerability': '_parse_vulnerability_object',
@@ -358,65 +358,75 @@ objects_mapping = {
 }
 
 ## GALAXIES MAPPING
+_attack_pattern_names = (
+    'mitre-attack-pattern',
+    'mitre-enterprise-attack-attack-pattern',
+    'mitre-mobile-attack-attack-pattern',
+    'mitre-pre-attack-attack-pattern'
+)
+course_of_action_names = (
+    'mitre-course-of-action',
+    'mitre-enterprise-attack-course-of-action',
+    'mitre-mobile-attack-course-of-action'
+)
+_malware_names = (
+    'android',
+    'banker',
+    'stealer',
+    'backdoor',
+    'ransomware',
+    'mitre-malware',
+    'malpedia',
+    'mitre-enterprise-attack-malware',
+    'mitre-mobile-attack-malware'
+)
+_tool_names = (
+    'botnet',
+    'rat',
+    'exploit-kit',
+    'tds',
+    'tool',
+    'mitre-tool',
+    'mitre-enterprise-attack-tool',
+    'mitre-mobile-attack-tool'
+)
+ttp_names = (
+    'branded-vulnerability',
+    *_attack_pattern_names,
+    *_malware_names,
+    *_tool_names
+)
 galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
 galaxy_types_mapping.update(
     dict.fromkeys(
-        [
-            'mitre-attack-pattern',
-            'mitre-enterprise-attack-attack-pattern',
-            'mitre-mobile-attack-attack-pattern',
-            'mitre-pre-attack-attack-pattern'
-        ],
+        _attack_pattern_names,
         '_parse_attack_pattern_{}_galaxy'
     )
 )
 galaxy_types_mapping.update(
     dict.fromkeys(
-        [
-            'mitre-course-of-action',
-            'mitre-enterprise-attack-course-of-action',
-            'mitre-mobile-attack-course-of-action'
-        ],
+        course_of_action_names,
         '_parse_course_of_action_{}_galaxy'
     )
 )
 galaxy_types_mapping.update(
     dict.fromkeys(
-        [
-            'android',
-            'banker',
-            'stealer',
-            'backdoor',
-            'ransomware',
-            'mitre-malware',
-            'malpedia',
-            'mitre-enterprise-attack-malware',
-            'mitre-mobile-attack-malware'
-        ],
+        _malware_names,
         '_parse_malware_{}_galaxy'
     )
 )
 galaxy_types_mapping.update(
     dict.fromkeys(
-        [
+        (
             'threat-actor',
             'microsoft-activity-group'
-        ],
+        ),
         '_parse_threat_actor_galaxy'
     )
 )
 galaxy_types_mapping.update(
     dict.fromkeys(
-        [
-            'botnet',
-            'rat',
-            'exploit-kit',
-            'tds',
-            'tool',
-            'mitre-tool',
-            'mitre-enterprise-attack-tool',
-            'mitre-mobile-attack-tool'
-        ],
+        _tool_names,
         '_parse_tool_{}_galaxy'
     )
 )
