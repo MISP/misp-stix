@@ -675,7 +675,7 @@ class MISPtoSTIX1Parser():
         return attributes_dict
 
     def _extract_object_attribute_tags_and_galaxies(self, misp_object: MISPObject) -> tuple:
-        tags = defaultdict(set)
+        tags = set()
         galaxies = defaultdict(list)
         for attribute in misp_object.attributes:
             if attribute.get('Galaxy'):
@@ -685,7 +685,7 @@ class MISPtoSTIX1Parser():
                 else:
                     self._warnings.add(f'{galaxy_type} galaxy in {misp_object.name} object not mapped.')
             if attribute.tags:
-                tags['tags'].update(tag.name for tag in attribute.tags)
+                tags.update(tag.name for tag in attribute.tags)
         return tags, galaxies
 
     @staticmethod
@@ -743,23 +743,25 @@ class MISPtoSTIX1Parser():
 
     def _handle_non_indicator_object_tags_and_galaxies(self, misp_object: MISPObject) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
+        tag_names = set()
         if galaxies:
             # For now we handle tags and will see how it goes with the input of
             # this function once we parse some other non indicator objects
             for galaxy in galaxies.values():
-                tags['tag_names'].update(self._quick_fetch_tag_names(galaxy))
-            return tuple(tag for tag in tags['tags'] if tag not in tags['tag_names'])
-        return tuple(tag for tag in tags['tags'])
+                tag_names.update(self._quick_fetch_tag_names(galaxy))
+            return tuple(tag for tag in tags if tag not in tag_names)
+        return tuple(tag for tag in tags)
 
     def _handle_object_tags_and_galaxies(self, misp_object: MISPObject, indicator: Indicator) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
+        tag_names = set()
         if galaxies:
             for galaxy_type, galaxy in galaxies.items():
                 to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
                 getattr(self, to_call.format('attribute'))(galaxy, indicator)
-                tags['tag_names'].update(self._quick_fetch_tag_names(galaxy))
-            return tuple(tag for tag in tags['tags'] if tag not in tags['tag_names'])
-        return tuple(tag for tag in tags['tags'])
+                tag_names.update(self._quick_fetch_tag_names(galaxy))
+            return tuple(tag for tag in tags if tag not in tag_names)
+        return tuple(tag for tag in tags)
 
     def _handle_ttp_from_object(self, misp_object: MISPObject, ttp: TTP):
         tags = self._handle_non_indicator_object_tags_and_galaxies(misp_object)
@@ -808,6 +810,9 @@ class MISPtoSTIX1Parser():
         for key, feature in stix1_mapping.course_of_action_object_mapping.items():
             if key in attributes:
                 setattr(course_of_action, feature, attributes.pop(key))
+        tags = self._handle_non_indicator_object_tags_and_galaxies(misp_object)
+        if tags:
+            course_of_action.handling = self._set_handling(tags)
         coa_taken = self._create_coa_taken(course_of_action.id_, timestamp=misp_object.timestamp)
         self._contextualised_data['course_of_action'][uuid] = coa_taken
         self._courses_of_action[uuid] = course_of_action
