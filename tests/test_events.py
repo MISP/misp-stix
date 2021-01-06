@@ -1212,15 +1212,76 @@ def get_event_with_vulnerability_galaxy():
 #                               ATTRIBUTES TESTS                               #
 ################################################################################
 
+_INDICATOR_ATTRIBUTE = {
+    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "type": "domain",
+    "category": "Network activity",
+    "value": "circl.lu",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "comment": "Domain test attribute"
+}
+
+_NON_INDICATOR_ATTRIBUTE = {
+    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "type": "vulnerability",
+    "category": "External analysis",
+    "value": "CVE-2017-11774",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "comment": "Vulnerability test attribute"
+}
+
+_OBSERVABLE_ATTRIBUTE = {
+    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "type": "AS",
+    "category": "Network activity",
+    "value": "AS174"
+}
+
+def get_embedded_indicator_attribute_galaxy():
+    attribute = deepcopy(_INDICATOR_ATTRIBUTE)
+    attribute['Galaxy'] = [
+        deepcopy(_TEST_ATTACK_PATTERN_GALAXY)
+    ]
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [attribute]
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_MALWARE_GALAXY)
+    ]
+    return event
+
+
+def get_embedded_non_indicator_attribute_galaxy():
+    attribute = deepcopy(_NON_INDICATOR_ATTRIBUTE)
+    attribute['Galaxy'] = [
+        deepcopy(_TEST_ATTACK_PATTERN_GALAXY),
+        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
+    ]
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [attribute]
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY),
+        deepcopy(_TEST_MALWARE_GALAXY)
+    ]
+    return event
+
+
+def get_embedded_observable_attribute_galaxy():
+    attribute = deepcopy(_OBSERVABLE_ATTRIBUTE)
+    attribute['Galaxy'] = [
+        deepcopy(_TEST_ATTACK_PATTERN_GALAXY)
+    ]
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [attribute]
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_MALWARE_GALAXY)
+    ]
+    return event
+
+
 def get_event_with_as_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "AS",
-            "category": "Network activity",
-            "value": "AS174"
-        }
+        deepcopy(_OBSERVABLE_ATTRIBUTE)
     ]
     return event
 
@@ -1242,14 +1303,7 @@ def get_event_with_attachment_attribute():
 def get_event_with_domain_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "domain",
-            "category": "Network activity",
-            "value": "circl.lu",
-            "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Domain test attribute"
-        }
+        deepcopy(_INDICATOR_ATTRIBUTE)
     ]
     return event
 
@@ -1696,14 +1750,7 @@ def get_event_with_url_attribute():
 def get_event_with_vulnerability_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "vulnerability",
-            "category": "External analysis",
-            "value": "CVE-2017-11774",
-            "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Vulnerability test attribute"
-        }
+        deepcopy(_NON_INDICATOR_ATTRIBUTE)
     ]
     return event
 

@@ -316,27 +316,44 @@ class TestStix1Export(unittest.TestCase):
         self.assertTrue(properties.is_source)
         self.assertFalse(properties.is_destination)
 
+    def _check_ttp_fields(self, ttp, uuid, identifier, object_type):
+        self.assertEqual(ttp.id_, f"{_DEFAULT_NAMESPACE}:TTP-{uuid}")
+        self.assertEqual(ttp.title, f"{identifier} (MISP {object_type})")
+
     def _check_ttp_fields_from_attribute(self, stix_package, attribute):
-        ttp = self._check_ttp_length(stix_package)
-        self.assertEqual(ttp.id_, f"{_DEFAULT_NAMESPACE}:TTP-{attribute['uuid']}")
-        self.assertEqual(ttp.title, f"{attribute['category']}: {attribute['value']} (MISP Attribute)")
+        ttp = self._check_ttp_length(stix_package, 1)[0]
+        self._check_ttp_fields(
+            ttp,
+            attribute['uuid'],
+            f"{attribute['category']}: {attribute['value']}",
+            'Attribute'
+        )
         return ttp
 
     def _check_ttp_fields_from_galaxy(self, stix_package, cluster_uuid, galaxy_name):
-        ttp = self._check_ttp_length(stix_package)
-        self.assertEqual(ttp.id_, f"{_DEFAULT_NAMESPACE}:TTP-{cluster_uuid}")
-        self.assertEqual(ttp.title, f"{galaxy_name} (MISP Galaxy)")
+        ttp = self._check_ttp_length(stix_package, 1)[0]
+        self._check_ttp_fields(ttp, cluster_uuid, galaxy_name, 'Galaxy')
         return ttp
 
     def _check_ttp_fields_from_object(self, stix_package, misp_object):
-        ttp = self._check_ttp_length(stix_package)
-        self.assertEqual(ttp.id_, f"{_DEFAULT_NAMESPACE}:TTP-{misp_object['uuid']}")
-        self.assertEqual(ttp.title, f"{misp_object['meta-category']}: {misp_object['name']} (MISP Object)")
+        ttp = self._check_ttp_length(stix_package, 1)[0]
+        self._check_ttp_fields(
+            ttp,
+            misp_object['uuid'],
+            f"{misp_object['meta-category']}: {misp_object['name']}",
+            'Object'
+        )
         return ttp
 
-    def _check_ttp_length(self, stix_package):
-        self.assertEqual(len(stix_package.ttps.ttp), 1)
-        return stix_package.ttps.ttp[0]
+    def _check_ttp_length(self, stix_package, length):
+        self.assertEqual(len(stix_package.ttps.ttp), length)
+        return stix_package.ttps.ttp
+
+    def _check_ttps_from_galaxies(self, stix_package, uuids, names):
+        ttps = self._check_ttp_length(stix_package, len(uuids))
+        for ttp, uuid, name in zip(ttps, uuids, names):
+            self._check_ttp_fields(ttp, uuid, name, 'Galaxy')
+        return ttps
 
     def _check_url_observables(self, observables, misp_object):
         attributes = misp_object['Attribute']
@@ -496,6 +513,84 @@ class TestStix1Export(unittest.TestCase):
     ################################################################################
     #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
     ################################################################################
+
+    def test_embedded_indicator_attribute_galaxy(self):
+        event = get_embedded_indicator_attribute_galaxy()
+        attribute = event['Event']['Attribute'][0]
+        attribute_galaxy = attribute['Galaxy'][0]
+        attribute_cluster = attribute_galaxy['GalaxyCluster'][0]
+        galaxy = event['Event']['Galaxy'][0]
+        cluster = galaxy['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        malware_ttp, attack_pattern_ttp = self._check_ttps_from_galaxies(
+            stix_package,
+            (cluster['uuid'], attribute_cluster['uuid']),
+            (galaxy['name'], attribute_galaxy['name'])
+        )
+        attack_pattern = attack_pattern_ttp.behavior.attack_patterns[0]
+        self._check_embedded_features(attack_pattern, attribute_cluster, 'AttackPattern')
+        malware = malware_ttp.behavior.malware_instances[0]
+        self._check_embedded_features(malware, cluster, 'MalwareInstance')
+        incident = stix_package.incidents[0]
+        self._check_related_ttp(incident.leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
+        indicator = incident.related_indicators.indicator[0].item
+        self._check_related_ttp(
+            indicator.indicated_ttps[0],
+            attribute_galaxy['name'],
+            attribute_cluster['uuid']
+        )
+
+    def test_embedded_non_indicator_attribute_galaxy(self):
+        event = get_embedded_non_indicator_attribute_galaxy()
+        attribute = event['Event']['Attribute'][0]
+        attribute_galaxy = attribute['Galaxy'][0]
+        attribute_cluster = attribute_galaxy['GalaxyCluster'][0]
+        coa_galaxy, malware_galaxy = event['Event']['Galaxy']
+        coa_cluster = coa_galaxy['GalaxyCluster'][0]
+        malware_cluster = malware_galaxy['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        malware_ttp, attack_pattern_ttp, vulnerability_ttp = self._check_ttp_length(
+            stix_package,
+            3
+        )
+        self._check_ttp_fields(
+            attack_pattern_ttp,
+            attribute_cluster['uuid'],
+            attribute_galaxy['name'],
+            'Galaxy'
+        )
+        self._check_ttp_fields(
+            malware_ttp,
+            malware_cluster['uuid'],
+            malware_galaxy['name'],
+            'Galaxy'
+        )
+        self._check_ttp_fields(
+            vulnerability_ttp,
+            attribute['uuid'],
+            f"{attribute['category']}: {attribute['value']}",
+            'Attribute'
+        )
+        attack_pattern = attack_pattern_ttp.behavior.attack_patterns[0]
+        self._check_embedded_features(attack_pattern, attribute_cluster, 'AttackPattern')
+        malware = malware_ttp.behavior.malware_instances[0]
+        self._check_embedded_features(malware, malware_cluster, 'MalwareInstance')
+        exploit_target = vulnerability_ttp.exploit_targets.exploit_target[0].item
+        self.assertEqual(exploit_target.id_, f"{_DEFAULT_NAMESPACE}:ExploitTarget-{attribute['uuid']}")
+        course_of_action = stix_package.courses_of_action[0]
+        self._check_embedded_features(course_of_action, coa_cluster, 'CourseOfAction')
+        incident = stix_package.incidents[0]
+        related_malware, related_vulnerability = incident.leveraged_ttps.ttp
+        self._check_related_ttp(related_malware, malware_galaxy['name'], malware_cluster['uuid'])
+        self._check_related_ttp(related_vulnerability, attribute['type'], attribute['uuid'])
+        self._check_related_ttp(
+            vulnerability_ttp.related_ttps[0],
+            attribute_galaxy['name'],
+            attribute_cluster['uuid']
+        )
+        self._check_coa_taken(incident.coa_taken[0], coa_cluster['uuid'])
 
     def test_event_with_as_attribute(self):
         event = get_event_with_as_attribute()
@@ -914,6 +1009,12 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(exploit_target.id_, f"{_DEFAULT_NAMESPACE}:ExploitTarget-{attribute['uuid']}")
         vulnerability = exploit_target.vulnerabilities[0]
         self.assertEqual(vulnerability.cve_id, attribute['value'])
+        incident = stix_package.incidents[0]
+        self._check_related_ttp(
+            incident.leveraged_ttps.ttp[0],
+            attribute['type'],
+            attribute['uuid']
+        )
 
     def test_event_with_windows_service_attributes(self):
         event = get_event_with_windows_service_attributes()
