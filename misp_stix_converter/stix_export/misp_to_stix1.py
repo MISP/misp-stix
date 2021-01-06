@@ -245,6 +245,21 @@ class MISPtoSTIX1Parser():
             return tuple(tag.name for tag in attribute.tags if tag.name not in tag_names)
         return tuple(tag.name for tag in attribute.tags)
 
+    def _handle_non_indicator_attribute_tags_and_galaxies(self, attribute: MISPAttribute, ttp: TTP) -> tuple:
+        if attribute.get('Galaxy'):
+            tag_names = []
+            for galaxy in attribute['Galaxy']:
+                galaxy_type = galaxy['type']
+                if galaxy_type not in stix1_mapping.ttp_names:
+                    if galaxy_type not in stix1_mapping.galaxy_types_mapping:
+                        self._warnings.add(f'{galaxy_type} galaxy in {attribute.type} attribute not mapped.')
+                    continue
+                to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
+                getattr(self, to_call.format('object'))(galaxy, ttp)
+                tag_names.extend(self._quick_fetch_tag_names(galaxy))
+            return tuple(tag.name for tag in attribute.tags if tag.name not in tag_names)
+        return tuple(tag.name for tag in attribute.tags)
+
     def _parse_attachment(self, attribute: MISPAttribute):
         if attribute.data:
             observable = self._create_attachment_observable(
@@ -538,6 +553,9 @@ class MISPtoSTIX1Parser():
             exploit_target.title = f"Vulnerability {attribute.value}"
         exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
+        tags = self._handle_non_indicator_attribute_tags_and_galaxies(attribute, ttp)
+        if tags:
+            ttp.handling = self._set_handling(tags)
         related_ttp = self._create_related_ttp(ttp.id_, attribute.type, timestamp=attribute.timestamp)
         self._handle_related_ttps({attribute.uuid: related_ttp})
         self._ttps[attribute.uuid] = ttp
