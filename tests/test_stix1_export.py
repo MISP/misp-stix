@@ -78,6 +78,17 @@ class TestStix1Export(unittest.TestCase):
         if timestamp is not None:
             self.assertEqual(coa_taken.course_of_action.timestamp, datetime.fromtimestamp(int(timestamp), timezone.utc))
 
+    def _check_course_of_action_fields(self, course_of_action, misp_object):
+        self.assertEqual(course_of_action.id_, f"{_DEFAULT_NAMESPACE}:CourseOfAction-{misp_object['uuid']}")
+        name, type_, objective, stage, cost, impact, efficacy = misp_object['Attribute']
+        self.assertEqual(course_of_action.title, name['value'])
+        self.assertEqual(course_of_action.type_.value, type_['value'])
+        self.assertEqual(course_of_action.objective.description.value, objective['value'])
+        self.assertEqual(course_of_action.stage.value, stage['value'])
+        self.assertEqual(course_of_action.cost.value, cost['value'])
+        self.assertEqual(course_of_action.impact.value, impact['value'])
+        self.assertEqual(course_of_action.efficacy.value, efficacy['value'])
+
     def _check_custom_properties(self, attributes, custom_properties):
         self.assertEqual(len(custom_properties), len(attributes))
         for attribute, custom in zip(attributes, custom_properties):
@@ -305,9 +316,9 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(key_value.datatype.value, datatype['value'])
         self.assertEqual(properties.modified_time.value, datetime.strptime(modified['value'], '%Y-%m-%dT%H:%M:%S'))
 
-    def _check_related_ttp(self, related_ttp, galaxy_name, cluster_uuid, timestamp=None):
+    def _check_related_object(self, related_ttp, galaxy_name, cluster_uuid, timestamp=None, object_type='TTP'):
         self.assertEqual(related_ttp.relationship.value, galaxy_name)
-        self.assertEqual(related_ttp.item.idref, f"{_DEFAULT_NAMESPACE}:TTP-{cluster_uuid}")
+        self.assertEqual(related_ttp.item.idref, f"{_DEFAULT_NAMESPACE}:{object_type}-{cluster_uuid}")
         if timestamp is not None:
             self.assertEqual(related_ttp.item.timestamp, datetime.fromtimestamp(int(timestamp), timezone.utc))
 
@@ -536,14 +547,19 @@ class TestStix1Export(unittest.TestCase):
         course_of_action = stix_package.courses_of_action[0]
         self._check_embedded_features(course_of_action, coa_cluster, 'CourseOfAction')
         incident = stix_package.incidents[0]
-        self._check_related_ttp(incident.leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
+        self._check_related_object(incident.leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
         indicator = incident.related_indicators.indicator[0].item
-        self._check_related_ttp(
+        self._check_related_object(
             indicator.indicated_ttps[0],
             ap_galaxy['name'],
             ap_cluster['uuid']
         )
-        self.assertEqual(indicator.suggested_coas[0].item.idref, f"{_DEFAULT_NAMESPACE}:CourseOfAction-{coa_cluster['uuid']}")
+        self._check_related_object(
+            indicator.suggested_coas[0],
+            coa_galaxy['name'],
+            coa_cluster['uuid'],
+            object_type='CourseOfAction'
+        )
 
     def test_embedded_non_indicator_attribute_galaxy(self):
         event = get_embedded_non_indicator_attribute_galaxy()
@@ -587,9 +603,17 @@ class TestStix1Export(unittest.TestCase):
         self._check_embedded_features(course_of_action, coa_cluster, 'CourseOfAction')
         incident = stix_package.incidents[0]
         related_malware, related_vulnerability = incident.leveraged_ttps.ttp
-        self._check_related_ttp(related_malware, malware_galaxy['name'], malware_cluster['uuid'])
-        self._check_related_ttp(related_vulnerability, attribute['type'], attribute['uuid'])
-        self._check_related_ttp(
+        self._check_related_object(
+            related_malware,
+            malware_galaxy['name'],
+            malware_cluster['uuid']
+        )
+        self._check_related_object(
+            related_vulnerability,
+            attribute['type'],
+            attribute['uuid']
+        )
+        self._check_related_object(
             vulnerability_ttp.related_ttps[0],
             attribute_galaxy['name'],
             attribute_cluster['uuid']
@@ -606,11 +630,19 @@ class TestStix1Export(unittest.TestCase):
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         malware = ttp.behavior.malware_instances[0]
         self._check_embedded_features(malware, cluster, 'MalwareInstance')
-        self._check_related_ttp(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
+        self._check_related_object(
+            stix_package.incidents[0].leveraged_ttps.ttp[0],
+            galaxy['name'],
+            cluster['uuid']
+        )
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         malware = ttp.behavior.malware_instances[0]
         self._check_embedded_features(malware, cluster, 'MalwareInstance')
-        self._check_related_ttp(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
+        self._check_related_object(
+            stix_package.incidents[0].leveraged_ttps.ttp[0],
+            galaxy['name'],
+            cluster['uuid']
+        )
 
     def test_event_with_as_attribute(self):
         event = get_event_with_as_attribute()
@@ -1030,7 +1062,7 @@ class TestStix1Export(unittest.TestCase):
         vulnerability = exploit_target.vulnerabilities[0]
         self.assertEqual(vulnerability.cve_id, attribute['value'])
         incident = stix_package.incidents[0]
-        self._check_related_ttp(
+        self._check_related_object(
             incident.leveraged_ttps.ttp[0],
             attribute['type'],
             attribute['uuid']
@@ -1085,6 +1117,133 @@ class TestStix1Export(unittest.TestCase):
     #                          MISP OBJECTS EXPORT TESTS.                          #
     ################################################################################
 
+    def test_embedded_indicator_object_galaxy(self):
+        event = get_embedded_indicator_object_galaxy()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        malware_galaxy = misp_object['Attribute'][0]['Galaxy'][0]
+        malware_cluster = malware_galaxy['GalaxyCluster'][0]
+        coa_attribute_galaxy = misp_object['Attribute'][1]['Galaxy'][0]
+        coa_attribute_cluster = coa_attribute_galaxy['GalaxyCluster'][0]
+        tool_galaxy, coa_event_galaxy = event['Event']['Galaxy']
+        tool_cluster = tool_galaxy['GalaxyCluster'][0]
+        coa_event_cluster = coa_event_galaxy['GalaxyCluster'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        tool_ttp, malware_ttp = self._check_ttps_from_galaxies(
+            stix_package,
+            (tool_cluster['uuid'], malware_cluster['uuid']),
+            (tool_galaxy['name'], malware_galaxy['name'])
+        )
+        malware = malware_ttp.behavior.malware_instances[0]
+        self._check_embedded_features(malware, malware_cluster, 'MalwareInstance')
+        tool = tool_ttp.resources.tools[0]
+        self._check_embedded_features(tool, tool_cluster, 'ToolInformation', feature='name')
+        self.assertEqual(len(stix_package.courses_of_action), 1)
+        course_of_action = stix_package.courses_of_action[0]
+        self._check_embedded_features(course_of_action, coa_attribute_cluster, 'CourseOfAction')
+        self._check_embedded_features(course_of_action, coa_event_cluster, 'CourseOfAction')
+        incident = stix_package.incidents[0]
+        self._check_related_object(
+            incident.leveraged_ttps.ttp[0],
+            tool_galaxy['name'],
+            tool_cluster['uuid']
+        )
+        indicator = incident.related_indicators.indicator[0].item
+        self._check_related_object(
+            indicator.indicated_ttps[0],
+            malware_galaxy['name'],
+            malware_cluster['uuid']
+        )
+        self._check_related_object(
+            indicator.suggested_coas[0],
+            coa_attribute_galaxy['name'],
+            coa_attribute_cluster['uuid'],
+            object_type='CourseOfAction'
+        )
+        self._check_coa_taken(incident.coa_taken[0], coa_event_cluster['uuid'])
+
+    def test_embedded_non_indicator_object_galaxy(self):
+        event = get_embedded_non_indicator_object_galaxy()
+        coa_object, ttp_object = deepcopy(event['Event']['Object'])
+        malware_galaxy = ttp_object['Attribute'][0]['Galaxy'][0]
+        malware_cluster = malware_galaxy['GalaxyCluster'][0]
+        coa_galaxy, tool_galaxy = event['Event']['Galaxy']
+        coa_cluster = coa_galaxy['GalaxyCluster'][0]
+        tool_cluster = tool_galaxy['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        tool_ttp, malware_ttp, vulnerability_ttp = self._check_ttp_length(
+            stix_package,
+            3
+        )
+        self._check_ttp_fields(
+            malware_ttp,
+            malware_cluster['uuid'],
+            malware_galaxy['name'],
+            'Galaxy'
+        )
+        self._check_ttp_fields(
+            tool_ttp,
+            tool_cluster['uuid'],
+            tool_galaxy['name'],
+            'Galaxy'
+        )
+        self._check_ttp_fields(
+            vulnerability_ttp,
+            ttp_object['uuid'],
+            f"{ttp_object['meta-category']}: {ttp_object['name']}",
+            'Object'
+        )
+        malware = malware_ttp.behavior.malware_instances[0]
+        self._check_embedded_features(malware, malware_cluster, 'MalwareInstance')
+        tool = tool_ttp.resources.tools[0]
+        self._check_embedded_features(tool, tool_cluster, 'ToolInformation', feature='name')
+        exploit_target = vulnerability_ttp.exploit_targets.exploit_target[0].item
+        self.assertEqual(exploit_target.id_, f"{_DEFAULT_NAMESPACE}:ExploitTarget-{ttp_object['uuid']}")
+        coa_from_galaxy, coa_from_object = stix_package.courses_of_action
+        self._check_embedded_features(coa_from_galaxy, coa_cluster, 'CourseOfAction')
+        self._check_course_of_action_fields(coa_from_object, coa_object)
+        incident = stix_package.incidents[0]
+        related_tool, related_vulnerability = incident.leveraged_ttps.ttp
+        self._check_related_object(
+            related_tool,
+            tool_galaxy['name'],
+            tool_cluster['uuid']
+        )
+        self._check_related_object(
+            related_vulnerability,
+            ttp_object['name'],
+            ttp_object['uuid']
+        )
+        self._check_related_object(
+            vulnerability_ttp.related_ttps[0],
+            malware_galaxy['name'],
+            malware_cluster['uuid']
+        )
+        self.assertEqual(len(incident.coa_taken), 2)
+        gcoa_taken, ecoa_taken = incident.coa_taken
+        self._check_coa_taken(gcoa_taken, coa_cluster['uuid'])
+        self._check_coa_taken(ecoa_taken, coa_object['uuid'])
+
+    def test_embedded_observable_object_galaxy(self):
+        event = get_embedded_observable_object_galaxy()
+        self._remove_ids_flags(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        galaxy = event['Event']['Galaxy'][0]
+        cluster = galaxy['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
+        tool = ttp.resources.tools[0]
+        self._check_embedded_features(tool, cluster, 'ToolInformation', feature='name')
+        self._check_related_object(
+            stix_package.incidents[0].leveraged_ttps.ttp[0],
+            galaxy['name'],
+            cluster['uuid']
+        )
+
     def test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
         self._add_ids_flag(event)
@@ -1100,7 +1259,7 @@ class TestStix1Export(unittest.TestCase):
     def test_event_with_asn_object_observable(self):
         event = get_event_with_asn_object()
         self._remove_ids_flags(event)
-        misp_object = event['Event']['Object'][0]
+        misp_object = deepcopy(event['Event']['Object'][0])
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
@@ -1120,7 +1279,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(attack_pattern.capec_id, f"CAPEC-{id_['value']}")
         self.assertEqual(attack_pattern.title, name['value'])
         self.assertEqual(attack_pattern.description.value, summary['value'])
-        self._check_related_ttp(
+        self._check_related_object(
             stix_package.incidents[0].leveraged_ttps.ttp[0],
             misp_object['name'],
             misp_object['uuid'],
@@ -1134,15 +1293,7 @@ class TestStix1Export(unittest.TestCase):
         stix_package = self.parser.stix_package
         self.assertEqual(len(stix_package.courses_of_action), 1)
         course_of_action = stix_package.courses_of_action[0]
-        self.assertEqual(course_of_action.id_, f"{_DEFAULT_NAMESPACE}:CourseOfAction-{misp_object['uuid']}")
-        name, type_, objective, stage, cost, impact, efficacy = misp_object['Attribute']
-        self.assertEqual(course_of_action.title, name['value'])
-        self.assertEqual(course_of_action.type_.value, type_['value'])
-        self.assertEqual(course_of_action.objective.description.value, objective['value'])
-        self.assertEqual(course_of_action.stage.value, stage['value'])
-        self.assertEqual(course_of_action.cost.value, cost['value'])
-        self.assertEqual(course_of_action.impact.value, impact['value'])
-        self.assertEqual(course_of_action.efficacy.value, efficacy['value'])
+        self._check_course_of_action_fields(course_of_action, misp_object)
         self._check_coa_taken(
             stix_package.incidents[0].coa_taken[0],
             misp_object['uuid'],
@@ -1483,7 +1634,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(len(references), 2)
         self.assertEqual(references[0], reference1['value'])
         self.assertEqual(references[1], reference2['value'])
-        self._check_related_ttp(
+        self._check_related_object(
             stix_package.incidents[0].leveraged_ttps.ttp[0],
             misp_object['name'],
             misp_object['uuid'],
@@ -1502,7 +1653,7 @@ class TestStix1Export(unittest.TestCase):
         id_, description = misp_object['Attribute']
         self.assertEqual(weakness.cwe_id, id_['value'])
         self.assertEqual(weakness.description.value, description['value'])
-        self._check_related_ttp(
+        self._check_related_object(
             stix_package.incidents[0].leveraged_ttps.ttp[0],
             misp_object['name'],
             misp_object['uuid'],
@@ -1568,7 +1719,7 @@ class TestStix1Export(unittest.TestCase):
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         attack_pattern = ttp.behavior.attack_patterns[0]
         self._check_embedded_features(attack_pattern, cluster, 'AttackPattern')
-        self._check_related_ttp(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
+        self._check_related_object(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
@@ -1589,7 +1740,7 @@ class TestStix1Export(unittest.TestCase):
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         malware = ttp.behavior.malware_instances[0]
         self._check_embedded_features(malware, cluster, 'MalwareInstance')
-        self._check_related_ttp(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
+        self._check_related_object(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
 
     def test_event_with_threat_actor_galaxy(self):
         event = get_event_with_threat_actor_galaxy()
@@ -1618,7 +1769,7 @@ class TestStix1Export(unittest.TestCase):
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         tool = ttp.resources.tools[0]
         self._check_embedded_features(tool, cluster, 'ToolInformation', feature='name')
-        self._check_related_ttp(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
+        self._check_related_object(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
 
     def test_event_with_vulnerability_galaxy(self):
         event = get_event_with_vulnerability_galaxy()
@@ -1632,4 +1783,4 @@ class TestStix1Export(unittest.TestCase):
         vulnerability = exploit_target.vulnerabilities[0]
         self._check_embedded_features(vulnerability, cluster, 'Vulnerability')
         self.assertEqual(vulnerability.cve_id, cluster['meta']['aliases'][0])
-        self._check_related_ttp(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
+        self._check_related_object(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])

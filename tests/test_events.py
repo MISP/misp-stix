@@ -1810,6 +1810,52 @@ def get_event_with_x509_fingerprint_attributes():
 #                              MISP OBJECTS TESTS                              #
 ################################################################################
 
+def get_embedded_indicator_object_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    misp_object = deepcopy(_TEST_ASN_OBJECT)
+    misp_object['Attribute'][0]['Galaxy'] = [deepcopy(_TEST_MALWARE_GALAXY)]
+    misp_object['Attribute'][1]['Galaxy'] = [
+        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
+    ]
+    event['Event']['Object'] = [misp_object]
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_TOOL_GALAXY),
+        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
+    ]
+    return event
+
+def get_embedded_non_indicator_object_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    coa_object = deepcopy(_TEST_COURSE_OF_ACTION_OBJECT)
+    coa_object['Attribute'][0]['Galaxy'] = [
+        deepcopy(_TEST_ATTACK_PATTERN_GALAXY)
+    ]
+    coa_object['Attribute'][1]['Galaxy'] = [
+        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
+    ]
+    ttp_object = deepcopy(_TEST_VULNERABILITY_OBJECT)
+    ttp_object['Attribute'][0]['Galaxy'] = [deepcopy(_TEST_MALWARE_GALAXY)]
+    ttp_object['Attribute'][1]['Galaxy'] = [
+        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
+    ]
+    event['Event']['Object'] = [
+        coa_object,
+        ttp_object
+    ]
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY),
+        deepcopy(_TEST_TOOL_GALAXY)
+    ]
+    return event
+
+def get_embedded_observable_object_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    misp_object = deepcopy(_TEST_ASN_OBJECT)
+    misp_object['Attribute'][0]['Galaxy'] = [deepcopy(_TEST_MALWARE_GALAXY)]
+    event['Event']['Object'] = [misp_object]
+    event['Event']['Galaxy'] = [deepcopy(_TEST_TOOL_GALAXY)]
+    return event
+
 def get_event_with_asn_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
