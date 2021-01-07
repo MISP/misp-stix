@@ -1240,7 +1240,8 @@ _OBSERVABLE_ATTRIBUTE = {
 def get_embedded_indicator_attribute_galaxy():
     attribute = deepcopy(_INDICATOR_ATTRIBUTE)
     attribute['Galaxy'] = [
-        deepcopy(_TEST_ATTACK_PATTERN_GALAXY)
+        deepcopy(_TEST_ATTACK_PATTERN_GALAXY),
+        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
     ]
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [attribute]

@@ -517,29 +517,33 @@ class TestStix1Export(unittest.TestCase):
     def test_embedded_indicator_attribute_galaxy(self):
         event = get_embedded_indicator_attribute_galaxy()
         attribute = event['Event']['Attribute'][0]
-        attribute_galaxy = attribute['Galaxy'][0]
-        attribute_cluster = attribute_galaxy['GalaxyCluster'][0]
+        ap_galaxy, coa_galaxy = attribute['Galaxy']
+        ap_cluster = ap_galaxy['GalaxyCluster'][0]
+        coa_cluster = coa_galaxy['GalaxyCluster'][0]
         galaxy = event['Event']['Galaxy'][0]
         cluster = galaxy['GalaxyCluster'][0]
         self.parser.parse_misp_event(event, '1.1.1')
         stix_package = self.parser.stix_package
         malware_ttp, attack_pattern_ttp = self._check_ttps_from_galaxies(
             stix_package,
-            (cluster['uuid'], attribute_cluster['uuid']),
-            (galaxy['name'], attribute_galaxy['name'])
+            (cluster['uuid'], ap_cluster['uuid']),
+            (galaxy['name'], ap_galaxy['name'])
         )
         attack_pattern = attack_pattern_ttp.behavior.attack_patterns[0]
-        self._check_embedded_features(attack_pattern, attribute_cluster, 'AttackPattern')
+        self._check_embedded_features(attack_pattern, ap_cluster, 'AttackPattern')
         malware = malware_ttp.behavior.malware_instances[0]
         self._check_embedded_features(malware, cluster, 'MalwareInstance')
+        course_of_action = stix_package.courses_of_action[0]
+        self._check_embedded_features(course_of_action, coa_cluster, 'CourseOfAction')
         incident = stix_package.incidents[0]
         self._check_related_ttp(incident.leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
         indicator = incident.related_indicators.indicator[0].item
         self._check_related_ttp(
             indicator.indicated_ttps[0],
-            attribute_galaxy['name'],
-            attribute_cluster['uuid']
+            ap_galaxy['name'],
+            ap_cluster['uuid']
         )
+        self.assertEqual(indicator.suggested_coas[0].item.idref, f"{_DEFAULT_NAMESPACE}:CourseOfAction-{coa_cluster['uuid']}")
 
     def test_embedded_non_indicator_attribute_galaxy(self):
         event = get_embedded_non_indicator_attribute_galaxy()
