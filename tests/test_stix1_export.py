@@ -592,6 +592,22 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_coa_taken(incident.coa_taken[0], coa_cluster['uuid'])
 
+    def test_embedded_observable_attribute_galaxy(self):
+        event = get_embedded_observable_attribute_galaxy()
+        attribute = event['Event']['Attribute'][0]
+        galaxy = event['Event']['Galaxy'][0]
+        cluster = galaxy['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
+        malware = ttp.behavior.malware_instances[0]
+        self._check_embedded_features(malware, cluster, 'MalwareInstance')
+        self._check_related_ttp(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
+        ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
+        malware = ttp.behavior.malware_instances[0]
+        self._check_embedded_features(malware, cluster, 'MalwareInstance')
+        self._check_related_ttp(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
+
     def test_event_with_as_attribute(self):
         event = get_event_with_as_attribute()
         attribute = event['Event']['Attribute'][0]
