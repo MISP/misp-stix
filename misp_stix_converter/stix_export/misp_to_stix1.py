@@ -1579,7 +1579,7 @@ class MISPtoSTIX1Parser():
             course_of_action = self._create_course_of_action_from_galaxy(cluster)
             related_coa = self._create_related_coa(course_of_action.id_, galaxy['name'])
             object_coa.related_coas.append(related_coa)
-            self._course_of_action[cluster_uuid] = course_of_action
+            self._courses_of_action[cluster_uuid] = course_of_action
 
     def _parse_malware_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         related_ttps = self._get_related_ttps(galaxy, 'malware')
