@@ -694,14 +694,19 @@ class MISPtoSTIX1Parser():
 
     def _extract_object_attribute_tags_and_galaxies(self, misp_object: MISPObject) -> tuple:
         tags = set()
-        galaxies = defaultdict(list)
+        galaxies = {}
         for attribute in misp_object.attributes:
             if attribute.get('Galaxy'):
-                galaxy_type = galaxy['type']
-                if galaxy_type in stix1_mapping.galaxy_types_mapping:
-                    galaxies[galaxy['type']].append(galaxy)
-                else:
-                    self._warnings.add(f'{galaxy_type} galaxy in {misp_object.name} object not mapped.')
+                for galaxy in attribute['Galaxy']:
+                    print(galaxy)
+                    galaxy_type = galaxy['type']
+                    if galaxy_type not in stix1_mapping.galaxy_types_mapping:
+                        self._warnings.add(f'{galaxy_type} galaxy in {misp_object.name} object not mapped.')
+                        continue
+                    if galaxy_type in galaxies:
+                        self._merge_galaxy_clusters(galaxies[galaxy_type], galaxy)
+                    else:
+                        galaxies[galaxy_type] = galaxy
             if attribute.tags:
                 tags.update(tag.name for tag in attribute.tags)
         return tags, galaxies
@@ -2108,6 +2113,15 @@ class MISPtoSTIX1Parser():
     @staticmethod
     def _from_datetime_to_str(date):
         return date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+    @staticmethod
+    def _merge_galaxy_clusters(galaxies, galaxy):
+        for cluster in galaxy['GalaxyCluster']:
+            for galaxy_cluster in galaxies['GalaxyCluster']:
+                if cluster['uuid'] == galaxy_cluster['uuid']:
+                    break
+            else:
+                galaxies['GalaxyCluster'].append(cluster)
 
     @staticmethod
     def _quick_fetch_tag_names(galaxy: dict) -> list:
