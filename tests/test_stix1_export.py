@@ -1227,6 +1227,28 @@ class TestStix1Export(unittest.TestCase):
         self._check_coa_taken(gcoa_taken, coa_cluster['uuid'])
         self._check_coa_taken(ecoa_taken, coa_object['uuid'])
 
+    def test_embedded_object_galaxy_with_multiple_clusters(self):
+        event = get_embedded_object_galaxy_with_multiple_clusters()
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        galaxy1 = misp_object['Attribute'][0]['Galaxy'][0]
+        cluster1 = galaxy1['GalaxyCluster'][0]
+        galaxy2 = misp_object['Attribute'][1]['Galaxy'][0]
+        cluster2 = galaxy2['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        ttp1, ttp2 = self._check_ttp_length(stix_package, 2)
+        self._check_ttp_fields(ttp1, cluster1['uuid'], galaxy1['name'], 'Galaxy')
+        self._check_ttp_fields(ttp2, cluster2['uuid'], galaxy2['name'], 'Galaxy')
+        malware1 = ttp1.behavior.malware_instances[0]
+        self._check_embedded_features(malware1, cluster1, 'MalwareInstance')
+        malware2 = ttp2.behavior.malware_instances[0]
+        self._check_embedded_features(malware2, cluster2, 'MalwareInstance')
+        indicator = stix_package.incidents[0].related_indicators.indicator[0].item
+        related_ttp1, related_ttp2 = indicator.indicated_ttps
+        self._check_related_object(related_ttp1, galaxy1['name'], cluster1['uuid'])
+        self._check_related_object(related_ttp2, galaxy2['name'], cluster2['uuid'])
+
     def test_embedded_observable_object_galaxy(self):
         event = get_embedded_observable_object_galaxy()
         self._remove_ids_flags(event)

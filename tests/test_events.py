@@ -1848,6 +1848,33 @@ def get_embedded_non_indicator_object_galaxy():
     ]
     return event
 
+def get_embedded_object_galaxy_with_multiple_clusters():
+    event = deepcopy(_BASE_EVENT)
+    misp_object = deepcopy(_TEST_ASN_OBJECT)
+    misp_object['Attribute'][0]['Galaxy'] = [deepcopy(_TEST_MALWARE_GALAXY)]
+    misp_object['Attribute'][1]['Galaxy'] = [
+        {
+            "uuid": "d752161c-78f6-11e7-a0ea-bfa79b407ce4",
+            "name": "Malware",
+            "type": "mitre-malware",
+            "description": "Name of ATT&CK software",
+            "GalaxyCluster": [
+                {
+                    "uuid": "8787e86d-8475-4f13-acea-d33eb83b6105",
+                    "value": "Winnti for Linux - S0430",
+                    "description": "Winnti for Linux is a trojan designed specifically for targeting Linux systems.",
+                    "meta": {
+                        "synonyms": [
+                            "Winnti for Linux"
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+    event['Event']['Object'] = [misp_object]
+    return event
+
 def get_embedded_observable_object_galaxy():
     event = deepcopy(_BASE_EVENT)
     misp_object = deepcopy(_TEST_ASN_OBJECT)
