@@ -1824,6 +1824,7 @@ def get_embedded_indicator_object_galaxy():
     ]
     return event
 
+
 def get_embedded_non_indicator_object_galaxy():
     event = deepcopy(_BASE_EVENT)
     coa_object = deepcopy(_TEST_COURSE_OF_ACTION_OBJECT)
@@ -1847,6 +1848,7 @@ def get_embedded_non_indicator_object_galaxy():
         deepcopy(_TEST_TOOL_GALAXY)
     ]
     return event
+
 
 def get_embedded_object_galaxy_with_multiple_clusters():
     event = deepcopy(_BASE_EVENT)
@@ -1875,6 +1877,7 @@ def get_embedded_object_galaxy_with_multiple_clusters():
     event['Event']['Object'] = [misp_object]
     return event
 
+
 def get_embedded_observable_object_galaxy():
     event = deepcopy(_BASE_EVENT)
     misp_object = deepcopy(_TEST_ASN_OBJECT)
@@ -1890,12 +1893,14 @@ def get_event_with_asn_object():
     ]
     return event
 
+
 def get_event_with_attack_pattern_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_ATTACK_PATTERN_OBJECT)
     ]
     return event
+
 
 def get_event_with_course_of_action_object():
     event = deepcopy(_BASE_EVENT)
@@ -1904,12 +1909,14 @@ def get_event_with_course_of_action_object():
     ]
     return event
 
+
 def get_event_with_credential_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_CREDENTIAL_OBJECT)
     ]
     return event
+
 
 def get_event_with_domain_ip_object():
     event = deepcopy(_BASE_EVENT)
@@ -1918,6 +1925,7 @@ def get_event_with_domain_ip_object():
     ]
     return event
 
+
 def get_event_with_email_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
@@ -1925,12 +1933,14 @@ def get_event_with_email_object():
     ]
     return event
 
+
 def get_event_with_file_object_with_artifact():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_FILE_OBJECT)
     ]
     return event
+
 
 def get_event_with_file_and_pe_objects():
     event = deepcopy(_BASE_EVENT)
@@ -1941,6 +1951,7 @@ def get_event_with_file_and_pe_objects():
     ]
     return event
 
+
 def get_event_with_file_object():
     event = deepcopy(_BASE_EVENT)
     file_object = deepcopy(_TEST_FILE_OBJECT)
@@ -1950,12 +1961,14 @@ def get_event_with_file_object():
     ]
     return event
 
+
 def get_event_with_ip_port_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_IP_PORT_OBJECT)
     ]
     return event
+
 
 def get_event_with_network_connection_object():
     event = deepcopy(_BASE_EVENT)
@@ -1964,12 +1977,14 @@ def get_event_with_network_connection_object():
     ]
     return event
 
+
 def get_event_with_network_socket_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_NETWORK_SOCKET_OBJECT)
     ]
     return event
+
 
 def get_event_with_process_object():
     event = deepcopy(_BASE_EVENT)
@@ -1978,6 +1993,7 @@ def get_event_with_process_object():
     ]
     return event
 
+
 def get_event_with_registry_key_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
@@ -1985,12 +2001,14 @@ def get_event_with_registry_key_object():
     ]
     return event
 
+
 def get_event_with_url_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_URL_OBJECT)
     ]
     return event
+
 
 def get_event_with_user_account_objects():
     event = deepcopy(_BASE_EVENT)
@@ -2017,12 +2035,14 @@ def get_event_with_user_account_objects():
     ]
     return event
 
+
 def get_event_with_vulnerability_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_VULNERABILITY_OBJECT)
     ]
     return event
+
 
 def get_event_with_weakness_object():
     event = deepcopy(_BASE_EVENT)
@@ -2031,12 +2051,14 @@ def get_event_with_weakness_object():
     ]
     return event
 
+
 def get_event_with_whois_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_WHOIS_OBJECT)
     ]
     return event
+
 
 def get_event_with_x509_object():
     event = deepcopy(_BASE_EVENT)
