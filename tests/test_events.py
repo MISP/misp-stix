@@ -186,6 +186,83 @@ _TEST_ATTACK_PATTERN_OBJECT = {
     ]
 }
 
+_TEST_BANK_ACCOUNT_OBJECT = {
+    "name": "bank-account",
+    "meta-category": "financial",
+    "description": "An object describing bank account information based on account description from goAML 4.0",
+    "uuid": "695e7924-2518-4054-9cea-f82853d37410",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "iban",
+            "object_relation": "iban",
+            "value": "LU1234567890ABCDEF1234567890",
+            "to_ids": True
+        },
+        {
+            "type": "bic",
+            "object_relation": "swift",
+            "value": "CTBKLUPP"
+        },
+        {
+            "type": "bank-account-nr",
+            "object_relation": "account",
+            "value": "1234567890"
+        },
+        {
+            "type": "text",
+            "object_relation": "institution-name",
+            "value": "Central Bank"
+        },
+        {
+            "type": "text",
+            "object_relation": "account-name",
+            "value": "John Smith's bank account"
+        },
+        {
+            "type": "text",
+            "object_relation": "beneficiary",
+            "value": "John Smith"
+        },
+        {
+            "type": "text",
+            "object_relation": "currency-code",
+            "value": "EUR"
+        }
+    ]
+}
+
+_TEST_BTC_WALLET_OBJECT = {
+    "name": "btc-wallet",
+    "meta-category": "financial",
+    "description": "An object to describe a Bitcoin wallet.",
+    "uuid": "6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "btc",
+            "object_relation": "wallet-address",
+            "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+            "to_ids": True
+        },
+        {
+            "type": "float",
+            "object_relation": "balance_BTC",
+            "value": "2.25036953"
+        },
+        {
+            "type": "float",
+            "object_relation": "BTC_received",
+            "value": "3.35036953"
+        },
+        {
+            "type": "float",
+            "object_relation": "BTC_sent",
+            "value": "1.1"
+        }
+    ]
+}
+
 _TEST_COURSE_OF_ACTION_OBJECT = {
     "name": "course-of-action",
     "meta-category": "misc",
@@ -748,6 +825,41 @@ _TEST_PE_SECTION_OBJECT = {
             "type": "ssdeep",
             "object_relation": "ssdeep",
             "value": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ\/UjHSEuSvK",
+        }
+    ]
+}
+
+_TEST_PERSON_OBJECT = {
+    "name": "person",
+    "meta-category": "misc",
+    "description": "An object which describes a person or an identity.",
+    "uuid": "868037d5-d804-4f1d-8016-f296361f9c68",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "first-name",
+            "object_relation": "first-name",
+            "value": "John"
+        },
+        {
+            "type": "last-name",
+            "object_relation": "last-name",
+            "value": "Smith"
+        },
+        {
+            "type": "nationality",
+            "object_relation": "nationality",
+            "value": "USA"
+        },
+        {
+            "type": "passport-number",
+            "object_relation": "passport-number",
+            "value": "ABA9875413"
+        },
+        {
+            "type": "phone-number",
+            "object_relation": "phone-number",
+            "value": "0123456789"
         }
     ]
 }
@@ -1968,6 +2080,16 @@ def get_event_with_credential_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_CREDENTIAL_OBJECT)
+    ]
+    return event
+
+
+def get_event_with_custom_objects():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_BANK_ACCOUNT_OBJECT),
+        deepcopy(_TEST_BTC_WALLET_OBJECT),
+        deepcopy(_TEST_PERSON_OBJECT)
     ]
     return event
 

@@ -1383,13 +1383,47 @@ class TestStix1Export(unittest.TestCase):
     def test_event_with_credential_object_observable(self):
         event = get_event_with_credential_object()
         self._remove_ids_flags(event)
-        misp_object = event['Event']['Object'][0]
+        misp_object = deepcopy(event['Event']['Object'][0])
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, misp_object['meta-category'])
         properties = self._check_observable_features(observable.item, misp_object, 'UserAccount')
         self._check_credential_properties(properties, misp_object['Attribute'])
+
+    def test_event_with_custom_objects(self):
+        event = get_event_with_custom_objects()
+        account, btc, person = deepcopy(event['Event']['Object'])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        account_rindicator, btc_rindicator = incident.related_indicators.indicator
+        account_indicator = self._check_indicator_object_features(
+            account_rindicator,
+            account,
+            orgc
+        )
+        account_properties = self._check_observable_features(
+            account_indicator.observable,
+            account,
+            'Custom'
+        )
+        self._check_custom_properties(account['Attribute'], account_properties.custom_properties)
+        btc_indicator = self._check_indicator_object_features(
+            btc_rindicator,
+            btc,
+            orgc
+        )
+        btc_properties = self._check_observable_features(
+            btc_indicator.observable,
+            btc,
+            'Custom'
+        )
+        self._check_custom_properties(btc['Attribute'], btc_properties.custom_properties)
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, person['meta-category'])
+        properties = self._check_observable_features(observable.item, person, 'Custom')
+        self._check_custom_properties(person['Attribute'], properties.custom_properties)
 
     def test_event_with_domain_ip_object_indicator(self):
         event = get_event_with_domain_ip_object()
