@@ -95,6 +95,10 @@ class TestStix1Export(unittest.TestCase):
             self.assertEqual(custom.name, attribute['object_relation'])
             self.assertEqual(custom.value, attribute['value'])
 
+    def _check_custom_property(self, attribute, custom_properties):
+        self.assertEqual(custom_properties.name, attribute['type'])
+        self.assertEqual(custom_properties.value, attribute['value'])
+
     def _check_destination_address(self, properties, category='ipv4-addr'):
         self.assertEqual(properties.category, category)
         self.assertFalse(properties.is_source)
@@ -662,6 +666,27 @@ class TestStix1Export(unittest.TestCase):
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, attribute['category'])
         self._check_attachment_properties(observable.item, attribute)
+
+    def test_event_with_custom_attributes(self):
+        event = get_event_with_custom_attributes()
+        btc, iban, phone, weakness = event['Event']['Attribute']
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        btc_rindicator, iban_rindicator = incident.related_indicators.indicator
+        btc_indicator = self._check_indicator_attribute_features(btc_rindicator, btc, orgc)
+        btc_properties = self._check_observable_features(btc_indicator.observable, btc, 'Custom')
+        self._check_custom_property(btc, btc_properties.custom_properties.property_[0])
+        iban_indicator = self._check_indicator_attribute_features(iban_rindicator, iban, orgc)
+        iban_properties = self._check_observable_features(iban_indicator.observable, iban, 'Custom')
+        self._check_custom_property(iban, iban_properties.custom_properties.property_[0])
+        phone_observable, weakness_observable = incident.related_observables.observable
+        self.assertEqual(phone_observable.relationship, phone['category'])
+        phone_properties = self._check_observable_features(phone_observable.item, phone, 'Custom')
+        self._check_custom_property(phone, phone_properties.custom_properties.property_[0])
+        self.assertEqual(weakness_observable.relationship, weakness['category'])
+        weakness_properties = self._check_observable_features(weakness_observable.item, weakness, 'Custom')
+        self._check_custom_property(weakness, weakness_properties.custom_properties.property_[0])
 
     def test_event_with_domain_attribute(self):
         event = get_event_with_domain_attribute()

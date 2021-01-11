@@ -1301,6 +1301,41 @@ def get_event_with_attachment_attribute():
     return event
 
 
+def get_event_with_custom_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "btc",
+            "category": "Financial fraud",
+            "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Btc test attribute"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "iban",
+            "category": "Financial fraud",
+            "value": "LU1234567890ABCDEF1234567890",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "IBAN test attribute"
+        },
+        {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "type": "phone-number",
+            "category": "Person",
+            "value": "0123456789"
+        },
+        {
+            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "type": "weakness",
+            "category": "External analysis",
+            "value": "CWE-20"
+        },
+    ]
+    return event
+
+
 def get_event_with_domain_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
