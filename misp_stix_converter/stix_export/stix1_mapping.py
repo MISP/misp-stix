@@ -251,6 +251,7 @@ attribute_types_mapping = {
     'target-user': '_parse_target_user',
     'user-agent': '_parse_user_agent_attribute',
     'vulnerability': '_parse_vulnerability_attribute',
+    'weakness': '_parse_weakness_attribute',
     'yara': '_parse_yara_attribute'
 }
 attribute_types_mapping.update(

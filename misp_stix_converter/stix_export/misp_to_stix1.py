@@ -245,6 +245,22 @@ class MISPtoSTIX1Parser():
             return tuple(tag.name for tag in attribute.tags if tag.name not in tag_names)
         return tuple(tag.name for tag in attribute.tags)
 
+    def _handle_exploit_target(self, attribute: MISPAttribute, stix_object: Union[Vulnerability, Weakness], stix_type: str):
+        ttp = self._create_ttp(attribute)
+        exploit_target = ExploitTarget(timestamp=attribute.timestamp)
+        exploit_target.id_ = f"{self._namespace}:ExploitTarget-{attribute.uuid}"
+        if hasattr(attribute, 'comment') and attribute.comment != "Imported via the freetext import.":
+            exploit_target.description = attribute.comment
+        exploit_target.title = f"{stix_type.capitalize()} {attribute.value}"
+        getattr(exploit_target, f"add_{stix_type}")(stix_object)
+        ttp.add_exploit_target(exploit_target)
+        tags = self._handle_non_indicator_attribute_tags_and_galaxies(attribute, ttp)
+        if tags:
+            ttp.handling = self._set_handling(tags)
+        related_ttp = self._create_related_ttp(ttp.id_, attribute.type, timestamp=attribute.timestamp)
+        self._handle_related_ttps({attribute.uuid: related_ttp})
+        self._ttps[attribute.uuid] = ttp
+
     def _handle_non_indicator_attribute_tags_and_galaxies(self, attribute: MISPAttribute, ttp: TTP) -> tuple:
         if attribute.get('Galaxy'):
             tag_names = []
@@ -542,23 +558,14 @@ class MISPtoSTIX1Parser():
         self._parse_http_session(attribute, http_client_request)
 
     def _parse_vulnerability_attribute(self, attribute: MISPAttribute):
-        ttp = self._create_ttp(attribute)
         vulnerability = Vulnerability()
         vulnerability.cve_id = attribute.value
-        exploit_target = ExploitTarget(timestamp=attribute.timestamp)
-        exploit_target.id_ = f"{self._namespace}:ExploitTarget-{attribute.uuid}"
-        if hasattr(attribute, 'comment') and attribute.comment != "Imported via the freetext import.":
-            exploit_target.title = attribute.comment
-        else:
-            exploit_target.title = f"Vulnerability {attribute.value}"
-        exploit_target.add_vulnerability(vulnerability)
-        ttp.add_exploit_target(exploit_target)
-        tags = self._handle_non_indicator_attribute_tags_and_galaxies(attribute, ttp)
-        if tags:
-            ttp.handling = self._set_handling(tags)
-        related_ttp = self._create_related_ttp(ttp.id_, attribute.type, timestamp=attribute.timestamp)
-        self._handle_related_ttps({attribute.uuid: related_ttp})
-        self._ttps[attribute.uuid] = ttp
+        self._handle_exploit_target(attribute, vulnerability, 'vulnerability')
+
+    def _parse_weakness_attribute(self, attribute: MISPAttribute):
+        weakness = Weakness()
+        weakness.cwe_id = attribute.value
+        self._handle_exploit_target(attribute, weakness, 'weakness')
 
     def _parse_windows_service_attribute(self, attribute: MISPAttribute):
         windows_service = WinService()
