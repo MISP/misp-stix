@@ -669,7 +669,7 @@ class TestStix1Export(unittest.TestCase):
 
     def test_event_with_custom_attributes(self):
         event = get_event_with_custom_attributes()
-        btc, iban, phone, weakness = event['Event']['Attribute']
+        btc, iban, phone, passport = event['Event']['Attribute']
         orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
@@ -680,13 +680,17 @@ class TestStix1Export(unittest.TestCase):
         iban_indicator = self._check_indicator_attribute_features(iban_rindicator, iban, orgc)
         iban_properties = self._check_observable_features(iban_indicator.observable, iban, 'Custom')
         self._check_custom_property(iban, iban_properties.custom_properties.property_[0])
-        phone_observable, weakness_observable = incident.related_observables.observable
+        phone_observable, passport_observable = incident.related_observables.observable
         self.assertEqual(phone_observable.relationship, phone['category'])
         phone_properties = self._check_observable_features(phone_observable.item, phone, 'Custom')
         self._check_custom_property(phone, phone_properties.custom_properties.property_[0])
-        self.assertEqual(weakness_observable.relationship, weakness['category'])
-        weakness_properties = self._check_observable_features(weakness_observable.item, weakness, 'Custom')
-        self._check_custom_property(weakness, weakness_properties.custom_properties.property_[0])
+        self.assertEqual(passport_observable.relationship, passport['category'])
+        passport_properties = self._check_observable_features(
+            passport_observable.item,
+            passport,
+            'Custom'
+        )
+        self._check_custom_property(passport, passport_properties.custom_properties.property_[0])
 
     def test_event_with_domain_attribute(self):
         event = get_event_with_domain_attribute()
@@ -1086,6 +1090,23 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(exploit_target.id_, f"{_DEFAULT_NAMESPACE}:ExploitTarget-{attribute['uuid']}")
         vulnerability = exploit_target.vulnerabilities[0]
         self.assertEqual(vulnerability.cve_id, attribute['value'])
+        incident = stix_package.incidents[0]
+        self._check_related_object(
+            incident.leveraged_ttps.ttp[0],
+            attribute['type'],
+            attribute['uuid']
+        )
+
+    def test_event_with_weakness_attribute(self):
+        event = get_event_with_weakness_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        ttp = self._check_ttp_fields_from_attribute(stix_package, attribute)
+        exploit_target = ttp.exploit_targets.exploit_target[0].item
+        self.assertEqual(exploit_target.id_, f"{_DEFAULT_NAMESPACE}:ExploitTarget-{attribute['uuid']}")
+        weakness = exploit_target.weaknesses[0]
         incident = stix_package.incidents[0]
         self._check_related_object(
             incident.leveraged_ttps.ttp[0],

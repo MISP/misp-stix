@@ -1131,6 +1131,7 @@ _TEST_X509_OBJECT = {
 #                               BASE EVENT TESTS                               #
 ################################################################################
 
+
 def get_base_event():
     return deepcopy(_BASE_EVENT)
 
@@ -1159,6 +1160,7 @@ def get_event_with_tags():
 ################################################################################
 #                                GALAXIES TESTS                                #
 ################################################################################
+
 
 def get_event_with_attack_pattern_galaxy():
     event = deepcopy(_BASE_EVENT)
@@ -1236,6 +1238,7 @@ _OBSERVABLE_ATTRIBUTE = {
     "category": "Network activity",
     "value": "AS174"
 }
+
 
 def get_embedded_indicator_attribute_galaxy():
     attribute = deepcopy(_INDICATOR_ATTRIBUTE)
@@ -1328,9 +1331,9 @@ def get_event_with_custom_attributes():
         },
         {
             "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-            "type": "weakness",
-            "category": "External analysis",
-            "value": "CWE-20"
+            "type": "passport-number",
+            "category": "Person",
+            "value": "ABA9875413"
         },
     ]
     return event
@@ -1791,6 +1794,21 @@ def get_event_with_vulnerability_attribute():
     return event
 
 
+def get_event_with_weakness_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "weakness",
+            "category": "External analysis",
+            "value": "CWE-25",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "comment": "Weakness test attribute"
+        }
+    ]
+    return event
+
+
 def get_event_with_windows_service_attributes():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
@@ -1920,6 +1938,7 @@ def get_embedded_observable_object_galaxy():
     event['Event']['Object'] = [misp_object]
     event['Event']['Galaxy'] = [deepcopy(_TEST_TOOL_GALAXY)]
     return event
+
 
 def get_event_with_asn_object():
     event = deepcopy(_BASE_EVENT)
