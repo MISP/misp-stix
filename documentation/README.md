@@ -127,7 +127,8 @@ When they are exported neither as indicator nor as observable, the top level obj
 | url | **URIObjectType** - Value |
 | user-agent | **HTTPSessionObjectType** - HTTP_Request_Response -> HTTP_Client_Request -> HTTP_Request_Header -> Parsed_Header - User_Agent |
 | vhash | **FileObjectType** - Hashes -> Hash - Simple_Hash_Value |
-| vulnerability | *stix: TTPs* -> **TTPType** Exploit_Targets -> **ExploitTargetType** -> Vulnerability - CVE_ID |
+| vulnerability | *stix: TTPs* -> **TTPType** - Exploit_Targets -> **ExploitTargetType** -> Vulnerability - CVE_ID |
+| weakness | *stix: TTPs* -> **TTPType** - Exploit_targets -> **ExploitTargetType** -> Weakness - CWE_ID |
 | windows-service-displayname | **WindowsServiceObjectType** - Display_Name |
 | windows-service-name | **WindowsServiceObjectType** - Service_Name |
 | x509-fingerprint-md5 | **X509CertificateObjectType** - Certificate_Signature - Signature |
@@ -145,7 +146,27 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 
 | MISP Object name | STIX Object type |
 | -- | -- |
-|  |  |
+| asn | **ASObjectType** |
+| attack-pattern | **TTPType** - Behavior - Attack_Patterns |
+| course-of-action | **CourseOfActionType** |
+| credential | **UserAccountObjectType** |
+| domain-ip | ObservableComposition -> **DomainNameObjectType** \| **AddressObjectType** |
+| email | **EmailMessageObjectType** |
+| file | **FileObjectType** |
+| file with references to pe \& pe-section objects | **WindowsExecutableFileObjectType** |
+| ip-port | ObservableComposition -> **AddressObjectType** \| **PortObjectType** |
+| network-connection | **NetworkConnectionObjectType** |
+| network-socket | **NetworkSocketObjectType** |
+| process | **ProcessObjectType** |
+| registry-key | **WindowsRegistryKeyObjectType** |
+| url | **URIObjectType** |
+| user-account | **UserAccountObjectType** |
+| user-account with `unix` as `account-type` attribute value | **UnixUserAccountObjectType** |
+| user-account with `windows-local` as `account-type` attribute value | **WindowsUserAccountObjectType** |
+| vulnerability | **TTPType** - Exploit_Target - Vulnerability |
+| weakness | **TTPType** - Exploit_Target - Weakness |
+| whois | **WhoisObjectType** |
+| x509 | **X509CertificateObjectType** |
 
 ##### Detailed mapping
 
