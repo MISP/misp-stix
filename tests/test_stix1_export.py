@@ -1483,7 +1483,6 @@ class TestStix1Export(unittest.TestCase):
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_object_features(related_indicator, file, orgc)
         properties = self._check_observable_features(indicator.observable, file, 'WindowsExecutableFile')
-        # related_objects = indicator.observable.object_.related_objects
         self._check_file_and_pe_properties(properties, file, pe, section)
 
     def test_event_with_file_and_pe_objects_observables(self):
