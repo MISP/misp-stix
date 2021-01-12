@@ -785,6 +785,15 @@
         },
         "STIX": "    <!--To_ids flag by default is true here, but does not affect the result being a TTP-->\n    <ttp:TTP id=\"MISP:TTP-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2020-10-25T16:22:00+00:00\" xsi:type='ttp:TTPType'>\n        <ttp:Title>External analysis: CVE-2017-11774 (MISP Attribute)</ttp:Title>\n        <ttp:Exploit_Targets>\n            <ttp:Exploit_Target>\n                <stixCommon:Exploit_Target id=\"MISP:ExploitTarget-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2020-10-25T16:22:00+00:00\" xsi:type='et:ExploitTargetType'>\n                    <et:Title>Vulnerability test attribute</et:Title>\n                    <et:Vulnerability>\n                        <et:CVE_ID>CVE-2017-11774</et:CVE_ID>\n                    </et:Vulnerability>\n                </stixCommon:Exploit_Target>\n            </ttp:Exploit_Target>\n        </ttp:Exploit_Targets>\n    </ttp:TTP>"
     },
+    "weakness": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "weakness",
+            "category": "External analysis",
+            "value": "ABA9875413"
+        },
+        "STIX": "    <!--To_ids flag by default is false here, but does not affect the result being a TTP-->\n    <ttp:TTP id=\"MISP:TTP-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2021-01-12T13:43:56+00:00\" xsi:type='ttp:TTPType'>\n        <ttp:Title>External analysis: CWE-25 (MISP Attribute)</ttp:Title>\n        <ttp:Exploit_Targets>\n            <ttp:Exploit_Target>\n                <stixCommon:Exploit_Target id=\"MISP:ExploitTarget-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\" timestamp=\"2021-01-12T13:43:56+00:00\" xsi:type='et:ExploitTargetType'>\n                    <et:Title>Weakness CWE-25</et:Title>\n                    <et:Description>Weakness test attribute</et:Description>\n                    <et:Weakness>\n                        <et:CWE_ID>CWE-25</et:CWE_ID>\n                    </et:Weakness>\n                </stixCommon:Exploit_Target>\n            </ttp:Exploit_Target>\n        </ttp:Exploit_Targets>\n    </ttp:TTP>"
+    },
     "windows-service-displayname": {
         "MISP": {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",

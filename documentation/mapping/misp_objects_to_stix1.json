@@ -1,3 +1,1150 @@
 {
-    
+    "asn": {
+        "MISP": {
+            "name": "asn",
+            "meta-category": "network",
+            "description": "Autonomous system object describing an autonomous system",
+            "uuid": "5b23c82b-6508-4bdc-b580-045b0a00020f",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "AS",
+                    "object_relation": "asn",
+                    "value": "AS66642"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "description",
+                    "value": "AS name"
+                },
+                {
+                    "type": "ip-src",
+                    "object_relation": "subnet-announced",
+                    "value": "1.2.3.4"
+                },
+                {
+                    "type": "ip-src",
+                    "object_relation": "subnet-announced",
+                    "value": "8.8.8.8"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5b23c82b-6508-4bdc-b580-045b0a00020f\" timestamp=\"2021-01-12T14:36:01+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>network: asn (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">IP Watchlist</indicator:Type>\n        <indicator:Description>Autonomous system object describing an autonomous system</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-5b23c82b-6508-4bdc-b580-045b0a00020f\">\n            <cybox:Object id=\"MISP:AS-5b23c82b-6508-4bdc-b580-045b0a00020f\">\n                <cybox:Properties xsi:type=\"ASObj:ASObjectType\">\n                    <cyboxCommon:Custom_Properties>\n                        <cyboxCommon:Property name=\"subnet-announced\">1.2.3.4</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"subnet-announced\">8.8.8.8</cyboxCommon:Property>\n                    </cyboxCommon:Custom_Properties>\n                    <ASObj:Name>AS name</ASObj:Name>\n                    <ASObj:Handle condition=\"Equals\">AS66642</ASObj:Handle>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T14:36:01+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "attack-pattern": {
+        "MISP": {
+            "name": "attack-pattern",
+            "meta-category": "vulnerability",
+            "description": "Attack pattern describing a common attack pattern enumeration and classification.",
+            "uuid": "7205da54-70de-4fa7-9b34-e14e63fe6787",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "id",
+                    "value": "9"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "Buffer Overflow in Local Command-Line Utilities"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "summary",
+                    "value": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root."
+                }
+            ]
+        },
+        "STIX": "    <ttp:TTP id=\"MISP:TTP-7205da54-70de-4fa7-9b34-e14e63fe6787\" timestamp=\"2021-01-12T14:42:42+00:00\" xsi:type='ttp:TTPType'>\n        <ttp:Title>vulnerability: attack-pattern (MISP Object)</ttp:Title>\n        <ttp:Behavior>\n            <ttp:Attack_Patterns>\n                <ttp:Attack_Pattern capec_id=\"CAPEC-9\" id=\"MISP:AttackPattern-7205da54-70de-4fa7-9b34-e14e63fe6787\">\n                    <ttp:Title>Buffer Overflow in Local Command-Line Utilities</ttp:Title>\n                    <ttp:Description>This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.</ttp:Description>\n                </ttp:Attack_Pattern>\n            </ttp:Attack_Patterns>\n        </ttp:Behavior>\n    </ttp:TTP>"
+    },
+    "course-of-action": {
+        "MISP": {
+            "name": "course-of-action",
+            "meta-category": "misc",
+            "description": "An object describing a specific measure taken to prevent or respond to an attack.",
+            "uuid": "5d514ff9-ac30-4fb5-b9e7-3eb4a964451a",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "Block traffic to PIVY C2 Server (10.10.10.10)"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "type",
+                    "value": "Perimeter Blocking"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "objective",
+                    "value": "Block communication between the PIVY agents and the C2 Server"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "stage",
+                    "value": "Response"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "cost",
+                    "value": "Low"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "impact",
+                    "value": "Low"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "efficacy",
+                    "value": "High"
+                }
+            ]
+        },
+        "STIX": "    <coa:Course_Of_Action id=\"MISP:CourseOfAction-5d514ff9-ac30-4fb5-b9e7-3eb4a964451a\" timestamp=\"2021-01-12T14:44:56.158319+00:00\" xsi:type='coa:CourseOfActionType'>\n        <coa:Title>Block traffic to PIVY C2 Server (10.10.10.10)</coa:Title>\n        <coa:Stage xsi:type=\"stixVocabs:COAStageVocab-1.0\">Response</coa:Stage>\n        <coa:Type xsi:type=\"stixVocabs:CourseOfActionTypeVocab-1.0\">Perimeter Blocking</coa:Type>\n        <coa:Objective>\n            <coa:Description>Block communication between the PIVY agents and the C2 Server</coa:Description>\n        </coa:Objective>\n        <coa:Impact timestamp=\"2021-01-12T14:44:56.158436+00:00\">\n            <stixCommon:Value>Low</stixCommon:Value>\n        </coa:Impact>\n        <coa:Cost timestamp=\"2021-01-12T14:44:56.158417+00:00\">\n            <stixCommon:Value>Low</stixCommon:Value>\n        </coa:Cost>\n        <coa:Efficacy timestamp=\"2021-01-12T14:44:56.158458+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n        </coa:Efficacy>\n    </coa:Course_Of_Action>"
+    },
+    "credential": {
+        "MISP": {
+            "name": "credential",
+            "meta-category": "misc",
+            "description": "Credential describes one or more credential(s)",
+            "uuid": "5b1f9378-46d4-494b-a4c1-044e0a00020f",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "text",
+                    "value": "MISP default credentials"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "username",
+                    "value": "misp"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "password",
+                    "value": "Password1234"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "type",
+                    "value": "password"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "origin",
+                    "value": "malware-analysis"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "format",
+                    "value": "clear-text"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "notification",
+                    "value": "victim-notified"
+                }
+            ]
+        },
+        "STIX": "    <stixCommon:RelatedObservableType>\n        <stixCommon:Relationship>misc</stixCommon:Relationship>\n        <stixCommon:Observable id=\"MISP:Observable-5b1f9378-46d4-494b-a4c1-044e0a00020f\">\n            <cybox:Object id=\"MISP:UserAccount-5b1f9378-46d4-494b-a4c1-044e0a00020f\">\n                <cybox:Properties xsi:type=\"UserAccountObj:UserAccountObjectType\">\n                    <cyboxCommon:Custom_Properties>\n                        <cyboxCommon:Property name=\"origin\">malware-analysis</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"notification\">victim-notified</cyboxCommon:Property>\n                    </cyboxCommon:Custom_Properties>\n                    <AccountObj:Description>MISP default credentials</AccountObj:Description>\n                    <AccountObj:Authentication>\n                        <AccountObj:Authentication_Type>password</AccountObj:Authentication_Type>\n                        <AccountObj:Authentication_Data>Password1234</AccountObj:Authentication_Data>\n                        <AccountObj:Structured_Authentication_Mechanism>\n                            <AccountObj:Description>clear-text</AccountObj:Description>\n                        </AccountObj:Structured_Authentication_Mechanism>\n                    </AccountObj:Authentication>\n                    <UserAccountObj:Username>misp</UserAccountObj:Username>\n                </cybox:Properties>\n            </cybox:Object>\n        </stixCommon:Observable>\n    </stixCommon:RelatedObservableType>"
+    },
+    "domain-ip": {
+        "MISP": {
+            "name": "domain-ip",
+            "meta-category": "network",
+            "description": "A domain and IP address seen as a tuple",
+            "uuid": "5ac337df-e078-4e99-8b17-02550a00020f",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                    "type": "domain",
+                    "object_relation": "domain",
+                    "value": "circl.lu"
+                },
+                {
+                    "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+                    "type": "ip-dst",
+                    "object_relation": "ip",
+                    "value": "149.13.33.14"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5ac337df-e078-4e99-8b17-02550a00020f\" timestamp=\"2021-01-12T15:20:16+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>network: domain-ip (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Domain Watchlist</indicator:Type>\n        <indicator:Description>A domain and IP address seen as a tuple</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:domain-ip_ObservableComposition-5ac337df-e078-4e99-8b17-02550a00020f\">\n            <cybox:Observable_Composition operator=\"AND\">\n                <cybox:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                    <cybox:Object id=\"MISP:DomainName-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                        <cybox:Properties xsi:type=\"DomainNameObj:DomainNameObjectType\">\n                            <DomainNameObj:Value condition=\"Equals\">circl.lu</DomainNameObj:Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n                <cybox:Observable id=\"MISP:Observable-518b4bcb-a86b-4783-9457-391d548b605b\">\n                    <cybox:Object id=\"MISP:Address-518b4bcb-a86b-4783-9457-391d548b605b\">\n                        <cybox:Properties xsi:type=\"AddressObj:AddressObjectType\" category=\"ipv4-addr\" is_source=\"false\" is_destination=\"true\">\n                            <AddressObj:Address_Value condition=\"Equals\">149.13.33.14</AddressObj:Address_Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n            </cybox:Observable_Composition>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:20:16+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "email": {
+        "MISP": {
+            "name": "email",
+            "meta-category": "network",
+            "description": "Email object describing an email with meta-information",
+            "uuid": "5e396622-2a54-4c8d-b61d-159da964451a",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "email-src",
+                    "object_relation": "from",
+                    "value": "source@email.test"
+                },
+                {
+                    "type": "email-dst",
+                    "object_relation": "to",
+                    "value": "destination@email.test"
+                },
+                {
+                    "type": "email-dst",
+                    "object_relation": "cc",
+                    "value": "cc1@email.test"
+                },
+                {
+                    "type": "email-dst",
+                    "object_relation": "cc",
+                    "value": "cc2@email.test"
+                },
+                {
+                    "type": "email-reply-to",
+                    "object_relation": "reply-to",
+                    "value": "reply-to@email.test"
+                },
+                {
+                    "type": "email-subject",
+                    "object_relation": "subject",
+                    "value": "Email test subject"
+                },
+                {
+                    "type": "email-attachment",
+                    "object_relation": "attachment",
+                    "value": "attachment1.file"
+                },
+                {
+                    "type": "email-attachment",
+                    "object_relation": "attachment",
+                    "value": "attachment2.file"
+                },
+                {
+                    "type": "email-x-mailer",
+                    "object_relation": "x-mailer",
+                    "value": "x-mailer-test"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "user-agent",
+                    "value": "Test user agent"
+                },
+                {
+                    "type": "email-mime-boundary",
+                    "object_relation": "mime-boundary",
+                    "value": "Test mime boundary"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5e396622-2a54-4c8d-b61d-159da964451a\" timestamp=\"2021-01-12T15:23:22+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>network: email (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malicious E-mail</indicator:Type>\n        <indicator:Description>Email object describing an email with meta-information</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-5e396622-2a54-4c8d-b61d-159da964451a\">\n            <cybox:Object id=\"MISP:EmailMessage-5e396622-2a54-4c8d-b61d-159da964451a\">\n                <cybox:Properties xsi:type=\"EmailMessageObj:EmailMessageObjectType\">\n                    <EmailMessageObj:Header>\n                        <EmailMessageObj:To>\n                            <EmailMessageObj:Recipient xsi:type=\"AddressObj:AddressObjectType\" category=\"e-mail\">\n                                <AddressObj:Address_Value>destination@email.test</AddressObj:Address_Value>\n                            </EmailMessageObj:Recipient>\n                        </EmailMessageObj:To>\n                        <EmailMessageObj:CC>\n                            <EmailMessageObj:Recipient xsi:type=\"AddressObj:AddressObjectType\" category=\"e-mail\">\n                                <AddressObj:Address_Value>cc1@email.test</AddressObj:Address_Value>\n                            </EmailMessageObj:Recipient>\n                            <EmailMessageObj:Recipient xsi:type=\"AddressObj:AddressObjectType\" category=\"e-mail\">\n                                <AddressObj:Address_Value>cc2@email.test</AddressObj:Address_Value>\n                            </EmailMessageObj:Recipient>\n                        </EmailMessageObj:CC>\n                        <EmailMessageObj:From xsi:type=\"AddressObj:AddressObjectType\" category=\"e-mail\">\n                            <AddressObj:Address_Value condition=\"Equals\">source@email.test</AddressObj:Address_Value>\n                        </EmailMessageObj:From>\n                        <EmailMessageObj:Subject condition=\"Equals\">Email test subject</EmailMessageObj:Subject>\n                        <EmailMessageObj:Reply_To xsi:type=\"AddressObj:AddressObjectType\" category=\"e-mail\">\n                            <AddressObj:Address_Value condition=\"Equals\">reply-to@email.test</AddressObj:Address_Value>\n                        </EmailMessageObj:Reply_To>\n                        <EmailMessageObj:Boundary condition=\"Equals\">Test mime boundary</EmailMessageObj:Boundary>\n                        <EmailMessageObj:User_Agent condition=\"Equals\">Test user agent</EmailMessageObj:User_Agent>\n                        <EmailMessageObj:X_Mailer condition=\"Equals\">x-mailer-test</EmailMessageObj:X_Mailer>\n                    </EmailMessageObj:Header>\n                    <EmailMessageObj:Attachments>\n                        <EmailMessageObj:File object_reference=\"MISP:FileObject-d507ecc5-0285-4aae-9e20-b66b982b4138\"/>\n                        <EmailMessageObj:File object_reference=\"MISP:FileObject-c5c7a683-7a2b-418a-af4a-773b131f918b\"/>\n                    </EmailMessageObj:Attachments>\n                </cybox:Properties>\n                <cybox:Related_Objects>\n                    <cybox:Related_Object id=\"MISP:FileObject-d507ecc5-0285-4aae-9e20-b66b982b4138\">\n                        <cybox:Properties xsi:type=\"FileObj:FileObjectType\">\n                            <FileObj:File_Name condition=\"Equals\">attachment1.file</FileObj:File_Name>\n                        </cybox:Properties>\n                        <cybox:Relationship xsi:type=\"cyboxVocabs:ObjectRelationshipVocab-1.1\">Contains</cybox:Relationship>\n                    </cybox:Related_Object>\n                    <cybox:Related_Object id=\"MISP:FileObject-c5c7a683-7a2b-418a-af4a-773b131f918b\">\n                        <cybox:Properties xsi:type=\"FileObj:FileObjectType\">\n                            <FileObj:File_Name condition=\"Equals\">attachment2.file</FileObj:File_Name>\n                        </cybox:Properties>\n                        <cybox:Relationship xsi:type=\"cyboxVocabs:ObjectRelationshipVocab-1.1\">Contains</cybox:Relationship>\n                    </cybox:Related_Object>\n                </cybox:Related_Objects>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:23:22+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "file": {
+        "MISP": {
+            "name": "file",
+            "meta-category": "file",
+            "description": "File object describing a file with meta-information",
+            "uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                    "type": "malware-sample",
+                    "object_relation": "malware-sample",
+                    "value": "oui|8764605c6f388c89096b534d33565802",
+                    "data": "UEsDBAoACQAAAPKLQ1AvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAA+dKOF7nSjhedXgLAAEEIQAAAAQhAAAA7ukeownnAQsmsimPVT3qvMUSCRqPjj3xfZpK3MTLpCrssX1AVtxZoMh3ucu5mCxQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAPKLQ1BAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAPnSjhe50o4XnV4CwABBCEAAAAEIQAAAFHTwHeSOtOjQMWS6+0aN1BLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAADyi0NQL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAA+dKOF51eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAADyi0NQQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAPnSjhedXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA=="
+                },
+                {
+                    "type": "filename",
+                    "object_relation": "filename",
+                    "value": "oui"
+                },
+                {
+                    "type": "md5",
+                    "object_relation": "md5",
+                    "value": "8764605c6f388c89096b534d33565802"
+                },
+                {
+                    "type": "sha1",
+                    "object_relation": "sha1",
+                    "value": "46aba99aa7158e4609aaa72b50990842fd22ae86"
+                },
+                {
+                    "type": "sha256",
+                    "object_relation": "sha256",
+                    "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+                },
+                {
+                    "type": "size-in-bytes",
+                    "object_relation": "size-in-bytes",
+                    "value": "35"
+                },
+                {
+                    "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+                    "type": "attachment",
+                    "object_relation": "attachment",
+                    "value": "non",
+                    "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+                },
+                {
+                    "type": "text",
+                    "object_relation": "path",
+                    "value": "/var/www/MISP/app/files/scripts/tmp"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "file-encoding",
+                    "value": "UTF-8"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5e384ae7-672c-4250-9cda-3b4da964451a\" timestamp=\"2021-01-12T15:31:12+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>file: file (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">File Hash Watchlist</indicator:Type>\n        <indicator:Description>File object describing a file with meta-information</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:file_ObservableComposition-5e384ae7-672c-4250-9cda-3b4da964451a\">\n            <cybox:Observable_Composition operator=\"AND\">\n                <cybox:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                    <cybox:Title>oui</cybox:Title>\n                    <cybox:Object id=\"MISP:Artifact-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                        <cybox:Properties xsi:type=\"ArtifactObj:ArtifactObjectType\">\n                            <ArtifactObj:Hashes>\n                                <cyboxCommon:Hash>\n                                    <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">MD5</cyboxCommon:Type>\n                                    <cyboxCommon:Simple_Hash_Value condition=\"Equals\">8764605c6f388c89096b534d33565802</cyboxCommon:Simple_Hash_Value>\n                                </cyboxCommon:Hash>\n                            </ArtifactObj:Hashes>\n                            <ArtifactObj:Raw_Artifact condition=\"Equals\"><![CDATA[UEsDBAoACQAAAPKLQ1AvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAA+dKOF7nSjhedXgLAAEEIQAAAAQhAAAA7ukeownnAQsmsimPVT3qvMUSCRqPjj3xfZpK3MTLpCrssX1AVtxZoMh3ucu5mCxQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAPKLQ1BAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAPnSjhe50o4XnV4CwABBCEAAAAEIQAAAFHTwHeSOtOjQMWS6+0aN1BLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAADyi0NQL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAA+dKOF51eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAADyi0NQQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAPnSjhedXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==]]></ArtifactObj:Raw_Artifact>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n                <cybox:Observable id=\"MISP:Observable-518b4bcb-a86b-4783-9457-391d548b605b\">\n                    <cybox:Title>non</cybox:Title>\n                    <cybox:Object id=\"MISP:Artifact-518b4bcb-a86b-4783-9457-391d548b605b\">\n                        <cybox:Properties xsi:type=\"ArtifactObj:ArtifactObjectType\">\n                            <ArtifactObj:Raw_Artifact condition=\"Equals\"><![CDATA[Tm9uLW1hbGljaW91cyBmaWxlCg==]]></ArtifactObj:Raw_Artifact>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n                <cybox:Observable id=\"MISP:Observable-5e384ae7-672c-4250-9cda-3b4da964451a\">\n                    <cybox:Object id=\"MISP:File-5e384ae7-672c-4250-9cda-3b4da964451a\">\n                        <cybox:Properties xsi:type=\"FileObj:FileObjectType\">\n                            <cyboxCommon:Custom_Properties>\n                                <cyboxCommon:Property name=\"file-encoding\">UTF-8</cyboxCommon:Property>\n                            </cyboxCommon:Custom_Properties>\n                            <FileObj:File_Name condition=\"Equals\">oui</FileObj:File_Name>\n                            <FileObj:File_Path condition=\"Equals\">/var/www/MISP/app/files/scripts/tmp</FileObj:File_Path>\n                            <FileObj:Size_In_Bytes condition=\"Equals\">35</FileObj:Size_In_Bytes>\n                            <FileObj:Hashes>\n                                <cyboxCommon:Hash>\n                                    <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">MD5</cyboxCommon:Type>\n                                    <cyboxCommon:Simple_Hash_Value condition=\"Equals\">8764605c6f388c89096b534d33565802</cyboxCommon:Simple_Hash_Value>\n                                </cyboxCommon:Hash>\n                                <cyboxCommon:Hash>\n                                    <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">SHA1</cyboxCommon:Type>\n                                    <cyboxCommon:Simple_Hash_Value condition=\"Equals\">46aba99aa7158e4609aaa72b50990842fd22ae86</cyboxCommon:Simple_Hash_Value>\n                                </cyboxCommon:Hash>\n                                <cyboxCommon:Hash>\n                                    <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">SHA256</cyboxCommon:Type>\n                                    <cyboxCommon:Simple_Hash_Value condition=\"Equals\">ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b</cyboxCommon:Simple_Hash_Value>\n                                </cyboxCommon:Hash>\n                            </FileObj:Hashes>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n            </cybox:Observable_Composition>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:31:12+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "file (with references to pe & pe-section(s))": {
+        "MISP": [
+            {
+                "name": "file",
+                "meta-category": "file",
+                "description": "File object describing a file with meta-information",
+                "uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "filename",
+                        "object_relation": "filename",
+                        "value": "oui"
+                    },
+                    {
+                        "type": "md5",
+                        "object_relation": "md5",
+                        "value": "b2a5abfeef9e36964281a31e17b57c97"
+                    },
+                    {
+                        "type": "sha1",
+                        "object_relation": "sha1",
+                        "value": "5898fc860300e228dcd54c0b1045b5fa0dcda502"
+                    },
+                    {
+                        "type": "sha256",
+                        "object_relation": "sha256",
+                        "value": "3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8"
+                    },
+                    {
+                        "type": "size-in-bytes",
+                        "object_relation": "size-in-bytes",
+                        "value": "1234"
+                    },
+                    {
+                        "type": "float",
+                        "object_relation": "entropy",
+                        "value": "1.234"
+                    }
+                ],
+                "ObjectReference": [
+                    {
+                        "referenced_uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
+                        "relationship_type": "includes",
+                        "Object": {
+                            "uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
+                            "name": "pe",
+                            "meta-category": "file"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "pe",
+                "meta-category": "file",
+                "description": "Object describing a Portable Executable",
+                "uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "type",
+                        "value": "exe"
+                    },
+                    {
+                        "type": "datetime",
+                        "object_relation": "compilation-timestamp",
+                        "value": "2019-03-16T12:31:22"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "entrypoint-address",
+                        "value": "5369222868"
+                    },
+                    {
+                        "type": "filename",
+                        "object_relation": "original-filename",
+                        "value": "PuTTy"
+                    },
+                    {
+                        "type": "filename",
+                        "object_relation": "internal-filename",
+                        "value": "PuTTy"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "file-description",
+                        "value": "SSH, Telnet and Rlogin client"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "file-version",
+                        "value": "Release 0.71 (with embedded help)"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "lang-id",
+                        "value": "080904B0"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "product-name",
+                        "value": "PuTTy suite"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "product-version",
+                        "value": "Release 0.71"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "company-name",
+                        "value": "Simoe Tatham"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "legal-copyright",
+                        "value": "Copyright \u00a9 1997-2019 Simon Tatham."
+                    },
+                    {
+                        "type": "counter",
+                        "object_relation": "number-sections",
+                        "value": "8"
+                    },
+                    {
+                        "type": "imphash",
+                        "object_relation": "imphash",
+                        "value": "23ea835ab4b9017c74dfb023d2301c99"
+                    },
+                    {
+                        "type": "impfuzzy",
+                        "object_relation": "impfuzzy",
+                        "value": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt"
+                    }
+                ],
+                "ObjectReference": [
+                    {
+                        "referenced_uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
+                        "relationship_type": "includes",
+                        "Object": {
+                            "uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
+                            "name": "pe-section",
+                            "meta-category": "file"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "pe-section",
+                "meta-category": "file",
+                "description": "Object describing a section of a Portable Executable",
+                "uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "name",
+                        "value": ".rsrc"
+                    },
+                    {
+                        "type": "size-in-bytes",
+                        "object_relation": "size-in-bytes",
+                        "value": "305152"
+                    },
+                    {
+                        "type": "float",
+                        "object_relation": "entropy",
+                        "value": "7.836462238824369"
+                    },
+                    {
+                        "type": "md5",
+                        "object_relation": "md5",
+                        "value": "8a2a5fc2ce56b3b04d58539a95390600"
+                    },
+                    {
+                        "type": "sha1",
+                        "object_relation": "sha1",
+                        "value": "0aeb9def096e9f73e9460afe6f8783a32c7eabdf"
+                    },
+                    {
+                        "type": "sha256",
+                        "object_relation": "sha256",
+                        "value": "c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b"
+                    },
+                    {
+                        "type": "sha512",
+                        "object_relation": "sha512",
+                        "value": "98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f"
+                    },
+                    {
+                        "type": "ssdeep",
+                        "object_relation": "ssdeep",
+                        "value": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ\/UjHSEuSvK"
+                    }
+                ]
+            }
+        ],
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5ac47782-e1b8-40b6-96b4-02510a00020f\" timestamp=\"2021-01-12T15:28:54+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>file: file (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">File Hash Watchlist</indicator:Type>\n        <indicator:Description>File object describing a file with meta-information</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-5ac47782-e1b8-40b6-96b4-02510a00020f\">\n            <cybox:Object id=\"MISP:WindowsExecutableFile-5ac47782-e1b8-40b6-96b4-02510a00020f\">\n                <cybox:Properties xsi:type=\"WinExecutableFileObj:WindowsExecutableFileObjectType\">\n                    <cyboxCommon:Custom_Properties>\n                        <cyboxCommon:Property name=\"compilation-timestamp\">2019-03-16T12:31:22</cyboxCommon:Property>\n                    </cyboxCommon:Custom_Properties>\n                    <FileObj:File_Name condition=\"Equals\">oui</FileObj:File_Name>\n                    <FileObj:Size_In_Bytes condition=\"Equals\">1234</FileObj:Size_In_Bytes>\n                    <FileObj:Hashes>\n                        <cyboxCommon:Hash>\n                            <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">MD5</cyboxCommon:Type>\n                            <cyboxCommon:Simple_Hash_Value condition=\"Equals\">b2a5abfeef9e36964281a31e17b57c97</cyboxCommon:Simple_Hash_Value>\n                        </cyboxCommon:Hash>\n                        <cyboxCommon:Hash>\n                            <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">SHA1</cyboxCommon:Type>\n                            <cyboxCommon:Simple_Hash_Value condition=\"Equals\">5898fc860300e228dcd54c0b1045b5fa0dcda502</cyboxCommon:Simple_Hash_Value>\n                        </cyboxCommon:Hash>\n                        <cyboxCommon:Hash>\n                            <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">SHA256</cyboxCommon:Type>\n                            <cyboxCommon:Simple_Hash_Value condition=\"Equals\">3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8</cyboxCommon:Simple_Hash_Value>\n                        </cyboxCommon:Hash>\n                    </FileObj:Hashes>\n                    <FileObj:Peak_Entropy condition=\"Equals\">1.234</FileObj:Peak_Entropy>\n                    <WinExecutableFileObj:Headers>\n                        <WinExecutableFileObj:File_Header>\n                            <WinExecutableFileObj:Number_Of_Sections condition=\"Equals\">8</WinExecutableFileObj:Number_Of_Sections>\n                            <WinExecutableFileObj:Hashes>\n                                <cyboxCommon:Hash>\n                                    <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">MD5</cyboxCommon:Type>\n                                    <cyboxCommon:Simple_Hash_Value condition=\"Equals\">23ea835ab4b9017c74dfb023d2301c99</cyboxCommon:Simple_Hash_Value>\n                                </cyboxCommon:Hash>\n                                <cyboxCommon:Hash>\n                                    <cyboxCommon:Type condition=\"Equals\">Other</cyboxCommon:Type>\n                                    <cyboxCommon:Simple_Hash_Value condition=\"Equals\">192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt</cyboxCommon:Simple_Hash_Value>\n                                </cyboxCommon:Hash>\n                            </WinExecutableFileObj:Hashes>\n                        </WinExecutableFileObj:File_Header>\n                        <WinExecutableFileObj:Optional_Header>\n                            <WinExecutableFileObj:Address_Of_Entry_Point condition=\"Equals\">5369222868</WinExecutableFileObj:Address_Of_Entry_Point>\n                        </WinExecutableFileObj:Optional_Header>\n                    </WinExecutableFileObj:Headers>\n                    <WinExecutableFileObj:Resources>\n                        <WinExecutableFileObj:VersionInfoResource xsi:type='WinExecutableFileObj:PEVersionInfoResourceType'>\n                            <WinExecutableFileObj:CompanyName condition=\"Equals\">Simoe Tatham</WinExecutableFileObj:CompanyName>\n                            <WinExecutableFileObj:FileDescription condition=\"Equals\">SSH, Telnet and Rlogin client</WinExecutableFileObj:FileDescription>\n                            <WinExecutableFileObj:FileVersion condition=\"Equals\">Release 0.71 (with embedded help)</WinExecutableFileObj:FileVersion>\n                            <WinExecutableFileObj:InternalName condition=\"Equals\">PuTTy</WinExecutableFileObj:InternalName>\n                            <WinExecutableFileObj:LangID condition=\"Equals\">080904B0</WinExecutableFileObj:LangID>\n                            <WinExecutableFileObj:LegalCopyright condition=\"Equals\">Copyright © 1997-2019 Simon Tatham./WinExecutableFileObj:LegalCopyright>\n                            <WinExecutableFileObj:OriginalFilename condition=\"Equals\">PuTTy</WinExecutableFileObj:OriginalFilename>\n                            <WinExecutableFileObj:ProductName condition=\"Equals\">PuTTy suite</WinExecutableFileObj:ProductName>\n                            <WinExecutableFileObj:ProductVersion condition=\"Equals\">Release 0.71</WinExecutableFileObj:ProductVersion>\n                        </WinExecutableFileObj:VersionInfoResource>\n                    </WinExecutableFileObj:Resources>\n                    <WinExecutableFileObj:Sections>\n                        <WinExecutableFileObj:Section>\n                            <WinExecutableFileObj:Section_Header>\n                                <WinExecutableFileObj:Name condition=\"Equals\">.rsrc</WinExecutableFileObj:Name>\n                                <WinExecutableFileObj:Size_Of_Raw_Data condition=\"Equals\">305152</WinExecutableFileObj:Size_Of_Raw_Data>\n                            </WinExecutableFileObj:Section_Header>\n                            <WinExecutableFileObj:Data_Hashes>\n                                <cyboxCommon:Hash>\n                                    <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">MD5</cyboxCommon:Type>\n                                    <cyboxCommon:Simple_Hash_Value condition=\"Equals\">8a2a5fc2ce56b3b04d58539a95390600</cyboxCommon:Simple_Hash_Value>\n                                </cyboxCommon:Hash>\n                                <cyboxCommon:Hash>\n                                    <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">SHA1</cyboxCommon:Type>\n                                    <cyboxCommon:Simple_Hash_Value condition=\"Equals\">0aeb9def096e9f73e9460afe6f8783a32c7eabdf</cyboxCommon:Simple_Hash_Value>\n                                </cyboxCommon:Hash>\n                                <cyboxCommon:Hash>\n                                    <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">SHA256</cyboxCommon:Type>\n                                    <cyboxCommon:Simple_Hash_Value condition=\"Equals\">c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b</cyboxCommon:Simple_Hash_Value>\n                                </cyboxCommon:Hash>\n                                <cyboxCommon:Hash>\n                                    <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">SHA512</cyboxCommon:Type>\n                                    <cyboxCommon:Simple_Hash_Value condition=\"Equals\">98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f</cyboxCommon:Simple_Hash_Value>\n                                </cyboxCommon:Hash>\n                                <cyboxCommon:Hash>\n                                    <cyboxCommon:Type condition=\"Equals\" xsi:type=\"cyboxVocabs:HashNameVocab-1.0\">SSDEEP</cyboxCommon:Type>\n                                    <cyboxCommon:Fuzzy_Hash_Value>6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ\\/UjHSEuSvK</cyboxCommon:Fuzzy_Hash_Value>\n                                </cyboxCommon:Hash>\n                            </WinExecutableFileObj:Data_Hashes>\n                            <WinExecutableFileObj:Entropy>\n                                <WinExecutableFileObj:Value>7.836462238824369</WinExecutableFileObj:Value>\n                            </WinExecutableFileObj:Entropy>\n                        </WinExecutableFileObj:Section>\n                    </WinExecutableFileObj:Sections>\n                    <WinExecutableFileObj:Type condition=\"Equals\">exe</WinExecutableFileObj:Type>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:28:54+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "ip-port": {
+        "MISP": {
+            "name": "ip-port",
+            "meta-category": "network",
+            "description": "An IP address (or domain) and a port",
+            "uuid": "5ac47edc-31e4-4402-a7b6-040d0a00020f",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                    "type": "ip-dst",
+                    "object_relation": "ip",
+                    "value": "149.13.33.14"
+                },
+                {
+                    "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+                    "type": "port",
+                    "object_relation": "dst-port",
+                    "value": "443"
+                },
+                {
+                    "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+                    "type": "domain",
+                    "object_relation": "domain",
+                    "value": "circl.lu"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5ac47edc-31e4-4402-a7b6-040d0a00020f\" timestamp=\"2021-01-12T15:34:10+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>network: ip-port (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malware Artifacts</indicator:Type>\n        <indicator:Description>An IP address (or domain) and a port</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:ip-port_ObservableComposition-5ac47edc-31e4-4402-a7b6-040d0a00020f\">\n            <cybox:Observable_Composition operator=\"AND\">\n                <cybox:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                    <cybox:Object id=\"MISP:Address-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                        <cybox:Properties xsi:type=\"AddressObj:AddressObjectType\" category=\"ipv4-addr\" is_source=\"false\" is_destination=\"true\">\n                            <AddressObj:Address_Value condition=\"Equals\">149.13.33.14</AddressObj:Address_Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n                <cybox:Observable id=\"MISP:Observable-518b4bcb-a86b-4783-9457-391d548b605b\">\n                    <cybox:Object id=\"MISP:dstPort-518b4bcb-a86b-4783-9457-391d548b605b\">\n                        <cybox:Properties xsi:type=\"PortObj:PortObjectType\">\n                            <PortObj:Port_Value condition=\"Equals\">443</PortObj:Port_Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n                <cybox:Observable id=\"MISP:Observable-34cb1a7c-55ec-412a-8684-ba4a88d83a45\">\n                    <cybox:Object id=\"MISP:DomainName-34cb1a7c-55ec-412a-8684-ba4a88d83a45\">\n                        <cybox:Properties xsi:type=\"DomainNameObj:DomainNameObjectType\">\n                            <DomainNameObj:Value condition=\"Equals\">circl.lu</DomainNameObj:Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n            </cybox:Observable_Composition>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:34:10+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "network-connection": {
+        "MISP": {
+            "name": "network-connection",
+            "meta-category": "network",
+            "description": "A local or remote network connection",
+            "uuid": "5afacc53-c0b0-4825-a6ee-03c80a00020f",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "ip-src",
+                    "object_relation": "ip-src",
+                    "value": "1.2.3.4"
+                },
+                {
+                    "type": "ip-dst",
+                    "object_relation": "ip-dst",
+                    "value": "5.6.7.8"
+                },
+                {
+                    "type": "port",
+                    "object_relation": "src-port",
+                    "value": "8080"
+                },
+                {
+                    "type": "port",
+                    "object_relation": "dst-port",
+                    "value": "8080"
+                },
+                {
+                    "type": "hostname",
+                    "object_relation": "hostname-dst",
+                    "value": "circl.lu"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "layer3-protocol",
+                    "value": "IP"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "layer4-protocol",
+                    "value": "TCP"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "layer7-protocol",
+                    "value": "HTTP"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5afacc53-c0b0-4825-a6ee-03c80a00020f\" timestamp=\"2021-01-12T15:34:57+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>network: network-connection (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malware Artifacts</indicator:Type>\n        <indicator:Description>A local or remote network connection</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-5afacc53-c0b0-4825-a6ee-03c80a00020f\">\n            <cybox:Object id=\"MISP:NetworkConnection-5afacc53-c0b0-4825-a6ee-03c80a00020f\">\n                <cybox:Properties xsi:type=\"NetworkConnectionObj:NetworkConnectionObjectType\">\n                    <NetworkConnectionObj:Layer3_Protocol condition=\"Equals\">IP</NetworkConnectionObj:Layer3_Protocol>\n                    <NetworkConnectionObj:Layer4_Protocol condition=\"Equals\">TCP</NetworkConnectionObj:Layer4_Protocol>\n                    <NetworkConnectionObj:Layer7_Protocol condition=\"Equals\">HTTP</NetworkConnectionObj:Layer7_Protocol>\n                    <NetworkConnectionObj:Source_Socket_Address xsi:type=\"SocketAddressObj:SocketAddressObjectType\">\n                        <SocketAddressObj:IP_Address xsi:type=\"AddressObj:AddressObjectType\" category=\"ipv4-addr\" is_source=\"true\" is_destination=\"false\">\n                            <AddressObj:Address_Value condition=\"Equals\">1.2.3.4</AddressObj:Address_Value>\n                        </SocketAddressObj:IP_Address>\n                        <SocketAddressObj:Port xsi:type=\"PortObj:PortObjectType\">\n                            <PortObj:Port_Value condition=\"Equals\">8080</PortObj:Port_Value>\n                        </SocketAddressObj:Port>\n                    </NetworkConnectionObj:Source_Socket_Address>\n                    <NetworkConnectionObj:Destination_Socket_Address xsi:type=\"SocketAddressObj:SocketAddressObjectType\">\n                        <SocketAddressObj:IP_Address xsi:type=\"AddressObj:AddressObjectType\" category=\"ipv4-addr\" is_source=\"false\" is_destination=\"true\">\n                            <AddressObj:Address_Value condition=\"Equals\">5.6.7.8</AddressObj:Address_Value>\n                        </SocketAddressObj:IP_Address>\n                        <SocketAddressObj:Hostname xsi:type=\"HostnameObj:HostnameObjectType\">\n                            <HostnameObj:Hostname_Value condition=\"Equals\">circl.lu</HostnameObj:Hostname_Value>\n                        </SocketAddressObj:Hostname>\n                        <SocketAddressObj:Port xsi:type=\"PortObj:PortObjectType\">\n                            <PortObj:Port_Value condition=\"Equals\">8080</PortObj:Port_Value>\n                        </SocketAddressObj:Port>\n                    </NetworkConnectionObj:Destination_Socket_Address>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:34:57+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "network-socket": {
+        "MISP": {
+            "name": "network-socket",
+            "meta-category": "network",
+            "description": "Network socket object describes a local or remote network connections based on the socket data structure",
+            "uuid": "5afb3223-0988-4ef1-a920-02070a00020f",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "ip-src",
+                    "object_relation": "ip-src",
+                    "value": "1.2.3.4"
+                },
+                {
+                    "type": "ip-dst",
+                    "object_relation": "ip-dst",
+                    "value": "5.6.7.8"
+                },
+                {
+                    "type": "port",
+                    "object_relation": "src-port",
+                    "value": "8080"
+                },
+                {
+                    "type": "port",
+                    "object_relation": "dst-port",
+                    "value": "8080"
+                },
+                {
+                    "type": "hostname",
+                    "object_relation": "hostname-dst",
+                    "value": "circl.lu"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "address-family",
+                    "value": "AF_FILE"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "domain-family",
+                    "value": "PF_INET"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "state",
+                    "value": "listening"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "protocol",
+                    "value": "TCP"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5afb3223-0988-4ef1-a920-02070a00020f\" timestamp=\"2021-01-12T15:35:58+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>network: network-socket (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malware Artifacts</indicator:Type>\n        <indicator:Description>Network socket object describes a local or remote network connections based on the socket data structure</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-5afb3223-0988-4ef1-a920-02070a00020f\">\n            <cybox:Object id=\"MISP:NetworkSocket-5afb3223-0988-4ef1-a920-02070a00020f\">\n                <cybox:Properties xsi:type=\"NetworkSocketObj:NetworkSocketObjectType\" is_blocking=\"false\" is_listening=\"true\">\n                    <NetworkSocketObj:Address_Family condition=\"Equals\">AF_FILE</NetworkSocketObj:Address_Family>\n                    <NetworkSocketObj:Domain condition=\"Equals\">PF_INET</NetworkSocketObj:Domain>\n                    <NetworkSocketObj:Local_Address xsi:type=\"SocketAddressObj:SocketAddressObjectType\">\n                        <SocketAddressObj:IP_Address xsi:type=\"AddressObj:AddressObjectType\" category=\"ipv4-addr\" is_source=\"true\" is_destination=\"false\">\n                            <AddressObj:Address_Value condition=\"Equals\">1.2.3.4</AddressObj:Address_Value>\n                        </SocketAddressObj:IP_Address>\n                        <SocketAddressObj:Port xsi:type=\"PortObj:PortObjectType\">\n                            <PortObj:Port_Value condition=\"Equals\">8080</PortObj:Port_Value>\n                        </SocketAddressObj:Port>\n                    </NetworkSocketObj:Local_Address>\n                    <NetworkSocketObj:Protocol condition=\"Equals\">TCP</NetworkSocketObj:Protocol>\n                    <NetworkSocketObj:Remote_Address xsi:type=\"SocketAddressObj:SocketAddressObjectType\">\n                        <SocketAddressObj:IP_Address xsi:type=\"AddressObj:AddressObjectType\" category=\"ipv4-addr\" is_source=\"false\" is_destination=\"true\">\n                            <AddressObj:Address_Value condition=\"Equals\">5.6.7.8</AddressObj:Address_Value>\n                        </SocketAddressObj:IP_Address>\n                        <SocketAddressObj:Hostname xsi:type=\"HostnameObj:HostnameObjectType\">\n                            <HostnameObj:Hostname_Value condition=\"Equals\">circl.lu</HostnameObj:Hostname_Value>\n                        </SocketAddressObj:Hostname>\n                        <SocketAddressObj:Port xsi:type=\"PortObj:PortObjectType\">\n                            <PortObj:Port_Value condition=\"Equals\">8080</PortObj:Port_Value>\n                        </SocketAddressObj:Port>\n                    </NetworkSocketObj:Remote_Address>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:35:58+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "process": {
+        "MISP": {
+            "name": "process",
+            "meta-category": "misc",
+            "description": "Object describing a system process.",
+            "uuid": "5e39776a-b284-40b3-8079-22fea964451a",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "pid",
+                    "value": "2510"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "child-pid",
+                    "value": "1401"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "parent-pid",
+                    "value": "2107"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "test_process.exe"
+                },
+                {
+                    "type": "filename",
+                    "object_relation": "image",
+                    "value": "TestProcess"
+                },
+                {
+                    "type": "port",
+                    "object_relation": "port",
+                    "value": "1234"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5e39776a-b284-40b3-8079-22fea964451a\" timestamp=\"2021-01-12T15:37:53+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>misc: process (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malware Artifacts</indicator:Type>\n        <indicator:Description>Object describing a system process.</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-5e39776a-b284-40b3-8079-22fea964451a\">\n            <cybox:Object id=\"MISP:Process-5e39776a-b284-40b3-8079-22fea964451a\">\n                <cybox:Properties xsi:type=\"ProcessObj:ProcessObjectType\">\n                    <ProcessObj:PID condition=\"Equals\">2510</ProcessObj:PID>\n                    <ProcessObj:Name condition=\"Equals\">test_process.exe</ProcessObj:Name>\n                    <ProcessObj:Parent_PID condition=\"Equals\">2107</ProcessObj:Parent_PID>\n                    <ProcessObj:Child_PID_List>\n                        <ProcessObj:Child_PID>1401</ProcessObj:Child_PID>\n                    </ProcessObj:Child_PID_List>\n                    <ProcessObj:Image_Info>\n                        <ProcessObj:File_Name condition=\"Equals\">TestProcess</ProcessObj:File_Name>\n                    </ProcessObj:Image_Info>\n                    <ProcessObj:Port_List>\n                        <ProcessObj:Port xsi:type=\"PortObj:PortObjectType\">\n                            <PortObj:Port_Value condition=\"Equals\">1234</PortObj:Port_Value>\n                        </ProcessObj:Port>\n                    </ProcessObj:Port_List>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:37:53+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "registry-key": {
+        "MISP": {
+            "name": "registry-key",
+            "meta-category": "file",
+            "description": "Registry key object describing a Windows registry key",
+            "uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "regkey",
+                    "object_relation": "key",
+                    "value": "hkey_local_machine\\system\\bar\\foo"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "hive",
+                    "value": "hklm"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "RegistryName"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "data",
+                    "value": "qwertyuiop"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "data-type",
+                    "value": "REG_SZ"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "last-modified",
+                    "value": "2020-10-25T16:22:00"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5ac3379c-3e74-44ba-9160-04120a00020f\" timestamp=\"2021-01-12T15:38:46+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>file: registry-key (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malware Artifacts</indicator:Type>\n        <indicator:Description>Registry key object describing a Windows registry key</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-5ac3379c-3e74-44ba-9160-04120a00020f\">\n            <cybox:Object id=\"MISP:WindowsRegistryKey-5ac3379c-3e74-44ba-9160-04120a00020f\">\n                <cybox:Properties xsi:type=\"WinRegistryKeyObj:WindowsRegistryKeyObjectType\">\n                    <WinRegistryKeyObj:Key condition=\"Equals\">hkey_local_machine\\system\\bar\\foo</WinRegistryKeyObj:Key>\n                    <WinRegistryKeyObj:Hive condition=\"Equals\">HKEY_LOCAL_MACHINE</WinRegistryKeyObj:Hive>\n                    <WinRegistryKeyObj:Values>\n                        <WinRegistryKeyObj:Value>\n                            <WinRegistryKeyObj:Name condition=\"Equals\">RegistryName</WinRegistryKeyObj:Name>\n                            <WinRegistryKeyObj:Data condition=\"Equals\">qwertyuiop</WinRegistryKeyObj:Data>\n                            <WinRegistryKeyObj:Datatype condition=\"Equals\">REG_SZ</WinRegistryKeyObj:Datatype>\n                        </WinRegistryKeyObj:Value>\n                    </WinRegistryKeyObj:Values>\n                    <WinRegistryKeyObj:Modified_Time condition=\"Equals\">2020-10-25T16:22:00</WinRegistryKeyObj:Modified_Time>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:38:46+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "url": {
+        "MISP": {
+            "name": "url",
+            "meta-category": "network",
+            "description": "url object describes an url along with its normalized field",
+            "uuid": "5ac347ca-dac4-4562-9775-04120a00020f",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                    "type": "url",
+                    "object_relation": "url",
+                    "value": "https://www.circl.lu/team"
+                },
+                {
+                    "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+                    "type": "domain",
+                    "object_relation": "domain",
+                    "value": "circl.lu"
+                },
+                {
+                    "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+                    "type": "hostname",
+                    "object_relation": "host",
+                    "value": "www.circl.lu"
+                },
+                {
+                    "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                    "type": "ip-dst",
+                    "object_relation": "ip",
+                    "value": "149.13.33.14"
+                },
+                {
+                    "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+                    "type": "port",
+                    "object_relation": "port",
+                    "value": "443"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5ac347ca-dac4-4562-9775-04120a00020f\" timestamp=\"2021-01-12T15:39:53+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>network: url (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">URL Watchlist</indicator:Type>\n        <indicator:Description>url object describes an url along with its normalized field</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:url_ObservableComposition-5ac347ca-dac4-4562-9775-04120a00020f\">\n            <cybox:Observable_Composition operator=\"AND\">\n                <cybox:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                    <cybox:Object id=\"MISP:URI-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                        <cybox:Properties xsi:type=\"URIObj:URIObjectType\" type=\"URL\">\n                            <URIObj:Value condition=\"Equals\">https://www.circl.lu/team</URIObj:Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n                <cybox:Observable id=\"MISP:Observable-518b4bcb-a86b-4783-9457-391d548b605b\">\n                    <cybox:Object id=\"MISP:DomainName-518b4bcb-a86b-4783-9457-391d548b605b\">\n                        <cybox:Properties xsi:type=\"DomainNameObj:DomainNameObjectType\">\n                            <DomainNameObj:Value condition=\"Equals\">circl.lu</DomainNameObj:Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n                <cybox:Observable id=\"MISP:Observable-34cb1a7c-55ec-412a-8684-ba4a88d83a45\">\n                    <cybox:Object id=\"MISP:Hostname-34cb1a7c-55ec-412a-8684-ba4a88d83a45\">\n                        <cybox:Properties xsi:type=\"HostnameObj:HostnameObjectType\">\n                            <HostnameObj:Hostname_Value condition=\"Equals\">www.circl.lu</HostnameObj:Hostname_Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n                <cybox:Observable id=\"MISP:Observable-94a2b00f-bec3-4f8a-bea4-e4ccf0de776f\">\n                    <cybox:Object id=\"MISP:Address-94a2b00f-bec3-4f8a-bea4-e4ccf0de776f\">\n                        <cybox:Properties xsi:type=\"AddressObj:AddressObjectType\" category=\"ipv4-addr\" is_source=\"false\" is_destination=\"true\">\n                            <AddressObj:Address_Value condition=\"Equals\">149.13.33.14</AddressObj:Address_Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n                <cybox:Observable id=\"MISP:Observable-f2259650-bc33-4b64-a3a8-a324aa7ea6bb\">\n                    <cybox:Object id=\"MISP:Port-f2259650-bc33-4b64-a3a8-a324aa7ea6bb\">\n                        <cybox:Properties xsi:type=\"PortObj:PortObjectType\">\n                            <PortObj:Port_Value condition=\"Equals\">443</PortObj:Port_Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n            </cybox:Observable_Composition>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:39:53+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "user-account": {
+        "MISP": {
+            "name": "user-account",
+            "meta-category": "misc",
+            "description": "Object describing an user account",
+            "uuid": "5d234f25-539c-4d12-bf93-2c46a964451a",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "username",
+                    "value": "iglocska"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "user-id",
+                    "value": "iglocska"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "display-name",
+                    "value": "Code Monkey"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "password",
+                    "value": "P4ssw0rd1234!"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "group",
+                    "value": "viktor-fan"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "group",
+                    "value": "donald-fan"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "group-id",
+                    "value": "2004"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "home_dir",
+                    "value": "/home/iglocska"
+                }
+            ]
+        },
+        "STIX": "    <stixCommon:RelatedObservableType>\n        <stixCommon:Relationship>misc</stixCommon:Relationship>\n        <stixCommon:Observable id=\"MISP:Observable-5d234f25-539c-4d12-bf93-2c46a964451a\">\n            <cybox:Object id=\"MISP:UserAccount-5d234f25-539c-4d12-bf93-2c46a964451a\">\n                <cybox:Properties xsi:type=\"UserAccountObj:UserAccountObjectType\">\n                    <cyboxCommon:Custom_Properties>\n                        <cyboxCommon:Property name=\"user-id\">iglocska</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"group\">viktor-fan</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"group\">donald-fan</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"group-id\">2004</cyboxCommon:Property>\n                    </cyboxCommon:Custom_Properties>\n                    <AccountObj:Authentication>\n                        <AccountObj:Authentication_Type>password</AccountObj:Authentication_Type>\n                        <AccountObj:Authentication_Data>P4ssw0rd1234!</AccountObj:Authentication_Data>\n                    </AccountObj:Authentication>\n                    <UserAccountObj:Full_Name condition=\"Equals\">Code Monkey</UserAccountObj:Full_Name>\n                    <UserAccountObj:Home_Directory condition=\"Equals\">/home/iglocska</UserAccountObj:Home_Directory>\n                    <UserAccountObj:Username condition=\"Equals\">iglocska</UserAccountObj:Username>\n                </cybox:Properties>\n            </cybox:Object>\n        </stixCommon:Observable>\n    </stixCommon:RelatedObservableType>"
+    },
+    "user-account (with unix account type)": {
+        "MISP": {
+            "name": "user-account",
+            "meta-category": "misc",
+            "description": "Object describing an user account",
+            "uuid": "5d234f25-539c-4d12-bf93-2c46a964451a",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "username",
+                    "value": "iglocska"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "user-id",
+                    "value": "iglocska"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "display-name",
+                    "value": "Code Monkey"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "password",
+                    "value": "P4ssw0rd1234!"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "group",
+                    "value": "viktor-fan"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "group",
+                    "value": "donald-fan"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "group-id",
+                    "value": "2004"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "home_dir",
+                    "value": "/home/iglocska"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "account-type",
+                    "value": "unix"
+                }
+            ]
+        },
+        "STIX": "    <stixCommon:RelatedObservableType>\n        <stixCommon:Relationship>misc</stixCommon:Relationship>\n        <stixCommon:Observable id=\"MISP:Observable-5d234f25-539c-4d12-bf93-2c46a964451a\">\n            <cybox:Object id=\"MISP:UnixUserAccount-5d234f25-539c-4d12-bf93-2c46a964451a\">\n                <cybox:Properties xsi:type=\"UnixUserAccountObj:UnixUserAccountObjectType\">\n                    <cyboxCommon:Custom_Properties>\n                        <cyboxCommon:Property name=\"user-id\">iglocska</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"group\">viktor-fan</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"group\">donald-fan</cyboxCommon:Property>\n                    </cyboxCommon:Custom_Properties>\n                    <AccountObj:Authentication>\n                        <AccountObj:Authentication_Type>password</AccountObj:Authentication_Type>\n                        <AccountObj:Authentication_Data>P4ssw0rd1234!</AccountObj:Authentication_Data>\n                    </AccountObj:Authentication>\n                    <UserAccountObj:Full_Name condition=\"Equals\">Code Monkey</UserAccountObj:Full_Name>\n                    <UserAccountObj:Home_Directory condition=\"Equals\">/home/iglocska</UserAccountObj:Home_Directory>\n                    <UserAccountObj:Username condition=\"Equals\">iglocska</UserAccountObj:Username>\n                    <UnixUserAccountObj:Group_ID condition=\"Equals\">2004</UnixUserAccountObj:Group_ID>\n                </cybox:Properties>\n            </cybox:Object>\n        </stixCommon:Observable>\n    </stixCommon:RelatedObservableType>"
+    },
+    "user-account (with windows account type)": {
+        "MISP": {
+            "name": "user-account",
+            "meta-category": "misc",
+            "description": "Object describing an user account",
+            "uuid": "5d234f25-539c-4d12-bf93-2c46a964451a",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "username",
+                    "value": "iglocska"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "user-id",
+                    "value": "iglocska"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "display-name",
+                    "value": "Code Monkey"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "password",
+                    "value": "P4ssw0rd1234!"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "group",
+                    "value": "viktor-fan"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "group",
+                    "value": "donald-fan"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "group-id",
+                    "value": "2004"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "home_dir",
+                    "value": "/home/iglocska"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "account-type",
+                    "value": "windows-local"
+                }
+            ]
+        },
+        "STIX": "    <stixCommon:RelatedObservableType>\n        <stixCommon:Relationship>misc</stixCommon:Relationship>\n        <stixCommon:Observable id=\"MISP:Observable-5d234f25-539c-4d12-bf93-2c46a964451a\">\n            <cybox:Object id=\"MISP:WindowsUserAccount-5d234f25-539c-4d12-bf93-2c46a964451a\">\n                <cybox:Properties xsi:type=\"WinUserAccountObj:WindowsUserAccountObjectType\">\n                    <cyboxCommon:Custom_Properties>\n                        <cyboxCommon:Property name=\"group-id\">2004</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"account-type\">windows-local</cyboxCommon:Property>\n                    </cyboxCommon:Custom_Properties>\n                    <AccountObj:Authentication>\n                        <AccountObj:Authentication_Type>password</AccountObj:Authentication_Type>\n                        <AccountObj:Authentication_Data>P4ssw0rd1234!</AccountObj:Authentication_Data>\n                    </AccountObj:Authentication>\n                    <UserAccountObj:Full_Name condition=\"Equals\">Code Monkey</UserAccountObj:Full_Name>\n                    <UserAccountObj:Group_List>\n                        <UserAccountObj:Group xsi:type='WinUserAccountObj:WindowsGroupType'>\n                            <WinUserAccountObj:Name>viktor-fan</WinUserAccountObj:Name>\n                        </UserAccountObj:Group>\n                        <UserAccountObj:Group xsi:type='WinUserAccountObj:WindowsGroupType'>\n                            <WinUserAccountObj:Name>donald-fan</WinUserAccountObj:Name>\n                        </UserAccountObj:Group>\n                    </UserAccountObj:Group_List>\n                    <UserAccountObj:Home_Directory condition=\"Equals\">/home/iglocska</UserAccountObj:Home_Directory>\n                    <UserAccountObj:Username condition=\"Equals\">iglocska</UserAccountObj:Username>\n                    <WinUserAccountObj:Security_ID condition=\"Equals\">iglocska</WinUserAccountObj:Security_ID>\n                </cybox:Properties>\n            </cybox:Object>\n        </stixCommon:Observable>\n    </stixCommon:RelatedObservableType>"
+    },
+    "vulnerability": {
+        "MISP": {
+            "name": "vulnerability",
+            "meta-category": "vulnerability",
+            "description": "Vulnerability object describing a common vulnerability",
+            "uuid": "5e579975-e9cc-46c6-a6ad-1611a964451a",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "id",
+                    "value": "CVE-2017-11774"
+                },
+                {
+                    "type": "float",
+                    "object_relation": "cvss-score",
+                    "value": "6.8"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "summary",
+                    "value": "Microsoft Outlook allow an attacker to execute arbitrary commands"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "created",
+                    "value": "2017-10-13T07:29:00"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "published",
+                    "value": "2017-10-13T07:29:00"
+                },
+                {
+                    "type": "link",
+                    "object_relation": "references",
+                    "value": "http://www.securityfocus.com/bid/101098"
+                },
+                {
+                    "type": "link",
+                    "object_relation": "references",
+                    "value": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
+                }
+            ]
+        },
+        "STIX": "    <ttp:TTP id=\"MISP:TTP-5e579975-e9cc-46c6-a6ad-1611a964451a\" timestamp=\"2021-01-12T15:57:42+00:00\" xsi:type='ttp:TTPType'>\n        <ttp:Title>vulnerability: vulnerability (MISP Object)</ttp:Title>\n        <ttp:Exploit_Targets>\n            <ttp:Exploit_Target>\n                <stixCommon:Exploit_Target id=\"MISP:ExploitTarget-5e579975-e9cc-46c6-a6ad-1611a964451a\" timestamp=\"2021-01-12T15:57:42+00:00\" xsi:type='et:ExploitTargetType'>\n                    <et:Vulnerability>\n                        <et:Description>Microsoft Outlook allow an attacker to execute arbitrary commands</et:Description>\n                        <et:CVE_ID>CVE-2017-11774</et:CVE_ID>\n                        <et:CVSS_Score>\n    <et:Overall_Score>6.8</et:Overall_Score>\n                        </et:CVSS_Score>\n                        <et:Discovered_DateTime precision=\"second\">2017-10-13T07:29:00</et:Discovered_DateTime>\n                        <et:Published_DateTime precision=\"second\">2017-10-13T07:29:00</et:Published_DateTime>\n                        <et:References>\n                            <stixCommon:Reference>http://www.securityfocus.com/bid/101098</stixCommon:Reference>\n                            <stixCommon:Reference>https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774</stixCommon:Reference>\n                        </et:References>\n                    </et:Vulnerability>\n                </stixCommon:Exploit_Target>\n            </ttp:Exploit_Target>\n        </ttp:Exploit_Targets>\n    </ttp:TTP>"
+    },
+    "weakness": {
+        "MISP": {
+            "name": "weakness",
+            "meta-category": "vulnerability",
+            "description": "Weakness object describing a common weakness",
+            "uuid": "a1285743-3962-40e3-a824-0f21f10f3e19",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "text": "text",
+                    "object_relation": "id",
+                    "value": "CWE-119"
+                },
+                {
+                    "text": "text",
+                    "object_relation": "description",
+                    "value": "The software performs operations on a memory buffer, but it can read from or write to a memory location that is outside of the intended boundary of the buffer"
+                }
+            ]
+        },
+        "STIX": "    <ttp:TTP id=\"MISP:TTP-a1285743-3962-40e3-a824-0f21f10f3e19\" timestamp=\"2021-01-12T15:58:15+00:00\" xsi:type='ttp:TTPType'>\n        <ttp:Title>vulnerability: weakness (MISP Object)</ttp:Title>\n        <ttp:Exploit_Targets>\n            <ttp:Exploit_Target>\n                <stixCommon:Exploit_Target id=\"MISP:ExploitTarget-a1285743-3962-40e3-a824-0f21f10f3e19\" timestamp=\"2021-01-12T15:58:15+00:00\" xsi:type='et:ExploitTargetType'>\n                    <et:Weakness>\n                        <et:Description>The software performs operations on a memory buffer, but it can read from or write to a memory location that is outside of the intended boundary of the buffer</et:Description>\n                        <et:CWE_ID>CWE-119</et:CWE_ID>\n                    </et:Weakness>\n                </stixCommon:Exploit_Target>\n            </ttp:Exploit_Target>\n        </ttp:Exploit_Targets>\n    </ttp:TTP>"
+    },
+    "whois": {
+        "MISP": {
+            "name": "whois",
+            "meta-category": "network",
+            "description": "Whois records information for a domain name or an IP address.",
+            "uuid": "5b0d1b61-6c00-4387-a5fa-04370a00020f",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "whois-registrar",
+                    "object_relation": "registrar",
+                    "value": "Registrar"
+                },
+                {
+                    "type": "whois-registrant-email",
+                    "object_relation": "registrant-email",
+                    "value": "registrant@email.com"
+                },
+                {
+                    "type": "whois-registrant-org",
+                    "object_relation": "registrant-org",
+                    "value": "Registrant Org"
+                },
+                {
+                    "type": "whois-registrant-name",
+                    "object_relation": "registrant-name",
+                    "value": "Registrant Name"
+                },
+                {
+                    "type": "whois-registrant-phone",
+                    "object_relation": "registrant-phone",
+                    "value": "0123456789"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "creation-date",
+                    "value": "2017-10-01T08:00:00"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "modification-date",
+                    "value": "2020-10-25T16:22:00"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "expiration-date",
+                    "value": "2021-01-01T00:00:00"
+                },
+                {
+                    "type": "domain",
+                    "object_relation": "domain",
+                    "value": "circl.lu"
+                },
+                {
+                    "type": "hostname",
+                    "object_relation": "nameserver",
+                    "value": "www.circl.lu"
+                },
+                {
+                    "type": "ip-src",
+                    "object_relation": "ip-address",
+                    "value": "1.2.3.4"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5b0d1b61-6c00-4387-a5fa-04370a00020f\" timestamp=\"2021-01-12T15:59:11+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>network: whois (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malware Artifacts</indicator:Type>\n        <indicator:Description>Whois records information for a domain name or an IP address.</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-5b0d1b61-6c00-4387-a5fa-04370a00020f\">\n            <cybox:Object id=\"MISP:Whois-5b0d1b61-6c00-4387-a5fa-04370a00020f\">\n                <cybox:Properties xsi:type=\"WhoisObj:WhoisObjectType\">\n                    <WhoisObj:Domain_Name xsi:type=\"URIObj:URIObjectType\">\n                        <URIObj:Value>circl.lu</URIObj:Value>\n                    </WhoisObj:Domain_Name>\n                    <WhoisObj:IP_Address xsi:type=\"AddressObj:AddressObjectType\">\n                        <AddressObj:Address_Value>1.2.3.4</AddressObj:Address_Value>\n                    </WhoisObj:IP_Address>\n                    <WhoisObj:Nameservers>\n                        <WhoisObj:Nameserver xsi:type=\"URIObj:URIObjectType\">\n                            <URIObj:Value>www.circl.lu</URIObj:Value>\n                        </WhoisObj:Nameserver>\n                    </WhoisObj:Nameservers>\n                    <WhoisObj:Updated_Date condition=\"Equals\" precision=\"day\">2020-10-25T16:22:00</WhoisObj:Updated_Date>\n                    <WhoisObj:Creation_Date condition=\"Equals\" precision=\"day\">2017-10-01T08:00:00</WhoisObj:Creation_Date>\n                    <WhoisObj:Expiration_Date condition=\"Equals\" precision=\"day\">2021-01-01T00:00:00</WhoisObj:Expiration_Date>\n                    <WhoisObj:Registrar_Info>\n                        <WhoisObj:Name>Registrar</WhoisObj:Name>\n                    </WhoisObj:Registrar_Info>\n                    <WhoisObj:Registrants>\n                        <WhoisObj:Registrant>\n                            <WhoisObj:Name condition=\"Equals\">Registrant Name</WhoisObj:Name>\n                            <WhoisObj:Email_Address xsi:type=\"AddressObj:AddressObjectType\" category=\"e-mail\">\n                                <AddressObj:Address_Value condition=\"Equals\">registrant@email.com</AddressObj:Address_Value>\n                            </WhoisObj:Email_Address>\n                            <WhoisObj:Phone_Number condition=\"Equals\">0123456789</WhoisObj:Phone_Number>\n                            <WhoisObj:Organization condition=\"Equals\">Registrant Org</WhoisObj:Organization>\n                        </WhoisObj:Registrant>\n                    </WhoisObj:Registrants>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:59:11+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "x509": {
+        "MISP": {
+            "name": "x509",
+            "meta-category": "network",
+            "description": "x509 object describing a X.509 certificate",
+            "uuid": "5ac3444e-145c-4749-8467-02550a00020f",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "issuer",
+                    "value": "Issuer Name"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "pem",
+                    "value": "RawCertificateInPEMFormat"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "pubkey-info-algorithm",
+                    "value": "PublicKeyAlgorithm"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "pubkey-info-exponent",
+                    "value": "2"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "pubkey-info-modulus",
+                    "value": "C5"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "serial-number",
+                    "value": "1234567890"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "signature-algorithm",
+                    "value": "SHA1_WITH_RSA_ENCRYPTION"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "subject",
+                    "value": "CertificateSubject"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "validity-not-before",
+                    "value": "2020-01-01T00:00:00"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "validity-not-after",
+                    "value": "2021-01-01T00:00:00"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "version",
+                    "value": "1"
+                },
+                {
+                    "type": "x509-fingerprint-md5",
+                    "object_relation": "x509-fingerprint-md5",
+                    "value": "b2a5abfeef9e36964281a31e17b57c97"
+                },
+                {
+                    "type": "x509-fingerprint-sha1",
+                    "object_relation": "x509-fingerprint-sha1",
+                    "value": "5898fc860300e228dcd54c0b1045b5fa0dcda502"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5ac3444e-145c-4749-8467-02550a00020f\" timestamp=\"2021-01-12T15:59:58+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>network: x509 (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malware Artifacts</indicator:Type>\n        <indicator:Description>x509 object describing a X.509 certificate</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-5ac3444e-145c-4749-8467-02550a00020f\">\n            <cybox:Object id=\"MISP:X509Certificate-5ac3444e-145c-4749-8467-02550a00020f\">\n                <cybox:Properties xsi:type=\"X509CertificateObj:X509CertificateObjectType\">\n                    <cyboxCommon:Custom_Properties>\n                        <cyboxCommon:Property name=\"x509-fingerprint-md5\">b2a5abfeef9e36964281a31e17b57c97</cyboxCommon:Property>\n                    </cyboxCommon:Custom_Properties>\n                    <X509CertificateObj:Certificate>\n                        <X509CertificateObj:Version condition=\"Equals\">1</X509CertificateObj:Version>\n                        <X509CertificateObj:Serial_Number condition=\"Equals\">1234567890</X509CertificateObj:Serial_Number>\n                        <X509CertificateObj:Signature_Algorithm condition=\"Equals\">SHA1_WITH_RSA_ENCRYPTION</X509CertificateObj:Signature_Algorithm>\n                        <X509CertificateObj:Issuer condition=\"Equals\">Issuer Name</X509CertificateObj:Issuer>\n                        <X509CertificateObj:Validity>\n                            <X509CertificateObj:Not_Before condition=\"Equals\">2020-01-01T00:00:00</X509CertificateObj:Not_Before>\n                            <X509CertificateObj:Not_After condition=\"Equals\">2021-01-01T00:00:00</X509CertificateObj:Not_After>\n                        </X509CertificateObj:Validity>\n                        <X509CertificateObj:Subject condition=\"Equals\">CertificateSubject</X509CertificateObj:Subject>\n                        <X509CertificateObj:Subject_Public_Key>\n                            <X509CertificateObj:Public_Key_Algorithm condition=\"Equals\">PublicKeyAlgorithm</X509CertificateObj:Public_Key_Algorithm>\n                            <X509CertificateObj:RSA_Public_Key>\n                                <X509CertificateObj:Modulus condition=\"Equals\">C5</X509CertificateObj:Modulus>\n                                <X509CertificateObj:Exponent condition=\"Equals\">2</X509CertificateObj:Exponent>\n                            </X509CertificateObj:RSA_Public_Key>\n                        </X509CertificateObj:Subject_Public_Key>\n                    </X509CertificateObj:Certificate>\n                    <X509CertificateObj:Raw_Certificate condition=\"Equals\">RawCertificateInPEMFormat</X509CertificateObj:Raw_Certificate>\n                    <X509CertificateObj:Certificate_Signature>\n                        <X509CertificateObj:Signature_Algorithm condition=\"Equals\">SHA1</X509CertificateObj:Signature_Algorithm>\n                        <X509CertificateObj:Signature condition=\"Equals\">5898fc860300e228dcd54c0b1045b5fa0dcda502</X509CertificateObj:Signature>\n                    </X509CertificateObj:Certificate_Signature>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:59:58+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    }
 }

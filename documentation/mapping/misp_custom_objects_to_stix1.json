@@ -1,0 +1,118 @@
+{
+    "bank-account": {
+        "MISP": {
+            "name": "bank-account",
+            "meta-category": "financial",
+            "description": "An object describing bank account information based on account description from goAML 4.0",
+            "uuid": "695e7924-2518-4054-9cea-f82853d37410",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "iban",
+                    "object_relation": "iban",
+                    "value": "LU1234567890ABCDEF1234567890"
+                },
+                {
+                    "type": "bic",
+                    "object_relation": "swift",
+                    "value": "CTBKLUPP"
+                },
+                {
+                    "type": "bank-account-nr",
+                    "object_relation": "account",
+                    "value": "1234567890"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "institution-name",
+                    "value": "Central Bank"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "account-name",
+                    "value": "John Smith's bank account"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "beneficiary",
+                    "value": "John Smith"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "currency-code",
+                    "value": "EUR"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-695e7924-2518-4054-9cea-f82853d37410\" timestamp=\"2021-01-12T15:13:38+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>financial: bank-account (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malware Artifacts</indicator:Type>\n        <indicator:Description>An object describing bank account information based on account description from goAML 4.0</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-695e7924-2518-4054-9cea-f82853d37410\">\n            <cybox:Object id=\"MISP:Custom-695e7924-2518-4054-9cea-f82853d37410\">\n                <cybox:Properties xsi:type=\"CustomObj:CustomObjectType\" custom_name=\"bank-account\">\n                    <cyboxCommon:Custom_Properties>\n                        <cyboxCommon:Property name=\"iban\">LU1234567890ABCDEF1234567890</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"swift\">CTBKLUPP</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"account\">1234567890</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"institution-name\">Central Bank</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"account-name\">John Smith's bank account</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"beneficiary\">John Smith</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"currency-code\">EUR</cyboxCommon:Property>\n                    </cyboxCommon:Custom_Properties>\n                    <CustomObj:Description>An object describing bank account information based on account description from goAML 4.0</CustomObj:Description>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:13:38+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "btc-wallet": {
+        "MISP": {
+            "name": "btc-wallet",
+            "meta-category": "financial",
+            "description": "An object to describe a Bitcoin wallet.",
+            "uuid": "6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "btc",
+                    "object_relation": "wallet-address",
+                    "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE"
+                },
+                {
+                    "type": "float",
+                    "object_relation": "balance_BTC",
+                    "value": "2.25036953"
+                },
+                {
+                    "type": "float",
+                    "object_relation": "BTC_received",
+                    "value": "3.35036953"
+                },
+                {
+                    "type": "float",
+                    "object_relation": "BTC_sent",
+                    "value": "1.1"
+                }
+            ]
+        },
+        "STIX": "    <indicator:Indicator id=\"MISP:Indicator-6f7509f1-f324-4acc-bf06-bbe726ab8fc7\" timestamp=\"2021-01-12T15:13:38+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>financial: btc-wallet (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malware Artifacts</indicator:Type>\n        <indicator:Description>An object to describe a Bitcoin wallet.</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:Observable-6f7509f1-f324-4acc-bf06-bbe726ab8fc7\">\n            <cybox:Object id=\"MISP:Custom-6f7509f1-f324-4acc-bf06-bbe726ab8fc7\">\n                <cybox:Properties xsi:type=\"CustomObj:CustomObjectType\" custom_name=\"btc-wallet\">\n                    <cyboxCommon:Custom_Properties>\n                        <cyboxCommon:Property name=\"wallet-address\">1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"balance_BTC\">2.25036953</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"BTC_received\">3.35036953</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"BTC_sent\">1.1</cyboxCommon:Property>\n                    </cyboxCommon:Custom_Properties>\n                    <CustomObj:Description>An object to describe a Bitcoin wallet.</CustomObj:Description>\n                </cybox:Properties>\n            </cybox:Object>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:13:38+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
+    },
+    "person": {
+        "MISP": {
+            "name": "person",
+            "meta-category": "misc",
+            "description": "An object which describes a person or an identity.",
+            "uuid": "868037d5-d804-4f1d-8016-f296361f9c68",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "first-name",
+                    "object_relation": "first-name",
+                    "value": "John"
+                },
+                {
+                    "type": "last-name",
+                    "object_relation": "last-name",
+                    "value": "Smith"
+                },
+                {
+                    "type": "nationality",
+                    "object_relation": "nationality",
+                    "value": "USA"
+                },
+                {
+                    "type": "passport-number",
+                    "object_relation": "passport-number",
+                    "value": "ABA9875413"
+                },
+                {
+                    "type": "phone-number",
+                    "object_relation": "phone-number",
+                    "value": "0123456789"
+                }
+            ]
+        },
+        "STIX": "    <stixCommon:RelatedObservableType>\n        <stixCommon:Relationship>misc</stixCommon:Relationship>\n        <stixCommon:Observable id=\"MISP:Observable-868037d5-d804-4f1d-8016-f296361f9c68\">\n            <cybox:Object id=\"MISP:Custom-868037d5-d804-4f1d-8016-f296361f9c68\">\n                <cybox:Properties xsi:type=\"CustomObj:CustomObjectType\" custom_name=\"person\">\n                    <cyboxCommon:Custom_Properties>\n                        <cyboxCommon:Property name=\"first-name\">John</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"last-name\">Smith</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"nationality\">USA</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"passport-number\">ABA9875413</cyboxCommon:Property>\n                        <cyboxCommon:Property name=\"phone-number\">0123456789</cyboxCommon:Property>\n                    </cyboxCommon:Custom_Properties>\n                    <CustomObj:Description>An object which describes a person or an identity.</CustomObj:Description>\n                </cybox:Properties>\n            </cybox:Object>\n        </stixCommon:Observable>\n    </stixCommon:RelatedObservableType>"
+    }
+}

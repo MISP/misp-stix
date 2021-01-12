@@ -1,9 +1,10 @@
 # MISP Attributes to STIX1 mapping
 
-In most of the cases, a MISP Attribute is exported to STIX as `Indicator` if its `to_ids` flag is set, or as `Observable` if its `to_ids` flag is false.But there are also some other examples where none of those two situations happen. This documentation gives all the details about the single attributes mapping into STIX objects, depending on the type of the attributes.
+MISP Attributes are the actual raw data used by analysts to describe the IoCs and observed data related to a specific event (which could be an actual threat report, an IP watchlist, etc.)  
+Thus, in most of the cases, a MISP Attribute is exported to STIX as `Indicator` if its `to_ids` flag is set, or as `Observable` if its `to_ids` flag is false. But there are also some other examples where MISP attributes are exported neither as indicator nor as observable, this documentation gives all the details about the single attributes mapping into STIX objects, depending on the type of the attributes.
 
 As we can see in the [detailed Events mapping documentation](misp_events_to_stix1.md), attributes within their event are exported in different STIX objects embedded in a `STIX Package`. Indicators and observables are also embedded in the `Incident` but it is not the case for TTPS for instance.  
-So fot he rest of this documentation, in order to keep the content clear enough and to skip the irrelevant part, we will consider the followings:
+So for he rest of this documentation, in order to keep the content clear enough and to skip the irrelevant part, we will consider the followings:
 - Indicators and observables are displayed as standalone objects, but we keep in mind that **if the related MISP attributes are exported within their event, those STIX objects are actually exported within their Incident and STIX Package**
 - We will give details about the context of each STIX object being neither an Indicator not an Observable case by case, since those ones are also displayed outside of their Incident or STIX package.
 - In the following examples, every MISP attribute that has a `to_ids` flag, has the default value for this flag, depending on the attribute type.
@@ -2654,6 +2655,35 @@ So fot he rest of this documentation, in order to keep the content clear enough 
     </ttp:TTP>
     ```
 
+- weakness
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "weakness",
+        "category": "External analysis",
+        "value": "ABA9875413"
+    }
+    ```
+  - STIX
+    ```xml
+    <!--To_ids flag by default is false here, but does not affect the result being a TTP-->
+    <ttp:TTP id="MISP:TTP-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" timestamp="2021-01-12T13:43:56+00:00" xsi:type='ttp:TTPType'>
+        <ttp:Title>External analysis: CWE-25 (MISP Attribute)</ttp:Title>
+        <ttp:Exploit_Targets>
+            <ttp:Exploit_Target>
+                <stixCommon:Exploit_Target id="MISP:ExploitTarget-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" timestamp="2021-01-12T13:43:56+00:00" xsi:type='et:ExploitTargetType'>
+                    <et:Title>Weakness CWE-25</et:Title>
+                    <et:Description>Weakness test attribute</et:Description>
+                    <et:Weakness>
+                        <et:CWE_ID>CWE-25</et:CWE_ID>
+                    </et:Weakness>
+                </stixCommon:Exploit_Target>
+            </ttp:Exploit_Target>
+        </ttp:Exploit_Targets>
+    </ttp:TTP>
+    ```
+
 - windows-service-displayname
   - MISP
     ```json
@@ -2874,7 +2904,7 @@ Nonetheless, every attribute whose type is not in the list, is exported as `Cust
         "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "type": "btc",
         "category": "Financial fraud",
-        "value": " 1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE ",
+        "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
         "timestamp": "1603642920",
         "comment": "Btc test attribute",
         "to_ids": true
@@ -2973,14 +3003,14 @@ Nonetheless, every attribute whose type is not in the list, is exported as `Cust
     </cybox:ObservableType>
     ```
 
-- weakness
+- passport-number
   - MISP
     ```json
     {
         "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "type": "weakness",
-        "category": "External analysis",
-        "value": "CWE-20",
+        "type": "passport-number",
+        "category": "Person",
+        "value": "ABA9875413",
         "to_ids": false
     }
     ```
@@ -2990,7 +3020,7 @@ Nonetheless, every attribute whose type is not in the list, is exported as `Cust
         <cybox:Object id="MISP:Custom-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
             <cybox:Properties xsi:type="CustomObj:CustomObjectType">
                 <cyboxCommon:Custom_Properties>
-                    <cyboxCommon:Property name="weakness">CWE-20</cyboxCommon:Property>
+                    <cyboxCommon:Property name="passport-number">ABA9875413</cyboxCommon:Property>
                 </cyboxCommon:Custom_Properties>
             </cybox:Properties>
         </cybox:Object>

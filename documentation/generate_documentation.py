@@ -16,6 +16,7 @@ class DocumentationGenerator():
         # mapping
         self._misp_attributes_to_stix1_mapping = 'mapping/misp_attributes_to_stix1.json'
         self._misp_custom_attributes_to_stix1_mapping_ = 'mapping/misp_custom_attributes_to_stix1.json'
+        self._misp_custom_objects_to_stix1_mapping_ = 'mapping/misp_custom_objects_to_stix1.json'
         self._misp_objects_to_stix1_mapping = 'mapping/misp_objects_to_stix1.json'
         self._misp_galaxies_to_stix1_mapping = 'mapping/misp_galaxies_to_stix1.json'
         # documentation results
@@ -69,8 +70,14 @@ class DocumentationGenerator():
         with open(self._misp_objects_to_stix1_mapping, 'rt', encoding='utf-8') as f:
             mapping = json.loads(f.read())
         mapping = self._parse_mapping(header, mapping)
+        with open(self._misp_custom_objects_to_stix1_mapping_, 'rt', encoding='utf-8') as f:
+            custom_mapping = json.loads(f.read())
+        custom_mapping = self._parse_mapping(header, custom_mapping)
         with open(self._objects_to_stix1_content, 'rt', encoding='utf-8') as f:
-            objects_mapping = f.read().format(_objects_to_stix1_mapping_=mapping)
+            objects_mapping = f.read().format(
+                _objects_to_stix1_mapping_=mapping,
+                _custom_objects_to_stix1_mapping_=custom_mapping
+            )
         with open(self._misp_objects_to_stix1, 'wt', encoding='utf-8') as f:
             f.write(objects_mapping)
         # Galaxies documentation

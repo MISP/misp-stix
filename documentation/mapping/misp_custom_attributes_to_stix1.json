@@ -4,7 +4,7 @@
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "btc",
             "category": "Financial fraud",
-            "value": " 1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE ",
+            "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
             "timestamp": "1603642920",
             "comment": "Btc test attribute",
             "to_ids": true
@@ -33,14 +33,14 @@
         },
         "STIX": "    <cybox:ObservableType id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Object id=\"MISP:Custom-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Properties xsi:type=\"CustomObj:CustomObjectType\">\n                <cyboxCommon:Custom_Properties>\n                    <cyboxCommon:Property name=\"phone-number\">0123456789</cyboxCommon:Property>\n                </cyboxCommon:Custom_Properties>\n            </cybox:Properties>\n        </cybox:Object>\n    </cybox:ObservableType>"
     },
-    "weakness": {
+    "passport-number": {
         "MISP": {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "weakness",
-            "category": "External analysis",
-            "value": "CWE-20",
+            "type": "passport-number",
+            "category": "Person",
+            "value": "ABA9875413",
             "to_ids": false
         },
-        "STIX": "    <cybox:ObservableType id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Object id=\"MISP:Custom-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Properties xsi:type=\"CustomObj:CustomObjectType\">\n                <cyboxCommon:Custom_Properties>\n                    <cyboxCommon:Property name=\"weakness\">CWE-20</cyboxCommon:Property>\n                </cyboxCommon:Custom_Properties>\n            </cybox:Properties>\n        </cybox:Object>\n    </cybox:ObservableType>"
+        "STIX": "    <cybox:ObservableType id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n        <cybox:Object id=\"MISP:Custom-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n            <cybox:Properties xsi:type=\"CustomObj:CustomObjectType\">\n                <cyboxCommon:Custom_Properties>\n                    <cyboxCommon:Property name=\"passport-number\">ABA9875413</cyboxCommon:Property>\n                </cyboxCommon:Custom_Properties>\n            </cybox:Properties>\n        </cybox:Object>\n    </cybox:ObservableType>"
     }
 }

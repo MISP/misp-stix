@@ -1,9 +1,10 @@
 # MISP Attributes to STIX1 mapping
 
-In most of the cases, a MISP Attribute is exported to STIX as `Indicator` if its `to_ids` flag is set, or as `Observable` if its `to_ids` flag is false.But there are also some other examples where none of those two situations happen. This documentation gives all the details about the single attributes mapping into STIX objects, depending on the type of the attributes.
+MISP Attributes are the actual raw data used by analysts to describe the IoCs and observed data related to a specific event (which could be an actual threat report, an IP watchlist, etc.)  
+Thus, in most of the cases, a MISP Attribute is exported to STIX as `Indicator` if its `to_ids` flag is set, or as `Observable` if its `to_ids` flag is false. But there are also some other examples where MISP attributes are exported neither as indicator nor as observable, this documentation gives all the details about the single attributes mapping into STIX objects, depending on the type of the attributes.
 
 As we can see in the [detailed Events mapping documentation](misp_events_to_stix1.md), attributes within their event are exported in different STIX objects embedded in a `STIX Package`. Indicators and observables are also embedded in the `Incident` but it is not the case for TTPS for instance.  
-So fot he rest of this documentation, in order to keep the content clear enough and to skip the irrelevant part, we will consider the followings:
+So for he rest of this documentation, in order to keep the content clear enough and to skip the irrelevant part, we will consider the followings:
 - Indicators and observables are displayed as standalone objects, but we keep in mind that **if the related MISP attributes are exported within their event, those STIX objects are actually exported within their Incident and STIX Package**
 - We will give details about the context of each STIX object being neither an Indicator not an Observable case by case, since those ones are also displayed outside of their Incident or STIX package.
 - In the following examples, every MISP attribute that has a `to_ids` flag, has the default value for this flag, depending on the attribute type.
