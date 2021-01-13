@@ -149,7 +149,7 @@ hash_type_attributes = {
 
 # mapping for the attributes that can go through the simpleobservable script
 misp_indicator_type = {
-    "email-attachment": "Malicious E-mail",
+    "malware-sample": "Malware Artifacts",
     "mutex": "Host Characteristics",
     "named pipe": "Host Characteristics",
     "url": "URL Watchlist"
@@ -160,8 +160,7 @@ misp_indicator_type.update(
     dict.fromkeys(
         [
             "file",
-            "filename",
-            "malware-sample"
+            "filename"
         ],
         "File Hash Watchlist"
     )
