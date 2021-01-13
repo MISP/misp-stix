@@ -2,20 +2,19 @@
 #!/usr/bin/env python3
 
 import json
-from .export.stix1_export import Stix1ExportParser
-from .import.stix1_import import Stix1FromMISPImportParser, ExternalStix1ImportParser
-from .import.stix2_import import Stix2FromMISPImportParser, ExternalStix2ImportParser
+from .stix_export import Stix1ExportParser
 
 _default_namespace = 'https://github.com/MISP/MISP'
 _default_org = 'MISP'
 
 
-def misp_to_stix(filename, return_format, namespace=_default_namesapce, org=_default_org):
+def misp_to_stix(filename, return_format, version, namespace=_default_namespace, org=_default_org):
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
     export_parser = Stix1ExportParser(return_format, namespace, org)
-    export_parser.load_event(filename)
-    export_parser.generate_stix1_package()
+    export_parser.load_file(filename)
+    export_parser.generate_stix1_package(version)
+    export_parser.save_stix1(filename)
     return
 
 

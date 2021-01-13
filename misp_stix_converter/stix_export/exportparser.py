@@ -9,7 +9,7 @@ class ExportParser():
     def __init__(self):
         super().__init__()
 
-    def load_event(filename):
+    def load_file(self, filename):
         with open(filename, 'rt', encoding='utf-8') as f:
             self.json_event = json.loads(f.read())
         self.filename = filename

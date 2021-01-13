@@ -7,10 +7,11 @@ from .misp_to_stix1 import MISPtoSTIX1Parser
 
 
 class Stix1ExportParser(ExportParser):
-    def __init__(self, return_format, namespace, org):
+    def __init__(self, return_format, namespace, org, include_namespaces=True):
         self.return_format = return_format
         self.baseurl = namespace
         self.orgname = org
+        self.include_namespaces = include_namespaces
         try:
             idgen.set_id_namespace({namespace: self.orgname})
         except ValueError:
@@ -21,22 +22,20 @@ class Stix1ExportParser(ExportParser):
         self.namespace = idgen.get_id_namespace_alias()
 
     def generate_stix1_package(self, version):
-        stix_package = STIXPackage()
         if self.json_event.get('response'):
             for event in self.json_event['response']:
+                self._stix_package = STIXPackage()
                 package_generator = MISPtoSTIX1Parser(self.namespace, self.orgname)
-                package_generator.parse_misp_event(event['Event'], version)
-                stix_package.add_related_package(package_generator.get_package())
+                package_generator.parse_misp_event(self.load(event), version)
+                self._stix_package.add_related_package(package_generator.stix_package)
         else:
             package_generator = MISPtoSTIX1Parser(self.namespace, self.orgname)
-            package_generator.parse_misp_event(self.json_event['Event'], version)
-            stix_package.add_related_package(package_generator.get_package())
+            package_generator.parse_misp_event(self.json_event, version)
+            self._stix_package = package_generator.stix_package
 
-    # def generate_stix1_json_package(self):
-    #     if self.json_event.get('response'):
-
-
-        # to_call, args = self._format_to_package()
+    @property
+    def stix_package(self):
+        return self._stix_package
 
     ################################################################################
     ##                             UTILITY FUNCTIONS.                             ##
@@ -51,8 +50,8 @@ class Stix1ExportParser(ExportParser):
     def _format_to_package(self, args={}):
         if self.return_format == 'xml':
             args = {
-                'include_namespaces': False,
-                'include_schemalocs': False,
+                'include_namespaces': self.include_namespaces,
+                'include_schemalocs': self.include_namespaces,
                 'encoding': 'utf8'
             }
         return f'to_{self.return_format}', args
