@@ -605,8 +605,8 @@ class MISPtoSTIX1Parser():
             if self._check_object_name(misp_object):
                 continue
             try:
-                if misp_object.name in stix1_mapping.ttp_names:
-                    getattr(self, stix1_mapping.ttp_names[misp_object.name])(misp_object)
+                if misp_object.name in stix1_mapping.non_indicator_names:
+                    getattr(self, stix1_mapping.non_indicator_names[misp_object.name])(misp_object)
                 else:
                     to_ids = self._fetch_ids_flags(misp_object.attributes)
                     to_call = self._fetch_objects_mapping_function(misp_object.name)
