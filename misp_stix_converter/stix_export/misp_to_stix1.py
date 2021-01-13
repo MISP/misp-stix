@@ -206,9 +206,9 @@ class MISPtoSTIX1Parser():
                     getattr(self, stix1_mapping.attribute_types_mapping[attribute_type])(attribute)
                 else:
                     self._parse_custom_attribute(attribute)
-                    self.warnings.add(f'MISP Attribute type {attribute_type} not mapped.')
+                    self._warnings.add(f'MISP Attribute type {attribute_type} not mapped.')
             except Exception:
-                self.errors.append(f'Error with the {attribute_type} attribute: {attribute.value}.')
+                self._errors.append(f'Error with the {attribute_type} attribute: {attribute.value}.')
 
     def _handle_attribute(self, attribute: MISPAttribute, observable: Observable):
         if attribute.to_ids:
@@ -647,7 +647,7 @@ class MISPtoSTIX1Parser():
         if reference.relationship_type in relationship_types:
             if reference.Object['name'] == object_name:
                 if reference.referenced_uuid not in self._objects_to_parse[object_name]:
-                    self.warnings.add(f'Reference to a non existing {object_name} object: {reference.referenced_uuid}')
+                    self._warnings.add(f'Reference to a non existing {object_name} object: {reference.referenced_uuid}')
                     return False
                 return True
         return False
