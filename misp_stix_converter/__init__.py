@@ -1,3 +1,3 @@
-from .stix_export import *
-from .stix_import import *
+__version__ = '0.1'
+from .misp2stix import *
 from .misp_stix_converter import misp_to_stix

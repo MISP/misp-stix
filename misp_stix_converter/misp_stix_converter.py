@@ -2,7 +2,7 @@
 #!/usr/bin/env python3
 
 import json
-from .stix_export import Stix1ExportParser
+from .misp2stix.stix1_export import Stix1ExportParser
 
 _default_namespace = 'https://github.com/MISP/MISP'
 _default_org = 'MISP'
@@ -14,8 +14,10 @@ def misp_to_stix(filename, return_format, version, namespace=_default_namespace,
     export_parser = Stix1ExportParser(return_format, namespace, org)
     export_parser.load_file(filename)
     export_parser.generate_stix1_package(version)
-    export_parser.save_stix1(filename)
-    return
+    to_call, args= export_parser.format_to_package()
+    with open(f'{filename}.out', 'wb') as f:
+        f.write(getattr(export_parser.stix_package, to_call)(**args))
+    return 1
 
 
 def misp_to_stix2():
@@ -32,7 +34,7 @@ def stix_to_misp(filename):
     stix_parser.load_event()
     stix_parser.build_misp_event(event)
     stix_parser.save_file()
-    return 
+    return
 
 
 def stix2_to_misp(filename):
