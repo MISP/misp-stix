@@ -44,7 +44,6 @@ from cybox.utils import Namespace
 from datetime import datetime
 from io import BytesIO
 from mixbox import idgen
-from pymisp import MISPAttribute, MISPEvent, MISPObject, MISPObjectReference
 from stix.coa import CourseOfAction
 from stix.common import InformationSource, Identity, ToolInformation
 from stix.common.confidence import Confidence
@@ -91,7 +90,6 @@ class MISPtoSTIX1Parser():
         self._errors = []
         self._warnings = set()
         self._header_comment = []
-        self._misp_event = MISPEvent()
         self._objects_to_parse = defaultdict(dict)
         self._contextualised_data = defaultdict(dict)
         self._courses_of_action = {}
@@ -100,7 +98,9 @@ class MISPtoSTIX1Parser():
         self._ttp_references = {}
 
     def parse_misp_event(self, misp_event: dict, version: str):
-        self._misp_event.from_dict(**misp_event)
+        if 'Event' in misp_event:
+            misp_event = misp_event['Event']
+        self._misp_event = misp_event
         self._stix_package = self._create_stix_package(version)
         self._incident = self._create_incident()
         self._generate_stix_objects()
@@ -139,38 +139,38 @@ class MISPtoSTIX1Parser():
     ################################################################################
 
     def _create_incident(self) -> Incident:
-        incident_id = f'{self._orgname}:Incident-{self._misp_event.uuid}'
+        incident_id = f"{self._orgname}:Incident-{self._misp_event['uuid']}"
         incident = Incident(
             id_=incident_id,
-            title=self._misp_event.info,
-            timestamp=self._misp_event.timestamp
+            title=self._misp_event['info'],
+            timestamp=self._datetime_from_timestamp(self._misp_event['timestamp'])
         )
         incident_time = Time()
-        incident_time.incident_discovery = self._from_datetime_to_str(self._misp_event.date)
-        if self._misp_event.published:
-            incident_time.incident_reported = self._misp_event.publish_timestamp
+        incident_time.incident_discovery = self._misp_event['date']
+        if self._misp_event.get('published') and self._misp_event.get('publish_timestamp'):
+            incident_time.incident_reported = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
         incident.time = incident_time
         return incident
 
     def _create_stix_package(self, version: str) -> STIXPackage:
-        package_id = f'{self._orgname}:STIXPackage-{self._misp_event.uuid}'
-        timestamp = self._misp_event.timestamp
+        package_id = f"{self._orgname}:STIXPackage-{self._misp_event['uuid']}"
+        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
         stix_package = STIXPackage(id_=package_id, timestamp=timestamp)
         stix_package.version = version
         return stix_package
 
     def _generate_stix_objects(self):
-        if hasattr(self._misp_event, 'threat_level_id'):
-            threat_level = stix1_mapping.threat_level_mapping[self._misp_event.threat_level_id]
+        if self._misp_event.get('threat_level_id'):
+            threat_level = stix1_mapping.threat_level_mapping[int(self._misp_event['threat_level_id'])]
             self._add_journal_entry(f'Event Threat Level: {threat_level}')
         tags = self._handle_event_tags_and_galaxies()
         if tags:
             self._incident.handling = self._set_handling(tags)
-        if hasattr(self._misp_event, 'id'):
-            external_id = ExternalID(value=self._misp_event.id, source='MISP Event')
+        if self._misp_event.get('id'):
+            external_id = ExternalID(value=self._misp_event['id'], source='MISP Event')
             self._incident.add_external_id(external_id)
-        if hasattr(self._misp_event, 'analysis'):
-            status = stix1_mapping.status_mapping[self._misp_event.analysis]
+        if self._misp_event.get('analysis'):
+            status = stix1_mapping.status_mapping[int(self._misp_event['analysis'])]
             self._incident.status = IncidentStatus(status)
         self.orgc_name = self._set_creator()
         self._incident.information_source = self._set_source()
@@ -191,16 +191,16 @@ class MISPtoSTIX1Parser():
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
                     self._warnings.add(f'{galaxy_type} galaxy in event not mapped.')
-            return tuple(tag.name for tag in self._misp_event.tags if tag.name not in tag_names)
-        return tuple(tag.name for tag in self._misp_event.tags)
+            return tuple(tag['name'] for tag in self._misp_event.get('Tag', []) if tag['name'] not in tag_names)
+        return tuple(tag['name'] for tag in self._misp_event.get('Tag', []))
 
     ################################################################################
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
     ################################################################################
 
     def _resolve_attributes(self):
-        for attribute in self._misp_event.attributes:
-            attribute_type = attribute.type
+        for attribute in self._misp_event['Attribute']:
+            attribute_type = attribute['type']
             try:
                 if attribute_type in stix1_mapping.attribute_types_mapping:
                     getattr(self, stix1_mapping.attribute_types_mapping[attribute_type])(attribute)
@@ -208,12 +208,12 @@ class MISPtoSTIX1Parser():
                     self._parse_custom_attribute(attribute)
                     self._warnings.add(f'MISP Attribute type {attribute_type} not mapped.')
             except Exception:
-                self._errors.append(f'Error with the {attribute_type} attribute: {attribute.value}.')
+                self._errors.append(f"Error with the {attribute_type} attribute: {attribute['value']}.")
 
-    def _handle_attribute(self, attribute: MISPAttribute, observable: Observable):
-        if attribute.to_ids:
+    def _handle_attribute(self, attribute: dict, observable: Observable):
+        if attribute.get('to_ids', False):
             indicator = self._create_indicator_from_attribute(attribute)
-            indicator.add_indicator_type(self._set_indicator_type(attribute.type))
+            indicator.add_indicator_type(self._set_indicator_type(attribute['type']))
             indicator.add_valid_time_position(ValidTime())
             indicator.add_observable(observable)
             tags = self._handle_attribute_tags_and_galaxies(attribute, indicator)
@@ -221,17 +221,17 @@ class MISPtoSTIX1Parser():
                 indicator.handling = self._set_handling(tags)
             related_indicator = RelatedIndicator(
                 indicator,
-                relationship=attribute.category
+                relationship=attribute['category']
             )
             self._incident.related_indicators.append(related_indicator)
         else:
             related_observable = RelatedObservable(
                 observable,
-                relationship=attribute.category
+                relationship=attribute['category']
             )
             self._incident.related_observables.append(related_observable)
 
-    def _handle_attribute_tags_and_galaxies(self, attribute: MISPAttribute, indicator: Indicator) -> tuple:
+    def _handle_attribute_tags_and_galaxies(self, attribute: dict, indicator: Indicator) -> tuple:
         if attribute.get('Galaxy'):
             tag_names = []
             for galaxy in attribute['Galaxy']:
@@ -241,127 +241,129 @@ class MISPtoSTIX1Parser():
                     getattr(self, to_call.format('attribute'))(galaxy, indicator)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
-                    self._warnings.add(f'{galaxy_type} galaxy in {attribute.type} attribute not mapped.')
-            return tuple(tag.name for tag in attribute.tags if tag.name not in tag_names)
-        return tuple(tag.name for tag in attribute.tags)
+                    self._warnings.add(f"{galaxy_type} galaxy in {attribute['type']} attribute not mapped.")
+            return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
+        return tuple(tag['name'] for tag in attribute.get('Tag', []))
 
-    def _handle_exploit_target(self, attribute: MISPAttribute, stix_object: Union[Vulnerability, Weakness], stix_type: str):
+    def _handle_exploit_target(self, attribute: dict, stix_object: Union[Vulnerability, Weakness], stix_type: str):
+        attribute_uuid = attribute['uuid']
         ttp = self._create_ttp(attribute)
-        exploit_target = ExploitTarget(timestamp=attribute.timestamp)
-        exploit_target.id_ = f"{self._namespace}:ExploitTarget-{attribute.uuid}"
-        if hasattr(attribute, 'comment') and attribute.comment != "Imported via the freetext import.":
-            exploit_target.description = attribute.comment
-        exploit_target.title = f"{stix_type.capitalize()} {attribute.value}"
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        exploit_target = ExploitTarget(timestamp=timestamp)
+        exploit_target.id_ = f"{self._namespace}:ExploitTarget-{attribute_uuid}"
+        if attribute.get('comment') and attribute['comment'] != "Imported via the freetext import.":
+            exploit_target.description = attribute['comment']
+        exploit_target.title = f"{stix_type.capitalize()} {attribute['value']}"
         getattr(exploit_target, f"add_{stix_type}")(stix_object)
         ttp.add_exploit_target(exploit_target)
         tags = self._handle_non_indicator_attribute_tags_and_galaxies(attribute, ttp)
         if tags:
             ttp.handling = self._set_handling(tags)
-        related_ttp = self._create_related_ttp(ttp.id_, attribute.type, timestamp=attribute.timestamp)
-        self._handle_related_ttps({attribute.uuid: related_ttp})
-        self._ttps[attribute.uuid] = ttp
+        related_ttp = self._create_related_ttp(ttp.id_, attribute['type'], timestamp=timestamp)
+        self._handle_related_ttps({attribute_uuid: related_ttp})
+        self._ttps[attribute_uuid] = ttp
 
-    def _handle_non_indicator_attribute_tags_and_galaxies(self, attribute: MISPAttribute, ttp: TTP) -> tuple:
+    def _handle_non_indicator_attribute_tags_and_galaxies(self, attribute: dict, ttp: TTP) -> tuple:
         if attribute.get('Galaxy'):
             tag_names = []
             for galaxy in attribute['Galaxy']:
                 galaxy_type = galaxy['type']
                 if galaxy_type not in stix1_mapping.ttp_names:
                     if galaxy_type not in stix1_mapping.galaxy_types_mapping:
-                        self._warnings.add(f'{galaxy_type} galaxy in {attribute.type} attribute not mapped.')
+                        self._warnings.add(f"{galaxy_type} galaxy in {attribute['type']} attribute not mapped.")
                     continue
                 to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
                 getattr(self, to_call.format('object'))(galaxy, ttp)
                 tag_names.extend(self._quick_fetch_tag_names(galaxy))
-            return tuple(tag.name for tag in attribute.tags if tag.name not in tag_names)
-        return tuple(tag.name for tag in attribute.tags)
+            return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
+        return tuple(tag['name'] for tag in attribute.get('Tag', []))
 
-    def _parse_attachment(self, attribute: MISPAttribute):
-        if attribute.data:
+    def _parse_attachment(self, attribute: dict):
+        if attribute.get('data'):
             observable = self._create_attachment_observable(
-                attribute.value,
-                attribute.data,
-                attribute.uuid
+                attribute['value'],
+                attribute['data'],
+                attribute['uuid']
             )
             self._handle_attribute(attribute, observable)
         else:
             self._parse_file_attribute(attribute)
 
-    def _parse_autonomous_system_attribute(self, attribute: MISPAttribute):
-        autonomous_system = self._create_autonomous_system_object(attribute.value)
-        observable = self._create_observable(autonomous_system, attribute.uuid, 'AS')
+    def _parse_autonomous_system_attribute(self, attribute: dict):
+        autonomous_system = self._create_autonomous_system_object(attribute['value'])
+        observable = self._create_observable(autonomous_system, attribute['uuid'], 'AS')
         self._handle_attribute(attribute, observable)
 
-    def _parse_custom_attribute(self, attribute: MISPAttribute):
+    def _parse_custom_attribute(self, attribute: dict):
         custom_object = Custom()
         custom_object.custom_properties = CustomProperties()
         custom_object.custom_properties.append(self._create_property(
-            attribute.type,
-            attribute.value
+            attribute['type'],
+            attribute['value']
         ))
-        observable = self._create_observable(custom_object, attribute.uuid, 'Custom')
+        observable = self._create_observable(custom_object, attribute['uuid'], 'Custom')
         self._handle_attribute(attribute, observable)
 
-    def _parse_domain_attribute(self, attribute: MISPAttribute):
-        observable = self._create_domain_observable(attribute.value, attribute.uuid)
+    def _parse_domain_attribute(self, attribute: dict):
+        observable = self._create_domain_observable(attribute['value'], attribute['uuid'])
         self._handle_attribute(attribute, observable)
 
-    def _parse_domain_ip_attribute(self, attribute: MISPAttribute):
-        domain, ip = attribute.value.split('|')
-        domain_observable = self._create_domain_observable(domain, attribute.uuid)
-        address_observable = self._create_address_observable(attribute.type, ip, attribute.uuid)
+    def _parse_domain_ip_attribute(self, attribute: dict):
+        domain, ip = attribute['value'].split('|')
+        domain_observable = self._create_domain_observable(domain, attribute['uuid'])
+        address_observable = self._create_address_observable(attribute['type'], ip, attribute['uuid'])
         composite_object = ObservableComposition(
             observables=[domain_observable, address_observable]
         )
         composite_object.operator = "AND"
         observable = Observable(
-            id_=f"{self._namespace}:ObservableComposition-{attribute.uuid}"
+            id_=f"{self._namespace}:ObservableComposition-{attribute['uuid']}"
         )
         observable.observable_composition = composite_object
         self._handle_attribute(attribute, observable)
 
-    def _parse_email_attachment(self, attribute: MISPAttribute):
+    def _parse_email_attachment(self, attribute: dict):
         file_object = File()
-        file_object.file_name = attribute.value
+        file_object.file_name = attribute['value']
         file_object.file_name.condition = "Equals"
-        file_object.parent.id_ = f"{self._namespace}:File-{attribute.uuid}"
+        file_object.parent.id_ = f"{self._namespace}:File-{attribute['uuid']}"
         email = EmailMessage()
         email.attachments = Attachments()
         email.attachments.append(file_object.parent.id_)
         email.add_related(file_object, "Contains", inline=True)
-        email.parent.related_objects[0].id_ = f"{self._namespace}:File-{attribute.uuid}"
-        observable = self._create_observable(email, attribute.uuid, 'EmailMessage')
+        email.parent.related_objects[0].id_ = f"{self._namespace}:File-{attribute['uuid']}"
+        observable = self._create_observable(email, attribute['uuid'], 'EmailMessage')
         self._handle_attribute(attribute, observable)
 
-    def _parse_email_attribute(self, attribute: MISPAttribute):
+    def _parse_email_attribute(self, attribute: dict):
         email_object = EmailMessage()
         email_header = EmailHeader()
-        feature = stix1_mapping.email_attribute_mapping[attribute.type]
-        setattr(email_header, feature, attribute.value)
+        feature = stix1_mapping.email_attribute_mapping[attribute['type']]
+        setattr(email_header, feature, attribute['value'])
         setattr(getattr(email_header, feature), 'condition', 'Equals')
         email_object.header = email_header
-        observable = self._create_observable(email_object, attribute.uuid, 'EmailMessage')
+        observable = self._create_observable(email_object, attribute['uuid'], 'EmailMessage')
         self._handle_attribute(attribute, observable)
 
-    def _parse_file_attribute(self, attribute: MISPAttribute):
-        file_object = self._create_file_object(attribute.value)
-        observable = self._create_observable(file_object, attribute.uuid, 'File')
+    def _parse_file_attribute(self, attribute: dict):
+        file_object = self._create_file_object(attribute['value'])
+        observable = self._create_observable(file_object, attribute['uuid'], 'File')
         self._handle_attribute(attribute, observable)
 
-    def _parse_hash_attribute(self, attribute: MISPAttribute):
-        hash = self._parse_hash_value(attribute.type, attribute.value)
+    def _parse_hash_attribute(self, attribute: dict):
+        hash = self._parse_hash_value(attribute['type'], attribute['value'])
         file_object = File()
         file_object.add_hash(hash)
-        observable = self._create_observable(file_object, attribute.uuid, 'File')
+        observable = self._create_observable(file_object, attribute['uuid'], 'File')
         self._handle_attribute(attribute, observable)
 
-    def _parse_hash_composite_attribute(self, attribute: MISPAttribute):
-        filename, hash_value = attribute.value.split('|')
+    def _parse_hash_composite_attribute(self, attribute: dict):
+        filename, hash_value = attribute['value'].split('|')
         file_object = self._create_file_object(filename)
-        attribute_type = attribute.type.split('|')[1] if '|' in attribute.type else 'filename|md5'
+        attribute_type = attribute['type'].split('|')[1] if '|' in attribute['type'] else 'filename|md5'
         hash = self._parse_hash_value(attribute_type, hash_value)
         file_object.add_hash(hash)
-        observable = self._create_observable(file_object, attribute.uuid, 'File')
+        observable = self._create_observable(file_object, attribute['uuid'], 'File')
         self._handle_attribute(attribute, observable)
 
     @staticmethod
@@ -374,159 +376,159 @@ class MISPtoSTIX1Parser():
         _set_hash_type(hash, attribute_value)
         return hash
 
-    def _parse_hostname_attribute(self, attribute: MISPAttribute):
-        observable = self._create_hostname_observable(attribute.value, attribute.uuid)
+    def _parse_hostname_attribute(self, attribute: dict):
+        observable = self._create_hostname_observable(attribute['value'], attribute['uuid'])
         self._handle_attribute(attribute, observable)
 
-    def _parse_hostname_port_attribute(self, attribute: MISPAttribute):
-        hostname, port = attribute.value.split('|')
+    def _parse_hostname_port_attribute(self, attribute: dict):
+        hostname, port = attribute['value'].split('|')
         socket_address = self._create_socket_address_object(hostname=hostname, port=port)
-        observable = self._create_observable(socket_address, attribute.uuid, 'SocketAddress')
+        observable = self._create_observable(socket_address, attribute['uuid'], 'SocketAddress')
         self._handle_attribute(attribute, observable)
 
-    def _parse_http_method_attribute(self, attribute: MISPAttribute):
+    def _parse_http_method_attribute(self, attribute: dict):
         http_client_request = HTTPClientRequest()
         http_request_line = HTTPRequestLine()
-        http_request_line.http_method = attribute.value
+        http_request_line.http_method = attribute['value']
         http_request_line.http_method.condition = "Equals"
         http_client_request.http_request_line = http_request_line
         self._parse_http_session(attribute, http_client_request)
 
-    def _parse_http_session(self, attribute: MISPAttribute, http_client_request: HTTPClientRequest):
+    def _parse_http_session(self, attribute: dict, http_client_request: HTTPClientRequest):
         http_request_response = HTTPRequestResponse()
         http_request_response.http_client_request = http_client_request
         http_session_object = HTTPSession()
         http_session_object.http_request_response = http_request_response
-        observable = self._create_observable(http_session_object, attribute.uuid, 'HTTPSession')
+        observable = self._create_observable(http_session_object, attribute['uuid'], 'HTTPSession')
         self._handle_attribute(attribute, observable)
 
-    def _parse_ip_attribute(self, attribute: MISPAttribute):
-        address_object = self._create_address_object(attribute.type, attribute.value)
-        observable = self._create_observable(address_object, attribute.uuid, 'Address')
+    def _parse_ip_attribute(self, attribute: dict):
+        address_object = self._create_address_object(attribute['type'], attribute['value'])
+        observable = self._create_observable(address_object, attribute['uuid'], 'Address')
         self._handle_attribute(attribute, observable)
 
-    def _parse_ip_port_attribute(self, attribute: MISPAttribute):
-        ip, port = attribute.value.split('|')
-        ip_type = attribute.type.split('|')[0]
+    def _parse_ip_port_attribute(self, attribute: dict):
+        ip, port = attribute['value'].split('|')
+        ip_type = attribute['type'].split('|')[0]
         socket_address = self._create_socket_address_object(ip=(ip_type, ip), port=port)
-        observable = self._create_observable(socket_address, attribute.uuid, 'SocketAddress')
+        observable = self._create_observable(socket_address, attribute['uuid'], 'SocketAddress')
         self._handle_attribute(attribute, observable)
 
-    def _parse_mac_address(self, attribute: MISPAttribute):
+    def _parse_mac_address(self, attribute: dict):
         network_interface = NetworkInterface()
-        network_interface.mac = attribute.value
+        network_interface.mac = attribute['value']
         network_interface_list = NetworkInterfaceList()
         network_interface_list.append(network_interface)
         system_object = System()
         system_object.network_interface_list = network_interface_list
-        observable = self._create_observable(system_object, attribute.uuid, 'System')
+        observable = self._create_observable(system_object, attribute['uuid'], 'System')
         self._handle_attribute(attribute, observable)
 
-    def _parse_malware_sample(self, attribute: MISPAttribute):
-        if attribute.data:
+    def _parse_malware_sample(self, attribute: dict):
+        if attribute.get('data'):
             observable = self._create_malware_sample_observable(
-                attribute.value,
-                attribute.data,
-                attribute.uuid
+                attribute['value'],
+                attribute['data'],
+                attribute['uuid']
             )
             self._handle_attribute(attribute, observable)
         else:
             self._parse_hash_composite_attribute(attribute)
 
-    def _parse_mutex_attribute(self, attribute: MISPAttribute):
-        mutex_object = self._create_mutex_object(attribute.value)
-        observable = self._create_observable(mutex_object, attribute.uuid, 'Mutex')
+    def _parse_mutex_attribute(self, attribute: dict):
+        mutex_object = self._create_mutex_object(attribute['value'])
+        observable = self._create_observable(mutex_object, attribute['uuid'], 'Mutex')
         self._handle_attribute(attribute, observable)
 
-    def _parse_named_pipe(self, attribute: MISPAttribute):
+    def _parse_named_pipe(self, attribute: dict):
         pipe_object = Pipe()
         pipe_object.named = True
-        pipe_object.name = attribute.value
+        pipe_object.name = attribute['value']
         pipe_object.name.condition = "Equals"
-        observable = self._create_observable(pipe_object, attribute.uuid, 'Pipe')
+        observable = self._create_observable(pipe_object, attribute['uuid'], 'Pipe')
         self._handle_attribute(attribute, observable)
 
-    def _parse_pattern_attribute(self, attribute: MISPAttribute):
+    def _parse_pattern_attribute(self, attribute: dict):
         byte_run = ByteRun()
-        byte_run.byte_run_data = attribute.value
+        byte_run.byte_run_data = attribute['value']
         file_object = File()
         file_object.byte_runs = ByteRuns(byte_run)
-        observable = self._create_observable(file_object, attribute.uuid, 'File')
+        observable = self._create_observable(file_object, attribute['uuid'], 'File')
         self._handle_attribute(attribute, observable)
 
-    def _parse_port_attribute(self, attribute: MISPAttribute):
-        observable = self._create_port_observable(attribute.value, attribute.uuid)
+    def _parse_port_attribute(self, attribute: dict):
+        observable = self._create_port_observable(attribute['value'], attribute['uuid'])
         self._handle_attribute(attribute, observable)
 
-    def _parse_regkey_attribute(self, attribute: MISPAttribute):
-        registry_key = self._create_registry_key_object(attribute.value)
-        observable = self._create_observable(registry_key, attribute.uuid, 'WindowsRegistryKey')
+    def _parse_regkey_attribute(self, attribute: dict):
+        registry_key = self._create_registry_key_object(attribute['value'])
+        observable = self._create_observable(registry_key, attribute['uuid'], 'WindowsRegistryKey')
         self._handle_attribute(attribute, observable)
 
-    def _parse_regkey_value_attribute(self, attribute: MISPAttribute):
-        regkey, value = attribute.value.split('|')
+    def _parse_regkey_value_attribute(self, attribute: dict):
+        regkey, value = attribute['value'].split('|')
         registry_key = self._create_registry_key_object(regkey)
         registry_value = RegistryValue()
         registry_value.data = value.strip()
         registry_value.data.condition = "Equals"
         registry_key.values = RegistryValues(registry_value)
-        observable = self._create_observable(registry_key, attribute.uuid, 'WindowsRegistryKey')
+        observable = self._create_observable(registry_key, attribute['uuid'], 'WindowsRegistryKey')
         self._handle_attribute(attribute, observable)
 
-    def _parse_snort_attribute(self, attribute: MISPAttribute):
-        if attribute.to_ids:
+    def _parse_snort_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
             test_mechanism = SnortTestMechanism()
             test_mechanism.rules = [
                 {
-                    "value": attribute.value,
+                    "value": attribute['value'],
                     "encoded": True
                 }
             ]
             self._parse_test_mechanism(attribute, test_mechanism)
         else:
-            self._parse_custom_attribute(self, attribute)
+            self._parse_custom_attribute(attribute)
 
-    def _parse_target_attribute(self, attribute: MISPAttribute, identity_spec: STIXCIQIdentity3_0):
+    def _parse_target_attribute(self, attribute: dict, identity_spec: STIXCIQIdentity3_0):
         ciq_identity = CIQIdentity3_0Instance()
         ciq_identity.specification = identity_spec
-        ciq_identity.id_ = f"{self._namespace}:Identity-{attribute.uuid}"
-        ciq_identity.name = f"{attribute.category}: {attribute.value} (MISP Attribute)"
+        ciq_identity.id_ = f"{self._namespace}:Identity-{attribute['uuid']}"
+        ciq_identity.name = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
         self._incident.add_victim(ciq_identity)
 
-    def _parse_target_email(self, attribute: MISPAttribute):
+    def _parse_target_email(self, attribute: dict):
         identity_spec = STIXCIQIdentity3_0()
-        identity_spec.add_electronic_address_identifier(ElectronicAddressIdentifier(value=attribute.value))
+        identity_spec.add_electronic_address_identifier(ElectronicAddressIdentifier(value=attribute['value']))
         self._parse_target_attribute(attribute, identity_spec)
 
-    def _parse_target_external(self, attribute: MISPAttribute):
+    def _parse_target_external(self, attribute: dict):
         identity_spec = STIXCIQIdentity3_0()
-        identity_spec.party_name = PartyName(name_lines=[f"External target: {attribute.value}"])
+        identity_spec.party_name = PartyName(name_lines=[f"External target: {attribute['value']}"])
         self._parse_target_attribute(attribute, identity_spec)
 
-    def _parse_target_location(self, attribute: MISPAttribute):
+    def _parse_target_location(self, attribute: dict):
         identity_spec = STIXCIQIdentity3_0()
-        identity_spec.add_address(ciq_Address(FreeTextAddress(address_lines=[attribute.value])))
+        identity_spec.add_address(ciq_Address(FreeTextAddress(address_lines=[attribute['value']])))
         self._parse_target_attribute(attribute, identity_spec)
 
-    def _parse_target_machine(self, attribute: MISPAttribute):
+    def _parse_target_machine(self, attribute: dict):
         affected_asset = AffectedAsset()
-        description = attribute.value
-        if hasattr(attribute, 'comment') and attribute.comment:
-            description = f"{description} ({attribute.comment})"
+        description = attribute['value']
+        if attribute.get('comment'):
+            description = f"{description} ({attribute['comment']})"
         affected_asset.description = description
         self._incident.affected_assets.append(affected_asset)
 
-    def _parse_target_org(self, attribute: MISPAttribute):
+    def _parse_target_org(self, attribute: dict):
         identity_spec = STIXCIQIdentity3_0()
-        identity_spec.party_name = PartyName(organisation_names=[attribute.value])
+        identity_spec.party_name = PartyName(organisation_names=[attribute['value']])
         self._parse_target_attribute(attribute, identity_spec)
 
-    def _parse_target_user(self, attribute: MISPAttribute):
+    def _parse_target_user(self, attribute: dict):
         identity_spec = STIXCIQIdentity3_0()
-        identity_spec.party_name = PartyName(person_names=[attribute.value])
+        identity_spec.party_name = PartyName(person_names=[attribute['value']])
         self._parse_target_attribute(attribute, identity_spec)
 
-    def _parse_test_mechanism(self, attribute: MISPAttribute, test_mechanism: Union[SnortTestMechanism, YaraTestMechanism]):
+    def _parse_test_mechanism(self, attribute: dict, test_mechanism: Union[SnortTestMechanism, YaraTestMechanism]):
         indicator = self._create_indicator_from_attribute(attribute)
         tags = self._handle_attribute_tags_and_galaxies(attribute, indicator)
         if tags:
@@ -534,89 +536,90 @@ class MISPtoSTIX1Parser():
         indicator.add_indicator_type("Malware Artifacts")
         indicator.add_valid_time_position(ValidTime())
         indicator.add_test_mechanism(test_mechanism)
-        related_indicator = RelatedIndicator(indicator, relationship=attribute.category)
+        related_indicator = RelatedIndicator(indicator, relationship=attribute['category'])
         self._incident.related_indicators.append(related_indicator)
 
-    def _parse_url_attribute(self, attribute: MISPAttribute):
-        observable = self._create_uri_observable(attribute.value, attribute.uuid)
+    def _parse_url_attribute(self, attribute: dict):
+        observable = self._create_uri_observable(attribute['value'], attribute['uuid'])
         self._handle_attribute(attribute, observable)
 
-    def _parse_undefined_attribute(self, attribute: MISPAttribute):
-        if hasattr(attribute, 'comment') and attribute.comment == 'Imported from STIX header description':
-            self._header_comment.append(attribute.value)
+    def _parse_undefined_attribute(self, attribute: dict):
+        if attribute.get('comment') and attribute['comment'] == 'Imported from STIX header description':
+            self._header_comment.append(attribute['value'])
         else:
-            self._add_journal_entry(f"Attribute ({attribute.category} - {attribute.type}): {attribute.value}")
+            self._add_journal_entry(f"Attribute ({attribute['category']} - {attribute['type']}): {attribute['value']}")
 
-    def _parse_user_agent_attribute(self, attribute: MISPAttribute):
+    def _parse_user_agent_attribute(self, attribute: dict):
         http_client_request = HTTPClientRequest()
         http_request_header = HTTPRequestHeader()
         header_fields = HTTPRequestHeaderFields()
-        header_fields.user_agent = attribute.value
+        header_fields.user_agent = attribute['value']
         header_fields.user_agent.condition = "Equals"
         http_request_header.parsed_header = header_fields
         http_client_request.http_request_header = http_request_header
         self._parse_http_session(attribute, http_client_request)
 
-    def _parse_vulnerability_attribute(self, attribute: MISPAttribute):
+    def _parse_vulnerability_attribute(self, attribute: dict):
         vulnerability = Vulnerability()
-        vulnerability.cve_id = attribute.value
+        vulnerability.cve_id = attribute['value']
         self._handle_exploit_target(attribute, vulnerability, 'vulnerability')
 
-    def _parse_weakness_attribute(self, attribute: MISPAttribute):
+    def _parse_weakness_attribute(self, attribute: dict):
         weakness = Weakness()
-        weakness.cwe_id = attribute.value
+        weakness.cwe_id = attribute['value']
         self._handle_exploit_target(attribute, weakness, 'weakness')
 
-    def _parse_windows_service_attribute(self, attribute: MISPAttribute):
+    def _parse_windows_service_attribute(self, attribute: dict):
         windows_service = WinService()
-        feature = 'service_name' if attribute.type == 'windows-service-name' else 'display_name'
-        setattr(windows_service, feature, attribute.value)
-        observable = self._create_observable(windows_service, attribute.uuid, 'WindowsService')
+        feature = 'service_name' if attribute['type'] == 'windows-service-name' else 'display_name'
+        setattr(windows_service, feature, attribute['value'])
+        observable = self._create_observable(windows_service, attribute['uuid'], 'WindowsService')
         self._handle_attribute(attribute, observable)
 
-    def _parse_x509_fingerprint_attribute(self, attribute: MISPAttribute):
+    def _parse_x509_fingerprint_attribute(self, attribute: dict):
         x509_signature = X509CertificateSignature()
-        signature_algorithm = attribute.type.split('-')[-1].upper()
-        for feature, value in zip(('signature', 'signature_algorithm'), (attribute.value, signature_algorithm)):
+        signature_algorithm = attribute['type'].split('-')[-1].upper()
+        for feature, value in zip(('signature', 'signature_algorithm'), (attribute['value'], signature_algorithm)):
             setattr(x509_signature, feature, value)
             setattr(getattr(x509_signature, feature), 'condition', 'Equals')
         x509_certificate = X509Certificate()
         x509_certificate.certificate_signature = x509_signature
-        observable = self._create_observable(x509_certificate, attribute.uuid, 'X509Certificate')
+        observable = self._create_observable(x509_certificate, attribute['uuid'], 'X509Certificate')
         self._handle_attribute(attribute, observable)
 
-    def _parse_yara_attribute(self, attribute: MISPAttribute):
-        if attribute.to_ids:
+    def _parse_yara_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
             test_mechanism = YaraTestMechanism()
             test_mechanism.rule = {
-                "value": attribute.value,
+                "value": attribute['value'],
                 "encoded": True
             }
             self._parse_test_mechanism(attribute, test_mechanism)
         else:
-            self._parse_custom_attribute(self, attribute)
+            self._parse_custom_attribute(attribute)
 
     ################################################################################
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
     ################################################################################
 
     def _resolve_objects(self):
-        for misp_object in self._misp_event.objects:
+        for misp_object in self._misp_event['Object']:
+            object_name = misp_object['name']
             if self._check_object_name(misp_object):
                 continue
             try:
-                if misp_object.name in stix1_mapping.non_indicator_names:
-                    getattr(self, stix1_mapping.non_indicator_names[misp_object.name])(misp_object)
+                if object_name in stix1_mapping.non_indicator_names:
+                    getattr(self, stix1_mapping.non_indicator_names[object_name])(misp_object)
                 else:
-                    to_ids = self._fetch_ids_flags(misp_object.attributes)
-                    to_call = self._fetch_objects_mapping_function(misp_object.name)
+                    to_ids = self._fetch_ids_flags(misp_object['Attribute'])
+                    to_call = self._fetch_objects_mapping_function(object_name)
                     observable = getattr(self, to_call)(misp_object)
                     if to_ids:
                         self._handle_misp_object_with_context(misp_object, observable)
                     else:
                         self._handle_misp_object(observable, misp_object.get('meta-category'))
             except Exception:
-                self._errors.append(f'Error with the {misp_object.name} object: {misp_object.uuid}.')
+                self._errors.append(f"Error with the {object_name} object: {misp_object['uuid']}.")
         if self._objects_to_parse:
             if 'file' in self._objects_to_parse:
                 self._resolve_files_to_parse()
@@ -629,38 +632,45 @@ class MISPtoSTIX1Parser():
             stix_object.custom_properties = CustomProperties()
             stix_object.custom_properties.append(prop)
 
-    def _check_object_name(self, misp_object: MISPObject) -> bool:
-        object_name = misp_object.name
+    def _check_object_name(self, misp_object: dict) -> bool:
+        object_name = misp_object['name']
         if object_name == 'original-imported-file':
             return True
         if object_name in ('pe', 'pe-section'):
-            self._objects_to_parse[object_name][misp_object.uuid] = misp_object
+            self._objects_to_parse[object_name][misp_object['uuid']] = misp_object
             return True
         if object_name == 'file' and misp_object.get('ObjectReference'):
-            for reference in misp_object.references:
-                if reference.relationship_type in ('includes', 'included-in') and reference.Object['name'] == 'pe':
-                    self._objects_to_parse[object_name][misp_object.uuid] = misp_object
+            for reference in misp_object['ObjectReference']:
+                if self._check_references_fields(reference, ('includes', 'included-in'), 'pe'):
+                    self._objects_to_parse[object_name][misp_object['uuid']] = misp_object
                     return True
         return False
 
-    def _check_reference(self, reference: MISPObjectReference, relationship_types: tuple, object_name: str) -> bool:
-        if reference.relationship_type in relationship_types:
-            if reference.Object['name'] == object_name:
-                if reference.referenced_uuid not in self._objects_to_parse[object_name]:
-                    self._warnings.add(f'Reference to a non existing {object_name} object: {reference.referenced_uuid}')
-                    return False
-                return True
+    def _check_reference(self, reference: dict, relationship_types: tuple, object_name: str) -> bool:
+        if  self._check_references_fields(reference, relationship_types, object_name):
+            if reference['referenced_uuid'] not in self._objects_to_parse[object_name]:
+                self._warnings.add(f"Reference to a non existing {object_name} object: {reference['referenced_uuid']}")
+                return False
+            return True
+        return False
+
+    @staticmethod
+    def _check_references_fields(reference: dict, relationship_types: tuple, object_name: str) -> bool:
+        if reference['relationship_type'] not in relationship_types:
+            return False
+        if reference.get('Object') and reference['Object']['name'] == object_name:
+            return True
         return False
 
     @staticmethod
     def _extract_file_attributes(attributes: list) -> dict:
         attributes_dict = defaultdict(list)
         for attribute in attributes:
-            value = attribute.value
-            relation = attribute.object_relation
+            value = attribute['value']
+            relation = attribute['object_relation']
             if relation in _FILE_SINGLE_ATTRIBUTES:
                 if attribute.get('data'):
-                    value = (value, attribute.data, attribute.uuid)
+                    value = (value, attribute['data'], attribute['uuid'])
                 attributes_dict[relation] = value
             else:
                 attributes_dict[relation].append(value)
@@ -671,14 +681,14 @@ class MISPtoSTIX1Parser():
         attributes_dict = defaultdict(list)
         if force_single is not None:
             for attribute in attributes:
-                relation = attribute.object_relation
+                relation = attribute['object_relation']
                 if relation in force_single:
-                    attributes_dict[relation] = attribute.value
+                    attributes_dict[relation] = attribute['value']
                 else:
-                    attributes_dict[relation].append(attribute.value)
+                    attributes_dict[relation].append(attribute['value'])
             return attributes_dict
         for attribute in attributes:
-            attributes_dict[attribute.object_relation].append(attribute.value)
+            attributes_dict[attribute['object_relation']].append(attribute['value'])
         return attributes_dict
 
     @staticmethod
@@ -686,50 +696,50 @@ class MISPtoSTIX1Parser():
         attributes_dict = defaultdict(list)
         if with_uuid is not None:
             for attribute in attributes:
-                relation = attribute.object_relation
-                value = (attribute.value, attribute.uuid) if relation in with_uuid else attribute.value
+                relation = attribute['object_relation']
+                value = (attribute['value'], attribute['uuid']) if relation in with_uuid else attribute['value']
                 attributes_dict[relation].append(value)
             return attributes_dict
         for attribute in attributes:
-            attributes_dict[attribute.object_relation].append(
+            attributes_dict[attribute['object_relation']].append(
                 (
-                    attribute.value,
-                    attribute.uuid
+                    attribute['value'],
+                    attribute['uuid']
                 )
             )
         return attributes_dict
 
-    def _extract_object_attribute_tags_and_galaxies(self, misp_object: MISPObject) -> tuple:
+    def _extract_object_attribute_tags_and_galaxies(self, misp_object: dict) -> tuple:
         tags = set()
         galaxies = {}
-        for attribute in misp_object.attributes:
+        for attribute in misp_object['Attribute']:
             if attribute.get('Galaxy'):
                 for galaxy in attribute['Galaxy']:
                     print(galaxy)
                     galaxy_type = galaxy['type']
                     if galaxy_type not in stix1_mapping.galaxy_types_mapping:
-                        self._warnings.add(f'{galaxy_type} galaxy in {misp_object.name} object not mapped.')
+                        self._warnings.add(f"{galaxy_type} galaxy in {misp_object['name']} object not mapped.")
                         continue
                     if galaxy_type in galaxies:
                         self._merge_galaxy_clusters(galaxies[galaxy_type], galaxy)
                     else:
                         galaxies[galaxy_type] = galaxy
-            if attribute.tags:
-                tags.update(tag.name for tag in attribute.tags)
+            if attribute.get('Tag'):
+                tags.update(tag['name'] for tag in attribute['Tag'])
         return tags, galaxies
 
     @staticmethod
     def _extract_object_attributes(attributes: list) -> dict:
-        return {attribute.object_relation: attribute.value for attribute in attributes}
+        return {attribute['object_relation']: attribute['value'] for attribute in attributes}
 
     @staticmethod
     def _extract_object_attributes_with_uuid(attributes: list) -> dict:
-        return {attribute.object_relation: (attribute.value, attribute.uuid) for attribute in attributes}
+        return {attribute['object_relation']: (attribute['value'], attribute['uuid']) for attribute in attributes}
 
     @staticmethod
     def _fetch_ids_flags(attributes: list) -> bool:
         for attribute in attributes:
-            if attribute.to_ids:
+            if attribute.get('to_ids', False):
                 return True
         return False
 
@@ -757,9 +767,9 @@ class MISPtoSTIX1Parser():
         )
         self._incident.related_observables.append(related_observable)
 
-    def _handle_misp_object_with_context(self, misp_object: MISPObject, observable: Observable):
+    def _handle_misp_object_with_context(self, misp_object: dict, observable: Observable):
         indicator = self._create_indicator_from_object(misp_object)
-        indicator.add_indicator_type(self._set_indicator_type(misp_object.name))
+        indicator.add_indicator_type(self._set_indicator_type(misp_object['name']))
         indicator.add_valid_time_position(ValidTime())
         indicator.add_observable(observable)
         tags = self._handle_object_tags_and_galaxies(misp_object, indicator)
@@ -771,7 +781,7 @@ class MISPtoSTIX1Parser():
         )
         self._incident.related_indicators.append(related_indicator)
 
-    def _handle_non_indicator_object_tags_and_galaxies(self, misp_object: MISPObject, stix_object: Union[TTP, CourseOfAction], galaxy_name: str) -> tuple:
+    def _handle_non_indicator_object_tags_and_galaxies(self, misp_object: dict, stix_object: Union[TTP, CourseOfAction], galaxy_name: str) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
         tag_names = set()
         if galaxies:
@@ -783,7 +793,7 @@ class MISPtoSTIX1Parser():
             return tuple(tag for tag in tags if tag not in tag_names)
         return tuple(tag for tag in tags)
 
-    def _handle_object_tags_and_galaxies(self, misp_object: MISPObject, indicator: Indicator) -> tuple:
+    def _handle_object_tags_and_galaxies(self, misp_object: dict, indicator: Indicator) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
         tag_names = set()
         if galaxies:
@@ -794,17 +804,21 @@ class MISPtoSTIX1Parser():
             return tuple(tag for tag in tags if tag not in tag_names)
         return tuple(tag for tag in tags)
 
-    def _handle_ttp_from_object(self, misp_object: MISPObject, ttp: TTP):
+    def _handle_ttp_from_object(self, misp_object: dict, ttp: TTP):
         tags = self._handle_non_indicator_object_tags_and_galaxies(misp_object, ttp, 'ttp_names')
         if tags:
             ttp.handling = self._set_handling(tags)
-        related_ttp = self._create_related_ttp(ttp.id_, misp_object.name, timestamp=misp_object.timestamp)
-        self._contextualised_data['ttp'][misp_object.uuid] = related_ttp
-        self._ttps[misp_object.uuid] = ttp
+        related_ttp = self._create_related_ttp(
+            ttp.id_,
+            misp_object['name'],
+            timestamp=self._datetime_from_timestamp(misp_object['timestamp'])
+        )
+        self._contextualised_data['ttp'][misp_object['uuid']] = related_ttp
+        self._ttps[misp_object['uuid']] = ttp
 
-    def _parse_asn_object(self, misp_object: MISPObject) -> Observable:
+    def _parse_asn_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
-            misp_object.attributes,
+            misp_object['Attribute'],
             force_single=('asn', 'description')
         )
         as_object = self._create_autonomous_system_object(attributes.pop('asn'))
@@ -812,39 +826,42 @@ class MISPtoSTIX1Parser():
             as_object.name = attributes.pop('description')
         if attributes:
             as_object.custom_properties = self._handle_custom_properties(attributes)
-        observable = self._create_observable(as_object, misp_object.uuid, 'AS')
+        observable = self._create_observable(as_object, misp_object['uuid'], 'AS')
         return observable
 
-    def _parse_attack_pattern_object(self, misp_object: MISPObject):
+    def _parse_attack_pattern_object(self, misp_object: dict):
         ttp = self._create_ttp_from_object(misp_object)
         attack_pattern = AttackPattern()
-        attack_pattern.id_ = f'{self._namespace}:AttackPattern-{misp_object.uuid}'
-        attributes = self._extract_object_attributes(misp_object.attributes)
+        attack_pattern.id_ = f"{self._namespace}:AttackPattern-{misp_object['uuid']}"
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
         for key, feature in stix1_mapping.attack_pattern_object_mapping.items():
             if key in attributes:
                 setattr(attack_pattern, feature, attributes.pop(key))
         if attack_pattern.capec_id and not attack_pattern.capec_id.startswith('CAPEC'):
             attack_pattern.capec_id = f'CAPEC-{attack_pattern.capec_id}'
         if misp_object.get('ObjectReference'):
-            references = ((reference.referenced_uuid, reference.relationship_type) for reference in misp_object.references)
-            self._ttp_references[misp_object.uuid] = references
+            references = ((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
+            self._ttp_references[misp_object['uuid']] = references
         behavior = Behavior()
         behavior.add_attack_pattern(attack_pattern)
         ttp.behavior = behavior
         self._handle_ttp_from_object(misp_object, ttp)
 
-    def _parse_course_of_action_object(self, misp_object: MISPObject):
+    def _parse_course_of_action_object(self, misp_object: dict):
         course_of_action = CourseOfAction()
-        uuid = misp_object.uuid
+        uuid = misp_object['uuid']
         course_of_action.id_ = f'{self._namespace}:CourseOfAction-{uuid}'
-        attributes = self._extract_object_attributes(misp_object.attributes)
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
         for key, feature in stix1_mapping.course_of_action_object_mapping.items():
             if key in attributes:
                 setattr(course_of_action, feature, attributes.pop(key))
         tags = self._handle_non_indicator_object_tags_and_galaxies(misp_object, course_of_action, 'course_of_action_names')
         if tags:
             course_of_action.handling = self._set_handling(tags)
-        coa_taken = self._create_coa_taken(course_of_action.id_, timestamp=misp_object.timestamp)
+        coa_taken = self._create_coa_taken(
+            course_of_action.id_,
+            timestamp=self._datetime_from_timestamp(misp_object['timestamp'])
+        )
         self._contextualised_data['course_of_action'][uuid] = coa_taken
         self._courses_of_action[uuid] = course_of_action
 
@@ -870,10 +887,10 @@ class MISPtoSTIX1Parser():
             return [self._create_authentication_object(**args)]
         return []
 
-    def _parse_credential_object(self, misp_object: MISPObject) -> Observable:
+    def _parse_credential_object(self, misp_object: dict) -> Observable:
         single_attributes = ('username', 'text')
         attributes = self._extract_multiple_object_attributes(
-            misp_object.attributes,
+            misp_object['Attribute'],
             force_single=single_attributes
         )
         account_object = UserAccount()
@@ -885,26 +902,26 @@ class MISPtoSTIX1Parser():
             account_object.authentication = authentication_list
         if attributes:
             account_object.custom_properties = self._handle_custom_properties(attributes)
-        observable = self._create_observable(account_object, misp_object.uuid, 'UserAccount')
+        observable = self._create_observable(account_object, misp_object['uuid'], 'UserAccount')
         return observable
 
-    def _parse_custom_object(self, misp_object: MISPObject) -> Observable:
+    def _parse_custom_object(self, misp_object: dict) -> Observable:
         custom_object = Custom()
-        custom_object.custom_name = misp_object.name
+        custom_object.custom_name = misp_object['name']
         if misp_object.get('description'):
-            custom_object.description = misp_object.description
+            custom_object.description = misp_object['description']
         custom_object.custom_properties = CustomProperties()
-        for attribute in misp_object.attributes:
+        for attribute in misp_object['Attribute']:
             custom_object.custom_properties.append(self._create_property(
-                attribute.object_relation,
-                attribute.value
+                attribute['object_relation'],
+                attribute['value']
             ))
-        observable = self._create_observable(custom_object, misp_object.uuid, 'Custom')
-        self._warnings.add(f'MISP Object name {misp_object.name} not mapped.')
+        observable = self._create_observable(custom_object, misp_object['uuid'], 'Custom')
+        self._warnings.add(f"MISP Object name {misp_object['name']} not mapped.")
         return observable
 
-    def _parse_domain_ip_object(self, misp_object: MISPObject) -> Observable:
-        attributes = self._extract_multiple_object_attributes_with_uuid(misp_object.attributes)
+    def _parse_domain_ip_object(self, misp_object: dict) -> Observable:
+        attributes = self._extract_multiple_object_attributes_with_uuid(misp_object['Attribute'])
         observables = []
         if 'domain' in attributes:
             for attribute in attributes['domain']:
@@ -917,14 +934,14 @@ class MISPtoSTIX1Parser():
                 observables.append(self._create_port_observable(*attribute))
         observable_composition = self._create_observable_composition(
             observables,
-            misp_object.name,
-            misp_object.uuid
+            misp_object['name'],
+            misp_object['uuid']
         )
         return observable_composition
 
-    def _parse_email_object(self, misp_object: MISPObject) -> Observable:
+    def _parse_email_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes_with_uuid(
-            misp_object.attributes,
+            misp_object['Attribute'],
             with_uuid=['attachment']
         )
         email_object = EmailMessage()
@@ -956,7 +973,7 @@ class MISPtoSTIX1Parser():
                 email_object.attachments.append(related_file.id_)
         if attributes:
             email_object.custom_properties = self._handle_custom_properties(attributes)
-        observable = self._create_observable(email_object, misp_object.uuid, 'EmailMessage')
+        observable = self._create_observable(email_object, misp_object['uuid'], 'EmailMessage')
         return observable
 
     def _parse_file_attributes(self, attributes: dict, file_object: Union[File, WinExecutableFile]):
@@ -978,18 +995,18 @@ class MISPtoSTIX1Parser():
                     for single_value in value:
                         self._add_custom_property(file_object, object_relation, single_value)
 
-    def _parse_file_object(self, misp_object: MISPObject) -> Observable:
-        attributes = self._extract_file_attributes(misp_object.attributes)
+    def _parse_file_object(self, misp_object: dict) -> Observable:
+        attributes = self._extract_file_attributes(misp_object['Attribute'])
         observables = self._parse_file_observables(attributes)
         file_object = File()
         self._parse_file_attributes(attributes, file_object)
-        file_observable = self._create_observable(file_object, misp_object.uuid, 'File')
+        file_observable = self._create_observable(file_object, misp_object['uuid'], 'File')
         if observables:
             observables.append(file_observable)
             observable_composition = self._create_observable_composition(
                 observables,
-                misp_object.name,
-                misp_object.uuid
+                misp_object['name'],
+                misp_object['uuid']
             )
             return observable_composition
         return file_observable
@@ -1012,29 +1029,29 @@ class MISPtoSTIX1Parser():
                 attributes['attachment'] = [attributes['attachment']]
         return observables
 
-    def _parse_file_with_pe_object(self, misp_object: MISPObject) -> Observable:
-        attributes = self._extract_file_attributes(misp_object.attributes)
+    def _parse_file_with_pe_object(self, misp_object: dict) -> Observable:
+        attributes = self._extract_file_attributes(misp_object['Attribute'])
         observables = self._parse_file_observables(attributes)
         file_object = WinExecutableFile()
         self._parse_file_attributes(attributes, file_object)
-        for reference in misp_object.references:
+        for reference in misp_object['ObjectReference']:
             if self._check_reference(reference, _PE_RELATIONSHIP_TYPES, 'pe'):
-                misp_pe = self._objects_to_parse['pe'].pop(reference.referenced_uuid)
+                misp_pe = self._objects_to_parse['pe'].pop(reference['referenced_uuid'])
                 self._parse_pe_object(file_object, misp_pe)
                 break
-        file_observable = self._create_observable(file_object, misp_object.uuid, 'WindowsExecutableFile')
+        file_observable = self._create_observable(file_object, misp_object['uuid'], 'WindowsExecutableFile')
         if observables:
             observables.append(file_observable)
             observable_composition = self._create_observable_composition(
                 observables,
-                misp_object.name,
-                misp_object.uuid
+                misp_object['name'],
+                misp_object['uuid']
             )
             return observable_composition
         return file_observable
 
-    def _parse_ip_port_object(self, misp_object: MISPObject) -> Observable:
-        attributes = self._extract_multiple_object_attributes_with_uuid(misp_object.attributes)
+    def _parse_ip_port_object(self, misp_object: dict) -> Observable:
+        attributes = self._extract_multiple_object_attributes_with_uuid(misp_object['Attribute'])
         observables = []
         for feature in ('ip-src', 'ip-dst'):
             if feature in attributes:
@@ -1055,16 +1072,16 @@ class MISPtoSTIX1Parser():
                 observables.append(self._create_domain_observable(*attribute))
         if 'hostname' in attributes:
             for attribute in attributes['hostname']:
-                observables.append(self._create_hostname_observable(*attributes))
+                observables.append(self._create_hostname_observable(*attribute))
         observable_composition = self._create_observable_composition(
             observables,
-            misp_object.name,
-            misp_object.uuid
+            misp_object['name'],
+            misp_object['uuid']
         )
         return observable_composition
 
-    def _parse_network_connection_object(self, misp_object: MISPObject) -> Observable:
-        attributes = self._extract_object_attributes(misp_object.attributes)
+    def _parse_network_connection_object(self, misp_object: dict) -> Observable:
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
         connection_object = NetworkConnection()
         self._parse_socket_addresses(
             connection_object,
@@ -1080,14 +1097,14 @@ class MISPtoSTIX1Parser():
             connection_object.custom_properties = self._handle_custom_properties(attributes)
         observable = self._create_observable(
             connection_object,
-            misp_object.uuid,
+            misp_object['uuid'],
             'NetworkConnection'
         )
         return observable
 
-    def _parse_network_socket_object(self, misp_object: MISPObject) -> Observable:
+    def _parse_network_socket_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
-            misp_object.attributes,
+            misp_object['Attribute'],
             force_single=(
                 'ip-src', 'ip-dst', 'src-port', 'dst-port', 'hostname-src',
                 'hostname-dst', 'ptotocol', 'address-family', 'domain-family'
@@ -1105,22 +1122,19 @@ class MISPtoSTIX1Parser():
             socket_object.is_blocking = True if 'blocking' in states else False
         if attributes:
             socket_object.custom_properties = self._handle_custom_properties(attributes)
-        observable = self._create_observable(socket_object, misp_object.uuid, 'NetworkSocket')
+        observable = self._create_observable(socket_object, misp_object['uuid'], 'NetworkSocket')
         return observable
 
-    def _parse_pe_object(self, file_object: WinExecutableFile, misp_pe: MISPObject):
+    def _parse_pe_object(self, file_object: WinExecutableFile, misp_pe: dict):
         attributes = self._extract_multiple_object_attributes(
-            misp_pe.attributes,
+            misp_pe['Attribute'],
             force_single=(
-                'company-name', 'compilation-timestamp', 'entrypoint-address',
-                'file-description', 'file-version', 'impfuzzy', 'imphash', 'type',
-                'internal-filename', 'lang-id', 'legal-copyright', 'number-sections',
+                'company-name', 'entrypoint-address', 'file-description',
+                'file-version', 'impfuzzy', 'imphash', 'type', 'lang-id',
+                'internal-filename', 'legal-copyright', 'number-sections',
                 'original-filename', 'pehash', 'product-name', 'product-version'
             )
         )
-        if 'compilation-timestamp' in attributes:
-            timestamp = attributes.pop('compilation-timestamp')
-            attributes['compilation-timestamp'] = [datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S')]
         if any(feature in attributes for feature in stix1_mapping.pe_resource_mapping):
             resource = PEVersionInfoResource()
             for key, feature in stix1_mapping.pe_resource_mapping.items():
@@ -1160,9 +1174,9 @@ class MISPtoSTIX1Parser():
                 hashlist.hashes = hashes
                 file_object.headers.file_header.hashes = hashlist
         if misp_pe.get('ObjectReference'):
-            for reference in misp_pe.references:
+            for reference in misp_pe['ObjectReference']:
                 if self._check_reference(reference, _PE_RELATIONSHIP_TYPES, 'pe-section'):
-                    misp_pe_section = self._objects_to_parse['pe-section'][reference.referenced_uuid]
+                    misp_pe_section = self._objects_to_parse['pe-section'][reference['referenced_uuid']]
                     pe_section = self._parse_pe_section_object(misp_pe_section)
                     try:
                         file_object.sections.append(pe_section)
@@ -1170,8 +1184,8 @@ class MISPtoSTIX1Parser():
                         file_object.sections = PESectionList()
                         file_object.sections.append(pe_section)
 
-    def _parse_pe_section_object(self, misp_pe_section: MISPObject) -> PESection:
-        section_attributes = self._extract_object_attributes(misp_pe_section.attributes)
+    def _parse_pe_section_object(self, misp_pe_section: dict) -> PESection:
+        section_attributes = self._extract_object_attributes(misp_pe_section['Attribute'])
         pe_section = PESection()
         if 'entropy' in section_attributes:
             pe_section.entropy = Entropy()
@@ -1193,9 +1207,9 @@ class MISPtoSTIX1Parser():
             pe_section.data_hashes.hashes = hashlist
         return pe_section
 
-    def _parse_process_object(self, misp_object: MISPObject) -> Observable:
+    def _parse_process_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
-            misp_object.attributes,
+            misp_object['Attribute'],
             force_single=(
                 'command-line', 'creation-time', 'image',
                 'name', 'parent-pid', 'pid', 'start-time'
@@ -1224,11 +1238,11 @@ class MISPtoSTIX1Parser():
                     setattr(getattr(process_object.image_info, feature), 'condition', 'Equals')
         if attributes:
             process_object.custom_properties = self._handle_custom_properties(attributes)
-        observable = self._create_observable(process_object, misp_object.uuid, 'Process')
+        observable = self._create_observable(process_object, misp_object['uuid'], 'Process')
         return observable
 
-    def _parse_registry_key_object(self, misp_object: MISPObject) -> Observable:
-        attributes = self._extract_object_attributes(misp_object.attributes)
+    def _parse_registry_key_object(self, misp_object: dict) -> Observable:
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
         registry_object = self._create_registry_key_object(attributes.pop('key')) if 'key' in attributes else WinRegistryKey()
         if 'hive' in attributes:
             hive = attributes.pop('hive').lstrip('\\').upper()
@@ -1253,7 +1267,7 @@ class MISPtoSTIX1Parser():
             )
         observable = self._create_observable(
             registry_object,
-            misp_object.uuid,
+            misp_object['uuid'],
             'WindowsRegistryKey'
         )
         return observable
@@ -1275,8 +1289,8 @@ class MISPtoSTIX1Parser():
                     self._create_socket_address_object(**args)
                 )
 
-    def _parse_url_object(self, misp_object: MISPObject) -> Observable:
-        attributes = self._extract_object_attributes_with_uuid(misp_object.attributes)
+    def _parse_url_object(self, misp_object: dict) -> Observable:
+        attributes = self._extract_object_attributes_with_uuid(misp_object['Attribute'])
         observables = []
         if 'url' in attributes:
             observables.append(self._create_uri_observable(*attributes['url']))
@@ -1290,14 +1304,14 @@ class MISPtoSTIX1Parser():
             observables.append(self._create_port_observable(*attributes['port']))
         observable_composition = self._create_observable_composition(
             observables,
-            misp_object.name,
-            misp_object.uuid
+            misp_object['name'],
+            misp_object['uuid']
         )
         return observable_composition
 
-    def _parse_user_account_object(self, misp_object: MISPObject) -> Observable:
+    def _parse_user_account_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
-            misp_object.attributes,
+            misp_object['Attribute'],
             force_single=(
                 'account-type', 'created', 'disabled', 'display-name', 'home_dir',
                 'last_login', 'password', 'shell', 'text', 'username'
@@ -1317,16 +1331,16 @@ class MISPtoSTIX1Parser():
             account_object.custom_properties = self._handle_custom_properties(attributes)
         observable = self._create_observable(
             account_object,
-            misp_object.uuid,
+            misp_object['uuid'],
             account_object._XSI_TYPE.split('ObjectType')[0]
         )
         return observable
 
-    def _parse_vulnerability_object(self, misp_object: MISPObject):
+    def _parse_vulnerability_object(self, misp_object: dict):
         ttp = self._create_ttp_from_object(misp_object)
         vulnerability = Vulnerability()
         attributes = self._extract_multiple_object_attributes(
-            misp_object.attributes,
+            misp_object['Attribute'],
             force_single=(
                 'created', 'cvss-score', 'published', 'summary'
             )
@@ -1346,33 +1360,33 @@ class MISPtoSTIX1Parser():
             for reference in attributes.pop('references'):
                 vulnerability.add_reference(reference)
         if misp_object.get('ObjectReference'):
-            references = ((reference.referenced_uuid, reference.relationship_type) for reference in misp_object.references)
-            self._ttp_references[misp_object.uuid] = references
-        exploit_target = ExploitTarget(timestamp=misp_object.timestamp)
-        exploit_target.id_ = f'{self._namespace}:ExploitTarget-{misp_object.uuid}'
+            references = ((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
+            self._ttp_references[misp_object['uuid']] = references
+        exploit_target = ExploitTarget(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
+        exploit_target.id_ = f"{self._namespace}:ExploitTarget-{misp_object['uuid']}"
         exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
         self._handle_ttp_from_object(misp_object, ttp)
 
-    def _parse_weakness_object(self, misp_object: MISPObject):
+    def _parse_weakness_object(self, misp_object: dict):
         ttp = self._create_ttp_from_object(misp_object)
         weakness = Weakness()
-        attributes = self._extract_object_attributes(misp_object.attributes)
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
         for key, feature in stix1_mapping.weakness_object_mapping.items():
             if key in attributes:
                 setattr(weakness, feature, attributes.pop(key))
         if misp_object.get('ObjectReference'):
-            references = ((reference.referenced_uuid, reference.relationship_type) for reference in misp_object.references)
-            self._ttp_references[misp_object.uuid] = references
-        exploit_target = ExploitTarget(timestamp=misp_object.timestamp)
-        exploit_target.id_ = f'{self._namespace}:ExploitTarget-{misp_object.uuid}'
+            references = ((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
+            self._ttp_references[misp_object['uuid']] = references
+        exploit_target = ExploitTarget(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
+        exploit_target.id_ = f"{self._namespace}:ExploitTarget-{misp_object['uuid']}"
         exploit_target.add_weakness(weakness)
         ttp.add_exploit_target(exploit_target)
         self._handle_ttp_from_object(misp_object, ttp)
 
-    def _parse_whois_object(self, misp_object: MISPObject) -> Observable:
+    def _parse_whois_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
-            misp_object.attributes,
+            misp_object['Attribute'],
             force_single=(
                 'comment', 'creation-date', 'expiration-date', 'modification-date',
                 'registrant-email', 'registrant-name', 'registrant-org',
@@ -1414,20 +1428,20 @@ class MISPtoSTIX1Parser():
             whois_object.remarks = attributes.pop('text')
         if attributes:
             whois_object.custom_properties = self._handle_custom_properties(attributes)
-        observable = self._create_observable(whois_object, misp_object.uuid, 'Whois')
+        observable = self._create_observable(whois_object, misp_object['uuid'], 'Whois')
         return observable
 
-    def _parse_x509_object(self, misp_object: MISPObject) -> Observable:
+    def _parse_x509_object(self, misp_object: dict) -> Observable:
         single_attributes = tuple(stix1_mapping.x509_creation_mapping.keys())
         attributes = defaultdict(list)
         content = defaultdict(bool)
-        for attribute in misp_object.attributes:
-            relation = attribute.object_relation
+        for attribute in misp_object['Attribute']:
+            relation = attribute['object_relation']
             if relation in single_attributes:
-                attributes[relation] = attribute.value
+                attributes[relation] = attribute['value']
                 content[stix1_mapping.x509_creation_mapping[relation]] = True
             else:
-                attributes[relation].append(attribute.value)
+                attributes[relation].append(attribute['value'])
         x509_object = X509Certificate()
         if any(content[feature] for feature in ('certificate', 'validity', 'pubkey')):
             x509_cert = X509Cert()
@@ -1484,20 +1498,20 @@ class MISPtoSTIX1Parser():
             x509_object.certificate_signature = signature
         if attributes:
             x509_object.custom_properties = self._handle_custom_properties(attributes)
-        observable = self._create_observable(x509_object, misp_object.uuid, 'X509Certificate')
+        observable = self._create_observable(x509_object, misp_object['uuid'], 'X509Certificate')
         return observable
 
     def _resolve_files_to_parse(self):
         for uuid, misp_object in self._objects_to_parse.pop('file').items():
             try:
-                to_ids = self._fetch_ids_flags(misp_object.attributes)
+                to_ids = self._fetch_ids_flags(misp_object['Attribute'])
                 observable = self._parse_file_with_pe_object(misp_object)
                 if to_ids:
                     self._handle_misp_object_with_context(misp_object, observable)
                 else:
                     self._handle_misp_object(observable, misp_object.get('meta-category'))
             except Exception:
-                self._errors.append(f'Error with the {misp_object.name} object: {misp_object.uuid}.')
+                self._errors.append(f"Error with the {misp_object['name']} object: {misp_object['uuid']}.")
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
@@ -1736,7 +1750,7 @@ class MISPtoSTIX1Parser():
         return observable
 
     def _create_artifact_object(self, data: BytesIO) -> Artifact:
-        raw_artifact = RawArtifact(self._get_b64encoded(data))
+        raw_artifact = RawArtifact(data)
         artifact = Artifact()
         artifact.raw_artifact = raw_artifact
         artifact.raw_artifact.condition = "Equals"
@@ -1814,29 +1828,32 @@ class MISPtoSTIX1Parser():
         observable = self._create_observable(hostname_object, uuid, 'Hostname')
         return observable
 
-    def _create_indicator_from_attribute(self, attribute: MISPAttribute) -> Indicator:
-        indicator = Indicator(timestamp=attribute.timestamp)
-        indicator.id_ = f"{self._namespace}:Indicator-{attribute.uuid}"
+    def _create_indicator_from_attribute(self, attribute: dict) -> Indicator:
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        indicator = Indicator(timestamp=timestamp)
+        indicator.id_ = f"{self._namespace}:Indicator-{attribute['uuid']}"
         indicator.producer = self._set_producer()
-        indicator.title = f"{attribute.category}: {attribute.value} (MISP Attribute)"
-        indicator.description = attribute.comment if attribute.get('comment') else indicator.title
+        indicator.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
+        indicator.description = attribute['comment'] if attribute.get('comment') else indicator.title
         indicator.confidence = Confidence(
             value=stix1_mapping.confidence_value,
             description=stix1_mapping.confidence_description,
-            timestamp=attribute.timestamp
+            timestamp=timestamp
         )
         return indicator
 
-    def _create_indicator_from_object(self, misp_object: MISPObject) -> Indicator:
-        indicator = Indicator(timestamp=misp_object.timestamp)
-        indicator.id_ = f"{self._namespace}:Indicator-{misp_object.uuid}"
+    def _create_indicator_from_object(self, misp_object: dict) -> Indicator:
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        indicator = Indicator(timestamp=timestamp)
+        indicator.id_ = f"{self._namespace}:Indicator-{misp_object['uuid']}"
         indicator.producer = self._set_producer()
-        indicator.title = f"{misp_object.get('meta-category')}: {misp_object.name} (MISP Object)"
-        indicator.description = misp_object.comment if misp_object.get('comment') else misp_object.description
+        indicator.title = f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
+        if any(misp_object.get(feature) for feature in ('comment', 'description')):
+            indicator.description = misp_object['comment'] if misp_object.get('comment') else misp_object['description']
         indicator.confidence = Confidence(
             value=stix1_mapping.confidence_value,
             description=stix1_mapping.confidence_description,
-            timestamp=misp_object.timestamp
+            timestamp=timestamp
         )
         return indicator
 
@@ -1952,13 +1969,13 @@ class MISPtoSTIX1Parser():
                 threat_actor.add_intended_effect(intended_effect)
         return threat_actor
 
-    def _create_ttp(self, attribute: MISPAttribute) -> TTP:
-        ttp = TTP(timestamp=attribute.timestamp)
-        ttp.id_ = f"{self._namespace}:TTP-{attribute.uuid}"
-        if attribute.tags:
-            tags = tuple(tag.name for tag in attribute.tags)
+    def _create_ttp(self, attribute: dict) -> TTP:
+        ttp = TTP(timestamp=self._datetime_from_timestamp(attribute['timestamp']))
+        ttp.id_ = f"{self._namespace}:TTP-{attribute['uuid']}"
+        if attribute.get('Tag'):
+            tags = tuple(tag['name'] for tag in attribute['Tag'])
             ttp.handling = self._set_handling(tags)
-        ttp.title = f"{attribute.category}: {attribute.value} (MISP Attribute)"
+        ttp.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
         return ttp
 
     def _create_ttp_from_galaxy(self, galaxy_name: str, uuid: str) -> TTP:
@@ -1967,10 +1984,10 @@ class MISPtoSTIX1Parser():
         ttp.title = f'{galaxy_name} (MISP Galaxy)'
         return ttp
 
-    def _create_ttp_from_object(self, misp_object: MISPObject) -> TTP:
-        ttp = TTP(timestamp=misp_object.timestamp)
-        ttp.id_ = f'{self._namespace}:TTP-{misp_object.uuid}'
-        ttp.title = f"{misp_object['meta-category']}: {misp_object.name} (MISP Object)"
+    def _create_ttp_from_object(self, misp_object: dict) -> TTP:
+        ttp = TTP(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
+        ttp.id_ = f"{self._namespace}:TTP-{misp_object['uuid']}"
+        ttp.title = f"{misp_object['meta-category']}: {misp_object['name']} (MISP Object)"
         return ttp
 
     @staticmethod
@@ -2039,8 +2056,8 @@ class MISPtoSTIX1Parser():
         return color_value
 
     def _set_creator(self) -> str:
-        if hasattr(self._misp_event, 'orgc'):
-            return self._misp_event.orgc.name
+        if self._misp_event.get('Orgc'):
+            return self._misp_event['Orgc']['name']
         return self._orgname
 
     @staticmethod
@@ -2092,7 +2109,7 @@ class MISPtoSTIX1Parser():
         return information_source
 
     def _set_reporter(self) -> Identity:
-        reporter = self._misp_event.org.name if hasattr(self._misp_event, 'org') else self._orgname
+        reporter = self._misp_event['Org']['name'] if self._misp_event.get('Org') else self._orgname
         identity = Identity(name=reporter)
         return self._create_information_source(identity)
 
@@ -2114,8 +2131,8 @@ class MISPtoSTIX1Parser():
     ################################################################################
 
     @staticmethod
-    def _get_b64encoded(data: BytesIO) -> str:
-        return b64encode(data.getvalue()).decode()
+    def _datetime_from_timestamp(timestamp):
+        return datetime.utcfromtimestamp(int(timestamp))
 
     @staticmethod
     def _from_datetime_to_str(date):
