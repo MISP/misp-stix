@@ -14,7 +14,7 @@ def misp_to_stix(filename, return_format, version, namespace=_default_namespace,
     export_parser = Stix1ExportParser(return_format, namespace, org)
     export_parser.load_file(filename)
     export_parser.generate_stix1_package(version)
-    to_call, args= export_parser.format_to_package()
+    to_call, args = export_parser.format_to_package()
     with open(f'{filename}.out', 'wb') as f:
         f.write(getattr(export_parser.stix_package, to_call)(**args))
     return 1
