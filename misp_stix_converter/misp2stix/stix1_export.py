@@ -3,6 +3,7 @@
 
 from mixbox import idgen
 from mixbox.namespaces import Namespace
+from stix.core import STIXPackage
 from .exportparser import ExportParser
 from .framing import stix_framing
 from .misp_to_stix1 import MISPtoSTIX1Parser
@@ -24,10 +25,10 @@ class Stix1ExportParser(ExportParser):
 
     def generate_stix1_package(self, version):
         if self.json_event.get('response'):
+            self._stix_package = STIXPackage()
             for event in self.json_event['response']:
-                self._stix_package = STIXPackage()
                 package_generator = MISPtoSTIX1Parser(self._namespace, self._orgname)
-                package_generator.parse_misp_event(self.load(event), version)
+                package_generator.parse_misp_event(event, version)
                 self._stix_package.add_related_package(package_generator.stix_package)
         else:
             package_generator = MISPtoSTIX1Parser(self._namespace, self._orgname)
