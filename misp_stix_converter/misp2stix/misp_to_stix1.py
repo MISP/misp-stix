@@ -715,7 +715,6 @@ class MISPtoSTIX1Parser():
         for attribute in misp_object['Attribute']:
             if attribute.get('Galaxy'):
                 for galaxy in attribute['Galaxy']:
-                    print(galaxy)
                     galaxy_type = galaxy['type']
                     if galaxy_type not in stix1_mapping.galaxy_types_mapping:
                         self._warnings.add(f"{galaxy_type} galaxy in {misp_object['name']} object not mapped.")
