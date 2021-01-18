@@ -10,7 +10,7 @@ from datetime import date, datetime
 
 _BASE_EVENT = {
     "Event": {
-        "uuid": "91b18402-618a-4818-8432-4ab41ec8b890",
+        "uuid": "a6ef17d6-91cb-4a05-b10b-2f045daf874c",
         "info": "MISP-STIX-Converter test event",
         "date": date.today().strftime("%Y-%m-%d"),
         "timestamp": str(int(datetime.now().timestamp())),
@@ -383,56 +383,67 @@ _TEST_EMAIL_OBJECT = {
     "timestamp": str(int(datetime.now().timestamp())),
     "Attribute": [
         {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "email-src",
             "object_relation": "from",
             "value": "source@email.test"
         },
         {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
             "type": "email-dst",
             "object_relation": "to",
             "value": "destination@email.test"
         },
         {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
             "type": "email-dst",
             "object_relation": "cc",
             "value": "cc1@email.test"
         },
         {
+            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
             "type": "email-dst",
             "object_relation": "cc",
             "value": "cc2@email.test"
         },
         {
+            "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
             "type": "email-reply-to",
             "object_relation": "reply-to",
             "value": "reply-to@email.test"
         },
         {
+            "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
             "type": "email-subject",
             "object_relation": "subject",
             "value": "Email test subject"
         },
         {
+            "uuid": "2007ec09-8137-4a71-a3ce-6ef967bebacf",
             "type": "email-attachment",
             "object_relation": "attachment",
             "value": "attachment1.file"
         },
         {
+            "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
             "type": "email-attachment",
             "object_relation": "attachment",
             "value": "attachment2.file"
         },
         {
+            "uuid": "ae3206e4-024c-4988-8455-4aea83971dea",
             "type": "email-x-mailer",
             "object_relation": "x-mailer",
             "value": "x-mailer-test"
         },
         {
+            "uuid": "f2fc14de-8d32-4164-bf20-e48ca285ccb2",
             "type": "text",
             "object_relation": "user-agent",
             "value": "Test user agent"
         },
         {
+            "uuid": "0d8b91cf-bead-42df-aa6a-a21b98f8c6f7",
             "type": "email-mime-boundary",
             "object_relation": "mime-boundary",
             "value": "Test mime boundary"
@@ -1332,7 +1343,8 @@ _INDICATOR_ATTRIBUTE = {
     "category": "Network activity",
     "value": "circl.lu",
     "timestamp": str(int(datetime.now().timestamp())),
-    "comment": "Domain test attribute"
+    "comment": "Domain test attribute",
+    "to_ids": True
 }
 
 _NON_INDICATOR_ATTRIBUTE = {
@@ -1425,7 +1437,8 @@ def get_event_with_custom_attributes():
             "category": "Financial fraud",
             "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Btc test attribute"
+            "comment": "Btc test attribute",
+            "to_ids": True
         },
         {
             "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
@@ -1433,7 +1446,8 @@ def get_event_with_custom_attributes():
             "category": "Financial fraud",
             "value": "LU1234567890ABCDEF1234567890",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "IBAN test attribute"
+            "comment": "IBAN test attribute",
+            "to_ids": True
         },
         {
             "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
@@ -1468,7 +1482,8 @@ def get_event_with_domain_ip_attribute():
             "category": "Network activity",
             "value": "circl.lu|149.13.33.14",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Domain|ip test attribute"
+            "comment": "Domain|ip test attribute",
+            "to_ids": True
         }
     ]
     return event
@@ -1483,7 +1498,8 @@ def get_event_with_email_attachment_attribute():
             "category": "Payload delivery",
             "value": "email_attachment.test",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Email attachment test attribute"
+            "comment": "Email attachment test attribute",
+            "to_ids": True
         }
     ]
     return event
@@ -1498,7 +1514,8 @@ def get_event_with_email_attributes():
             "category": "Payload delivery",
             "value": "src@email.test",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Source email address test attribute"
+            "comment": "Source email address test attribute",
+            "to_ids": True
         },
         {
             "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
@@ -1506,7 +1523,8 @@ def get_event_with_email_attributes():
             "category": "Payload delivery",
             "value": "dst@email.test",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Destination email address test attribute"
+            "comment": "Destination email address test attribute",
+            "to_ids": True
         },
         {
             "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
@@ -1533,7 +1551,8 @@ def get_event_with_filename_attribute():
             "category": "Payload delivery",
             "value": "test_file_name",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Filename test attribute"
+            "comment": "Filename test attribute",
+            "to_ids": True
         }
     ]
     return event
@@ -1548,7 +1567,8 @@ def get_event_with_hash_attributes():
             "category": "Payload delivery",
             "value": "b2a5abfeef9e36964281a31e17b57c97",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "MD5 test attribute"
+            "comment": "MD5 test attribute",
+            "to_ids": True
         },
         {
             "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
@@ -1556,7 +1576,8 @@ def get_event_with_hash_attributes():
             "category": "Payload delivery",
             "value": "1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "TLSH test attribute"
+            "comment": "TLSH test attribute",
+            "to_ids": True
         }
     ]
     return event
@@ -1571,7 +1592,8 @@ def get_event_with_hash_composite_attributes():
             "category": "Payload delivery",
             "value": "test_file_name|b2a5abfeef9e36964281a31e17b57c97",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Filename|md5 test attribute"
+            "comment": "Filename|md5 test attribute",
+            "to_ids": True
         },
         {
             "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
@@ -1579,7 +1601,8 @@ def get_event_with_hash_composite_attributes():
             "category": "Payload delivery",
             "value": "test_file_name|1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Filename|tlsh test attribute"
+            "comment": "Filename|tlsh test attribute",
+            "to_ids": True
         }
     ]
     return event
@@ -1594,7 +1617,8 @@ def get_event_with_hostname_attribute():
             "category": "Network activity",
             "value": "circl.lu",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Hostname test attribute"
+            "comment": "Hostname test attribute",
+            "to_ids": True
         }
     ]
     return event
@@ -1609,7 +1633,8 @@ def get_event_with_hostname_port_attribute():
             "category": "Network activity",
             "value": "circl.lu|8443",
             "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Hostname|port test attribute"
+            "comment": "Hostname|port test attribute",
+            "to_ids": True
         }
     ]
     return event
@@ -1644,6 +1669,7 @@ def get_event_with_ip_attributes():
             "type": "ip-src",
             "category": "Network activity",
             "value": "1.2.3.4",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "Source IP test attribute"
         },
@@ -1652,6 +1678,7 @@ def get_event_with_ip_attributes():
             "type": "ip-dst",
             "category": "Network activity",
             "value": "5.6.7.8",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "Destination IP test attribute"
         }
@@ -1667,6 +1694,7 @@ def get_event_with_ip_port_attributes():
             "type": "ip-src|port",
             "category": "Network activity",
             "value": "1.2.3.4|1234",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "Source IP | Port test attribute"
         },
@@ -1675,6 +1703,7 @@ def get_event_with_ip_port_attributes():
             "type": "ip-dst|port",
             "category": "Network activity",
             "value": "5.6.7.8|5678",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "Destination IP | Port test attribute"
         }
@@ -1704,6 +1733,7 @@ def get_event_with_malware_sample_attribute():
             "category": "Payload delivery",
             "value": "oui|8764605c6f388c89096b534d33565802",
             "data": "UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "Malware Sample test attribute"
         }
@@ -1719,6 +1749,7 @@ def get_event_with_mutex_attribute():
             "type": "mutex",
             "category": "Artifacts dropped",
             "value": "MutexTest",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "Mutex test attribute"
         }
@@ -1747,6 +1778,7 @@ def get_event_with_pattern_attribute():
             "type": "pattern-in-file",
             "category": "Artifacts dropped",
             "value": "P4tt3rn_1n_f1l3_t3st",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "Named pipe test attribute"
         }
@@ -1775,6 +1807,7 @@ def get_event_with_regkey_attribute():
             "type": "regkey",
             "category": "Persistence mechanism",
             "value": "HKLM\Software\mthjk",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "Regkey test attribute"
         }
@@ -1790,6 +1823,7 @@ def get_event_with_regkey_value_attribute():
             "type": "regkey|value",
             "category": "Persistence mechanism",
             "value": "HKLM\Software\mthjk|1234567890",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "Regkey | value test attribute"
         }
@@ -1848,6 +1882,7 @@ def get_event_with_test_mechanism_attributes():
             "type": "snort",
             "category": "Network activity",
             "value": 'alert tcp any any -> any any (msg:"oui")',
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "Snort test attribute"
         },
@@ -1856,6 +1891,7 @@ def get_event_with_test_mechanism_attributes():
             "type": "yara",
             "category": "Payload installation",
             "value": 'import "pe" rule single_section{condition:pe.number_of_sections == 1}',
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "Yara test attribute"
         }
@@ -1891,6 +1927,7 @@ def get_event_with_url_attribute():
             "type": "url",
             "category": "Network activity",
             "value": "https://misp-project.org/download/",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "URL test attribute"
         }
@@ -1948,6 +1985,7 @@ def get_event_with_x509_fingerprint_attributes():
             "type": "x509-fingerprint-md5",
             "category": "Payload delivery",
             "value": "8764605c6f388c89096b534d33565802",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "X509 MD5 fingerprint test attribute"
         },
@@ -1956,6 +1994,7 @@ def get_event_with_x509_fingerprint_attributes():
             "type": "x509-fingerprint-sha1",
             "category": "Payload delivery",
             "value": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "X509 SHA1 fingerprint test attribute"
         },
@@ -1964,6 +2003,7 @@ def get_event_with_x509_fingerprint_attributes():
             "type": "x509-fingerprint-sha256",
             "category": "Payload delivery",
             "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+            "to_ids": True,
             "timestamp": str(int(datetime.now().timestamp())),
             "comment": "X509 SHA256 fingerprint test attribute"
         }

@@ -76,7 +76,10 @@ class TestStix1Export(unittest.TestCase):
     def _check_coa_taken(self, coa_taken, uuid, timestamp=None):
         self.assertEqual(coa_taken.course_of_action.idref, f'{_DEFAULT_NAMESPACE}:CourseOfAction-{uuid}')
         if timestamp is not None:
-            self.assertEqual(coa_taken.course_of_action.timestamp, datetime.fromtimestamp(int(timestamp), timezone.utc))
+            self.assertEqual(
+                coa_taken.course_of_action.timestamp,
+                datetime.utcfromtimestamp(int(timestamp))
+            )
 
     def _check_course_of_action_fields(self, course_of_action, misp_object):
         self.assertEqual(course_of_action.id_, f"{_DEFAULT_NAMESPACE}:CourseOfAction-{misp_object['uuid']}")
@@ -225,7 +228,10 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(indicator.id_, f"{_DEFAULT_NAMESPACE}:Indicator-{attribute['uuid']}")
         self.assertEqual(indicator.title, f"{attribute['category']}: {attribute['value']} (MISP Attribute)")
         self.assertEqual(indicator.description.value, attribute['comment'])
-        self.assertEqual(int(indicator.timestamp.timestamp()), int(attribute['timestamp']))
+        self.assertEqual(
+            self._get_utc_timestamp(indicator.timestamp),
+            int(attribute['timestamp'])
+        )
         self.assertEqual(indicator.producer.identity.name, orgc)
         return indicator
 
@@ -235,7 +241,10 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(indicator.id_, f"{_DEFAULT_NAMESPACE}:Indicator-{misp_object['uuid']}")
         self.assertEqual(indicator.title, f"{misp_object['meta-category']}: {misp_object['name']} (MISP Object)")
         self.assertEqual(indicator.description.value, misp_object['description'])
-        self.assertEqual(int(indicator.timestamp.timestamp()), int(misp_object['timestamp']))
+        self.assertEqual(
+            self._get_utc_timestamp(indicator.timestamp),
+            int(misp_object['timestamp'])
+        )
         self.assertEqual(indicator.producer.identity.name, orgc)
         return indicator
 
@@ -324,7 +333,10 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(related_ttp.relationship.value, galaxy_name)
         self.assertEqual(related_ttp.item.idref, f"{_DEFAULT_NAMESPACE}:{object_type}-{cluster_uuid}")
         if timestamp is not None:
-            self.assertEqual(related_ttp.item.timestamp, datetime.fromtimestamp(int(timestamp), timezone.utc))
+            self.assertEqual(
+                related_ttp.item.timestamp,
+                datetime.utcfromtimestamp(int(timestamp))
+            )
 
     def _check_source_address(self, properties, category='ipv4-addr'):
         self.assertEqual(properties.category, category)
@@ -436,9 +448,9 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(registrant.organization.value, org['value'])
         self.assertEqual(registrant.name.value, name['value'])
         self.assertEqual(registrant.phone_number.value, phone['value'])
-        self.assertEqual(properties.creation_date.value, datetime.strptime(creation['value'], '%Y-%m-%dT%H:%M:%S'))
-        self.assertEqual(properties.updated_date.value, datetime.strptime(modification['value'], '%Y-%m-%dT%H:%M:%S'))
-        self.assertEqual(properties.expiration_date.value, datetime.strptime(expiration['value'], '%Y-%m-%dT%H:%M:%S'))
+        self.assertEqual(properties.creation_date.value, datetime.strptime(creation['value'], '%Y-%m-%dT%H:%M:%S').date())
+        self.assertEqual(properties.updated_date.value, datetime.strptime(modification['value'], '%Y-%m-%dT%H:%M:%S').date())
+        self.assertEqual(properties.expiration_date.value, datetime.strptime(expiration['value'], '%Y-%m-%dT%H:%M:%S').date())
         self.assertEqual(properties.domain_name.value.value, domain['value'])
         nameservers = properties.nameservers
         self.assertEqual(len(nameservers), 1)
@@ -478,6 +490,10 @@ class TestStix1Export(unittest.TestCase):
         return stix_object.to_xml(include_namespaces=False).decode().replace('"', '\"').encode()
 
     @staticmethod
+    def _get_utc_timestamp(dtime):
+        return int(dtime.replace(tzinfo=timezone.utc).timestamp())
+
+    @staticmethod
     def _remove_ids_flags(event):
         for misp_object in event['Event']['Object']:
             for attribute in misp_object['Attribute']:
@@ -490,12 +506,14 @@ class TestStix1Export(unittest.TestCase):
     def test_base_event(self):
         event = get_base_event()
         uuid = event['Event']['uuid']
-        timestamp = int(event['Event']['timestamp'])
         info = event['Event']['info']
         self.parser.parse_misp_event(event, '1.1.1')
         stix_package = self.parser.stix_package
         self.assertEqual(stix_package.id_, f"{_DEFAULT_NAMESPACE}:STIXPackage-{uuid}")
-        self.assertEqual(int(stix_package.timestamp.timestamp()), timestamp)
+        self.assertEqual(
+            self._get_utc_timestamp(stix_package.timestamp),
+            int(event['Event']['timestamp'])
+        )
         self.assertEqual(stix_package.version, '1.1.1')
         self.assertEqual(stix_package.stix_header.title, f'Export from {_DEFAULT_NAMESPACE} MISP')
         incident = stix_package.incidents[0]
@@ -506,14 +524,20 @@ class TestStix1Export(unittest.TestCase):
 
     def test_published_event(self):
         event = get_published_event()
-        timestamp = int(event['Event']['timestamp'])
-        publish_timestamp = int(event['Event']['publish_timestamp'])
-        date = event['Event']['date']
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
-        self.assertEqual(int(incident.timestamp.timestamp()), timestamp)
-        self.assertEqual(incident.time.incident_discovery.value.strftime("%Y-%m-%d"), date)
-        self.assertEqual(int(incident.time.incident_reported.value.timestamp()), publish_timestamp)
+        self.assertEqual(
+            self._get_utc_timestamp(incident.timestamp),
+            int(event['Event']['timestamp'])
+        )
+        self.assertEqual(
+            incident.time.incident_discovery.value.strftime("%Y-%m-%d"),
+            event['Event']['date']
+        )
+        self.assertEqual(
+            self._get_utc_timestamp(incident.time.incident_reported.value),
+            int(event['Event']['publish_timestamp'])
+        )
 
     def test_event_with_tags(self):
         event = get_event_with_tags()
