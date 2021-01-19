@@ -121,7 +121,17 @@ class MISPtoSTIX1Parser():
             self._stix_package.add_course_of_action(course_of_action)
         for threat_actor in self._threat_actors.values():
             self._stix_package.add_threat_actor(threat_actor)
-        for ttp in self._ttps.values():
+        for uuid, ttp in self._ttps.items():
+            if uuid in self._ttp_references:
+                for referenced_uuid, relationship in self._ttp_references[uuid]:
+                    if referenced_uuid in self._ttps:
+                        referenced_ttp = self._ttps[referenced_uuid]
+                        related_ttp = self._create_related_ttp(
+                            referenced_ttp.id_,
+                            relationship,
+                            timestamp=referenced_ttp.timestamp
+                        )
+                        ttp.add_related_ttp(related_ttp)
             self._stix_package.add_ttp(ttp)
         self._stix_package.add_incident(self._incident)
         stix_header = STIXHeader()
@@ -839,7 +849,7 @@ class MISPtoSTIX1Parser():
         if attack_pattern.capec_id and not attack_pattern.capec_id.startswith('CAPEC'):
             attack_pattern.capec_id = f'CAPEC-{attack_pattern.capec_id}'
         if misp_object.get('ObjectReference'):
-            references = ((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
+            references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
         behavior = Behavior()
         behavior.add_attack_pattern(attack_pattern)
@@ -1359,7 +1369,7 @@ class MISPtoSTIX1Parser():
             for reference in attributes.pop('references'):
                 vulnerability.add_reference(reference)
         if misp_object.get('ObjectReference'):
-            references = ((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
+            references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
         exploit_target = ExploitTarget(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
         exploit_target.id_ = f"{self._namespace}:ExploitTarget-{misp_object['uuid']}"
@@ -1375,7 +1385,7 @@ class MISPtoSTIX1Parser():
             if key in attributes:
                 setattr(weakness, feature, attributes.pop(key))
         if misp_object.get('ObjectReference'):
-            references = ((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
+            references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
         exploit_target = ExploitTarget(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
         exploit_target.id_ = f"{self._namespace}:ExploitTarget-{misp_object['uuid']}"
