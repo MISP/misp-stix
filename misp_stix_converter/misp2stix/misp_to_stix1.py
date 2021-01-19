@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import socket
 from . import stix1_mapping
@@ -647,7 +647,7 @@ class MISPtoSTIX1Parser():
         return False
 
     def _check_reference(self, reference: dict, relationship_types: tuple, object_name: str) -> bool:
-        if  self._check_references_fields(reference, relationship_types, object_name):
+        if self._check_references_fields(reference, relationship_types, object_name):
             if reference['referenced_uuid'] not in self._objects_to_parse[object_name]:
                 self._warnings.add(f"Reference to a non existing {object_name} object: {reference['referenced_uuid']}")
                 return False
