@@ -1740,6 +1740,19 @@ class TestStix1Export(unittest.TestCase):
         windows_properties = self._check_observable_features(windows_observable.item, windows, 'WindowsUserAccount')
         self._check_windows_user_account_properties(windows_properties, windows['Attribute'])
 
+    def test_event_with_vulnerability_and_weakness_related_object(self):
+        event = get_event_with_vulnerability_and_weakness_objects()
+        vulnerability, weakness = deepcopy(event['Event']['Object'])
+        self.parser.parse_misp_event(event, '1.1.1')
+        stix_package = self.parser.stix_package
+        vulnerability_ttp, weakness_ttp = self._check_ttp_length(stix_package, 2)
+        self._check_related_object(
+            vulnerability_ttp.related_ttps[0],
+            'weakened-by',
+            weakness['uuid'],
+            timestamp=weakness['timestamp']
+        )
+
     def test_event_with_vulnerability_object(self):
         event = get_event_with_vulnerability_object()
         misp_object = deepcopy(event['Event']['Object'][0])

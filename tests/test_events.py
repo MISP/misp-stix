@@ -2252,6 +2252,23 @@ def get_event_with_user_account_objects():
     return event
 
 
+def get_event_with_vulnerability_and_weakness_objects():
+    event = deepcopy(_BASE_EVENT)
+    weakness = deepcopy(_TEST_WEAKNESS_OBJECT)
+    vulnerability = deepcopy(_TEST_VULNERABILITY_OBJECT)
+    vulnerability['ObjectReference'] = [
+        {
+            "referenced_uuid": weakness['uuid'],
+            "relationship_type": "weakened-by"
+        }
+    ]
+    event['Event']['Object'] = [
+        vulnerability,
+        weakness
+    ]
+    return event
+
+
 def get_event_with_vulnerability_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
