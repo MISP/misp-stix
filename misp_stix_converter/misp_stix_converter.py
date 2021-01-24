@@ -8,16 +8,18 @@ _default_namespace = 'https://github.com/MISP/MISP'
 _default_org = 'MISP'
 
 
-def misp_to_stix(filename, return_format, version, namespace=_default_namespace, org=_default_org):
+def misp_to_stix(filename, return_format, version, include_namespaces = False, namespace=_default_namespace, org=_default_org):
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
-    export_parser = Stix1ExportParser(return_format, namespace, org)
+    export_parser = Stix1ExportParser(return_format, namespace, org, include_namespaces)
     export_parser.load_file(filename)
     export_parser.generate_stix1_package(version)
-    to_call, args = export_parser.format_to_package()
-    with open(f'{filename}.out', 'wb') as f:
-        f.write(getattr(export_parser.stix_package, to_call)(**args))
-    return 1
+    if include_namespaces:
+        args = (export_parser.decoded_package, filename, return_format)
+        return _write_raw_stix(*args)
+    if return_format == 'xml':
+        return _stix_to_xml(export_parser.stix_package, export_parser.xml_args, filename)
+    return _stix_to_json(export_parser.decoded_package, filename)
 
 
 def misp_to_stix2():
@@ -74,6 +76,26 @@ def _load_stix_event(filename, tries=0):
     return 0
 
 
+def _stix_to_json(stix_package, filename):
+    stix_package = stix_package['related_packages']['related_packages'] if stix_package.get('related_packages') else [{'package': package}]
+    with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+        f.write(json.dumps(stix_package))
+    return 1
+
+
+def _stix_to_xml(stix_package, xml_args, filename):
+    if stix_package.related_packages is not None:
+        with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+            f.write(_write_indented_package(_write_decoded_packages(
+                stix_package.related_packages.related_package,
+                xml_args
+            )))
+        return 1
+    with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+        f.write(_write_single_package(stix_package, xml_args))
+    return 1
+
+
 def _update_namespaces():
     from mixbox.namespaces import Namespace, register_namespace
     # LIST OF ADDITIONAL NAMESPACES
@@ -86,3 +108,29 @@ def _update_namespaces():
     ]
     for namespace in ADDITIONAL_NAMESPACES:
         register_namespace(namespace)
+
+
+def _write_decoded_packages(packages, args):
+    return (f'            {package.to_xml(**args).decode()}' for package in packages)
+
+
+def _write_indented_package(packages):
+    separator = '\n            '
+    package = '\n'.join(f'{separator}'.join(package.split('\n')[:-1]) for package in packages)
+    return f'{package}\n'
+
+
+def _write_single_package(package, args):
+    package = package.to_xml(**args).decode().replace('stix:STIX_Package', 'stix:Package')
+    package = '\n            '.join(package.split('\n')[:-1])
+    return f'            {package}\n'
+
+
+def _write_raw_stix(decoded, filename, return_format):
+    if return_format == 'xml':
+        with open(f'{filename}.out', 'wb') as f:
+            f.write(decoded)
+    else:
+        with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+            f.write(json.dumps(decoded))
+    return 1
