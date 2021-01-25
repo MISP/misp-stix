@@ -1917,7 +1917,7 @@ class TestStix1Export(unittest.TestCase):
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         exploit_target = ttp.exploit_targets.exploit_target[0].item
-        self.assertEqual(exploit_target.id_, f"{_DEFAULT_NAMESPACE}:ExploitTarget-{cluster['uuid']}")
+        self.assertEqual(exploit_target.id_, f"{_DEFAULT_ORGNAME}:ExploitTarget-{cluster['uuid']}")
         vulnerability = exploit_target.vulnerabilities[0]
         self._check_embedded_features(vulnerability, cluster, 'Vulnerability')
         self.assertEqual(vulnerability.cve_id, cluster['meta']['aliases'][0])
