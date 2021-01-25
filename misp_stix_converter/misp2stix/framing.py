@@ -3,6 +3,10 @@
 
 import datetime
 import json
+import re
+from mixbox import idgen
+from mixbox.namespaces import Namespace
+from stix.core import STIXHeader, STIXPackage
 from .stix1_mapping import NS_DICT, SCHEMALOC_DICT
 
 json_footer = ']}\n'
@@ -14,9 +18,9 @@ def stix_framing(namespace, orgname, return_format):
     namespaces = {namespace: orgname}
     namespaces.update(NS_DICT)
     try:
-        idgen.set_id_namespace(Namespace(baseurl, orgname))
+        idgen.set_id_namespace(Namespace(namespace, orgname))
     except TypeError:
-        idgen.set_id_namespace(Namespace(baseurl, orgname, "MISP"))
+        idgen.set_id_namespace(Namespace(namespace, orgname, "MISP"))
     stix_package = STIXPackage()
     stix_header = STIXHeader()
     stix_header.title = f'Export from {real_orgname} MISP'
@@ -36,7 +40,7 @@ def stix20_framing(uuid):
 
 def _stix_json_framing(stix_package):
     header = stix_package.to_json()[:-1]
-    header = f'{header}, "related_packages": ['
+    header = f'{header}, "related_packages": '
     return header, ',', json_footer
 
 
@@ -45,7 +49,7 @@ def _stix_xml_framing(stix_package, namespaces, schemaloc):
     s_related = "stix:Related_Package"
     header = stix_package.to_xml(auto_namespace=False, ns_dict=namespaces, schemaloc_dict=schemaloc)
     header = header.decode()
-    header = f"{header}    <{s_related}s>\n        <{header}>\n".replace(s_stix, "")
+    header = f"{header}    <{s_related}s>\n        <{s_related}>\n".replace(s_stix, "")
     footer = f"        </{s_related}>\n    </{s_related}s>\n{s_stix}"
     separator = f"        </{s_related}>\n        <{s_related}>\n"
     return header, separator, footer
