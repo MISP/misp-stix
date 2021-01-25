@@ -28,7 +28,7 @@ class Stix1ExportParser(ExportParser):
             self._stix_package = STIXPackage()
             self._stix_package.version = version
             for event in self.json_event['response']:
-                package_generator = MISPtoSTIX1Parser(self._namespace, self._orgname)
+                package_generator = MISPtoSTIX1Parser(self._orgname)
                 package_generator.parse_misp_event(event, version)
                 self._stix_package.add_related_package(package_generator.stix_package)
         else:

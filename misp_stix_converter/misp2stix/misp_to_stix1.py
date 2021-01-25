@@ -84,8 +84,7 @@ _PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
 
 
 class MISPtoSTIX1Parser():
-    def __init__(self, namespace: str, orgname: str):
-        self._namespace = namespace
+    def __init__(self, orgname: str):
         self._orgname = orgname
         self._errors = []
         self._warnings = set()
@@ -114,9 +113,6 @@ class MISPtoSTIX1Parser():
         if 'ttp' in self._contextualised_data:
             for ttp in self._contextualised_data['ttp'].values():
                 self._incident.add_leveraged_ttps(ttp)
-        # for uuid, ttp in self._ttps.items():
-        #     self.parse_ttp_references(uuid, ttp)
-        #     self._stix_package.add_ttp(ttp)
         for course_of_action in self._courses_of_action.values():
             self._stix_package.add_course_of_action(course_of_action)
         for threat_actor in self._threat_actors.values():
@@ -135,7 +131,7 @@ class MISPtoSTIX1Parser():
             self._stix_package.add_ttp(ttp)
         self._stix_package.add_incident(self._incident)
         stix_header = STIXHeader()
-        stix_header.title = f"Export from {self._namespace} MISP"
+        stix_header.title = f"Export from {self._orgname}'s MISP"
         if self._header_comment and len(self._header_comment) == 1:
             stix_header.description = self._header_comment[0]
         self._stix_package.stix_header = stix_header
@@ -260,7 +256,7 @@ class MISPtoSTIX1Parser():
         ttp = self._create_ttp(attribute)
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         exploit_target = ExploitTarget(timestamp=timestamp)
-        exploit_target.id_ = f"{self._namespace}:ExploitTarget-{attribute_uuid}"
+        exploit_target.id_ = f"{self._orgname}:ExploitTarget-{attribute_uuid}"
         if attribute.get('comment') and attribute['comment'] != "Imported via the freetext import.":
             exploit_target.description = attribute['comment']
         exploit_target.title = f"{stix_type.capitalize()} {attribute['value']}"
@@ -327,7 +323,7 @@ class MISPtoSTIX1Parser():
         )
         composite_object.operator = "AND"
         observable = Observable(
-            id_=f"{self._namespace}:ObservableComposition-{attribute['uuid']}"
+            id_=f"{self._orgname}:ObservableComposition-{attribute['uuid']}"
         )
         observable.observable_composition = composite_object
         self._handle_attribute(attribute, observable)
@@ -336,12 +332,12 @@ class MISPtoSTIX1Parser():
         file_object = File()
         file_object.file_name = attribute['value']
         file_object.file_name.condition = "Equals"
-        file_object.parent.id_ = f"{self._namespace}:File-{attribute['uuid']}"
+        file_object.parent.id_ = f"{self._orgname}:File-{attribute['uuid']}"
         email = EmailMessage()
         email.attachments = Attachments()
         email.attachments.append(file_object.parent.id_)
         email.add_related(file_object, "Contains", inline=True)
-        email.parent.related_objects[0].id_ = f"{self._namespace}:File-{attribute['uuid']}"
+        email.parent.related_objects[0].id_ = f"{self._orgname}:File-{attribute['uuid']}"
         observable = self._create_observable(email, attribute['uuid'], 'EmailMessage')
         self._handle_attribute(attribute, observable)
 
@@ -501,7 +497,7 @@ class MISPtoSTIX1Parser():
     def _parse_target_attribute(self, attribute: dict, identity_spec: STIXCIQIdentity3_0):
         ciq_identity = CIQIdentity3_0Instance()
         ciq_identity.specification = identity_spec
-        ciq_identity.id_ = f"{self._namespace}:Identity-{attribute['uuid']}"
+        ciq_identity.id_ = f"{self._orgname}:Identity-{attribute['uuid']}"
         ciq_identity.name = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
         self._incident.add_victim(ciq_identity)
 
@@ -841,7 +837,7 @@ class MISPtoSTIX1Parser():
     def _parse_attack_pattern_object(self, misp_object: dict):
         ttp = self._create_ttp_from_object(misp_object)
         attack_pattern = AttackPattern()
-        attack_pattern.id_ = f"{self._namespace}:AttackPattern-{misp_object['uuid']}"
+        attack_pattern.id_ = f"{self._orgname}:AttackPattern-{misp_object['uuid']}"
         attributes = self._extract_object_attributes(misp_object['Attribute'])
         for key, feature in stix1_mapping.attack_pattern_object_mapping.items():
             if key in attributes:
@@ -859,7 +855,7 @@ class MISPtoSTIX1Parser():
     def _parse_course_of_action_object(self, misp_object: dict):
         course_of_action = CourseOfAction()
         uuid = misp_object['uuid']
-        course_of_action.id_ = f'{self._namespace}:CourseOfAction-{uuid}'
+        course_of_action.id_ = f'{self._orgname}:CourseOfAction-{uuid}'
         attributes = self._extract_object_attributes(misp_object['Attribute'])
         for key, feature in stix1_mapping.course_of_action_object_mapping.items():
             if key in attributes:
@@ -971,7 +967,7 @@ class MISPtoSTIX1Parser():
             for attachment in attributes.pop('attachment'):
                 filename, uuid = attachment
                 file = self._create_file_object(filename)
-                file.parent.id_ = f"{self._namespace}:FileObject-{uuid}"
+                file.parent.id_ = f"{self._orgname}:FileObject-{uuid}"
                 related_file = RelatedObject(
                     relationship='Contains',
                     inline=True,
@@ -1372,7 +1368,7 @@ class MISPtoSTIX1Parser():
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
         exploit_target = ExploitTarget(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
-        exploit_target.id_ = f"{self._namespace}:ExploitTarget-{misp_object['uuid']}"
+        exploit_target.id_ = f"{self._orgname}:ExploitTarget-{misp_object['uuid']}"
         exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
         self._handle_ttp_from_object(misp_object, ttp)
@@ -1388,7 +1384,7 @@ class MISPtoSTIX1Parser():
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
             self._ttp_references[misp_object['uuid']] = references
         exploit_target = ExploitTarget(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
-        exploit_target.id_ = f"{self._namespace}:ExploitTarget-{misp_object['uuid']}"
+        exploit_target.id_ = f"{self._orgname}:ExploitTarget-{misp_object['uuid']}"
         exploit_target.add_weakness(weakness)
         ttp.add_exploit_target(exploit_target)
         self._handle_ttp_from_object(misp_object, ttp)
@@ -1559,7 +1555,7 @@ class MISPtoSTIX1Parser():
     def _parse_attack_pattern_galaxy(self, cluster: dict, ttp: TTP):
         behavior = Behavior()
         attack_pattern = AttackPattern()
-        attack_pattern.id_ = f"{self._namespace}:AttackPattern-{cluster['uuid']}"
+        attack_pattern.id_ = f"{self._orgname}:AttackPattern-{cluster['uuid']}"
         attack_pattern.title = cluster['value']
         attack_pattern.description = cluster['description']
         if cluster['meta'].get('external_id'):
@@ -1628,7 +1624,7 @@ class MISPtoSTIX1Parser():
     def _parse_malware_galaxy(self, cluster: dict, ttp: TTP):
         behavior = Behavior()
         malware = MalwareInstance()
-        malware.id_ = f"{self._namespace}:MalwareInstance-{cluster['uuid']}"
+        malware.id_ = f"{self._orgname}:MalwareInstance-{cluster['uuid']}"
         malware.title = cluster['value']
         if cluster.get('description'):
             malware.description = cluster['description']
@@ -1674,7 +1670,7 @@ class MISPtoSTIX1Parser():
     def _parse_tool_galaxy(self, cluster: dict, ttp: TTP):
         tools = Tools()
         tool = ToolInformation()
-        tool.id_ = f"{self._namespace}:ToolInformation-{cluster['uuid']}"
+        tool.id_ = f"{self._orgname}:ToolInformation-{cluster['uuid']}"
         tool.name = cluster['value']
         if cluster.get('description'):
             tool.description = cluster['description']
@@ -1699,9 +1695,9 @@ class MISPtoSTIX1Parser():
 
     def _parse_vulnerability_galaxy(self, cluster: dict, ttp: TTP):
         exploit_target = ExploitTarget()
-        exploit_target.id_ = f"{self._namespace}:ExploitTarget-{cluster['uuid']}"
+        exploit_target.id_ = f"{self._orgname}:ExploitTarget-{cluster['uuid']}"
         vulnerability = Vulnerability()
-        vulnerability.id_ = f"{self._namespace}:Vulnerability-{cluster['uuid']}"
+        vulnerability.id_ = f"{self._orgname}:Vulnerability-{cluster['uuid']}"
         vulnerability.title = cluster['value']
         vulnerability.description = cluster['description']
         if cluster['meta'].get('aliases'):
@@ -1801,7 +1797,7 @@ class MISPtoSTIX1Parser():
 
     def _create_course_of_action_from_galaxy(self, cluster: dict) -> CourseOfAction:
         course_of_action = CourseOfAction()
-        course_of_action.id_ = f"{self._namespace}:CourseOfAction-{cluster['uuid']}"
+        course_of_action.id_ = f"{self._orgname}:CourseOfAction-{cluster['uuid']}"
         course_of_action.title = cluster['value']
         course_of_action.description = cluster['description']
         return course_of_action
@@ -1840,7 +1836,7 @@ class MISPtoSTIX1Parser():
     def _create_indicator_from_attribute(self, attribute: dict) -> Indicator:
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         indicator = Indicator(timestamp=timestamp)
-        indicator.id_ = f"{self._namespace}:Indicator-{attribute['uuid']}"
+        indicator.id_ = f"{self._orgname}:Indicator-{attribute['uuid']}"
         indicator.producer = self._set_producer()
         indicator.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
         indicator.description = attribute['comment'] if attribute.get('comment') else indicator.title
@@ -1854,7 +1850,7 @@ class MISPtoSTIX1Parser():
     def _create_indicator_from_object(self, misp_object: dict) -> Indicator:
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         indicator = Indicator(timestamp=timestamp)
-        indicator.id_ = f"{self._namespace}:Indicator-{misp_object['uuid']}"
+        indicator.id_ = f"{self._orgname}:Indicator-{misp_object['uuid']}"
         indicator.producer = self._set_producer()
         indicator.title = f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
         if any(misp_object.get(feature) for feature in ('comment', 'description')):
@@ -1887,15 +1883,15 @@ class MISPtoSTIX1Parser():
         return mutex_object
 
     def _create_observable(self, stix_object: _OBSERVABLE_OBJECT_TYPES, attribute_uuid: str, feature: str) -> Observable:
-        stix_object.parent.id_ = f"{self._namespace}:{feature}-{attribute_uuid}"
+        stix_object.parent.id_ = f"{self._orgname}:{feature}-{attribute_uuid}"
         observable = Observable(stix_object)
-        observable.id_ = f"{self._namespace}:Observable-{attribute_uuid}"
+        observable.id_ = f"{self._orgname}:Observable-{attribute_uuid}"
         return observable
 
     def _create_observable_composition(self, observables: list, name: str, uuid: str) -> Observable:
         observable_composition = ObservableComposition(observables=observables)
         observable_composition.operator = 'AND'
-        observable = Observable(id_=f'{self._namespace}:{name}_ObservableComposition-{uuid}')
+        observable = Observable(id_=f'{self._orgname}:{name}_ObservableComposition-{uuid}')
         observable.observable_composition = observable_composition
         return observable
 
@@ -1964,7 +1960,7 @@ class MISPtoSTIX1Parser():
 
     def _create_threat_actor_from_galaxy(self, cluster: dict) -> ThreatActor:
         threat_actor = ThreatActor()
-        threat_actor.id_ = f"{self._namespace}:ThreatActor-{cluster['uuid']}"
+        threat_actor.id_ = f"{self._orgname}:ThreatActor-{cluster['uuid']}"
         threat_actor.title = cluster['value']
         if cluster.get('description'):
             threat_actor.description = cluster['description']
@@ -1980,7 +1976,7 @@ class MISPtoSTIX1Parser():
 
     def _create_ttp(self, attribute: dict) -> TTP:
         ttp = TTP(timestamp=self._datetime_from_timestamp(attribute['timestamp']))
-        ttp.id_ = f"{self._namespace}:TTP-{attribute['uuid']}"
+        ttp.id_ = f"{self._orgname}:TTP-{attribute['uuid']}"
         if attribute.get('Tag'):
             tags = tuple(tag['name'] for tag in attribute['Tag'])
             ttp.handling = self._set_handling(tags)
@@ -1989,13 +1985,13 @@ class MISPtoSTIX1Parser():
 
     def _create_ttp_from_galaxy(self, galaxy_name: str, uuid: str) -> TTP:
         ttp = TTP()
-        ttp.id_ = f'{self._namespace}:TTP-{uuid}'
+        ttp.id_ = f'{self._orgname}:TTP-{uuid}'
         ttp.title = f'{galaxy_name} (MISP Galaxy)'
         return ttp
 
     def _create_ttp_from_object(self, misp_object: dict) -> TTP:
         ttp = TTP(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
-        ttp.id_ = f"{self._namespace}:TTP-{misp_object['uuid']}"
+        ttp.id_ = f"{self._orgname}:TTP-{misp_object['uuid']}"
         ttp.title = f"{misp_object['meta-category']}: {misp_object['name']} (MISP Object)"
         return ttp
 
