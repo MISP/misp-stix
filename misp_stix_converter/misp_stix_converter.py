@@ -2,6 +2,7 @@
 #!/usr/bin/env python3
 
 import json
+import re
 from .misp2stix.stix1_export import Stix1ExportParser
 
 _default_namespace = 'https://github.com/MISP/MISP'
