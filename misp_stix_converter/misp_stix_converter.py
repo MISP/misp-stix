@@ -3,6 +3,7 @@
 
 import json
 import re
+from .misp2stix.framing import stix_xml_separator
 from .misp2stix.stix1_export import Stix1ExportParser
 
 _default_namespace = 'https://github.com/MISP/MISP'
@@ -16,8 +17,7 @@ def misp_to_stix(filename, return_format, version, include_namespaces = False, n
     export_parser.load_file(filename)
     export_parser.generate_stix1_package(version)
     if include_namespaces:
-        args = (export_parser.decoded_package, filename, return_format)
-        return _write_raw_stix(*args)
+        return _write_raw_stix(export_parser.decoded_package, filename, return_format)
     if return_format == 'xml':
         return _stix_to_xml(export_parser.stix_package, export_parser.xml_args, filename)
     return _stix_to_json(export_parser.decoded_package, filename)
@@ -112,17 +112,23 @@ def _update_namespaces():
 
 
 def _write_decoded_packages(packages, args):
-    return (f'            {package.to_xml(**args).decode()}' for package in packages)
+    return (f'            {_write_package(pckg.item, args)}' for pckg in packages)
 
 
 def _write_indented_package(packages):
-    separator = '\n            '
-    package = '\n'.join(f'{separator}'.join(package.split('\n')[:-1]) for package in packages)
-    return f'{package}\n'
+    package = (f'\n            '.join(pckg.split('\n')[:-1]) for pckg in packages)
+    separator = f'\n{stix_xml_separator()}'
+    return f'{separator.join(package)}\n'
+
+
+def _write_package(package, args):
+    before = 'stix:STIX_Package'
+    after = 'stix:Package'
+    return package.to_xml(**args).decode().replace(before, after)
 
 
 def _write_single_package(package, args):
-    package = package.to_xml(**args).decode().replace('stix:STIX_Package', 'stix:Package')
+    package = _write_package(package, args)
     package = '\n            '.join(package.split('\n')[:-1])
     return f'            {package}\n'
 

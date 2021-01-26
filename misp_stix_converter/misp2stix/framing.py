@@ -33,6 +33,11 @@ def stix_framing(namespace, orgname, return_format):
     return _stix_json_framing(stix_package)
 
 
+def stix_xml_separator():
+    header = "stix:Related_Package"
+    return f"        </{header}>\n        <{header}>\n"
+
+
 def stix20_framing(uuid):
     header = '{"type": "bundle", "spec_version": "2.0", "id":'
     return f'{header} "bundle--{uuid}", "objects": [', ',', json_footer
