@@ -132,6 +132,7 @@ class MISPtoSTIX1Parser():
         self._stix_package.add_incident(self._incident)
         stix_header = STIXHeader()
         stix_header.title = f"Export from {self._orgname}'s MISP"
+        stix_header.package_intents = "Threat Report"
         if self._header_comment and len(self._header_comment) == 1:
             stix_header.description = self._header_comment[0]
         self._stix_package.stix_header = stix_header
@@ -169,6 +170,7 @@ class MISPtoSTIX1Parser():
         if self._misp_event.get('threat_level_id'):
             threat_level = stix1_mapping.threat_level_mapping[int(self._misp_event['threat_level_id'])]
             self._add_journal_entry(f'Event Threat Level: {threat_level}')
+        self._add_journal_entry('MISP Tag: misp:tool="MISP-STIX-Converter"')
         tags = self._handle_event_tags_and_galaxies()
         if tags:
             self._incident.handling = self._set_handling(tags)

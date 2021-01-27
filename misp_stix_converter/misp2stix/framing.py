@@ -23,7 +23,7 @@ def stix_framing(namespace, orgname, return_format):
         idgen.set_id_namespace(Namespace(namespace, orgname, "MISP"))
     stix_package = STIXPackage()
     stix_header = STIXHeader()
-    stix_header.title = f'Export from {real_orgname} MISP'
+    stix_header.title = f"Export from {real_orgname}'s MISP"
     stix_header.package_intents="Threat Report"
     stix_package.stix_header = stix_header
     stix_package.version = "1.1.1"
