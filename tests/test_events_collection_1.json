@@ -1,0 +1,59 @@
+{
+    "response": [
+        {
+            "Event": {
+                "uuid": "e2e6a6ea-f69b-4d93-8564-f51d67cafe51",
+                "info": "MISP-STIX-Converter test event with AS attribute",
+                "date": "2020-10-25",
+                "timestamp": "1603642920",
+                "threat_level_id": "2",
+                "Org": {
+                    "name": "MISP-Project"
+                },
+                "Orgc": {
+                    "name": "MISP-Project"
+                },
+                "Attribute": [
+                    {
+                        "uuid": "2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+                        "type": "AS",
+                        "category": "Network activity",
+                        "value": "AS174"
+                    }
+                ],
+                "Object": [],
+                "Galaxy": [],
+                "Tag": []
+            }
+        },
+        {
+            "Event": {
+                "uuid": "d402185f-c129-4f65-8678-43edb2cee1cf",
+                "info": "MISP-STIX-Converter test event with domain attribute",
+                "date": "2020-10-25",
+                "timestamp": "1603642920",
+                "threat_level_id": "2",
+                "Org": {
+                    "name": "MISP-Project"
+                },
+                "Orgc": {
+                    "name": "MISP-Project"
+                },
+                "Attribute": [
+                    {
+                        "uuid": "4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+                        "type": "domain",
+                        "category": "Network activity",
+                        "value": "circl.lu",
+                        "timestamp": "1603642920",
+                        "comment": "Domain test attribute",
+                        "to_ids": true
+                    }
+                ],
+                "Object": [],
+                "Galaxy": [],
+                "Tag": []
+            }
+        }
+    ]
+}

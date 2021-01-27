@@ -1,0 +1,62 @@
+{
+    "response": [
+        {
+            "Event": {
+                "uuid": "50bf87fc-d134-499f-9e26-806cbe89ed37",
+                "info": "MISP-STIX-Converter test event with domain|ip attribute",
+                "date": "2020-10-25",
+                "timestamp": "1603642920",
+                "threat_level_id": "2",
+                "Org": {
+                    "name": "MISP-Project"
+                },
+                "Orgc": {
+                    "name": "MISP-Project"
+                },
+                "Attribute": [
+                    {
+                        "uuid": "726f90e2-2ad6-44a2-b345-c05e55e850e5",
+                        "type": "domain|ip",
+                        "category": "Network activity",
+                        "value": "circl.lu|149.13.33.14",
+                        "timestamp": "1603642920",
+                        "comment": "Domain|ip test attribute",
+                        "to_ids": true
+                    }
+                ],
+                "Object": [],
+                "Galaxy": [],
+                "Tag": []
+            }
+        },
+        {
+            "Event": {
+                "uuid": "71356f2b-eefe-48db-a93a-4aa2233e3a59",
+                "info": "MISP-STIX-Converter test event with filename attribute",
+                "date": "2020-10-25",
+                "timestamp": "1603642920",
+                "threat_level_id": "2",
+                "Org": {
+                    "name": "MISP-Project"
+                },
+                "Orgc": {
+                    "name": "MISP-Project"
+                },
+                "Attribute": [
+                    {
+                        "uuid": "02de0847-dccf-481a-a96a-6a7654328658",
+                        "type": "filename",
+                        "category": "Payload delivery",
+                        "value": "test_file_name",
+                        "timestamp": "1603642920",
+                        "comment": "Filename test attribute",
+                        "to_ids": true
+                    }
+                ],
+                "Object": [],
+                "Galaxy": [],
+                "Tag": []
+            }
+        }
+    ]
+}
