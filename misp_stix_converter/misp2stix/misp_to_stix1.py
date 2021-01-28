@@ -181,7 +181,7 @@ class MISPtoSTIX1Parser():
             status = stix1_mapping.status_mapping[int(self._misp_event['analysis'])]
             self._incident.status = IncidentStatus(status)
         self.orgc_name = self._set_creator()
-        self._incident.information_source = self._set_source()
+        self._incident.information_source = self._set_producer()
         self._incident.reporter = self._set_reporter()
         if self._misp_event.get('Attribute'):
             self._resolve_attributes()
@@ -1716,7 +1716,7 @@ class MISPtoSTIX1Parser():
             ttp.add_related_ttp(related_ttp)
 
     ################################################################################
-    #                      OBJECTS CREATION HELPER FUNCTIONS.                      #
+    #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 
     def _add_journal_entry(self, entryline: str):
@@ -2112,16 +2112,11 @@ class MISPtoSTIX1Parser():
 
     def _set_producer(self) -> Identity:
         identity = Identity(name=self.orgc_name)
-        information_source = InformationSource(identity=identity)
-        return information_source
+        return self._create_information_source(identity)
 
     def _set_reporter(self) -> Identity:
         reporter = self._misp_event['Org']['name'] if self._misp_event.get('Org') else self._orgname
         identity = Identity(name=reporter)
-        return self._create_information_source(identity)
-
-    def _set_source(self) -> Identity:
-        identity = Identity(name=self.orgc_name)
         return self._create_information_source(identity)
 
     @staticmethod
