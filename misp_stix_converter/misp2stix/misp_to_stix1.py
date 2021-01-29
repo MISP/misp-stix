@@ -3,6 +3,7 @@
 
 import socket
 from . import stix1_mapping
+from .exportparser import MISPtoSTIXParser
 from base64 import b64encode
 from collections import defaultdict
 from cybox.core import Object, Observable, ObservableComposition, RelatedObject
@@ -83,11 +84,10 @@ _OBSERVABLE_OBJECT_TYPES = Union[
 _PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
 
 
-class MISPtoSTIX1Parser():
+class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def __init__(self, orgname: str):
+        super().__init__()
         self._orgname = orgname
-        self._errors = []
-        self._warnings = set()
         self._header_comment = []
         self._objects_to_parse = defaultdict(dict)
         self._contextualised_data = defaultdict(dict)
@@ -238,20 +238,6 @@ class MISPtoSTIX1Parser():
                 relationship=attribute['category']
             )
             self._incident.related_observables.append(related_observable)
-
-    def _handle_attribute_tags_and_galaxies(self, attribute: dict, indicator: Indicator) -> tuple:
-        if attribute.get('Galaxy'):
-            tag_names = []
-            for galaxy in attribute['Galaxy']:
-                galaxy_type = galaxy['type']
-                if galaxy_type in stix1_mapping.galaxy_types_mapping:
-                    to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
-                    getattr(self, to_call.format('attribute'))(galaxy, indicator)
-                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
-                else:
-                    self._warnings.add(f"{galaxy_type} galaxy in {attribute['type']} attribute not mapped.")
-            return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
-        return tuple(tag['name'] for tag in attribute.get('Tag', []))
 
     def _handle_exploit_target(self, attribute: dict, stix_object: Union[Vulnerability, Weakness], stix_type: str):
         attribute_uuid = attribute['uuid']
@@ -2139,19 +2125,3 @@ class MISPtoSTIX1Parser():
     @staticmethod
     def _from_datetime_to_str(date):
         return date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-
-    @staticmethod
-    def _merge_galaxy_clusters(galaxies, galaxy):
-        for cluster in galaxy['GalaxyCluster']:
-            for galaxy_cluster in galaxies['GalaxyCluster']:
-                if cluster['uuid'] == galaxy_cluster['uuid']:
-                    break
-            else:
-                galaxies['GalaxyCluster'].append(cluster)
-
-    @staticmethod
-    def _quick_fetch_tag_names(galaxy: dict) -> list:
-        attribute_galaxies = []
-        for cluster in galaxy['GalaxyCluster']:
-            attribute_galaxies.append(f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"')
-        return attribute_galaxies

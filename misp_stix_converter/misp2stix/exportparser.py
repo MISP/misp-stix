@@ -2,7 +2,9 @@
 #!/usr/bin/env python3
 
 import json
-from pymisp import MISPEvent
+from . import stix1_mapping
+from stix.indicator import Indicator
+from typing import Union
 
 
 class ExportParser():
@@ -13,3 +15,46 @@ class ExportParser():
         with open(filename, 'rt', encoding='utf-8') as f:
             self.json_event = json.loads(f.read())
         self.filename = filename
+
+
+class MISPtoSTIXParser():
+    def __init__(self):
+        super().__init__()
+        self._errors = []
+        self._warnings = set()
+
+    ################################################################################
+    #                           COMMON PARSING FUNCTIONS                           #
+    ################################################################################
+
+    def _handle_attribute_tags_and_galaxies(self, attribute: dict, indicator: Union[Indicator, str]) -> tuple:
+        # If used for STIX1 parsing "indicator" is Indicator, and str if used for STIX2
+        if attribute.get('Galaxy'):
+            tag_names = []
+            for galaxy in attribute['Galaxy']:
+                galaxy_type = galaxy['type']
+                if galaxy_type in stix1_mapping.galaxy_types_mapping:
+                    to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
+                    getattr(self, to_call.format('attribute'))(galaxy, indicator)
+                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
+                else:
+                    self._warnings.add(f"{galaxy_type} galaxy in {attribute['type']} attribute not mapped.")
+            return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
+        return tuple(tag['name'] for tag in attribute.get('Tag', []))
+
+    ################################################################################
+    #                           COMMON UTILITY FUNCTIONS                           #
+    ################################################################################
+
+    @staticmethod
+    def _merge_galaxy_clusters(galaxies, galaxy):
+        for cluster in galaxy['GalaxyCluster']:
+            for galaxy_cluster in galaxies['GalaxyCluster']:
+                if cluster['uuid'] == galaxy_cluster['uuid']:
+                    break
+            else:
+                galaxies['GalaxyCluster'].append(cluster)
+
+    @staticmethod
+    def _quick_fetch_tag_names(galaxy: dict) -> tuple:
+        return tuple(f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"' for cluster in galaxy["GalaxyCluster"])
