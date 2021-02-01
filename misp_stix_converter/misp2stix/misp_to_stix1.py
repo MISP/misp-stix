@@ -154,7 +154,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         )
         incident_time = Time()
         incident_time.incident_discovery = self._misp_event['date']
-        if self._misp_event.get('published') and self._misp_event.get('publish_timestamp'):
+        if self._is_published():
             incident_time.incident_reported = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
         incident.time = incident_time
         return incident
@@ -187,20 +187,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             self._resolve_attributes()
         if self._misp_event.get('Object'):
             self._resolve_objects()
-
-    def _handle_event_tags_and_galaxies(self) -> tuple:
-        if self._misp_event.get('Galaxy'):
-            tag_names = []
-            for galaxy in self._misp_event['Galaxy']:
-                galaxy_type = galaxy['type']
-                if galaxy_type in stix1_mapping.galaxy_types_mapping:
-                    to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
-                    getattr(self, to_call.format('event'))(galaxy)
-                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
-                else:
-                    self._warnings.add(f'{galaxy_type} galaxy in event not mapped.')
-            return tuple(tag['name'] for tag in self._misp_event.get('Tag', []) if tag['name'] not in tag_names)
-        return tuple(tag['name'] for tag in self._misp_event.get('Tag', []))
 
     ################################################################################
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
@@ -2117,10 +2103,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
-
-    @staticmethod
-    def _datetime_from_timestamp(timestamp):
-        return datetime.utcfromtimestamp(int(timestamp))
 
     @staticmethod
     def _from_datetime_to_str(date):

@@ -3,6 +3,7 @@
 
 import json
 from . import stix1_mapping
+from datetime import datetime
 from stix.indicator import Indicator
 from typing import Union
 
@@ -18,6 +19,8 @@ class ExportParser():
 
 
 class MISPtoSTIXParser():
+    __published_fields = ('published', 'publish_timestamp')
+
     def __init__(self):
         super().__init__()
         self._errors = []
@@ -42,9 +45,30 @@ class MISPtoSTIXParser():
             return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
         return tuple(tag['name'] for tag in attribute.get('Tag', []))
 
+    def _handle_event_tags_and_galaxies(self) -> tuple:
+        if self._misp_event.get('Galaxy'):
+            tag_names = []
+            for galaxy in self._misp_event['Galaxy']:
+                galaxy_type = galaxy['type']
+                if galaxy_type in stix1_mapping.galaxy_types_mapping:
+                    to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
+                    getattr(self, to_call.format('event'))(galaxy)
+                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
+                else:
+                    self._warnings.add(f'{galaxy_type} galaxy in event not mapped.')
+            return tuple(tag['name'] for tag in self._misp_event.get('Tag', []) if tag['name'] not in tag_names)
+        return tuple(tag['name'] for tag in self._misp_event.get('Tag', []))
+
     ################################################################################
     #                           COMMON UTILITY FUNCTIONS                           #
     ################################################################################
+
+    @staticmethod
+    def _datetime_from_timestamp(timestamp):
+        return datetime.utcfromtimestamp(int(timestamp))
+
+    def _is_published(self):
+        return all(self._misp_event.get(feature) for feature in self.__published_fields)
 
     @staticmethod
     def _merge_galaxy_clusters(galaxies, galaxy):
