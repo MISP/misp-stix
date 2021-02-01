@@ -15,10 +15,12 @@ _BASE_EVENT = {
         "date": date.today().strftime("%Y-%m-%d"),
         "timestamp": str(int(datetime.now().timestamp())),
         "Org": {
-            "name": "MISP-Project"
+            "name": "MISP-Project",
+            "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
         },
         "Orgc": {
-            "name": "MISP-Project"
+            "name": "MISP-Project",
+            "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
         },
         "Attribute": [],
         "Object": [],
