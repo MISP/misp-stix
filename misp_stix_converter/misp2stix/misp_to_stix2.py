@@ -1,25 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import json
+from . import stix2_mapping
 from .exportparser import MISPtoSTIXParser
 from collections import defaultdict
 from stix2.v20.bundle import Bundle as Bundle_v20
-from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
-from stix2.v20.observables import SocketExt, WindowsPESection, WindowsRegistryValueType
-from stix2.v20.sdo import Identity as Identity_v20
-from stix2.v20.sdo import Indicator as Indicator_v20
-from stix2.v20.sro import Relationship
 from stix2.v21.bundle import Bundle as Bundle_v21
-from stix2.v21.common import MarkingDefinition as MarkingDefinition_v21
-from stix2.v21.sdo import Identity as Identity_v21
-from stix2.v21.sdo import Indicator as Indicator_v21
+from stix2.v20.sro import Relationship
 # from stix2.v20.sdo import AttackPattern, CourseOfAction, CustomObject, IntrusionSet, Malware, ObservedData, Report, ThreatActor, Tool, Vulnerability
-
 from typing import Union
 from uuid import uuid4
 
 _label_fields = ('type', 'category', 'to_ids')
+_misp_time_fields = ('first_seen', 'last_seen')
+_stix_time_fields = {
+    'indicator': ('valid_from', 'valid_until'),
+    'observed-data': ('first_observed', 'last_observed')
+}
 
 
 class MISPtoSTIX2Parser(MISPtoSTIXParser):
@@ -60,7 +57,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     #                            MAIN PARSING FUNCTIONS                            #
     ################################################################################
 
-    def _append_SDO(stix_object):
+    def _append_SDO(self, stix_object):
         self._objects.append(stix_object)
         self._object_refs.append(stix_object.id)
 
@@ -77,8 +74,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'created_by_ref': self._identity_id,
             'interoperability': True
         }
-        if self._is_published():
-            report_args['published'] = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
         markings = self._handle_event_tags_and_galaxies()
         if markings:
             report_args['object_marking_refs'] = self._handle_markings(markings)
@@ -86,7 +81,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for marking in self._marking.values():
                 self._append_SDO(marking)
         report_args['object_refs'] = self._object_refs
-        return Report(**report_args)
+        print(report_args)
+        if self._is_published():
+            report_args['published'] = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
+            return self._create_report(report_args)
+        return self._handle_unpublished_report(report_args)
 
     def _handle_markings(self, markings: tuple) -> list:
         marking_ids = []
@@ -137,8 +136,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _parse_AS_value(value: str) -> str:
         if value.startswith('AS'):
-            return value[2:]
-        return value
+            return int(value[2:])
+        return int(value)
 
     def _parse_autonomous_system_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
@@ -169,7 +168,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     @staticmethod
     def _create_labels(attribute: dict) -> list:
-        return [f'misp:{feature}="{attribute[feature]}"' for feature in _label_fields]
+        return [f'misp:{feature}="{attribute[feature]}"' for feature in _label_fields if attribute.get(feature)]
 
     @staticmethod
     def _create_marking_definition_args(marking: str) -> dict:
@@ -183,6 +182,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             }
         }
         return marking_definition
+
+    def _create_observable_args(self, attribute: dict) -> dict:
+        observable_id = f"observed-data--{attribute['uuid']}"
+        observable_args = {
+            'id': observable_id,
+            'type': 'observed-data',
+            'labels': self._create_labels(attribute),
+            'number_observed': 1,
+            'created_by_ref': self._identity_id,
+            'interoperability': True
+        }
+        observable_args.update(self._handle_time_fields(attribute, 'observed-data'))
+        markings = self._handle_attribute_tags_and_galaxies(attribute, observable_id)
+        if markings:
+            observable_args['object_marking_refs'] = self._handle_markings(markings)
+        return observable_args
 
     def _set_identity(self) -> int:
         orgc = self._misp_event['Orgc']
@@ -200,109 +215,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     ################################################################################
 
     @staticmethod
+    def _datetime_from_str(timestamp):
+        return datetime.strptime(timestamp.split('+')[0], '%Y-%m-%dT%H:%M:%S.%f')
+
+    def _handle_time_fields(self, attribute: dict, stix_type: str) -> dict:
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        to_return = {
+            'created': timestamp,
+            'modified': timestamp
+        }
+        stix_fields = _stix_time_fields[stix_type]
+        for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
+            to_return[stix_field] = self._datetime_from_str(attribute[misp_field]) if attribute.get(misp_field) else timestamp
+        return to_return
+
+    @staticmethod
     def _handle_value_for_pattern(attribute_value: str) -> str:
         return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
-
-
-class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
-    def __init__(self):
-        super().__init__()
-        self._version = '2.0'
-
-    ################################################################################
-    #                         ATTRIBUTES PARSING FUNCTIONS                         #
-    ################################################################################
-
-    def _parse_autonomous_system_attribute_observable(self, attribute: dict):
-        observable_object = {
-            '0': {
-                'type': 'autonomous-system',
-                'number': self._parse_AS_value(attribute['value'])
-            }
-        }
-
-    ################################################################################
-    #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
-    ################################################################################
-
-    def _create_bundle(self) -> Bundle_v20:
-        return Bundle_v20(self._objects)
-
-    def _create_identity_object(self, orgname: str) -> Identity_v20:
-        identity_args = {
-            'type': 'identity',
-            'id': self._identity_id,
-            'name': orgname,
-            'identity_class': 'organization',
-            'interoperability': True
-        }
-        return Identity_v20(**identity_args)
-
-    @staticmethod
-    def _create_indicator(self, indicator_args: dict) -> Indicator_v20:
-        indicator_args.update(
-            {
-                "spec_version": "2.1",
-                "pattern_type": "stix",
-                "pattern_version": "2.1",
-            }
-        )
-        return Indicator_v20(**indicator_args)
-
-    def _create_marking(self, marking: str) -> Union[str, None]:
-        if marking in stix2_mapping.tlp_markings_v20:
-            marking_definition = deepcopy(stix2_mapping.tlp_markings_v20[marking])
-            self._markings[marking] = marking_definition
-            return marking_definition.id
-        marking_args = self._create_marking_definition_args(marking)
-        try:
-            self._markings[marking] = MarkingDefinition_v20(**marking_args)
-        except (TLPMarkingDefinitionError, ValueError):
-            return
-        return marking_args['id']
-
-
-class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
-    def __init__(self):
-        super().__init__()
-        self._version = '2.1'
-
-    ################################################################################
-    #                         ATTRIBUTES PARSING FUNCTIONS                         #
-    ################################################################################
-
-    def _parse_autonomous_system_attribute_observable(self, attribute: dict):
-        observable_object = {}
-
-    ################################################################################
-    #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
-    ################################################################################
-
-    def _create_bundle(self) -> Bundle_v21:
-        return Bundle_v21(self._objects)
-
-    def _create_identity_object(self, orgname: str) -> Identity_v21:
-        identity_args = {
-            'type': 'identity',
-            'id': self._identity_id,
-            'name': orgname,
-            'identity_class': 'organization',
-            'interoperability': True
-        }
-        return Identity_v21(**identity_args)
-
-    @staticmethod
-    def _create_indicator(self, indicator_args: dict) -> Indicator_v21:
-        return Indicator_v21(**indicator_args)
-
-    def _create_marking(self, marking: str) -> Union[str, None]:
-        if marking in stix2_mapping.tlp_markings_v21:
-            marking_definition = deepcopy(stix2_mapping.tlp_markings_v21[marking])
-            self._markings[marking] = marking_definition
-            return marking_definition.id
-        marking_args = self._create_marking_definition_args(marking)
-        try:
-            self._markings[marking] = MarkingDefinition_v21(**marking_args)
-        except (TLPMarkingDefinitionError, ValueError):
-            return
-        return marking_args['id']
