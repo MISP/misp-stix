@@ -64,14 +64,14 @@ class MISPtoSTIXParser():
     ################################################################################
 
     @staticmethod
-    def _datetime_from_timestamp(timestamp):
+    def _datetime_from_timestamp(timestamp: str) -> datetime:
         return datetime.utcfromtimestamp(int(timestamp))
 
-    def _is_published(self):
+    def _is_published(self) -> bool:
         return all(self._misp_event.get(feature) for feature in self.__published_fields)
 
     @staticmethod
-    def _merge_galaxy_clusters(galaxies, galaxy):
+    def _merge_galaxy_clusters(galaxies: dict, galaxy: dict):
         for cluster in galaxy['GalaxyCluster']:
             for galaxy_cluster in galaxies['GalaxyCluster']:
                 if cluster['uuid'] == galaxy_cluster['uuid']:
