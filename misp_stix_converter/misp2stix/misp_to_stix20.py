@@ -14,9 +14,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         super().__init__()
         self._version = '2.0'
 
-    @staticmethod
-    def _handle_unpublished_report(report_args: dict) -> Report:
-        report_args['published'] = report_args['modified']
+    def _handle_unpublished_report(self, report_args: dict) -> Report:
+        report_args.update(
+            {
+                'id': f"report--{self._misp_event['uuid']}",
+                'type': 'report',
+                'published': report_args['modified']
+            }
+        )
         return Report(**report_args)
 
     ################################################################################

@@ -18,8 +18,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         super().__init__()
         self._version = '2.1'
 
-    @staticmethod
-    def _handle_unpublished_report(report_args: dict) -> Grouping:
+    def _handle_unpublished_report(self, report_args: dict) -> Grouping:
+        report_args.update(
+            {
+                'id': f"grouping--{self._misp_event['uuid']}",
+                'type': 'grouping',
+                'context': 'suspicious-activity'
+            }
+        )
         return Grouping(**report_args)
 
     ################################################################################

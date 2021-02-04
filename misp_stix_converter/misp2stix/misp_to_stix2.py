@@ -34,7 +34,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._misp_event = misp_event
         self._ids = ids
         self._include_bundle = include_bundle
-        self._report_id = f"report--{misp_event['uuid']}"
         self._objects = []
         self._object_refs = []
         self._links = []
@@ -63,8 +62,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _generate_event_report(self):
         report_args = {
-            'type': 'report',
-            'id': self._report_id,
             'name': self._misp_event['info'],
             'modified': self._datetime_from_timestamp(self._misp_event['timestamp']),
             'labels': [
@@ -81,9 +78,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for marking in self._marking.values():
                 self._append_SDO(marking)
         report_args['object_refs'] = self._object_refs
-        print(report_args)
         if self._is_published():
-            report_args['published'] = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
+            published = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
+            report_args.update(
+                {
+                    'id': f"report--{self._misp_event['uuid']}",
+                    'type': 'report',
+                    'published': published
+                }
+            )
             return self._create_report(report_args)
         return self._handle_unpublished_report(report_args)
 
