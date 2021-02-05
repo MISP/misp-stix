@@ -1362,6 +1362,7 @@ _OBSERVABLE_ATTRIBUTE = {
     "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
     "type": "AS",
     "category": "Network activity",
+    "timestamp": str(int(datetime.now().timestamp())),
     "value": "AS174"
 }
 
