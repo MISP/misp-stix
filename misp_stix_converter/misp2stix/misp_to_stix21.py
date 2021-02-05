@@ -86,7 +86,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_observed_data(self, attribute: dict, observable: _OBSERVABLE_OBJECT_TYPES):
         observable_args = self._create_observable_args(attribute)
         observable_args['object_refs'] = [observable.id]
-        observable = ObservedData(**observable_args)
+        observed_data = ObservedData(**observable_args)
+        self._append_SDO(observed_data)
         self._append_SDO(observable)
 
     @staticmethod

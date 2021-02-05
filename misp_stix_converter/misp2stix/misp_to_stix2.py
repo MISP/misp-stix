@@ -47,9 +47,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._objects.insert(index, report)
 
     @property
-    def stix_objects(self) -> Union[Bundle_v20, Bundle_v21, list]:
-        if self._include_bundle:
-            return self._create_bundle()
+    def bundle(self) -> Union[Bundle_v20, Bundle_v21]:
+        return self._create_bundle()
+
+    @property
+    def stix_objects(self) -> list:
         return self._objects
 
     ################################################################################
