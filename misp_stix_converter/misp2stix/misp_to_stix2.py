@@ -111,8 +111,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for attribute in self._misp_event['Attribute']:
             attribute_type = attribute['type']
             try:
-                if attribute_type in stix1_mapping.attribute_types_mapping:
-                    getattr(self, stix1_mapping.attribute_types_mapping[attribute_type])(attribute)
+                if attribute_type in stix2_mapping.attribute_types_mapping:
+                    getattr(self, stix2_mapping.attribute_types_mapping[attribute_type])(attribute)
                 else:
                     self._parse_custom_attribute(attribute)
                     self._warnings.add(f'MISP Attribute type {attribute_type} not mapped.')
