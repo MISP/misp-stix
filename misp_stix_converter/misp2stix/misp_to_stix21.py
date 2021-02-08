@@ -68,7 +68,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return Grouping(**grouping_args)
 
     @staticmethod
-    def _create_indicator(self, indicator_args: dict) -> Indicator:
+    def _create_indicator(indicator_args: dict) -> Indicator:
         indicator_args.update(
             {
                 "spec_version": "2.1",

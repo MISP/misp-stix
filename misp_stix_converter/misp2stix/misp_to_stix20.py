@@ -62,7 +62,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return Identity(**identity_args)
 
     @staticmethod
-    def _create_indicator(self, indicator_args: dict) -> Indicator:
+    def _create_indicator(indicator_args: dict) -> Indicator:
         return Indicator(**indicator_args)
 
     def _create_marking(self, marking: str) -> Union[str, None]:

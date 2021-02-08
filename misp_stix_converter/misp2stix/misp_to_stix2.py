@@ -133,7 +133,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attribute.get('comment'):
             indicator_args['description'] = attribute['comment']
         markings = self._handle_attribute_tags_and_galaxies(attribute, indicator_id)
-        if marking:
+        if markings:
             indicator_args['object_marking_refs'] = self._handle_markings(markings)
         indicator = self._create_indicator(indicator_args)
         self._append_SDO(indicator)
@@ -174,6 +174,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
+
+    @staticmethod
+    def _create_killchain(category):
+        kill_chain = [
+            {
+                'kill_chain_name': 'misp-category',
+                'phase_name': category
+            }
+        ]
+        return kill_chain
 
     @staticmethod
     def _create_labels(attribute: dict) -> list:
