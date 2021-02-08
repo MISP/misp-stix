@@ -34,6 +34,10 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(type_label, f'misp:type="{attribute["type"]}"')
         self.assertEqual(category_label, f'misp:category="{attribute["category"]}"')
         self.assertEqual(ids_label, f'misp:to_ids="{attribute["to_ids"]}"')
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        self.assertEqual(indicator.created, timestamp)
+        self.assertEqual(indicator.modified, timestamp)
+        self.assertEqual(indicator.valid_from, timestamp)
 
     def _check_killchain(self, killchain, category):
         self.assertEqual(killchain['kill_chain_name'], 'misp-category')
@@ -49,14 +53,25 @@ class TestSTIX2Export(unittest.TestCase):
         type_label, category_label = observed_data.labels
         self.assertEqual(type_label, f'misp:type="{attribute["type"]}"')
         self.assertEqual(category_label, f'misp:category="{attribute["category"]}"')
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        self.assertEqual(observed_data.created, timestamp)
+        self.assertEqual(observed_data.modified, timestamp)
+        self.assertEqual(observed_data.first_observed, timestamp)
+        self.assertEqual(observed_data.last_observed, timestamp)
 
-    def _check_report_features(self, report, event, identity_id):
+    def _check_report_features(self, report, event, identity_id, timestamp):
         self.assertEqual(report.type, 'report')
         self.assertEqual(report.id, f"report--{event['uuid']}")
         self.assertEqual(report.created_by_ref, identity_id)
         self.assertEqual(report.labels, self._labels)
         self.assertEqual(report.name, event['info'])
+        self.assertEqual(report.created, timestamp)
+        self.assertEqual(report.modified, timestamp)
         return report.object_refs
+
+    @staticmethod
+    def _datetime_from_timestamp(timestamp):
+        return datetime.utcfromtimestamp(int(timestamp))
 
 
 class TestSTIX20Export(TestSTIX2Export):
@@ -70,8 +85,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.parser.parse_misp_event(event)
         identity, report, observed_data = self.parser.stix_objects
         identity_id = self._check_identity_features(identity, orgc)
-        object_ref = self._check_report_features(report, event['Event'], identity_id)[0]
-        self._check_observable_features(observed_data, attribute, identity_id, object_ref)
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_attribute_observable_features(observed_data, attribute, identity_id, object_ref)
         observable = observed_data['objects']['0']
         self.assertEqual(observable.type, 'autonomous-system')
         self.assertEqual(observable.number, int(attribute['value'][2:]))
@@ -83,7 +100,9 @@ class TestSTIX20Export(TestSTIX2Export):
         self.parser.parse_misp_event(event)
         identity, report, indicator = self.parser.stix_objects
         identity_id = self._check_identity_features(identity, orgc)
-        object_ref = self._check_report_features(report, event['Event'], identity_id)[0]
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
         self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
         self.assertEqual(indicator.pattern, f"[domain-name:value = '{attribute['value']}']")
 
@@ -92,12 +111,14 @@ class TestSTIX21Export(TestSTIX2Export):
     def setUp(self):
         self.parser = MISPtoSTIX21Parser()
 
-    def _check_grouping_features(self, grouping, event, identity_id):
+    def _check_grouping_features(self, grouping, event, identity_id, timestamp):
         self.assertEqual(grouping.type, 'grouping')
         self.assertEqual(grouping.id, f"grouping--{event['uuid']}")
         self.assertEqual(grouping.created_by_ref, identity_id)
         self.assertEqual(grouping.labels, self._labels)
         self.assertEqual(grouping.name, event['info'])
+        self.assertEqual(grouping.created, timestamp)
+        self.assertEqual(grouping.modified, timestamp)
         return grouping.object_refs
 
     def _check_pattern_features(self, indicator):
@@ -117,7 +138,12 @@ class TestSTIX21Export(TestSTIX2Export):
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, AS = stix_objects
         identity_id = self._check_identity_features(identity, orgc)
-        observable_id, as_id = self._check_grouping_features(grouping, event['Event'], identity_id)
+        observable_id, as_id = self._check_grouping_features(
+            grouping,
+            event['Event'],
+            identity_id,
+            self._datetime_from_timestamp(attribute['timestamp'])
+        )
         self._check_attribute_observable_features(observed_data, attribute, identity_id, observable_id)
         object_ref = observed_data['object_refs'][0]
         self.assertEqual(AS.id, object_ref)
@@ -136,7 +162,8 @@ class TestSTIX21Export(TestSTIX2Export):
         args = (
             grouping,
             event['Event'],
-            identity_id
+            identity_id,
+            self._datetime_from_timestamp(attribute['timestamp'])
         )
         object_ref = self._check_grouping_features(*args)[0]
         self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
