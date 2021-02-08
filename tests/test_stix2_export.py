@@ -23,7 +23,23 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(identity.identity_class, 'organization')
         return identity_id
 
-    def _check_observable_features(self, observed_data, attribute, identity_id, object_ref):
+    def _check_attribute_indicator_features(self, indicator, attribute, identity_id, object_ref):
+        uuid = f"indicator--{attribute['uuid']}"
+        self.assertEqual(uuid, object_ref)
+        self.assertEqual(indicator.id, uuid)
+        self.assertEqual(indicator.type, 'indicator')
+        self.assertEqual(indicator.created_by_ref, identity_id)
+        self._check_killchain(indicator.kill_chain_phases[0], attribute['category'])
+        type_label, category_label, ids_label = indicator.labels
+        self.assertEqual(type_label, f'misp:type="{attribute["type"]}"')
+        self.assertEqual(category_label, f'misp:category="{attribute["category"]}"')
+        self.assertEqual(ids_label, f'misp:to_ids="{attribute["to_ids"]}"')
+
+    def _check_killchain(self, killchain, category):
+        self.assertEqual(killchain['kill_chain_name'], 'misp-category')
+        self.assertEqual(killchain['phase_name'], category)
+
+    def _check_attribute_observable_features(self, observed_data, attribute, identity_id, object_ref):
         uuid = f"observed-data--{attribute['uuid']}"
         self.assertEqual(uuid, object_ref)
         self.assertEqual(observed_data.id, uuid)
@@ -60,6 +76,17 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(observable.type, 'autonomous-system')
         self.assertEqual(observable.number, int(attribute['value'][2:]))
 
+    def test_event_with_domain_attribute(self):
+        event = get_event_with_domain_attribute()
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        identity, report, indicator = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        object_ref = self._check_report_features(report, event['Event'], identity_id)[0]
+        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+        self.assertEqual(indicator.pattern, f"[domain-name:value = '{attribute['value']}']")
+
 
 class TestSTIX21Export(TestSTIX2Export):
     def setUp(self):
@@ -72,6 +99,10 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(grouping.labels, self._labels)
         self.assertEqual(grouping.name, event['info'])
         return grouping.object_refs
+
+    def _check_pattern_features(self, indicator):
+        self.assertEqual(indicator.pattern_type, 'stix')
+        self.assertEqual(indicator.pattern_version, '2.1')
 
     def _check_spec_versions(self, stix_objects):
         for stix_object in stix_objects:
@@ -87,8 +118,27 @@ class TestSTIX21Export(TestSTIX2Export):
         identity, grouping, observed_data, AS = stix_objects
         identity_id = self._check_identity_features(identity, orgc)
         observable_id, as_id = self._check_grouping_features(grouping, event['Event'], identity_id)
-        self._check_observable_features(observed_data, attribute, identity_id, observable_id)
+        self._check_attribute_observable_features(observed_data, attribute, identity_id, observable_id)
         object_ref = observed_data['object_refs'][0]
         self.assertEqual(AS.id, object_ref)
         self.assertEqual(AS.type, 'autonomous-system')
         self.assertEqual(AS.number, int(attribute['value'][2:]))
+
+    def test_event_with_domain_attribute(self):
+        event = get_event_with_domain_attribute()
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, indicator = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        object_ref = self._check_grouping_features(*args)[0]
+        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+        self._check_pattern_features(indicator)
+        self.assertEqual(indicator.pattern, f"[domain-name:value = '{attribute['value']}']")
