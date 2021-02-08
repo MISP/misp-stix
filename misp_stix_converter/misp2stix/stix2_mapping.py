@@ -7,7 +7,8 @@ from stix2.v21.common import (TLP_WHITE as TLP_WHITE_v21, TLP_GREEN as TLP_GREEN
                               TLP_AMBER as TLP_AMBER_v21, TLP_RED as TLP_RED_v21)
 
 attribute_types_mapping = {
-    "AS": "_parse_autonomous_system_attribute"
+    'AS': '_parse_autonomous_system_attribute',
+    'domain': '_parse_domain_attribute'
 }
 
 tlp_markings_v20 = {

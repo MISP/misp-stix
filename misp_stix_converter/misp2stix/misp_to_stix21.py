@@ -39,6 +39,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         self._create_observed_data(attribute, AS_object)
 
+    def _parse_domain_attribute_observable(self, attribute: dict):
+        domain_object = DomainName(
+            id=f"domain-name--{attribute['uuid']}",
+            value=attribute['value']
+        )
+        self._create_observed_data(attribute, domain_object)
+
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################

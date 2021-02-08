@@ -34,6 +34,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         }
         self._create_observed_data(attribute, observable_object)
 
+    def _parse_domain_attribute_observable(self, attribute: dict):
+        observable_object = {
+            '0': DomainName(value=attribute['value'])
+        }
+        self._create_observed_data(attribute, observable_object)
+
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################

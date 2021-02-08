@@ -146,14 +146,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_autonomous_system_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            self._parse_autonomous_system_attribute_pattern(attribute)
+            value = self._parse_AS_value(attribute['value'])
+            pattern = f"[autonomous-system:number = '{value}']"
+            self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_autonomous_system_attribute_observable(attribute)
 
-    def _parse_autonomous_system_attribute_pattern(self, attribute: dict):
-        value = self._parse_AS_value(attribute['value'])
-        pattern = f"[autonomous-system:number = '{value}']"
-        self._handle_attribute_indicator(attribute, pattern)
+    def _parse_domain_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[domain-name:value = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_domain_attribute_observable(attribute)
 
     ################################################################################
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
