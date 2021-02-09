@@ -102,7 +102,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.parser.parse_misp_event(event)
         identity, report, indicator = self.parser.stix_objects
         identity_id = self._check_identity_features(identity, orgc)
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
         self.assertEqual(report.published, timestamp)
         self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
@@ -117,7 +117,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.parser.parse_misp_event(event)
         identity, report, observed_data = self.parser.stix_objects
         identity_id = self._check_identity_features(identity, orgc)
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
         self.assertEqual(report.published, timestamp)
         self._check_attribute_observable_features(observed_data, attribute, identity_id, object_ref)
@@ -134,7 +134,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.parser.parse_misp_event(event)
         identity, report, indicator = self.parser.stix_objects
         identity_id = self._check_identity_features(identity, orgc)
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
         self.assertEqual(report.published, timestamp)
         self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
@@ -148,7 +148,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.parser.parse_misp_event(event)
         identity, report, observed_data = self.parser.stix_objects
         identity_id = self._check_identity_features(identity, orgc)
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
         self.assertEqual(report.published, timestamp)
         self._check_attribute_observable_features(observed_data, attribute, identity_id, object_ref)
@@ -215,7 +215,7 @@ class TestSTIX21Export(TestSTIX2Export):
             grouping,
             event['Event'],
             identity_id,
-            self._datetime_from_timestamp(attribute['timestamp'])
+            self._datetime_from_timestamp(event['Event']['timestamp'])
         )
         self._check_attribute_observable_features(observed_data, attribute, identity_id, observable_id)
         object_ref = observed_data['object_refs'][0]
@@ -238,7 +238,7 @@ class TestSTIX21Export(TestSTIX2Export):
             grouping,
             event['Event'],
             identity_id,
-            self._datetime_from_timestamp(attribute['timestamp'])
+            self._datetime_from_timestamp(event['Event']['timestamp'])
         )
         object_ref = self._check_grouping_features(*args)[0]
         self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
@@ -259,7 +259,7 @@ class TestSTIX21Export(TestSTIX2Export):
             grouping,
             event['Event'],
             identity_id,
-            self._datetime_from_timestamp(attribute['timestamp'])
+            self._datetime_from_timestamp(event['Event']['timestamp'])
         )
         self._check_attribute_observable_features(observed_data, attribute, identity_id, observable_id)
         object_ref = observed_data['object_refs'][0]
