@@ -189,6 +189,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_hostname_port_attribute_observable(attribute)
 
+    def _parse_mac_address_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[mac-addr:value = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_mac_address_attribute_observable(attribute)
+
     ################################################################################
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
     ################################################################################

@@ -5,7 +5,7 @@ from .misp_to_stix2 import MISPtoSTIX2Parser
 from stix2.v21.bundle import Bundle
 from stix2.v21.common import MarkingDefinition
 from stix2.v21.observables import (AutonomousSystem, DomainName, File, IPv4Address,
-                                   IPv6Address, NetworkTraffic)
+                                   IPv6Address, MACAddress, NetworkTraffic)
 from stix2.v21.sdo import Grouping, Identity, Indicator, ObservedData, Report
 from typing import Union
 
@@ -87,6 +87,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             )
         ]
         self._create_observed_data(attribute, objects)
+
+    def _parse_mac_address_attribute_observable(self, attribute: dict):
+        mac_address_object = MACAddress(
+            id=f"mac-addr--{attribute['uuid']}",
+            value=attribute['value']
+        )
+        self._create_observed_data(attribute, [mac_address_object])
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
