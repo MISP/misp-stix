@@ -208,6 +208,18 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(network_traffic_object.dst_port, int(port))
         self.assertEqual(network_traffic_object.dst_ref, '0')
 
+    def test_event_with_mac_address_indicator_attribute(self):
+        event = get_event_with_mac_address_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[mac-addr:value = '{attribute_value}']")
+
+    def test_event_with_mac_address_observable_attribute(self):
+        event = get_event_with_mac_address_attribute()
+        attribute_value, observable_objects = self._run_observable_tests(event)
+        observable = observable_objects['0']
+        self.assertEqual(observable.type, 'mac-addr')
+        self.assertEqual(observable.value, attribute_value)
+
 
 class TestSTIX21Export(TestSTIX2Export):
     def setUp(self):
@@ -378,3 +390,18 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(network_traffic.type, 'network-traffic')
         self.assertEqual(network_traffic.dst_port, int(port))
         self.assertEqual(network_traffic.dst_ref, domain_id)
+
+    def test_event_with_mac_address_indicator_attribute(self):
+        event = get_event_with_mac_address_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[mac-addr:value = '{attribute_value}']")
+
+    def test_event_with_mac_address_observable_attribute(self):
+        event = get_event_with_mac_address_attribute()
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        object_ref = object_refs[0]
+        mac_address = observable[0]
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(mac_address.id, object_ref)
+        self.assertEqual(mac_address.type, 'mac-addr')
+        self.assertEqual(mac_address.value, attribute_value)

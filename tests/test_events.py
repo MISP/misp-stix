@@ -1721,7 +1721,8 @@ def get_event_with_mac_address_attribute():
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "mac-address",
             "category": "Payload delivery",
-            "value": "12:34:56:78:90:AB"
+            "value": "12:34:56:78:90:AB",
+            "timestamp": str(int(datetime.now().timestamp())),
         }
     ]
     return event
