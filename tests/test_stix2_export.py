@@ -94,8 +94,7 @@ class TestSTIX20Export(TestSTIX2Export):
     def setUp(self):
         self.parser = MISPtoSTIX20Parser()
 
-    def test_event_with_as_indicator_attribute(self):
-        event = get_event_with_as_attribute()
+    def _run_indicator_tests(self, event):
         self._add_attribute_ids_flag(event)
         orgc = event['Event']['Orgc']
         attribute = event['Event']['Attribute'][0]
@@ -106,8 +105,13 @@ class TestSTIX20Export(TestSTIX2Export):
         object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
         self.assertEqual(report.published, timestamp)
         self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
-        number = self._parse_AS_value(attribute['value'])
-        self.assertEqual(indicator.pattern, f"[autonomous-system:number = '{number}']")
+        return attribute['value'], indicator.pattern
+
+    def test_event_with_as_indicator_attribute(self):
+        event = get_event_with_as_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        number = self._parse_AS_value(attribute_value)
+        self.assertEqual(pattern, f"[autonomous-system:number = '{number}']")
 
     def test_event_with_as_observable_attribute(self):
         event = get_event_with_as_attribute()
@@ -128,17 +132,8 @@ class TestSTIX20Export(TestSTIX2Export):
 
     def test_event_with_domain_indicator_attribute(self):
         event = get_event_with_domain_attribute()
-        self._add_attribute_ids_flag(event)
-        orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event)
-        identity, report, indicator = self.parser.stix_objects
-        identity_id = self._check_identity_features(identity, orgc)
-        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
-        self.assertEqual(report.published, timestamp)
-        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
-        self.assertEqual(indicator.pattern, f"[domain-name:value = '{attribute['value']}']")
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[domain-name:value = '{attribute_value}']")
 
     def test_event_with_domain_observable_attribute(self):
         event = get_event_with_domain_attribute()
@@ -158,20 +153,11 @@ class TestSTIX20Export(TestSTIX2Export):
 
     def test_event_with_domain_ip_indicator_attribute(self):
         event = get_event_with_domain_ip_attribute()
-        self._add_attribute_ids_flag(event)
-        orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event)
-        identity, report, indicator = self.parser.stix_objects
-        identity_id = self._check_identity_features(identity, orgc)
-        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
-        self.assertEqual(report.published, timestamp)
-        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
-        domain, ip = attribute['value'].split('|')
+        attribute_value, pattern = self._run_indicator_tests(event)
+        domain, ip = attribute_value.split('|')
         domain_pattern = f"domain-name:value = '{domain}'"
         ip_pattern = f"domain-name:resolves_to_refs[*].value = '{ip}'"
-        self.assertEqual(indicator.pattern, f'[{domain_pattern} AND {ip_pattern}]')
+        self.assertEqual(pattern, f'[{domain_pattern} AND {ip_pattern}]')
 
     def test_event_with_domain_ip_observable_attribute(self):
         event = get_event_with_domain_ip_attribute()
@@ -195,17 +181,8 @@ class TestSTIX20Export(TestSTIX2Export):
 
     def test_event_with_filename_indicator_attribute(self):
         event = get_event_with_filename_attribute()
-        self._add_attribute_ids_flag(event)
-        orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event)
-        identity, report, indicator = self.parser.stix_objects
-        identity_id = self._check_identity_features(identity, orgc)
-        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
-        self.assertEqual(report.published, timestamp)
-        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
-        self.assertEqual(indicator.pattern, f"[file:name = '{attribute['value']}']")
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[file:name = '{attribute_value}']")
 
     def test_event_with_filename_observable_attribute(self):
         event = get_event_with_filename_attribute()
@@ -225,17 +202,8 @@ class TestSTIX20Export(TestSTIX2Export):
 
     def test_event_with_hostname_indicator_attribute(self):
         event = get_event_with_hostname_attribute()
-        self._add_attribute_ids_flag(event)
-        orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event)
-        identity, report, indicator = self.parser.stix_objects
-        identity_id = self._check_identity_features(identity, orgc)
-        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
-        self.assertEqual(report.published, timestamp)
-        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
-        self.assertEqual(indicator.pattern, f"[domain-name:value = '{attribute['value']}']")
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[domain-name:value = '{attribute_value}']")
 
     def test_event_with_hostname_observable_attribute(self):
         event = get_event_with_hostname_attribute()
@@ -255,20 +223,11 @@ class TestSTIX20Export(TestSTIX2Export):
 
     def test_event_with_hostname_port_indicator_attribute(self):
         event = get_event_with_hostname_port_attribute()
-        self._add_attribute_ids_flag(event)
-        orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event)
-        identity, report, indicator = self.parser.stix_objects
-        identity_id = self._check_identity_features(identity, orgc)
-        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
-        self.assertEqual(report.published, timestamp)
-        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
-        hostname, port = attribute['value'].split('|')
+        attribute_value, pattern = self._run_indicator_tests(event)
+        hostname, port = attribute_value.split('|')
         hostname_pattern = f"domain-name:value = '{hostname}'"
         port_pattern = f"network-traffic:dst_port = '{port}'"
-        self.assertEqual(indicator.pattern, f"[{hostname_pattern} AND {port_pattern}]")
+        self.assertEqual(pattern, f"[{hostname_pattern} AND {port_pattern}]")
 
     def test_event_with_hostname_port_observable_attribute(self):
         event = get_event_with_hostname_port_attribute()
@@ -313,8 +272,7 @@ class TestSTIX21Export(TestSTIX2Export):
         for stix_object in stix_objects:
             self.assertEqual(stix_object.spec_version, '2.1')
 
-    def test_event_with_as_indicator_attribute(self):
-        event = get_event_with_as_attribute()
+    def _run_indicator_tests(self, event):
         self._add_attribute_ids_flag(event)
         orgc = event['Event']['Orgc']
         attribute = event['Event']['Attribute'][0]
@@ -332,8 +290,13 @@ class TestSTIX21Export(TestSTIX2Export):
         object_ref = self._check_grouping_features(*args)[0]
         self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
         self._check_pattern_features(indicator)
-        number = self._parse_AS_value(attribute['value'])
-        self.assertEqual(indicator.pattern, f"[autonomous-system:number = '{number}']")
+        return attribute['value'], indicator.pattern
+
+    def test_event_with_as_indicator_attribute(self):
+        event = get_event_with_as_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        number = self._parse_AS_value(attribute_value)
+        self.assertEqual(pattern, f"[autonomous-system:number = '{number}']")
 
     def test_event_with_as_observable_attribute(self):
         event = get_event_with_as_attribute()
@@ -360,24 +323,8 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_domain_indicator_attribute(self):
         event = get_event_with_domain_attribute()
-        self._add_attribute_ids_flag(event)
-        orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event)
-        stix_objects = self.parser.stix_objects
-        self._check_spec_versions(stix_objects)
-        identity, grouping, indicator = stix_objects
-        identity_id = self._check_identity_features(identity, orgc)
-        args = (
-            grouping,
-            event['Event'],
-            identity_id,
-            self._datetime_from_timestamp(event['Event']['timestamp'])
-        )
-        object_ref = self._check_grouping_features(*args)[0]
-        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
-        self._check_pattern_features(indicator)
-        self.assertEqual(indicator.pattern, f"[domain-name:value = '{attribute['value']}']")
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[domain-name:value = '{attribute_value}']")
 
     def test_event_with_domain_observable_attribute(self):
         event = get_event_with_domain_attribute()
@@ -404,27 +351,11 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_domain_ip_indicator_attribute(self):
         event = get_event_with_domain_ip_attribute()
-        self._add_attribute_ids_flag(event)
-        orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event)
-        stix_objects = self.parser.stix_objects
-        self._check_spec_versions(stix_objects)
-        identity, grouping, indicator = stix_objects
-        identity_id = self._check_identity_features(identity, orgc)
-        args = (
-            grouping,
-            event['Event'],
-            identity_id,
-            self._datetime_from_timestamp(event['Event']['timestamp'])
-        )
-        object_ref = self._check_grouping_features(*args)[0]
-        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
-        self._check_pattern_features(indicator)
-        domain, ip = attribute['value'].split('|')
+        attribute_value, pattern = self._run_indicator_tests(event)
+        domain, ip = attribute_value.split('|')
         domain_pattern = f"domain-name:value = '{domain}'"
         ip_pattern = f"domain-name:resolves_to_refs[*].value = '{ip}'"
-        self.assertEqual(indicator.pattern, f'[{domain_pattern} AND {ip_pattern}]')
+        self.assertEqual(pattern, f'[{domain_pattern} AND {ip_pattern}]')
 
     def test_event_with_domain_ip_observable_attribute(self):
         event = get_event_with_domain_ip_attribute()
@@ -457,24 +388,8 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_filename_indicator_attribute(self):
         event = get_event_with_filename_attribute()
-        self._add_attribute_ids_flag(event)
-        orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event)
-        stix_objects = self.parser.stix_objects
-        self._check_spec_versions(stix_objects)
-        identity, grouping, indicator = stix_objects
-        identity_id = self._check_identity_features(identity, orgc)
-        args = (
-            grouping,
-            event['Event'],
-            identity_id,
-            self._datetime_from_timestamp(event['Event']['timestamp'])
-        )
-        object_ref = self._check_grouping_features(*args)[0]
-        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
-        self._check_pattern_features(indicator)
-        self.assertEqual(indicator.pattern, f"[file:name = '{attribute['value']}']")
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[file:name = '{attribute_value}']")
 
     def test_event_with_filename_observable_attribute(self):
         event = get_event_with_filename_attribute()
@@ -501,24 +416,8 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_hostname_indicator_attribute(self):
         event = get_event_with_hostname_attribute()
-        self._add_attribute_ids_flag(event)
-        orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event)
-        stix_objects = self.parser.stix_objects
-        self._check_spec_versions(stix_objects)
-        identity, grouping, indicator = stix_objects
-        identity_id = self._check_identity_features(identity, orgc)
-        args = (
-            grouping,
-            event['Event'],
-            identity_id,
-            self._datetime_from_timestamp(event['Event']['timestamp'])
-        )
-        object_ref = self._check_grouping_features(*args)[0]
-        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
-        self._check_pattern_features(indicator)
-        self.assertEqual(indicator.pattern, f"[domain-name:value = '{attribute['value']}']")
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[domain-name:value = '{attribute_value}']")
 
     def test_event_with_hostname_observable_attribute(self):
         event = get_event_with_hostname_attribute()
@@ -545,27 +444,11 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_hostname_port_indicator_attribute(self):
         event = get_event_with_hostname_port_attribute()
-        self._add_attribute_ids_flag(event)
-        orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event)
-        stix_objects = self.parser.stix_objects
-        self._check_spec_versions(stix_objects)
-        identity, grouping, indicator = stix_objects
-        identity_id = self._check_identity_features(identity, orgc)
-        args = (
-            grouping,
-            event['Event'],
-            identity_id,
-            self._datetime_from_timestamp(event['Event']['timestamp'])
-        )
-        object_ref = self._check_grouping_features(*args)[0]
-        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
-        self._check_pattern_features(indicator)
-        hostname, port = attribute['value'].split('|')
+        attribute_value, pattern = self._run_indicator_tests(event)
+        hostname, port = attribute_value.split('|')
         hostname_pattern = f"domain-name:value = '{hostname}'"
         port_pattern = f"network-traffic:dst_port = '{port}'"
-        self.assertEqual(indicator.pattern, f"[{hostname_pattern} AND {port_pattern}]")
+        self.assertEqual(pattern, f"[{hostname_pattern} AND {port_pattern}]")
 
     def test_event_with_hostname_port_observable_attribute(self):
         event = get_event_with_hostname_port_attribute()
