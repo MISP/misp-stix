@@ -193,6 +193,103 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(address_object.type, 'ipv4-addr')
         self.assertEqual(address_object.value, ip)
 
+    def test_event_with_filename_indicator_attribute(self):
+        event = get_event_with_filename_attribute()
+        self._add_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        identity, report, indicator = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+        self.assertEqual(indicator.pattern, f"[file:name = '{attribute['value']}']")
+
+    def test_event_with_filename_observable_attribute(self):
+        event = get_event_with_filename_attribute()
+        self._remove_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        identity, report, observed_data = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_attribute_observable_features(observed_data, attribute, identity_id, object_ref)
+        observable = observed_data['objects']['0']
+        self.assertEqual(observable.type, 'file')
+        self.assertEqual(observable.name, attribute['value'])
+
+    def test_event_with_hostname_indicator_attribute(self):
+        event = get_event_with_hostname_attribute()
+        self._add_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        identity, report, indicator = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+        self.assertEqual(indicator.pattern, f"[domain-name:value = '{attribute['value']}']")
+
+    def test_event_with_hostname_observable_attribute(self):
+        event = get_event_with_hostname_attribute()
+        self._remove_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        identity, report, observed_data = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_attribute_observable_features(observed_data, attribute, identity_id, object_ref)
+        observable = observed_data['objects']['0']
+        self.assertEqual(observable.type, 'domain-name')
+        self.assertEqual(observable.value, attribute['value'])
+
+    def test_event_with_hostname_port_indicator_attribute(self):
+        event = get_event_with_hostname_port_attribute()
+        self._add_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        identity, report, indicator = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+        hostname, port = attribute['value'].split('|')
+        hostname_pattern = f"domain-name:value = '{hostname}'"
+        port_pattern = f"network-traffic:dst_port = '{port}'"
+        self.assertEqual(indicator.pattern, f"[{hostname_pattern} AND {port_pattern}]")
+
+    def test_event_with_hostname_port_observable_attribute(self):
+        event = get_event_with_hostname_port_attribute()
+        self._remove_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        identity, report, observed_data = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_attribute_observable_features(observed_data, attribute, identity_id, object_ref)
+        hostname, port = attribute['value'].split('|')
+        domain_object, network_traffic_object = observed_data['objects'].values()
+        self.assertEqual(domain_object.type, 'domain-name')
+        self.assertEqual(domain_object.value, hostname)
+        self.assertEqual(network_traffic_object.type, 'network-traffic')
+        self.assertEqual(network_traffic_object.dst_port, int(port))
+        self.assertEqual(network_traffic_object.dst_ref, '0')
+
 
 class TestSTIX21Export(TestSTIX2Export):
     def setUp(self):
@@ -357,3 +454,143 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(address.id, address_ref)
         self.assertEqual(address.type, 'ipv4-addr')
         self.assertEqual(address.value, ip_value)
+
+    def test_event_with_filename_indicator_attribute(self):
+        event = get_event_with_filename_attribute()
+        self._add_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, indicator = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        object_ref = self._check_grouping_features(*args)[0]
+        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+        self._check_pattern_features(indicator)
+        self.assertEqual(indicator.pattern, f"[file:name = '{attribute['value']}']")
+
+    def test_event_with_filename_observable_attribute(self):
+        event = get_event_with_filename_attribute()
+        self._remove_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, observed_data, file = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        observable_id, file_id = self._check_grouping_features(
+            grouping,
+            event['Event'],
+            identity_id,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        self._check_attribute_observable_features(observed_data, attribute, identity_id, observable_id)
+        object_ref = observed_data['object_refs'][0]
+        self.assertEqual(object_ref, file_id)
+        self.assertEqual(file.id, object_ref)
+        self.assertEqual(file.type, 'file')
+        self.assertEqual(file.name, attribute['value'])
+
+    def test_event_with_hostname_indicator_attribute(self):
+        event = get_event_with_hostname_attribute()
+        self._add_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, indicator = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        object_ref = self._check_grouping_features(*args)[0]
+        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+        self._check_pattern_features(indicator)
+        self.assertEqual(indicator.pattern, f"[domain-name:value = '{attribute['value']}']")
+
+    def test_event_with_hostname_observable_attribute(self):
+        event = get_event_with_hostname_attribute()
+        self._remove_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, observed_data, domain = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        observable_id, domain_id = self._check_grouping_features(
+            grouping,
+            event['Event'],
+            identity_id,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        self._check_attribute_observable_features(observed_data, attribute, identity_id, observable_id)
+        object_ref = observed_data['object_refs'][0]
+        self.assertEqual(object_ref, domain_id)
+        self.assertEqual(domain.id, object_ref)
+        self.assertEqual(domain.type, 'domain-name')
+        self.assertEqual(domain.value, attribute['value'])
+
+    def test_event_with_hostname_port_indicator_attribute(self):
+        event = get_event_with_hostname_port_attribute()
+        self._add_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, indicator = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        object_ref = self._check_grouping_features(*args)[0]
+        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+        self._check_pattern_features(indicator)
+        hostname, port = attribute['value'].split('|')
+        hostname_pattern = f"domain-name:value = '{hostname}'"
+        port_pattern = f"network-traffic:dst_port = '{port}'"
+        self.assertEqual(indicator.pattern, f"[{hostname_pattern} AND {port_pattern}]")
+
+    def test_event_with_hostname_port_observable_attribute(self):
+        event = get_event_with_hostname_port_attribute()
+        self._remove_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, observed_data, domain, network_traffic = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        observable_id, domain_id, network_traffic_id = self._check_grouping_features(
+            grouping,
+            event['Event'],
+            identity_id,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        self._check_attribute_observable_features(observed_data, attribute, identity_id, observable_id)
+        hostname, port = attribute['value'].split('|')
+        hostname_ref, network_traffic_ref = observed_data['object_refs']
+        self.assertEqual(hostname_ref, domain_id)
+        self.assertEqual(domain.id, hostname_ref)
+        self.assertEqual(domain.type, 'domain-name')
+        self.assertEqual(domain.value, hostname)
+        self.assertEqual(network_traffic.id, network_traffic_id)
+        self.assertEqual(network_traffic.type, 'network-traffic')
+        self.assertEqual(network_traffic.dst_port, int(port))
+        self.assertEqual(network_traffic.dst_ref, domain_id)
