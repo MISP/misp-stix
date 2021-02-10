@@ -4,7 +4,8 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from stix2.v21.bundle import Bundle
 from stix2.v21.common import MarkingDefinition
-from stix2.v21.observables import AutonomousSystem, DomainName, IPv4Address, IPv6Address
+from stix2.v21.observables import (AutonomousSystem, DomainName, File, IPv4Address,
+                                   IPv6Address, NetworkTraffic)
 from stix2.v21.sdo import Grouping, Identity, Indicator, ObservedData, Report
 from typing import Union
 
@@ -50,22 +51,42 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         domain, ip = attribute['value'].split('|')
         address_type = self._get_address_type(ip)
         address_id = f"{address_type._type}--{attribute['uuid']}"
-        address_object = address_type(
-            id=address_id,
-            value=ip
+        objects = [
+            DomainName(
+                id=f"domain-name--{attribute['uuid']}",
+                value=domain,
+                resolves_to_refs=[address_id]
+            ),
+            address_type(
+                id=address_id,
+                value=ip
+            )
+        ]
+        self._create_observed_data(attribute, objects)
+
+    def _parse_filename_attribute_observable(self, attribute: dict):
+        file_object = File(
+            id=f"file--{attribute['uuid']}",
+            name=attribute['value']
         )
-        domain_object = DomainName(
-            id=f"domain-name--{attribute['uuid']}",
-            value=domain,
-            resolves_to_refs=[address_id]
-        )
-        self._create_observed_data(
-            attribute,
-            [
-                domain_object,
-                address_object
-            ]
-        )
+        self._create_observed_data(attribute, [file_object])
+
+    def _parse_hostname_port_attribute_observable(self, attribute: dict):
+        hostname, port = attribute['value'].split('|')
+        domain_id = f"domain-name--{attribute['uuid']}"
+        objects = [
+            DomainName(
+                id=domain_id,
+                value=hostname
+            ),
+            NetworkTraffic(
+                id=f"network-traffic--{attribute['uuid']}",
+                dst_port=port,
+                dst_ref=domain_id,
+                protocols=['TCP']
+            )
+        ]
+        self._create_observed_data(attribute, objects)
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #

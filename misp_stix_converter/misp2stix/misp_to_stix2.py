@@ -172,6 +172,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_domain_ip_attribute_observable(attribute)
 
+    def _parse_filename_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[file:name = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_filename_attribute_observable(attribute)
+
+    def _parse_hostname_port_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            hostname, port = attribute['value'].split('|')
+            hostname_pattern = self._create_domain_pattern(hostname)
+            port_pattern = self._create_port_pattern(port)
+            pattern = f"[{hostname_pattern} AND {port_pattern}]"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_hostname_port_attribute_observable(attribute)
+
     ################################################################################
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
     ################################################################################
@@ -253,6 +270,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _create_domain_resolving_pattern(value):
         return f"domain-name:resolves_to_refs[*].value = '{value}'"
+
+    @staticmethod
+    def _create_port_pattern(value):
+        return f"network-traffic:dst_port = '{value}'"
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #

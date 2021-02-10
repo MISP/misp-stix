@@ -4,7 +4,8 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from stix2.v20.bundle import Bundle
 from stix2.v20.common import MarkingDefinition
-from stix2.v20.observables import AutonomousSystem, DomainName, IPv4Address, IPv6Address
+from stix2.v20.observables import (AutonomousSystem, DomainName, File, IPv4Address,
+                                   IPv6Address, NetworkTraffic)
 from stix2.v20.sdo import Identity, Indicator, ObservedData, Report
 from typing import Union
 
@@ -51,6 +52,27 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 resolves_to_refs=['1']
             ),
             '1': address_object
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_filename_attribute_observable(self, attribute: dict):
+        observable_object = {
+            '0': File(name=attribute['value'])
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_hostname_port_attribute_observable(self, attribute: dict):
+        hostname, port = attribute['value'].split('|')
+        observable_object = {
+            '0': DomainName(
+                value=hostname
+            ),
+            '1': NetworkTraffic(
+                dst_port=port,
+                _valid_refs={'0': 'domain-name'},
+                dst_ref='0',
+                protocols=['TCP']
+            )
         }
         self._create_observed_data(attribute, observable_object)
 
