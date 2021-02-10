@@ -157,10 +157,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_domain_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[domain-name:value = '{attribute['value']}']"
+            pattern = f"[{self._create_domain_pattern(attribute['value'])}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_domain_attribute_observable(attribute)
+
+    def _parse_domain_ip_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            domain, ip = attribute['value'].split('|')
+            domain_pattern = self._create_domain_pattern(domain)
+            resolving_ref = self._create_domain_resolving_pattern(ip)
+            pattern = f"[{domain_pattern} AND {resolving_ref}]"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_domain_ip_attribute_observable(attribute)
 
     ################################################################################
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
@@ -231,6 +241,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._objects.append(identity)
             return 1
         return 0
+
+    ################################################################################
+    #                         PATTERNS CREATION FUNCTIONS.                         #
+    ################################################################################
+
+    @staticmethod
+    def _create_domain_pattern(value):
+        return f"domain-name:value = '{value}'"
+
+    @staticmethod
+    def _create_domain_resolving_pattern(value):
+        return f"domain-name:resolves_to_refs[*].value = '{value}'"
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #

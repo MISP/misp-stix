@@ -4,7 +4,7 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from stix2.v20.bundle import Bundle
 from stix2.v20.common import MarkingDefinition
-from stix2.v20.observables import AutonomousSystem
+from stix2.v20.observables import AutonomousSystem, DomainName, IPv4Address, IPv6Address
 from stix2.v20.sdo import Identity, Indicator, ObservedData, Report
 from typing import Union
 
@@ -37,6 +37,20 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_domain_attribute_observable(self, attribute: dict):
         observable_object = {
             '0': DomainName(value=attribute['value'])
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_domain_ip_attribute_observable(self, attribute: dict):
+        domain, ip = attribute['value'].split('|')
+        address_type = self._get_address_type(ip)
+        address_object = address_type(value=ip)
+        observable_object = {
+            '0': DomainName(
+                value=domain,
+                _valid_refs={'1': address_object._type},
+                resolves_to_refs=['1']
+            ),
+            '1': address_object
         }
         self._create_observed_data(attribute, observable_object)
 
@@ -86,3 +100,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_report(report_args):
         return Report(**report_args)
+
+    ################################################################################
+    #                              UTILITY FUNCTIONS.                              #
+    ################################################################################
+
+    @staticmethod
+    def _get_address_type(address):
+        if ':' in address:
+            return IPv6Address
+        return IPv4Address

@@ -4,7 +4,7 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from stix2.v21.bundle import Bundle
 from stix2.v21.common import MarkingDefinition
-from stix2.v21.observables import AutonomousSystem
+from stix2.v21.observables import AutonomousSystem, DomainName, IPv4Address, IPv6Address
 from stix2.v21.sdo import Grouping, Identity, Indicator, ObservedData, Report
 from typing import Union
 
@@ -37,14 +37,35 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             id=f"autonomous-system--{attribute['uuid']}",
             number=self._parse_AS_value(attribute['value'])
         )
-        self._create_observed_data(attribute, AS_object)
+        self._create_observed_data(attribute, [AS_object])
 
     def _parse_domain_attribute_observable(self, attribute: dict):
         domain_object = DomainName(
             id=f"domain-name--{attribute['uuid']}",
             value=attribute['value']
         )
-        self._create_observed_data(attribute, domain_object)
+        self._create_observed_data(attribute, [domain_object])
+
+    def _parse_domain_ip_attribute_observable(self, attribute: dict):
+        domain, ip = attribute['value'].split('|')
+        address_type = self._get_address_type(ip)
+        address_id = f"{address_type._type}--{attribute['uuid']}"
+        address_object = address_type(
+            id=address_id,
+            value=ip
+        )
+        domain_object = DomainName(
+            id=f"domain-name--{attribute['uuid']}",
+            value=domain,
+            resolves_to_refs=[address_id]
+        )
+        self._create_observed_data(
+            attribute,
+            [
+                domain_object,
+                address_object
+            ]
+        )
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
@@ -90,13 +111,24 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             return
         return marking_args['id']
 
-    def _create_observed_data(self, attribute: dict, observable: _OBSERVABLE_OBJECT_TYPES):
+    def _create_observed_data(self, attribute: dict, observables: list):
         observable_args = self._create_observable_args(attribute)
-        observable_args['object_refs'] = [observable.id]
+        observable_args['object_refs'] = [observable.id for observable in observables]
         observed_data = ObservedData(**observable_args)
         self._append_SDO(observed_data)
-        self._append_SDO(observable)
+        for observable in observables:
+            self._append_SDO(observable)
 
     @staticmethod
     def _create_report(report_args):
         return Report(**report_args)
+
+    ################################################################################
+    #                              UTILITY FUNCTIONS.                              #
+    ################################################################################
+
+    @staticmethod
+    def _get_address_type(address):
+        if ':' in address:
+            return IPv6Address
+        return IPv4Address
