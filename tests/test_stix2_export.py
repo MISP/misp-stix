@@ -156,6 +156,43 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(observable.type, 'domain-name')
         self.assertEqual(observable.value, attribute['value'])
 
+    def test_event_with_domain_ip_indicator_attribute(self):
+        event = get_event_with_domain_ip_attribute()
+        self._add_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        identity, report, indicator = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+        domain, ip = attribute['value'].split('|')
+        domain_pattern = f"domain-name:value = '{domain}'"
+        ip_pattern = f"domain-name:resolves_to_refs[*].value = '{ip}'"
+        self.assertEqual(indicator.pattern, f'[{domain_pattern} AND {ip_pattern}]')
+
+    def test_event_with_domain_ip_observable_attribute(self):
+        event = get_event_with_domain_ip_attribute()
+        self._remove_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        identity, report, observed_data = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_attribute_observable_features(observed_data, attribute, identity_id, object_ref)
+        domain, ip = attribute['value'].split('|')
+        domain_object, address_object = observed_data['objects'].values()
+        self.assertEqual(domain_object.type, 'domain-name')
+        self.assertEqual(domain_object.value, domain)
+        self.assertEqual(domain_object.resolves_to_refs, ['1'])
+        self.assertEqual(address_object.type, 'ipv4-addr')
+        self.assertEqual(address_object.value, ip)
+
 
 class TestSTIX21Export(TestSTIX2Export):
     def setUp(self):
@@ -255,7 +292,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, domain = stix_objects
         identity_id = self._check_identity_features(identity, orgc)
-        observable_id, as_id = self._check_grouping_features(
+        observable_id, domain_id = self._check_grouping_features(
             grouping,
             event['Event'],
             identity_id,
@@ -263,6 +300,60 @@ class TestSTIX21Export(TestSTIX2Export):
         )
         self._check_attribute_observable_features(observed_data, attribute, identity_id, observable_id)
         object_ref = observed_data['object_refs'][0]
+        self.assertEqual(object_ref, domain_id)
         self.assertEqual(domain.id, object_ref)
         self.assertEqual(domain.type, 'domain-name')
         self.assertEqual(domain.value, attribute['value'])
+
+    def test_event_with_domain_ip_indicator_attribute(self):
+        event = get_event_with_domain_ip_attribute()
+        self._add_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, indicator = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        object_ref = self._check_grouping_features(*args)[0]
+        self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+        self._check_pattern_features(indicator)
+        domain, ip = attribute['value'].split('|')
+        domain_pattern = f"domain-name:value = '{domain}'"
+        ip_pattern = f"domain-name:resolves_to_refs[*].value = '{ip}'"
+        self.assertEqual(indicator.pattern, f'[{domain_pattern} AND {ip_pattern}]')
+
+    def test_event_with_domain_ip_observable_attribute(self):
+        event = get_event_with_domain_ip_attribute()
+        self._remove_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, observed_data, domain, address = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        observable_id, domain_id, address_id = self._check_grouping_features(
+            grouping,
+            event['Event'],
+            identity_id,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        self._check_attribute_observable_features(observed_data, attribute, identity_id, observable_id)
+        domain_value, ip_value = attribute['value'].split('|')
+        domain_ref, address_ref = observed_data['object_refs']
+        self.assertEqual(domain_ref, domain_id)
+        self.assertEqual(domain.id, domain_ref)
+        self.assertEqual(domain.type, 'domain-name')
+        self.assertEqual(domain.value, domain_value)
+        self.assertEqual(domain.resolves_to_refs, [address_id])
+        self.assertEqual(address_ref, address_id)
+        self.assertEqual(address.id, address_ref)
+        self.assertEqual(address.type, 'ipv4-addr')
+        self.assertEqual(address.value, ip_value)
