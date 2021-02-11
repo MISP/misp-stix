@@ -220,6 +220,33 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(observable.type, 'mac-addr')
         self.assertEqual(observable.value, attribute_value)
 
+    def test_event_with_mutex_indicator_attribute(self):
+        event = get_event_with_mutex_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[mutex:name = '{attribute_value}']")
+
+    def test_event_with_mutex_observable_attribute(self):
+        event = get_event_with_mutex_attribute()
+        attribute_value, observable_objects = self._run_observable_tests(event)
+        observable = observable_objects['0']
+        self.assertEqual(observable.type, 'mutex')
+        self.assertEqual(observable.name, attribute_value)
+
+    def test_event_with_regkey_indicator_attribute(self):
+        event = get_event_with_regkey_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(
+            pattern.replace('\\\\', '\\'),
+            f"[windows-registry-key:key = '{attribute_value}']"
+        )
+
+    def test_event_with_regkey_observable_attribute(self):
+        event = get_event_with_regkey_attribute()
+        attribute_value, observable_objects = self._run_observable_tests(event)
+        observable = observable_objects['0']
+        self.assertEqual(observable.type, 'windows-registry-key')
+        self.assertEqual(observable.key, attribute_value)
+
 
 class TestSTIX21Export(TestSTIX2Export):
     def setUp(self):
@@ -405,3 +432,36 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(mac_address.id, object_ref)
         self.assertEqual(mac_address.type, 'mac-addr')
         self.assertEqual(mac_address.value, attribute_value)
+
+    def test_event_with_mutex_indicator_attribute(self):
+        event = get_event_with_mutex_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[mutex:name = '{attribute_value}']")
+
+    def test_event_with_mutex_observable_attribute(self):
+        event = get_event_with_mutex_attribute()
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        object_ref = object_refs[0]
+        mutex = observable[0]
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(mutex.id, object_ref)
+        self.assertEqual(mutex.type, 'mutex')
+        self.assertEqual(mutex.name, attribute_value)
+
+    def test_event_with_regkey_indicator_attribute(self):
+        event = get_event_with_regkey_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(
+            pattern.replace('\\\\', '\\'),
+            f"[windows-registry-key:key = '{attribute_value}']"
+        )
+
+    def test_event_with_regkey_observable_attribute(self):
+        event = get_event_with_regkey_attribute()
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        object_ref = object_refs[0]
+        registry_key = observable[0]
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(registry_key.id, object_ref)
+        self.assertEqual(registry_key.type, 'windows-registry-key')
+        self.assertEqual(registry_key.key, attribute_value)

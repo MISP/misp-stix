@@ -1797,7 +1797,8 @@ def get_event_with_port_attribute():
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "port",
             "category": "Network activity",
-            "value": "8443"
+            "value": "8443",
+            "timestamp": str(int(datetime.now().timestamp()))
         }
     ]
     return event
