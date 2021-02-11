@@ -13,7 +13,9 @@ attribute_types_mapping = {
     'filename': '_parse_filename_attribute',
     'hostname': '_parse_domain_attribute',
     'hostname|port': '_parse_hostname_port_attribute',
-    'mac-address': '_parse_mac_address_attribute'
+    'mac-address': '_parse_mac_address_attribute',
+    'mutex': '_parse_mutex_attribute',
+    'regkey': '_parse_regkey_attribute'
 }
 
 tlp_markings_v20 = {

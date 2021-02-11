@@ -5,7 +5,8 @@ from .misp_to_stix2 import MISPtoSTIX2Parser
 from stix2.v21.bundle import Bundle
 from stix2.v21.common import MarkingDefinition
 from stix2.v21.observables import (AutonomousSystem, DomainName, File, IPv4Address,
-                                   IPv6Address, MACAddress, NetworkTraffic)
+                                   IPv6Address, MACAddress, Mutex, NetworkTraffic,
+                                   WindowsRegistryKey)
 from stix2.v21.sdo import Grouping, Identity, Indicator, ObservedData, Report
 from typing import Union
 
@@ -83,7 +84,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 id=f"network-traffic--{attribute['uuid']}",
                 dst_port=port,
                 dst_ref=domain_id,
-                protocols=['TCP']
+                protocols=['tcp']
             )
         ]
         self._create_observed_data(attribute, objects)
@@ -94,6 +95,20 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             value=attribute['value']
         )
         self._create_observed_data(attribute, [mac_address_object])
+
+    def _parse_mutex_attribute_observable(self, attribute: dict):
+        mutex_object = Mutex(
+            id=f"mutex--{attribute['uuid']}",
+            name=attribute['value']
+        )
+        self._create_observed_data(attribute, [mutex_object])
+
+    def _parse_regkey_attribute_observable(self, attribute: dict):
+        port_object = WindowsRegistryKey(
+            id=f"windows-registry-key--{attribute['uuid']}",
+            key=attribute['value']
+        )
+        self._create_observed_data(attribute, [port_object])
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #

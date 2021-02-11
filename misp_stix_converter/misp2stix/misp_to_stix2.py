@@ -196,6 +196,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_mac_address_attribute_observable(attribute)
 
+    def _parse_mutex_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[mutex:name = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_mutex_attribute_observable(attribute)
+
+    def _parse_regkey_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            key = attribute['value']
+            if '\\\\' not in key:
+                key = key.replace('\\', '\\\\')
+            pattern = f"[windows-registry-key:key = '{key}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_regkey_attribute_observable(attribute)
+
     ################################################################################
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
     ################################################################################
