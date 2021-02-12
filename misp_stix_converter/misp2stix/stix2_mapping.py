@@ -8,14 +8,17 @@ from stix2.v21.common import (TLP_WHITE as TLP_WHITE_v21, TLP_GREEN as TLP_GREEN
 
 attribute_types_mapping = {
     'AS': '_parse_autonomous_system_attribute',
+    'attachment': '_parse_attachment_attribute',
     'domain': '_parse_domain_attribute',
     'domain|ip': '_parse_domain_ip_attribute',
+    'email-attachment': '_parse_email_attachment_attribute',
     'filename': '_parse_filename_attribute',
     'hostname': '_parse_domain_attribute',
     'hostname|port': '_parse_hostname_port_attribute',
     'mac-address': '_parse_mac_address_attribute',
     'mutex': '_parse_mutex_attribute',
-    'regkey': '_parse_regkey_attribute'
+    'regkey': '_parse_regkey_attribute',
+    'regkey|value': '_parse_regkey_value_attribute'
 }
 
 tlp_markings_v20 = {

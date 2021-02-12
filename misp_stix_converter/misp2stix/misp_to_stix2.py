@@ -147,6 +147,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             return int(value[2:])
         return int(value)
 
+    def _parse_attachment_attribute(self, attribute: dict):
+        if attribute.get('data'):
+            if attribute.get('to_ids', False):
+                file_pattern = self._create_filename_pattern(attribute['value'])
+                data_pattern = self._create_content_ref_pattern(attribute['data'])
+                pattern = f"[{file_pattern} AND {data_pattern}]"
+                self._handle_attribute_indicator(attribute, pattern)
+            else:
+                self._parse_attachment_attribute_observable(attribute)
+        else:
+            self._parse_filename_attribute(attribute)
+
     def _parse_autonomous_system_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             value = self._parse_AS_value(attribute['value'])
@@ -172,9 +184,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_domain_ip_attribute_observable(attribute)
 
+    def _parse_email_attachment_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[email-message:body_multipart[*].body_raw_ref.name = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_email_attachment_attribute_observable(attribute)
+
     def _parse_filename_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[file:name = '{attribute['value']}']"
+            pattern = f"[{self._create_filename_pattern(attribute['value'])}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_filename_attribute_observable(attribute)
@@ -208,10 +227,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             key = attribute['value']
             if '\\\\' not in key:
                 key = key.replace('\\', '\\\\')
-            pattern = f"[windows-registry-key:key = '{key}']"
+            pattern = f"[{self._create_regkey_pattern(key)}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_regkey_attribute_observable(attribute)
+
+    def _parse_regkey_value_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            key, value = attribute['value'].split('|')
+            if '\\\\' not in key:
+                key = key.replace('\\', '\\\\')
+            key_pattern = self._create_regkey_pattern(key)
+            pattern = f"[{key_pattern} AND windows-registry-key:values.data = '{value.strip()}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_regkey_value_attribute_observable(attribute)
+
 
     ################################################################################
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
@@ -288,6 +319,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     ################################################################################
 
     @staticmethod
+    def _create_content_ref_pattern(value):
+        return f"file:content_ref.payload_bin = '{value}'"
+
+    @staticmethod
     def _create_domain_pattern(value):
         return f"domain-name:value = '{value}'"
 
@@ -296,8 +331,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return f"domain-name:resolves_to_refs[*].value = '{value}'"
 
     @staticmethod
+    def _create_filename_pattern(value):
+        return f"file:name = '{value}'"
+
+    @staticmethod
     def _create_port_pattern(value):
         return f"network-traffic:dst_port = '{value}'"
+
+    @staticmethod
+    def _create_regkey_pattern(value):
+        return f"windows-registry-key:key = '{value.strip()}'"
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #

@@ -4,9 +4,10 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from stix2.v21.bundle import Bundle
 from stix2.v21.common import MarkingDefinition
-from stix2.v21.observables import (AutonomousSystem, DomainName, File, IPv4Address,
-                                   IPv6Address, MACAddress, Mutex, NetworkTraffic,
-                                   WindowsRegistryKey)
+from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, EmailMessage,
+                                   EmailMIMEComponent, File, IPv4Address, IPv6Address,
+                                   MACAddress, Mutex, NetworkTraffic, WindowsRegistryKey,
+                                   WindowsRegistryValueType)
 from stix2.v21.sdo import Grouping, Identity, Indicator, ObservedData, Report
 from typing import Union
 
@@ -33,6 +34,21 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     ################################################################################
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
     ################################################################################
+
+    def _parse_attachment_attribute_observable(self, attribute: dict):
+        artifact_id = f"artifact--{attribute['uuid']}"
+        objects = [
+            File(
+                id=f"file--{attribute['uuid']}",
+                name=attribute['value'],
+                content_ref=artifact_id
+            ),
+            Artifact(
+                id=artifact_id,
+                payload_bin=attribute['data']
+            )
+        ]
+        self._create_observed_data(attribute, objects)
 
     def _parse_autonomous_system_attribute_observable(self, attribute: dict):
         AS_object = AutonomousSystem(
@@ -61,6 +77,26 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             address_type(
                 id=address_id,
                 value=ip
+            )
+        ]
+        self._create_observed_data(attribute, objects)
+
+    def _parse_email_attachment_attribute_observable(self, attribute: dict):
+        file_id = f"file--{attribute['uuid']}"
+        objects = [
+            EmailMessage(
+                id=f"email-message--{attribute['uuid']}",
+                is_multipart=True,
+                body_multipart=[
+                    EmailMIMEComponent(
+                        content_disposition=f"attachment; filename='{attribute['value']}'",
+                        body_raw_ref=file_id
+                    )
+                ]
+            ),
+            File(
+                id=file_id,
+                name=attribute['value']
             )
         ]
         self._create_observed_data(attribute, objects)
@@ -104,11 +140,24 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._create_observed_data(attribute, [mutex_object])
 
     def _parse_regkey_attribute_observable(self, attribute: dict):
-        port_object = WindowsRegistryKey(
+        regkey_object = WindowsRegistryKey(
             id=f"windows-registry-key--{attribute['uuid']}",
-            key=attribute['value']
+            key=attribute['value'].strip()
         )
-        self._create_observed_data(attribute, [port_object])
+        self._create_observed_data(attribute, [regkey_object])
+
+    def _parse_regkey_value_attribute_observable(self, attribute: dict):
+        key, value = attribute['value'].split('|')
+        regkey_object = WindowsRegistryKey(
+            id=f"windows-registry-key--{attribute['uuid']}",
+            key=key.strip(),
+            values=[
+                WindowsRegistryValueType(
+                    data=value.strip()
+                )
+            ]
+        )
+        self._create_observed_data(attribute, [regkey_object])
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #

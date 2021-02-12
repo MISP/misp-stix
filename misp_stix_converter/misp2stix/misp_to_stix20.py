@@ -4,9 +4,10 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from stix2.v20.bundle import Bundle
 from stix2.v20.common import MarkingDefinition
-from stix2.v20.observables import (AutonomousSystem, DomainName, File, IPv4Address,
-                                   IPv6Address, MACAddress, Mutex, NetworkTraffic,
-                                   WindowsRegistryKey)
+from stix2.v20.observables import (Artifact, AutonomousSystem, DomainName, EmailMessage,
+                                   EmailMIMEComponent, File, IPv4Address, IPv6Address,
+                                   MACAddress, Mutex, NetworkTraffic, WindowsRegistryKey,
+                                   WindowsRegistryValueType)
 from stix2.v20.sdo import Identity, Indicator, ObservedData, Report
 from typing import Union
 
@@ -29,6 +30,19 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     ################################################################################
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
     ################################################################################
+
+    def _parse_attachment_attribute_observable(self, attribute: dict):
+        observable_object = {
+            '0': File(
+                name=attribute['value'],
+                _valid_refs={'1': 'artifact'},
+                content_ref='1'
+            ),
+            '1': Artifact(
+                payload_bin=attribute['data']
+            )
+        }
+        self._create_observed_data(attribute, observable_object)
 
     def _parse_autonomous_system_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -53,6 +67,21 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 resolves_to_refs=['1']
             ),
             '1': address_object
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_email_attachment_attribute_observable(self, attribute: dict):
+        observable_object = {
+            '0': EmailMessage(
+                is_multipart=True,
+                body_multipart=[
+                    EmailMIMEComponent(
+                        content_disposition=f"attachment; filename='{attribute['value']}'",
+                        body_raw_ref='1'
+                    )
+                ]
+            ),
+            '1': File(name=attribute['value'])
         }
         self._create_observed_data(attribute, observable_object)
 
@@ -92,7 +121,22 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_regkey_attribute_observable(self, attribute: dict):
         observable_object = {
             '0': WindowsRegistryKey(
-                key=attribute['value']
+                key=attribute['value'].strip()
+            )
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_regkey_value_attribute_observable(self, attribute: dict):
+        key, value = attribute['value'].split('|')
+        observable_object = {
+            '0': WindowsRegistryKey(
+                key=key.strip(),
+                values=[
+                    WindowsRegistryValueType(
+                        name='',
+                        data=value.strip()
+                    )
+                ]
             )
         }
         self._create_observed_data(attribute, observable_object)
