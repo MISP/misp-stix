@@ -134,6 +134,25 @@ class TestSTIX20Export(TestSTIX2Export):
         number = self._parse_AS_value(attribute_value)
         self.assertEqual(observable.number, number)
 
+    def test_event_with_attachment_indicator_attribute(self):
+        event = get_event_with_attachment_attribute()
+        data = event['Event']['Attribute'][0]['data']
+        attribute_value, pattern = self._run_indicator_tests(event)
+        file_pattern = f"file:name = '{attribute_value}'"
+        data_pattern = f"file:content_ref.payload_bin = '{data}'"
+        self.assertEqual(pattern, f"[{file_pattern} AND {data_pattern}]")
+
+    def test_event_with_attachment_observable_attribute(self):
+        event = get_event_with_attachment_attribute()
+        data = event['Event']['Attribute'][0]['data']
+        attribute_value, observable_objects = self._run_observable_tests(event)
+        file_object, artifact_object = observable_objects.values()
+        self.assertEqual(file_object.type, 'file')
+        self.assertEqual(file_object.name, attribute_value)
+        self.assertEqual(file_object.content_ref, '1')
+        self.assertEqual(artifact_object.type, 'artifact')
+        self.assertEqual(artifact_object.payload_bin, data)
+
     def test_event_with_domain_indicator_attribute(self):
         event = get_event_with_domain_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
@@ -164,6 +183,23 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(domain_object.resolves_to_refs, ['1'])
         self.assertEqual(address_object.type, 'ipv4-addr')
         self.assertEqual(address_object.value, ip)
+
+    def test_event_with_email_attachment_indicator_attribute(self):
+        event = get_event_with_email_attachment_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[email-message:body_multipart[*].body_raw_ref.name = '{attribute_value}']")
+
+    def test_event_with_email_attachment_observable_attribute(self):
+        event = get_event_with_email_attachment_attribute()
+        attribute_value, observable_objects = self._run_observable_tests(event)
+        email_object, file_object = observable_objects.values()
+        self.assertEqual(email_object.type, 'email-message')
+        self.assertEqual(email_object.is_multipart, True)
+        body = email_object.body_multipart[0]
+        self.assertEqual(body.content_disposition, f"attachment; filename='{attribute_value}'")
+        self.assertEqual(body.body_raw_ref, '1')
+        self.assertEqual(file_object.type, 'file')
+        self.assertEqual(file_object.name, attribute_value)
 
     def test_event_with_filename_indicator_attribute(self):
         event = get_event_with_filename_attribute()
@@ -237,7 +273,7 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(
             pattern.replace('\\\\', '\\'),
-            f"[windows-registry-key:key = '{attribute_value}']"
+            f"[windows-registry-key:key = '{attribute_value.strip()}']"
         )
 
     def test_event_with_regkey_observable_attribute(self):
@@ -245,7 +281,27 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute_value, observable_objects = self._run_observable_tests(event)
         observable = observable_objects['0']
         self.assertEqual(observable.type, 'windows-registry-key')
-        self.assertEqual(observable.key, attribute_value)
+        self.assertEqual(observable.key, attribute_value.strip())
+
+    def test_event_with_regkey_value_indicator_attribute(self):
+        event = get_event_with_regkey_value_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        key, value = attribute_value.split('|')
+        key_pattern = f"windows-registry-key:key = '{key.strip()}'"
+        value_pattern = f"windows-registry-key:values.data = '{value.strip()}'"
+        self.assertEqual(
+            pattern.replace('\\\\', '\\'),
+            f"[{key_pattern} AND {value_pattern}]"
+        )
+
+    def test_event_with_regkey_value_observable_attribute(self):
+        event = get_event_with_regkey_value_attribute()
+        attribute_value, observable_objects = self._run_observable_tests(event)
+        key, value = attribute_value.split('|')
+        observable = observable_objects['0']
+        self.assertEqual(observable.type, 'windows-registry-key')
+        self.assertEqual(observable.key, key.strip())
+        self.assertEqual(observable['values'][0].data, value.strip())
 
 
 class TestSTIX21Export(TestSTIX2Export):
@@ -324,6 +380,31 @@ class TestSTIX21Export(TestSTIX2Export):
         number = self._parse_AS_value(attribute_value)
         self.assertEqual(AS.number, number)
 
+    def test_event_with_attachment_indicator_attribute(self):
+        event = get_event_with_attachment_attribute()
+        data = event['Event']['Attribute'][0]['data']
+        attribute_value, pattern = self._run_indicator_tests(event)
+        file_pattern = f"file:name = '{attribute_value}'"
+        data_pattern = f"file:content_ref.payload_bin = '{data}'"
+        self.assertEqual(pattern, f"[{file_pattern} AND {data_pattern}]")
+
+    def test_event_with_attachment_observable_attribute(self):
+        event = get_event_with_attachment_attribute()
+        data = event['Event']['Attribute'][0]['data']
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        file_id, artifact_id = grouping_refs
+        file_ref, artifact_ref = object_refs
+        file_object, artifact_object = observable
+        self.assertEqual(file_ref, file_id)
+        self.assertEqual(file_object.id, file_ref)
+        self.assertEqual(file_object.type, 'file')
+        self.assertEqual(file_object.name, attribute_value)
+        self.assertEqual(file_object.content_ref, artifact_id)
+        self.assertEqual(artifact_ref, artifact_id)
+        self.assertEqual(artifact_object.id, artifact_ref)
+        self.assertEqual(artifact_object.type, 'artifact')
+        self.assertEqual(artifact_object.payload_bin, data)
+
     def test_event_with_domain_indicator_attribute(self):
         event = get_event_with_domain_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
@@ -363,6 +444,28 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(address.id, address_ref)
         self.assertEqual(address.type, 'ipv4-addr')
         self.assertEqual(address.value, ip_value)
+
+    def test_event_with_email_attachment_indicator_attribute(self):
+        event = get_event_with_email_attachment_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[email-message:body_multipart[*].body_raw_ref.name = '{attribute_value}']")
+
+    def test_event_with_email_attachment_observable_attribute(self):
+        event = get_event_with_email_attachment_attribute()
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        email_id, file_id = grouping_refs
+        email_ref, file_ref = object_refs
+        email, file = observable
+        self.assertEqual(email_ref, email_id)
+        self.assertEqual(email.id, email_ref)
+        self.assertEqual(email.type, 'email-message')
+        self.assertEqual(email.is_multipart, True)
+        body = email.body_multipart[0]
+        self.assertEqual(body.content_disposition, f"attachment; filename='{attribute_value}'")
+        self.assertEqual(body.body_raw_ref, file_id)
+        self.assertEqual(file_ref, file_id)
+        self.assertEqual(file.id, file_ref)
+        self.assertEqual(file.name, attribute_value)
 
     def test_event_with_filename_indicator_attribute(self):
         event = get_event_with_filename_attribute()
@@ -453,7 +556,7 @@ class TestSTIX21Export(TestSTIX2Export):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(
             pattern.replace('\\\\', '\\'),
-            f"[windows-registry-key:key = '{attribute_value}']"
+            f"[windows-registry-key:key = '{attribute_value.strip()}']"
         )
 
     def test_event_with_regkey_observable_attribute(self):
@@ -464,4 +567,27 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(object_ref, grouping_refs[0])
         self.assertEqual(registry_key.id, object_ref)
         self.assertEqual(registry_key.type, 'windows-registry-key')
-        self.assertEqual(registry_key.key, attribute_value)
+        self.assertEqual(registry_key.key, attribute_value.strip())
+
+    def test_event_with_regkey_value_indicator_attribute(self):
+        event = get_event_with_regkey_value_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        key, value = attribute_value.split('|')
+        key_pattern = f"windows-registry-key:key = '{key.strip()}'"
+        value_pattern = f"windows-registry-key:values.data = '{value.strip()}'"
+        self.assertEqual(
+            pattern.replace('\\\\', '\\'),
+            f"[{key_pattern} AND {value_pattern}]"
+        )
+
+    def test_event_with_regkey_value_observable_attribute(self):
+        event = get_event_with_regkey_value_attribute()
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        key, value = attribute_value.split('|')
+        object_ref = object_refs[0]
+        registry_key = observable[0]
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(registry_key.id, object_ref)
+        self.assertEqual(registry_key.type, 'windows-registry-key')
+        self.assertEqual(registry_key.key, key.strip())
+        self.assertEqual(registry_key['values'][0].data, value.strip())

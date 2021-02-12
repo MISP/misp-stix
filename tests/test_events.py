@@ -1425,7 +1425,8 @@ def get_event_with_attachment_attribute():
             "type": "attachment",
             "category": "Payload delivery",
             "value": "attachment.test",
-            "data": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK"
+            "data": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK",
+            "timestamp": str(int(datetime.now().timestamp()))
         }
     ]
     return event
