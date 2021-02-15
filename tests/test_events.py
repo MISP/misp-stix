@@ -1339,6 +1339,42 @@ def get_event_with_vulnerability_galaxy():
 #                               ATTRIBUTES TESTS                               #
 ################################################################################
 
+_EMAIL_DESTINATION_ATTRIBUTE = {
+    "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+    "type": "email-dst",
+    "category": "Payload delivery",
+    "value": "dst@email.test",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "comment": "Destination email address test attribute",
+    "to_ids": True
+}
+
+_EMAIL_REPLY_TO_ATTRIBUTE = {
+    "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+    "type": "email-reply-to",
+    "category": "Payload delivery",
+    "value": "reply-to@email.test",
+    "timestamp": str(int(datetime.now().timestamp()))
+}
+
+_EMAIL_SOURCE_ATTRIBUTE = {
+    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "type": "email-src",
+    "category": "Payload delivery",
+    "value": "src@email.test",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "comment": "Source email address test attribute",
+    "to_ids": True
+}
+
+_EMAIL_SUBJECT_ATTRIBUTE = {
+    "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+    "type": "email-subject",
+    "category": "Payload delivery",
+    "value": "Test Subject",
+    "timestamp": str(int(datetime.now().timestamp()))
+}
+
 _INDICATOR_ATTRIBUTE = {
     "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
     "type": "domain",
@@ -1512,36 +1548,39 @@ def get_event_with_email_attachment_attribute():
 def get_event_with_email_attributes():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "email-src",
-            "category": "Payload delivery",
-            "value": "src@email.test",
-            "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Source email address test attribute",
-            "to_ids": True
-        },
-        {
-            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
-            "type": "email-dst",
-            "category": "Payload delivery",
-            "value": "dst@email.test",
-            "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Destination email address test attribute",
-            "to_ids": True
-        },
-        {
-            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-            "type": "email-subject",
-            "category": "Payload delivery",
-            "value": "Test Subject"
-        },
-        {
-            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-            "type": "email-reply-to",
-            "category": "Payload delivery",
-            "value": "reply-to@email.test"
-        }
+        deepcopy(_EMAIL_SOURCE_ATTRIBUTE),
+        deepcopy(_EMAIL_DESTINATION_ATTRIBUTE),
+        deepcopy(_EMAIL_SUBJECT_ATTRIBUTE),
+        deepcopy(_EMAIL_REPLY_TO_ATTRIBUTE)
+    ]
+    return event
+
+def get_event_with_email_destination_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        deepcopy(_EMAIL_DESTINATION_ATTRIBUTE)
+    ]
+    return event
+
+def get_event_with_email_reply_to_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        deepcopy(_EMAIL_REPLY_TO_ATTRIBUTE)
+    ]
+    return event
+
+def get_event_with_email_source_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        deepcopy(_EMAIL_SOURCE_ATTRIBUTE)
+    ]
+    return event
+
+
+def get_event_with_email_subject_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        deepcopy(_EMAIL_SUBJECT_ATTRIBUTE)
     ]
     return event
 
