@@ -4,10 +4,10 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from stix2.v20.bundle import Bundle
 from stix2.v20.common import MarkingDefinition
-from stix2.v20.observables import (Artifact, AutonomousSystem, DomainName, EmailMessage,
-                                   EmailMIMEComponent, File, IPv4Address, IPv6Address,
-                                   MACAddress, Mutex, NetworkTraffic, WindowsRegistryKey,
-                                   WindowsRegistryValueType)
+from stix2.v20.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
+                                   EmailMessage, EmailMIMEComponent, File, IPv4Address,
+                                   IPv6Address, MACAddress, Mutex, NetworkTraffic,
+                                   WindowsRegistryKey, WindowsRegistryValueType)
 from stix2.v20.sdo import Identity, Indicator, ObservedData, Report
 from typing import Union
 
@@ -82,6 +82,54 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 ]
             ),
             '1': File(name=attribute['value'])
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_email_destination_attribute_observable(self, attribute: dict):
+        observable_object = {
+            '0': EmailMessage(
+                is_multipart=False,
+                _valid_refs={'1': 'email-addr'},
+                to_refs=['1']
+            ),
+            '1': EmailAddress(
+                value=attribute['value']
+            )
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_email_reply_to_attribute_observable(self, attribute: dict):
+        observable_object = {
+            '0': EmailMessage(
+                is_multipart=False,
+                additional_header_fields={
+                    "Reply-To": [
+                        attribute['value']
+                    ]
+                }
+            )
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_email_source_attribute_observable(self, attribute: dict):
+        observable_object = {
+            '0': EmailMessage(
+                is_multipart=False,
+                _valid_refs={'1': 'email-addr'},
+                from_ref='1'
+            ),
+            '1': EmailAddress(
+                value=attribute['value']
+            )
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_email_subject_attribute_observable(self, attribute: dict):
+        observable_object = {
+            '0': EmailMessage(
+                is_multipart=False,
+                subject=attribute['value']
+            )
         }
         self._create_observed_data(attribute, observable_object)
 

@@ -4,10 +4,10 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from stix2.v21.bundle import Bundle
 from stix2.v21.common import MarkingDefinition
-from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, EmailMessage,
-                                   EmailMIMEComponent, File, IPv4Address, IPv6Address,
-                                   MACAddress, Mutex, NetworkTraffic, WindowsRegistryKey,
-                                   WindowsRegistryValueType)
+from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
+                                   EmailMessage, EmailMIMEComponent, File, IPv4Address,
+                                   IPv6Address, MACAddress, Mutex, NetworkTraffic,
+                                   WindowsRegistryKey, WindowsRegistryValueType)
 from stix2.v21.sdo import Grouping, Identity, Indicator, ObservedData, Report
 from typing import Union
 
@@ -100,6 +100,56 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             )
         ]
         self._create_observed_data(attribute, objects)
+
+    def _parse_email_destination_attribute_observable(self, attribute: dict):
+        address_id = f"email-addr--{attribute['uuid']}"
+        objects = [
+            EmailMessage(
+                id=f"email-message--{attribute['uuid']}",
+                is_multipart=False,
+                to_refs=[address_id]
+            ),
+            EmailAddress(
+                id=address_id,
+                value=attribute['value']
+            )
+        ]
+        self._create_observed_data(attribute, objects)
+
+    def _parse_email_reply_to_attribute_observable(self, attribute: dict):
+        message_object = EmailMessage(
+            id=f"email-message--{attribute['uuid']}",
+            is_multipart=False,
+            additional_header_fields={
+                "Reply-To": [
+                    attribute['value']
+                ]
+            }
+        )
+        self._create_observed_data(attribute, [message_object])
+
+    def _parse_email_source_attribute_observable(self, attribute: dict):
+        address_id = f"email-addr--{attribute['uuid']}"
+        objects = [
+            EmailMessage(
+                id=f"email-message--{attribute['uuid']}",
+                is_multipart=False,
+                from_ref=address_id
+            ),
+            EmailAddress(
+                id=address_id,
+                value=attribute['value']
+            )
+        ]
+        self._create_observed_data(attribute, objects)
+
+    def _parse_email_subject_attribute_observable(self, attribute: dict):
+        message_object = EmailMessage(
+            id=f"email-message--{attribute['uuid']}",
+            is_multipart=False,
+            subject=attribute['value']
+        )
+        self._create_observed_data(attribute, [message_object])
 
     def _parse_filename_attribute_observable(self, attribute: dict):
         file_object = File(

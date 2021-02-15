@@ -191,6 +191,34 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_email_attachment_attribute_observable(attribute)
 
+    def _parse_email_destination_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[email-message:to_refs[*].value = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_email_destination_attribute_observable(attribute)
+
+    def _parse_email_reply_to_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[email-message:additional_header_fields.reply_to = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_email_reply_to_attribute_observable(attribute)
+
+    def _parse_email_source_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[email-message:from_ref.value = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_email_source_attribute_observable(attribute)
+
+    def _parse_email_subject_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[email-message:subject = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_email_subject_attribute_observable(attribute)
+
     def _parse_filename_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             pattern = f"[{self._create_filename_pattern(attribute['value'])}]"
