@@ -235,6 +235,18 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(address.type, 'email-addr')
         self.assertEqual(address.value, attribute_value)
 
+    def test_event_with_email_indicator_attribute(self):
+        event = get_event_with_email_address_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[email-addr:value = '{attribute_value}']")
+
+    def test_event_with_email_observable_attribute(self):
+        event = get_event_with_email_address_attribute()
+        attribute_value, observable_objects = self._run_observable_tests(event)
+        address_object = observable_objects['0']
+        self.assertEqual(address_object.type, 'email-addr')
+        self.assertEqual(address_object.value, attribute_value)
+
     def test_event_with_email_reply_to_indicator_attribute(self):
         event = get_event_with_email_reply_to_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
@@ -250,22 +262,6 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.additional_header_fields['Reply-To'][0], attribute_value)
-
-    def test_event_with_email_x_mailer_indicator_attribute(self):
-        event = get_event_with_email_x_mailer_attribute()
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(
-            pattern,
-            f"[email-message:additional_header_fields.x_mailer = '{attribute_value}']"
-        )
-
-    def test_event_with_email_x_mailer__attribute(self):
-        event = get_event_with_email_x_mailer_attribute()
-        attribute_value, observable_objects = self._run_observable_tests(event)
-        message = observable_objects['0']
-        self.assertEqual(message.type, 'email-message')
-        self.assertEqual(message.is_multipart, False)
-        self.assertEqual(message.additional_header_fields['X-Mailer'], attribute_value)
 
     def test_event_with_email_source_indicator_attribute(self):
         event = get_event_with_email_source_attribute()
@@ -294,6 +290,22 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.subject, attribute_value)
+
+    def test_event_with_email_x_mailer_indicator_attribute(self):
+        event = get_event_with_email_x_mailer_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(
+            pattern,
+            f"[email-message:additional_header_fields.x_mailer = '{attribute_value}']"
+        )
+
+    def test_event_with_email_x_mailer__attribute(self):
+        event = get_event_with_email_x_mailer_attribute()
+        attribute_value, observable_objects = self._run_observable_tests(event)
+        message = observable_objects['0']
+        self.assertEqual(message.type, 'email-message')
+        self.assertEqual(message.is_multipart, False)
+        self.assertEqual(message.additional_header_fields['X-Mailer'], attribute_value)
 
     def test_event_with_filename_indicator_attribute(self):
         event = get_event_with_filename_attribute()
@@ -601,6 +613,37 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(address.type, 'email-addr')
         self.assertEqual(address.value, attribute_value)
 
+    def test_event_with_email_indicator_attribute(self):
+        event = get_event_with_email_address_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[email-addr:value = '{attribute_value}']")
+
+    def test_event_with_email_message_id_indicator_attribute(self):
+        event = get_event_with_email_message_id_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[email-message:message_id = '{attribute_value}']")
+
+    def test_event_with_email_message_id_observable_attribute(self):
+        event = get_event_with_email_message_id_attribute()
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        object_ref = object_refs[0]
+        message = observable[0]
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(message.id, object_ref)
+        self.assertEqual(message.type, 'email-message')
+        self.assertEqual(message.is_multipart, False)
+        self.assertEqual(message.message_id, attribute_value)
+
+    def test_event_with_email_observable_attribute(self):
+        event = get_event_with_email_address_attribute()
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        object_ref = object_refs[0]
+        address = observable[0]
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(address.id, object_ref)
+        self.assertEqual(address.type, 'email-addr')
+        self.assertEqual(address.value, attribute_value)
+
     def test_event_with_email_reply_to_indicator_attribute(self):
         event = get_event_with_email_reply_to_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
@@ -619,25 +662,6 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.additional_header_fields['Reply-To'][0], attribute_value)
-
-    def test_event_with_email_x_mailer_indicator_attribute(self):
-        event = get_event_with_email_x_mailer_attribute()
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(
-            pattern,
-            f"[email-message:additional_header_fields.x_mailer = '{attribute_value}']"
-        )
-
-    def test_event_with_email_x_mailer__attribute(self):
-        event = get_event_with_email_x_mailer_attribute()
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
-        message = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(message.id, object_ref)
-        self.assertEqual(message.type, 'email-message')
-        self.assertEqual(message.is_multipart, False)
-        self.assertEqual(message.additional_header_fields['X-Mailer'], attribute_value)
 
     def test_event_with_email_source_indicator_attribute(self):
         event = get_event_with_email_source_attribute()
@@ -675,6 +699,25 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.subject, attribute_value)
+
+    def test_event_with_email_x_mailer_indicator_attribute(self):
+        event = get_event_with_email_x_mailer_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(
+            pattern,
+            f"[email-message:additional_header_fields.x_mailer = '{attribute_value}']"
+        )
+
+    def test_event_with_email_x_mailer__attribute(self):
+        event = get_event_with_email_x_mailer_attribute()
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        object_ref = object_refs[0]
+        message = observable[0]
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(message.id, object_ref)
+        self.assertEqual(message.type, 'email-message')
+        self.assertEqual(message.is_multipart, False)
+        self.assertEqual(message.additional_header_fields['X-Mailer'], attribute_value)
 
     def test_event_with_filename_indicator_attribute(self):
         event = get_event_with_filename_attribute()
