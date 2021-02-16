@@ -1555,12 +1555,28 @@ def get_event_with_email_attributes():
     ]
     return event
 
+
+def get_event_with_email_body_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "email-body",
+            "category": "Payload delivery",
+            "value": "Email body test",
+            "timestamp": str(int(datetime.now().timestamp())),
+        }
+    ]
+    return event
+
+
 def get_event_with_email_destination_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
         deepcopy(_EMAIL_DESTINATION_ATTRIBUTE)
     ]
     return event
+
 
 def get_event_with_email_reply_to_attribute():
     event = deepcopy(_BASE_EVENT)
@@ -1569,10 +1585,25 @@ def get_event_with_email_reply_to_attribute():
     ]
     return event
 
+
 def get_event_with_email_source_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
         deepcopy(_EMAIL_SOURCE_ATTRIBUTE)
+    ]
+    return event
+
+
+def get_event_with_email_x_mailer_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "email-x-mailer",
+            "category": "Payload delivery",
+            "value": "Email X-Mailer test",
+            "timestamp": str(int(datetime.now().timestamp())),
+        }
     ]
     return event
 
