@@ -193,7 +193,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_email_body_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[email-message:body_multipart[*].body = '{attribute['value']}']"
+            pattern = f"[email-message:body = '{attribute['value']}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_email_body_attribute_observable(attribute)

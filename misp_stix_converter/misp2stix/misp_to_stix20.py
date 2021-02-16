@@ -88,14 +88,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_email_body_attribute_observable(self, attribute: dict):
         observable_object = {
             '0': EmailMessage(
-                is_multipart=True,
-                body_multipart=[
-                    EmailMIMEComponent(
-                        content_type="text/plain; charset=utf-8",
-                        content_disposition="inline",
-                        body=attribute['value']
-                    )
-                ]
+                is_multipart=False,
+                body=attribute['value']
             )
         }
         self._create_observed_data(attribute, observable_object)
