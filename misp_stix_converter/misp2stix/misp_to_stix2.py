@@ -54,6 +54,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def stix_objects(self) -> list:
         return self._objects
 
+    @staticmethod
+    def _update_mapping_v21():
+        stix2_mapping.attribute_types_mapping.update(
+            {
+                'email-message-id': '_parse_email_message_id_attribute'
+            }
+        )
+
     ################################################################################
     #                            MAIN PARSING FUNCTIONS                            #
     ################################################################################
@@ -167,6 +175,27 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_autonomous_system_attribute_observable(attribute)
 
+    def _parse_custom_attribute(self, attribute: dict):
+        prefix = f"x-misp-object-{attribute['type'].replace('|', '-').replace(' ', '-').lower()}"
+        custom_id = f"{prefix}--{attribute['uuid']}"
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        custom_args = {
+            'id': custom_id,
+            'x_misp_category': attribute['category'],
+            'created': timestamp,
+            'modified': timestamp,
+            'labels': self._create_labels(attribute),
+            'x_misp_value': attribute['value'],
+            'created_by_ref': self._identity_id
+        }
+        if attribute.get('comment'):
+            custom_args['x_misp_comment'] = attribute['comment']
+        markings = self._handle_attribute_tags_and_galaxies(attribute, custom_id)
+        if markings:
+            custom_args['object_marking_refs'] = self._handle_markings(markings)
+        custom_object = self._create_custom_object(prefix, custom_args)
+        self._append_SDO(custom_object)
+
     def _parse_domain_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             pattern = f"[{self._create_domain_pattern(attribute['value'])}]"
@@ -190,6 +219,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_email_attachment_attribute_observable(attribute)
+
+    def _parse_email_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[email-addr:value = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_email_attribute_observable(attribute)
 
     def _parse_email_body_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):

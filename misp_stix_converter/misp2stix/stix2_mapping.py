@@ -11,6 +11,7 @@ attribute_types_mapping = {
     'attachment': '_parse_attachment_attribute',
     'domain': '_parse_domain_attribute',
     'domain|ip': '_parse_domain_ip_attribute',
+    'email': '_parse_email_attribute',
     'email-attachment': '_parse_email_attachment_attribute',
     'email-body': '_parse_email_body_attribute',
     'email-dst': '_parse_email_destination_attribute',

@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
+from stix2.properties import DictionaryProperty, ListProperty, StringProperty, TimestampProperty
 from stix2.v21.bundle import Bundle
 from stix2.v21.common import MarkingDefinition
 from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
                                    EmailMessage, EmailMIMEComponent, File, IPv4Address,
                                    IPv6Address, MACAddress, Mutex, NetworkTraffic,
                                    WindowsRegistryKey, WindowsRegistryValueType)
-from stix2.v21.sdo import Grouping, Identity, Indicator, ObservedData, Report
+from stix2.v21.sdo import CustomObject, Grouping, Identity, Indicator, ObservedData, Report
 from typing import Union
 
 _OBSERVABLE_OBJECT_TYPES = Union[
@@ -20,6 +21,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def __init__(self):
         super().__init__()
         self._version = '2.1'
+        self._update_mapping_v21()
 
     def _handle_unpublished_report(self, report_args: dict) -> Grouping:
         report_args.update(
@@ -101,6 +103,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         ]
         self._create_observed_data(attribute, objects)
 
+    def _parse_email_attribute_observable(self, attribute: dict):
+        address_object = EmailAddress(
+            id=f"email-addr--{attribute['uuid']}",
+            value=attribute['value']
+        )
+        self._create_observed_data(attribute, [address_object])
+
     def _parse_email_body_attribute_observable(self, attribute: dict):
         message_object = EmailMessage(
             id=f"email-message--{attribute['uuid']}",
@@ -123,6 +132,18 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             )
         ]
         self._create_observed_data(attribute, objects)
+
+    def _parse_email_message_id_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[email-message:message_id = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            message_object = EmailMessage(
+                id=f"email-message--{attribute['uuid']}",
+                is_multipart=False,
+                message_id=attribute['value']
+            )
+            self._create_observed_data(attribute, [message_object])
 
     def _parse_email_reply_to_attribute_observable(self, attribute: dict):
         message_object = EmailMessage(
@@ -233,6 +254,29 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _create_bundle(self) -> Bundle:
         return Bundle(self._objects)
+
+    @staticmethod
+    def _create_custom_object(object_type, custom_args):
+        stix_labels = ListProperty(StringProperty)
+        stix_labels.clean(custom_args['labels'])
+        stix_markings = ListProperty(StringProperty)
+        if custom_args.get('markings'):
+            stix_markings.clean(custom_args['markings'])
+        @CustomObject(object_type, [
+            ('id', StringProperty(required=True)),
+            ('labels', ListProperty(stix_labels, required=True)),
+            ('x_misp_value', StringProperty(required=True)),
+            ('created', TimestampProperty(required=True, precision='millisecond')),
+            ('modified', TimestampProperty(required=True, precision='millisecond')),
+            ('created_by_ref', StringProperty(required=True)),
+            ('object_marking_refs', ListProperty(stix_markings)),
+            ('x_misp_comment', StringProperty()),
+            ('x_misp_category', StringProperty())
+        ])
+        class Custom(object):
+            def __init__(self, **kwargs):
+                return
+        return Custom(**custom_args)
 
     def _create_identity_object(self, orgname: str) -> Identity:
         identity_args = {

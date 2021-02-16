@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
+from stix2.properties import DictionaryProperty, ListProperty, StringProperty, TimestampProperty
 from stix2.v20.bundle import Bundle
 from stix2.v20.common import MarkingDefinition
 from stix2.v20.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
                                    EmailMessage, EmailMIMEComponent, File, IPv4Address,
                                    IPv6Address, MACAddress, Mutex, NetworkTraffic,
                                    WindowsRegistryKey, WindowsRegistryValueType)
-from stix2.v20.sdo import Identity, Indicator, ObservedData, Report
+from stix2.v20.sdo import CustomObject, Identity, Indicator, ObservedData, Report
 from typing import Union
 
 
@@ -82,6 +83,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 ]
             ),
             '1': File(name=attribute['value'])
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_email_attribute_observable(self, attribute: dict):
+        observable_object = {
+            '0': EmailAddress(
+                value=attribute['value']
+            )
         }
         self._create_observed_data(attribute, observable_object)
 
@@ -215,6 +224,29 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _create_bundle(self) -> Bundle:
         return Bundle(self._objects)
+
+    @staticmethod
+    def _create_custom_object(object_type, custom_args):
+        stix_labels = ListProperty(StringProperty)
+        stix_labels.clean(custom_args['labels'])
+        stix_markings = ListProperty(StringProperty)
+        if custom_args.get('markings'):
+            stix_markings.clean(custom_args['markings'])
+        @CustomObject(object_type, [
+            ('id', StringProperty(required=True)),
+            ('labels', ListProperty(stix_labels, required=True)),
+            ('x_misp_value', StringProperty(required=True)),
+            ('created', TimestampProperty(required=True, precision='millisecond')),
+            ('modified', TimestampProperty(required=True, precision='millisecond')),
+            ('created_by_ref', StringProperty(required=True)),
+            ('object_marking_refs', ListProperty(stix_markings)),
+            ('x_misp_comment', StringProperty()),
+            ('x_misp_category', StringProperty())
+        ])
+        class Custom(object):
+            def __init__(self, **kwargs):
+                return
+        return Custom(**custom_args)
 
     @staticmethod
     def _create_grouping(grouping_args):
