@@ -101,6 +101,20 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         ]
         self._create_observed_data(attribute, objects)
 
+    def _parse_email_body_attribute_observable(self, attribute: dict):
+        message_object = EmailMessage(
+            id=f"email-message--{attribute['uuid']}",
+            is_multipart=True,
+            body_multipart=[
+                EmailMIMEComponent(
+                    content_type="text/plain; charset=utf-8",
+                    content_disposition="inline",
+                    body=attribute['value']
+                )
+            ]
+        )
+        self._create_observed_data(attribute, [message_object])
+
     def _parse_email_destination_attribute_observable(self, attribute: dict):
         address_id = f"email-addr--{attribute['uuid']}"
         objects = [
@@ -148,6 +162,16 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             id=f"email-message--{attribute['uuid']}",
             is_multipart=False,
             subject=attribute['value']
+        )
+        self._create_observed_data(attribute, [message_object])
+
+    def _parse_email_x_mailer_attribute_observable(self, attribute: dict):
+        message_object = EmailMessage(
+            id=f"email-message--{attribute['uuid']}",
+            is_multipart=False,
+            additional_header_fields={
+                "X-Mailer": attribute['value']
+            }
         )
         self._create_observed_data(attribute, [message_object])
 
