@@ -209,7 +209,7 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(
             pattern,
-            f"[email-message:body_multipart[*].body = '{attribute_value}']"
+            f"[email-message:body = '{attribute_value}']"
         )
 
     def test_event_with_email_body_observable_attribute(self):
@@ -217,11 +217,8 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute_value, observable_objects = self._run_observable_tests(event)
         email_object = observable_objects['0']
         self.assertEqual(email_object.type, 'email-message')
-        self.assertEqual(email_object.is_multipart, True)
-        body = email_object.body_multipart[0]
-        self.assertEqual(body.content_type, 'text/plain; charset=utf-8')
-        self.assertEqual(body.content_disposition, 'inline')
-        self.assertEqual(body.body, attribute_value)
+        self.assertEqual(email_object.is_multipart, False)
+        self.assertEqual(email_object.body, attribute_value)
 
     def test_event_with_email_destination_indicator_attribute(self):
         event = get_event_with_email_destination_attribute()
@@ -569,7 +566,7 @@ class TestSTIX21Export(TestSTIX2Export):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(
             pattern,
-            f"[email-message:body_multipart[*].body = '{attribute_value}']"
+            f"[email-message:body = '{attribute_value}']"
         )
 
     def test_event_with_email_body_observable_attribute(self):
@@ -580,11 +577,8 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(object_ref, grouping_refs[0])
         self.assertEqual(message.id, object_ref)
         self.assertEqual(message.type, 'email-message')
-        self.assertEqual(message.is_multipart, True)
-        body = message.body_multipart[0]
-        self.assertEqual(body.content_type, 'text/plain; charset=utf-8')
-        self.assertEqual(body.content_disposition, 'inline')
-        self.assertEqual(body.body, attribute_value)
+        self.assertEqual(message.is_multipart, False)
+        self.assertEqual(message.body, attribute_value)
 
     def test_event_with_email_destination_indicator_attribute(self):
         event = get_event_with_email_destination_attribute()
