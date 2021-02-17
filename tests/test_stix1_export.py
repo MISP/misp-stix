@@ -800,6 +800,28 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(reply_to_properties.reply_to.address_value.value, reply_to['value'])
         self.assertEqual(reply_to_properties.reply_to.category, 'e-mail')
 
+    def test_event_with_email_body_attribute(self):
+        event = get_event_with_email_body_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, attribute['category'])
+        properties = self._check_observable_features(observable.item, attribute, 'EmailMessage')
+        self.assertEqual(properties.raw_body, attribute['value'])
+
+    def test_event_with_email_header_attribute(self):
+        event = get_event_with_email_header_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, attribute['category'])
+        properties = self._check_observable_features(observable.item, attribute, 'EmailMessage')
+        self.assertEqual(properties.raw_header, attribute['value'])
+
     def test_event_with_filename_attribute(self):
         event = get_event_with_filename_attribute()
         attribute = event['Event']['Attribute'][0]
