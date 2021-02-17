@@ -1592,6 +1592,20 @@ def get_event_with_email_destination_attribute():
     return event
 
 
+def get_event_with_email_header_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "email-header",
+            "category": "Payload delivery",
+            "value": "from mail.example.com ([198.51.100.3]) by smtp.gmail.com",
+            "timestamp": str(int(datetime.now().timestamp()))
+        }
+    ]
+    return event
+
+
 def get_event_with_email_message_id_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [

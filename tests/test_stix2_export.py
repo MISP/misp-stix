@@ -235,6 +235,19 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(address.type, 'email-addr')
         self.assertEqual(address.value, attribute_value)
 
+    def test_event_with_email_header_indicator_attribute(self):
+        event = get_event_with_email_header_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[email-message:received_lines = '{attribute_value}']")
+
+    def test_event_with_email_header_observable_attribute(self):
+        event = get_event_with_email_header_attribute()
+        attribute_value, observable_objects = self._run_observable_tests(event)
+        message_object = observable_objects['0']
+        self.assertEqual(message_object.type, 'email-message')
+        self.assertEqual(message_object.is_multipart, False)
+        self.assertEqual(message_object.received_lines, [attribute_value])
+
     def test_event_with_email_indicator_attribute(self):
         event = get_event_with_email_address_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
@@ -612,6 +625,22 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(address.id, address_ref)
         self.assertEqual(address.type, 'email-addr')
         self.assertEqual(address.value, attribute_value)
+
+    def test_event_with_email_header_indicator_attribute(self):
+        event = get_event_with_email_header_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[email-message:received_lines = '{attribute_value}']")
+
+    def test_event_with_email_header_observable_attribute(self):
+        event = get_event_with_email_header_attribute()
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        object_ref = object_refs[0]
+        message = observable[0]
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(message.id, object_ref)
+        self.assertEqual(message.type, 'email-message')
+        self.assertEqual(message.is_multipart, False)
+        self.assertEqual(message.received_lines, [attribute_value])
 
     def test_event_with_email_indicator_attribute(self):
         event = get_event_with_email_address_attribute()
