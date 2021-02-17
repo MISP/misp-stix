@@ -325,6 +325,18 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         observable = self._create_observable(email_object, attribute['uuid'], 'EmailMessage')
         self._handle_attribute(attribute, observable)
 
+    def _parse_email_body_attribute(self, attribute: dict):
+        email_object = EmailMessage()
+        email_object.raw_body = attribute['value']
+        observable = self._create_observable(email_object, attribute['uuid'], 'EmailMessage')
+        self._handle_attribute(attribute, observable)
+
+    def _parse_email_header_attribute(self, attribute: dict):
+        email_object = EmailMessage()
+        email_object.raw_header = attribute['value']
+        observable = self._create_observable(email_object, attribute['uuid'], 'EmailMessage')
+        self._handle_attribute(attribute, observable)
+
     def _parse_file_attribute(self, attribute: dict):
         file_object = self._create_file_object(attribute['value'])
         observable = self._create_observable(file_object, attribute['uuid'], 'File')

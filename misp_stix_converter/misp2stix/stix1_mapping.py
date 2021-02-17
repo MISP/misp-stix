@@ -229,6 +229,8 @@ attribute_types_mapping = {
     'domain': '_parse_domain_attribute',
     'domain|ip': '_parse_domain_ip_attribute',
     'email-attachment': '_parse_email_attachment',
+    'email-body': '_parse_email_body_attribute',
+    'email-header': '_parse_email_header_attribute',
     'filename': '_parse_file_attribute',
     'hostname': '_parse_hostname_attribute',
     'hostname|port': '_parse_hostname_port_attribute',
