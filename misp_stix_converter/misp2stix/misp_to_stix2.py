@@ -241,6 +241,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_email_destination_attribute_observable(attribute)
 
+    def _parse_email_header_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[email-message:received_lines = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_email_header_attribute_observable(attribute)
+
     def _parse_email_reply_to_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             pattern = f"[email-message:additional_header_fields.reply_to = '{attribute['value']}']"

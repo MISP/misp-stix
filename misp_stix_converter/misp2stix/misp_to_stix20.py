@@ -116,6 +116,15 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         }
         self._create_observed_data(attribute, observable_object)
 
+    def _parse_email_header_attribute_observable(self, attribute: dict):
+        observable_object = {
+            '0': EmailMessage(
+                is_multipart=False,
+                received_lines=[attribute['value']]
+            )
+        }
+        self._create_observed_data(attribute, observable_object)
+
     def _parse_email_reply_to_attribute_observable(self, attribute: dict):
         observable_object = {
             '0': EmailMessage(

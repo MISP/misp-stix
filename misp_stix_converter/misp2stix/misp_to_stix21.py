@@ -133,6 +133,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         ]
         self._create_observed_data(attribute, objects)
 
+    def _parse_email_header_attribute_observable(self, attribute: dict):
+        message_object = EmailMessage(
+            id=f"email-message--{attribute['uuid']}",
+            is_multipart=False,
+            received_lines=[attribute['value']]
+        )
+        self._create_observed_data(attribute, [message_object])
+
     def _parse_email_message_id_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             pattern = f"[email-message:message_id = '{attribute['value']}']"

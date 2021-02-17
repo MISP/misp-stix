@@ -15,6 +15,7 @@ attribute_types_mapping = {
     'email-attachment': '_parse_email_attachment_attribute',
     'email-body': '_parse_email_body_attribute',
     'email-dst': '_parse_email_destination_attribute',
+    'email-header': '_parse_email_header_attribute',
     'email-reply-to': '_parse_email_reply_to_attribute',
     'email-src': '_parse_email_source_attribute',
     'email-subject': '_parse_email_subject_attribute',
