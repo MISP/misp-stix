@@ -764,7 +764,7 @@ class TestStix1Export(unittest.TestCase):
 
     def test_event_with_email_attributes(self):
         event = get_event_with_email_attributes()
-        source, destination, subject, reply_to = event['Event']['Attribute']
+        source, destination, subject, reply_to, message_id, x_mailer, boundary = event['Event']['Attribute']
         orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
@@ -785,7 +785,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self.assertEqual(destination_properties.to[0].address_value.value, destination['value'])
         self.assertEqual(destination_properties.to[0].category, 'e-mail')
-        subject_observable, reply_to_observable = incident.related_observables.observable
+        subject_observable, reply_to_observable, message_id_observable, x_mailer_observable, boundary_observable = incident.related_observables.observable
         subject_properties = self._check_observable_features(
             subject_observable.item,
             subject,
@@ -799,6 +799,24 @@ class TestStix1Export(unittest.TestCase):
         )
         self.assertEqual(reply_to_properties.reply_to.address_value.value, reply_to['value'])
         self.assertEqual(reply_to_properties.reply_to.category, 'e-mail')
+        message_id_properties = self._check_observable_features(
+            message_id_observable.item,
+            message_id,
+            'EmailMessage'
+        )
+        self.assertEqual(message_id_properties.message_id.value, message_id['value'])
+        x_mailer_properties = self._check_observable_features(
+            x_mailer_observable.item,
+            x_mailer,
+            'EmailMessage'
+        )
+        self.assertEqual(x_mailer_properties.header.x_mailer.value, x_mailer['value'])
+        boundary_properties = self._check_observable_features(
+            boundary_observable.item,
+            boundary,
+            'EmailMessage'
+        )
+        self.assertEqual(boundary_properties.header.boundary.value, boundary['value'])
 
     def test_event_with_email_body_attribute(self):
         event = get_event_with_email_body_attribute()
