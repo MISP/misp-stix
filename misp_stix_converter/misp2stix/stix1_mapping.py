@@ -169,11 +169,14 @@ misp_indicator_type.update(
     dict.fromkeys(
         [
             "email",
+            "email-attachment",
             "email-src",
             "email-dst",
+            "email-message-id",
+            "email-mime-boundary",
             "email-subject",
             "email-reply-to",
-            "email-attachment"
+            "email-x-mailer"
         ],
         "Malicious E-mail"
     )
@@ -219,8 +222,11 @@ cybox_validation = {"AutonomousSystem": "isInt"}
 email_attribute_mapping = {
     'email-src': 'from_',
     'email-dst': 'to',
+    'email-message-id': 'message_id',
+    'email-mime-boundary': 'boundary',
     'email-reply-to': 'reply_to',
-    'email-subject': 'subject'
+    'email-subject': 'subject',
+    'email-x-mailer': 'x_mailer'
 }
 
 attribute_types_mapping = {
@@ -308,8 +314,11 @@ attribute_types_mapping.update(
         [
             "email-src",
             "email-dst",
+            "email-message-id",
+            "email-mime-boundary",
             "email-subject",
-            "email-reply-to"
+            "email-reply-to",
+            'email-x-mailer'
         ],
         '_parse_email_attribute'
     )
