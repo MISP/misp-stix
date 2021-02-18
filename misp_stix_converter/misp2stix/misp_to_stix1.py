@@ -328,12 +328,14 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_email_body_attribute(self, attribute: dict):
         email_object = EmailMessage()
         email_object.raw_body = attribute['value']
+        email_object.raw_body.condition = 'Equals'
         observable = self._create_observable(email_object, attribute['uuid'], 'EmailMessage')
         self._handle_attribute(attribute, observable)
 
     def _parse_email_header_attribute(self, attribute: dict):
         email_object = EmailMessage()
         email_object.raw_header = attribute['value']
+        email_object.raw_header.condition = 'Equals'
         observable = self._create_observable(email_object, attribute['uuid'], 'EmailMessage')
         self._handle_attribute(attribute, observable)
 

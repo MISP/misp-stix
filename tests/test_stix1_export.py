@@ -809,7 +809,7 @@ class TestStix1Export(unittest.TestCase):
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, attribute['category'])
         properties = self._check_observable_features(observable.item, attribute, 'EmailMessage')
-        self.assertEqual(properties.raw_body, attribute['value'])
+        self.assertEqual(properties.raw_body.value, attribute['value'])
 
     def test_event_with_email_header_attribute(self):
         event = get_event_with_email_header_attribute()
@@ -820,7 +820,7 @@ class TestStix1Export(unittest.TestCase):
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, attribute['category'])
         properties = self._check_observable_features(observable.item, attribute, 'EmailMessage')
-        self.assertEqual(properties.raw_header, attribute['value'])
+        self.assertEqual(properties.raw_header.value, attribute['value'])
 
     def test_event_with_filename_attribute(self):
         event = get_event_with_filename_attribute()
