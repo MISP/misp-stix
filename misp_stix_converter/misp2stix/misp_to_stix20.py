@@ -187,6 +187,19 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         }
         self._create_observed_data(attribute, observable_object)
 
+    def _parse_hash_composite_attribute_observable(self, attribute: dict):
+        hash_type = attribute['type'].split('|')[1]
+        filename, hash_value = attribute['value'].split('|')
+        observable_object = {
+            '0': File(
+                name=filename,
+                hashes={
+                    self._define_hash_type(hash_type): hash_value
+                }
+            )
+        }
+        self._create_observed_data(attribute, observable_object)
+
     def _parse_hostname_port_attribute_observable(self, attribute: dict):
         hostname, port = attribute['value'].split('|')
         observable_object = {

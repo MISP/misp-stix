@@ -51,6 +51,12 @@ attribute_types_mapping.update(
         '_parse_hash_attribute'
     )
 )
+attribute_types_mapping.update(
+    dict.fromkeys(
+        (f"filename|{hash}" for hash in _hash_attribute_types),
+        '_parse_hash_composite_attribute'
+    )
+)
 
 tlp_markings_v20 = {
     'tlp:white': TLP_WHITE_v20,

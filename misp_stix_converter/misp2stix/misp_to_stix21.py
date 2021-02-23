@@ -214,6 +214,18 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         self._create_observed_data(attribute, [file_object])
 
+    def _parse_hash_composite_attribute_observable(self, attribute: dict):
+        hash_type = attribute['type'].split('|')[1]
+        filename, hash_value = attribute['value'].split('|')
+        file_object = File(
+            id=f"file--{attribute['uuid']}",
+            name=filename,
+            hashes={
+                self._define_hash_type(hash_type): hash_value
+            }
+        )
+        self._create_observed_data(attribute, [file_object])
+
     def _parse_hostname_port_attribute_observable(self, attribute: dict):
         hostname, port = attribute['value'].split('|')
         domain_id = f"domain-name--{attribute['uuid']}"

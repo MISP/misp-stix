@@ -291,6 +291,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_hash_attribute_observable(attribute)
 
+    def _parse_hash_composite_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            hash_type = attribute['type'].split('|')[1]
+            filename, hash_value = attribute['value'].split('|')
+            filename_pattern = self._create_filename_pattern(filename)
+            hash_pattern = self._create_hash_pattern(hash_type, hash_value)
+            pattern = f"[{filename_pattern} AND {hash_pattern}]"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_hash_composite_attribute_observable(attribute)
+
     def _parse_hostname_port_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             hostname, port = attribute['value'].split('|')
