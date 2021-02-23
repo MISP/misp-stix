@@ -1688,53 +1688,47 @@ def get_event_with_filename_attribute():
     return event
 
 
-def get_event_with_hash_attributes():
-    event = deepcopy(_BASE_EVENT)
-    event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "md5",
-            "category": "Payload delivery",
-            "value": "b2a5abfeef9e36964281a31e17b57c97",
-            "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "MD5 test attribute",
-            "to_ids": True
-        },
-        {
-            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
-            "type": "tlsh",
-            "category": "Payload delivery",
-            "value": "1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1",
-            "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "TLSH test attribute",
-            "to_ids": True
+def _get_hash_attributes(types, values, uuids, to_ids):
+    for attribute_type, value, uuid in zip(types, values, uuids):
+        attribute = {
+            'uuid': uuid,
+            'type': attribute_type,
+            'category': 'Payload delivery',
+            'value': value,
+            'timestamp': str(int(datetime.now().timestamp())),
+            'comment': f'{attribute_type.upper()} test attribute',
+            'to_ids': to_ids
         }
-    ]
+        yield attribute
+
+
+def get_event_with_hash_attributes(types, values, uuids, to_ids=True):
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = list(
+        _get_hash_attributes(types, values, uuids, to_ids)
+    )
     return event
 
 
-def get_event_with_hash_composite_attributes():
-    event = deepcopy(_BASE_EVENT)
-    event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "filename|md5",
-            "category": "Payload delivery",
-            "value": "test_file_name|b2a5abfeef9e36964281a31e17b57c97",
-            "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Filename|md5 test attribute",
-            "to_ids": True
-        },
-        {
-            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
-            "type": "filename|tlsh",
-            "category": "Payload delivery",
-            "value": "test_file_name|1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1",
-            "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Filename|tlsh test attribute",
-            "to_ids": True
+def _get_hash_composite_attributes(types, values, uuids, to_ids):
+    for attribute_type, value, uuid in zip(types, values, uuids):
+        attribute = {
+            'uuid': uuid,
+            'type': f'filename|{attribute_type}',
+            'category': 'Payload delivery',
+            'value': value,
+            'timestamp': str(int(datetime.now().timestamp())),
+            'comment': f'Filename|{attribute_type} test attribute',
+            'to_ids': to_ids
         }
-    ]
+        yield attribute
+
+
+def get_event_with_hash_composite_attributes(types, values, uuids, to_ids=True):
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = list(
+        _get_hash_composite_attributes(types, values, uuids, to_ids)
+    )
     return event
 
 

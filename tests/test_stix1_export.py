@@ -852,7 +852,17 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(properties.file_name.value, attribute['value'])
 
     def test_event_with_hash_attributes(self):
-        event = get_event_with_hash_attributes()
+        event = get_event_with_hash_attributes(
+            ('md5', 'tlsh'),
+            (
+                'b2a5abfeef9e36964281a31e17b57c97',
+                '1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1'
+            ),
+            (
+                '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
+                '518b4bcb-a86b-4783-9457-391d548b605b'
+            )
+        )
         md5, tlsh = event['Event']['Attribute']
         orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event, '1.1.1')
@@ -866,7 +876,17 @@ class TestStix1Export(unittest.TestCase):
         self._check_hash_property(tlsh_properties.hashes[0], tlsh['value'], 'Other')
 
     def test_event_with_hash_composite_attributes(self):
-        event = get_event_with_hash_composite_attributes()
+        event = get_event_with_hash_composite_attributes(
+            ('md5', 'tlsh'),
+            (
+                'filename1|b2a5abfeef9e36964281a31e17b57c97',
+                'filename2|1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1'
+            ),
+            (
+                '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
+                '518b4bcb-a86b-4783-9457-391d548b605b'
+            )
+        )
         md5, tlsh = event['Event']['Attribute']
         orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event, '1.1.1')

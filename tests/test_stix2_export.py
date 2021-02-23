@@ -107,6 +107,22 @@ class TestSTIX20Export(TestSTIX2Export):
         self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
         return attribute['value'], indicator.pattern
 
+    def _run_indicators_tests(self, event):
+        self._add_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attributes = event['Event']['Attribute']
+        self.parser.parse_misp_event(event)
+        identity, report, *indicators = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
+        self.assertEqual(report.published, timestamp)
+        for attribute, indicator, object_ref in zip(attributes, indicators, object_refs):
+            self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+        attribute_values = (attribute['value'] for attribute in attributes)
+        patterns = (indicator.pattern for indicator in indicators)
+        return attribute_values, patterns
+
     def _run_observable_tests(self, event):
         self._remove_attribute_ids_flag(event)
         orgc = event['Event']['Orgc']
@@ -115,10 +131,48 @@ class TestSTIX20Export(TestSTIX2Export):
         identity, report, observed_data = self.parser.stix_objects
         identity_id = self._check_identity_features(identity, orgc)
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        args = (
+            report,
+            event['Event'],
+            identity_id,
+            timestamp
+        )
+        object_ref = self._check_report_features(*args)[0]
         self.assertEqual(report.published, timestamp)
-        self._check_attribute_observable_features(observed_data, attribute, identity_id, object_ref)
+        self._check_attribute_observable_features(
+            observed_data,
+            attribute,
+            identity_id,
+            object_ref
+        )
         return attribute['value'], observed_data['objects']
+
+    def _run_observables_tests(self, event):
+        self._remove_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attributes = event['Event']['Attribute']
+        self.parser.parse_misp_event(event)
+        identity, report, *observed_datas = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        args = (
+            report,
+            event['Event'],
+            identity_id,
+            timestamp
+        )
+        object_refs = self._check_report_features(*args)
+        self.assertEqual(report.published, timestamp)
+        for attribute, observed_data, object_ref in zip(attributes, observed_datas, object_refs):
+            self._check_attribute_observable_features(
+                observed_data,
+                attribute,
+                identity_id,
+                object_ref
+            )
+        attribute_values = tuple(attribute['value'] for attribute in attributes)
+        observable_objects = tuple(observed_data['objects'] for observed_data in observed_datas)
+        return attribute_values, observable_objects
 
     def test_event_with_as_indicator_attribute(self):
         event = get_event_with_as_attribute()
@@ -332,6 +386,54 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(observable.type, 'file')
         self.assertEqual(observable.name, attribute_value)
 
+    def test_event_with_hash_indicator_attributes(self):
+        event = get_event_with_hash_attributes(
+            ('md5', 'sha1', 'sha512/256', 'sha3-256'),
+            (
+                'b2a5abfeef9e36964281a31e17b57c97',
+                '2920d5e6c579fce772e5506caf03af65579088bd',
+                '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93',
+                '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4'
+            ),
+            (
+                '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
+                '518b4bcb-a86b-4783-9457-391d548b605b',
+                '34cb1a7c-55ec-412a-8684-ba4a88d83a45',
+                '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f'
+            )
+        )
+        attribute_values, patterns = self._run_indicators_tests(event)
+        md5, sha1, sha2, sha3 = attribute_values
+        md5_pattern, sha1_pattern, sha2_pattern, sha3_pattern = patterns
+        self.assertEqual(md5_pattern, f"[file:hashes.MD5 = '{md5}']")
+        self.assertEqual(sha1_pattern, f"[file:hashes.SHA1 = '{sha1}']")
+        self.assertEqual(sha2_pattern, f"[file:hashes.SHA256 = '{sha2}']")
+        self.assertEqual(sha3_pattern, f"[file:hashes.SHA3256 = '{sha3}']")
+
+    def test_event_with_hash_observable_attributes(self):
+        event = get_event_with_hash_attributes(
+            ('md5', 'sha1', 'sha512/256', 'sha3-256'),
+            (
+                'b2a5abfeef9e36964281a31e17b57c97',
+                '2920d5e6c579fce772e5506caf03af65579088bd',
+                '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93',
+                '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4'
+            ),
+            (
+                '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
+                '518b4bcb-a86b-4783-9457-391d548b605b',
+                '34cb1a7c-55ec-412a-8684-ba4a88d83a45',
+                '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f'
+            )
+        )
+        attribute_values, observable_objects = self._run_observables_tests(event)
+        md5, sha1, sha2, sha3 = attribute_values
+        md5_object, sha1_object, sha2_object, sha3_object = observable_objects
+        self.assertEqual(md5_object['0'].hashes['MD5'], md5)
+        self.assertEqual(sha1_object['0'].hashes['SHA-1'], sha1)
+        self.assertEqual(sha2_object['0'].hashes['SHA-256'], sha2)
+        self.assertEqual(sha3_object['0'].hashes['SHA3-256'], sha3)
+
     def test_event_with_hostname_indicator_attribute(self):
         event = get_event_with_hostname_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
@@ -465,6 +567,28 @@ class TestSTIX21Export(TestSTIX2Export):
         self._check_pattern_features(indicator)
         return attribute['value'], indicator.pattern
 
+    def _run_indicators_tests(self, event):
+        self._add_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attributes = event['Event']['Attribute']
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, *indicators = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        object_refs = self._check_grouping_features(*args)
+        for attribute, indicator, object_ref in zip(attributes, indicators, object_refs):
+            self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+            self._check_pattern_features(indicator)
+        attribute_values = (attribute['value'] for attribute in attributes)
+        patterns = (indicator.pattern for indicator in indicators)
+        return attribute_values, patterns
+
     def _run_observable_tests(self, event):
         self._remove_attribute_ids_flag(event)
         orgc = event['Event']['Orgc']
@@ -481,6 +605,35 @@ class TestSTIX21Export(TestSTIX2Export):
         )
         self._check_attribute_observable_features(observed_data, attribute, identity_id, observable_id)
         return attribute['value'], ids, observed_data['object_refs'], observable
+
+    def _run_observables_tests(self, event):
+        self._remove_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attributes = event['Event']['Attribute']
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, *observables = stix_objects
+        observed_datas = observables[::2]
+        observables = observables[1::2]
+        identity_id = self._check_identity_features(identity, orgc)
+        ids = self._check_grouping_features(
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        observable_ids = ids[::2]
+        object_ids = ids[1::2]
+        for attribute, observed_data, observable_id in zip(attributes, observed_datas, observable_ids):
+            self._check_attribute_observable_features(
+                observed_data,
+                attribute,
+                identity_id,
+                observable_id
+            )
+        attribute_values = tuple(attribute['value'] for attribute in attributes)
+        object_refs = tuple(observed_data['object_refs'][0] for observed_data in observed_datas)
+        return attribute_values, object_ids, object_refs, observables
 
     def test_event_with_as_indicator_attribute(self):
         event = get_event_with_as_attribute()
@@ -737,7 +890,7 @@ class TestSTIX21Export(TestSTIX2Export):
             f"[email-message:additional_header_fields.x_mailer = '{attribute_value}']"
         )
 
-    def test_event_with_email_x_mailer__attribute(self):
+    def test_event_with_email_x_mailer_observable_attribute(self):
         event = get_event_with_email_x_mailer_attribute()
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
         object_ref = object_refs[0]
@@ -762,6 +915,58 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(file.id, object_ref)
         self.assertEqual(file.type, 'file')
         self.assertEqual(file.name, attribute_value)
+
+    def test_event_with_hash_indicator_attributes(self):
+        event = get_event_with_hash_attributes(
+            ('md5', 'sha1', 'sha512/256', 'sha3-256'),
+            (
+                'b2a5abfeef9e36964281a31e17b57c97',
+                '2920d5e6c579fce772e5506caf03af65579088bd',
+                '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93',
+                '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4'
+            ),
+            (
+                '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
+                '518b4bcb-a86b-4783-9457-391d548b605b',
+                '34cb1a7c-55ec-412a-8684-ba4a88d83a45',
+                '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f'
+            )
+        )
+        attribute_values, patterns = self._run_indicators_tests(event)
+        md5, sha1, sha2, sha3 = attribute_values
+        md5_pattern, sha1_pattern, sha2_pattern, sha3_pattern = patterns
+        self.assertEqual(md5_pattern, f"[file:hashes.MD5 = '{md5}']")
+        self.assertEqual(sha1_pattern, f"[file:hashes.SHA1 = '{sha1}']")
+        self.assertEqual(sha2_pattern, f"[file:hashes.SHA256 = '{sha2}']")
+        self.assertEqual(sha3_pattern, f"[file:hashes.SHA3256 = '{sha3}']")
+
+    def test_event_with_hash_observable_attributes(self):
+        event = get_event_with_hash_attributes(
+            ('md5', 'sha1', 'sha512/256', 'sha3-256'),
+            (
+                'b2a5abfeef9e36964281a31e17b57c97',
+                '2920d5e6c579fce772e5506caf03af65579088bd',
+                '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93',
+                '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4'
+            ),
+            (
+                '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
+                '518b4bcb-a86b-4783-9457-391d548b605b',
+                '34cb1a7c-55ec-412a-8684-ba4a88d83a45',
+                '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f'
+            )
+        )
+        values, grouping_refs, object_refs, observables = self._run_observables_tests(event)
+        for grouping_ref, object_ref, observable in zip(grouping_refs, object_refs, observables):
+            self.assertEqual(grouping_ref, object_ref)
+            self.assertEqual(observable.id, object_ref)
+            self.assertEqual(observable.type, 'file')
+        md5, sha1, sha2, sha3 = values
+        md5_object, sha1_object, sha2_object, sha3_object = observables
+        self.assertEqual(md5_object.hashes['MD5'], md5)
+        self.assertEqual(sha1_object.hashes['SHA-1'], sha1)
+        self.assertEqual(sha2_object.hashes['SHA-256'], sha2)
+        self.assertEqual(sha3_object.hashes['SHA3-256'], sha3)
 
     def test_event_with_hostname_indicator_attribute(self):
         event = get_event_with_hostname_attribute()
