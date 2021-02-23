@@ -4,6 +4,7 @@
 from . import stix2_mapping
 from .exportparser import MISPtoSTIXParser
 from collections import defaultdict
+from datetime import datetime
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v20.sro import Relationship
@@ -411,30 +412,30 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     ################################################################################
 
     @staticmethod
-    def _create_content_ref_pattern(value):
+    def _create_content_ref_pattern(value: str) -> str:
         return f"file:content_ref.payload_bin = '{value}'"
 
     @staticmethod
-    def _create_domain_pattern(value):
+    def _create_domain_pattern(value: str) -> str:
         return f"domain-name:value = '{value}'"
 
     @staticmethod
-    def _create_domain_resolving_pattern(value):
+    def _create_domain_resolving_pattern(value: str) -> str:
         return f"domain-name:resolves_to_refs[*].value = '{value}'"
 
     @staticmethod
-    def _create_filename_pattern(value):
+    def _create_filename_pattern(value: str) -> str:
         return f"file:name = '{value}'"
 
     def _create_hash_pattern(self, hash_type: str, value: str) -> str:
         return f"file:hashes.{self._define_hash_type(hash_type)} = '{value}'"
 
     @staticmethod
-    def _create_port_pattern(value):
+    def _create_port_pattern(value: str) -> str:
         return f"network-traffic:dst_port = '{value}'"
 
     @staticmethod
-    def _create_regkey_pattern(value):
+    def _create_regkey_pattern(value: str) -> str:
         return f"windows-registry-key:key = '{value.strip()}'"
 
     ################################################################################
@@ -442,7 +443,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     ################################################################################
 
     @staticmethod
-    def _datetime_from_str(timestamp):
+    def _datetime_from_str(timestamp: str) -> datetime:
         return datetime.strptime(timestamp.split('+')[0], '%Y-%m-%dT%H:%M:%S.%f')
 
     @staticmethod
