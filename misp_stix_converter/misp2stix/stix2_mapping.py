@@ -6,6 +6,23 @@ from stix2.v20.common import (TLP_WHITE as TLP_WHITE_v20, TLP_GREEN as TLP_GREEN
 from stix2.v21.common import (TLP_WHITE as TLP_WHITE_v21, TLP_GREEN as TLP_GREEN_v21,
                               TLP_AMBER as TLP_AMBER_v21, TLP_RED as TLP_RED_v21)
 
+_hash_attribute_types = (
+    "md5",
+    "sha1",
+    "sha224",
+    "sha256",
+    "sha384",
+    "sha512",
+    "sha512/224",
+    "sha512/256",
+    "sha3-224",
+    "sha3-256",
+    "sha3-384",
+    "sha3-512",
+    "ssdeep",
+    "tlsh"
+)
+
 attribute_types_mapping = {
     'AS': '_parse_autonomous_system_attribute',
     'attachment': '_parse_attachment_attribute',
@@ -28,6 +45,12 @@ attribute_types_mapping = {
     'regkey': '_parse_regkey_attribute',
     'regkey|value': '_parse_regkey_value_attribute'
 }
+attribute_types_mapping.update(
+    dict.fromkeys(
+        _hash_attribute_types,
+        '_parse_hash_attribute'
+    )
+)
 
 tlp_markings_v20 = {
     'tlp:white': TLP_WHITE_v20,

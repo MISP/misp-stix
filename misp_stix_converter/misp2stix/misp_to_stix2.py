@@ -283,6 +283,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_filename_attribute_observable(attribute)
 
+    def _parse_hash_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[{self._create_hash_pattern(attribute['type'], attribute['value'])}]"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_hash_attribute_observable(attribute)
+
     def _parse_hostname_port_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             hostname, port = attribute['value'].split('|')
@@ -419,6 +426,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_filename_pattern(value):
         return f"file:name = '{value}'"
 
+    def _create_hash_pattern(self, hash_type: str, value: str) -> str:
+        return f"file:hashes.{self._define_hash_type(hash_type)} = '{value}'"
+
     @staticmethod
     def _create_port_pattern(value):
         return f"network-traffic:dst_port = '{value}'"
@@ -434,6 +444,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _datetime_from_str(timestamp):
         return datetime.strptime(timestamp.split('+')[0], '%Y-%m-%dT%H:%M:%S.%f')
+
+    @staticmethod
+    def _define_hash_type(hash_type: str) -> str:
+        if '/' in hash_type:
+            return f"SHA{hash_type.split('/')[1]}"
+        return hash_type.replace('-', '').upper()
 
     def _handle_indicator_time_fields(self, attribute: dict) -> dict:
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
