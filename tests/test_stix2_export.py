@@ -512,6 +512,76 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(network_traffic_object.dst_port, int(port))
         self.assertEqual(network_traffic_object.dst_ref, '0')
 
+    def test_event_with_ip_indicator_attributes(self):
+        event = get_event_with_ip_attributes()
+        attribute_values, patterns = self._run_indicators_tests(event)
+        src, dst = attribute_values
+        src_pattern, dst_pattern = patterns
+        src_type_pattern = "network-traffic:src_ref.type = 'ipv4-addr'"
+        src_value_pattern = f"network-traffic:src_ref.value = '{src}'"
+        self.assertEqual(src_pattern, f"[{src_type_pattern} AND {src_value_pattern}]")
+        dst_type_pattern = "network-traffic:dst_ref.type = 'ipv4-addr'"
+        dst_value_pattern = f"network-traffic:dst_ref.value = '{dst}'"
+        self.assertEqual(dst_pattern, f"[{dst_type_pattern} AND {dst_value_pattern}]")
+
+    def test_event_with_ip_observable_attributes(self):
+        event = get_event_with_ip_attributes()
+        attribute_values, observable_objects = self._run_observables_tests(event)
+        src, dst = attribute_values
+        src_object, dst_object = observable_objects
+        src_network, src_address = src_object.values()
+        self.assertEqual(src_network.type, 'network-traffic')
+        self.assertEqual(src_network.src_ref, '1')
+        self.assertEqual(src_address.type, 'ipv4-addr')
+        self.assertEqual(src_address.value, src)
+        dst_network, dst_address = dst_object.values()
+        self.assertEqual(dst_network.type, 'network-traffic')
+        self.assertEqual(dst_network.dst_ref, '1')
+        self.assertEqual(dst_address.type, 'ipv4-addr')
+        self.assertEqual(dst_address.value, dst)
+
+    def test_event_with_ip_port_indicator_attributes(self):
+        event = get_event_with_ip_port_attributes()
+        attribute_values, patterns = self._run_indicators_tests(event)
+        src, dst = attribute_values
+        src_ip_value, src_port_value = src.split('|')
+        dst_ip_value, dst_port_value = dst.split('|')
+        src_pattern, dst_pattern = patterns
+        src_type_pattern = "network-traffic:src_ref.type = 'ipv4-addr'"
+        src_value_pattern = f"network-traffic:src_ref.value = '{src_ip_value}'"
+        src_port_pattern = f"network-traffic:src_port = '{src_port_value}'"
+        self.assertEqual(
+            src_pattern,
+            f"[{src_type_pattern} AND {src_value_pattern} AND {src_port_pattern}]"
+        )
+        dst_type_pattern = "network-traffic:dst_ref.type = 'ipv4-addr'"
+        dst_value_pattern = f"network-traffic:dst_ref.value = '{dst_ip_value}'"
+        dst_port_pattern = f"network-traffic:dst_port = '{dst_port_value}'"
+        self.assertEqual(
+            dst_pattern,
+            f"[{dst_type_pattern} AND {dst_value_pattern} AND {dst_port_pattern}]"
+        )
+
+    def test_event_with_ip_port_observable_attributes(self):
+        event = get_event_with_ip_port_attributes()
+        attribute_values, observable_objects = self._run_observables_tests(event)
+        src, dst = attribute_values
+        src_ip_value, src_port_value = src.split('|')
+        dst_ip_value, dst_port_value = dst.split('|')
+        src_object, dst_object = observable_objects
+        src_network, src_address = src_object.values()
+        self.assertEqual(src_network.type, 'network-traffic')
+        self.assertEqual(src_network.src_ref, '1')
+        self.assertEqual(src_network.src_port, int(src_port_value))
+        self.assertEqual(src_address.type, 'ipv4-addr')
+        self.assertEqual(src_address.value, src_ip_value)
+        dst_network, dst_address = dst_object.values()
+        self.assertEqual(dst_network.type, 'network-traffic')
+        self.assertEqual(dst_network.dst_ref, '1')
+        self.assertEqual(dst_network.dst_port, int(dst_port_value))
+        self.assertEqual(dst_address.type, 'ipv4-addr')
+        self.assertEqual(dst_address.value, dst_ip_value)
+
     def test_event_with_mac_address_indicator_attribute(self):
         event = get_event_with_mac_address_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
@@ -653,7 +723,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self._check_attribute_observable_features(observed_data, attribute, identity_id, observable_id)
         return attribute['value'], ids, observed_data['object_refs'], observable
 
-    def _run_observables_tests(self, event):
+    def _run_observables_tests(self, event, index=2):
         self._remove_attribute_ids_flag(event)
         orgc = event['Event']['Orgc']
         attributes = event['Event']['Attribute']
@@ -661,16 +731,16 @@ class TestSTIX21Export(TestSTIX2Export):
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, *observables = stix_objects
-        observed_datas = observables[::2]
-        observables = observables[1::2]
+        observed_datas = observables[::index]
+        observables = [value for count, value in enumerate(observables) if count % index != 0]
         identity_id = self._check_identity_features(identity, orgc)
         ids = self._check_grouping_features(
             grouping,
             event['Event'],
             identity_id
         )
-        observable_ids = ids[::2]
-        object_ids = ids[1::2]
+        observable_ids = ids[::index]
+        object_ids = [value for count, value in enumerate(ids) if count % index != 0]
         for attribute, observed_data, observable_id in zip(attributes, observed_datas, observable_ids):
             self._check_attribute_observable_features(
                 observed_data,
@@ -1104,6 +1174,94 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(network_traffic.type, 'network-traffic')
         self.assertEqual(network_traffic.dst_port, int(port))
         self.assertEqual(network_traffic.dst_ref, domain_id)
+
+    def test_event_with_ip_indicator_attributes(self):
+        event = get_event_with_ip_attributes()
+        attribute_values, patterns = self._run_indicators_tests(event)
+        src, dst = attribute_values
+        src_pattern, dst_pattern = patterns
+        src_type_pattern = "network-traffic:src_ref.type = 'ipv4-addr'"
+        src_value_pattern = f"network-traffic:src_ref.value = '{src}'"
+        self.assertEqual(src_pattern, f"[{src_type_pattern} AND {src_value_pattern}]")
+        dst_type_pattern = "network-traffic:dst_ref.type = 'ipv4-addr'"
+        dst_value_pattern = f"network-traffic:dst_ref.value = '{dst}'"
+        self.assertEqual(dst_pattern, f"[{dst_type_pattern} AND {dst_value_pattern}]")
+
+    def test_event_with_ip_observable_attributes(self):
+        event = get_event_with_ip_attributes()
+        values, grouping_refs, object_refs, observables = self._run_observables_tests(
+            event,
+            index=3
+        )
+        for grouping_ref, observable in zip(grouping_refs, observables):
+            self.assertEqual(grouping_ref, observable.id)
+        src, dst = values
+        src_network_id, src_address_id, dst_network_id, dst_address_id = grouping_refs
+        src_observable_id, dst_observable_id = object_refs
+        src_network, src_address, dst_network, dst_address = observables
+        self.assertEqual(src_network_id, src_observable_id)
+        self.assertEqual(src_network.id, src_network_id)
+        self.assertEqual(src_network.type, 'network-traffic')
+        self.assertEqual(src_network.src_ref, src_address_id)
+        self.assertEqual(src_address.id, src_address_id)
+        self.assertEqual(src_address.value, src)
+        self.assertEqual(dst_network_id, dst_observable_id)
+        self.assertEqual(dst_network.id, dst_network_id)
+        self.assertEqual(dst_network.type, 'network-traffic')
+        self.assertEqual(dst_network.dst_ref, dst_address_id)
+        self.assertEqual(dst_address.id, dst_address_id)
+        self.assertEqual(dst_address.value, dst)
+
+    def test_event_with_ip_port_indicator_attributes(self):
+        event = get_event_with_ip_port_attributes()
+        attribute_values, patterns = self._run_indicators_tests(event)
+        src, dst = attribute_values
+        src_ip_value, src_port_value = src.split('|')
+        dst_ip_value, dst_port_value = dst.split('|')
+        src_pattern, dst_pattern = patterns
+        src_type_pattern = "network-traffic:src_ref.type = 'ipv4-addr'"
+        src_value_pattern = f"network-traffic:src_ref.value = '{src_ip_value}'"
+        src_port_pattern = f"network-traffic:src_port = '{src_port_value}'"
+        self.assertEqual(
+            src_pattern,
+            f"[{src_type_pattern} AND {src_value_pattern} AND {src_port_pattern}]"
+        )
+        dst_type_pattern = "network-traffic:dst_ref.type = 'ipv4-addr'"
+        dst_value_pattern = f"network-traffic:dst_ref.value = '{dst_ip_value}'"
+        dst_port_pattern = f"network-traffic:dst_port = '{dst_port_value}'"
+        self.assertEqual(
+            dst_pattern,
+            f"[{dst_type_pattern} AND {dst_value_pattern} AND {dst_port_pattern}]"
+        )
+
+    def test_event_with_ip_port_observable_attributes(self):
+        event = get_event_with_ip_port_attributes()
+        values, grouping_refs, object_refs, observables = self._run_observables_tests(
+            event,
+            index=3
+        )
+        for grouping_ref, observable in zip(grouping_refs, observables):
+            self.assertEqual(grouping_ref, observable.id)
+        src, dst = values
+        src_network_id, src_address_id, dst_network_id, dst_address_id = grouping_refs
+        src_observable_id, dst_observable_id = object_refs
+        src_network, src_address, dst_network, dst_address = observables
+        src_ip_value, src_port_value = src.split('|')
+        self.assertEqual(src_network_id, src_observable_id)
+        self.assertEqual(src_network.id, src_network_id)
+        self.assertEqual(src_network.type, 'network-traffic')
+        self.assertEqual(src_network.src_port, int(src_port_value))
+        self.assertEqual(src_network.src_ref, src_address_id)
+        self.assertEqual(src_address.id, src_address_id)
+        self.assertEqual(src_address.value, src_ip_value)
+        dst_ip_value, dst_port_value = dst.split('|')
+        self.assertEqual(dst_network_id, dst_observable_id)
+        self.assertEqual(dst_network.id, dst_network_id)
+        self.assertEqual(dst_network.type, 'network-traffic')
+        self.assertEqual(dst_network.dst_port, int(dst_port_value))
+        self.assertEqual(dst_network.dst_ref, dst_address_id)
+        self.assertEqual(dst_address.id, dst_address_id)
+        self.assertEqual(dst_address.value, dst_ip_value)
 
     def test_event_with_mac_address_indicator_attribute(self):
         event = get_event_with_mac_address_attribute()
