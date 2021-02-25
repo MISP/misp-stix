@@ -243,6 +243,44 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         ]
         self._create_observed_data(attribute, objects)
 
+    def _parse_ip_attribute_observable(self, attribute: dict):
+        address_type = self._get_address_type(attribute['value'])
+        address_id = f"{address_type._type}--{attribute['uuid']}"
+        ip_type = attribute['type'].split('-')[1]
+        network_traffic_args = {
+            'id': f"network-traffic--{attribute['uuid']}",
+            f'{ip_type}_ref': address_id,
+            'protocols': ['tcp']
+        }
+        objects = [
+            NetworkTraffic(**network_traffic_args),
+            address_type(
+                id=address_id,
+                value=attribute['value']
+            )
+        ]
+        self._create_observed_data(attribute, objects)
+
+    def _parse_ip_port_attribute_observable(self, attribute: dict):
+        ip_value, port_value = attribute['value'].split('|')
+        address_type = self._get_address_type(ip_value)
+        address_id = f"{address_type._type}--{attribute['uuid']}"
+        ip_type = attribute['type'].split('|')[0].split('-')[1]
+        network_traffic_args = {
+            'id': f"network-traffic--{attribute['uuid']}",
+            f'{ip_type}_ref': address_id,
+            f'{ip_type}_port': port_value,
+            'protocols': ['tcp']
+        }
+        objects = [
+            NetworkTraffic(**network_traffic_args),
+            address_type(
+                id=address_id,
+                value=ip_value
+            )
+        ]
+        self._create_observed_data(attribute, objects)
+
     def _parse_mac_address_attribute_observable(self, attribute: dict):
         mac_address_object = MACAddress(
             id=f"mac-addr--{attribute['uuid']}",

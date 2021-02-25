@@ -57,6 +57,24 @@ attribute_types_mapping.update(
         '_parse_hash_composite_attribute'
     )
 )
+attribute_types_mapping.update(
+    dict.fromkeys(
+        (
+            'ip-src',
+            'ip-dst'
+        ),
+        '_parse_ip_attribute'
+    )
+)
+attribute_types_mapping.update(
+    dict.fromkeys(
+        (
+            'ip-src|port',
+            'ip-dst|port'
+        ),
+        '_parse_ip_port_attribute'
+    )
+)
 
 tlp_markings_v20 = {
     'tlp:white': TLP_WHITE_v20,

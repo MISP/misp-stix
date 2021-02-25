@@ -312,6 +312,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_hostname_port_attribute_observable(attribute)
 
+    def _parse_ip_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            ip_type = attribute['type'].split('-')[1]
+            pattern = f"[{self._create_ip_pattern(ip_type, attribute['value'])}]"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_ip_attribute_observable(attribute)
+
+    def _parse_ip_port_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            ip_type = attribute['type'].split('|')[0].split('-')[1]
+            ip_value, port_value = attribute['value'].split('|')
+            ip_pattern = self._create_ip_pattern(ip_type, ip_value)
+            port_pattern = self._create_port_pattern(port_value, ip_type=ip_type)
+            pattern = f"[{ip_pattern} AND {port_pattern}]"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_ip_port_attribute_observable(attribute)
+
     def _parse_mac_address_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             pattern = f"[mac-addr:value = '{attribute['value']}']"
@@ -441,9 +460,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_hash_pattern(self, hash_type: str, value: str) -> str:
         return f"file:hashes.{self._define_hash_type(hash_type)} = '{value}'"
 
+    def _create_ip_pattern(self, ip_type: str, value: str) -> str:
+        address_type = self._define_address_type(value)
+        network_type = f"network-traffic:{ip_type}_ref.type = '{address_type}'"
+        network_value = f"network-traffic:{ip_type}_ref.value = '{value}'"
+        return f"{network_type} AND {network_value}"
+
     @staticmethod
-    def _create_port_pattern(value: str) -> str:
-        return f"network-traffic:dst_port = '{value}'"
+    def _create_port_pattern(value: str, ip_type: str = 'dst') -> str:
+        return f"network-traffic:{ip_type}_port = '{value}'"
 
     @staticmethod
     def _create_regkey_pattern(value: str) -> str:
@@ -456,6 +481,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _datetime_from_str(timestamp: str) -> datetime:
         return datetime.strptime(timestamp.split('+')[0], '%Y-%m-%dT%H:%M:%S.%f')
+
+    @staticmethod
+    def _define_address_type(address):
+        if ':' in address:
+            return 'ipv6-addr'
+        return 'ipv4-addr'
 
     @staticmethod
     def _define_hash_type(hash_type: str) -> str:
