@@ -259,6 +259,7 @@ attribute_types_mapping = {
     'user-agent': '_parse_user_agent_attribute',
     'vulnerability': '_parse_vulnerability_attribute',
     'weakness': '_parse_weakness_attribute',
+    'whois-registrar': '_parse_whois_registrar_attribute',
     'yara': '_parse_yara_attribute'
 }
 attribute_types_mapping.update(
@@ -341,6 +342,17 @@ attribute_types_mapping.update(
             'text'
         ],
         '_parse_undefined_attribute'
+    )
+)
+attribute_types_mapping.update(
+    dict.fromkeys(
+        [
+            'whois-registrant-email',
+            'whois-registrant-name',
+            'whois-registrant-org',
+            'whois-registrant-phone'
+        ],
+        '_parse_whois_registrant_attribute'
     )
 )
 

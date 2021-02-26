@@ -563,6 +563,27 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         weakness.cwe_id = attribute['value']
         self._handle_exploit_target(attribute, weakness, 'weakness')
 
+    def _parse_whois_registrant_attribute(self, attribute: dict):
+        whois_object = WhoisEntry()
+        registrants = WhoisRegistrants()
+        registrant = WhoisRegistrant()
+        object_relation = '-'.join(attribute['type'].split('-')[1:])
+        feature = stix1_mapping.whois_registrant_mapping[object_relation]
+        setattr(registrant, feature, attribute['value'])
+        setattr(getattr(registrant, feature), 'condition', 'Equals')
+        registrants.append(registrant)
+        whois_object.registrants = registrants
+        observable = self._create_observable(whois_object, attribute['uuid'], 'Whois')
+        self._handle_attribute(attribute, observable)
+
+    def _parse_whois_registrar_attribute(self, attribute: dict):
+        whois_object = WhoisEntry()
+        whois_registrar = WhoisRegistrar()
+        whois_registrar.name = attribute['value']
+        whois_object.registrar_info = whois_registrar
+        observable = self._create_observable(whois_object, attribute['uuid'], 'Whois')
+        self._handle_attribute(attribute, observable)
+
     def _parse_windows_service_attribute(self, attribute: dict):
         windows_service = WinService()
         feature = 'service_name' if attribute['type'] == 'windows-service-name' else 'display_name'
