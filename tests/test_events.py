@@ -2084,6 +2084,50 @@ def get_event_with_weakness_attribute():
     return event
 
 
+def get_event_with_whois_registrar_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "whois-registrar",
+            "category": "Attribution",
+            "value": "Registrar.eu"
+        }
+    ]
+    return event
+
+
+def get_event_with_whois_registrant_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "whois-registrant-email",
+            "category": "Attribution",
+            "value": "registrant@email.org"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "whois-registrant-name",
+            "category": "Attribution",
+            "value": "Registrant Name"
+        },
+        {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "type": "whois-registrant-org",
+            "category": "Attribution",
+            "value": "Registrant Org"
+        },
+        {
+            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "type": "whois-registrant-phone",
+            "category": "Attribution",
+            "value": "0123456789"
+        }
+    ]
+    return event
+
+
 def get_event_with_windows_service_attributes():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [

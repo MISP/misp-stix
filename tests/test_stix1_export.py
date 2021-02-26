@@ -1192,7 +1192,6 @@ class TestStix1Export(unittest.TestCase):
     def test_event_with_weakness_attribute(self):
         event = get_event_with_weakness_attribute()
         attribute = event['Event']['Attribute'][0]
-        orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event, '1.1.1')
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_attribute(stix_package, attribute)
@@ -1206,10 +1205,43 @@ class TestStix1Export(unittest.TestCase):
             attribute['uuid']
         )
 
+    def test_event_with_whois_registrant_attributes(self):
+        event = get_event_with_whois_registrant_attributes()
+        email, name, org, phone = event['Event']['Attribute']
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        email_observable, name_observable, org_observable, phone_observable = incident.related_observables.observable
+        self.assertEqual(email_observable.relationship, email['category'])
+        email_properties = self._check_observable_features(email_observable.item, email, 'Whois')
+        self.assertEqual(
+            email_properties.registrants[0].email_address.address_value.value,
+            email['value']
+        )
+        self.assertEqual(name_observable.relationship, name['category'])
+        name_properties = self._check_observable_features(name_observable.item, name, 'Whois')
+        self.assertEqual(name_properties.registrants[0].name.value, name['value'])
+        self.assertEqual(org_observable.relationship, org['category'])
+        org_properties = self._check_observable_features(org_observable.item, org, 'Whois')
+        self.assertEqual(org_properties.registrants[0].organization.value, org['value'])
+        self.assertEqual(phone_observable.relationship, phone['category'])
+        phone_properties = self._check_observable_features(phone_observable.item, phone, 'Whois')
+        self.assertEqual(phone_properties.registrants[0].phone_number.value, phone['value'])
+
+    def test_event_with_whois_registrar_attribute(self):
+        event = get_event_with_whois_registrar_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, attribute['category'])
+        properties = self._check_observable_features(observable.item, attribute, 'Whois')
+        self.assertEqual(properties.registrar_info.name, attribute['value'])
+
     def test_event_with_windows_service_attributes(self):
         event = get_event_with_windows_service_attributes()
         displayname, name = event['Event']['Attribute']
-        orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
         r_displayname, r_name = incident.related_observables.observable
