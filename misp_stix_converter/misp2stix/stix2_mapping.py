@@ -42,8 +42,10 @@ attribute_types_mapping = {
     'hostname|port': '_parse_hostname_port_attribute',
     'mac-address': '_parse_mac_address_attribute',
     'mutex': '_parse_mutex_attribute',
+    'port': '_parse_port_attribute',
     'regkey': '_parse_regkey_attribute',
-    'regkey|value': '_parse_regkey_value_attribute'
+    'regkey|value': '_parse_regkey_value_attribute',
+    'size-in-bytes': '_parse_size_in_bytes_attribute'
 }
 attribute_types_mapping.update(
     dict.fromkeys(

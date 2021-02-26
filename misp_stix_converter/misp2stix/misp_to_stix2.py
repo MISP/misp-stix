@@ -345,6 +345,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_mutex_attribute_observable(attribute)
 
+    def _parse_port_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[network-traffic:dst_port = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_custom_attribute(attribute)
+
     def _parse_regkey_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             key = attribute['value']
@@ -365,6 +372,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_regkey_value_attribute_observable(attribute)
+
+    def _parse_size_in_bytes_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[file:size = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_custom_attribute(attribute)
 
     def _parse_x509_fingerprint_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
