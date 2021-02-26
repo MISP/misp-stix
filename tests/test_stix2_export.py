@@ -430,6 +430,7 @@ class TestSTIX20Export(TestSTIX2Export):
         hash_types = ('MD5', 'SHA-1', 'SHA-256', 'SHA3-256')
         for attribute_value, observable_object, hash_type in zip(attribute_values, observable_objects, hash_types):
             filename, hash_value = attribute_value.split('|')
+            self.assertEqual(observable_object['0'].type, 'file')
             self.assertEqual(observable_object['0'].name, filename)
             self.assertEqual(observable_object['0'].hashes[hash_type], hash_value)
 
@@ -476,10 +477,10 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute_values, observable_objects = self._run_observables_tests(event)
         md5, sha1, sha2, sha3 = attribute_values
         md5_object, sha1_object, sha2_object, sha3_object = observable_objects
-        self.assertEqual(md5_object['0'].hashes['MD5'], md5)
-        self.assertEqual(sha1_object['0'].hashes['SHA-1'], sha1)
-        self.assertEqual(sha2_object['0'].hashes['SHA-256'], sha2)
-        self.assertEqual(sha3_object['0'].hashes['SHA3-256'], sha3)
+        hash_types = ('MD5', 'SHA-1', 'SHA-256', 'SHA3-256')
+        for attribute_value, observable_object, hash_type in zip(attribute_values, observable_objects, hash_types):
+            self.assertEqual(observable_object['0'].type, 'file')
+            self.assertEqual(observable_object['0'].hashes[hash_type], attribute_value)
 
     def test_event_with_hostname_indicator_attribute(self):
         event = get_event_with_hostname_attribute()
@@ -640,6 +641,23 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(observable.type, 'windows-registry-key')
         self.assertEqual(observable.key, key.strip())
         self.assertEqual(observable['values'][0].data, value.strip())
+
+    def test_event_with_x509_fingerprint_indicator_attributes(self):
+        event = get_event_with_x509_fingerprint_attributes()
+        attribute_values, patterns = self._run_indicators_tests(event)
+        md5, sha1, sha256 = attribute_values
+        md5_pattern, sha1_pattern, sha256_pattern = patterns
+        self.assertEqual(md5_pattern, f"[x509-certificate:hashes.MD5 = '{md5}']")
+        self.assertEqual(sha1_pattern, f"[x509-certificate:hashes.SHA1 = '{sha1}']")
+        self.assertEqual(sha256_pattern, f"[x509-certificate:hashes.SHA256 = '{sha256}']")
+
+    def test_event_with_x509_fingerprint_observable_attributes(self):
+        event = get_event_with_x509_fingerprint_attributes()
+        attribute_values, observable_objects = self._run_observables_tests(event)
+        hash_types = ('MD5', 'SHA-1', 'SHA-256')
+        for attribute_value, observable_object, hash_type in zip(attribute_values, observable_objects, hash_types):
+            self.assertEqual(observable_object['0'].type, 'x509-certificate')
+            self.assertEqual(observable_object['0'].hashes[hash_type], attribute_value)
 
 
 class TestSTIX21Export(TestSTIX2Export):
@@ -1333,3 +1351,25 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(registry_key.type, 'windows-registry-key')
         self.assertEqual(registry_key.key, key.strip())
         self.assertEqual(registry_key['values'][0].data, value.strip())
+
+    def test_event_with_x509_fingerprint_indicator_attributes(self):
+        event = get_event_with_x509_fingerprint_attributes()
+        attribute_values, patterns = self._run_indicators_tests(event)
+        md5, sha1, sha256 = attribute_values
+        md5_pattern, sha1_pattern, sha256_pattern = patterns
+        self.assertEqual(md5_pattern, f"[x509-certificate:hashes.MD5 = '{md5}']")
+        self.assertEqual(sha1_pattern, f"[x509-certificate:hashes.SHA1 = '{sha1}']")
+        self.assertEqual(sha256_pattern, f"[x509-certificate:hashes.SHA256 = '{sha256}']")
+
+    def test_event_with_x509_fingerprint_observable_attributes(self):
+        event = get_event_with_x509_fingerprint_attributes()
+        values, grouping_refs, object_refs, observables = self._run_observables_tests(event)
+        for grouping_ref, object_ref, observable in zip(grouping_refs, object_refs, observables):
+            self.assertEqual(grouping_ref, object_ref)
+            self.assertEqual(observable.id, object_ref)
+            self.assertEqual(observable.type, 'x509-certificate')
+        md5, sha1, sha256 = values
+        md5_object, sha1_object, sha256_object = observables
+        self.assertEqual(md5_object.hashes['MD5'], md5)
+        self.assertEqual(sha1_object.hashes['SHA-1'], sha1)
+        self.assertEqual(sha256_object.hashes['SHA-256'], sha256)
