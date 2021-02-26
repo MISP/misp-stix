@@ -607,6 +607,11 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(observable.type, 'mutex')
         self.assertEqual(observable.name, attribute_value)
 
+    def test_event_with_port_indicator_attribute(self):
+        event = get_event_with_port_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[network-traffic:dst_port = '{attribute_value}']")
+
     def test_event_with_regkey_indicator_attribute(self):
         event = get_event_with_regkey_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
@@ -641,6 +646,11 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(observable.type, 'windows-registry-key')
         self.assertEqual(observable.key, key.strip())
         self.assertEqual(observable['values'][0].data, value.strip())
+
+    def test_event_with_size_in_bytes_indicator_attribute(self):
+        event = get_event_with_size_in_bytes_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[file:size = '{attribute_value}']")
 
     def test_event_with_x509_fingerprint_indicator_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
@@ -1311,6 +1321,11 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(mutex.type, 'mutex')
         self.assertEqual(mutex.name, attribute_value)
 
+    def test_event_with_port_indicator_attribute(self):
+        event = get_event_with_port_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[network-traffic:dst_port = '{attribute_value}']")
+
     def test_event_with_regkey_indicator_attribute(self):
         event = get_event_with_regkey_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
@@ -1351,6 +1366,11 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(registry_key.type, 'windows-registry-key')
         self.assertEqual(registry_key.key, key.strip())
         self.assertEqual(registry_key['values'][0].data, value.strip())
+
+    def test_event_with_size_in_bytes_indicator_attribute(self):
+        event = get_event_with_size_in_bytes_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[file:size = '{attribute_value}']")
 
     def test_event_with_x509_fingerprint_indicator_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()

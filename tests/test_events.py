@@ -1964,7 +1964,8 @@ def get_event_with_size_in_bytes_attribute():
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "size-in-bytes",
             "value": "1234",
-            "category": "Other"
+            "category": "Other",
+            "timestamp": str(int(datetime.now().timestamp()))
         }
     ]
     return event
