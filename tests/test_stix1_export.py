@@ -1091,6 +1091,17 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(properties.key.value, regkey)
         self.assertEqual(properties.values[0].data.value, value)
 
+    def test_event_with_size_in_bytes_attribute(self):
+        event = get_event_with_size_in_bytes_attribute()
+        attribute = event['Event']['Attribute'][0]
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, attribute['category'])
+        properties = self._check_observable_features(observable.item, attribute, 'File')
+        self.assertEqual(properties.size_in_bytes.value, int(attribute['value']))
+
     def test_event_with_target_attributes(self):
         event = get_event_with_target_attributes()
         email, external, location, machine, org, user = event['Event']['Attribute']
