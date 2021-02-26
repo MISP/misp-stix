@@ -75,6 +75,16 @@ attribute_types_mapping.update(
         '_parse_ip_port_attribute'
     )
 )
+attribute_types_mapping.update(
+    dict.fromkeys(
+        [
+            'x509-fingerprint-md5',
+            'x509-fingerprint-sha1',
+            'x509-fingerprint-sha256'
+        ],
+        '_parse_x509_fingerprint_attribute'
+    )
+)
 
 tlp_markings_v20 = {
     'tlp:white': TLP_WHITE_v20,

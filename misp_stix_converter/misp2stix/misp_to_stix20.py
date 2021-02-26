@@ -8,7 +8,8 @@ from stix2.v20.common import MarkingDefinition
 from stix2.v20.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
                                    EmailMessage, EmailMIMEComponent, File, IPv4Address,
                                    IPv6Address, MACAddress, Mutex, NetworkTraffic,
-                                   WindowsRegistryKey, WindowsRegistryValueType)
+                                   WindowsRegistryKey, WindowsRegistryValueType,
+                                   X509Certificate)
 from stix2.v20.sdo import CustomObject, Identity, Indicator, ObservedData, Report
 from typing import Union
 
@@ -278,6 +279,17 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                         data=value.strip()
                     )
                 ]
+            )
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_x509_fingerprint_attribute_observable(self, attribute: dict):
+        hash_type = attribute['type'].split('-')[-1]
+        observable_object = {
+            '0': X509Certificate(
+                hashes={
+                    self._define_hash_type(hash_type): attribute['value']
+                }
             )
         }
         self._create_observed_data(attribute, observable_object)

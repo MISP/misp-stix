@@ -8,7 +8,8 @@ from stix2.v21.common import MarkingDefinition
 from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
                                    EmailMessage, EmailMIMEComponent, File, IPv4Address,
                                    IPv6Address, MACAddress, Mutex, NetworkTraffic,
-                                   WindowsRegistryKey, WindowsRegistryValueType)
+                                   WindowsRegistryKey, WindowsRegistryValueType,
+                                   X509Certificate)
 from stix2.v21.sdo import CustomObject, Grouping, Identity, Indicator, ObservedData, Report
 from typing import Union
 
@@ -314,6 +315,16 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             ]
         )
         self._create_observed_data(attribute, [regkey_object])
+
+    def _parse_x509_fingerprint_attribute_observable(self, attribute: dict):
+        hash_type = attribute['type'].split('-')[-1]
+        x509_object = X509Certificate(
+            id=f"x509-certificate--{attribute['uuid']}",
+            hashes={
+                self._define_hash_type(hash_type): attribute['value']
+            }
+        )
+        self._create_observed_data(attribute, [x509_object])
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #

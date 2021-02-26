@@ -366,6 +366,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_regkey_value_attribute_observable(attribute)
 
+    def _parse_x509_fingerprint_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            hash_type = attribute['type'].split('-')[-1].upper()
+            pattern = f"[x509-certificate:hashes.{hash_type} = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_x509_fingerprint_attribute_observable(attribute)
 
     ################################################################################
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
