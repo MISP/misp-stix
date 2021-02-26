@@ -469,6 +469,13 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         observable = self._create_observable(registry_key, attribute['uuid'], 'WindowsRegistryKey')
         self._handle_attribute(attribute, observable)
 
+    def _parse_size_in_bytes_attribute(self, attribute: dict):
+        file_object = File()
+        file_object.size_in_bytes = attribute['value']
+        file_object.size_in_bytes.condition = 'Equals'
+        observable = self._create_observable(file_object, attribute['uuid'], 'File')
+        self._handle_attribute(attribute, observable)
+
     def _parse_snort_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             test_mechanism = SnortTestMechanism()

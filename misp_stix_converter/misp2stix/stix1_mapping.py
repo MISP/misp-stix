@@ -249,6 +249,7 @@ attribute_types_mapping = {
     'port': '_parse_port_attribute',
     'regkey': '_parse_regkey_attribute',
     'regkey|value': '_parse_regkey_value_attribute',
+    'size-in-bytes': '_parse_size_in_bytes_attribute',
     'snort': '_parse_snort_attribute',
     'target-email': '_parse_target_email',
     'target-external': '_parse_target_external',
