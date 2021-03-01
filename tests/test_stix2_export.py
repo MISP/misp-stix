@@ -44,6 +44,20 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(indicator.modified, timestamp)
         self.assertEqual(indicator.valid_from, timestamp)
 
+    def _check_attribute_vulnerability_features(self, vulnerability, attribute, identity_id, object_ref):
+        uuid = f"vulnerability--{attribute['uuid']}"
+        self.assertEqual(uuid, object_ref)
+        self.assertEqual(vulnerability.id, uuid)
+        self.assertEqual(vulnerability.type, 'vulnerability')
+        self.assertEqual(vulnerability.created_by_ref, identity_id)
+        type_label, category_label, ids_label = vulnerability.labels
+        self.assertEqual(type_label, f'misp:type="{attribute["type"]}"')
+        self.assertEqual(category_label, f'misp:category="{attribute["category"]}"')
+        self.assertEqual(ids_label, f'misp:to_ids="{attribute["to_ids"]}"')
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        self.assertEqual(vulnerability.created, timestamp)
+        self.assertEqual(vulnerability.modified, timestamp)
+
     def _check_killchain(self, killchain, category):
         self.assertEqual(killchain['kill_chain_name'], 'misp-category')
         self.assertEqual(killchain['phase_name'], category)
@@ -666,6 +680,28 @@ class TestSTIX20Export(TestSTIX2Export):
         event = get_event_with_size_in_bytes_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[file:size = '{attribute_value}']")
+
+    def test_event_with_vulnerability_attribute(self):
+        event = get_event_with_vulnerability_attribute()
+        self._add_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        identity, report, vulnerability = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_attribute_vulnerability_features(
+            vulnerability,
+            attribute,
+            identity_id,
+            object_ref
+        )
+        self.assertEqual(vulnerability.name, attribute['value'])
+        external_reference = vulnerability.external_references[0]
+        self.assertEqual(external_reference.source_name, 'cve')
+        self.assertEqual(external_reference.external_id, attribute['value'])
 
     def test_event_with_x509_fingerprint_indicator_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
@@ -1401,6 +1437,33 @@ class TestSTIX21Export(TestSTIX2Export):
         event = get_event_with_size_in_bytes_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[file:size = '{attribute_value}']")
+
+    def test_event_with_vulnerability_attribute(self):
+        event = get_event_with_vulnerability_attribute()
+        self._add_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, vulnerability = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        object_ref = self._check_grouping_features(*args)[0]
+        self._check_attribute_vulnerability_features(
+            vulnerability,
+            attribute,
+            identity_id,
+            object_ref
+        )
+        self.assertEqual(vulnerability.name, attribute['value'])
+        external_reference = vulnerability.external_references[0]
+        self.assertEqual(external_reference.source_name, 'cve')
+        self.assertEqual(external_reference.external_id, attribute['value'])
 
     def test_event_with_x509_fingerprint_indicator_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
