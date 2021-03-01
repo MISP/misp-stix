@@ -10,7 +10,8 @@ from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, Email
                                    IPv6Address, MACAddress, Mutex, NetworkTraffic,
                                    WindowsRegistryKey, WindowsRegistryValueType,
                                    X509Certificate)
-from stix2.v21.sdo import CustomObject, Grouping, Identity, Indicator, ObservedData, Report
+from stix2.v21.sdo import (CustomObject, Grouping, Identity, Indicator, ObservedData,
+                           Report, Vulnerability)
 from typing import Union
 
 _OBSERVABLE_OBJECT_TYPES = Union[
@@ -404,6 +405,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_report(report_args: dict) -> Report:
         return Report(**report_args)
+
+    @staticmethod
+    def _create_vulnerability(vulnerability_args: dict) -> Vulnerability:
+        return Vulnerability(**vulnerability_args)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #

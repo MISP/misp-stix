@@ -394,6 +394,26 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_custom_attribute(attribute)
 
+    def _parse_vulnerability_attribute(self, attribute: dict):
+        vulnerability_id = f"vulnerability--{attribute['uuid']}"
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        vulnerability_args = {
+            'id': vulnerability_id,
+            'type': 'vulnerability',
+            'name': attribute['value'],
+            'external_references': [self._get_vulnerability_references(attribute['value'])],
+            'created_by_ref': self._identity_id,
+            'labels': self._create_labels(attribute),
+            'interoperability': True,
+            'created': timestamp,
+            'modified': timestamp
+        }
+        markings = self._handle_attribute_tags_and_galaxies(attribute, vulnerability_id)
+        if markings:
+            vulnerability_args['object_marking_refs'] = self._handle_markings(markings)
+        vulnerability = self._create_vulnerability(vulnerability_args)
+        self._append_SDO(vulnerability)
+
     def _parse_x509_fingerprint_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             hash_type = attribute['type'].split('-')[-1].upper()
@@ -528,6 +548,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if '/' in hash_type:
             return f"SHA{hash_type.split('/')[1]}"
         return hash_type.replace('-', '').upper()
+
+    @staticmethod
+    def _get_vulnerability_references(vulnerability: str) -> dict:
+        return {
+            'source_name': 'cve',
+            'external_id': vulnerability
+        }
 
     def _handle_indicator_time_fields(self, attribute: dict) -> dict:
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])

@@ -47,7 +47,8 @@ attribute_types_mapping = {
     'regkey': '_parse_regkey_attribute',
     'regkey|value': '_parse_regkey_value_attribute',
     'size-in-bytes': '_parse_size_in_bytes_attribute',
-    'user-agent': '_parse_user_agent_attribute'
+    'user-agent': '_parse_user_agent_attribute',
+    'vulnerability': '_parse_vulnerability_attribute'
 }
 attribute_types_mapping.update(
     dict.fromkeys(
