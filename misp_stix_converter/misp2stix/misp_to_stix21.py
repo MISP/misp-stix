@@ -402,7 +402,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._append_SDO(observable)
 
     @staticmethod
-    def _create_report(report_args):
+    def _create_report(report_args: dict) -> Report:
         return Report(**report_args)
 
     ################################################################################
