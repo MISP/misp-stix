@@ -312,6 +312,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_hostname_port_attribute_observable(attribute)
 
+    def _parse_http_method_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[network-traffic:extensions.'http-request-ext'.request_method = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_custom_attribute(attribute)
+
     def _parse_ip_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             ip_type = attribute['type'].split('-')[1]
@@ -376,6 +383,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_size_in_bytes_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             pattern = f"[file:size = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_custom_attribute(attribute)
+
+    def _parse_user_agent_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = '{attribute['value']}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_custom_attribute(attribute)
