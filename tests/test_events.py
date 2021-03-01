@@ -1771,7 +1771,8 @@ def get_event_with_http_attributes():
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "http-method",
             "category": "Network activity",
-            "value": "POST"
+            "value": "POST",
+            "timestamp": str(int(datetime.now().timestamp()))
         },
         {
             "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",

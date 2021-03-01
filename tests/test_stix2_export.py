@@ -513,6 +513,21 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(network_traffic_object.dst_port, int(port))
         self.assertEqual(network_traffic_object.dst_ref, '0')
 
+    def test_event_with_http_indicator_attributes(self):
+        event = get_event_with_http_attributes()
+        attribute_values, patterns = self._run_indicators_tests(event)
+        http_method, user_agent = attribute_values
+        http_method_pattern, user_agent_pattern = patterns
+        prefix = f"network-traffic:extensions.'http-request-ext'"
+        self.assertEqual(
+            http_method_pattern,
+            f"[{prefix}.request_method = '{http_method}']"
+        )
+        self.assertEqual(
+            user_agent_pattern,
+            f"[{prefix}.request_header.'User-Agent' = '{user_agent}']"
+        )
+
     def test_event_with_ip_indicator_attributes(self):
         event = get_event_with_ip_attributes()
         attribute_values, patterns = self._run_indicators_tests(event)
@@ -1202,6 +1217,21 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(network_traffic.type, 'network-traffic')
         self.assertEqual(network_traffic.dst_port, int(port))
         self.assertEqual(network_traffic.dst_ref, domain_id)
+
+    def test_event_with_http_indicator_attributes(self):
+        event = get_event_with_http_attributes()
+        attribute_values, patterns = self._run_indicators_tests(event)
+        http_method, user_agent = attribute_values
+        http_method_pattern, user_agent_pattern = patterns
+        prefix = f"network-traffic:extensions.'http-request-ext'"
+        self.assertEqual(
+            http_method_pattern,
+            f"[{prefix}.request_method = '{http_method}']"
+        )
+        self.assertEqual(
+            user_agent_pattern,
+            f"[{prefix}.request_header.'User-Agent' = '{user_agent}']"
+        )
 
     def test_event_with_ip_indicator_attributes(self):
         event = get_event_with_ip_attributes()
