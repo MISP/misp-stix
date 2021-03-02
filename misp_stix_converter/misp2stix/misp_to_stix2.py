@@ -176,6 +176,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_autonomous_system_attribute_observable(attribute)
 
+    def _parse_campaign_name_attribute(self, attribute: dict):
+        campaign_id = f"campaign--{attribute['uuid']}"
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        campaign_args = {
+            'id': campaign_id,
+            'type': 'campaign',
+            'name': attribute['value'],
+            'created_by_ref': self._identity_id,
+            'labels': self._create_labels(attribute),
+            'interoperability': True,
+            'created': timestamp,
+            'modified': timestamp
+        }
+        markings = self._handle_attribute_tags_and_galaxies(attribute, campaign_id)
+        if markings:
+            campaign_args['object_marking_refs'] = self._handle_markings(markings)
+        campaign = self._create_campaign(campaign_args)
+        self._append_SDO(campaign)
+
     def _parse_custom_attribute(self, attribute: dict):
         prefix = f"x-misp-object-{attribute['type'].replace('|', '-').replace(' ', '-').lower()}"
         custom_id = f"{prefix}--{attribute['uuid']}"

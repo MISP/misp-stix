@@ -10,8 +10,8 @@ from stix2.v20.observables import (Artifact, AutonomousSystem, DomainName, Email
                                    IPv6Address, MACAddress, Mutex, NetworkTraffic,
                                    WindowsRegistryKey, WindowsRegistryValueType,
                                    X509Certificate)
-from stix2.v20.sdo import (CustomObject, Identity, Indicator, ObservedData, Report,
-                           Vulnerability)
+from stix2.v20.sdo import (Campaign, CustomObject, Identity, Indicator, ObservedData,
+                           Report, Vulnerability)
 from typing import Union
 
 
@@ -301,6 +301,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _create_bundle(self) -> Bundle:
         return Bundle(self._objects)
+
+    @staticmethod
+    def _create_campaign(campaign_args: dict) -> Campaign:
+        return Campaign(**campaign_args)
 
     @staticmethod
     def _create_custom_object(object_type, custom_args):
