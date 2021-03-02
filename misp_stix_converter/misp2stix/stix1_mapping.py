@@ -232,6 +232,7 @@ email_attribute_mapping = {
 attribute_types_mapping = {
     'AS': '_parse_autonomous_system_attribute',
     'attachment': '_parse_attachment',
+    'campaign-name': '_parse_campaign_name_attribute',
     'domain': '_parse_domain_attribute',
     'domain|ip': '_parse_domain_ip_attribute',
     'email-attachment': '_parse_email_attachment',

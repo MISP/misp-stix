@@ -45,6 +45,7 @@ from cybox.utils import Namespace
 from datetime import datetime
 from io import BytesIO
 from mixbox import idgen
+from stix.campaign import Campaign, Names
 from stix.coa import CourseOfAction
 from stix.common import InformationSource, Identity, ToolInformation
 from stix.common.confidence import Confidence
@@ -273,6 +274,21 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         autonomous_system = self._create_autonomous_system_object(attribute['value'])
         observable = self._create_observable(autonomous_system, attribute['uuid'], 'AS')
         self._handle_attribute(attribute, observable)
+
+    def _parse_campaign_name_attribute(self, attribute: dict):
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        campaign = Campaign(timestamp=timestamp)
+        campaign.id_ = f"{self._orgname}:Campaign-{attribute['uuid']}"
+        campaign.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
+        if attribute.get('comment') and attribute['comment'] != "Imported via the freetext import.":
+            campaign.description = attribute['comment']
+        names = Names()
+        names.name = attribute['value']
+        campaign.names = names
+        tags = self._handle_non_indicator_attribute_tags_and_galaxies(attribute, campaign)
+        if tags:
+            campaign.handling = self._set_handling(tags)
+        self._stix_package.add_campaign(campaign)
 
     def _parse_custom_attribute(self, attribute: dict):
         custom_object = Custom()
