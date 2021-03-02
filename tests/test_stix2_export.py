@@ -28,6 +28,17 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(identity.identity_class, 'organization')
         return identity_id
 
+    def _check_attribute_campaign_features(self, campaign, attribute, identity_id, object_ref):
+        uuid = f"campaign--{attribute['uuid']}"
+        self.assertEqual(uuid, object_ref)
+        self.assertEqual(campaign.id, uuid)
+        self.assertEqual(campaign.type, 'campaign')
+        self.assertEqual(campaign.created_by_ref, identity_id)
+        self._check_attribute_labels(attribute, campaign.labels)
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        self.assertEqual(campaign.created, timestamp)
+        self.assertEqual(campaign.modified, timestamp)
+
     def _check_attribute_indicator_features(self, indicator, attribute, identity_id, object_ref):
         uuid = f"indicator--{attribute['uuid']}"
         self.assertEqual(uuid, object_ref)
@@ -35,14 +46,20 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(indicator.type, 'indicator')
         self.assertEqual(indicator.created_by_ref, identity_id)
         self._check_killchain(indicator.kill_chain_phases[0], attribute['category'])
-        type_label, category_label, ids_label = indicator.labels
-        self.assertEqual(type_label, f'misp:type="{attribute["type"]}"')
-        self.assertEqual(category_label, f'misp:category="{attribute["category"]}"')
-        self.assertEqual(ids_label, f'misp:to_ids="{attribute["to_ids"]}"')
+        self._check_attribute_labels(attribute, indicator.labels)
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         self.assertEqual(indicator.created, timestamp)
         self.assertEqual(indicator.modified, timestamp)
         self.assertEqual(indicator.valid_from, timestamp)
+
+    def _check_attribute_labels(self, attribute, labels):
+        if attribute.get('to_ids'):
+            type_label, category_label, ids_label = labels
+            self.assertEqual(ids_label, f'misp:to_ids="{attribute["to_ids"]}"')
+        else:
+            type_label, category_label = labels
+        self.assertEqual(type_label, f'misp:type="{attribute["type"]}"')
+        self.assertEqual(category_label, f'misp:category="{attribute["category"]}"')
 
     def _check_attribute_vulnerability_features(self, vulnerability, attribute, identity_id, object_ref):
         uuid = f"vulnerability--{attribute['uuid']}"
@@ -50,10 +67,7 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(vulnerability.id, uuid)
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
-        type_label, category_label, ids_label = vulnerability.labels
-        self.assertEqual(type_label, f'misp:type="{attribute["type"]}"')
-        self.assertEqual(category_label, f'misp:category="{attribute["category"]}"')
-        self.assertEqual(ids_label, f'misp:to_ids="{attribute["to_ids"]}"')
+        self._check_attribute_labels(attribute, vulnerability.labels)
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         self.assertEqual(vulnerability.created, timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
@@ -220,6 +234,25 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(file_object.content_ref, '1')
         self.assertEqual(artifact_object.type, 'artifact')
         self.assertEqual(artifact_object.payload_bin, data)
+
+    def test_event_with_campaign_name_attribute(self):
+        event = get_event_with_campaign_name_attribute()
+        self._remove_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        identity, report, campaign = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_attribute_campaign_features(
+            campaign,
+            attribute,
+            identity_id,
+            object_ref
+        )
+        self.assertEqual(campaign.name, attribute['value'])
 
     def test_event_with_domain_indicator_attribute(self):
         event = get_event_with_domain_attribute()
@@ -872,6 +905,30 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(artifact_object.id, artifact_ref)
         self.assertEqual(artifact_object.type, 'artifact')
         self.assertEqual(artifact_object.payload_bin, data)
+
+    def test_event_with_campaign_name_attribute(self):
+        event = get_event_with_campaign_name_attribute()
+        self._remove_attribute_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, campaign = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        object_ref = self._check_grouping_features(*args)[0]
+        self._check_attribute_campaign_features(
+            campaign,
+            attribute,
+            identity_id,
+            object_ref
+        )
+        self.assertEqual(campaign.name, attribute['value'])
 
     def test_event_with_domain_indicator_attribute(self):
         event = get_event_with_domain_attribute()

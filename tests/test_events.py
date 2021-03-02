@@ -1492,7 +1492,8 @@ def get_event_with_campaign_name_attribute():
             "type": "campaign-name",
             "category": "Attribution",
             "value": "MartyMcFly",
-            "timestamp": str(int(datetime.now().timestamp()))
+            "timestamp": str(int(datetime.now().timestamp())),
+            "to_ids": False
         }
     ]
     return event
