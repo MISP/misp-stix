@@ -77,6 +77,7 @@ _FILE_SINGLE_ATTRIBUTES = (
     "sha1", "sha224", "sha256", "sha384", "sha512", "sha512/224", "sha512/256",
     "size-in-bytes", "ssdeep", "tlsh", "vhash"
 )
+_NON_INDICATOR_OBJECT_TYPES = Union[Campaign, CourseOfAction, TTP]
 _OBSERVABLE_OBJECT_TYPES = Union[
     Address, Artifact, AutonomousSystem, Custom, DomainName, EmailMessage,
     File, Hostname, HTTPSession, Mutex, Pipe, Port, SocketAddress, System,
@@ -818,7 +819,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         )
         self._incident.related_indicators.append(related_indicator)
 
-    def _handle_non_indicator_object_tags_and_galaxies(self, misp_object: dict, stix_object: Union[TTP, CourseOfAction], galaxy_name: str) -> tuple:
+    def _handle_non_indicator_object_tags_and_galaxies(self, misp_object: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES, galaxy_name: str) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
         tag_names = set()
         if galaxies:
@@ -1597,10 +1598,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         behavior.add_attack_pattern(attack_pattern)
         ttp.behavior = behavior
 
-    def _parse_attack_pattern_object_galaxy(self, galaxy: dict, ttp: TTP):
+    def _parse_attack_pattern_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
         related_ttps = self._get_related_ttps(galaxy, 'attack_pattern')
         for related_ttp in related_ttps.values():
-            ttp.add_related_ttp(related_ttp)
+            stix_object.add_related_ttp(related_ttp)
 
     def _parse_course_of_action_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         for cluster in galaxy['GalaxyCluster']:
@@ -1666,10 +1667,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         behavior.add_malware_instance(malware)
         ttp.behavior = behavior
 
-    def _parse_malware_object_galaxy(self, galaxy: dict, ttp: TTP):
+    def _parse_malware_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
         related_ttps = self._get_related_ttps(galaxy, 'malware')
         for related_ttp in related_ttps.values():
-            ttp.add_related_ttp(related_ttp)
+            stix_object.add_related_ttp(related_ttp)
 
     def _parse_threat_actor_galaxy(self, galaxy: dict):
         for cluster in galaxy['GalaxyCluster']:
@@ -1711,10 +1712,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         resource.tools = tools
         ttp.resources = resource
 
-    def _parse_tool_object_galaxy(self, galaxy: dict, ttp: TTP):
+    def _parse_tool_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
         related_ttps = self._get_related_ttps(galaxy, 'tool')
         for related_ttp in related_ttps.values():
-            ttp.add_related_ttp(related_ttp)
+            stix_object.add_related_ttp(related_ttp)
 
     def _parse_vulnerability_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         related_ttps = self._get_related_ttps(galaxy, 'vulnerability')
@@ -1740,10 +1741,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
 
-    def _parse_vulnerability_object_galaxy(self, galaxy: dict, ttp: TTP):
+    def _parse_vulnerability_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
         related_ttps = self._get_related_ttps(galaxy, 'vulnerability')
         for related_ttp in related_ttps.values():
-            ttp.add_related_ttp(related_ttp)
+            stix_object.add_related_ttp(related_ttp)
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
