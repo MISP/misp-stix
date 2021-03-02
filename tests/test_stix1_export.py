@@ -344,9 +344,14 @@ class TestStix1Export(unittest.TestCase):
         self.assertTrue(properties.is_source)
         self.assertFalse(properties.is_destination)
 
-    def _check_ttp_fields(self, ttp, uuid, identifier, object_type):
+    def _check_ttp_fields(self, ttp, uuid, identifier, object_type, timestamp=None):
         self.assertEqual(ttp.id_, f"{_DEFAULT_ORGNAME}:TTP-{uuid}")
         self.assertEqual(ttp.title, f"{identifier} (MISP {object_type})")
+        if timestamp is not None:
+            self.assertEqual(
+                ttp.timestamp,
+                datetime.utcfromtimestamp(int(timestamp))
+            )
 
     def _check_ttp_fields_from_attribute(self, stix_package, attribute):
         ttp = self._check_ttp_length(stix_package, 1)[0]
@@ -354,7 +359,8 @@ class TestStix1Export(unittest.TestCase):
             ttp,
             attribute['uuid'],
             f"{attribute['category']}: {attribute['value']}",
-            'Attribute'
+            'Attribute',
+            timestamp=attribute['timestamp']
         )
         return ttp
 
@@ -369,7 +375,8 @@ class TestStix1Export(unittest.TestCase):
             ttp,
             misp_object['uuid'],
             f"{misp_object['meta-category']}: {misp_object['name']}",
-            'Object'
+            'Object',
+            timestamp=misp_object['timestamp']
         )
         return ttp
 
@@ -620,7 +627,8 @@ class TestStix1Export(unittest.TestCase):
             vulnerability_ttp,
             attribute['uuid'],
             f"{attribute['category']}: {attribute['value']}",
-            'Attribute'
+            'Attribute',
+            timestamp=attribute['timestamp']
         )
         attack_pattern = attack_pattern_ttp.behavior.attack_patterns[0]
         self._check_embedded_features(attack_pattern, attribute_cluster, 'AttackPattern')
@@ -1375,7 +1383,8 @@ class TestStix1Export(unittest.TestCase):
             vulnerability_ttp,
             ttp_object['uuid'],
             f"{ttp_object['meta-category']}: {ttp_object['name']}",
-            'Object'
+            'Object',
+            timestamp=ttp_object['timestamp']
         )
         malware = malware_ttp.behavior.malware_instances[0]
         self._check_embedded_features(malware, malware_cluster, 'MalwareInstance')
