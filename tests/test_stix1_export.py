@@ -700,6 +700,22 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(observable.relationship, attribute['category'])
         self._check_attachment_properties(observable.item, attribute)
 
+    def test_event_with_campaign_name_attribute(self):
+        event = get_event_with_campaign_name_attribute()
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event, '1.1.1')
+        campaign = self.parser.stix_package.campaigns[0]
+        self.assertEqual(campaign.id_, f"{_DEFAULT_ORGNAME}:Campaign-{attribute['uuid']}")
+        self.assertEqual(
+            campaign.title,
+            f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
+        )
+        self.assertEqual(campaign.names[0], attribute['value'])
+        self.assertEqual(
+            campaign.timestamp,
+            datetime.utcfromtimestamp(int(attribute['timestamp']))
+        )
+
     def test_event_with_custom_attributes(self):
         event = get_event_with_custom_attributes()
         btc, iban, phone, passport = event['Event']['Attribute']

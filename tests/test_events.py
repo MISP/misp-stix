@@ -1484,6 +1484,20 @@ def get_event_with_attachment_attribute():
     return event
 
 
+def get_event_with_campaign_name_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "campaign-name",
+            "category": "Attribution",
+            "value": "MartyMcFly",
+            "timestamp": str(int(datetime.now().timestamp()))
+        }
+    ]
+    return event
+
+
 def get_event_with_custom_attributes():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
