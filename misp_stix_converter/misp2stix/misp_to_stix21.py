@@ -8,7 +8,7 @@ from stix2.v21.common import MarkingDefinition
 from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
                                    EmailMessage, EmailMIMEComponent, File, IPv4Address,
                                    IPv6Address, MACAddress, Mutex, NetworkTraffic,
-                                   WindowsRegistryKey, WindowsRegistryValueType,
+                                   URL, WindowsRegistryKey, WindowsRegistryValueType,
                                    X509Certificate)
 from stix2.v21.sdo import (Campaign, CustomObject, Grouping, Identity, Indicator,
                            ObservedData, Report, Vulnerability)
@@ -316,6 +316,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             ]
         )
         self._create_observed_data(attribute, [regkey_object])
+
+    def _parse_url_attribute_observable(self, attribute: dict):
+        url_object = URL(
+            id=f"url--{attribute['uuid']}",
+            value=attribute['value']
+        )
+        self._create_observed_data(attribute, [url_object])
 
     def _parse_x509_fingerprint_attribute_observable(self, attribute: dict):
         hash_type = attribute['type'].split('-')[-1]

@@ -406,6 +406,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_custom_attribute(attribute)
 
+    def _parse_url_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            pattern = f"[url:value = '{attribute['value']}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_url_attribute_observable(attribute)
+
     def _parse_user_agent_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             pattern = f"[network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = '{attribute['value']}']"

@@ -84,6 +84,16 @@ attribute_types_mapping.update(
 attribute_types_mapping.update(
     dict.fromkeys(
         [
+            "uri",
+            "url",
+            "link"
+        ],
+        '_parse_url_attribute'
+    )
+)
+attribute_types_mapping.update(
+    dict.fromkeys(
+        [
             'x509-fingerprint-md5',
             'x509-fingerprint-sha1',
             'x509-fingerprint-sha256'

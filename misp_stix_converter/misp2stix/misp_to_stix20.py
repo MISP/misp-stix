@@ -8,7 +8,7 @@ from stix2.v20.common import MarkingDefinition
 from stix2.v20.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
                                    EmailMessage, EmailMIMEComponent, File, IPv4Address,
                                    IPv6Address, MACAddress, Mutex, NetworkTraffic,
-                                   WindowsRegistryKey, WindowsRegistryValueType,
+                                   URL, WindowsRegistryKey, WindowsRegistryValueType,
                                    X509Certificate)
 from stix2.v20.sdo import (Campaign, CustomObject, Identity, Indicator, ObservedData,
                            Report, Vulnerability)
@@ -280,6 +280,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                         data=value.strip()
                     )
                 ]
+            )
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_url_attribute_observable(self, attribute: dict):
+        observable_object = {
+            '0': URL(
+                value=attribute['value']
             )
         }
         self._create_observed_data(attribute, observable_object)
