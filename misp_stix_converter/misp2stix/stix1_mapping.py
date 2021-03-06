@@ -306,6 +306,7 @@ attribute_types_mapping.update(
 attribute_types_mapping.update(
     dict.fromkeys(
         [
+            "uri",
             "url",
             "link"
         ],
