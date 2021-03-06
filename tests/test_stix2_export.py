@@ -714,6 +714,18 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[file:size = '{attribute_value}']")
 
+    def test_event_with_url_indicator_attribute(self):
+        event = get_event_with_url_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[url:value = '{attribute_value}']")
+
+    def test_event_with_url_observable_attribute(self):
+        event = get_event_with_url_attribute()
+        attribute_value, observable_objects = self._run_observable_tests(event)
+        observable = observable_objects['0']
+        self.assertEqual(observable.type, 'url')
+        self.assertEqual(observable.value, attribute_value)
+
     def test_event_with_vulnerability_attribute(self):
         event = get_event_with_vulnerability_attribute()
         self._add_attribute_ids_flag(event)
@@ -1494,6 +1506,21 @@ class TestSTIX21Export(TestSTIX2Export):
         event = get_event_with_size_in_bytes_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[file:size = '{attribute_value}']")
+
+    def test_event_with_url_indicator_attribute(self):
+        event = get_event_with_url_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(pattern, f"[url:value = '{attribute_value}']")
+
+    def test_event_with_url_observable_attribute(self):
+        event = get_event_with_url_attribute()
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        object_ref = object_refs[0]
+        url = observable[0]
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(url.id, object_ref)
+        self.assertEqual(url.type, 'url')
+        self.assertEqual(url.value, attribute_value)
 
     def test_event_with_vulnerability_attribute(self):
         event = get_event_with_vulnerability_attribute()
