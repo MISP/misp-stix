@@ -657,6 +657,29 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(observable.type, 'mac-addr')
         self.assertEqual(observable.value, attribute_value)
 
+    def test_event_with_malware_sample_indicator_attribute(self):
+        event = get_event_with_malware_sample_attribute()
+        data = event['Event']['Attribute'][0]['data']
+        attribute_value, pattern = self._run_indicator_tests(event)
+        filename, hash_value = attribute_value.split('|')
+        file_pattern = f"file:name = '{filename}'"
+        hash_pattern = f"file:hashes.MD5 = '{hash_value}'"
+        data_pattern = f"file:content_ref.payload_bin = '{data}'"
+        self.assertEqual(pattern, f"[{file_pattern} AND {hash_pattern} AND {data_pattern}]")
+
+    def test_event_with_malware_sample_observable_attribute(self):
+        event = get_event_with_malware_sample_attribute()
+        data = event['Event']['Attribute'][0]['data']
+        attribute_value, observable_objects = self._run_observable_tests(event)
+        file_object, artifact_object = observable_objects.values()
+        filename, hash_value = attribute_value.split('|')
+        self.assertEqual(file_object.type, 'file')
+        self.assertEqual(file_object.name, filename)
+        self.assertEqual(file_object.hashes['MD5'], hash_value)
+        self.assertEqual(file_object.content_ref, '1')
+        self.assertEqual(artifact_object.type, 'artifact')
+        self.assertEqual(artifact_object.payload_bin, data)
+
     def test_event_with_mutex_indicator_attribute(self):
         event = get_event_with_mutex_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
@@ -1440,6 +1463,35 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(mac_address.id, object_ref)
         self.assertEqual(mac_address.type, 'mac-addr')
         self.assertEqual(mac_address.value, attribute_value)
+
+    def test_event_with_malware_sample_indicator_attribute(self):
+        event = get_event_with_malware_sample_attribute()
+        data = event['Event']['Attribute'][0]['data']
+        attribute_value, pattern = self._run_indicator_tests(event)
+        filename, hash_value = attribute_value.split('|')
+        file_pattern = f"file:name = '{filename}'"
+        hash_pattern = f"file:hashes.MD5 = '{hash_value}'"
+        data_pattern = f"file:content_ref.payload_bin = '{data}'"
+        self.assertEqual(pattern, f"[{file_pattern} AND {hash_pattern} AND {data_pattern}]")
+
+    def test_event_with_malware_sample_observable_attribute(self):
+        event = get_event_with_malware_sample_attribute()
+        data = event['Event']['Attribute'][0]['data']
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        file_id, artifact_id = grouping_refs
+        file_ref, artifact_ref = object_refs
+        file_object, artifact_object = observable
+        filename, hash_value = attribute_value.split('|')
+        self.assertEqual(file_ref, file_id)
+        self.assertEqual(file_object.id, file_ref)
+        self.assertEqual(file_object.type, 'file')
+        self.assertEqual(file_object.name, filename)
+        self.assertEqual(file_object.hashes['MD5'], hash_value)
+        self.assertEqual(file_object.content_ref, artifact_id)
+        self.assertEqual(artifact_ref, artifact_id)
+        self.assertEqual(artifact_object.id, artifact_ref)
+        self.assertEqual(artifact_object.type, 'artifact')
+        self.assertEqual(artifact_object.payload_bin, data)
 
     def test_event_with_mutex_indicator_attribute(self):
         event = get_event_with_mutex_attribute()
