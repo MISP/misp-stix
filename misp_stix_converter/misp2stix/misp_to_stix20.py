@@ -12,7 +12,7 @@ from stix2.v20.observables import (Artifact, AutonomousSystem, DomainName, Email
                                    X509Certificate)
 from stix2.v20.sdo import (Campaign, CustomObject, Identity, Indicator, ObservedData,
                            Report, Vulnerability)
-from typing import Union
+from typing import Optional, Union
 
 
 class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
@@ -189,8 +189,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         }
         self._create_observed_data(attribute, observable_object)
 
-    def _parse_hash_composite_attribute_observable(self, attribute: dict):
-        hash_type = attribute['type'].split('|')[1]
+    def _parse_hash_composite_attribute_observable(self, attribute: dict, hash_type: Optional[str] = None):
+        if hash_type is None:
+            hash_type = attribute['type'].split('|')[1]
         filename, hash_value = attribute['value'].split('|')
         observable_object = {
             '0': File(
@@ -252,6 +253,23 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_mac_address_attribute_observable(self, attribute: dict):
         observable_object = {
             '0': MACAddress(value=attribute['value'])
+        }
+        self._create_observed_data(attribute, observable_object)
+
+    def _parse_malware_sample_attribute_observable(self, attribute: dict):
+        filename, hash_value = attribute['value'].split('|')
+        observable_object = {
+            '0': File(
+                name=filename,
+                hashes={
+                    'MD5': hash_value
+                },
+                _valid_refs={'1': 'artifact'},
+                content_ref='1'
+            ),
+            '1': Artifact(
+                payload_bin=attribute['data']
+            )
         }
         self._create_observed_data(attribute, observable_object)
 

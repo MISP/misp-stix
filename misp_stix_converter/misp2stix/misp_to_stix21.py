@@ -12,7 +12,7 @@ from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, Email
                                    X509Certificate)
 from stix2.v21.sdo import (Campaign, CustomObject, Grouping, Identity, Indicator,
                            ObservedData, Report, Vulnerability)
-from typing import Union
+from typing import Optional, Union
 
 _OBSERVABLE_OBJECT_TYPES = Union[
     AutonomousSystem
@@ -216,8 +216,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         self._create_observed_data(attribute, [file_object])
 
-    def _parse_hash_composite_attribute_observable(self, attribute: dict):
-        hash_type = attribute['type'].split('|')[1]
+    def _parse_hash_composite_attribute_observable(self, attribute: dict, hash_type: Optional[str] = None):
+        if hash_type is None:
+            hash_type = attribute['type'].split('|')[1]
         filename, hash_value = attribute['value'].split('|')
         file_object = File(
             id=f"file--{attribute['uuid']}",
@@ -289,6 +290,25 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             value=attribute['value']
         )
         self._create_observed_data(attribute, [mac_address_object])
+
+    def _parse_malware_sample_attribute_observable(self, attribute: dict):
+        artifact_id = f"artifact--{attribute['uuid']}"
+        filename, hash_value = attribute['value'].split('|')
+        objects = [
+            File(
+                id=f"file--{attribute['uuid']}",
+                name=filename,
+                hashes={
+                    'MD5': hash_value
+                },
+                content_ref=artifact_id
+            ),
+            Artifact(
+                id=artifact_id,
+                payload_bin=attribute['data']
+            )
+        ]
+        self._create_observed_data(attribute, objects)
 
     def _parse_mutex_attribute_observable(self, attribute: dict):
         mutex_object = Mutex(

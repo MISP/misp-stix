@@ -43,6 +43,7 @@ attribute_types_mapping = {
     'hostname|port': '_parse_hostname_port_attribute',
     'http-method': '_parse_http_method_attribute',
     'mac-address': '_parse_mac_address_attribute',
+    'malware-sample': '_parse_malware_sample_attribute',
     'mutex': '_parse_mutex_attribute',
     'port': '_parse_port_attribute',
     'regkey': '_parse_regkey_attribute',

@@ -8,8 +8,7 @@ from datetime import datetime
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v20.sro import Relationship
-# from stix2.v20.sdo import AttackPattern, CourseOfAction, CustomObject, IntrusionSet, Malware, ObservedData, Report, ThreatActor, Tool, Vulnerability
-from typing import Union
+from typing import Optional, Union
 from uuid import uuid4
 
 _label_fields = ('type', 'category', 'to_ids')
@@ -310,16 +309,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_hash_attribute_observable(attribute)
 
-    def _parse_hash_composite_attribute(self, attribute: dict):
+    def _parse_hash_composite_attribute(self, attribute: dict, hash_type: Optional[str] = None):
         if attribute.get('to_ids', False):
-            hash_type = attribute['type'].split('|')[1]
-            filename, hash_value = attribute['value'].split('|')
-            filename_pattern = self._create_filename_pattern(filename)
-            hash_pattern = self._create_hash_pattern(hash_type, hash_value)
-            pattern = f"[{filename_pattern} AND {hash_pattern}]"
-            self._handle_attribute_indicator(attribute, pattern)
+            if hash_type is None:
+                hash_type = attribute['type'].split('|')[1]
+            pattern = self._create_filename_hash_pattern(hash_type, attribute['value'])
+            self._handle_attribute_indicator(attribute, f"[{pattern}]")
         else:
-            self._parse_hash_composite_attribute_observable(attribute)
+            self._parse_hash_composite_attribute_observable(attribute, hash_type=hash_type)
 
     def _parse_hostname_port_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
@@ -363,6 +360,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_mac_address_attribute_observable(attribute)
+
+    def _parse_malware_sample_attribute(self, attribute: dict):
+        if attribute.get('data'):
+            if attribute.get('to_ids', False):
+                file_pattern = self._create_filename_hash_pattern('md5', attribute['value'])
+                data_pattern = self._create_content_ref_pattern(attribute['data'])
+                pattern = f"[{file_pattern} AND {data_pattern}]"
+                self._handle_attribute_indicator(attribute, pattern)
+            else:
+                self._parse_malware_sample_attribute_observable(attribute)
+        else:
+            self._parse_hash_composite_attribute(attribute, hash_type='md5')
 
     def _parse_mutex_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
@@ -533,6 +542,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _create_domain_resolving_pattern(value: str) -> str:
         return f"domain-name:resolves_to_refs[*].value = '{value}'"
+
+    def _create_filename_hash_pattern(self, hash_type: str, attribute_value: str) -> str:
+        filename, hash_value = attribute_value.split('|')
+        filename_pattern = self._create_filename_pattern(filename)
+        hash_pattern = self._create_hash_pattern(hash_type, hash_value)
+        return f"{filename_pattern} AND {hash_pattern}"
 
     @staticmethod
     def _create_filename_pattern(value: str) -> str:
