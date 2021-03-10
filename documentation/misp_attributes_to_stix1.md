@@ -4,7 +4,7 @@ MISP Attributes are the actual raw data used by analysts to describe the IoCs an
 Thus, in most of the cases, a MISP Attribute is exported to STIX as `Indicator` if its `to_ids` flag is set, or as `Observable` if its `to_ids` flag is false. But there are also some other examples where MISP attributes are exported neither as indicator nor as observable, this documentation gives all the details about the single attributes mapping into STIX objects, depending on the type of the attributes.
 
 As we can see in the [detailed Events mapping documentation](misp_events_to_stix1.md), attributes within their event are exported in different STIX objects embedded in a `STIX Package`. Indicators and observables are also embedded in the `Incident` but it is not the case for TTPS for instance.  
-So for he rest of this documentation, in order to keep the content clear enough and to skip the irrelevant part, we will consider the followings:
+So for the rest of this documentation, in order to keep the content clear enough and to skip the irrelevant part, we will consider the followings:
 - Indicators and observables are displayed as standalone objects, but we keep in mind that **if the related MISP attributes are exported within their event, those STIX objects are actually exported within their Incident and STIX Package**
 - We will give details about the context of each STIX object being neither an Indicator not an Observable case by case, since those ones are also displayed outside of their Incident or STIX package.
 - In the following examples, every MISP attribute that has a `to_ids` flag, has the default value for this flag, depending on the attribute type.
@@ -3031,8 +3031,8 @@ Nonetheless, every attribute whose type is not in the list, is exported as `Cust
 ## The other detailed mappings
 
 For more detailed mappings, click on one of the link below:
-- [Events mapping](misp_events_to_stix1.md)
-- [Objects mapping](misp_objects_to_stix1.md)
-- [Galaxies mapping](misp_galaxies_to_stix1.md)
+- [Events export to STIX1 mapping](misp_events_to_stix1.md)
+- [Objects export to STIX1 mapping](misp_objects_to_stix1.md)
+- [Galaxies export to STIX1 mapping](misp_galaxies_to_stix1.md)
 
 ([Go back to the main documentation](README.md))
