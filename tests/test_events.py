@@ -1339,6 +1339,16 @@ def get_event_with_vulnerability_galaxy():
 #                               ATTRIBUTES TESTS                               #
 ################################################################################
 
+_BTC_ATTRIBUTE = {
+    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "type": "btc",
+    "category": "Financial fraud",
+    "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "comment": "Btc test attribute",
+    "to_ids": True
+}
+
 _EMAIL_DESTINATION_ATTRIBUTE = {
     "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
     "type": "email-dst",
@@ -1391,6 +1401,25 @@ _EMAIL_X_MAILER_ATTRIBUTE = {
     "timestamp": str(int(datetime.now().timestamp()))
 }
 
+_HTTP_METHOD_ATTRIBUTE = {
+    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "type": "http-method",
+    "category": "Network activity",
+    "value": "POST",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "to_ids": False
+}
+
+_IBAN_ATTRIBUTE = {
+    "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+    "type": "iban",
+    "category": "Financial fraud",
+    "value": "LU1234567890ABCDEF1234567890",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "comment": "IBAN test attribute",
+    "to_ids": True
+}
+
 _INDICATOR_ATTRIBUTE = {
     "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
     "type": "domain",
@@ -1416,6 +1445,34 @@ _OBSERVABLE_ATTRIBUTE = {
     "category": "Network activity",
     "timestamp": str(int(datetime.now().timestamp())),
     "value": "AS174"
+}
+
+_PORT_ATTRIBUTE = {
+    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "type": "port",
+    "category": "Network activity",
+    "value": "8443",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "to_ids": False
+}
+
+_SIZE_IN_BYTES_ATTRIBUTE = {
+    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "type": "size-in-bytes",
+    "value": "1234",
+    "category": "Other",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "to_ids": False
+}
+
+_USER_AGENT_ATTRIBUTE = {
+    "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+    "type": "user-agent",
+    "category": "Network activity",
+    "value": "Mozilla Firefox",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "comment": "User-agent test attribute",
+    "to_ids": False
 }
 
 
@@ -1499,27 +1556,11 @@ def get_event_with_campaign_name_attribute():
     return event
 
 
-def get_event_with_custom_attributes():
+def get_event_with_stix1_custom_attributes():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "btc",
-            "category": "Financial fraud",
-            "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
-            "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "Btc test attribute",
-            "to_ids": True
-        },
-        {
-            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
-            "type": "iban",
-            "category": "Financial fraud",
-            "value": "LU1234567890ABCDEF1234567890",
-            "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "IBAN test attribute",
-            "to_ids": True
-        },
+        deepcopy(_BTC_ATTRIBUTE),
+        deepcopy(_IBAN_ATTRIBUTE),
         {
             "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
             "type": "phone-number",
@@ -1532,6 +1573,19 @@ def get_event_with_custom_attributes():
             "category": "Person",
             "value": "ABA9875413"
         },
+    ]
+    return event
+
+
+def get_event_with_stix2_custom_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        deepcopy(_BTC_ATTRIBUTE),
+        deepcopy(_IBAN_ATTRIBUTE),
+        deepcopy(_HTTP_METHOD_ATTRIBUTE),
+        deepcopy(_PORT_ATTRIBUTE),
+        deepcopy(_SIZE_IN_BYTES_ATTRIBUTE),
+        deepcopy(_USER_AGENT_ATTRIBUTE)
     ]
     return event
 
@@ -1782,21 +1836,8 @@ def get_event_with_hostname_port_attribute():
 def get_event_with_http_attributes():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "http-method",
-            "category": "Network activity",
-            "value": "POST",
-            "timestamp": str(int(datetime.now().timestamp()))
-        },
-        {
-            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
-            "type": "user-agent",
-            "category": "Network activity",
-            "value": "Mozilla Firefox",
-            "timestamp": str(int(datetime.now().timestamp())),
-            "comment": "User-agent test attribute"
-        }
+        deepcopy(_HTTP_METHOD_ATTRIBUTE),
+        deepcopy(_USER_AGENT_ATTRIBUTE)
     ]
     return event
 
@@ -1930,13 +1971,7 @@ def get_event_with_pattern_attribute():
 def get_event_with_port_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "port",
-            "category": "Network activity",
-            "value": "8443",
-            "timestamp": str(int(datetime.now().timestamp()))
-        }
+        deepcopy(_PORT_ATTRIBUTE)
     ]
     return event
 
@@ -1976,13 +2011,7 @@ def get_event_with_regkey_value_attribute():
 def get_event_with_size_in_bytes_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "size-in-bytes",
-            "value": "1234",
-            "category": "Other",
-            "timestamp": str(int(datetime.now().timestamp()))
-        }
+        deepcopy(_SIZE_IN_BYTES_ATTRIBUTE)
     ]
     return event
 

@@ -254,6 +254,32 @@ class TestSTIX20Export(TestSTIX2Export):
         )
         self.assertEqual(campaign.name, attribute['value'])
 
+    def test_event_with_custom_attributes(self):
+        event = get_event_with_stix2_custom_attributes()
+        orgc = event['Event']['Orgc']
+        attributes = event['Event']['Attribute']
+        self.parser.parse_misp_event(event)
+        identity, report, *custom_objects = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        for attribute, custom_object in zip(attributes, custom_objects):
+            attribute_type = attribute['type']
+            category = attribute['category']
+            custom_id = f"x-misp-object-{attribute_type}"
+            self.assertEqual(custom_object.type, custom_id)
+            self.assertEqual(custom_object.id, f"{custom_id}--{attribute['uuid']}")
+            self.assertEqual(custom_object.created_by_ref, identity_id)
+            self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
+            self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
+            if attribute.get('to_ids', False):
+                self.assertEqual(custom_object.labels[2], 'misp:to_ids="True"')
+            self.assertEqual(custom_object.x_misp_category, category)
+            if attribute.get('comment'):
+                self.assertEqual(custom_object.x_misp_comment, attribute['comment'])
+            self.assertEqual(custom_object.x_misp_value, attribute['value'])
+
     def test_event_with_domain_indicator_attribute(self):
         event = get_event_with_domain_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
@@ -964,6 +990,38 @@ class TestSTIX21Export(TestSTIX2Export):
             object_ref
         )
         self.assertEqual(campaign.name, attribute['value'])
+
+    def test_event_with_custom_attributes(self):
+        event = get_event_with_stix2_custom_attributes()
+        orgc = event['Event']['Orgc']
+        attributes = event['Event']['Attribute']
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, *custom_objects = stix_objects
+        identity_id = self._check_identity_features(identity, orgc)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        object_refs = self._check_grouping_features(*args)
+        for attribute, custom_object, object_ref in zip(attributes, custom_objects, object_refs):
+            attribute_type = attribute['type']
+            category = attribute['category']
+            custom_id = f"x-misp-object-{attribute_type}"
+            self.assertEqual(custom_object.type, custom_id)
+            self.assertEqual(object_ref, f"{custom_id}--{attribute['uuid']}")
+            self.assertEqual(custom_object.id, object_ref)
+            self.assertEqual(custom_object.created_by_ref, identity_id)
+            self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
+            self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
+            if attribute.get('to_ids', False):
+                self.assertEqual(custom_object.labels[2], 'misp:to_ids="True"')
+            self.assertEqual(custom_object.x_misp_category, category)
+            if attribute.get('comment'):
+                self.assertEqual(custom_object.x_misp_comment, attribute['comment'])
+            self.assertEqual(custom_object.x_misp_value, attribute['value'])
 
     def test_event_with_domain_indicator_attribute(self):
         event = get_event_with_domain_attribute()

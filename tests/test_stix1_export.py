@@ -717,7 +717,7 @@ class TestStix1Export(unittest.TestCase):
         )
 
     def test_event_with_custom_attributes(self):
-        event = get_event_with_custom_attributes()
+        event = get_event_with_stix1_custom_attributes()
         btc, iban, phone, passport = event['Event']['Attribute']
         orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event, '1.1.1')
