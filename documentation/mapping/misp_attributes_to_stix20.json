@@ -1360,7 +1360,8 @@
             "type": "http-method",
             "category": "Network activity",
             "value": "POST",
-            "timestamp": "1603642920"
+            "timestamp": "1603642920",
+            "to_ids": true
         },
         "STIX": {
             "Indicator": {
@@ -1799,7 +1800,8 @@
             "type": "port",
             "category": "Network activity",
             "value": "8443",
-            "timestamp": "1603642920"
+            "timestamp": "1603642920",
+            "to_ids": true
         },
         "STIX": {
             "Indicator": {
@@ -1942,7 +1944,8 @@
             "type": "size-in-bytes",
             "value": "1234",
             "category": "Other",
-            "timestamp": "1603642920"
+            "timestamp": "1603642920",
+            "to_ids": true
         },
         "STIX": {
             "Indicator": {
@@ -2027,7 +2030,8 @@
             "category": "Network activity",
             "value": "Mozilla Firefox",
             "timestamp": "1603642920",
-            "comment": "User-agent test attribute"
+            "comment": "User-agent test attribute",
+            "to_ids": true
         },
         "STIX": {
             "Indicator": {

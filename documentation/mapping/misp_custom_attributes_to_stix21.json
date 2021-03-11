@@ -1,0 +1,154 @@
+{
+    "btc":{
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "btc",
+            "category": "Financial fraud",
+            "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+            "timestamp": "1603642920",
+            "comment": "Btc test attribute",
+            "to_ids": true
+        },
+        "STIX": {
+            "type": "x-misp-object-btc",
+            "spec_version": "2.1",
+            "id": "x-misp-object-btc--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2021-03-11T13:59:57.000Z",
+            "modified": "2021-03-11T13:59:57.000Z",
+            "labels": [
+                "misp:type=\"btc\"",
+                "misp:category=\"Financial fraud\"",
+                "misp:to_ids=\"True\""
+            ],
+            "x_misp_category": "Financial fraud",
+            "x_misp_comment": "Btc test attribute",
+            "x_misp_value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE"
+        }
+    },
+    "http-method": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "http-method",
+            "category": "Network activity",
+            "value": "POST",
+            "timestamp": "1603642920",
+            "to_ids": false
+        },
+        "STIX": {
+            "type": "x-misp-object-http-method",
+            "spec_version": "2.1",
+            "id": "x-misp-object-http-method--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2021-03-11T13:59:57.000Z",
+            "modified": "2021-03-11T13:59:57.000Z",
+            "labels": [
+                "misp:type=\"http-method\"",
+                "misp:category=\"Network activity\""
+            ],
+            "x_misp_category": "Network activity",
+            "x_misp_value": "POST"
+        }
+    },
+    "iban": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "iban",
+            "category": "Financial fraud",
+            "value": "LU1234567890ABCDEF1234567890",
+            "timestamp": "1603642920",
+            "comment": "IBAN test attribute",
+            "to_ids": true
+        },
+        "STIX": {
+            "type": "x-misp-object-iban",
+            "spec_version": "2.1",
+            "id": "x-misp-object-iban--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2021-03-11T13:59:57.000Z",
+            "modified": "2021-03-11T13:59:57.000Z",
+            "labels": [
+                "misp:type=\"iban\"",
+                "misp:category=\"Financial fraud\"",
+                "misp:to_ids=\"True\""
+            ],
+            "x_misp_category": "Financial fraud",
+            "x_misp_comment": "IBAN test attribute",
+            "x_misp_value": "LU1234567890ABCDEF1234567890"
+        }
+    },
+    "port": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "port",
+            "category": "Network activity",
+            "value": "8443",
+            "timestamp": "1603642920",
+            "to_ids": false
+        },
+        "STIX": {
+            "type": "x-misp-object-port",
+            "spec_version": "2.1",
+            "id": "x-misp-object-port--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2021-03-11T13:59:57.000Z",
+            "modified": "2021-03-11T13:59:57.000Z",
+            "labels": [
+                "misp:type=\"port\"",
+                "misp:category=\"Network activity\""
+            ],
+            "x_misp_category": "Network activity",
+            "x_misp_value": "8443"
+        }
+    },
+    "size-in-bytes": {
+        "MISP": {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "size-in-bytes",
+            "value": "1234",
+            "category": "Other",
+            "timestamp": "1603642920",
+            "to_ids": false
+        },
+        "STIX": {
+            "type": "x-misp-object-size-in-bytes",
+            "spec_version": "2.1",
+            "id": "x-misp-object-size-in-bytes--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2021-03-11T13:59:57.000Z",
+            "modified": "2021-03-11T13:59:57.000Z",
+            "labels": [
+                "misp:type=\"size-in-bytes\"",
+                "misp:category=\"Other\""
+            ],
+            "x_misp_category": "Other",
+            "x_misp_value": "1234"
+        }
+    },
+    "user-agent": {
+        "MISP": {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "user-agent",
+            "category": "Network activity",
+            "value": "Mozilla Firefox",
+            "timestamp": "1603642920",
+            "comment": "User-agent test attribute",
+            "to_ids": false
+        },
+        "STIX": {
+            "type": "x-misp-object-user-agent",
+            "spec_version": "2.1",
+            "id": "x-misp-object-user-agent--518b4bcb-a86b-4783-9457-391d548b605b",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2021-03-11T13:59:57.000Z",
+            "modified": "2021-03-11T13:59:57.000Z",
+            "labels": [
+                "misp:type=\"user-agent\"",
+                "misp:category=\"Network activity\""
+            ],
+            "x_misp_category": "Network activity",
+            "x_misp_comment": "User-agent test attribute",
+            "x_misp_value": "Mozilla Firefox"
+        }
+    }
+}

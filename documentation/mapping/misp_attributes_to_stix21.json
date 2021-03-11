@@ -996,8 +996,8 @@
                     "id": "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
                     "name": "test_file_name"
                 }
-            }
-        ]
+            ]
+        }
     },
     "filename|md5": {
         "MISP": {
