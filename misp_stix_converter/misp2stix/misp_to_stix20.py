@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
+from datetime import datetime
 from stix2.properties import DictionaryProperty, ListProperty, StringProperty, TimestampProperty
 from stix2.v20.bundle import Bundle
 from stix2.v20.common import MarkingDefinition
@@ -20,12 +21,44 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         super().__init__()
         self._version = '2.0'
 
+    def _handle_empty_object_refs(self, object_id: str, timestamp: datetime):
+        object_type = 'x-misp-event-note'
+        custom_args = {
+            'id': f"{object_type}--{self._misp_event['uuid']}",
+            'created': timestamp,
+            'modified': timestamp,
+            'created_by_ref': self._identity_id,
+            'x_misp_event_note': 'This MISP Event is empty and contains no attribute, object, galaxy or tag.',
+            'object_ref': object_id,
+            'interoperability': True
+        }
+        @CustomObject(
+            object_type,
+            [
+                ('id', StringProperty(required=True)),
+                ('created', TimestampProperty(required=True, precision='millisecond')),
+                ('modified', TimestampProperty(required=True, precision='millisecond')),
+                ('created_by_ref', StringProperty(required=True)),
+                ('x_misp_event_note', StringProperty(required=True)),
+                ('object_ref', StringProperty(required=True))
+            ]
+        )
+        class Custom():
+            def __init__(self, **kwargs):
+                return
+        custom_object = Custom(**custom_args)
+        self._append_SDO(custom_object)
+
     def _handle_unpublished_report(self, report_args: dict) -> Report:
+        report_id = f"report--{self._misp_event['uuid']}"
+        if not self._object_refs:
+            self._handle_empty_object_refs(report_id, report_args['modified'])
         report_args.update(
             {
-                'id': f"report--{self._misp_event['uuid']}",
+                'id': report_id,
                 'type': 'report',
-                'published': report_args['modified']
+                'published': report_args['modified'],
+                'object_refs': self._object_refs
             }
         )
         return Report(**report_args)

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
+from datetime import datetime
 from stix2.properties import DictionaryProperty, ListProperty, StringProperty, TimestampProperty
 from stix2.v21.bundle import Bundle
 from stix2.v21.common import MarkingDefinition
@@ -11,7 +12,7 @@ from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, Email
                                    URL, WindowsRegistryKey, WindowsRegistryValueType,
                                    X509Certificate)
 from stix2.v21.sdo import (Campaign, CustomObject, Grouping, Identity, Indicator,
-                           ObservedData, Report, Vulnerability)
+                           Note, ObservedData, Report, Vulnerability)
 from typing import Optional, Union
 
 _OBSERVABLE_OBJECT_TYPES = Union[
@@ -25,12 +26,28 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._version = '2.1'
         self._update_mapping_v21()
 
+    def _handle_empty_object_refs(self, object_id: str, timestamp: datetime):
+        note_args = {
+            'id': f"note--{self._misp_event['uuid']}",
+            'created': timestamp,
+            'modified': timestamp,
+            'created_by_ref': self._identity_id,
+            'content': 'This MISP Event is empty and contains no attribute, object, galaxy or tag.',
+            'object_refs': [object_id]
+        }
+        note = Note(**note_args)
+        self._append_SDO(note)
+
     def _handle_unpublished_report(self, report_args: dict) -> Grouping:
+        grouping_id = f"grouping--{self._misp_event['uuid']}"
+        if not self._object_refs:
+            self._handle_empty_object_refs(grouping_id, report_args['modified'])
         report_args.update(
             {
-                'id': f"grouping--{self._misp_event['uuid']}",
+                'id': grouping_id,
                 'type': 'grouping',
-                'context': 'suspicious-activity'
+                'context': 'suspicious-activity',
+                'object_refs': self._object_refs
             }
         )
         return Grouping(**report_args)

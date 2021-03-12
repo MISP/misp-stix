@@ -24,7 +24,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         super().__init__()
         self._custom_objects = {}
         self._galaxies = []
-        self._ids = {}
         self._markings = {}
         self._orgs = []
 
@@ -89,14 +88,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if self._markings:
             for marking in self._marking.values():
                 self._append_SDO(marking)
-        report_args['object_refs'] = self._object_refs
         if self._is_published():
+            report_id = f"report--{self._misp_event['uuid']}"
+            if not self._object_refs:
+                self._handle_empty_object_refs(report_id, timestamp)
             published = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
             report_args.update(
                 {
-                    'id': f"report--{self._misp_event['uuid']}",
+                    'id': report_id,
                     'type': 'report',
-                    'published': published
+                    'published': published,
+                    'object_refs': self._object_refs
                 }
             )
             return self._create_report(report_args)
