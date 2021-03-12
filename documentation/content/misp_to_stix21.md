@@ -15,7 +15,7 @@
 
 The detailed mapping for events and its contained structures, with explanations and examples, is available [here](misp_events_to_stix21.md)
 
-#### Attributes to STIX1 mapping
+#### Attributes to STIX 2.1 mapping
 
 ##### Summary
 

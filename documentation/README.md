@@ -12,12 +12,12 @@ Thus, it gives a detailed description of the inputs and outputs that are to expe
         * [Attributes to STIX1](#Attributes-to-STIX1-mapping)
         * [Objects to STIX1](#Objects-to-STIX1-mapping)
         * [Galaxies to STIX1](#Galaxies-to-STIX1-mapping)
-    * [MISP to STIX 2.0](#MISP-to-STIX-2.0)
-        * [Events to STIX 2.0](#Events-to-STIX-2.0-mapping)
-        * [Attributes to STIX 2.0](#Attributes-to-STIX-2.0-mapping)
-    * [MISP to STIX 2.1](#MISP-to-STIX-2.1)
-        * [Events to STIX 2.1](#Events-to-STIX-2.1-mapping)
-        * [Attributes to STIX 2.1](#Attributes-to-STIX-2.1-mapping)
+    * [MISP to STIX 2.0](#MISP-to-STIX-20)
+        * [Events to STIX 2.0](#Events-to-STIX-20-mapping)
+        * [Attributes to STIX 2.0](#Attributes-to-STIX-20-mapping)
+    * [MISP to STIX 2.1](#MISP-to-STIX-21)
+        * [Events to STIX 2.1](#Events-to-STIX-21-mapping)
+        * [Attributes to STIX 2.1](#Attributes-to-STIX-21-mapping)
 * [Future improvements](#Future-Improvements)
 
 ## Introduction
@@ -214,7 +214,7 @@ The detailed mapping for galaxies, with explanations and examples, is available 
 
 The detailed mapping for events and its contained structures, with explanations and examples, is available [here](misp_events_to_stix20.md)
 
-#### Attributes to STIX1 mapping
+#### Attributes to STIX 2.0 mapping
 
 ##### Summary
 
@@ -312,7 +312,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 
 The detailed mapping for events and its contained structures, with explanations and examples, is available [here](misp_events_to_stix21.md)
 
-#### Attributes to STIX1 mapping
+#### Attributes to STIX 2.1 mapping
 
 ##### Summary
 
