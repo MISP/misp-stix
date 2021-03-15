@@ -1263,6 +1263,8 @@ def get_base_event():
 
 def get_published_event():
     base_event = deepcopy(_BASE_EVENT)
+    base_event['Event']['date'] = '2020-10-25'
+    base_event['Event']['timestamp'] = '1603642920'
     base_event['Event']['published'] = True
     base_event['Event']['publish_timestamp'] = str(int(datetime.now().timestamp()))
     return base_event

@@ -26,7 +26,6 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(identity.id, identity_id)
         self.assertEqual(identity.name, orgc['name'])
         self.assertEqual(identity.identity_class, 'organization')
-        timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(identity.created, timestamp)
         self.assertEqual(identity.modified, timestamp)
         return identity_id
@@ -125,14 +124,18 @@ class TestSTIX20Export(TestSTIX2Export):
     def setUp(self):
         self.parser = MISPtoSTIX20Parser()
 
+    ################################################################################
+    #                              UTILITY FUNCTIONS.                              #
+    ################################################################################
+
     def _run_indicator_tests(self, event):
         self._add_attribute_ids_flag(event)
         orgc = event['Event']['Orgc']
         attribute = event['Event']['Attribute'][0]
         self.parser.parse_misp_event(event)
         identity, report, indicator = self.parser.stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
         self.assertEqual(report.published, timestamp)
         self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
@@ -144,8 +147,8 @@ class TestSTIX20Export(TestSTIX2Export):
         attributes = event['Event']['Attribute']
         self.parser.parse_misp_event(event)
         identity, report, *indicators = self.parser.stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
         self.assertEqual(report.published, timestamp)
         for attribute, indicator, object_ref in zip(attributes, indicators, object_refs):
@@ -160,8 +163,8 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute = event['Event']['Attribute'][0]
         self.parser.parse_misp_event(event)
         identity, report, observed_data = self.parser.stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
         args = (
             report,
             event['Event'],
@@ -184,8 +187,8 @@ class TestSTIX20Export(TestSTIX2Export):
         attributes = event['Event']['Attribute']
         self.parser.parse_misp_event(event)
         identity, report, *observed_datas = self.parser.stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
         args = (
             report,
             event['Event'],
@@ -204,6 +207,51 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute_values = tuple(attribute['value'] for attribute in attributes)
         observable_objects = tuple(observed_data['objects'] for observed_data in observed_datas)
         return attribute_values, observable_objects
+
+    ################################################################################
+    #                              EVENT FIELDS TESTS                              #
+    ################################################################################
+
+    def test_base_event(self):
+        event = get_base_event()
+        orgc = event['Event']['Orgc']
+        self.parser.parse_misp_event(event)
+        bundle = self.parser.bundle
+        self.assertEqual(bundle.type, 'bundle')
+        self.assertEqual(bundle.spec_version, '2.0')
+        self.assertEqual(len(bundle.objects), 3)
+        identity, report, custom = bundle.objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self.assertEqual(custom.type, 'x-misp-event-note')
+        self.assertEqual(custom.id, f"x-misp-event-note--{event['Event']['uuid']}")
+        self.assertEqual(custom.created_by_ref, identity_id)
+        self.assertEqual(custom.created, timestamp)
+        self.assertEqual(custom.modified, timestamp)
+        self.assertEqual(custom.object_ref, report.id)
+        self.assertEqual(
+            custom.x_misp_event_note,
+            "This MISP Event is empty and contains no attribute, object, galaxy or tag."
+        )
+
+    def test_published_event(self):
+        event = get_published_event()
+        orgc = event['Event']['Orgc']
+        self.parser.parse_misp_event(event)
+        _, report, _ = self.parser.stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        self.assertEqual(report.created, timestamp)
+        self.assertEqual(report.modified, timestamp)
+        self.assertEqual(
+            report.published,
+            self._datetime_from_timestamp(event['Event']['publish_timestamp'])
+        )
+
+    ################################################################################
+    #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
+    ################################################################################
 
     def test_event_with_as_indicator_attribute(self):
         event = get_event_with_as_attribute()
@@ -245,8 +293,8 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute = event['Event']['Attribute'][0]
         self.parser.parse_misp_event(event)
         identity, report, campaign = self.parser.stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
         self.assertEqual(report.published, timestamp)
         self._check_attribute_campaign_features(
@@ -263,8 +311,8 @@ class TestSTIX20Export(TestSTIX2Export):
         attributes = event['Event']['Attribute']
         self.parser.parse_misp_event(event)
         identity, report, *custom_objects = self.parser.stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
         self.assertEqual(report.published, timestamp)
         for attribute, custom_object in zip(attributes, custom_objects):
@@ -786,8 +834,8 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute = event['Event']['Attribute'][0]
         self.parser.parse_misp_event(event)
         identity, report, vulnerability = self.parser.stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
         self.assertEqual(report.published, timestamp)
         self._check_attribute_vulnerability_features(
@@ -823,6 +871,10 @@ class TestSTIX21Export(TestSTIX2Export):
     def setUp(self):
         self.parser = MISPtoSTIX21Parser()
 
+    ################################################################################
+    #                              UTILITY FUNCTIONS.                              #
+    ################################################################################
+
     def _check_grouping_features(self, grouping, event, identity_id):
         timestamp = self._datetime_from_timestamp(event['timestamp'])
         self.assertEqual(grouping.type, 'grouping')
@@ -850,7 +902,11 @@ class TestSTIX21Export(TestSTIX2Export):
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, indicator = stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
         args = (
             grouping,
             event['Event'],
@@ -869,7 +925,11 @@ class TestSTIX21Export(TestSTIX2Export):
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, *indicators = stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
         args = (
             grouping,
             event['Event'],
@@ -891,7 +951,11 @@ class TestSTIX21Export(TestSTIX2Export):
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, observed_data, *observable = stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
         observable_id, *ids = self._check_grouping_features(
             grouping,
             event['Event'],
@@ -910,7 +974,11 @@ class TestSTIX21Export(TestSTIX2Export):
         identity, grouping, *observables = stix_objects
         observed_datas = observables[::index]
         observables = [value for count, value in enumerate(observables) if count % index != 0]
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
         ids = self._check_grouping_features(
             grouping,
             event['Event'],
@@ -928,6 +996,58 @@ class TestSTIX21Export(TestSTIX2Export):
         attribute_values = tuple(attribute['value'] for attribute in attributes)
         object_refs = tuple(observed_data['object_refs'][0] for observed_data in observed_datas)
         return attribute_values, object_ids, object_refs, observables
+
+    ################################################################################
+    #                              EVENT FIELDS TESTS                              #
+    ################################################################################
+
+    def test_base_event(self):
+        event = get_base_event()
+        orgc = event['Event']['Orgc']
+        self.parser.parse_misp_event(event)
+        bundle = self.parser.bundle
+        self.assertEqual(bundle.type, 'bundle')
+        self.assertEqual(len(bundle.objects), 3)
+        stix_objects = bundle.objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, note = stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        object_ref = self._check_grouping_features(*args)[0]
+        self.assertEqual(note.type, 'note')
+        self.assertEqual(note.id, f"note--{event['Event']['uuid']}")
+        self.assertEqual(note.created_by_ref, identity_id)
+        self.assertEqual(note.created, timestamp)
+        self.assertEqual(note.modified, timestamp)
+        self.assertEqual(
+            note.content,
+            "This MISP Event is empty and contains no attribute, object, galaxy or tag."
+        )
+        self.assertEqual(note.object_refs, [grouping.id])
+
+    def test_published_event(self):
+        event = get_published_event()
+        orgc = event['Event']['Orgc']
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, report, _ = stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        self._check_report_features(report, event['Event'], identity_id, timestamp)
+        self.assertEqual(
+            report.published,
+            self._datetime_from_timestamp(event['Event']['publish_timestamp'])
+        )
+
+    ################################################################################
+    #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
+    ################################################################################
 
     def test_event_with_as_indicator_attribute(self):
         event = get_event_with_as_attribute()
@@ -980,7 +1100,11 @@ class TestSTIX21Export(TestSTIX2Export):
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, campaign = stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
         args = (
             grouping,
             event['Event'],
@@ -1003,7 +1127,11 @@ class TestSTIX21Export(TestSTIX2Export):
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, *custom_objects = stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
         args = (
             grouping,
             event['Event'],
@@ -1646,7 +1774,11 @@ class TestSTIX21Export(TestSTIX2Export):
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, vulnerability = stix_objects
-        identity_id = self._check_identity_features(identity, orgc, event['Event']['timestamp'])
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
         args = (
             grouping,
             event['Event'],
