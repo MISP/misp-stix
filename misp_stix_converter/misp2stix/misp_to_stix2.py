@@ -197,24 +197,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._append_SDO(campaign)
 
     def _parse_custom_attribute(self, attribute: dict):
-        prefix = f"x-misp-object-{attribute['type'].replace('|', '-').replace(' ', '-').lower()}"
-        custom_id = f"{prefix}--{attribute['uuid']}"
+        custom_id = f"x-misp-attribute--{attribute['uuid']}"
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         custom_args = {
             'id': custom_id,
-            'x_misp_category': attribute['category'],
             'created': timestamp,
             'modified': timestamp,
             'labels': self._create_labels(attribute),
+            'created_by_ref': self._identity_id,
             'x_misp_value': attribute['value'],
-            'created_by_ref': self._identity_id
+            'x_misp_type': attribute['type'],
+            'x_misp_category': attribute['category']
         }
         if attribute.get('comment'):
             custom_args['x_misp_comment'] = attribute['comment']
         markings = self._handle_attribute_tags_and_galaxies(attribute, custom_id)
         if markings:
             custom_args['object_marking_refs'] = self._handle_markings(markings)
-        custom_object = self._create_custom_object(prefix, custom_args)
+        custom_object = self._create_custom_object(custom_args)
         self._append_SDO(custom_object)
 
     def _parse_domain_attribute(self, attribute: dict):

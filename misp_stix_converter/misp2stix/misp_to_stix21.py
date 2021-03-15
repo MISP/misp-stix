@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
+from .stix2_mapping import CustomAttribute_v21
 from datetime import datetime
 from stix2.properties import DictionaryProperty, ListProperty, StringProperty, TimestampProperty
 from stix2.v21.bundle import Bundle
@@ -11,8 +12,8 @@ from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, Email
                                    IPv6Address, MACAddress, Mutex, NetworkTraffic,
                                    URL, WindowsRegistryKey, WindowsRegistryValueType,
                                    X509Certificate)
-from stix2.v21.sdo import (Campaign, CustomObject, Grouping, Identity, Indicator,
-                           Note, ObservedData, Report, Vulnerability)
+from stix2.v21.sdo import (Campaign, Grouping, Identity, Indicator, Note,
+                           ObservedData, Report, Vulnerability)
 from typing import Optional, Union
 
 _OBSERVABLE_OBJECT_TYPES = Union[
@@ -383,27 +384,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return Campaign(**campaign_args)
 
     @staticmethod
-    def _create_custom_object(object_type, custom_args):
+    def _create_custom_object(custom_args: dict) -> CustomAttribute_v21:
         stix_labels = ListProperty(StringProperty)
         stix_labels.clean(custom_args['labels'])
         stix_markings = ListProperty(StringProperty)
         if custom_args.get('markings'):
             stix_markings.clean(custom_args['markings'])
-        @CustomObject(object_type, [
-            ('id', StringProperty(required=True)),
-            ('labels', ListProperty(stix_labels, required=True)),
-            ('x_misp_value', StringProperty(required=True)),
-            ('created', TimestampProperty(required=True, precision='millisecond')),
-            ('modified', TimestampProperty(required=True, precision='millisecond')),
-            ('created_by_ref', StringProperty(required=True)),
-            ('object_marking_refs', ListProperty(stix_markings)),
-            ('x_misp_comment', StringProperty()),
-            ('x_misp_category', StringProperty())
-        ])
-        class Custom(object):
-            def __init__(self, **kwargs):
-                return
-        return Custom(**custom_args)
+        return CustomAttribute_v21(**custom_args)
 
     def _create_identity_object(self, orgname: str) -> Identity:
         identity_args = {
@@ -416,7 +403,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return Identity(**identity_args)
 
     @staticmethod
-    def _create_grouping(grouping_args):
+    def _create_grouping(grouping_args: dict) -> Grouping:
         return Grouping(**grouping_args)
 
     @staticmethod
@@ -463,7 +450,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     ################################################################################
 
     @staticmethod
-    def _get_address_type(address):
+    def _get_address_type(address: str) -> Union[IPv4Address, IPv6Address]:
         if ':' in address:
             return IPv6Address
         return IPv4Address

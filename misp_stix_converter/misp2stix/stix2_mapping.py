@@ -1,10 +1,64 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from stix2.properties import (DictionaryProperty, ListProperty, ObjectReferenceProperty,
+                              StringProperty, TimestampProperty)
 from stix2.v20.common import (TLP_WHITE as TLP_WHITE_v20, TLP_GREEN as TLP_GREEN_v20,
                               TLP_AMBER as TLP_AMBER_v20, TLP_RED as TLP_RED_v20)
+from stix2.v20.sdo import CustomObject as CustomObject_v20
 from stix2.v21.common import (TLP_WHITE as TLP_WHITE_v21, TLP_GREEN as TLP_GREEN_v21,
                               TLP_AMBER as TLP_AMBER_v21, TLP_RED as TLP_RED_v21)
+from stix2.v21.sdo import CustomObject as CustomObject_v21
+
+@CustomObject_v20(
+    'x-misp-attribute',
+    [
+        ('id', StringProperty(required=True)),
+        ('labels', ListProperty(StringProperty, required=True)),
+        ('created', TimestampProperty(required=True, precision='millisecond')),
+        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        ('created_by_ref', StringProperty(required=True)),
+        ('object_marking_refs', ListProperty(ObjectReferenceProperty(valid_types=['marking']))),
+        ('x_misp_type', StringProperty(required=True)),
+        ('x_misp_value', StringProperty(required=True)),
+        ('x_misp_comment', StringProperty()),
+        ('x_misp_category', StringProperty())
+    ]
+)
+class CustomAttribute_v20():
+    pass
+
+@CustomObject_v21(
+    'x-misp-attribute',
+    [
+        ('id', StringProperty(required=True)),
+        ('labels', ListProperty(StringProperty, required=True)),
+        ('created', TimestampProperty(required=True, precision='millisecond')),
+        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        ('created_by_ref', StringProperty(required=True)),
+        ('object_marking_refs', ListProperty(ObjectReferenceProperty(valid_types=['marking']))),
+        ('x_misp_type', StringProperty(required=True)),
+        ('x_misp_value', StringProperty(required=True)),
+        ('x_misp_comment', StringProperty()),
+        ('x_misp_category', StringProperty())
+    ]
+)
+class CustomAttribute_v21():
+    pass
+
+@CustomObject_v20(
+    'x-misp-event-note',
+    [
+        ('id', StringProperty(required=True)),
+        ('created', TimestampProperty(required=True, precision='millisecond')),
+        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        ('created_by_ref', StringProperty(required=True)),
+        ('x_misp_event_note', StringProperty(required=True)),
+        ('object_ref', StringProperty(required=True))
+    ]
+)
+class CustomNote():
+    pass
 
 _hash_attribute_types = (
     "md5",
