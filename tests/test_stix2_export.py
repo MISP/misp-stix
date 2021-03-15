@@ -267,14 +267,15 @@ class TestSTIX20Export(TestSTIX2Export):
         for attribute, custom_object in zip(attributes, custom_objects):
             attribute_type = attribute['type']
             category = attribute['category']
-            custom_id = f"x-misp-object-{attribute_type}"
-            self.assertEqual(custom_object.type, custom_id)
-            self.assertEqual(custom_object.id, f"{custom_id}--{attribute['uuid']}")
+            custom_type = f"x-misp-attribute"
+            self.assertEqual(custom_object.type, custom_type)
+            self.assertEqual(custom_object.id, f"{custom_type}--{attribute['uuid']}")
             self.assertEqual(custom_object.created_by_ref, identity_id)
             self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
             self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
             if attribute.get('to_ids', False):
                 self.assertEqual(custom_object.labels[2], 'misp:to_ids="True"')
+            self.assertEqual(custom_object.x_misp_type, attribute['type'])
             self.assertEqual(custom_object.x_misp_category, category)
             if attribute.get('comment'):
                 self.assertEqual(custom_object.x_misp_comment, attribute['comment'])
@@ -1009,15 +1010,16 @@ class TestSTIX21Export(TestSTIX2Export):
         for attribute, custom_object, object_ref in zip(attributes, custom_objects, object_refs):
             attribute_type = attribute['type']
             category = attribute['category']
-            custom_id = f"x-misp-object-{attribute_type}"
-            self.assertEqual(custom_object.type, custom_id)
-            self.assertEqual(object_ref, f"{custom_id}--{attribute['uuid']}")
+            custom_type = f"x-misp-attribute"
+            self.assertEqual(custom_object.type, custom_type)
+            self.assertEqual(object_ref, f"{custom_type}--{attribute['uuid']}")
             self.assertEqual(custom_object.id, object_ref)
             self.assertEqual(custom_object.created_by_ref, identity_id)
             self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
             self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
             if attribute.get('to_ids', False):
                 self.assertEqual(custom_object.labels[2], 'misp:to_ids="True"')
+            self.assertEqual(custom_object.x_misp_type, attribute['type'])
             self.assertEqual(custom_object.x_misp_category, category)
             if attribute.get('comment'):
                 self.assertEqual(custom_object.x_misp_comment, attribute['comment'])
