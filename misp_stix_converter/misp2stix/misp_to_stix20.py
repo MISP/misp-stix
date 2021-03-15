@@ -362,9 +362,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return CustomAttribute_v20(**custom_args)
 
     def _create_identity_object(self, orgname: str) -> Identity:
+        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
         identity_args = {
             'type': 'identity',
             'id': self._identity_id,
+            'created': timestamp,
+            'modified': timestamp,
             'name': orgname,
             'identity_class': 'organization',
             'interoperability': True
