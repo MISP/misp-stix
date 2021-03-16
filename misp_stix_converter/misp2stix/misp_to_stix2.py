@@ -86,8 +86,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if markings:
             report_args['object_marking_refs'] = self._handle_markings(markings)
         if self._markings:
-            for marking in self._marking.values():
-                self._append_SDO(marking)
+            for marking in self._markings.values():
+                self._objects.append(marking)
         if self._is_published():
             report_id = f"report--{self._misp_event['uuid']}"
             if not self._object_refs:

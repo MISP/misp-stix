@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
-from .stix2_mapping import CustomAttribute_v20, CustomNote
+from .stix2_mapping import CustomAttribute_v20, CustomNote, tlp_markings_v20
+from copy import deepcopy
 from datetime import datetime
+from stix2.exceptions import TLPMarkingDefinitionError
 from stix2.properties import DictionaryProperty, ListProperty, StringProperty, TimestampProperty
 from stix2.v20.bundle import Bundle
 from stix2.v20.common import MarkingDefinition
@@ -379,8 +381,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return Indicator(**indicator_args)
 
     def _create_marking(self, marking: str) -> Union[str, None]:
-        if marking in stix2_mapping.tlp_markings_v20:
-            marking_definition = deepcopy(stix2_mapping.tlp_markings_v20[marking])
+        if marking in tlp_markings_v20:
+            marking_definition = deepcopy(tlp_markings_v20[marking])
             self._markings[marking] = marking_definition
             return marking_definition.id
         marking_args = self._create_marking_definition_args(marking)
