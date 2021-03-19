@@ -30,21 +30,6 @@ class MISPtoSTIXParser():
     #                           COMMON PARSING FUNCTIONS                           #
     ################################################################################
 
-    def _handle_attribute_tags_and_galaxies(self, attribute: dict, indicator: Union[Indicator, str]) -> tuple:
-        # If used for STIX1 parsing "indicator" is Indicator, and str if used for STIX2
-        if attribute.get('Galaxy'):
-            tag_names = []
-            for galaxy in attribute['Galaxy']:
-                galaxy_type = galaxy['type']
-                if galaxy_type in stix1_mapping.galaxy_types_mapping:
-                    to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
-                    getattr(self, to_call.format('attribute'))(galaxy, indicator)
-                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
-                else:
-                    self._warnings.add(f"{galaxy_type} galaxy in {attribute['type']} attribute not mapped.")
-            return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
-        return tuple(tag['name'] for tag in attribute.get('Tag', []))
-
     def _handle_event_tags_and_galaxies(self) -> tuple:
         if self._misp_event.get('Galaxy'):
             tag_names = []
