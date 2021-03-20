@@ -104,6 +104,7 @@ SCHEMALOC_DICT = {
     'urn:oasis:names:tc:ciq:xnl:3': 'http://stix.mitre.org/XMLSchema/external/oasis_ciq_3.0/xNL.xsd',
 }
 
+
 # mappings
 status_mapping = {0: 'New', 1: 'Open', 2: 'Closed'}
 threat_level_mapping = {1: 'High', 2: 'Medium', 3: 'Low', 4: 'Undefined'}
@@ -146,6 +147,7 @@ hash_type_attributes = {
         "filename|impfuzzy"
     )
 }
+
 
 # mapping for the attributes that can go through the simpleobservable script
 misp_indicator_type = {
@@ -217,6 +219,7 @@ misp_indicator_type.update(
 )
 
 cybox_validation = {"AutonomousSystem": "isInt"}
+
 
 ## ATTRIBUTES MAPPING
 email_attribute_mapping = {
@@ -359,6 +362,7 @@ attribute_types_mapping.update(
     )
 )
 
+
 ## OBJECTS MAPPING
 non_indicator_names = {
     'attack-pattern': '_parse_attack_pattern_object',
@@ -382,6 +386,7 @@ objects_mapping = {
     "whois": '_parse_whois_object',
     "x509": '_parse_x509_object'
 }
+
 
 ## GALAXIES MAPPING
 _attack_pattern_names = (
@@ -456,6 +461,7 @@ galaxy_types_mapping.update(
         '_parse_tool_{}_galaxy'
     )
 )
+
 
 # mapping Windows Registry Hives and their abbreviations
 # see https://cybox.mitre.org/language/version2.1/xsddocs/objects/Win_Registry_Key_Object_xsd.html#RegistryHiveEnum
