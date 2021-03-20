@@ -14,8 +14,9 @@ from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, Email
                                    IPv6Address, MACAddress, Mutex, NetworkTraffic,
                                    URL, WindowsRegistryKey, WindowsRegistryValueType,
                                    X509Certificate)
-from stix2.v21.sdo import (Campaign, Grouping, Identity, Indicator, Note,
-                           ObservedData, Report, Vulnerability)
+from stix2.v21.sdo import (AttackPattern, Campaign, CourseOfAction, Grouping, Identity,
+                           Indicator, Malware, Note, ObservedData, Report, ThreatActor,
+                           Tool, Vulnerability)
 from typing import Optional, Union
 
 _OBSERVABLE_OBJECT_TYPES = Union[
@@ -378,12 +379,22 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 
+    def _create_attack_pattern(self, attack_pattern_args: dict, cluster: dict) -> AttackPattern:
+        attack_pattern_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
+        if cluster.get('meta', {}).get('synonyms'):
+            attack_pattern_args['aliases'] = cluster['meta']['synonyms']
+        return AttackPattern(**attack_pattern_args)
+
     def _create_bundle(self) -> Bundle:
         return Bundle(self._objects)
 
     @staticmethod
     def _create_campaign(campaign_args: dict) -> Campaign:
         return Campaign(**campaign_args)
+
+    @staticmethod
+    def _create_course_of_action(course_of_action_args: dict) -> CourseOfAction:
+        return CourseOfAction(**course_of_action_args)
 
     @staticmethod
     def _create_custom_object(custom_args: dict) -> CustomAttribute_v21:
@@ -422,6 +433,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         return Indicator(**indicator_args)
 
+    def _create_malware(self, malware_args: dict, cluster: dict) -> Malware:
+        malware_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
+        if cluster.get('meta', {}).get('synonyms'):
+            malware_args['aliases'] = cluster['meta']['synonyms']
+        return Malware(**malware_args)
+
     def _create_marking(self, marking: str) -> Union[str, None]:
         if marking in tlp_markings_v21:
             marking_definition = deepcopy(tlp_markings_v21[marking])
@@ -445,6 +462,16 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_report(report_args: dict) -> Report:
         return Report(**report_args)
+
+    @staticmethod
+    def _create_threat_actor(threat_actor_args: dict) -> ThreatActor:
+        return ThreatActor(**threat_actor_args)
+
+    def _create_tool(self, tool_args: dict, cluster: dict) -> Tool:
+        tool_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
+        if cluster.get('meta', {}).get('synonyms'):
+            tool_args['aliases'] = cluster['meta']['synonyms']
+        return Tool(**tool_args)
 
     @staticmethod
     def _create_vulnerability(vulnerability_args: dict) -> Vulnerability:

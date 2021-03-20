@@ -60,6 +60,8 @@ class CustomAttribute_v21():
 class CustomNote():
     pass
 
+
+## ATTRIBUTES MAPPING
 _hash_attribute_types = (
     "md5",
     "sha1",
@@ -156,6 +158,88 @@ attribute_types_mapping.update(
         '_parse_x509_fingerprint_attribute'
     )
 )
+
+
+## GALAXIES MAPPING
+galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
+galaxy_types_mapping.update(
+    dict.fromkeys(
+        (
+            'mitre-attack-pattern',
+            'mitre-enterprise-attack-attack-pattern',
+            'mitre-mobile-attack-attack-pattern',
+            'mitre-pre-attack-attack-pattern'
+        ),
+        '_parse_attack_pattern_{}_galaxy'
+    )
+)
+galaxy_types_mapping.update(
+    dict.fromkeys(
+        (
+            'mitre-course-of-action',
+            'mitre-enterprise-attack-course-of-action',
+            'mitre-mobile-attack-course-of-action'
+        ),
+        '_parse_course_of_action_{}_galaxy'
+    )
+)
+galaxy_types_mapping.update(
+    dict.fromkeys(
+        (
+            'android',
+            'banker',
+            'stealer',
+            'backdoor',
+            'ransomware',
+            'mitre-malware',
+            'malpedia',
+            'mitre-enterprise-attack-malware',
+            'mitre-mobile-attack-malware'
+        ),
+        '_parse_malware_{}_galaxy'
+    )
+)
+galaxy_types_mapping.update(
+    dict.fromkeys(
+        (
+            'threat-actor',
+            'microsoft-activity-group'
+        ),
+        '_parse_threat_actor_galaxy'
+    )
+)
+galaxy_types_mapping.update(
+    dict.fromkeys(
+        (
+            'botnet',
+            'rat',
+            'exploit-kit',
+            'tds',
+            'tool',
+            'mitre-tool',
+            'mitre-enterprise-attack-tool',
+            'mitre-mobile-attack-tool'
+        ),
+        '_parse_tool_{}_galaxy'
+    )
+)
+
+
+relationship_specs = {
+    'campaign': {
+        'attack-pattern': 'uses',
+        'malware': 'uses',
+        'threat-actor': 'attributed-to',
+        'tool': 'uses'
+    },
+    'indicator': {
+        'attack-pattern': 'indicates',
+        'malware': 'indicates',
+        'threat-actor': 'indicates',
+        'tool': 'indicates'
+    }
+}
+
 
 tlp_markings_v20 = {
     'tlp:white': TLP_WHITE_v20,
