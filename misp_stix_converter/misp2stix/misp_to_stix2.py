@@ -85,6 +85,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         markings = self._handle_event_tags_and_galaxies()
         if markings:
             report_args['object_marking_refs'] = self._handle_markings(markings)
+        if self._relationships:
+            for source_id, relationships in self._relationships.items():
+                for relationship in relationships:
+                    target_id, relationship_type, timestamp = relationship
+                    relationship = Relationship(
+                        created=timestamp,
+                        modified=timestamp,
+                        source_ref=source_id,
+                        target_ref=target_id,
+                        relationship_type=relationship_type,
+                        interoperability=True
+                    )
+                    self._append_SDO(relationship)
         if self._markings:
             for marking in self._markings.values():
                 self._objects.append(marking)
