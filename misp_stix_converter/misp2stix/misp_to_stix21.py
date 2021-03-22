@@ -434,7 +434,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return Indicator(**indicator_args)
 
     def _create_malware(self, malware_args: dict, cluster: dict) -> Malware:
-        malware_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
+        malware_args.update(
+            {
+                'kill_chain_phases': self._create_killchain(cluster['type']),
+                'is_family': True
+            }
+        )
         if cluster.get('meta', {}).get('synonyms'):
             malware_args['aliases'] = cluster['meta']['synonyms']
         return Malware(**malware_args)
