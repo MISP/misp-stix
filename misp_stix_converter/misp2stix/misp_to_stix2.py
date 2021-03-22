@@ -851,7 +851,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_relationships(self, source_id: str, target_ids: list, timestamp: datetime) -> list:
         source_type = source_id.split('--')[0]
         if source_type not in stix2_mapping.relationship_specs:
-            self._relationships[source_id].extend((target_id, 'has') for target_id in target_ids)
+            self._relationships[source_id].extend((target_id, 'has', timestamp) for target_id in target_ids)
         else:
             for target_id in target_ids:
                 target_type = target_id.split('--')[0]
