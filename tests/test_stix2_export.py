@@ -94,6 +94,14 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(observed_data.first_observed, timestamp)
         self.assertEqual(observed_data.last_observed, timestamp)
 
+    def _check_relationship_features(self, relationship, source_id, target_id, relationship_type, timestamp):
+        self.assertEqual(relationship.type, 'relationship')
+        self.assertEqual(relationship.source_ref, source_id)
+        self.assertEqual(relationship.target_ref, target_id)
+        self.assertEqual(relationship.relationship_type, relationship_type)
+        self.assertEqual(relationship.created, timestamp)
+        self.assertEqual(relationship.modified, timestamp)
+
     def _check_report_features(self, report, event, identity_id, timestamp):
         self.assertEqual(report.type, 'report')
         self.assertEqual(report.id, f"report--{event['uuid']}")
@@ -127,6 +135,13 @@ class TestSTIX20Export(TestSTIX2Export):
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
+
+    def _check_bundle_features(self, length):
+        bundle = self.parser.bundle
+        self.assertEqual(bundle.type, 'bundle')
+        self.assertEqual(bundle.spec_version, '2.0')
+        self.assertEqual(len(bundle.objects), length)
+        return bundle
 
     def _run_indicator_tests(self, event):
         self._add_attribute_ids_flag(event)
@@ -216,10 +231,7 @@ class TestSTIX20Export(TestSTIX2Export):
         event = get_base_event()
         orgc = event['Event']['Orgc']
         self.parser.parse_misp_event(event)
-        bundle = self.parser.bundle
-        self.assertEqual(bundle.type, 'bundle')
-        self.assertEqual(bundle.spec_version, '2.0')
-        self.assertEqual(len(bundle.objects), 3)
+        bundle = self._check_bundle_features(3)
         identity, report, custom = bundle.objects
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         identity_id = self._check_identity_features(identity, orgc, timestamp)
@@ -240,7 +252,8 @@ class TestSTIX20Export(TestSTIX2Export):
         event = get_published_event()
         orgc = event['Event']['Orgc']
         self.parser.parse_misp_event(event)
-        _, report, _ = self.parser.stix_objects
+        bundle = self._check_bundle_features(3)
+        _, report, _ = bundle.objects
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         self.assertEqual(report.created, timestamp)
         self.assertEqual(report.modified, timestamp)
@@ -249,9 +262,88 @@ class TestSTIX20Export(TestSTIX2Export):
             self._datetime_from_timestamp(event['Event']['publish_timestamp'])
         )
 
+    def test_event_with_tags(self):
+        event = get_event_with_tags()
+        orgc = event['Event']['Orgc']
+        self.parser.parse_misp_event(event)
+        bundle = self._check_bundle_features(4)
+        _, _, _, marking = bundle.objects
+        self.assertEqual(marking.definition_type, 'tlp')
+        self.assertEqual(marking.definition['tlp'], 'white')
+
     ################################################################################
     #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
     ################################################################################
+
+    def test_embedded_indicator_attribute_galaxy(self):
+        event = get_embedded_indicator_attribute_galaxy()
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        bundle = self._check_bundle_features(8)
+        identity, report, attack_pattern, course_of_action, indicator, malware, *relationships = bundle.objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
+        self.assertEqual(report.published, timestamp)
+        ap_ref, coa_ref, indicator_ref, malware_ref, apr_ref, coar_ref = object_refs
+        ap_relationship, coa_relationship = relationships
+        self.assertEqual(attack_pattern.id, ap_ref)
+        self.assertEqual(course_of_action.id, coa_ref)
+        self.assertEqual(indicator.id, indicator_ref)
+        self.assertEqual(malware.id, malware_ref)
+        self.assertEqual(ap_relationship.id, apr_ref)
+        self.assertEqual(coa_relationship.id, coar_ref)
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        self._check_relationship_features(ap_relationship, indicator_ref, ap_ref, 'indicates', timestamp)
+        self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'has', timestamp)
+
+    def test_embedded_non_indicator_attribute_galaxy(self):
+        event = get_embedded_non_indicator_attribute_galaxy()
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        bundle = self._check_bundle_features(8)
+        identity, report, attack_pattern, course_of_action, vulnerability, malware, *relationships = bundle.objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
+        self.assertEqual(report.published, timestamp)
+        ap_ref, coa_ref, vulnerability_ref, malware_ref, apr_ref, coar_ref = object_refs
+        ap_relationship, coa_relationship = relationships
+        self.assertEqual(attack_pattern.id, ap_ref)
+        self.assertEqual(course_of_action.id, coa_ref)
+        self.assertEqual(vulnerability.id, vulnerability_ref)
+        self.assertEqual(malware.id, malware_ref)
+        self.assertEqual(ap_relationship.id, apr_ref)
+        self.assertEqual(coa_relationship.id, coar_ref)
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        self._check_relationship_features(ap_relationship, vulnerability_ref, ap_ref, 'has', timestamp)
+        self._check_relationship_features(coa_relationship, vulnerability_ref, coa_ref, 'has', timestamp)
+
+    def test_embedded_observable_attribute_galaxy(self):
+        event = get_embedded_observable_attribute_galaxy()
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        bundle = self._check_bundle_features(6)
+        identity, report, attack_pattern, observed_data, malware, relationship = bundle.objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
+        self.assertEqual(report.published, timestamp)
+        ap_ref, od_ref, malware_ref, relationship_ref = object_refs
+        self.assertEqual(attack_pattern.id, ap_ref)
+        self.assertEqual(observed_data.id, od_ref)
+        self.assertEqual(malware.id, malware_ref)
+        self.assertEqual(relationship.id, relationship_ref)
+        self._check_relationship_features(
+            relationship,
+            od_ref,
+            ap_ref,
+            'has',
+            self._datetime_from_timestamp(attribute['timestamp'])
+        )
 
     def test_event_with_as_indicator_attribute(self):
         event = get_event_with_as_attribute()
@@ -875,6 +967,12 @@ class TestSTIX21Export(TestSTIX2Export):
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
 
+    def _check_bundle_features(self, length):
+        bundle = self.parser.bundle
+        self.assertEqual(bundle.type, 'bundle')
+        self.assertEqual(len(bundle.objects), length)
+        return bundle.objects
+
     def _check_grouping_features(self, grouping, event, identity_id):
         timestamp = self._datetime_from_timestamp(event['timestamp'])
         self.assertEqual(grouping.type, 'grouping')
@@ -1005,10 +1103,7 @@ class TestSTIX21Export(TestSTIX2Export):
         event = get_base_event()
         orgc = event['Event']['Orgc']
         self.parser.parse_misp_event(event)
-        bundle = self.parser.bundle
-        self.assertEqual(bundle.type, 'bundle')
-        self.assertEqual(len(bundle.objects), 3)
-        stix_objects = bundle.objects
+        stix_objects = self._check_bundle_features(3)
         self._check_spec_versions(stix_objects)
         identity, grouping, note = stix_objects
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
@@ -1034,7 +1129,7 @@ class TestSTIX21Export(TestSTIX2Export):
         event = get_published_event()
         orgc = event['Event']['Orgc']
         self.parser.parse_misp_event(event)
-        stix_objects = self.parser.stix_objects
+        stix_objects = self._check_bundle_features(3)
         self._check_spec_versions(stix_objects)
         identity, report, _ = stix_objects
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
@@ -1045,9 +1140,107 @@ class TestSTIX21Export(TestSTIX2Export):
             self._datetime_from_timestamp(event['Event']['publish_timestamp'])
         )
 
+    def test_event_with_tags(self):
+        event = get_event_with_tags()
+        orgc = event['Event']['Orgc']
+        self.parser.parse_misp_event(event)
+        stix_objects = self._check_bundle_features(4)
+        self._check_spec_versions(stix_objects)
+        _, _, _, marking = stix_objects
+        self.assertEqual(marking.definition_type, 'tlp')
+        self.assertEqual(marking.definition['tlp'], 'white')
+
     ################################################################################
     #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
     ################################################################################
+
+    def test_embedded_indicator_attribute_galaxy(self):
+        event = get_embedded_indicator_attribute_galaxy()
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self._check_bundle_features(8)
+        self._check_spec_versions(stix_objects)
+        identity, grouping, attack_pattern, course_of_action, indicator, malware, *relationships = stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        object_refs = self._check_grouping_features(*args)
+        ap_ref, coa_ref, indicator_ref, malware_ref, apr_ref, coar_ref = object_refs
+        ap_relationship, coa_relationship = relationships
+        self.assertEqual(attack_pattern.id, ap_ref)
+        self.assertEqual(course_of_action.id, coa_ref)
+        self.assertEqual(indicator.id, indicator_ref)
+        self.assertEqual(malware.id, malware_ref)
+        self.assertEqual(ap_relationship.id, apr_ref)
+        self.assertEqual(coa_relationship.id, coar_ref)
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        self._check_relationship_features(ap_relationship, indicator_ref, ap_ref, 'indicates', timestamp)
+        self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'has', timestamp)
+
+    def test_embedded_non_indicator_attribute_galaxy(self):
+        event = get_embedded_non_indicator_attribute_galaxy()
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self._check_bundle_features(8)
+        self._check_spec_versions(stix_objects)
+        identity, grouping, attack_pattern, course_of_action, vulnerability, malware, *relationships = stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        object_refs = self._check_grouping_features(*args)
+        ap_ref, coa_ref, vulnerability_ref, malware_ref, apr_ref, coar_ref = object_refs
+        ap_relationship, coa_relationship = relationships
+        self.assertEqual(attack_pattern.id, ap_ref)
+        self.assertEqual(course_of_action.id, coa_ref)
+        self.assertEqual(vulnerability.id, vulnerability_ref)
+        self.assertEqual(malware.id, malware_ref)
+        self.assertEqual(ap_relationship.id, apr_ref)
+        self.assertEqual(coa_relationship.id, coar_ref)
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        self._check_relationship_features(ap_relationship, vulnerability_ref, ap_ref, 'has', timestamp)
+        self._check_relationship_features(coa_relationship, vulnerability_ref, coa_ref, 'has', timestamp)
+
+    def test_embedded_observable_attribute_galaxy(self):
+        event = get_embedded_observable_attribute_galaxy()
+        orgc = event['Event']['Orgc']
+        attribute = event['Event']['Attribute'][0]
+        galaxy = event['Event']['Galaxy'][0]
+        cluster = galaxy['GalaxyCluster'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self._check_bundle_features(7)
+        self._check_spec_versions(stix_objects)
+        identity, grouping, attack_pattern, observed_data, autonomous_system, malware, relationship = stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        object_refs = self._check_grouping_features(*args)
+        ap_ref, od_ref, as_ref, malware_ref, relationship_ref = object_refs
+        self.assertEqual(attack_pattern.id, ap_ref)
+        self.assertEqual(observed_data.id, od_ref)
+        self.assertEqual(autonomous_system.id, as_ref)
+        self.assertEqual(malware.id, malware_ref)
+        self.assertEqual(relationship.id, relationship_ref)
+        self._check_relationship_features(
+            relationship,
+            od_ref,
+            ap_ref,
+            'has',
+            self._datetime_from_timestamp(attribute['timestamp'])
+        )
 
     def test_event_with_as_indicator_attribute(self):
         event = get_event_with_as_attribute()

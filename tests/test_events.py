@@ -37,6 +37,7 @@ _TEST_ATTACK_PATTERN_GALAXY = {
     "GalaxyCluster": [
         {
             "uuid": "dcaa092b-7de9-4a21-977f-7fcb77e89c48",
+            "type": "mitre-attack-pattern",
             "value": "Access Token Manipulation - T1134",
             "description": "Windows uses access tokens to determine the ownership of a running process.",
             "meta": {
@@ -56,6 +57,7 @@ _TEST_COURSE_OF_ACTION_GALAXY = {
     "GalaxyCluster": [
         {
             "uuid": "2497ac92-e751-4391-82c6-1b86e34d0294",
+            "type": "mitre-course-of-action",
             "value": "Automated Exfiltration Mitigation - T1020",
             "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network"
         }
@@ -70,6 +72,7 @@ _TEST_MALWARE_GALAXY = {
     "GalaxyCluster": [
         {
             "uuid": "b8eb28e4-48a6-40ae-951a-328714f75eda",
+            "type": "mitre-malware",
             "value": "BISCUIT - S0017",
             "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
             "meta": {
@@ -89,6 +92,7 @@ _TEST_THREAT_ACTOR_GALAXY = {
     "GalaxyCluster": [
         {
             "uuid": "11e17436-6ede-4733-8547-4ce0254ea19e",
+            "type": "threat-actor",
             "value": "Cutting Kitten",
             "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
             "meta": {
@@ -108,6 +112,7 @@ _TEST_TOOL_GALAXY = {
     "GalaxyCluster": [
         {
             "uuid": "bba595da-b73a-4354-aa6c-224d4de7cb4e",
+            "type": "mitre-tool",
             "value": "cmd - S0106",
             "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities."
         }
@@ -122,6 +127,7 @@ _TEST_VULNERABILITY_GALAXY = {
     "GalaxyCluster": [
         {
             "uuid": "a1640081-aa8d-4070-84b2-d23e2ae82799",
+            "type": "branded-vulnerability",
             "value": "Ghost",
             "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
             "meta": {
