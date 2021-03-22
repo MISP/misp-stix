@@ -7,7 +7,6 @@ from collections import defaultdict
 from datetime import datetime
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
-from stix2.v20.sro import Relationship
 from typing import Optional, Union
 from uuid import uuid4
 
@@ -89,14 +88,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for source_id, relationships in self._relationships.items():
                 for relationship in relationships:
                     target_id, relationship_type, timestamp = relationship
-                    relationship = Relationship(
-                        created=timestamp,
-                        modified=timestamp,
-                        source_ref=source_id,
-                        target_ref=target_id,
-                        relationship_type=relationship_type,
-                        interoperability=True
-                    )
+                    relationship_args = {
+                        'source_ref': source_id,
+                        'target_ref': target_id,
+                        'relationship_type': relationship_type,
+                        'created': timestamp,
+                        'modified': timestamp
+                    }
+                    relationship = self._create_relationship(relationship_args)
                     self._append_SDO(relationship)
         if self._markings:
             for marking in self._markings.values():

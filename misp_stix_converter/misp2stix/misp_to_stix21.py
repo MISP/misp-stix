@@ -17,6 +17,7 @@ from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, Email
 from stix2.v21.sdo import (AttackPattern, Campaign, CourseOfAction, Grouping, Identity,
                            Indicator, Malware, Note, ObservedData, Report, ThreatActor,
                            Tool, Vulnerability)
+from stix2.v21.sro import Relationship
 from typing import Optional, Union
 
 _OBSERVABLE_OBJECT_TYPES = Union[
@@ -463,6 +464,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._append_SDO(observed_data)
         for observable in observables:
             self._append_SDO(observable)
+
+    @staticmethod
+    def _create_relationship(relationship_args: dict) -> Relationship:
+        return Relationship(**relationship_args)
 
     @staticmethod
     def _create_report(report_args: dict) -> Report:
