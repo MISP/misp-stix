@@ -667,6 +667,35 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._galaxies.append(tool_id)
         return object_refs
 
+    def _parse_vulnerability_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
+        object_refs = self._parse_vulnerability_galaxy(galaxy, timestamp)
+        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+
+    def _parse_vulnerability_event_galaxy(self, galaxy: dict):
+        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
+        object_refs = self._parse_vulnerability_galaxy(galaxy, timestamp)
+        self._object_refs.extend(object_refs)
+
+    def _parse_vulnerability_galaxy(self, galaxy: dict, timestamp: datetime) -> list:
+        object_refs = []
+        for cluster in galaxy['GalaxyCluster']:
+            vulnerability_id = f"vulnerability--{cluster['uuid']}"
+            if vulnerability_id in self._ids or vulnerability_id in self._galaxies:
+                object_refs.append(vulnerability_id)
+                continue
+            vulnerability_args = self._create_galaxy_args(
+                cluster,
+                galaxy['description'],
+                galaxy['name'],
+                vulnerability_id,
+                timestamp
+            )
+            vulnerability = self._create_vulnerability(vulnerability_args)
+            self._objects.append(vulnerability)
+            object_refs.append(vulnerability_id)
+            self._galaxies.append(vulnerability_id)
+        return object_refs
+
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
