@@ -205,7 +205,7 @@ galaxy_types_mapping.update(
             'threat-actor',
             'microsoft-activity-group'
         ),
-        '_parse_threat_actor_galaxy'
+        '_parse_threat_actor_{}_galaxy'
     )
 )
 galaxy_types_mapping.update(

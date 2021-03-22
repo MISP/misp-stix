@@ -82,7 +82,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'created_by_ref': self._identity_id,
             'interoperability': True
         }
-        markings = self._handle_event_tags_and_galaxies()
+        markings = self._handle_event_tags_and_galaxies('stix2_galaxy_mapping')
         if markings:
             report_args['object_marking_refs'] = self._handle_markings(markings)
         if self._relationships:
@@ -613,7 +613,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_threat_actor_event_galaxy(self, galaxy: dict):
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
-        object_refs = self._parse_malware_galaxy(galaxy, timestamp)
+        object_refs = self._parse_threat_actor_galaxy(galaxy, timestamp)
         self._object_refs.extend(object_refs)
 
     def _parse_threat_actor_galaxy(self, galaxy: dict, timestamp: datetime) -> list:

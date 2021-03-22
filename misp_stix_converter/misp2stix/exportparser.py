@@ -2,7 +2,8 @@
 #!/usr/bin/env python3
 
 import json
-from . import stix1_mapping
+from .stix1_mapping import galaxy_types_mapping as stix1_galaxy_mapping
+from .stix2_mapping import galaxy_types_mapping as stix2_galaxy_mapping
 from datetime import datetime
 from stix.indicator import Indicator
 from typing import Union
@@ -30,13 +31,13 @@ class MISPtoSTIXParser():
     #                           COMMON PARSING FUNCTIONS                           #
     ################################################################################
 
-    def _handle_event_tags_and_galaxies(self) -> tuple:
+    def _handle_event_tags_and_galaxies(self, mapping: str) -> tuple:
         if self._misp_event.get('Galaxy'):
             tag_names = []
             for galaxy in self._misp_event['Galaxy']:
                 galaxy_type = galaxy['type']
-                if galaxy_type in stix1_mapping.galaxy_types_mapping:
-                    to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
+                if galaxy_type in globals()[mapping]:
+                    to_call = globals()[mapping][galaxy_type]
                     getattr(self, to_call.format('event'))(galaxy)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:

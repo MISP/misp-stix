@@ -173,7 +173,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             threat_level = stix1_mapping.threat_level_mapping[int(self._misp_event['threat_level_id'])]
             self._add_journal_entry(f'Event Threat Level: {threat_level}')
         self._add_journal_entry('MISP Tag: misp:tool="MISP-STIX-Converter"')
-        tags = self._handle_event_tags_and_galaxies()
+        tags = self._handle_event_tags_and_galaxies('stix1_galaxy_mapping')
         if tags:
             self._incident.handling = self._set_handling(tags)
         if self._misp_event.get('id'):
