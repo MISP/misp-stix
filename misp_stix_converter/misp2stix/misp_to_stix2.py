@@ -635,7 +635,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 timestamp
             )
             if cluster.get('meta', {}).get('synonyms'):
-                threat_actors_args['aliases'] = cluster['meta']['synonyms']
+                threat_actor_args['aliases'] = cluster['meta']['synonyms']
             threat_actor = self._create_threat_actor(threat_actor_args)
             self._objects.append(threat_actor)
             object_refs.append(threat_actor_id)
