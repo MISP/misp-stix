@@ -74,6 +74,18 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(vulnerability.created, timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
 
+    def _check_galaxy_features(self, stix_object, galaxy, timestamp, killchain, synonyms):
+        cluster = galaxy['GalaxyCluster'][0]
+        self.assertEqual(stix_object.created, timestamp)
+        self.assertEqual(stix_object.modified, timestamp)
+        self.assertEqual(stix_object.name, cluster['value'])
+        self.assertEqual(stix_object.description, f"{galaxy['description']} | {cluster['description']}")
+        self.assertEqual(stix_object.labels[0], f'misp:name="{galaxy["name"]}"')
+        if killchain:
+            self.assertEqual(stix_object.kill_chain_phases[0]['phase_name'], cluster['type'])
+        if synonyms:
+            self.assertEqual(stix_object.aliases[0], cluster['meta']['synonyms'][0])
+
     def _check_killchain(self, killchain, category):
         self.assertEqual(killchain['kill_chain_name'], 'misp-category')
         self.assertEqual(killchain['phase_name'], category)
@@ -171,6 +183,16 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute_values = (attribute['value'] for attribute in attributes)
         patterns = (indicator.pattern for indicator in indicators)
         return attribute_values, patterns
+
+    def _run_galaxy_tests(self, event, timestamp):
+        orgc = event['Event']['Orgc']
+        self.parser.parse_misp_event(event)
+        identity, report, stix_object = self.parser.stix_objects
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self.assertEqual(stix_object.id, object_ref)
+        return stix_object
 
     def _run_observable_tests(self, event):
         self._remove_attribute_ids_flag(event)
@@ -958,6 +980,58 @@ class TestSTIX20Export(TestSTIX2Export):
             self.assertEqual(observable_object['0'].type, 'x509-certificate')
             self.assertEqual(observable_object['0'].hashes[hash_type], attribute_value)
 
+    ################################################################################
+    #                            GALAXIES EXPORT TESTS.                            #
+    ################################################################################
+
+    def test_event_with_attack_pattern_galaxy(self):
+        event = get_event_with_attack_pattern_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        attack_pattern = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(attack_pattern.type, 'attack-pattern')
+        self._check_galaxy_features(attack_pattern, galaxy, timestamp, True, False)
+
+    def test_event_with_course_of_action_galaxy(self):
+        event = get_event_with_course_of_action_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        course_of_action = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(course_of_action.type, 'course-of-action')
+        self._check_galaxy_features(course_of_action, galaxy, timestamp, False, False)
+
+    def test_event_with_malware_galaxy(self):
+        event = get_event_with_malware_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        malware = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(malware.type, 'malware')
+        self._check_galaxy_features(malware, galaxy, timestamp, True, False)
+
+    def test_event_with_threat_actor_galaxy(self):
+        event = get_event_with_threat_actor_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        threat_actor = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(threat_actor.type, 'threat-actor')
+        self._check_galaxy_features(threat_actor, galaxy, timestamp, False, True)
+
+    def test_event_with_tool_galaxy(self):
+        event = get_event_with_tool_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        tool = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(tool.type, 'tool')
+        self._check_galaxy_features(tool, galaxy, timestamp, True, False)
+
+    def test_event_with_vulnerability_galaxy(self):
+        event = get_event_with_vulnerability_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        vulnerability = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(vulnerability.type, 'vulnerability')
+        self._check_galaxy_features(vulnerability, galaxy, timestamp, False, False)
+
 
 class TestSTIX21Export(TestSTIX2Export):
     def setUp(self):
@@ -991,6 +1065,22 @@ class TestSTIX21Export(TestSTIX2Export):
     def _check_spec_versions(self, stix_objects):
         for stix_object in stix_objects:
             self.assertEqual(stix_object.spec_version, '2.1')
+
+    def _run_galaxy_tests(self, event, timestamp):
+        orgc = event['Event']['Orgc']
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, stix_object = stix_objects
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        object_ref = self._check_grouping_features(*args)[0]
+        self.assertEqual(stix_object.id, object_ref)
+        return stix_object
 
     def _run_indicator_tests(self, event):
         self._add_attribute_ids_flag(event)
@@ -2010,3 +2100,55 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(md5_object.hashes['MD5'], md5)
         self.assertEqual(sha1_object.hashes['SHA-1'], sha1)
         self.assertEqual(sha256_object.hashes['SHA-256'], sha256)
+
+    ################################################################################
+    #                            GALAXIES EXPORT TESTS.                            #
+    ################################################################################
+
+    def test_event_with_attack_pattern_galaxy(self):
+        event = get_event_with_attack_pattern_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        attack_pattern = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(attack_pattern.type, 'attack-pattern')
+        self._check_galaxy_features(attack_pattern, galaxy, timestamp, True, False)
+
+    def test_event_with_course_of_action_galaxy(self):
+        event = get_event_with_course_of_action_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        course_of_action = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(course_of_action.type, 'course-of-action')
+        self._check_galaxy_features(course_of_action, galaxy, timestamp, False, False)
+
+    def test_event_with_malware_galaxy(self):
+        event = get_event_with_malware_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        malware = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(malware.type, 'malware')
+        self._check_galaxy_features(malware, galaxy, timestamp, True, True)
+
+    def test_event_with_threat_actor_galaxy(self):
+        event = get_event_with_threat_actor_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        threat_actor = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(threat_actor.type, 'threat-actor')
+        self._check_galaxy_features(threat_actor, galaxy, timestamp, False, True)
+
+    def test_event_with_tool_galaxy(self):
+        event = get_event_with_tool_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        tool = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(tool.type, 'tool')
+        self._check_galaxy_features(tool, galaxy, timestamp, True, True)
+
+    def test_event_with_vulnerability_galaxy(self):
+        event = get_event_with_vulnerability_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        vulnerability = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(vulnerability.type, 'vulnerability')
+        self._check_galaxy_features(vulnerability, galaxy, timestamp, False, False)

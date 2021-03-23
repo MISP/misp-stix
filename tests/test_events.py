@@ -98,6 +98,9 @@ _TEST_THREAT_ACTOR_GALAXY = {
             "meta": {
                 "cfr-type-of-incident": [
                     "Denial of service"
+                ],
+                "synonyms": [
+                    "Ghambar"
                 ]
             }
         }
@@ -114,7 +117,12 @@ _TEST_TOOL_GALAXY = {
             "uuid": "bba595da-b73a-4354-aa6c-224d4de7cb4e",
             "type": "mitre-tool",
             "value": "cmd - S0106",
-            "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities."
+            "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
+            "meta": {
+                "synonyms": [
+                    "cmd.exe"
+                ]
+            }
         }
     ]
 }
