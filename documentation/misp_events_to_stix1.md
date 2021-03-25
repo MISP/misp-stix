@@ -443,8 +443,8 @@ Those two last examples were very simple to have an overview of what happens.
 ## The other detailed mappings
 
 For more detailed mappings, click on one of the link below:
-- [Attributes mapping](misp_attributes_to_stix1.md)
-- [Objects mapping](misp_objects_to_stix1.md)
-- [Galaxies mapping](misp_galaxies_to_stix1.md)
+- [Attributes export to STIX1 mapping](misp_attributes_to_stix1.md)
+- [Objects export to STIX1 mapping](misp_objects_to_stix1.md)
+- [Galaxies export to STIX1 mapping](misp_galaxies_to_stix1.md)
 
 ([Go back to the main documentation](README.md))
