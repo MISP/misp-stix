@@ -83,7 +83,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         }
         markings = self._handle_event_tags_and_galaxies('stix2_galaxy_mapping')
         if markings:
-            report_args['object_marking_refs'] = self._handle_markings(markings)
+            self._handle_markings(report_args, markings)
         if self._relationships:
             for source_id, relationships in self._relationships.items():
                 for relationship in relationships:
@@ -116,16 +116,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             return self._create_report(report_args)
         return self._handle_unpublished_report(report_args)
 
-    def _handle_markings(self, markings: tuple) -> list:
+    def _handle_markings(self, object_args: dict, markings: tuple):
         marking_ids = []
         for marking in markings:
             if marking in self._markings:
                 marking_ids.append(self._markings[marking]['id'])
                 continue
-            marking_id = self._create_marking(marking)
-            if marking_id is not None:
-                marking_ids.append(marking_id)
-        return marking_ids
+            if marking.startswith('tlp:'):
+                marking_id = self._get_marking(marking)
+                if marking_id is not None:
+                    marking_ids.append(marking_id)
+                    continue
+            object_args['labels'].append(marking)
+        if marking_ids:
+            object_args['object_marking_refs'] = marking_ids
 
     ################################################################################
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
@@ -163,7 +167,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             indicator_args['modified']
         )
         if markings:
-            indicator_args['object_marking_refs'] = self._handle_markings(markings)
+            self._handle_markings(indicator_args, marking)
         indicator = self._create_indicator(indicator_args)
         self._append_SDO(indicator)
 
@@ -226,7 +230,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             timestamp
         )
         if markings:
-            campaign_args['object_marking_refs'] = self._handle_markings(markings)
+            self._handle_markings(campagin_args, markings)
         campaign = self._create_campaign(campaign_args)
         self._append_SDO(campaign)
 
@@ -251,7 +255,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             timestamp
         )
         if markings:
-            custom_args['object_marking_refs'] = self._handle_markings(markings)
+            self._handle_markings(custom_args, markings)
         custom_object = self._create_custom_object(custom_args)
         self._append_SDO(custom_object)
 
@@ -489,7 +493,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             timestamp
         )
         if markings:
-            vulnerability_args['object_marking_refs'] = self._handle_markings(markings)
+            self._handle_markings(vulnerability_args, markings)
         vulnerability = self._create_vulnerability(vulnerability_args)
         self._append_SDO(vulnerability)
 
@@ -738,19 +742,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_labels(attribute: dict) -> list:
         return [f'misp:{feature}="{attribute[feature]}"' for feature in _label_fields if attribute.get(feature)]
 
-    @staticmethod
-    def _create_marking_definition_args(marking: str) -> dict:
-        definition_type, definition = marking.split(':')
-        marking_definition = {
-            'type': 'marking-definition',
-            'id': f'marking-definition--{uuid4()}',
-            'definition_type': definition_type,
-            'definition': {
-                definition_type: definition
-            }
-        }
-        return marking_definition
-
     def _create_observable_args(self, attribute: dict) -> dict:
         observable_id = f"observed-data--{attribute['uuid']}"
         observable_args = {
@@ -768,7 +759,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             observable_args['modified']
         )
         if markings:
-            observable_args['object_marking_refs'] = self._handle_markings(markings)
+            self._handle_markings(observable_args, markings)
         return observable_args
 
     def _set_identity(self) -> int:

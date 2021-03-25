@@ -8,7 +8,6 @@ from datetime import datetime
 from stix2.exceptions import TLPMarkingDefinitionError
 from stix2.properties import DictionaryProperty, ListProperty, StringProperty, TimestampProperty
 from stix2.v20.bundle import Bundle
-from stix2.v20.common import MarkingDefinition
 from stix2.v20.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
                                    EmailMessage, EmailMIMEComponent, File, IPv4Address,
                                    IPv6Address, MACAddress, Mutex, NetworkTraffic,
@@ -394,18 +393,6 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         malware_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
         return Malware(**malware_args)
 
-    def _create_marking(self, marking: str) -> Union[str, None]:
-        if marking in tlp_markings_v20:
-            marking_definition = deepcopy(tlp_markings_v20[marking])
-            self._markings[marking] = marking_definition
-            return marking_definition.id
-        marking_args = self._create_marking_definition_args(marking)
-        try:
-            self._markings[marking] = MarkingDefinition(**marking_args)
-        except (TLPMarkingDefinitionError, ValueError):
-            return
-        return marking_args['id']
-
     def _create_observed_data(self, attribute: dict, observable: dict):
         observable_args = self._create_observable_args(attribute)
         observable_args['objects'] = observable
@@ -441,3 +428,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if ':' in address:
             return IPv6Address
         return IPv4Address
+
+    def _get_marking(self, marking: str) -> Union[str, None]:
+        try:
+            marking_definition = deepcopy(tlp_markings_v20[marking])
+            self._markings[marking] = marking_definition
+            return marking_definition.id
+        except KeyError:
+            self._warning.append(f"Unknwon TLP tag: {marking}")
+        return

@@ -10,6 +10,7 @@ from stix2.v21.common import (TLP_WHITE as TLP_WHITE_v21, TLP_GREEN as TLP_GREEN
                               TLP_AMBER as TLP_AMBER_v21, TLP_RED as TLP_RED_v21)
 from stix2.v21.sdo import CustomObject as CustomObject_v21
 
+
 @CustomObject_v20(
     'x-misp-attribute',
     [
@@ -27,6 +28,7 @@ from stix2.v21.sdo import CustomObject as CustomObject_v21
 )
 class CustomAttribute_v20():
     pass
+
 
 @CustomObject_v21(
     'x-misp-attribute',
@@ -46,6 +48,7 @@ class CustomAttribute_v20():
 class CustomAttribute_v21():
     pass
 
+
 @CustomObject_v20(
     'x-misp-event-note',
     [
@@ -61,7 +64,7 @@ class CustomNote():
     pass
 
 
-## ATTRIBUTES MAPPING
+# ATTRIBUTES MAPPING
 _hash_attribute_types = (
     "md5",
     "sha1",
@@ -160,7 +163,7 @@ attribute_types_mapping.update(
 )
 
 
-## GALAXIES MAPPING
+# GALAXIES MAPPING
 galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
 galaxy_types_mapping.update(
     dict.fromkeys(
