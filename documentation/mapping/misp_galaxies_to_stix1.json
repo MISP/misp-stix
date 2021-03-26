@@ -33,13 +33,13 @@
                     "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
                     "meta": {
                         "aliases": [
-                            "CVE-2015\u20130235"
+                            "CVE-2015-0235"
                         ]
                     }
                 }
             ]
         },
-        "STIX": "    <ttp:TTP id=\"MISP:TTP-a1640081-aa8d-4070-84b2-d23e2ae82799\" timestamp=\"2020-11-21T12:46:33.159077+00:00\" xsi:type='ttp:TTPType'>\n        <ttp:Title>Branded Vulnerability (MISP Galaxy)</ttp:Title>\n        <ttp:Exploit_Targets>\n            <ttp:Exploit_Target>\n                <stixCommon:Exploit_Target id=\"MISP:ExploitTarget-a1640081-aa8d-4070-84b2-d23e2ae82799\" timestamp=\"2020-11-21T12:46:33.159137+00:00\" xsi:type='et:ExploitTargetType'>\n                    <et:Vulnerability>\n                        <et:Title>Ghost</et:Title>\n                        <et:Description>The GHOST vulnerability is a serious weakness in the Linux glibc library.</et:Description>\n                        <et:CVE_ID>CVE-2015\u20130235</et:CVE_ID>\n                    </et:Vulnerability>\n                </stixCommon:Exploit_Target>\n            </ttp:Exploit_Target>\n        </ttp:Exploit_Targets>\n    </ttp:TTP>"
+        "STIX": "    <ttp:TTP id=\"MISP:TTP-a1640081-aa8d-4070-84b2-d23e2ae82799\" timestamp=\"2020-11-21T12:46:33.159077+00:00\" xsi:type='ttp:TTPType'>\n        <ttp:Title>Branded Vulnerability (MISP Galaxy)</ttp:Title>\n        <ttp:Exploit_Targets>\n            <ttp:Exploit_Target>\n                <stixCommon:Exploit_Target id=\"MISP:ExploitTarget-a1640081-aa8d-4070-84b2-d23e2ae82799\" timestamp=\"2020-11-21T12:46:33.159137+00:00\" xsi:type='et:ExploitTargetType'>\n                    <et:Vulnerability>\n                        <et:Title>Ghost</et:Title>\n                        <et:Description>The GHOST vulnerability is a serious weakness in the Linux glibc library.</et:Description>\n                        <et:CVE_ID>CVE-2015-0235</et:CVE_ID>\n                    </et:Vulnerability>\n                </stixCommon:Exploit_Target>\n            </ttp:Exploit_Target>\n        </ttp:Exploit_Targets>\n    </ttp:TTP>"
     },
     "Course of Action": {
         "MISP": {

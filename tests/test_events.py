@@ -140,7 +140,7 @@ _TEST_VULNERABILITY_GALAXY = {
             "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
             "meta": {
                 "aliases": [
-                    "CVE-2015–0235"
+                    "CVE-2015-0235"
                 ]
             }
         }
