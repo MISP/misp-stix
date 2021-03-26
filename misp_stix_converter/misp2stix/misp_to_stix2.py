@@ -523,6 +523,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if object_ref not in self._object_refs:
                 self._object_refs.append(object_ref)
 
+    @staticmethod
+    def _handle_external_ids(values: list, prefix: str) -> list:
+        external_ids = []
+        for value in values:
+            if value.startswith(prefix):
+                external_id = {
+                    'source_name': prefix.lower(),
+                    'external_id': value
+                }
+                external_ids.append(external_id)
+        return external_ids
+
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
             if object_ref not in self._object_refs:
@@ -551,6 +563,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 attack_pattern_id,
                 timestamp
             )
+            if cluster.get('meta', {}).get('external_id'):
+                external_ids = self._handle_external_ids(
+                    cluster['meta']['external_id'],
+                    'CAPEC'
+                )
+                if external_ids:
+                    attack_pattern_args['external_references'] = external_ids
             attack_pattern = self._create_attack_pattern(attack_pattern_args, cluster)
             self._objects.append(attack_pattern)
             object_refs.append(attack_pattern_id)
@@ -698,6 +717,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 vulnerability_id,
                 timestamp
             )
+            if cluster.get('meta', {}).get('aliases'):
+                external_ids = self._handle_external_ids(
+                    cluster['meta']['aliases'],
+                    'CVE'
+                )
+                if external_ids:
+                    vulnerability_args['external_references'] = external_ids
             vulnerability = self._create_vulnerability(vulnerability_args)
             self._objects.append(vulnerability)
             object_refs.append(vulnerability_id)
