@@ -15,9 +15,11 @@ Thus, it gives a detailed description of the inputs and outputs that are to expe
     * [MISP to STIX 2.0](#MISP-to-STIX-20)
         * [Events to STIX 2.0](#Events-to-STIX-20-mapping)
         * [Attributes to STIX 2.0](#Attributes-to-STIX-20-mapping)
+        * [Galaxies to STIX 2.0](#Galaxies-to-STIX-20-mapping)
     * [MISP to STIX 2.1](#MISP-to-STIX-21)
         * [Events to STIX 2.1](#Events-to-STIX-21-mapping)
         * [Attributes to STIX 2.1](#Attributes-to-STIX-21-mapping)
+        * [Galaxies to STIX 2.1](#Galaxies-to-STIX-21-mapping)
 * [Future improvements](#Future-Improvements)
 
 ## Introduction
@@ -294,6 +296,23 @@ When another object type is mentioned in bold, it means the corresponding attrib
 
 The detailed mapping for attributes, with explanations and examples, is available [here](misp_attributes_to_stix20.md)
 
+#### Galaxies to STIX 2.0 mapping
+
+##### Summary
+
+| MISP Galaxy Clusters name | STIX Object type |
+| -- | -- |
+| mitre-attack-pattern, mitre-enterprise-attack-attack-pattern, mitre-mobile-attack-attack-pattern, mitre-pre-attack-attack-pattern | **AttackPattern** |
+| mitre-course-of-action, mitre-enterprise-attack-course-of-action, mitre-mobile-attack-course-of-action | **CourseOfAction** |
+| android, backdoor, banker, malpedia, mitre-enterprise-attack-malware, mitre-malware, mitre-mobile-attack-malware, ransomware, stealer | **Malware** |
+| microsoft-activity-group, threat-actor | **ThreatActor** |
+| botnet, exploit-kit, mitre-enterprise-attack-tool, mitre-mobile-attack-tool, mitre-tool, rat, tds, tool | **Tool** |
+| branded-vulneratbility | **Vulnerability** |
+
+##### Detailed mapping
+
+The detailed mapping for galaxies, with explanations and examples, is available [here](misp_galaxies_to_stix20.md)
+
 
 ### MISP to STIX 2.1
 
@@ -391,3 +410,20 @@ When another object type is mentioned in bold, it means the corresponding attrib
 ##### Detailed mapping
 
 The detailed mapping for attributes, with explanations and examples, is available [here](misp_attributes_to_stix21.md)
+
+#### Galaxies to STIX 2.1 mapping
+
+##### Summary
+
+| MISP Galaxy Clusters name | STIX Object type |
+| -- | -- |
+| mitre-attack-pattern, mitre-enterprise-attack-attack-pattern, mitre-mobile-attack-attack-pattern, mitre-pre-attack-attack-pattern | **AttackPattern** |
+| mitre-course-of-action, mitre-enterprise-attack-course-of-action, mitre-mobile-attack-course-of-action | **CourseOfAction** |
+| android, backdoor, banker, malpedia, mitre-enterprise-attack-malware, mitre-malware, mitre-mobile-attack-malware, ransomware, stealer | **Malware** |
+| microsoft-activity-group, threat-actor | **ThreatActor** |
+| botnet, exploit-kit, mitre-enterprise-attack-tool, mitre-mobile-attack-tool, mitre-tool, rat, tds, tool | **Tool** |
+| branded-vulneratbility | **Vulnerability** |
+
+##### Detailed mapping
+
+The detailed mapping for galaxies, with explanations and examples, is available [here](misp_galaxies_to_stix21.md)
