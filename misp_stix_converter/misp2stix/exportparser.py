@@ -4,9 +4,10 @@
 import json
 from .stix1_mapping import galaxy_types_mapping as stix1_galaxy_mapping
 from .stix2_mapping import galaxy_types_mapping as stix2_galaxy_mapping
+from collections import defaultdict
 from datetime import datetime
 from stix.indicator import Indicator
-from typing import Union
+from typing import Optional
 
 
 class ExportParser():
@@ -30,6 +31,39 @@ class MISPtoSTIXParser():
     ################################################################################
     #                           COMMON PARSING FUNCTIONS                           #
     ################################################################################
+
+    @staticmethod
+    def _extract_multiple_object_attributes(attributes: list, force_single: Optional[tuple] = None) -> dict:
+        attributes_dict = defaultdict(list)
+        if force_single is not None:
+            for attribute in attributes:
+                relation = attribute['object_relation']
+                if relation in force_single:
+                    attributes_dict[relation] = attribute['value']
+                else:
+                    attributes_dict[relation].append(attribute['value'])
+            return attributes_dict
+        for attribute in attributes:
+            attributes_dict[attribute['object_relation']].append(attribute['value'])
+        return attributes_dict
+
+    def _extract_object_attribute_tags_and_galaxies(self, misp_object: dict, mapping: str) -> tuple:
+        tags = set()
+        galaxies = {}
+        for attribute in misp_object['Attribute']:
+            if attribute.get('Galaxy'):
+                for galaxy in attribute['Galaxy']:
+                    galaxy_type = galaxy['type']
+                    if galaxy_type not in globals()[mapping]:
+                        self._warnings.add(f"{galaxy_type} galaxy in {misp_object['name']} object not mapped.")
+                        continue
+                    if galaxy_type in galaxies:
+                        self._merge_galaxy_clusters(galaxies[galaxy_type], galaxy)
+                    else:
+                        galaxies[galaxy_type] = galaxy
+            if attribute.get('Tag'):
+                tags.update(tag['name'] for tag in attribute['Tag'])
+        return tags, galaxies
 
     def _handle_event_tags_and_galaxies(self, mapping: str) -> tuple:
         if self._misp_event.get('Galaxy'):
