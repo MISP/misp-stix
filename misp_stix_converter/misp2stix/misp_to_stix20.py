@@ -345,6 +345,17 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, observable_object)
 
     ################################################################################
+    #                        MISP OBJECTS PARSING FUNCTIONS                        #
+    ################################################################################
+
+    def _parse_asn_object_observable(self, misp_object: dict):
+        as_args = self._create_AS_args(misp_object['Attribute'])
+        observable_object = {
+            '0': AutonomousSystem(**as_args)
+        }
+        self._handle_object_observable(misp_object, observable_object)
+
+    ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 

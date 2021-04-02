@@ -225,8 +225,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_autonomous_system_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            value = self._parse_AS_value(attribute['value'])
-            pattern = f"[autonomous-system:number = '{value}']"
+            pattern = f"[{self._create_AS_pattern(attribute['value'])}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_autonomous_system_attribute_observable(attribute)
@@ -601,6 +600,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             return tuple(tag for tag in tags if tag not in tag_names)
         return tuple(tags)
 
+    def _parse_asn_object(self, misp_object: dict):
+        to_ids = self._fetch_ids_flag(misp_object['Attribute'])
+        if to_ids:
+            attributes = self._extract_multiple_object_attributes(
+                misp_object['Attribute'],
+                force_single=('asn', 'description')
+            )
+            pattern = [self._create_AS_pattern(attributes.pop('asn'))]
+            if 'description' in attributes:
+                pattern.append(f"autonomous-system:name = '{attributes.pop('description')}'")
+            if attributes:
+                for key, values in attributes.items():
+                    key = key.replace('-', '_')
+                    for value in values:
+                        pattern.append(f"autonomous-system:x_misp_{key} = '{value}'")
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_asn_object_observable(misp_object)
+
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
@@ -876,8 +894,29 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return 0
 
     ################################################################################
+    #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #
+    ################################################################################
+
+    def _create_AS_args(self, attributes: list) -> dict:
+        attributes = self._extract_multiple_object_attributes(
+            attributes,
+            force_single=('asn', 'description')
+        )
+        as_args = {'number': self._parse_AS_value(attributes.pop('asn'))}
+        if 'description' in attributes:
+            as_args['name'] = attributes.pop('description')
+        if attributes:
+            as_args['allow_custom'] = True
+            for key, values in attributes.items():
+                as_args[f"x_misp_{key.replace('-', '_')}"] = values[0] if len(values) == 1 else values
+        return as_args
+
+    ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #
     ################################################################################
+
+    def _create_AS_pattern(self, value: str) -> str:
+        return f"autonomous-system:number = '{self._parse_AS_value(value)}'"
 
     @staticmethod
     def _create_content_ref_pattern(value: str) -> str:

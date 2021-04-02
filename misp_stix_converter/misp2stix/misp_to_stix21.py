@@ -376,6 +376,15 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [x509_object])
 
     ################################################################################
+    #                        MISP OBJECTS PARSING FUNCTIONS                        #
+    ################################################################################
+
+    def _parse_asn_object_observable(self, misp_object: dict):
+        as_args = self._create_AS_args(misp_object['Attribute'])
+        AS_object = AutonomousSystem(**as_args)
+        self._handle_object_observable(misp_object, [AS_object])
+
+    ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 
@@ -386,7 +395,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return AttackPattern(**attack_pattern_args)
 
     def _create_bundle(self) -> Bundle:
-        return Bundle(self._objects)
+        return Bundle(self._objects, allow_custom=True)
 
     @staticmethod
     def _create_campaign(campaign_args: dict) -> Campaign:

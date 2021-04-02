@@ -163,6 +163,28 @@ attribute_types_mapping.update(
 )
 
 
+# OBJECTS MAPPING
+objects_mapping = {
+    'asn': '_parse_asn_object',
+    'attack-pattern': '_parse_attack_pattern',
+    'course-of-action': '_parse_course_of_action_object',
+    'credential': '_parse_credential_object',
+    'domain-ip': '_parse_domain_ip_object',
+    'email': '_parse_email_object',
+    'file': '_parse_file_object',
+    'ip-port': '_parse_ip_port_object',
+    'network-connection': '_parse_network_connection_object',
+    'network-socket': '_parse_network_socket_object',
+    'process': '_parse_process_object',
+    'registry-key': '_parse_registry_key_object',
+    'url': '_parse_url_object',
+    'user-account': '_parse_user_account_object',
+    'vulnerability': '_parse_vulnerability_object',
+    'whois': '_parse_whois_object',
+    'x509': '_parse_x509_object'
+}
+
+
 # GALAXIES MAPPING
 galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
 galaxy_types_mapping.update(
