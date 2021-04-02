@@ -532,6 +532,74 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _resolve_objects(self):
         for misp_object in self._misp_event['Object']:
             object_name = misp_object['name']
+            if object_name in stix2_mapping.objects_mapping:
+                getattr(self, stix2_mapping.objects_mapping[object_name])(misp_object)
+            else:
+                self._parse_custom_object(misp_object)
+                self._warnings.add(f'MISP Object name {object_name} not mapped.')
+
+    def _handle_object_indicator(self, misp_object: dict, pattern: list):
+        indicator_id = f"indicator--{misp_object['uuid']}"
+        indicator_args = {
+            'id': indicator_id,
+            'type': 'indicator',
+            'labels': self._create_object_labels(misp_object, True),
+            'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
+            'created_by_ref': self._identity_id,
+            'pattern': f'[{" AND ".join(pattern)}]',
+            'allow_custom': True,
+            'interoperability': True
+        }
+        indicator_args.update(self._handle_indicator_time_fields(misp_object))
+        if misp_object.get('comment'):
+            indicator_args['description'] = misp_object['comment']
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            indicator_id,
+            indicator_args['modified']
+        )
+        if markings:
+            self._handle_markings(indicator_args, markings)
+        indicator = self._create_indicator(indicator_args)
+        self._append_SDO(indicator)
+
+    def _handle_object_observable(self, misp_object: dict, observable: Union[dict, list]):
+        observable_id = f"observed-data--{misp_object['uuid']}"
+        observable_args = {
+            'id': observable_id,
+            'type': 'observed-data',
+            'labels': self._create_object_labels(misp_object, False),
+            'number_observed': 1,
+            'created_by_ref': self._identity_id,
+            'allow_custom': True,
+            'interoperability': True
+        }
+        observable_args.update(self._handle_observable_time_fields(misp_object))
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            observable_id,
+            observable_args['modified']
+        )
+        if markings:
+            self._handle_markings(observable_args, markings)
+        self._create_observed_data(observable_args, observable)
+
+    def _handle_object_tags_and_galaxies(self, misp_object: dict, object_id: str, timestamp: datetime) -> tuple:
+        tags, galaxies = self._extract_object_attribute_tags_and_galaxies(
+            misp_object,
+            'stix2_galaxy_mapping'
+        )
+        if galaxies:
+            tag_names = set()
+            for galaxy_type, galaxy in galaxies.items():
+                if galaxy_type in stix2_mapping.galaxy_types_mapping:
+                    to_call = stix2_mapping.galaxy_types_mapping[galaxy_type]
+                    getattr(self, to_call.format('attribute'))(galaxy, object_id, timestamp)
+                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
+                else:
+                    self._warnings.add(f"{galaxy_type} galaxy in {misp_object['name']} object not mapped.")
+            return tuple(tag for tag in tags if tag not in tag_names)
+        return tuple(tags)
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
@@ -788,6 +856,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_labels(attribute: dict) -> list:
         return [f'misp:{feature}="{attribute[feature]}"' for feature in _label_fields if attribute.get(feature)]
 
+    @staticmethod
+    def _create_object_labels(misp_object: dict, to_ids: bool) -> list:
+        return [
+            f'misp:category="{misp_object["meta-category"]}"',
+            f'misp:name="{misp_object["name"]}"',
+            f'misp:to_ids="{to_ids}"'
+        ]
 
     def _set_identity(self) -> int:
         orgc = self._misp_event['Orgc']
@@ -862,6 +937,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if '/' in hash_type:
             return f"SHA{hash_type.split('/')[1]}"
         return hash_type.replace('-', '').upper()
+
+    @staticmethod
+    def _fetch_ids_flag(attributes: list) -> bool:
+        for attribute in attributes:
+            print(attribute)
+            if attribute['to_ids']:
+                return True
+        return False
 
     @staticmethod
     def _get_vulnerability_references(vulnerability: str) -> dict:
