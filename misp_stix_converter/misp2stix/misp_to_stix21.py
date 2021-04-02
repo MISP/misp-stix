@@ -73,21 +73,21 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 payload_bin=attribute['data']
             )
         ]
-        self._create_observed_data(attribute, objects)
+        self._handle_attribute_observable(attribute, objects)
 
     def _parse_autonomous_system_attribute_observable(self, attribute: dict):
         AS_object = AutonomousSystem(
             id=f"autonomous-system--{attribute['uuid']}",
             number=self._parse_AS_value(attribute['value'])
         )
-        self._create_observed_data(attribute, [AS_object])
+        self._handle_attribute_observable(attribute, [AS_object])
 
     def _parse_domain_attribute_observable(self, attribute: dict):
         domain_object = DomainName(
             id=f"domain-name--{attribute['uuid']}",
             value=attribute['value']
         )
-        self._create_observed_data(attribute, [domain_object])
+        self._handle_attribute_observable(attribute, [domain_object])
 
     def _parse_domain_ip_attribute_observable(self, attribute: dict):
         domain, ip = attribute['value'].split('|')
@@ -104,7 +104,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 value=ip
             )
         ]
-        self._create_observed_data(attribute, objects)
+        self._handle_attribute_observable(attribute, objects)
 
     def _parse_email_attachment_attribute_observable(self, attribute: dict):
         file_id = f"file--{attribute['uuid']}"
@@ -124,14 +124,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 name=attribute['value']
             )
         ]
-        self._create_observed_data(attribute, objects)
+        self._handle_attribute_observable(attribute, objects)
 
     def _parse_email_attribute_observable(self, attribute: dict):
         address_object = EmailAddress(
             id=f"email-addr--{attribute['uuid']}",
             value=attribute['value']
         )
-        self._create_observed_data(attribute, [address_object])
+        self._handle_attribute_observable(attribute, [address_object])
 
     def _parse_email_body_attribute_observable(self, attribute: dict):
         message_object = EmailMessage(
@@ -139,7 +139,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             is_multipart=False,
             body=attribute['value']
         )
-        self._create_observed_data(attribute, [message_object])
+        self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_email_destination_attribute_observable(self, attribute: dict):
         address_id = f"email-addr--{attribute['uuid']}"
@@ -154,7 +154,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 value=attribute['value']
             )
         ]
-        self._create_observed_data(attribute, objects)
+        self._handle_attribute_observable(attribute, objects)
 
     def _parse_email_header_attribute_observable(self, attribute: dict):
         message_object = EmailMessage(
@@ -162,7 +162,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             is_multipart=False,
             received_lines=[attribute['value']]
         )
-        self._create_observed_data(attribute, [message_object])
+        self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_email_message_id_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
@@ -174,7 +174,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 is_multipart=False,
                 message_id=attribute['value']
             )
-            self._create_observed_data(attribute, [message_object])
+            self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_email_reply_to_attribute_observable(self, attribute: dict):
         message_object = EmailMessage(
@@ -186,7 +186,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 ]
             }
         )
-        self._create_observed_data(attribute, [message_object])
+        self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_email_source_attribute_observable(self, attribute: dict):
         address_id = f"email-addr--{attribute['uuid']}"
@@ -201,7 +201,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 value=attribute['value']
             )
         ]
-        self._create_observed_data(attribute, objects)
+        self._handle_attribute_observable(attribute, objects)
 
     def _parse_email_subject_attribute_observable(self, attribute: dict):
         message_object = EmailMessage(
@@ -209,7 +209,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             is_multipart=False,
             subject=attribute['value']
         )
-        self._create_observed_data(attribute, [message_object])
+        self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_email_x_mailer_attribute_observable(self, attribute: dict):
         message_object = EmailMessage(
@@ -219,14 +219,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 "X-Mailer": attribute['value']
             }
         )
-        self._create_observed_data(attribute, [message_object])
+        self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_filename_attribute_observable(self, attribute: dict):
         file_object = File(
             id=f"file--{attribute['uuid']}",
             name=attribute['value']
         )
-        self._create_observed_data(attribute, [file_object])
+        self._handle_attribute_observable(attribute, [file_object])
 
     def _parse_hash_attribute_observable(self, attribute: dict):
         file_object = File(
@@ -235,7 +235,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 self._define_hash_type(attribute['type']): attribute['value']
             }
         )
-        self._create_observed_data(attribute, [file_object])
+        self._handle_attribute_observable(attribute, [file_object])
 
     def _parse_hash_composite_attribute_observable(self, attribute: dict, hash_type: Optional[str] = None):
         if hash_type is None:
@@ -248,7 +248,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 self._define_hash_type(hash_type): hash_value
             }
         )
-        self._create_observed_data(attribute, [file_object])
+        self._handle_attribute_observable(attribute, [file_object])
 
     def _parse_hostname_port_attribute_observable(self, attribute: dict):
         hostname, port = attribute['value'].split('|')
@@ -265,7 +265,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 protocols=['tcp']
             )
         ]
-        self._create_observed_data(attribute, objects)
+        self._handle_attribute_observable(attribute, objects)
 
     def _parse_ip_attribute_observable(self, attribute: dict):
         address_type = self._get_address_type(attribute['value'])
@@ -283,7 +283,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 value=attribute['value']
             )
         ]
-        self._create_observed_data(attribute, objects)
+        self._handle_attribute_observable(attribute, objects)
 
     def _parse_ip_port_attribute_observable(self, attribute: dict):
         ip_value, port_value = attribute['value'].split('|')
@@ -303,14 +303,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 value=ip_value
             )
         ]
-        self._create_observed_data(attribute, objects)
+        self._handle_attribute_observable(attribute, objects)
 
     def _parse_mac_address_attribute_observable(self, attribute: dict):
         mac_address_object = MACAddress(
             id=f"mac-addr--{attribute['uuid']}",
             value=attribute['value']
         )
-        self._create_observed_data(attribute, [mac_address_object])
+        self._handle_attribute_observable(attribute, [mac_address_object])
 
     def _parse_malware_sample_attribute_observable(self, attribute: dict):
         artifact_id = f"artifact--{attribute['uuid']}"
@@ -329,21 +329,21 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 payload_bin=attribute['data']
             )
         ]
-        self._create_observed_data(attribute, objects)
+        self._handle_attribute_observable(attribute, objects)
 
     def _parse_mutex_attribute_observable(self, attribute: dict):
         mutex_object = Mutex(
             id=f"mutex--{attribute['uuid']}",
             name=attribute['value']
         )
-        self._create_observed_data(attribute, [mutex_object])
+        self._handle_attribute_observable(attribute, [mutex_object])
 
     def _parse_regkey_attribute_observable(self, attribute: dict):
         regkey_object = WindowsRegistryKey(
             id=f"windows-registry-key--{attribute['uuid']}",
             key=attribute['value'].strip()
         )
-        self._create_observed_data(attribute, [regkey_object])
+        self._handle_attribute_observable(attribute, [regkey_object])
 
     def _parse_regkey_value_attribute_observable(self, attribute: dict):
         key, value = attribute['value'].split('|')
@@ -356,14 +356,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 )
             ]
         )
-        self._create_observed_data(attribute, [regkey_object])
+        self._handle_attribute_observable(attribute, [regkey_object])
 
     def _parse_url_attribute_observable(self, attribute: dict):
         url_object = URL(
             id=f"url--{attribute['uuid']}",
             value=attribute['value']
         )
-        self._create_observed_data(attribute, [url_object])
+        self._handle_attribute_observable(attribute, [url_object])
 
     def _parse_x509_fingerprint_attribute_observable(self, attribute: dict):
         hash_type = attribute['type'].split('-')[-1]
@@ -373,7 +373,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 self._define_hash_type(hash_type): attribute['value']
             }
         )
-        self._create_observed_data(attribute, [x509_object])
+        self._handle_attribute_observable(attribute, [x509_object])
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
@@ -444,10 +444,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             malware_args['aliases'] = cluster['meta']['synonyms']
         return Malware(**malware_args)
 
-    def _create_observed_data(self, attribute: dict, observables: list):
-        observable_args = self._create_observable_args(attribute)
-        observable_args['object_refs'] = [observable.id for observable in observables]
-        observed_data = ObservedData(**observable_args)
+    def _create_observed_data(self, args: dict, observables: list):
+        args['object_refs'] = [observable.id for observable in observables]
+        observed_data = ObservedData(**args)
         self._append_SDO(observed_data)
         for observable in observables:
             self._append_SDO(observable)

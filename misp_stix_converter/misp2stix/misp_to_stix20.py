@@ -68,19 +68,19 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 payload_bin=attribute['data']
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_autonomous_system_attribute_observable(self, attribute: dict):
         observable_object = {
             '0': AutonomousSystem(number=self._parse_AS_value(attribute['value']))
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_domain_attribute_observable(self, attribute: dict):
         observable_object = {
             '0': DomainName(value=attribute['value'])
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_domain_ip_attribute_observable(self, attribute: dict):
         domain, ip = attribute['value'].split('|')
@@ -94,7 +94,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             ),
             '1': address_object
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_attachment_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -109,7 +109,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             ),
             '1': File(name=attribute['value'])
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -117,7 +117,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 value=attribute['value']
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_body_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -126,7 +126,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 body=attribute['value']
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_destination_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -139,7 +139,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 value=attribute['value']
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_header_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -148,7 +148,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 received_lines=[attribute['value']]
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_reply_to_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -161,7 +161,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 }
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_source_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -174,7 +174,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 value=attribute['value']
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_subject_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -183,7 +183,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 subject=attribute['value']
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_email_x_mailer_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -194,13 +194,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 }
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_filename_attribute_observable(self, attribute: dict):
         observable_object = {
             '0': File(name=attribute['value'])
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_hash_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -210,7 +210,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 }
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_hash_composite_attribute_observable(self, attribute: dict, hash_type: Optional[str] = None):
         if hash_type is None:
@@ -224,7 +224,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 }
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_hostname_port_attribute_observable(self, attribute: dict):
         hostname, port = attribute['value'].split('|')
@@ -239,7 +239,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 protocols=['tcp']
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_ip_attribute_observable(self, attribute: dict):
         address_type = self._get_address_type(attribute['value'])
@@ -254,7 +254,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             '0': NetworkTraffic(**network_traffic_args),
             '1': address_object
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_ip_port_attribute_observable(self, attribute: dict):
         ip_value, port_value = attribute['value'].split('|')
@@ -271,13 +271,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             '0': NetworkTraffic(**network_traffic_args),
             '1': address_object
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_mac_address_attribute_observable(self, attribute: dict):
         observable_object = {
             '0': MACAddress(value=attribute['value'])
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_malware_sample_attribute_observable(self, attribute: dict):
         filename, hash_value = attribute['value'].split('|')
@@ -294,13 +294,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 payload_bin=attribute['data']
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_mutex_attribute_observable(self, attribute: dict):
         observable_object = {
             '0': Mutex(name=attribute['value'])
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_regkey_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -308,7 +308,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 key=attribute['value'].strip()
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_regkey_value_attribute_observable(self, attribute: dict):
         key, value = attribute['value'].split('|')
@@ -323,7 +323,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 ]
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_url_attribute_observable(self, attribute: dict):
         observable_object = {
@@ -331,7 +331,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 value=attribute['value']
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_x509_fingerprint_attribute_observable(self, attribute: dict):
         hash_type = attribute['type'].split('-')[-1]
@@ -342,7 +342,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 }
             )
         }
-        self._create_observed_data(attribute, observable_object)
+        self._handle_attribute_observable(attribute, observable_object)
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
@@ -393,11 +393,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         malware_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
         return Malware(**malware_args)
 
-    def _create_observed_data(self, attribute: dict, observable: dict):
-        observable_args = self._create_observable_args(attribute)
-        observable_args['objects'] = observable
-        observable = ObservedData(**observable_args)
-        self._append_SDO(observable)
+    def _create_observed_data(self, args: dict, observable: dict):
+        args['objects'] = observable
+        observed_data = ObservedData(**args)
+        self._append_SDO(observed_data)
 
     @staticmethod
     def _create_relationship(relationship_args: dict) -> Relationship:

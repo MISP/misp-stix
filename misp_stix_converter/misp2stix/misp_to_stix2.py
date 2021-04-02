@@ -171,6 +171,26 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         indicator = self._create_indicator(indicator_args)
         self._append_SDO(indicator)
 
+    def _handle_attribute_observable(self, attribute: dict, observable: Union[dict, list]):
+        observable_id = f"observed-data--{attribute['uuid']}"
+        observable_args = {
+            'id': observable_id,
+            'type': 'observed-data',
+            'labels': self._create_labels(attribute),
+            'number_observed': 1,
+            'created_by_ref': self._identity_id,
+            'interoperability': True
+        }
+        observable_args.update(self._handle_observable_time_fields(attribute))
+        markings = self._handle_attribute_tags_and_galaxies(
+            attribute,
+            observable_id,
+            observable_args['modified']
+        )
+        if markings:
+            self._handle_markings(observable_args, markings)
+        self._create_observed_data(observable_args, observable)
+
     def _handle_attribute_tags_and_galaxies(self, attribute: dict, object_id: str, timestamp: datetime) -> tuple:
         if attribute.get('Galaxy'):
             tag_names = []
@@ -186,7 +206,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return tuple(tag['name'] for tag in attribute.get('Tag', []))
 
     @staticmethod
-    def _parse_AS_value(value: str) -> str:
+    def _parse_AS_value(value: str) -> int:
         if value.startswith('AS'):
             return int(value[2:])
         return int(value)
@@ -768,25 +788,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_labels(attribute: dict) -> list:
         return [f'misp:{feature}="{attribute[feature]}"' for feature in _label_fields if attribute.get(feature)]
 
-    def _create_observable_args(self, attribute: dict) -> dict:
-        observable_id = f"observed-data--{attribute['uuid']}"
-        observable_args = {
-            'id': observable_id,
-            'type': 'observed-data',
-            'labels': self._create_labels(attribute),
-            'number_observed': 1,
-            'created_by_ref': self._identity_id,
-            'interoperability': True
-        }
-        observable_args.update(self._handle_observable_time_fields(attribute))
-        markings = self._handle_attribute_tags_and_galaxies(
-            attribute,
-            observable_id,
-            observable_args['modified']
-        )
-        if markings:
-            self._handle_markings(observable_args, markings)
-        return observable_args
 
     def _set_identity(self) -> int:
         orgc = self._misp_event['Orgc']
