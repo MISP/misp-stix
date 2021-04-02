@@ -980,7 +980,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _fetch_ids_flag(attributes: list) -> bool:
         for attribute in attributes:
-            print(attribute)
             if attribute['to_ids']:
                 return True
         return False
