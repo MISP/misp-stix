@@ -167,7 +167,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             indicator_args['modified']
         )
         if markings:
-            self._handle_markings(indicator_args, marking)
+            self._handle_markings(indicator_args, markings)
         indicator = self._create_indicator(indicator_args)
         self._append_SDO(indicator)
 
