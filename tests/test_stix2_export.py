@@ -1042,6 +1042,38 @@ class TestSTIX20Export(TestSTIX2Export):
             self.assertEqual(observable_object['0'].hashes[hash_type], attribute_value)
 
     ################################################################################
+    #                          MISP OBJECTS EXPORT TESTS.                          #
+    ################################################################################
+
+    def test_event_with_asn_indicator_object(self):
+        event = get_event_with_asn_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        asn, description, subnet1, subnet2 = (attribute['value'] for attribute in attributes)
+        asn_pattern, description_pattern, subnet1_pattern, subnet2_pattern = pattern[1:-1].split(' AND ')
+        self.assertEqual(asn_pattern, f"autonomous-system:number = '{int(asn[2:])}'")
+        self.assertEqual(description_pattern, f"autonomous-system:name = '{description}'")
+        self.assertEqual(
+            subnet1_pattern,
+            f"autonomous-system:x_misp_subnet_announced = '{subnet1}'"
+        )
+        self.assertEqual(
+            subnet2_pattern,
+            f"autonomous-system:x_misp_subnet_announced = '{subnet2}'"
+        )
+
+    def test_event_with_asn_observable_object(self):
+        event = get_event_with_asn_object()
+        attributes, observable_objects = self._run_observable_from_object_tests(event)
+        asn, description, subnet1, subnet2 = (attribute['value'] for attribute in attributes)
+        self.assertEqual(observable_objects['0'].type, 'autonomous-system')
+        self.assertEqual(observable_objects['0'].number, int(asn[2:]))
+        self.assertEqual(observable_objects['0'].name, description)
+        self.assertEqual(
+            observable_objects['0'].x_misp_subnet_announced,
+            [subnet1, subnet2]
+        )
+
+    ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
     ################################################################################
 
@@ -2199,6 +2231,42 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(md5_object.hashes['MD5'], md5)
         self.assertEqual(sha1_object.hashes['SHA-1'], sha1)
         self.assertEqual(sha256_object.hashes['SHA-256'], sha256)
+
+    ################################################################################
+    #                          MISP OBJECTS EXPORT TESTS.                          #
+    ################################################################################
+
+    def test_event_with_asn_indicator_object(self):
+        event = get_event_with_asn_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        asn, description, subnet1, subnet2 = (attribute['value'] for attribute in attributes)
+        asn_pattern, description_pattern, subnet1_pattern, subnet2_pattern = pattern[1:-1].split(' AND ')
+        self.assertEqual(asn_pattern, f"autonomous-system:number = '{int(asn[2:])}'")
+        self.assertEqual(description_pattern, f"autonomous-system:name = '{description}'")
+        self.assertEqual(
+            subnet1_pattern,
+            f"autonomous-system:x_misp_subnet_announced = '{subnet1}'"
+        )
+        self.assertEqual(
+            subnet2_pattern,
+            f"autonomous-system:x_misp_subnet_announced = '{subnet2}'"
+        )
+
+    def test_event_with_asn_observable_object(self):
+        event = get_event_with_asn_object()
+        attributes, grouping_refs, object_refs, observable = self._run_observable_from_object_tests(event)
+        asn, description, subnet1, subnet2 = (attribute['value'] for attribute in attributes)
+        object_ref = object_refs[0]
+        autonomous_system = observable[0]
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(autonomous_system.id, object_ref)
+        self.assertEqual(autonomous_system.type, 'autonomous-system')
+        self.assertEqual(autonomous_system.number, int(asn[2:]))
+        self.assertEqual(autonomous_system.name, description)
+        self.assertEqual(
+            autonomous_system.x_misp_subnet_announced,
+            [subnet1, subnet2]
+        )
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
