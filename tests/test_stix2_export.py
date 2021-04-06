@@ -20,15 +20,10 @@ class TestSTIX2Export(unittest.TestCase):
         for attribute in event['Event']['Attribute']:
             attribute['to_ids'] = True
 
-    def _check_identity_features(self, identity, orgc, timestamp):
-        identity_id = f"identity--{orgc['uuid']}"
-        self.assertEqual(identity.type, 'identity')
-        self.assertEqual(identity.id, identity_id)
-        self.assertEqual(identity.name, orgc['name'])
-        self.assertEqual(identity.identity_class, 'organization')
-        self.assertEqual(identity.created, timestamp)
-        self.assertEqual(identity.modified, timestamp)
-        return identity_id
+    @staticmethod
+    def _add_object_ids_flag(event):
+        for misp_object in event['Event']['Object']:
+            misp_object['Attribute'][0]['to_ids'] = True
 
     def _check_attribute_campaign_features(self, campaign, attribute, identity_id, object_ref):
         uuid = f"campaign--{attribute['uuid']}"
@@ -42,17 +37,10 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(campaign.modified, timestamp)
 
     def _check_attribute_indicator_features(self, indicator, attribute, identity_id, object_ref):
-        uuid = f"indicator--{attribute['uuid']}"
-        self.assertEqual(uuid, object_ref)
-        self.assertEqual(indicator.id, uuid)
-        self.assertEqual(indicator.type, 'indicator')
-        self.assertEqual(indicator.created_by_ref, identity_id)
+        self._check_indicator_features(indicator, identity_id, object_ref, attribute['uuid'])
         self._check_killchain(indicator.kill_chain_phases[0], attribute['category'])
         self._check_attribute_labels(attribute, indicator.labels)
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
-        self.assertEqual(indicator.created, timestamp)
-        self.assertEqual(indicator.modified, timestamp)
-        self.assertEqual(indicator.valid_from, timestamp)
+        self._check_indicator_time_features(indicator, attribute['timestamp'])
 
     def _check_attribute_labels(self, attribute, labels):
         if attribute.get('to_ids'):
@@ -62,6 +50,11 @@ class TestSTIX2Export(unittest.TestCase):
             type_label, category_label = labels
         self.assertEqual(type_label, f'misp:type="{attribute["type"]}"')
         self.assertEqual(category_label, f'misp:category="{attribute["category"]}"')
+
+    def _check_attribute_observable_features(self, observed_data, attribute, identity_id, object_ref):
+        self._check_observable_features(observed_data, identity_id, object_ref, attribute['uuid'])
+        self._check_attribute_labels(attribute, observed_data.labels)
+        self._check_observable_time_features(observed_data, attribute['timestamp'])
 
     def _check_attribute_vulnerability_features(self, vulnerability, attribute, identity_id, object_ref):
         uuid = f"vulnerability--{attribute['uuid']}"
@@ -86,21 +79,60 @@ class TestSTIX2Export(unittest.TestCase):
         if synonyms:
             self.assertEqual(stix_object.aliases[0], cluster['meta']['synonyms'][0])
 
+    def _check_identity_features(self, identity, orgc, timestamp):
+        identity_id = f"identity--{orgc['uuid']}"
+        self.assertEqual(identity.type, 'identity')
+        self.assertEqual(identity.id, identity_id)
+        self.assertEqual(identity.name, orgc['name'])
+        self.assertEqual(identity.identity_class, 'organization')
+        self.assertEqual(identity.created, timestamp)
+        self.assertEqual(identity.modified, timestamp)
+        return identity_id
+
+    def _check_indicator_features(self, indicator, identity_id, object_ref, object_uuid):
+        uuid = f"indicator--{object_uuid}"
+        self.assertEqual(uuid, object_ref)
+        self.assertEqual(indicator.id, uuid)
+        self.assertEqual(indicator.type, 'indicator')
+        self.assertEqual(indicator.created_by_ref, identity_id)
+
+    def _check_indicator_time_features(self, indicator, object_time):
+        timestamp = self._datetime_from_timestamp(object_time)
+        self.assertEqual(indicator.created, timestamp)
+        self.assertEqual(indicator.modified, timestamp)
+        self.assertEqual(indicator.valid_from, timestamp)
+
     def _check_killchain(self, killchain, category):
         self.assertEqual(killchain['kill_chain_name'], 'misp-category')
         self.assertEqual(killchain['phase_name'], category)
 
-    def _check_attribute_observable_features(self, observed_data, attribute, identity_id, object_ref):
-        uuid = f"observed-data--{attribute['uuid']}"
+    def _check_object_indicator_features(self, indicator, misp_object, identity_id, object_ref):
+        self._check_indicator_features(indicator, identity_id, object_ref, misp_object['uuid'])
+        self._check_killchain(indicator.kill_chain_phases[0], misp_object['meta-category'])
+        self._check_object_labels(misp_object, indicator.labels, True)
+        self._check_indicator_time_features(indicator, misp_object['timestamp'])
+
+    def _check_object_labels(self, misp_object, labels, to_ids):
+        category_label, name_label, ids_label = labels
+        self.assertEqual(category_label, f'misp:category="{misp_object["meta-category"]}"')
+        self.assertEqual(name_label, f'misp:name="{misp_object["name"]}"')
+        self.assertEqual(ids_label, f'misp:to_ids="{to_ids}"')
+
+    def _check_object_observable_features(self, observed_data, misp_object, identity_id, object_ref):
+        self._check_observable_features(observed_data, identity_id, object_ref, misp_object['uuid'])
+        self._check_object_labels(misp_object, observed_data.labels, False)
+        self._check_observable_time_features(observed_data, misp_object['timestamp'])
+
+    def _check_observable_features(self, observed_data, identity_id, object_ref, object_uuid):
+        uuid = f"observed-data--{object_uuid}"
         self.assertEqual(uuid, object_ref)
         self.assertEqual(observed_data.id, uuid)
         self.assertEqual(observed_data.type, 'observed-data')
         self.assertEqual(observed_data.created_by_ref, identity_id)
         self.assertEqual(observed_data.number_observed, 1)
-        type_label, category_label = observed_data.labels
-        self.assertEqual(type_label, f'misp:type="{attribute["type"]}"')
-        self.assertEqual(category_label, f'misp:category="{attribute["category"]}"')
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+
+    def _check_observable_time_features(self, observed_data, object_time):
+        timestamp = self._datetime_from_timestamp(object_time)
         self.assertEqual(observed_data.created, timestamp)
         self.assertEqual(observed_data.modified, timestamp)
         self.assertEqual(observed_data.first_observed, timestamp)
@@ -139,6 +171,12 @@ class TestSTIX2Export(unittest.TestCase):
         for attribute in event['Event']['Attribute']:
             attribute['to_ids'] = False
 
+    @staticmethod
+    def _remove_object_ids_flags(event):
+        for misp_object in event['Event']['Object']:
+            for attribute in misp_object['Attribute']:
+                attribute['to_ids'] = False
+
 
 class TestSTIX20Export(TestSTIX2Export):
     def setUp(self):
@@ -154,6 +192,20 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(bundle.spec_version, '2.0')
         self.assertEqual(len(bundle.objects), length)
         return bundle
+
+    def _run_indicator_from_object_tests(self, event):
+        self._add_object_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        identity, report, indicator = self.parser.stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (report, event['Event'], identity_id, timestamp)
+        object_ref = self._check_report_features(*args)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_object_indicator_features(indicator, misp_object, identity_id, object_ref)
+        return misp_object['Attribute'], indicator.pattern
 
     def _run_indicator_tests(self, event):
         self._add_attribute_ids_flag(event)
@@ -194,6 +246,25 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(stix_object.id, object_ref)
         return stix_object
 
+    def _run_observable_from_object_tests(self, event):
+        self._remove_object_ids_flags(event)
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        identity, report, observed_data = self.parser.stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (report, event['Event'], identity_id, timestamp)
+        object_ref = self._check_report_features(*args)[0]
+        self.assertEqual(report.published, timestamp)
+        self._check_object_observable_features(
+            observed_data,
+            misp_object,
+            identity_id,
+            object_ref
+        )
+        return misp_object['Attribute'], observed_data['objects']
+
     def _run_observable_tests(self, event):
         self._remove_attribute_ids_flag(event)
         orgc = event['Event']['Orgc']
@@ -202,12 +273,7 @@ class TestSTIX20Export(TestSTIX2Export):
         identity, report, observed_data = self.parser.stix_objects
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        args = (
-            report,
-            event['Event'],
-            identity_id,
-            timestamp
-        )
+        args = (report, event['Event'], identity_id, timestamp)
         object_ref = self._check_report_features(*args)[0]
         self.assertEqual(report.published, timestamp)
         self._check_attribute_observable_features(
@@ -226,12 +292,7 @@ class TestSTIX20Export(TestSTIX2Export):
         identity, report, *observed_datas = self.parser.stix_objects
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        args = (
-            report,
-            event['Event'],
-            identity_id,
-            timestamp
-        )
+        args = (report, event['Event'], identity_id, timestamp)
         object_refs = self._check_report_features(*args)
         self.assertEqual(report.published, timestamp)
         for attribute, observed_data, object_ref in zip(attributes, observed_datas, object_refs):
@@ -1073,14 +1134,29 @@ class TestSTIX21Export(TestSTIX2Export):
         self._check_spec_versions(stix_objects)
         identity, grouping, stix_object = stix_objects
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        args = (
-            grouping,
-            event['Event'],
-            identity_id
-        )
+        args = (grouping, event['Event'], identity_id)
         object_ref = self._check_grouping_features(*args)[0]
         self.assertEqual(stix_object.id, object_ref)
         return stix_object
+
+    def _run_indicator_from_object_tests(self, event):
+        self._add_object_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, indicator = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        args = (grouping, event['Event'], identity_id)
+        object_ref = self._check_grouping_features(*args)[0]
+        self._check_object_indicator_features(indicator, misp_object, identity_id, object_ref)
+        self._check_pattern_features(indicator)
+        return misp_object['Attribute'], indicator.pattern
 
     def _run_indicator_tests(self, event):
         self._add_attribute_ids_flag(event)
@@ -1095,11 +1171,7 @@ class TestSTIX21Export(TestSTIX2Export):
             orgc,
             self._datetime_from_timestamp(event['Event']['timestamp'])
         )
-        args = (
-            grouping,
-            event['Event'],
-            identity_id
-        )
+        args = (grouping, event['Event'], identity_id)
         object_ref = self._check_grouping_features(*args)[0]
         self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
         self._check_pattern_features(indicator)
@@ -1118,11 +1190,7 @@ class TestSTIX21Export(TestSTIX2Export):
             orgc,
             self._datetime_from_timestamp(event['Event']['timestamp'])
         )
-        args = (
-            grouping,
-            event['Event'],
-            identity_id
-        )
+        args = (grouping, event['Event'], identity_id)
         object_refs = self._check_grouping_features(*args)
         for attribute, indicator, object_ref in zip(attributes, indicators, object_refs):
             self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
@@ -1130,6 +1198,32 @@ class TestSTIX21Export(TestSTIX2Export):
         attribute_values = (attribute['value'] for attribute in attributes)
         patterns = (indicator.pattern for indicator in indicators)
         return attribute_values, patterns
+
+    def _run_observable_from_object_tests(self, event):
+        self._remove_object_ids_flags(event)
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, observed_data, *observable = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        observable_id, *ids = self._check_grouping_features(
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        self._check_object_observable_features(
+            observed_data,
+            misp_object,
+            identity_id,
+            observable_id
+        )
+        return misp_object['Attribute'], ids, observed_data['object_refs'], observable
 
     def _run_observable_tests(self, event):
         self._remove_attribute_ids_flag(event)
@@ -1149,7 +1243,12 @@ class TestSTIX21Export(TestSTIX2Export):
             event['Event'],
             identity_id
         )
-        self._check_attribute_observable_features(observed_data, attribute, identity_id, observable_id)
+        self._check_attribute_observable_features(
+            observed_data,
+            attribute,
+            identity_id,
+            observable_id
+        )
         return attribute['value'], ids, observed_data['object_refs'], observable
 
     def _run_observables_tests(self, event, index=2):
