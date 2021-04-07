@@ -166,7 +166,7 @@ attribute_types_mapping.update(
 # OBJECTS MAPPING
 objects_mapping = {
     'asn': '_parse_asn_object',
-    'attack-pattern': '_parse_attack_pattern',
+    'attack-pattern': '_parse_attack_pattern_object',
     'course-of-action': '_parse_course_of_action_object',
     'credential': '_parse_credential_object',
     'domain-ip': '_parse_domain_ip_object',
@@ -182,6 +182,16 @@ objects_mapping = {
     'vulnerability': '_parse_vulnerability_object',
     'whois': '_parse_whois_object',
     'x509': '_parse_x509_object'
+}
+
+attack_pattern_object_mapping = {
+    'name': 'name',
+    'summary': 'description'
+}
+
+attack_pattern_reference_mapping = {
+    'id': ('capec', 'external_id'),
+    'references': ('mitre-attack', 'url')
 }
 
 
