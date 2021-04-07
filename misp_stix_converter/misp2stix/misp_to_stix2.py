@@ -537,7 +537,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         indicator_args = {
             'id': indicator_id,
             'type': 'indicator',
-            'labels': self._create_object_labels(misp_object, True),
+            'labels': self._create_object_labels(misp_object, to_ids=True),
             'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
             'created_by_ref': self._identity_id,
             'pattern': f'[{" AND ".join(pattern)}]',
@@ -561,7 +561,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         observable_args = {
             'id': observable_id,
             'type': 'observed-data',
-            'labels': self._create_object_labels(misp_object, False),
+            'labels': self._create_object_labels(misp_object, to_ids=False),
             'number_observed': 1,
             'created_by_ref': self._identity_id,
             'allow_custom': True,
@@ -594,23 +594,92 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             return tuple(tag for tag in tags if tag not in tag_names)
         return tuple(tags)
 
+    @staticmethod
+    def _handle_observable_multiple_properties(attributes: dict) -> dict:
+        properties = {'allow_custom': True}
+        for key, values in attributes.items():
+            feature = f"x_misp_{key.replace('-', '_')}"
+            properties[feature] = values[0] if len(values) == 1 else values
+        return properties
+
+    @staticmethod
+    def _handle_pattern_multiple_properties(attributes: dict, prefix: str) -> list:
+        pattern = []
+        for key, values in attributes.items():
+            key = key.replace('-', '_')
+            for value in values:
+                pattern.append(f"{prefix}:x_misp_{key} = '{value}'")
+        return pattern
+
     def _parse_asn_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'autonomous-system'
             attributes = self._extract_multiple_object_attributes(
                 misp_object['Attribute'],
                 force_single=('asn', 'description')
             )
             pattern = [self._create_AS_pattern(attributes.pop('asn'))]
             if 'description' in attributes:
-                pattern.append(f"autonomous-system:name = '{attributes.pop('description')}'")
+                pattern.append(f"{prefix}:name = '{attributes.pop('description')}'")
             if attributes:
-                for key, values in attributes.items():
-                    key = key.replace('-', '_')
-                    for value in values:
-                        pattern.append(f"autonomous-system:x_misp_{key} = '{value}'")
+                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_asn_object_observable(misp_object)
+
+    def _parse_attack_pattern_object(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=('name', 'summary')
+        )
+        prefix = 'attack-pattern'
+        attack_pattern_id = f"{prefix}--{misp_object['uuid']}"
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        attack_pattern_args = defaultdict(list)
+        for key, feature in stix2_mapping.attack_pattern_object_mapping.items():
+            if attributes.get(key):
+                attack_pattern_args[feature] = attributes.pop(key)
+        for feature in ('id', 'references'):
+            if attributes.get(feature):
+                for value in attributes.pop(feature):
+                    reference = self._parse_attack_pattern_reference(
+                        feature,
+                        value
+                    )
+                    attack_pattern_args['external_references'].append(reference)
+        if attributes:
+            attack_pattern_args.update(self._handle_observable_multiple_properties(attributes))
+        attack_pattern_args. update(
+            {
+                'id': attack_pattern_id,
+                'type': prefix,
+                'created_by_ref': self._identity_id,
+                'labels': self._create_object_labels(misp_object),
+                'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
+                'created': timestamp,
+                'modified': timestamp,
+                'interoperability': True
+            }
+        )
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            attack_pattern_id,
+            timestamp
+        )
+        if markings:
+            self._handle_markings(attack_pattern_args, markings)
+        self._append_SDO(self._create_attack_pattern_from_object(attack_pattern_args))
+
+    @staticmethod
+    def _parse_attack_pattern_reference(feature: str, value: str) -> dict:
+        source_name, key = stix2_mapping.attack_pattern_reference_mapping[feature]
+        if feature == 'id':
+            if 'CAPEC' not in value:
+                value = f"CAPEC-{value}"
+        else:
+            if 'mitre' not in value:
+                source_name = 'external_url'
+        return {'source_name': source_name, key: value}
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
@@ -872,12 +941,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return [f'misp:{feature}="{attribute[feature]}"' for feature in _label_fields if attribute.get(feature)]
 
     @staticmethod
-    def _create_object_labels(misp_object: dict, to_ids: bool) -> list:
-        return [
+    def _create_object_labels(misp_object: dict, to_ids: Optional[bool] = None) -> list:
+        labels = [
             f'misp:category="{misp_object["meta-category"]}"',
-            f'misp:name="{misp_object["name"]}"',
-            f'misp:to_ids="{to_ids}"'
+            f'misp:name="{misp_object["name"]}"'
         ]
+        if to_ids is not None:
+            labels.append(f'misp:to_ids="{to_ids}"')
+        return labels
 
     def _set_identity(self) -> int:
         orgc = self._misp_event['Orgc']
@@ -903,9 +974,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if 'description' in attributes:
             as_args['name'] = attributes.pop('description')
         if attributes:
-            as_args['allow_custom'] = True
-            for key, values in attributes.items():
-                as_args[f"x_misp_{key.replace('-', '_')}"] = values[0] if len(values) == 1 else values
+            as_args.update(self._handle_observable_multiple_properties(attributes))
         return as_args
 
     ################################################################################

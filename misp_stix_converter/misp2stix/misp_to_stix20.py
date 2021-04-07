@@ -358,8 +358,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 
-    def _create_attack_pattern(self, attack_pattern_args: dict, cluster: dict) -> AttackPattern:
-        attack_pattern_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
+    def _create_attack_pattern_from_galaxy(self, args: dict, cluster: dict) -> AttackPattern:
+        args['kill_chain_phases'] = self._create_killchain(cluster['type'])
+        return AttackPattern(**args)
+
+    @staticmethod
+    def _create_attack_pattern_from_object(attack_pattern_args: dict) -> AttackPattern:
         return AttackPattern(**attack_pattern_args)
 
     def _create_bundle(self) -> Bundle:
