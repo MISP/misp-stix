@@ -67,6 +67,10 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(vulnerability.created, timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
 
+    def _check_external_reference(self, reference, source_name, value):
+        self.assertEqual(reference.source_name, source_name)
+        self.assertEqual(reference.external_id, value)
+
     def _check_galaxy_features(self, stix_object, galaxy, timestamp, killchain, synonyms):
         cluster = galaxy['GalaxyCluster'][0]
         self.assertEqual(stix_object.created, timestamp)
@@ -109,18 +113,21 @@ class TestSTIX2Export(unittest.TestCase):
     def _check_object_indicator_features(self, indicator, misp_object, identity_id, object_ref):
         self._check_indicator_features(indicator, identity_id, object_ref, misp_object['uuid'])
         self._check_killchain(indicator.kill_chain_phases[0], misp_object['meta-category'])
-        self._check_object_labels(misp_object, indicator.labels, True)
+        self._check_object_labels(misp_object, indicator.labels, to_ids=True)
         self._check_indicator_time_features(indicator, misp_object['timestamp'])
 
-    def _check_object_labels(self, misp_object, labels, to_ids):
-        category_label, name_label, ids_label = labels
+    def _check_object_labels(self, misp_object, labels, to_ids=None):
+        if to_ids is not None:
+            category_label, name_label, ids_label = labels
+            self.assertEqual(ids_label, f'misp:to_ids="{to_ids}"')
+        else:
+            category_label, name_label = labels
         self.assertEqual(category_label, f'misp:category="{misp_object["meta-category"]}"')
         self.assertEqual(name_label, f'misp:name="{misp_object["name"]}"')
-        self.assertEqual(ids_label, f'misp:to_ids="{to_ids}"')
 
     def _check_object_observable_features(self, observed_data, misp_object, identity_id, object_ref):
         self._check_observable_features(observed_data, identity_id, object_ref, misp_object['uuid'])
-        self._check_object_labels(misp_object, observed_data.labels, False)
+        self._check_object_labels(misp_object, observed_data.labels, to_ids=False)
         self._check_observable_time_features(observed_data, misp_object['timestamp'])
 
     def _check_observable_features(self, observed_data, identity_id, object_ref, object_uuid):
@@ -1020,9 +1027,11 @@ class TestSTIX20Export(TestSTIX2Export):
             object_ref
         )
         self.assertEqual(vulnerability.name, attribute['value'])
-        external_reference = vulnerability.external_references[0]
-        self.assertEqual(external_reference.source_name, 'cve')
-        self.assertEqual(external_reference.external_id, attribute['value'])
+        self._check_external_reference(
+            vulnerability.external_references[0],
+            'cve',
+            attribute['value']
+        )
 
     def test_event_with_x509_fingerprint_indicator_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
@@ -1071,6 +1080,34 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(
             observable_objects['0'].x_misp_subnet_announced,
             [subnet1, subnet2]
+        )
+
+    def test_event_with_attack_pattern_object(self):
+        event = get_event_with_attack_pattern_object()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        identity, report, attack_pattern = self.parser.stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (report, event['Event'], identity_id, timestamp)
+        object_ref = self._check_report_features(*args)[0]
+        self.assertEqual(report.published, timestamp)
+        self.assertEqual(attack_pattern.type, 'attack-pattern')
+        self.assertEqual(attack_pattern.id, object_ref)
+        self.assertEqual(attack_pattern.created_by_ref, identity_id)
+        self._check_killchain(attack_pattern.kill_chain_phases[0], misp_object['meta-category'])
+        self._check_object_labels(misp_object, attack_pattern.labels)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(attack_pattern.created, timestamp)
+        self.assertEqual(attack_pattern.modified, timestamp)
+        id, name, summary = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(attack_pattern.name, name)
+        self.assertEqual(attack_pattern.description, summary)
+        self._check_external_reference(
+            attack_pattern.external_references[0],
+            'capec',
+            f'CAPEC-{id}'
         )
 
     ################################################################################
@@ -2206,9 +2243,11 @@ class TestSTIX21Export(TestSTIX2Export):
             object_ref
         )
         self.assertEqual(vulnerability.name, attribute['value'])
-        external_reference = vulnerability.external_references[0]
-        self.assertEqual(external_reference.source_name, 'cve')
-        self.assertEqual(external_reference.external_id, attribute['value'])
+        self._check_external_reference(
+            vulnerability.external_references[0],
+            'cve',
+            attribute['value']
+        )
 
     def test_event_with_x509_fingerprint_indicator_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
@@ -2266,6 +2305,38 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(
             autonomous_system.x_misp_subnet_announced,
             [subnet1, subnet2]
+        )
+
+    def test_event_with_attack_pattern_object(self):
+        event = get_event_with_attack_pattern_object()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, attack_pattern = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        args = (grouping, event['Event'], identity_id)
+        object_ref = self._check_grouping_features(*args)[0]
+        self.assertEqual(attack_pattern.type, 'attack-pattern')
+        self.assertEqual(attack_pattern.id, object_ref)
+        self.assertEqual(attack_pattern.created_by_ref, identity_id)
+        self._check_killchain(attack_pattern.kill_chain_phases[0], misp_object['meta-category'])
+        self._check_object_labels(misp_object, attack_pattern.labels)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(attack_pattern.created, timestamp)
+        self.assertEqual(attack_pattern.modified, timestamp)
+        id, name, summary = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(attack_pattern.name, name)
+        self.assertEqual(attack_pattern.description, summary)
+        self._check_external_reference(
+            attack_pattern.external_references[0],
+            'capec',
+            f'CAPEC-{id}'
         )
 
     ################################################################################
