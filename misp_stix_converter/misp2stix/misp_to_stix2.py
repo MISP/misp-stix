@@ -95,8 +95,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         'created': timestamp,
                         'modified': timestamp
                     }
-                    relationship = self._create_relationship(relationship_args)
-                    self._append_SDO(relationship)
+                    self._append_SDO(self._create_relationship(relationship_args))
         if self._markings:
             for marking in self._markings.values():
                 self._objects.append(marking)
@@ -168,8 +167,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(indicator_args, markings)
-        indicator = self._create_indicator(indicator_args)
-        self._append_SDO(indicator)
+        self._append_SDO(self._create_indicator(indicator_args))
 
     def _handle_attribute_observable(self, attribute: dict, observable: Union[dict, list]):
         observable_id = f"observed-data--{attribute['uuid']}"
@@ -250,8 +248,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(campagin_args, markings)
-        campaign = self._create_campaign(campaign_args)
-        self._append_SDO(campaign)
+        self._append_SDO(self._create_campaign(campaign_args))
 
     def _parse_custom_attribute(self, attribute: dict):
         custom_id = f"x-misp-attribute--{attribute['uuid']}"
@@ -275,8 +272,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(custom_args, markings)
-        custom_object = self._create_custom_object(custom_args)
-        self._append_SDO(custom_object)
+        self._append_SDO(self._create_custom_object(custom_args))
 
     def _parse_domain_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
@@ -513,8 +509,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(vulnerability_args, markings)
-        vulnerability = self._create_vulnerability(vulnerability_args)
-        self._append_SDO(vulnerability)
+        self._append_SDO(self._create_vulnerability(vulnerability_args))
 
     def _parse_x509_fingerprint_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
@@ -559,8 +554,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(indicator_args, markings)
-        indicator = self._create_indicator(indicator_args)
-        self._append_SDO(indicator)
+        self._append_SDO(self._create_indicator(indicator_args))
 
     def _handle_object_observable(self, misp_object: dict, observable: Union[dict, list]):
         observable_id = f"observed-data--{misp_object['uuid']}"
@@ -601,8 +595,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return tuple(tags)
 
     def _parse_asn_object(self, misp_object: dict):
-        to_ids = self._fetch_ids_flag(misp_object['Attribute'])
-        if to_ids:
+        if self._fetch_ids_flag(misp_object['Attribute']):
             attributes = self._extract_multiple_object_attributes(
                 misp_object['Attribute'],
                 force_single=('asn', 'description')
@@ -676,8 +669,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 )
                 if external_ids:
                     attack_pattern_args['external_references'] = external_ids
-            attack_pattern = self._create_attack_pattern(attack_pattern_args, cluster)
-            self._objects.append(attack_pattern)
+            self._objects.append(
+                self._create_attack_pattern_from_galaxy(
+                    attack_pattern_args,
+                    cluster
+                )
+            )
             object_refs.append(attack_pattern_id)
             self._galaxies.append(attack_pattern_id)
         return object_refs

@@ -39,8 +39,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'content': 'This MISP Event is empty and contains no attribute, object, galaxy or tag.',
             'object_refs': [object_id]
         }
-        note = Note(**note_args)
-        self._append_SDO(note)
+        self._append_SDO(Note(**note_args))
 
     def _handle_unpublished_report(self, report_args: dict) -> Grouping:
         grouping_id = f"grouping--{self._misp_event['uuid']}"
@@ -455,8 +454,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _create_observed_data(self, args: dict, observables: list):
         args['object_refs'] = [observable.id for observable in observables]
-        observed_data = ObservedData(**args)
-        self._append_SDO(observed_data)
+        self._append_SDO(ObservedData(**args))
         for observable in observables:
             self._append_SDO(observable)
 

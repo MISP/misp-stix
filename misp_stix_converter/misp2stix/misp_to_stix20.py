@@ -36,8 +36,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             'object_ref': object_id,
             'interoperability': True
         }
-        custom_object = CustomNote(**custom_args)
-        self._append_SDO(custom_object)
+        self._append_SDO(CustomNote(**custom_args))
 
     def _handle_unpublished_report(self, report_args: dict) -> Report:
         report_id = f"report--{self._misp_event['uuid']}"
@@ -406,8 +405,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _create_observed_data(self, args: dict, observable: dict):
         args['objects'] = observable
-        observed_data = ObservedData(**args)
-        self._append_SDO(observed_data)
+        self._append_SDO(ObservedData(**args))
 
     @staticmethod
     def _create_relationship(relationship_args: dict) -> Relationship:
