@@ -603,6 +603,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return properties
 
     @staticmethod
+    def _handle_observable_properties(attributes: dict) -> dict:
+        properties = {'allow_custom': True}
+        for key, value in attributes.items():
+            properties[f"x_misp_{key.replace('-', '_')}"] = value
+        return properties
+
+    @staticmethod
     def _handle_pattern_multiple_properties(attributes: dict, prefix: str) -> list:
         pattern = []
         for key, values in attributes.items():
@@ -680,6 +687,34 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if 'mitre' not in value:
                 source_name = 'external_url'
         return {'source_name': source_name, key: value}
+
+    def _parse_course_of_action_object(self, misp_object: dict):
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        prefix = 'course-of-action'
+        course_of_action_id = f"{prefix}--{misp_object['uuid']}"
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        course_of_action_args = {
+            'id': course_of_action_id,
+            'type': prefix,
+            'created_by_ref': self._identity_id,
+            'labels': self._create_object_labels(misp_object),
+            'created': timestamp,
+            'modified': timestamp,
+            'interoperability': True
+        }
+        for feature in stix2_mapping.course_of_action_object_mapping:
+            if attributes.get(feature):
+                course_of_action_args[feature] = attributes.pop(feature)
+        if attributes:
+            course_of_action_args.update(self._handle_observable_properties(attributes))
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            course_of_action_id,
+            timestamp
+        )
+        if markings:
+            self._handle_markings(course_of_action_args, markings)
+        self._append_SDO(self._create_course_of_action(course_of_action_args))
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #

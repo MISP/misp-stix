@@ -194,6 +194,11 @@ attack_pattern_reference_mapping = {
     'references': ('mitre-attack', 'url')
 }
 
+course_of_action_object_mapping = (
+    'name',
+    'description'
+)
+
 
 # GALAXIES MAPPING
 galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
