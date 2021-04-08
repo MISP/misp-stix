@@ -1138,6 +1138,30 @@ class TestSTIX20Export(TestSTIX2Export):
                 attribute['value']
             )
 
+    def test_event_with_credential_indicator_object(self):
+        event = get_event_with_credential_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        text, username, password, *attributes = ((attribute['object_relation'], attribute['value']) for attribute in attributes)
+        attributes.insert(0, text)
+        username_pattern, password_pattern, *pattern = pattern[1:-1].split(' AND ')
+        self.assertEqual(username_pattern, f"user-account:user_id = '{username[1]}'")
+        self.assertEqual(password_pattern, f"user-account:credential = '{password[1]}'")
+        for pattern_part, attribute in zip(pattern, attributes):
+            feature, value = attribute
+            self.assertEqual(pattern_part, f"user-account:x_misp_{feature} = '{value}'")
+
+    def test_event_with_credential_observable_object(self):
+        event = get_event_with_credential_object()
+        attributes, observable_objects = self._run_observable_from_object_tests(event)
+        user_account = observable_objects['0']
+        text, username, password, *attributes = ((attribute['object_relation'], attribute['value']) for attribute in attributes)
+        attributes.insert(0, text)
+        self.assertEqual(user_account.type, 'user-account')
+        self.assertEqual(user_account.user_id, username[1])
+        self.assertEqual(user_account.credential, password[1])
+        for feature, value in attributes:
+            self.assertEqual(getattr(user_account, f'x_misp_{feature}'), value)
+
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
     ################################################################################
@@ -2398,6 +2422,33 @@ class TestSTIX21Export(TestSTIX2Export):
                 ),
                 attribute['value']
             )
+
+    def test_event_with_credential_indicator_object(self):
+        event = get_event_with_credential_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        text, username, password, *attributes = ((attribute['object_relation'], attribute['value']) for attribute in attributes)
+        attributes.insert(0, text)
+        username_pattern, password_pattern, *pattern = pattern[1:-1].split(' AND ')
+        self.assertEqual(username_pattern, f"user-account:user_id = '{username[1]}'")
+        self.assertEqual(password_pattern, f"user-account:credential = '{password[1]}'")
+        for pattern_part, attribute in zip(pattern, attributes):
+            feature, value = attribute
+            self.assertEqual(pattern_part, f"user-account:x_misp_{feature} = '{value}'")
+
+    def test_event_with_credential_observable_object(self):
+        event = get_event_with_credential_object()
+        attributes, grouping_refs, object_refs, observable = self._run_observable_from_object_tests(event)
+        text, username, password, *attributes = ((attribute['object_relation'], attribute['value']) for attribute in attributes)
+        attributes.insert(0, text)
+        object_ref = object_refs[0]
+        user_account = observable[0]
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(user_account.id, object_ref)
+        self.assertEqual(user_account.type, 'user-account')
+        self.assertEqual(user_account.user_id, username[1])
+        self.assertEqual(user_account.credential, password[1])
+        for feature, value in attributes:
+            self.assertEqual(getattr(user_account, f'x_misp_{feature}'), value)
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
