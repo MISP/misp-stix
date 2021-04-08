@@ -11,8 +11,8 @@ from stix2.v20.bundle import Bundle
 from stix2.v20.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
                                    EmailMessage, EmailMIMEComponent, File, IPv4Address,
                                    IPv6Address, MACAddress, Mutex, NetworkTraffic,
-                                   URL, WindowsRegistryKey, WindowsRegistryValueType,
-                                   X509Certificate)
+                                   URL, UserAccount, WindowsRegistryKey,
+                                   WindowsRegistryValueType, X509Certificate)
 from stix2.v20.sdo import (AttackPattern, Campaign, CourseOfAction, Identity,
                            Indicator, Malware, ObservedData, Report, ThreatActor,
                            Tool, Vulnerability)
@@ -351,6 +351,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         as_args = self._create_AS_args(misp_object['Attribute'])
         observable_object = {
             '0': AutonomousSystem(**as_args)
+        }
+        self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_credential_object_observable(self, misp_object: dict):
+        credential_args = self._create_credential_args(misp_object['Attribute'])
+        observable_object = {
+            '0': UserAccount(**credential_args)
         }
         self._handle_object_observable(misp_object, observable_object)
 

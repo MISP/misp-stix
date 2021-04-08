@@ -199,6 +199,11 @@ course_of_action_object_mapping = (
     'description'
 )
 
+credential_object_mapping = {
+    'password': 'credential',
+    'username': 'user_id'
+}
+
 
 # GALAXIES MAPPING
 galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}

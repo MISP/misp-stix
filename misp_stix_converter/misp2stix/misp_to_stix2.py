@@ -716,6 +716,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_markings(course_of_action_args, markings)
         self._append_SDO(self._create_course_of_action(course_of_action_args))
 
+    def _parse_credential_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'user-account'
+            attributes = self._extract_multiple_object_attributes(
+                misp_object['Attribute'],
+                force_single=('username',)
+            )
+            pattern = []
+            if 'username' in attributes:
+                pattern.append(f"{prefix}:user_id = '{attributes.pop('username')}'")
+            if 'password' in attributes:
+                for password in attributes.pop('password'):
+                    pattern.append(f"{prefix}:credential = '{password}'")
+            if attributes:
+                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_credential_object_observable(misp_object)
+
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
@@ -1012,6 +1031,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             as_args.update(self._handle_observable_multiple_properties(attributes))
         return as_args
 
+    def _create_credential_args(self, attributes: list) -> dict:
+        attributes = self._extract_multiple_object_attributes(
+            attributes,
+            force_single=('username',)
+        )
+        credential_args = {}
+        if 'username' in attributes:
+            credential_args['user_id'] = attributes.pop('username')
+        if 'password' in attributes:
+            credential_args['credential'] = self._select_single_feature(
+                attributes,
+                'password'
+            )
+        if attributes:
+            credential_args.update(self._handle_observable_multiple_properties(attributes))
+        return credential_args
+
     ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #
     ################################################################################
@@ -1145,3 +1181,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         timestamp
                     )
                 )
+
+    @staticmethod
+    def _select_single_feature(attributes: dict, feature: str) -> str:
+        if len(attributes[feature]) == 1:
+            return attributes.pop(feature)[0]
+        return attribute[feature].pop(0)
