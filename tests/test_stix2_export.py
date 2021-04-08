@@ -1110,6 +1110,34 @@ class TestSTIX20Export(TestSTIX2Export):
             f'CAPEC-{id}'
         )
 
+    def test_event_with_course_of_action_object(self):
+        event = get_event_with_course_of_action_object()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        identity, report, course_of_action = self.parser.stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (report, event['Event'], identity_id, timestamp)
+        object_ref = self._check_report_features(*args)[0]
+        self.assertEqual(report.published, timestamp)
+        self.assertEqual(course_of_action.type, 'course-of-action')
+        self.assertEqual(course_of_action.id, object_ref)
+        self.assertEqual(course_of_action.created_by_ref, identity_id)
+        self._check_object_labels(misp_object, course_of_action.labels)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(course_of_action.created, timestamp)
+        self.assertEqual(course_of_action.modified, timestamp)
+        self.assertEqual(course_of_action.name, misp_object['Attribute'][0]['value'])
+        for attribute in misp_object['Attribute'][1:]:
+            self.assertEqual(
+                getattr(
+                    course_of_action,
+                    f"x_misp_{attribute['object_relation']}"
+                ),
+                attribute['value']
+            )
+
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
     ################################################################################
@@ -2338,6 +2366,38 @@ class TestSTIX21Export(TestSTIX2Export):
             'capec',
             f'CAPEC-{id}'
         )
+
+    def test_event_with_course_of_action_object(self):
+        event = get_event_with_course_of_action_object()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, course_of_action = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        args = (grouping, event['Event'], identity_id)
+        object_ref = self._check_grouping_features(*args)[0]
+        self.assertEqual(course_of_action.type, 'course-of-action')
+        self.assertEqual(course_of_action.id, object_ref)
+        self.assertEqual(course_of_action.created_by_ref, identity_id)
+        self._check_object_labels(misp_object, course_of_action.labels)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(course_of_action.created, timestamp)
+        self.assertEqual(course_of_action.modified, timestamp)
+        self.assertEqual(course_of_action.name, misp_object['Attribute'][0]['value'])
+        for attribute in misp_object['Attribute'][1:]:
+            self.assertEqual(
+                getattr(
+                    course_of_action,
+                    f"x_misp_{attribute['object_relation']}"
+                ),
+                attribute['value']
+            )
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
