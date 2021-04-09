@@ -83,8 +83,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_domain_ip_attribute_observable(self, attribute: dict):
         domain, ip = attribute['value'].split('|')
-        address_type = self._get_address_type(ip)
-        address_object = address_type(value=ip)
+        address_object = self._get_address_type(ip)(value=ip)
         observable_object = {
             '0': DomainName(
                 value=domain,
@@ -241,8 +240,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_ip_attribute_observable(self, attribute: dict):
-        address_type = self._get_address_type(attribute['value'])
-        address_object = address_type(value=attribute['value'])
+        address_object = self._get_address_type(attribute['value'])(value=attribute['value'])
         ip_type = attribute['type'].split('-')[1]
         network_traffic_args = {
             '_valid_refs': {'1': address_object._type},
@@ -257,8 +255,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_ip_port_attribute_observable(self, attribute: dict):
         ip_value, port_value = attribute['value'].split('|')
-        address_type = self._get_address_type(ip_value)
-        address_object = address_type(value=ip_value)
+        address_object = self._get_address_type(ip_value)(value=ip_value)
         ip_type = attribute['type'].split('|')[0].split('-')[1]
         network_traffic_args = {
             '_valid_refs': {'1': address_object._type},
@@ -359,6 +356,29 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {
             '0': UserAccount(**credential_args)
         }
+        self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_domain_ip_object_observable(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes(misp_object['Attribute'])
+        if not any(feature in attributes for feature in ('domain', 'hostname')):
+            self._parse_custom_object(misp_object)
+            self._warnings.add('Missing minimum requirement to build a DomainName object from a domain-ip MISP Object.')
+            return
+        observable_object = {}
+        domain_args = {}
+        if attributes.get('ip'):
+            index = 1
+            valid_refs = {}
+            for ip_value in attributes.pop('ip'):
+                address_object = self._get_address_type(ip_value)(value=ip_value)
+                observable_object[str(index)] = address_object
+                valid_refs[str(index)] = address_object._type
+                index += 1
+            domain_args['_valid_refs'] = valid_refs
+            domain_args['resolves_to_refs'] = list(valid_refs.keys())
+        if attributes:
+            domain_args.update(self._parse_domain_args(attributes))
+        observable_object['0'] = DomainName(**domain_args)
         self._handle_object_observable(misp_object, observable_object)
 
     ################################################################################

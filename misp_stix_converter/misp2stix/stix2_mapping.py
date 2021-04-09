@@ -204,6 +204,11 @@ credential_object_mapping = {
     'username': 'user_id'
 }
 
+domain_ip_object_mapping = {
+    'domain': 'value',
+    'ip': 'resolves_to_refs[*].value'
+}
+
 
 # GALAXIES MAPPING
 galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}

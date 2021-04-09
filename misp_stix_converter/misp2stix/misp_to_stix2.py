@@ -735,6 +735,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_credential_object_observable(misp_object)
 
+    def _parse_domain_ip_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'domain-name'
+            attributes = self._extract_multiple_object_attributes(
+                misp_object['Attribute']
+            )
+            pattern = []
+            for key, feature in stix2_mapping.domain_ip_object_mapping.items():
+                if attributes.get(key):
+                    for value in attributes.pop(key):
+                        pattern.append(f"{prefix}:{feature} = '{value}'")
+            if attributes:
+                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_domain_ip_object_observable(misp_object)
+
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
@@ -1047,6 +1064,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             credential_args.update(self._handle_observable_multiple_properties(attributes))
         return credential_args
+
+    def _parse_domain_args(self, attributes: dict) -> dict:
+        domain_args = {}
+        for feature in ('domain', 'hostname'):
+            if attributes.get(feature):
+                domain_args['value'] = self._select_single_feature(
+                    attributes,
+                    feature
+                )
+                break
+        if attributes:
+            domain_args.update(self._handle_observable_multiple_properties(attributes))
+        return domain_args
 
     ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #

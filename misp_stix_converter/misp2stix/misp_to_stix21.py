@@ -388,6 +388,30 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         user_object = UserAccount(**credential_args)
         self._handle_object_observable(misp_object, [user_object])
 
+    def _parse_domain_ip_object_observable(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes_with_uuid(
+            misp_object['Attribute'],
+            with_uuid=['ip']
+        )
+        if not any(feature in attributes for feature in ('domain', 'hostname')):
+            self._parse_custom_object(misp_object)
+            self._warnings.add('Missing minimum requirement to build a DomainName object from a domain-ip MISP Object.')
+            return
+        domain_args = {}
+        objects = []
+        if attributes.get('ip'):
+            for ip_value, uuid in attributes.pop('ip'):
+                address_type = self._get_address_type(ip_value)
+                address_id = f'{address_type._type}--{uuid}'
+                address_object = address_type(id=address_id, value=ip_value)
+                objects.append(address_object)
+            domain_args['resolves_to_refs'] = [stix_object.id for stix_object in objects]
+        if attributes:
+            domain_args.update(self._parse_domain_args(attributes))
+        domain_object = DomainName(**domain_args)
+        objects.insert(0, domain_object)
+        self._handle_object_observable(misp_object, objects)
+
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
