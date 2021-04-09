@@ -1162,6 +1162,26 @@ class TestSTIX20Export(TestSTIX2Export):
         for feature, value in attributes:
             self.assertEqual(getattr(user_account, f'x_misp_{feature}'), value)
 
+    def test_event_with_domain_ip_indicator_object(self):
+        event = get_event_with_domain_ip_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        domain, ip = (attribute['value'] for attribute in attributes)
+        domain_pattern, ip_pattern = pattern[1:-1].split(' AND ')
+        self.assertEqual(domain_pattern, f"domain-name:value = '{domain}'")
+        self.assertEqual(ip_pattern, f"domain-name:resolves_to_refs[*].value = '{ip}'")
+
+    def test_event_with_domain_ip_observable_attribute(self):
+        event = get_event_with_domain_ip_object()
+        attributes, observable_objects = self._run_observable_from_object_tests(event)
+        domain, ip = (attribute['value'] for attribute in attributes)
+        domain_object = observable_objects['0']
+        address_object = observable_objects['1']
+        self.assertEqual(domain_object.type, 'domain-name')
+        self.assertEqual(domain_object.value, domain)
+        self.assertEqual(domain_object.resolves_to_refs, ['1'])
+        self.assertEqual(address_object.type, 'ipv4-addr')
+        self.assertEqual(address_object.value, ip)
+
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
     ################################################################################
@@ -2449,6 +2469,29 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(user_account.credential, password[1])
         for feature, value in attributes:
             self.assertEqual(getattr(user_account, f'x_misp_{feature}'), value)
+
+    def test_event_with_domain_ip_indicator_object(self):
+        event = get_event_with_domain_ip_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        domain, ip = (attribute['value'] for attribute in attributes)
+        domain_pattern, ip_pattern = pattern[1:-1].split(' AND ')
+        self.assertEqual(domain_pattern, f"domain-name:value = '{domain}'")
+        self.assertEqual(ip_pattern, f"domain-name:resolves_to_refs[*].value = '{ip}'")
+
+    def test_event_with_domain_ip_observable_attribute(self):
+        event = get_event_with_domain_ip_object()
+        attributes, grouping_refs, object_refs, observable = self._run_observable_from_object_tests(event)
+        domain, ip = (attribute['value'] for attribute in attributes)
+        domain_ref, address_ref = object_refs
+        domain_object, address_object = observable
+        self.assertEqual(domain_ref, grouping_refs[0])
+        self.assertEqual(address_ref, grouping_refs[1])
+        self.assertEqual(domain_object.id, domain_ref)
+        self.assertEqual(domain_object.type, 'domain-name')
+        self.assertEqual(domain_object.value, domain)
+        self.assertEqual(domain_object.resolves_to_refs, [address_ref])
+        self.assertEqual(address_object.id, address_ref)
+        self.assertEqual(address_object.value, ip)
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
