@@ -209,6 +209,24 @@ domain_ip_object_mapping = {
     'ip': 'resolves_to_refs[*].value'
 }
 
+ip_port_object_mapping = {
+    'ip_features': {
+        'ip': "dst_ref.type = '{}' AND network-traffic:dst_ref.value",
+        'ip-src': "src_ref.type = '{}' AND network-traffic:src_ref.value",
+        'ip-dst': "dst_ref.type = '{}' AND network-traffic:dst_ref.value",
+    },
+    'domain_features': {
+        'domain': "dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value",
+        'hostname': "dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value"
+    },
+    'features': {
+        'dst-port': "dst_port",
+        'first-seen': "start",
+        'last-seen': "end",
+        'src-port': "src_port"
+    }
+}
+
 
 # GALAXIES MAPPING
 galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}

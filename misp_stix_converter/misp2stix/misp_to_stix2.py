@@ -752,6 +752,35 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_domain_ip_object_observable(misp_object)
 
+    def _parse_ip_port_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'network-traffic'
+            attributes = self._extract_multiple_object_attributes(misp_object['Attribute'])
+            patterns = []
+            for key, pattern in stix2_mapping.ip_port_object_mapping['ip_features'].items():
+                if key in attributes:
+                    for ip_value in attributes.pop(key):
+                        identifier = pattern.format(self._define_address_type(ip_value))
+                        patterns.append(f"({prefix}:{identifier} = '{ip_value}')")
+            for key, pattern in stix2_mapping.ip_port_object_mapping['domain_features'].items():
+                if key in attributes:
+                    for domain_value in attributes.pop(key):
+                        patterns.append(f"({prefix}:{pattern} = '{domain_value}')")
+            for key, feature in stix2_mapping.ip_port_object_mapping['features'].items():
+                if key in attributes:
+                    for value in attributes.pop(key):
+                        patterns.append(f"{prefix}:{feature} = '{value}'")
+            if attributes:
+                patterns.extend(
+                    self._handle_pattern_multiple_properties(
+                        attributes,
+                        prefix
+                    )
+                )
+            self._handle_object_indicator(misp_object, patterns)
+        else:
+            self._parse_ip_port_object_observable(misp_object)
+
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
