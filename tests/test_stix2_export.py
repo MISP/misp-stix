@@ -1170,7 +1170,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(domain_pattern, f"domain-name:value = '{domain}'")
         self.assertEqual(ip_pattern, f"domain-name:resolves_to_refs[*].value = '{ip}'")
 
-    def test_event_with_domain_ip_observable_attribute(self):
+    def test_event_with_domain_ip_observable_object(self):
         event = get_event_with_domain_ip_object()
         attributes, observable_objects = self._run_observable_from_object_tests(event)
         domain, ip = (attribute['value'] for attribute in attributes)
@@ -1179,6 +1179,41 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(domain_object.type, 'domain-name')
         self.assertEqual(domain_object.value, domain)
         self.assertEqual(domain_object.resolves_to_refs, ['1'])
+        self.assertEqual(address_object.type, 'ipv4-addr')
+        self.assertEqual(address_object.value, ip)
+
+    def test_event_with_ip_port_indicator_object(self):
+        prefix = 'network-traffic'
+        event = get_event_with_ip_port_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        ip, port, domain, first_seen = (attribute['value'] for attribute in attributes)
+        pattern = pattern[1:-1].split(' AND ')
+        self.assertEqual(
+            ' AND '.join(pattern[:2]),
+            f"({prefix}:dst_ref.type = 'ipv4-addr' AND {prefix}:dst_ref.value = '{ip}')"
+        )
+        self.assertEqual(
+            ' AND '.join(pattern[2:4]),
+            f"({prefix}:dst_ref.type = 'domain-name' AND {prefix}:dst_ref.value = '{domain}')"
+        )
+        self.assertEqual(pattern[4], f"{prefix}:dst_port = '{port}'")
+        self.assertEqual(pattern[5], f"{prefix}:start = '{first_seen}'")
+
+    def test_event_with_ip_port_observable_object(self):
+        event = get_event_with_ip_port_object()
+        attributes, observable_objects = self._run_observable_from_object_tests(event)
+        ip, port, domain, first_seen = (attribute['value'] for attribute in attributes)
+        network_traffic = observable_objects['0']
+        address_object = observable_objects['1']
+        self.assertEqual(network_traffic.type, 'network-traffic')
+        self.assertEqual(network_traffic.dst_port, int(port))
+        self.assertEqual(
+            network_traffic.start.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            first_seen
+        )
+        self.assertIn('ipv4', network_traffic.protocols)
+        self.assertEqual(network_traffic.dst_ref, '1')
+        self.assertEqual(network_traffic.x_misp_domain, domain)
         self.assertEqual(address_object.type, 'ipv4-addr')
         self.assertEqual(address_object.value, ip)
 
@@ -2478,7 +2513,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(domain_pattern, f"domain-name:value = '{domain}'")
         self.assertEqual(ip_pattern, f"domain-name:resolves_to_refs[*].value = '{ip}'")
 
-    def test_event_with_domain_ip_observable_attribute(self):
+    def test_event_with_domain_ip_observable_object(self):
         event = get_event_with_domain_ip_object()
         attributes, grouping_refs, object_refs, observable = self._run_observable_from_object_tests(event)
         domain, ip = (attribute['value'] for attribute in attributes)
@@ -2491,6 +2526,45 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(domain_object.value, domain)
         self.assertEqual(domain_object.resolves_to_refs, [address_ref])
         self.assertEqual(address_object.id, address_ref)
+        self.assertEqual(address_object.value, ip)
+
+    def test_event_with_ip_port_indicator_object(self):
+        prefix = 'network-traffic'
+        event = get_event_with_ip_port_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        ip, port, domain, first_seen = (attribute['value'] for attribute in attributes)
+        pattern = pattern[1:-1].split(' AND ')
+        self.assertEqual(
+            ' AND '.join(pattern[:2]),
+            f"({prefix}:dst_ref.type = 'ipv4-addr' AND {prefix}:dst_ref.value = '{ip}')"
+        )
+        self.assertEqual(
+            ' AND '.join(pattern[2:4]),
+            f"({prefix}:dst_ref.type = 'domain-name' AND {prefix}:dst_ref.value = '{domain}')"
+        )
+        self.assertEqual(pattern[4], f"{prefix}:dst_port = '{port}'")
+        self.assertEqual(pattern[5], f"{prefix}:start = '{first_seen}'")
+
+    def test_event_with_ip_port_observable_object(self):
+        event = get_event_with_ip_port_object()
+        attributes, grouping_refs, object_refs, observable = self._run_observable_from_object_tests(event)
+        ip, port, domain, first_seen = (attribute['value'] for attribute in attributes)
+        network_traffic_ref, address_ref = object_refs
+        network_traffic, address_object = observable
+        self.assertEqual(network_traffic_ref, grouping_refs[0])
+        self.assertEqual(address_ref, grouping_refs[1])
+        self.assertEqual(network_traffic.id, network_traffic_ref)
+        self.assertEqual(network_traffic.type, 'network-traffic')
+        self.assertEqual(network_traffic.dst_port, int(port))
+        self.assertEqual(
+            network_traffic.start.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            first_seen
+        )
+        self.assertIn('ipv4', network_traffic.protocols)
+        self.assertEqual(network_traffic.dst_ref, address_ref)
+        self.assertEqual(network_traffic.x_misp_domain, domain)
+        self.assertEqual(address_object.id, address_ref)
+        self.assertEqual(address_object.type, 'ipv4-addr')
         self.assertEqual(address_object.value, ip)
 
     ################################################################################

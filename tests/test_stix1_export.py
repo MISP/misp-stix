@@ -251,8 +251,8 @@ class TestStix1Export(unittest.TestCase):
 
     def _check_ip_port_observables(self, observables, misp_object):
         attributes = misp_object['Attribute']
-        self.assertEqual(len(observables), len(attributes))
-        ip, port, domain = attributes
+        self.assertEqual(len(observables), len(attributes) - 1)
+        ip, port, domain, _ = attributes
         ip_observable, port_observable, domain_observable = observables
         ip_properties = self._check_observable_features(ip_observable, ip, 'Address')
         self.assertEqual(ip_properties.address_value.value, ip['value'])

@@ -601,6 +601,12 @@ _TEST_IP_PORT_OBJECT = {
             "type": "domain",
             "object_relation": "domain",
             "value": "circl.lu"
+        },
+        {
+            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "type": "datetime",
+            "object_relation": "first-seen",
+            "value": "2020-10-25T16:22:00Z"
         }
     ]
 }
