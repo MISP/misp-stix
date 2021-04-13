@@ -623,7 +623,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             prefix = 'autonomous-system'
             attributes = self._extract_multiple_object_attributes(
                 misp_object['Attribute'],
-                force_single=('asn', 'description')
+                force_single=['asn', 'description']
             )
             pattern = [self._create_AS_pattern(attributes.pop('asn'))]
             if 'description' in attributes:
@@ -637,7 +637,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_attack_pattern_object(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=('name', 'summary')
+            force_single=['name', 'summary']
         )
         prefix = 'attack-pattern'
         attack_pattern_id = f"{prefix}--{misp_object['uuid']}"
@@ -721,7 +721,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             prefix = 'user-account'
             attributes = self._extract_multiple_object_attributes(
                 misp_object['Attribute'],
-                force_single=('username',)
+                force_single=['username']
             )
             pattern = []
             if 'username' in attributes:
@@ -738,9 +738,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_domain_ip_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'domain-name'
-            attributes = self._extract_multiple_object_attributes(
-                misp_object['Attribute']
-            )
+            attributes = self._extract_multiple_object_attributes(misp_object['Attribute'])
             pattern = []
             for key, feature in stix2_mapping.domain_ip_object_mapping.items():
                 if attributes.get(key):
@@ -1068,7 +1066,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_AS_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
             attributes,
-            force_single=('asn', 'description')
+            force_single=['asn', 'description']
         )
         as_args = {'number': self._parse_AS_value(attributes.pop('asn'))}
         if 'description' in attributes:
@@ -1080,7 +1078,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_credential_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
             attributes,
-            force_single=('username',)
+            force_single=['username']
         )
         credential_args = {}
         if 'username' in attributes:

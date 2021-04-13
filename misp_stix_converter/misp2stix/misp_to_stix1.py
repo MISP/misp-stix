@@ -730,28 +730,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         return attributes_dict
 
     @staticmethod
-    def _extract_multiple_object_attributes_with_uuid(attributes: list, with_uuid: Optional[list] = None) -> dict:
-        attributes_dict = defaultdict(list)
-        if with_uuid is not None:
-            for attribute in attributes:
-                relation = attribute['object_relation']
-                value = (attribute['value'], attribute['uuid']) if relation in with_uuid else attribute['value']
-                attributes_dict[relation].append(value)
-            return attributes_dict
-        for attribute in attributes:
-            attributes_dict[attribute['object_relation']].append(
-                (
-                    attribute['value'],
-                    attribute['uuid']
-                )
-            )
-        return attributes_dict
-
-    @staticmethod
-    def _extract_object_attributes(attributes: list) -> dict:
-        return {attribute['object_relation']: attribute['value'] for attribute in attributes}
-
-    @staticmethod
     def _extract_object_attributes_with_uuid(attributes: list) -> dict:
         return {attribute['object_relation']: (attribute['value'], attribute['uuid']) for attribute in attributes}
 
@@ -844,7 +822,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_asn_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=('asn', 'description')
+            force_single=['asn', 'description']
         )
         as_object = self._create_autonomous_system_object(attributes.pop('asn'))
         if 'description' in attributes:
@@ -917,13 +895,13 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         return []
 
     def _parse_credential_object(self, misp_object: dict) -> Observable:
-        single_attributes = ('username', 'text')
+        single_attributes = ['username', 'text']
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
             force_single=single_attributes
         )
         account_object = UserAccount()
-        for feature, field in zip(single_attributes, ('username', 'description')):
+        for feature, field in zip(tuple(single_attributes), ('username', 'description')):
             if feature in attributes:
                 setattr(account_object, field, attributes.pop(feature))
         authentication_list = self._parse_credential_authentication(attributes)
@@ -1134,10 +1112,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_network_socket_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=(
+            force_single=[
                 'ip-src', 'ip-dst', 'src-port', 'dst-port', 'hostname-src',
                 'hostname-dst', 'ptotocol', 'address-family', 'domain-family'
-            )
+            ]
         )
         socket_object = NetworkSocket()
         self._parse_socket_addresses(socket_object, attributes, ('local', 'remote'))
@@ -1157,12 +1135,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_pe_object(self, file_object: WinExecutableFile, misp_pe: dict):
         attributes = self._extract_multiple_object_attributes(
             misp_pe['Attribute'],
-            force_single=(
+            force_single=[
                 'company-name', 'entrypoint-address', 'file-description',
                 'file-version', 'impfuzzy', 'imphash', 'type', 'lang-id',
                 'internal-filename', 'legal-copyright', 'number-sections',
                 'original-filename', 'pehash', 'product-name', 'product-version'
-            )
+            ]
         )
         if any(feature in attributes for feature in stix1_mapping.pe_resource_mapping):
             resource = PEVersionInfoResource()
@@ -1239,10 +1217,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_process_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=(
+            force_single=[
                 'command-line', 'creation-time', 'image',
                 'name', 'parent-pid', 'pid', 'start-time'
-            )
+            ]
         )
         process_object = Process()
         for key, feature in stix1_mapping.process_object_mapping.items():
@@ -1341,10 +1319,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_user_account_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=(
+            force_single=[
                 'account-type', 'created', 'disabled', 'display-name', 'home_dir',
                 'last_login', 'password', 'shell', 'text', 'username'
-            )
+            ]
         )
         account_object = self._create_user_account_object(attributes)
         if 'password' in attributes:
@@ -1370,9 +1348,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         vulnerability = Vulnerability()
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=(
+            force_single=[
                 'created', 'cvss-score', 'published', 'summary'
-            )
+            ]
         )
         if 'id' in attributes:
             cve_id = attributes.pop('id')[0] if len(attributes['id']) == 1 else attributes['id'].pop(0)
@@ -1416,11 +1394,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_whois_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=(
+            force_single=[
                 'comment', 'creation-date', 'expiration-date', 'modification-date',
                 'registrant-email', 'registrant-name', 'registrant-org',
                 'registrant-phone', 'registrar', 'text'
-            )
+            ]
         )
         whois_object = WhoisEntry()
         if 'registrar' in attributes:

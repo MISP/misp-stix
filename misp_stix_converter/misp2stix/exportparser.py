@@ -33,7 +33,7 @@ class MISPtoSTIXParser():
     ################################################################################
 
     @staticmethod
-    def _extract_multiple_object_attributes(attributes: list, force_single: Optional[tuple] = None) -> dict:
+    def _extract_multiple_object_attributes(attributes: list, force_single: Optional[list] = None) -> dict:
         attributes_dict = defaultdict(list)
         if force_single is not None:
             for attribute in attributes:
@@ -46,6 +46,28 @@ class MISPtoSTIXParser():
         for attribute in attributes:
             attributes_dict[attribute['object_relation']].append(attribute['value'])
         return attributes_dict
+
+    @staticmethod
+    def _extract_multiple_object_attributes_with_uuid(attributes: list, with_uuid: Optional[list] = None) -> dict:
+        attributes_dict = defaultdict(list)
+        if with_uuid is not None:
+            for attribute in attributes:
+                relation = attribute['object_relation']
+                value = (attribute['value'], attribute['uuid']) if relation in with_uuid else attribute['value']
+                attributes_dict[relation].append(value)
+            return attributes_dict
+        for attribute in attributes:
+            attributes_dict[attribute['object_relation']].append(
+                (
+                    attribute['value'],
+                    attribute['uuid']
+                )
+            )
+        return attributes_dict
+
+    @staticmethod
+    def _extract_object_attributes(attributes: list) -> dict:
+        return {attribute['object_relation']: attribute['value'] for attribute in attributes}
 
     def _extract_object_attribute_tags_and_galaxies(self, misp_object: dict, mapping: str) -> tuple:
         tags = set()
