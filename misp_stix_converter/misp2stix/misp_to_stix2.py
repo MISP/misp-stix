@@ -1105,6 +1105,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             domain_args.update(self._handle_observable_multiple_properties(attributes))
         return domain_args
 
+    def _parse_ip_port_args(self, attributes: dict) -> dict:
+        args = {}
+        for key, feature in stix2_mapping.ip_port_object_mapping['features'].items():
+            if attributes.get(key):
+                args[feature] = self._select_single_feature(attributes, key)
+        if attributes:
+            args.update(self._handle_observable_multiple_properties(attributes))
+        return args
+
     ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #
     ################################################################################
@@ -1241,6 +1250,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     @staticmethod
     def _select_single_feature(attributes: dict, feature: str) -> str:
-        if len(attributes[feature]) == 1:
-            return attributes.pop(feature)[0]
-        return attribute[feature].pop(0)
+        if isinstance(attributes[feature], list):
+            if len(attributes[feature]) == 1:
+                return attributes.pop(feature)[0]
+            return attributes[feature].pop(0)
+        return attributes.pop(feature)

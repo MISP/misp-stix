@@ -3,6 +3,7 @@
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix2_mapping import CustomAttribute_v21, tlp_markings_v21
+from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
 from stix2.exceptions import TLPMarkingDefinitionError
@@ -378,6 +379,18 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
     ################################################################################
 
+    @staticmethod
+    def _extract_object_attributes_with_multiple_and_uuid(attributes: list, force_single: list = [], with_uuid: list = []) -> dict:
+        attributes_dict = defaultdict(list)
+        for attribute in attributes:
+            relation = attribute['object_relation']
+            value = (attribute['value'], attribute['uuid']) if relation in with_uuid else attribute['value']
+            if relation in force_single:
+                attributes_dict[relation] = value
+            else:
+                attributes_dict[relation].append(value)
+        return attributes_dict
+
     def _parse_asn_object_observable(self, misp_object: dict):
         as_args = self._create_AS_args(misp_object['Attribute'])
         AS_object = AutonomousSystem(**as_args)
@@ -403,13 +416,42 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             for ip_value, uuid in attributes.pop('ip'):
                 address_type = self._get_address_type(ip_value)
                 address_id = f'{address_type._type}--{uuid}'
-                address_object = address_type(id=address_id, value=ip_value)
-                objects.append(address_object)
+                objects.append(address_type(id=address_id, value=ip_value))
             domain_args['resolves_to_refs'] = [stix_object.id for stix_object in objects]
         if attributes:
             domain_args.update(self._parse_domain_args(attributes))
         domain_object = DomainName(**domain_args)
         objects.insert(0, domain_object)
+        self._handle_object_observable(misp_object, objects)
+
+    def _parse_ip_port_object_observable(self, misp_object: dict):
+        attributes = self._extract_object_attributes_with_multiple_and_uuid(
+            misp_object['Attribute'],
+            force_single=['first-seen', 'last-seen'],
+            with_uuid=['ip', 'ip-dst', 'ip-src']
+        )
+        protocols = {'tcp'}
+        network_traffic_args = {}
+        objects = []
+        for feature in ('ip-src', 'ip-dst', 'ip'):
+            if attributes.get(feature):
+                ref_type = 'src_ref' if feature == 'ip-src' else 'dst_ref'
+                if ref_type not in network_traffic_args:
+                    ip_value, uuid = self._select_single_feature(attributes, feature)
+                    if attributes.get(feature):
+                        attributes[feature] = [value[0] for value in attributes.pop(feature)]
+                    address_type = self._get_address_type(ip_value)
+                    address_id = f'{address_type._type}--{uuid}'
+                    objects.append(address_type(id=address_id, value=ip_value))
+                    network_traffic_args[ref_type] = address_id
+                    protocols.add(address_type._type.split('-')[0])
+                else:
+                    attributes[feature] = [value[0] for value in attributes.pop(feature)]
+        network_traffic_args['protocols'] = protocols
+        if attributes:
+            network_traffic_args.update(self._parse_ip_port_args(attributes))
+        network_traffic = NetworkTraffic(**network_traffic_args)
+        objects.insert(0, network_traffic)
         self._handle_object_observable(misp_object, objects)
 
     ################################################################################

@@ -3,6 +3,7 @@
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix2_mapping import CustomAttribute_v20, CustomNote, tlp_markings_v20
+from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
 from stix2.exceptions import TLPMarkingDefinitionError
@@ -370,9 +371,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             index = 1
             valid_refs = {}
             for ip_value in attributes.pop('ip'):
+                str_index = str(index)
                 address_object = self._get_address_type(ip_value)(value=ip_value)
-                observable_object[str(index)] = address_object
-                valid_refs[str(index)] = address_object._type
+                observable_object[str_index] = address_object
+                valid_refs[str_index] = address_object._type
                 index += 1
             domain_args['_valid_refs'] = valid_refs
             domain_args['resolves_to_refs'] = list(valid_refs.keys())
@@ -380,6 +382,34 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             domain_args.update(self._parse_domain_args(attributes))
         observable_object['0'] = DomainName(**domain_args)
         self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_ip_port_object_observable(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=['first-seen', 'last-seen']
+        )
+        protocols = {'tcp'}
+        observable_objects = {}
+        network_traffic_args = defaultdict(dict)
+        index = 1
+        for feature in ('ip-src', 'ip-dst', 'ip'):
+            if attributes.get(feature):
+                str_index = str(index)
+                ip_value = self._select_single_feature(attributes, feature)
+                address_object = self._get_address_type(ip_value)(value=ip_value)
+                observable_objects[str_index] = address_object
+                network_traffic_args['_valid_refs'][str_index] = address_object._type
+                protocols.add(address_object._type.split('-')[0])
+                ref_type = 'src_ref' if feature == 'ip-src' else 'dst_ref'
+                network_traffic_args[ref_type] = str_index
+                if ref_type == 'dst_ref':
+                    break
+                index += 1
+        network_traffic_args['protocols'] = protocols
+        if attributes:
+            network_traffic_args.update(self._parse_ip_port_args(attributes))
+        observable_objects['0'] = NetworkTraffic(**network_traffic_args)
+        self._handle_object_observable(misp_object, observable_objects)
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
