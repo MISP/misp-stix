@@ -59,6 +59,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'email-message-id': '_parse_email_message_id_attribute'
             }
         )
+        stix2_mapping.email_object_mapping.update(
+            {
+                'message-id': 'message_id'
+            }
+        )
 
     ################################################################################
     #                            MAIN PARSING FUNCTIONS                            #
@@ -532,6 +537,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 self._parse_custom_object(misp_object)
                 self._warnings.add(f'MISP Object name {object_name} not mapped.')
 
+    @staticmethod
+    def _extract_multiple_object_attributes_with_data(attributes: list, force_single: list = [], with_data: list = []) -> dict:
+        attributes_dict = defaultdict(list)
+        for attribute in attributes:
+            relation = attribute['object_relation']
+            value = attribute['value']
+            if relation in with_data and attribute.get('data'):
+                value = (value, attribute['data'])
+            if relation in force_single:
+                attributes_dict[relation] = value
+            else:
+                attributes_dict[relation].append(value)
+        return attributes_dict
+
     def _handle_object_indicator(self, misp_object: dict, pattern: list):
         indicator_id = f"indicator--{misp_object['uuid']}"
         indicator_args = {
@@ -749,6 +768,35 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_domain_ip_object_observable(misp_object)
+
+    def _parse_email_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'email-message'
+            fields_with_potential_data = ['attachment', 'screenshot']
+            attributes = self._extract_multiple_object_attributes_with_data(
+                misp_object['Attribute'],
+                with_data=fields_with_potential_data
+            )
+            pattern = []
+            for key, feature in stix2_mapping.email_object_mapping.items():
+                if key in attributes:
+                    for value in attributes.pop(key):
+                        pattern.append(f"{prefix}:{feature} = '{value}'")
+            if attributes:
+                n = 0
+                for key in fields_with_potential_data:
+                    if key in attributes:
+                        for value in attributes.pop(key):
+                            feature = f'body_multipart[{n}].body_raw_ref'
+                            if isinstance(value, tuple):
+                                value, data = value
+                                pattern.append(f"{prefix}:{feature}.payload_bin = '{value}'")
+                            pattern.append(f"{prefix}:{feature}.name = '{value}'")
+                            n += 1
+                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_email_object_observable(misp_object)
 
     def _parse_ip_port_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):

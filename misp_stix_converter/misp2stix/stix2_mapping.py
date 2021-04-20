@@ -209,6 +209,19 @@ domain_ip_object_mapping = {
     'ip': 'resolves_to_refs[*].value'
 }
 
+email_object_mapping = {
+    'cc': 'cc_refs.value',
+    'email-body': 'body',
+    'from': 'from_ref.value',
+    'from-display-name': 'from_ref.display_name',
+    'reply-to': 'additional_header_fields.reply_to',
+    'send-date': 'date',
+    'subject': 'subject',
+    'to': 'to_refs.value',
+    'to-display-name': 'to_refs.display_name',
+    'x-mailer': 'additional_header_fields.x_mailer'
+}
+
 ip_port_object_mapping = {
     'ip_features': {
         'ip': "dst_ref.type = '{}' AND network-traffic:dst_ref.value",
