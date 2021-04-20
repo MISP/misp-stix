@@ -1182,6 +1182,35 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(address_object.type, 'ipv4-addr')
         self.assertEqual(address_object.value, ip)
 
+    def test_event_with_email_indicator_object(self):
+        event = get_event_with_email_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary = (attribute['value'] for attribute in attributes)
+        cc1_, cc2_, from_, reply_to_, subject_, to_, x_mailer_, attachment1_, attachment2_, user_agent_, boundary_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(from_, f"email-message:from_ref.value = '{_from}'")
+        self.assertEqual(to_, f"email-message:to_refs.value = '{_to}'")
+        self.assertEqual(cc1_, f"email-message:cc_refs.value = '{_cc1}'")
+        self.assertEqual(cc2_, f"email-message:cc_refs.value = '{_cc2}'")
+        self.assertEqual(
+            reply_to_,
+            f"email-message:additional_header_fields.reply_to = '{_reply_to}'"
+        )
+        self.assertEqual(subject_, f"email-message:subject = '{_subject}'")
+        self.assertEqual(
+            attachment1_,
+            f"email-message:body_multipart[0].body_raw_ref.name = '{_attachment1}'"
+        )
+        self.assertEqual(
+            attachment2_,
+            f"email-message:body_multipart[1].body_raw_ref.name = '{_attachment2}'"
+        )
+        self.assertEqual(
+            x_mailer_,
+            f"email-message:additional_header_fields.x_mailer = '{_x_mailer}'"
+        )
+        self.assertEqual(user_agent_, f"email-message:x_misp_user_agent = '{_user_agent}'")
+        self.assertEqual(boundary_, f"email-message:x_misp_mime_boundary = '{_boundary}'")
+
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
         event = get_event_with_ip_port_object()
@@ -2527,6 +2556,35 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(domain_object.resolves_to_refs, [address_ref])
         self.assertEqual(address_object.id, address_ref)
         self.assertEqual(address_object.value, ip)
+
+    def test_event_with_email_indicator_object(self):
+        event = get_event_with_email_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary = (attribute['value'] for attribute in attributes)
+        cc1_, cc2_, from_, reply_to_, subject_, to_, x_mailer_, attachment1_, attachment2_, user_agent_, boundary_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(from_, f"email-message:from_ref.value = '{_from}'")
+        self.assertEqual(to_, f"email-message:to_refs.value = '{_to}'")
+        self.assertEqual(cc1_, f"email-message:cc_refs.value = '{_cc1}'")
+        self.assertEqual(cc2_, f"email-message:cc_refs.value = '{_cc2}'")
+        self.assertEqual(
+            reply_to_,
+            f"email-message:additional_header_fields.reply_to = '{_reply_to}'"
+        )
+        self.assertEqual(subject_, f"email-message:subject = '{_subject}'")
+        self.assertEqual(
+            attachment1_,
+            f"email-message:body_multipart[0].body_raw_ref.name = '{_attachment1}'"
+        )
+        self.assertEqual(
+            attachment2_,
+            f"email-message:body_multipart[1].body_raw_ref.name = '{_attachment2}'"
+        )
+        self.assertEqual(
+            x_mailer_,
+            f"email-message:additional_header_fields.x_mailer = '{_x_mailer}'"
+        )
+        self.assertEqual(user_agent_, f"email-message:x_misp_user_agent = '{_user_agent}'")
+        self.assertEqual(boundary_, f"email-message:x_misp_mime_boundary = '{_boundary}'")
 
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
