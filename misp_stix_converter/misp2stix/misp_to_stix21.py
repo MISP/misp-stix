@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
-from .stix2_mapping import CustomAttribute_v21, tlp_markings_v21
+from .stix2_mapping import (CustomAttribute_v21, domain_ip_uuid_fields, tlp_markings_v21,
+                            ip_port_single_fields, ip_port_uuid_fields)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
@@ -404,7 +405,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_domain_ip_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes_with_uuid(
             misp_object['Attribute'],
-            with_uuid=['ip']
+            with_uuid=domain_ip_uuid_fields
         )
         if not any(feature in attributes for feature in ('domain', 'hostname')):
             self._parse_custom_object(misp_object)
@@ -427,8 +428,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(
             misp_object['Attribute'],
-            force_single=['first-seen', 'last-seen'],
-            with_uuid=['ip', 'ip-dst', 'ip-src']
+            force_single=ip_port_single_fields,
+            with_uuid=ip_port_uuid_fields
         )
         protocols = {'tcp'}
         network_traffic_args = {}

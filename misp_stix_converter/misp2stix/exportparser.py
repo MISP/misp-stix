@@ -33,7 +33,7 @@ class MISPtoSTIXParser():
     ################################################################################
 
     @staticmethod
-    def _extract_multiple_object_attributes(attributes: list, force_single: Optional[list] = None) -> dict:
+    def _extract_multiple_object_attributes(attributes: list, force_single: Optional[tuple] = None) -> dict:
         attributes_dict = defaultdict(list)
         if force_single is not None:
             for attribute in attributes:
@@ -48,7 +48,7 @@ class MISPtoSTIXParser():
         return attributes_dict
 
     @staticmethod
-    def _extract_multiple_object_attributes_with_uuid(attributes: list, with_uuid: Optional[list] = None) -> dict:
+    def _extract_multiple_object_attributes_with_uuid(attributes: list, with_uuid: Optional[tuple] = None) -> dict:
         attributes_dict = defaultdict(list)
         if with_uuid is not None:
             for attribute in attributes:

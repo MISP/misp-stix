@@ -66,20 +66,20 @@ class CustomNote():
 
 # ATTRIBUTES MAPPING
 _hash_attribute_types = (
-    "md5",
-    "sha1",
-    "sha224",
-    "sha256",
-    "sha384",
-    "sha512",
-    "sha512/224",
-    "sha512/256",
-    "sha3-224",
-    "sha3-256",
-    "sha3-384",
-    "sha3-512",
-    "ssdeep",
-    "tlsh"
+    'md5',
+    'sha1',
+    'sha224',
+    'sha256',
+    'sha384',
+    'sha512',
+    'sha512/224',
+    'sha512/256',
+    'sha3-224',
+    'sha3-256',
+    'sha3-384',
+    'sha3-512',
+    'ssdeep',
+    'tlsh'
 )
 
 attribute_types_mapping = {
@@ -184,6 +184,11 @@ objects_mapping = {
     'x509': '_parse_x509_object'
 }
 
+as_single_fields = (
+    'asn',
+    'description'
+)
+
 attack_pattern_object_mapping = {
     'name': 'name',
     'summary': 'description'
@@ -193,6 +198,11 @@ attack_pattern_reference_mapping = {
     'id': ('capec', 'external_id'),
     'references': ('mitre-attack', 'url')
 }
+
+attack_pattern_single_fields = (
+    'name',
+    'summary'
+)
 
 course_of_action_object_mapping = (
     'name',
@@ -204,10 +214,23 @@ credential_object_mapping = {
     'username': 'user_id'
 }
 
+credential_single_fields = (
+    'username',
+)
+
 domain_ip_object_mapping = {
     'domain': 'value',
     'ip': 'resolves_to_refs[*].value'
 }
+
+domain_ip_uuid_fields = (
+    'ip',
+)
+
+email_data_fields = (
+    'attachment',
+    'screenshot'
+)
 
 email_object_mapping = {
     'cc': 'cc_refs.value',
@@ -221,6 +244,17 @@ email_object_mapping = {
     'to-display-name': 'to_refs.display_name',
     'x-mailer': 'additional_header_fields.x_mailer'
 }
+
+file_data_fields = (
+    'attachment',
+    'malware-sample'
+)
+
+file_object_mapping = {
+
+}
+
+file_single_fields = file_data_fields + _hash_attribute_types
 
 ip_port_object_mapping = {
     'ip_features': {
@@ -239,6 +273,17 @@ ip_port_object_mapping = {
         'src-port': "src_port"
     }
 }
+
+ip_port_single_fields = (
+    'first-seen',
+    'last-seen'
+)
+
+ip_port_uuid_fields = (
+    'ip',
+    'ip-dst',
+    'ip-src'
+)
 
 
 # GALAXIES MAPPING

@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
-from .stix2_mapping import CustomAttribute_v20, CustomNote, tlp_markings_v20
+from .stix2_mapping import (CustomAttribute_v20, CustomNote, ip_port_single_fields,
+                            tlp_markings_v20)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
@@ -386,7 +387,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=['first-seen', 'last-seen']
+            force_single=ip_port_single_fields
         )
         protocols = {'tcp'}
         observable_objects = {}

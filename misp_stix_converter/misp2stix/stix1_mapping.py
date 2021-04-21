@@ -387,11 +387,17 @@ objects_mapping = {
     "x509": '_parse_x509_object'
 }
 
+as_single_fields = (
+    'asn',
+    'description'
+)
+
 attack_pattern_object_mapping = {
     'id': 'capec_id',
     'name': 'title',
     'summary': 'description'
 }
+
 course_of_action_object_mapping = {
     'name': 'title',
     'type': 'type_',
@@ -402,6 +408,12 @@ course_of_action_object_mapping = {
     'impact': 'impact',
     'efficacy': 'efficacy'
 }
+
+credential_object_mapping = {
+    'username': 'username',
+    'text': 'description'
+}
+
 email_object_mapping = {
     'from': 'from_',
     'reply-to': 'reply_to',
@@ -410,17 +422,51 @@ email_object_mapping = {
     'mime-boundary': 'boundary',
     'user-agent': 'user_agent'
 }
+email_uuid_fields = (
+    'attachment',
+)
+
 file_object_mapping = {
     'entropy': 'peak_entropy',
     'fullpath': 'full_path',
     'path': 'file_path',
     'size-in-bytes': 'size_in_bytes'
 }
+
 network_socket_mapping = {
     'address-family': 'address_family',
     'domain-family': 'domain',
     'protocol': 'protocol'
 }
+network_socket_single_fields = (
+    'address-family',
+    'domain-family',
+    'dst-port',
+    'hostname-dst',
+    'hostname-src',
+    'ip-dst',
+    'ip-src',
+    'protocol',
+    'src-port'
+)
+
+pe_single_fields = (
+    'company-name',
+    'entrypoint-address',
+    'file-description',
+    'file-version',
+    'impfuzzy',
+    'imphash',
+    'internal-filename',
+    'lang-id',
+    'legal-copyright',
+    'number-sections',
+    'original-filename',
+    'pehash',
+    'product-name',
+    'product-version',
+    'type'
+)
 pe_resource_mapping = {
     'company-name': 'companyname',
     'file-description': 'filedescription',
@@ -432,6 +478,7 @@ pe_resource_mapping = {
     'product-name': 'productname',
     'product-version': 'productversion'
 }
+
 process_object_mapping = {
     'creation-time': 'creation_time',
     'start-time': 'start_time',
@@ -439,11 +486,22 @@ process_object_mapping = {
     'pid': 'pid',
     'parent-pid': 'parent_pid'
 }
+process_single_fields = (
+    'command-line',
+    'creation-time',
+    'image',
+    'name',
+    'parent-pid',
+    'pid',
+    'start-time'
+)
+
 regkey_object_mapping = {
     'name': 'name',
     'data': 'data',
     'data-type': 'datatype'
 }
+
 user_account_object_mapping = {
     'username': 'username',
     'display-name': 'full_name',
@@ -453,16 +511,37 @@ user_account_object_mapping = {
     'home_dir': 'home_directory',
     'shell': 'script_path'
 }
+user_account_single_fields = (
+    'account-type',
+    'created',
+    'disabled',
+    'display-name',
+    'home_dir',
+    'last_login',
+    'password',
+    'shell',
+    'text',
+    'username'
+)
+
 vulnerability_object_mapping = {
     'id': 'cve_id',
     'created': 'discovered_datetime',
     'summary': 'description',
     'published': 'published_datetime'
 }
+vulnerability_single_fields = (
+    'created',
+    'cvss-score',
+    'published',
+    'summary'
+)
+
 weakness_object_mapping = {
     'id': 'cwe_id',
     'description': 'description'
 }
+
 whois_object_mapping = {
     'creation-date': 'creation_date',
     'modification-date': 'updated_date',
@@ -474,6 +553,19 @@ whois_registrant_mapping = {
     'registrant-email': 'email_address',
     'registrant-org': 'organization'
 }
+whois_single_fields = (
+    'comment',
+    'creation-date',
+    'expiration-date',
+    'modification-date',
+    'registrant-email',
+    'registrant-name',
+    'registrant-org',
+    'registrant-phone',
+    'registrar',
+    'text'
+)
+
 x509_creation_mapping = {
     'version': 'certificate',
     'serial-number': 'certificate',

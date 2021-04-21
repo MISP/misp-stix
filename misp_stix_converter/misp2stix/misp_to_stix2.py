@@ -538,7 +538,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 self._warnings.add(f'MISP Object name {object_name} not mapped.')
 
     @staticmethod
-    def _extract_multiple_object_attributes_with_data(attributes: list, force_single: list = [], with_data: list = []) -> dict:
+    def _extract_multiple_object_attributes_with_data(attributes: list, force_single: tuple = (), with_data: tuple = ()) -> dict:
         attributes_dict = defaultdict(list)
         for attribute in attributes:
             relation = attribute['object_relation']
@@ -642,7 +642,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             prefix = 'autonomous-system'
             attributes = self._extract_multiple_object_attributes(
                 misp_object['Attribute'],
-                force_single=['asn', 'description']
+                force_single=stix2_mapping.as_single_fields
             )
             pattern = [self._create_AS_pattern(attributes.pop('asn'))]
             if 'description' in attributes:
@@ -656,7 +656,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_attack_pattern_object(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=['name', 'summary']
+            force_single=stix2_mapping.attack_pattern_single_fields
         )
         prefix = 'attack-pattern'
         attack_pattern_id = f"{prefix}--{misp_object['uuid']}"
@@ -740,7 +740,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             prefix = 'user-account'
             attributes = self._extract_multiple_object_attributes(
                 misp_object['Attribute'],
-                force_single=['username']
+                force_single=stix2_mapping.credential_single_fields
             )
             pattern = []
             if 'username' in attributes:
@@ -772,10 +772,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_email_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'email-message'
-            fields_with_potential_data = ['attachment', 'screenshot']
             attributes = self._extract_multiple_object_attributes_with_data(
                 misp_object['Attribute'],
-                with_data=fields_with_potential_data
+                with_data=stix2_mapping.email_data_fields
             )
             pattern = []
             for key, feature in stix2_mapping.email_object_mapping.items():
@@ -784,7 +783,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         pattern.append(f"{prefix}:{feature} = '{value}'")
             if attributes:
                 n = 0
-                for key in fields_with_potential_data:
+                for key in stix2_mapping.email_data_fields:
                     if key in attributes:
                         for value in attributes.pop(key):
                             feature = f'body_multipart[{n}].body_raw_ref'
@@ -1114,7 +1113,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_AS_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
             attributes,
-            force_single=['asn', 'description']
+            force_single=stix2_mapping.as_single_fields
         )
         as_args = {'number': self._parse_AS_value(attributes.pop('asn'))}
         if 'description' in attributes:
@@ -1126,7 +1125,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_credential_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
             attributes,
-            force_single=['username']
+            force_single=stix2_mapping.credential_single_fields
         )
         credential_args = {}
         if 'username' in attributes:
