@@ -985,7 +985,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
 
     def _parse_file_attributes(self, attributes: dict, file_object: Union[File, WinExecutableFile]):
         if 'filename' in attributes:
-            filename = attributes.pop('filename')[0] if len(attributes['filename']) == 1 else attributes['filename'].pop(0)
+            filename = self._select_single_feature(attributes, 'filename')
             file_object.file_name = filename
             file_object.file_name.condition = 'Equals'
         for feature, key in stix1_mapping.file_object_mapping.items():
@@ -1353,7 +1353,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             ]
         )
         if 'id' in attributes:
-            cve_id = attributes.pop('id')[0] if len(attributes['id']) == 1 else attributes['id'].pop(0)
+            cve_id = self._select_single_feature(attributes, 'id')
             vulnerability.cve_id = cve_id
         if 'cvss-score' in attributes:
             cvss = CVSSVector()
@@ -1424,10 +1424,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 nameservers.append(URI(value=nameserver))
             whois_object.nameservers = nameservers
         if 'domain' in attributes:
-            domain_name = attributes.pop('domain')[0] if len(attributes['domain']) == 1 else attributes['domain'].pop(0)
+            domain_name = self._select_single_feature(attributes, 'domain')
             whois_object.domain_name = URI(value=domain_name)
         if 'ip-address' in attributes:
-            ip_address = attributes.pop('ip-address')[0] if len(attributes['ip-address']) == 1 else attribute['ip-address'].pop(0)
+            ip_address = self._select_single_feature(attributes, 'ip-address')
             whois_object.ip_address = Address(address_value=ip_address)
         if 'comment' in attributes:
             whois_object.remarks = attributes.pop('comment')

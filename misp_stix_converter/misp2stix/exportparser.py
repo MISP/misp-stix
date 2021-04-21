@@ -124,3 +124,11 @@ class MISPtoSTIXParser():
     @staticmethod
     def _quick_fetch_tag_names(galaxy: dict) -> tuple:
         return tuple(f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"' for cluster in galaxy["GalaxyCluster"])
+
+    @staticmethod
+    def _select_single_feature(attributes: dict, feature: str) -> str:
+        if isinstance(attributes[feature], list):
+            if len(attributes[feature]) == 1:
+                return attributes.pop(feature)[0]
+            return attributes[feature].pop(0)
+        return attributes.pop(feature)

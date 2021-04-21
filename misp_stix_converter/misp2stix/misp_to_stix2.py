@@ -1295,11 +1295,3 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         timestamp
                     )
                 )
-
-    @staticmethod
-    def _select_single_feature(attributes: dict, feature: str) -> str:
-        if isinstance(attributes[feature], list):
-            if len(attributes[feature]) == 1:
-                return attributes.pop(feature)[0]
-            return attributes[feature].pop(0)
-        return attributes.pop(feature)
