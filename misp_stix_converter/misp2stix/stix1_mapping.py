@@ -3,55 +3,55 @@
 
 # STIX header
 NS_DICT = {
-    "http://cybox.mitre.org/common-2" : 'cyboxCommon',
-    "http://cybox.mitre.org/cybox-2" : 'cybox',
-    "http://cybox.mitre.org/default_vocabularies-2" : 'cyboxVocabs',
-    "http://cybox.mitre.org/objects#AccountObject-2" : 'AccountObj',
+    "http://cybox.mitre.org/common-2": 'cyboxCommon',
+    "http://cybox.mitre.org/cybox-2": 'cybox',
+    "http://cybox.mitre.org/default_vocabularies-2": 'cyboxVocabs',
+    "http://cybox.mitre.org/objects#AccountObject-2": 'AccountObj',
     "http://cybox.mitre.org/objects#ArtifactObject-2": 'ArtifactObj',
-    "http://cybox.mitre.org/objects#ASObject-1" : 'ASObj',
-    "http://cybox.mitre.org/objects#AddressObject-2" : 'AddressObj',
-    "http://cybox.mitre.org/objects#PortObject-2" : 'PortObj',
-    "http://cybox.mitre.org/objects#DomainNameObject-1" : 'DomainNameObj',
-    "http://cybox.mitre.org/objects#EmailMessageObject-2" : 'EmailMessageObj',
-    "http://cybox.mitre.org/objects#FileObject-2" : 'FileObj',
-    "http://cybox.mitre.org/objects#HTTPSessionObject-2" : 'HTTPSessionObj',
-    "http://cybox.mitre.org/objects#HostnameObject-1" : 'HostnameObj',
-    "http://cybox.mitre.org/objects#MutexObject-2" : 'MutexObj',
-    "http://cybox.mitre.org/objects#PipeObject-2" : 'PipeObj',
-    "http://cybox.mitre.org/objects#URIObject-2" : 'URIObj',
-    "http://cybox.mitre.org/objects#WinRegistryKeyObject-2" : 'WinRegistryKeyObj',
-    'http://cybox.mitre.org/objects#WinServiceObject-2' : 'WinServiceObj',
-    "http://cybox.mitre.org/objects#NetworkConnectionObject-2" : 'NetworkConnectionObj',
-    "http://cybox.mitre.org/objects#NetworkSocketObject-2" : 'NetworkSocketObj',
-    "http://cybox.mitre.org/objects#SocketAddressObject-1" : 'SocketAddressObj',
-    "http://cybox.mitre.org/objects#SystemObject-2" : 'SystemObj',
-    "http://cybox.mitre.org/objects#ProcessObject-2" : 'ProcessObj',
-    "http://cybox.mitre.org/objects#X509CertificateObject-2" : 'X509CertificateObj',
-    "http://cybox.mitre.org/objects#WhoisObject-2" : 'WhoisObj',
-    "http://cybox.mitre.org/objects#WinExecutableFileObject-2" : 'WinExecutableFileObj',
+    "http://cybox.mitre.org/objects#ASObject-1": 'ASObj',
+    "http://cybox.mitre.org/objects#AddressObject-2": 'AddressObj',
+    "http://cybox.mitre.org/objects#PortObject-2": 'PortObj',
+    "http://cybox.mitre.org/objects#DomainNameObject-1": 'DomainNameObj',
+    "http://cybox.mitre.org/objects#EmailMessageObject-2": 'EmailMessageObj',
+    "http://cybox.mitre.org/objects#FileObject-2": 'FileObj',
+    "http://cybox.mitre.org/objects#HTTPSessionObject-2": 'HTTPSessionObj',
+    "http://cybox.mitre.org/objects#HostnameObject-1": 'HostnameObj',
+    "http://cybox.mitre.org/objects#MutexObject-2": 'MutexObj',
+    "http://cybox.mitre.org/objects#PipeObject-2": 'PipeObj',
+    "http://cybox.mitre.org/objects#URIObject-2": 'URIObj',
+    "http://cybox.mitre.org/objects#WinRegistryKeyObject-2": 'WinRegistryKeyObj',
+    'http://cybox.mitre.org/objects#WinServiceObject-2': 'WinServiceObj',
+    "http://cybox.mitre.org/objects#NetworkConnectionObject-2": 'NetworkConnectionObj',
+    "http://cybox.mitre.org/objects#NetworkSocketObject-2": 'NetworkSocketObj',
+    "http://cybox.mitre.org/objects#SocketAddressObject-1": 'SocketAddressObj',
+    "http://cybox.mitre.org/objects#SystemObject-2": 'SystemObj',
+    "http://cybox.mitre.org/objects#ProcessObject-2": 'ProcessObj',
+    "http://cybox.mitre.org/objects#X509CertificateObject-2": 'X509CertificateObj',
+    "http://cybox.mitre.org/objects#WhoisObject-2": 'WhoisObj',
+    "http://cybox.mitre.org/objects#WinExecutableFileObject-2": 'WinExecutableFileObj',
     "http://cybox.mitre.org/objects#UnixUserAccountObject-2": "UnixUserAccountObj",
     "http://cybox.mitre.org/objects#UserAccountObject-2": "UserAccountObj",
     "http://cybox.mitre.org/objects#WinUserAccountObject-2": "WinUserAccountObj",
     "http://cybox.mitre.org/objects#CustomObject-1": "CustomObj",
-    "http://data-marking.mitre.org/Marking-1" : 'marking',
+    "http://data-marking.mitre.org/Marking-1": 'marking',
     "http://data-marking.mitre.org/extensions/MarkingStructure#Simple-1": 'simpleMarking',
-    "http://data-marking.mitre.org/extensions/MarkingStructure#TLP-1" : 'tlpMarking',
-    "http://stix.mitre.org/ExploitTarget-1" : 'et',
-    "http://stix.mitre.org/Incident-1" : 'incident',
-    "http://stix.mitre.org/Indicator-2" : 'indicator',
+    "http://data-marking.mitre.org/extensions/MarkingStructure#TLP-1": 'tlpMarking',
+    "http://stix.mitre.org/ExploitTarget-1": 'et',
+    "http://stix.mitre.org/Incident-1": 'incident',
+    "http://stix.mitre.org/Indicator-2": 'indicator',
     "http://stix.mitre.org/CourseOfAction-1": 'coa',
-    "http://stix.mitre.org/TTP-1" : 'ttp',
-    "http://stix.mitre.org/ThreatActor-1" : 'ta',
-    "http://stix.mitre.org/common-1" : 'stixCommon',
-    "http://stix.mitre.org/default_vocabularies-1" : 'stixVocabs',
-    "http://stix.mitre.org/extensions/Identity#CIQIdentity3.0-1" : 'ciqIdentity',
-    "http://stix.mitre.org/extensions/TestMechanism#Snort-1" : 'snortTM',
+    "http://stix.mitre.org/TTP-1": 'ttp',
+    "http://stix.mitre.org/ThreatActor-1": 'ta',
+    "http://stix.mitre.org/common-1": 'stixCommon',
+    "http://stix.mitre.org/default_vocabularies-1": 'stixVocabs',
+    "http://stix.mitre.org/extensions/Identity#CIQIdentity3.0-1": 'ciqIdentity',
+    "http://stix.mitre.org/extensions/TestMechanism#Snort-1": 'snortTM',
     "http://stix.mitre.org/extensions/TestMechanism#YARA-1": 'yaraTM',
-    "http://stix.mitre.org/stix-1" : 'stix',
-    "http://www.w3.org/2001/XMLSchema-instance" : 'xsi',
-    "urn:oasis:names:tc:ciq:xal:3" : 'xal',
-    "urn:oasis:names:tc:ciq:xnl:3" : 'xnl',
-    "urn:oasis:names:tc:ciq:xpil:3" : 'xpil'
+    "http://stix.mitre.org/stix-1": 'stix',
+    "http://www.w3.org/2001/XMLSchema-instance": 'xsi',
+    "urn:oasis:names:tc:ciq:xal:3": 'xal',
+    "urn:oasis:names:tc:ciq:xnl:3": 'xnl',
+    "urn:oasis:names:tc:ciq:xpil:3": 'xpil'
 }
 
 SCHEMALOC_DICT = {
@@ -221,7 +221,7 @@ misp_indicator_type.update(
 cybox_validation = {"AutonomousSystem": "isInt"}
 
 
-## ATTRIBUTES MAPPING
+# ATTRIBUTES MAPPING
 email_attribute_mapping = {
     'email-src': 'from_',
     'email-dst': 'to',
@@ -363,7 +363,7 @@ attribute_types_mapping.update(
 )
 
 
-## OBJECTS MAPPING
+# OBJECTS MAPPING
 non_indicator_names = {
     'attack-pattern': '_parse_attack_pattern_object',
     'course-of-action': '_parse_course_of_action_object',
@@ -386,107 +386,6 @@ objects_mapping = {
     "whois": '_parse_whois_object',
     "x509": '_parse_x509_object'
 }
-
-
-## GALAXIES MAPPING
-_attack_pattern_names = (
-    'mitre-attack-pattern',
-    'mitre-enterprise-attack-attack-pattern',
-    'mitre-mobile-attack-attack-pattern',
-    'mitre-pre-attack-attack-pattern'
-)
-course_of_action_names = (
-    'mitre-course-of-action',
-    'mitre-enterprise-attack-course-of-action',
-    'mitre-mobile-attack-course-of-action'
-)
-_malware_names = (
-    'android',
-    'banker',
-    'stealer',
-    'backdoor',
-    'ransomware',
-    'mitre-malware',
-    'malpedia',
-    'mitre-enterprise-attack-malware',
-    'mitre-mobile-attack-malware'
-)
-_tool_names = (
-    'botnet',
-    'rat',
-    'exploit-kit',
-    'tds',
-    'tool',
-    'mitre-tool',
-    'mitre-enterprise-attack-tool',
-    'mitre-mobile-attack-tool'
-)
-ttp_names = (
-    'branded-vulnerability',
-    *_attack_pattern_names,
-    *_malware_names,
-    *_tool_names
-)
-galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
-galaxy_types_mapping.update(
-    dict.fromkeys(
-        _attack_pattern_names,
-        '_parse_attack_pattern_{}_galaxy'
-    )
-)
-galaxy_types_mapping.update(
-    dict.fromkeys(
-        course_of_action_names,
-        '_parse_course_of_action_{}_galaxy'
-    )
-)
-galaxy_types_mapping.update(
-    dict.fromkeys(
-        _malware_names,
-        '_parse_malware_{}_galaxy'
-    )
-)
-galaxy_types_mapping.update(
-    dict.fromkeys(
-        (
-            'threat-actor',
-            'microsoft-activity-group'
-        ),
-        '_parse_threat_actor_galaxy'
-    )
-)
-galaxy_types_mapping.update(
-    dict.fromkeys(
-        _tool_names,
-        '_parse_tool_{}_galaxy'
-    )
-)
-
-
-# mapping Windows Registry Hives and their abbreviations
-# see https://cybox.mitre.org/language/version2.1/xsddocs/objects/Win_Registry_Key_Object_xsd.html#RegistryHiveEnum
-# the dict keys must be UPPER CASE and end with \\
-misp_reghive = {
-    "HKEY_CLASSES_ROOT": "HKEY_CLASSES_ROOT",
-    "HKCR": "HKEY_CLASSES_ROOT",
-    "HKEY_CURRENT_CONFIG": "HKEY_CURRENT_CONFIG",
-    "HKCC": "HKEY_CURRENT_CONFIG",
-    "HKEY_CURRENT_USER": "HKEY_CURRENT_USER",
-    "HKCU": "HKEY_CURRENT_USER",
-    "HKEY_LOCAL_MACHINE": "HKEY_LOCAL_MACHINE",
-    "HKLM": "HKEY_LOCAL_MACHINE",
-    "HKEY_USERS": "HKEY_USERS",
-    "HKU": "HKEY_USERS",
-    "HKEY_CURRENT_USER_LOCAL_SETTINGS": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
-    "HKCULS": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
-    "HKEY_PERFORMANCE_DATA": "HKEY_PERFORMANCE_DATA",
-    "HKPD": "HKEY_PERFORMANCE_DATA",
-    "HKEY_PERFORMANCE_NLSTEXT": "HKEY_PERFORMANCE_NLSTEXT",
-    "HKPN": "HKEY_PERFORMANCE_NLSTEXT",
-    "HKEY_PERFORMANCE_TEXT": "HKEY_PERFORMANCE_TEXT",
-    "HKPT": "HKEY_PERFORMANCE_TEXT",
-}
-
 
 attack_pattern_object_mapping = {
     'id': 'capec_id',
@@ -599,6 +498,106 @@ x509_object_mapping = {
     'signature-algorithm': 'signature_algorithm',
     'subject': 'subject'
 }
+
+# GALAXIES MAPPING
+_attack_pattern_names = (
+    'mitre-attack-pattern',
+    'mitre-enterprise-attack-attack-pattern',
+    'mitre-mobile-attack-attack-pattern',
+    'mitre-pre-attack-attack-pattern'
+)
+course_of_action_names = (
+    'mitre-course-of-action',
+    'mitre-enterprise-attack-course-of-action',
+    'mitre-mobile-attack-course-of-action'
+)
+_malware_names = (
+    'android',
+    'banker',
+    'stealer',
+    'backdoor',
+    'ransomware',
+    'mitre-malware',
+    'malpedia',
+    'mitre-enterprise-attack-malware',
+    'mitre-mobile-attack-malware'
+)
+_tool_names = (
+    'botnet',
+    'rat',
+    'exploit-kit',
+    'tds',
+    'tool',
+    'mitre-tool',
+    'mitre-enterprise-attack-tool',
+    'mitre-mobile-attack-tool'
+)
+ttp_names = (
+    'branded-vulnerability',
+    *_attack_pattern_names,
+    *_malware_names,
+    *_tool_names
+)
+galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
+galaxy_types_mapping.update(
+    dict.fromkeys(
+        _attack_pattern_names,
+        '_parse_attack_pattern_{}_galaxy'
+    )
+)
+galaxy_types_mapping.update(
+    dict.fromkeys(
+        course_of_action_names,
+        '_parse_course_of_action_{}_galaxy'
+    )
+)
+galaxy_types_mapping.update(
+    dict.fromkeys(
+        _malware_names,
+        '_parse_malware_{}_galaxy'
+    )
+)
+galaxy_types_mapping.update(
+    dict.fromkeys(
+        (
+            'threat-actor',
+            'microsoft-activity-group'
+        ),
+        '_parse_threat_actor_galaxy'
+    )
+)
+galaxy_types_mapping.update(
+    dict.fromkeys(
+        _tool_names,
+        '_parse_tool_{}_galaxy'
+    )
+)
+
+
+# mapping Windows Registry Hives and their abbreviations
+# see https://cybox.mitre.org/language/version2.1/xsddocs/objects/Win_Registry_Key_Object_xsd.html#RegistryHiveEnum
+# the dict keys must be UPPER CASE and end with \\
+misp_reghive = {
+    "HKEY_CLASSES_ROOT": "HKEY_CLASSES_ROOT",
+    "HKCR": "HKEY_CLASSES_ROOT",
+    "HKEY_CURRENT_CONFIG": "HKEY_CURRENT_CONFIG",
+    "HKCC": "HKEY_CURRENT_CONFIG",
+    "HKEY_CURRENT_USER": "HKEY_CURRENT_USER",
+    "HKCU": "HKEY_CURRENT_USER",
+    "HKEY_LOCAL_MACHINE": "HKEY_LOCAL_MACHINE",
+    "HKLM": "HKEY_LOCAL_MACHINE",
+    "HKEY_USERS": "HKEY_USERS",
+    "HKU": "HKEY_USERS",
+    "HKEY_CURRENT_USER_LOCAL_SETTINGS": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
+    "HKCULS": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
+    "HKEY_PERFORMANCE_DATA": "HKEY_PERFORMANCE_DATA",
+    "HKPD": "HKEY_PERFORMANCE_DATA",
+    "HKEY_PERFORMANCE_NLSTEXT": "HKEY_PERFORMANCE_NLSTEXT",
+    "HKPN": "HKEY_PERFORMANCE_NLSTEXT",
+    "HKEY_PERFORMANCE_TEXT": "HKEY_PERFORMANCE_TEXT",
+    "HKPT": "HKEY_PERFORMANCE_TEXT",
+}
+
 
 # Descriptions
 
