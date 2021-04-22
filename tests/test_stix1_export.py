@@ -296,7 +296,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(dst_socket.port.port_value.value, int(dst_port['value']))
         self.assertEqual(properties.address_family.value, address['value'])
         self.assertEqual(properties.domain.value, domain['value'])
-        self.assertEqual(properties.protocol.value[0], protocol['value'])
+        self.assertEqual(properties.protocol.value, protocol['value'])
         self.assertEqual(getattr(properties, f"is_{state['value']}"), True)
 
     def _check_observable_features(self, observable, attribute, name):
