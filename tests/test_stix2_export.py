@@ -174,6 +174,26 @@ class TestSTIX2Export(unittest.TestCase):
         return int(value)
 
     @staticmethod
+    def _reassemble_pattern(pattern):
+        reassembled = []
+        middle = False
+        for feature in pattern.split(' AND '):
+            if feature.startswith('('):
+                pattern_part = [feature]
+                middle = True
+                continue
+            if feature.endswith(')'):
+                pattern_part.append(feature)
+                reassembled.append(' AND '.join(pattern_part))
+                middle = False
+                continue
+            if middle:
+                pattern_part.append(feature)
+            else:
+                reassembled.append(feature)
+        return reassembled
+
+    @staticmethod
     def _remove_attribute_ids_flag(event):
         for attribute in event['Event']['Attribute']:
             attribute['to_ids'] = False
@@ -1210,6 +1230,27 @@ class TestSTIX20Export(TestSTIX2Export):
         )
         self.assertEqual(user_agent_, f"email-message:x_misp_user_agent = '{_user_agent}'")
         self.assertEqual(boundary_, f"email-message:x_misp_mime_boundary = '{_boundary}'")
+
+    def test_event_with_file_indicator_object(self):
+        event = get_event_with_file_object_with_artifact()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute['value'] for attribute in attributes)
+        md5_, sha1_, sha256_, filename_, encoding_, path_, size_, malware_sample_, attachment_ = self._reassemble_pattern(pattern[1:-1])
+        self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5}'")
+        self.assertEqual(sha1_, f"file:hashes.SHA1 = '{_sha1}'")
+        self.assertEqual(sha256_, f"file:hashes.SHA256 = '{_sha256}'")
+        self.assertEqual(filename_, f"file:name = '{_filename}'")
+        self.assertEqual(encoding_, f"file:name_enc = '{_encoding}'")
+        self.assertEqual(path_, f"file:parent_directory_ref.path = '{_path}'")
+        self.assertEqual(size_, f"file:size = '{_size}'")
+        ms_data, ms_filename, ms_md5 = malware_sample_.split(' AND ')
+        self.assertEqual(ms_data, f"(file:content_ref.payload_bin = '{attributes[0]['data']}'")
+        filename, md5 = _malware_sample.split('|')
+        self.assertEqual(ms_filename, f"file:content_ref.x_misp_filename = '{filename}'")
+        self.assertEqual(ms_md5, f"file:content_ref.hashes.MD5 = '{md5}')")
+        a_data, a_filename = attachment_.split(' AND ')
+        self.assertEqual(a_data, f"(file:content_ref.payload_bin = '{attributes[6]['data']}'")
+        self.assertEqual(a_filename, f"file:content_ref.x_misp_filename = '{_attachment}')")
 
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
@@ -2585,6 +2626,27 @@ class TestSTIX21Export(TestSTIX2Export):
         )
         self.assertEqual(user_agent_, f"email-message:x_misp_user_agent = '{_user_agent}'")
         self.assertEqual(boundary_, f"email-message:x_misp_mime_boundary = '{_boundary}'")
+
+    def test_event_with_file_indicator_object(self):
+        event = get_event_with_file_object_with_artifact()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute['value'] for attribute in attributes)
+        md5_, sha1_, sha256_, filename_, encoding_, path_, size_, malware_sample_, attachment_ = self._reassemble_pattern(pattern[1:-1])
+        self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5}'")
+        self.assertEqual(sha1_, f"file:hashes.SHA1 = '{_sha1}'")
+        self.assertEqual(sha256_, f"file:hashes.SHA256 = '{_sha256}'")
+        self.assertEqual(filename_, f"file:name = '{_filename}'")
+        self.assertEqual(encoding_, f"file:name_enc = '{_encoding}'")
+        self.assertEqual(path_, f"file:parent_directory_ref.path = '{_path}'")
+        self.assertEqual(size_, f"file:size = '{_size}'")
+        ms_data, ms_filename, ms_md5 = malware_sample_.split(' AND ')
+        self.assertEqual(ms_data, f"(file:content_ref.payload_bin = '{attributes[0]['data']}'")
+        filename, md5 = _malware_sample.split('|')
+        self.assertEqual(ms_filename, f"file:content_ref.x_misp_filename = '{filename}'")
+        self.assertEqual(ms_md5, f"file:content_ref.hashes.MD5 = '{md5}')")
+        a_data, a_filename = attachment_.split(' AND ')
+        self.assertEqual(a_data, f"(file:content_ref.payload_bin = '{attributes[6]['data']}'")
+        self.assertEqual(a_filename, f"file:content_ref.x_misp_filename = '{_attachment}')")
 
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
