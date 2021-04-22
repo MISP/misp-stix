@@ -4,13 +4,12 @@
 import socket
 from . import stix1_mapping
 from .exportparser import MISPtoSTIXParser
-from base64 import b64encode
 from collections import defaultdict
-from cybox.core import Object, Observable, ObservableComposition, RelatedObject
+from cybox.core import Observable, ObservableComposition, RelatedObject
 from cybox.common import Hash, HashList, ByteRun, ByteRuns
 from cybox.common.hashes import _set_hash_type
 from cybox.common.object_properties import CustomProperties,  Property
-from cybox.objects.account_object import Account, Authentication, StructuredAuthenticationMechanism
+from cybox.objects.account_object import Authentication, StructuredAuthenticationMechanism
 from cybox.objects.address_object import Address
 from cybox.objects.artifact_object import Artifact, RawArtifact
 from cybox.objects.as_object import AutonomousSystem
@@ -41,10 +40,8 @@ from cybox.objects.win_registry_key_object import RegistryValue, RegistryValues,
 from cybox.objects.win_service_object import WinService
 from cybox.objects.win_user_account_object import WinGroup, WinGroupList, WinUser
 from cybox.objects.x509_certificate_object import X509Certificate, X509CertificateSignature, X509Cert, SubjectPublicKey, RSAPublicKey, Validity
-from cybox.utils import Namespace
 from datetime import datetime
 from io import BytesIO
-from mixbox import idgen
 from stix.campaign import Campaign, Names
 from stix.coa import CourseOfAction
 from stix.common import InformationSource, Identity, ToolInformation
@@ -70,7 +67,7 @@ from stix.ttp import TTP, Behavior
 from stix.ttp.attack_pattern import AttackPattern
 from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 _FILE_SINGLE_ATTRIBUTES = (
     "attachment", "authentihash", "entropy", "imphash", "malware-sample", "md5",

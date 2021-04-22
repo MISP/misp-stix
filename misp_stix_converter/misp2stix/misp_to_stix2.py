@@ -252,7 +252,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             timestamp
         )
         if markings:
-            self._handle_markings(campagin_args, markings)
+            self._handle_markings(campaign_args, markings)
         self._append_SDO(self._create_campaign(campaign_args))
 
     def _parse_custom_attribute(self, attribute: dict):

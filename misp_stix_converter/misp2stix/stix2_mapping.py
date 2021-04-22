@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from stix2.properties import (DictionaryProperty, ListProperty, ObjectReferenceProperty,
+from stix2.properties import (ListProperty, ObjectReferenceProperty,
                               StringProperty, TimestampProperty)
 from stix2.v20.common import (TLP_WHITE as TLP_WHITE_v20, TLP_GREEN as TLP_GREEN_v20,
                               TLP_AMBER as TLP_AMBER_v20, TLP_RED as TLP_RED_v20)

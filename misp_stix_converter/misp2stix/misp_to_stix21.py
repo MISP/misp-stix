@@ -7,8 +7,7 @@ from .stix2_mapping import (CustomAttribute_v21, domain_ip_uuid_fields, tlp_mark
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from stix2.exceptions import TLPMarkingDefinitionError
-from stix2.properties import DictionaryProperty, ListProperty, StringProperty, TimestampProperty
+from stix2.properties import ListProperty, StringProperty
 from stix2.v21.bundle import Bundle
 from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
                                    EmailMessage, EmailMIMEComponent, File, IPv4Address,
