@@ -193,12 +193,10 @@ attack_pattern_object_mapping = {
     'name': 'name',
     'summary': 'description'
 }
-
 attack_pattern_reference_mapping = {
     'id': ('capec', 'external_id'),
     'references': ('mitre-attack', 'url')
 }
-
 attack_pattern_single_fields = (
     'name',
     'summary'
@@ -213,7 +211,6 @@ credential_object_mapping = {
     'password': 'credential',
     'username': 'user_id'
 }
-
 credential_single_fields = (
     'username',
 )
@@ -222,7 +219,6 @@ domain_ip_object_mapping = {
     'domain': 'value',
     'ip': 'resolves_to_refs[*].value'
 }
-
 domain_ip_uuid_fields = (
     'ip',
 )
@@ -231,7 +227,6 @@ email_data_fields = (
     'attachment',
     'screenshot'
 )
-
 email_object_mapping = {
     'cc': 'cc_refs.value',
     'email-body': 'body',
@@ -249,11 +244,13 @@ file_data_fields = (
     'attachment',
     'malware-sample'
 )
-
 file_object_mapping = {
-
+    'filename': 'name',
+    'file-encoding': 'name_enc',
+    'mime-type': 'mime_type',
+    'path': 'parent_directory_ref.path',
+    'size-in-bytes': 'size'
 }
-
 file_single_fields = file_data_fields + _hash_attribute_types
 
 ip_port_object_mapping = {
@@ -273,12 +270,10 @@ ip_port_object_mapping = {
         'src-port': "src_port"
     }
 }
-
 ip_port_single_fields = (
     'first-seen',
     'last-seen'
 )
-
 ip_port_uuid_fields = (
     'ip',
     'ip-dst',

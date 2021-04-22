@@ -797,6 +797,62 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_email_object_observable(misp_object)
 
+    def _parse_file_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'file'
+            attributes = self._extract_multiple_object_attributes_with_data(
+                misp_object['Attribute'],
+                force_single=stix2_mapping.file_single_fields,
+                with_data=stix2_mapping.file_data_fields
+            )
+            pattern = []
+            for hash_type in stix2_mapping._hash_attribute_types:
+                if hash_type in attributes:
+                    pattern.append(
+                        self._create_hash_pattern(
+                            hash_type,
+                            attributes.pop(hash_type)
+                        )
+                    )
+            for key, feature in stix2_mapping.file_object_mapping.items():
+                if key in attributes:
+                    for value in attributes.pop(key):
+                        pattern.append(f"{prefix}:{feature} = '{value}'")
+            if 'malware-sample' in attributes:
+                value = attributes.pop('malware-sample')
+                malware_sample = []
+                if isinstance(value, tuple):
+                    value, data = value
+                    malware_sample.append(self._create_content_ref_pattern(data))
+                filename, md5 = value.split('|')
+                malware_sample.append(
+                    self._create_content_ref_pattern(
+                        filename,
+                        'x_misp_filename'
+                    )
+                )
+                malware_sample.append(
+                    self._create_content_ref_pattern(
+                        md5,
+                        'hashes.MD5'
+                    )
+                )
+                pattern.append(f"({' AND '.join(malware_sample)})")
+            if 'attachment' in attributes:
+                value = attributes.pop('attachment')
+                if isinstance(value, tuple):
+                    value, data = value
+                    filename_pattern = self._create_content_ref_pattern(value, 'x_misp_filename')
+                    data_pattern = self._create_content_ref_pattern(data)
+                    pattern.append(f'({data_pattern} AND {filename_pattern})')
+                else:
+                    pattern.append(self._create_content_ref_pattern(value, 'x_misp_filename'))
+            if attributes:
+                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_file_object_observable(misp_object)
+
     def _parse_ip_port_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'
@@ -1169,8 +1225,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return f"autonomous-system:number = '{self._parse_AS_value(value)}'"
 
     @staticmethod
-    def _create_content_ref_pattern(value: str) -> str:
-        return f"file:content_ref.payload_bin = '{value}'"
+    def _create_content_ref_pattern(value: str, feature: str = 'payload_bin') -> str:
+        return f"file:content_ref.{feature} = '{value}'"
 
     @staticmethod
     def _create_domain_pattern(value: str) -> str:
