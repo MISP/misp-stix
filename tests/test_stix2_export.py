@@ -1231,6 +1231,47 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(user_agent_, f"email-message:x_misp_user_agent = '{_user_agent}'")
         self.assertEqual(boundary_, f"email-message:x_misp_mime_boundary = '{_boundary}'")
 
+    def test_event_with_email_observable_object(self):
+        event = get_event_with_email_object()
+        attributes, observable_objects = self._run_observable_from_object_tests(event)
+        _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary = (attribute['value'] for attribute in attributes)
+        message = observable_objects['0']
+        self.assertEqual(message.type, 'email-message')
+        self.assertEqual(message.is_multipart, True)
+        self.assertEqual(message.subject, _subject)
+        additional_header = message.additional_header_fields
+        self.assertEqual(additional_header['Reply-To'], _reply_to)
+        self.assertEqual(additional_header['X-Mailer'], _x_mailer)
+        self.assertEqual(message.x_misp_mime_boundary, _boundary)
+        self.assertEqual(message.x_misp_user_agent, _user_agent)
+        self.assertEqual(message.from_ref, '1')
+        self.assertEqual(message.to_refs, ['2'])
+        self.assertEqual(message.cc_refs, ['3', '4'])
+        body1, body2 = message.body_multipart
+        self.assertEqual(body1['body_raw_ref'], '5')
+        self.assertEqual(body1['content_disposition'], f"attachment; filename='{_attachment1}'")
+        self.assertEqual(body2['body_raw_ref'], '6')
+        self.assertEqual(body2['content_disposition'], f"attachment; filename='{_attachment2}'")
+        address1 = observable_objects['1']
+        self.assertEqual(address1.type, 'email-addr')
+        self.assertEqual(address1.value, _from)
+        address2 = observable_objects['2']
+        self.assertEqual(address2.type, 'email-addr')
+        self.assertEqual(address2.value, _to)
+        address3 = observable_objects['3']
+        self.assertEqual(address3.type, 'email-addr')
+        self.assertEqual(address3.value, _cc1)
+        address4 = observable_objects['4']
+        self.assertEqual(address4.type, 'email-addr')
+        self.assertEqual(address4.value, _cc2)
+        file1 = observable_objects['5']
+        self.assertEqual(file1.type, 'file')
+        self.assertEqual(file1.name, _attachment1)
+        file2 = observable_objects['6']
+        self.assertEqual(file2.type, 'file')
+        self.assertEqual(file2.name, _attachment2)
+
+
     def test_event_with_file_indicator_object(self):
         event = get_event_with_file_object_with_artifact()
         attributes, pattern = self._run_indicator_from_object_tests(event)
