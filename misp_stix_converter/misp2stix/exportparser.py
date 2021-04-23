@@ -48,6 +48,20 @@ class MISPtoSTIXParser():
         return attributes_dict
 
     @staticmethod
+    def _extract_multiple_object_attributes_with_data(attributes: list, force_single: tuple = (), with_data: tuple = ()) -> dict:
+        attributes_dict = defaultdict(list)
+        for attribute in attributes:
+            relation = attribute['object_relation']
+            value = attribute['value']
+            if relation in with_data and attribute.get('data'):
+                value = (value, attribute['data'])
+            if relation in force_single:
+                attributes_dict[relation] = value
+            else:
+                attributes_dict[relation].append(value)
+        return attributes_dict
+
+    @staticmethod
     def _extract_multiple_object_attributes_with_uuid(attributes: list, with_uuid: Optional[tuple] = None) -> dict:
         attributes_dict = defaultdict(list)
         if with_uuid is not None:

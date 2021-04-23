@@ -537,20 +537,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 self._parse_custom_object(misp_object)
                 self._warnings.add(f'MISP Object name {object_name} not mapped.')
 
-    @staticmethod
-    def _extract_multiple_object_attributes_with_data(attributes: list, force_single: tuple = (), with_data: tuple = ()) -> dict:
-        attributes_dict = defaultdict(list)
-        for attribute in attributes:
-            relation = attribute['object_relation']
-            value = attribute['value']
-            if relation in with_data and attribute.get('data'):
-                value = (value, attribute['data'])
-            if relation in force_single:
-                attributes_dict[relation] = value
-            else:
-                attributes_dict[relation].append(value)
-        return attributes_dict
-
     def _handle_object_indicator(self, misp_object: dict, pattern: list):
         indicator_id = f"indicator--{misp_object['uuid']}"
         indicator_args = {
@@ -1194,6 +1180,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             credential_args.update(self._handle_observable_multiple_properties(attributes))
         return credential_args
+
+    def _parse_email_args(self, attributes: dict) -> dict:
+        email_args = {}
+        if any(key in attributes for key in stix2_mapping.email_header_fields.keys()):
+            header_fields = {}
+            for key, feature in stix2_mapping.email_header_fields.items():
+                if attributes.get(key):
+                    header_fields[feature] = self._select_single_feature(attributes, key)
+            email_args['additional_header_fields'] = header_fields
+        for feature in ('send-date', 'subject'):
+            if attributes.get(feature):
+                email_args[stix2_mapping.email_object_mapping[feature]] = self._select_single_feature(
+                    attributes,
+                    feature
+                )
+        if attributes:
+            email_args.update(self._handle_observable_multiple_properties(attributes))
+        return email_args
 
     def _parse_domain_args(self, attributes: dict) -> dict:
         domain_args = {}

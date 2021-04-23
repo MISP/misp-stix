@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
-from .stix2_mapping import (CustomAttribute_v20, CustomNote, ip_port_single_fields,
-                            tlp_markings_v20)
+from .stix2_mapping import (CustomAttribute_v20, CustomNote, email_data_fields,
+                            email_header_fields, email_object_mapping,
+                            ip_port_single_fields, tlp_markings_v20)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
@@ -112,9 +113,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_email_attribute_observable(self, attribute: dict):
         observable_object = {
-            '0': EmailAddress(
-                value=attribute['value']
-            )
+            '0': self._create_email_address(attribute['value'])
         }
         self._handle_attribute_observable(attribute, observable_object)
 
@@ -134,9 +133,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 _valid_refs={'1': 'email-addr'},
                 to_refs=['1']
             ),
-            '1': EmailAddress(
-                value=attribute['value']
-            )
+            '1': self._create_email_address(attribute['value'])
         }
         self._handle_attribute_observable(attribute, observable_object)
 
@@ -169,9 +166,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 _valid_refs={'1': 'email-addr'},
                 from_ref='1'
             ),
-            '1': EmailAddress(
-                value=attribute['value']
-            )
+            '1': self._create_email_address(attribute['value'])
         }
         self._handle_attribute_observable(attribute, observable_object)
 
@@ -383,13 +378,82 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object['0'] = DomainName(**domain_args)
         self._handle_object_observable(misp_object, observable_object)
 
+    def _parse_email_object_observable(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes_with_data(
+            misp_object['Attribute'],
+            with_data=email_data_fields
+        )
+        observable_object = {}
+        email_message_args = defaultdict(dict)
+        email_message_args['is_multipart'] = False
+        index = 1
+        if attributes.get('from'):
+            str_index = str(index)
+            self._parse_email_object_reference(
+                self._select_single_feature(attributes, 'from'),
+                email_message_args,
+                observable_object,
+                str_index
+            )
+            email_message_args['from_ref'] = str_index
+            index += 1
+        for feature in ('to', 'cc'):
+            if attributes.get(feature):
+                references = []
+                for value in attributes.pop(feature):
+                    str_index = str(index)
+                    self._parse_email_object_reference(
+                        value,
+                        email_message_args,
+                        observable_object,
+                        str_index
+                    )
+                    references.append(str_index)
+                    index += 1
+                email_message_args[f'{feature}_refs'] = references
+        if any(key in attributes for key in email_data_fields):
+            body_multipart = []
+            for feature in email_data_fields:
+                if attributes.get(feature):
+                    for value in attributes.pop(feature):
+                        str_index = str(index)
+                        if isinstance(value, tuple):
+                            value, data = value
+                            observable_objects[str_index] = self._create_artifact(
+                                data,
+                                filename=value
+                            )
+                        else:
+                            observable_object[str_index] = self._create_file(value)
+                        body = {
+                            'content_disposition': f"{feature}; filename='{value}'",
+                            'body_raw_ref': str_index
+                        }
+                        body_multipart.append(body)
+                        index += 1
+            email_message_args.update(
+                {
+                    'body_multipart': body_multipart,
+                    'is_multipart': True
+                }
+            )
+        if attributes:
+            email_message_args.update(self._parse_email_args(attributes))
+        observable_object['0'] = EmailMessage(**email_message_args)
+        self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_email_object_reference(self, address: str, email_args: dict, observable: dict, index: str):
+        email_address = self._create_email_address(address)
+        observable[index] = email_address
+        email_args['_valid_refs'][index] = email_address._type
+
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
             force_single=ip_port_single_fields
         )
         protocols = {'tcp'}
-        observable_objects = {}
+        observable_object = {}
         network_traffic_args = defaultdict(dict)
         index = 1
         for feature in ('ip-src', 'ip-dst', 'ip'):
@@ -397,7 +461,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 str_index = str(index)
                 ip_value = self._select_single_feature(attributes, feature)
                 address_object = self._get_address_type(ip_value)(value=ip_value)
-                observable_objects[str_index] = address_object
+                observable_object[str_index] = address_object
                 network_traffic_args['_valid_refs'][str_index] = address_object._type
                 protocols.add(address_object._type.split('-')[0])
                 ref_type = 'src_ref' if feature == 'ip-src' else 'dst_ref'
@@ -408,8 +472,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         network_traffic_args['protocols'] = protocols
         if attributes:
             network_traffic_args.update(self._parse_ip_port_args(attributes))
-        observable_objects['0'] = NetworkTraffic(**network_traffic_args)
-        self._handle_object_observable(misp_object, observable_objects)
+        observable_object['0'] = NetworkTraffic(**network_traffic_args)
+        self._handle_object_observable(misp_object, observable_object)
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
@@ -442,6 +506,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if custom_args.get('markings'):
             stix_markings.clean(custom_args['markings'])
         return CustomAttribute_v20(**custom_args)
+
+    @staticmethod
+    def _create_email_address(email_address: str) -> EmailAddress:
+        return EmailAddress(value=email_address)
 
     def _create_identity_object(self, orgname: str) -> Identity:
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
