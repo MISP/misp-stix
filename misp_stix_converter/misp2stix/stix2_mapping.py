@@ -223,6 +223,10 @@ domain_ip_uuid_fields = (
     'ip',
 )
 
+email_header_fields = {
+    'reply-to': 'Reply-To',
+    'x-mailer': 'X-Mailer'
+}
 email_data_fields = (
     'attachment',
     'screenshot'
@@ -239,6 +243,13 @@ email_object_mapping = {
     'to-display-name': 'to_refs.display_name',
     'x-mailer': 'additional_header_fields.x_mailer'
 }
+email_uuid_fields = (
+    'attachment',
+    'cc',
+    'from',
+    'screenshot',
+    'to'
+)
 
 file_data_fields = (
     'attachment',
