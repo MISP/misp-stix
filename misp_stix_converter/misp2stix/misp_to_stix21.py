@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
-from .stix2_mapping import (CustomAttribute_v21, domain_ip_uuid_fields, tlp_markings_v21,
-                            ip_port_single_fields, ip_port_uuid_fields)
+from .stix2_mapping import (CustomAttribute_v21, domain_ip_uuid_fields, email_data_fields,
+                            email_uuid_fields, tlp_markings_v21, ip_port_single_fields,
+                            ip_port_uuid_fields)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
@@ -119,17 +120,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     )
                 ]
             ),
-            File(
-                id=file_id,
-                name=attribute['value']
-            )
+            self._create_file(file_id, attribute['value'])
         ]
         self._handle_attribute_observable(attribute, objects)
 
     def _parse_email_attribute_observable(self, attribute: dict):
-        address_object = EmailAddress(
-            id=f"email-addr--{attribute['uuid']}",
-            value=attribute['value']
+        address_object = self._create_email_address(
+            f"email-addr--{attribute['uuid']}",
+            attribute['value']
         )
         self._handle_attribute_observable(attribute, [address_object])
 
@@ -149,9 +147,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 is_multipart=False,
                 to_refs=[address_id]
             ),
-            EmailAddress(
-                id=address_id,
-                value=attribute['value']
+            self._create_email_address(
+                address_id,
+                attribute['value']
             )
         ]
         self._handle_attribute_observable(attribute, objects)
@@ -196,9 +194,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 is_multipart=False,
                 from_ref=address_id
             ),
-            EmailAddress(
-                id=address_id,
-                value=attribute['value']
+            self._create_email_address(
+                address_id,
+                attribute['value']
             )
         ]
         self._handle_attribute_observable(attribute, objects)
@@ -222,10 +220,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [message_object])
 
     def _parse_filename_attribute_observable(self, attribute: dict):
-        file_object = File(
-            id=f"file--{attribute['uuid']}",
-            name=attribute['value']
-        )
+        file_object = self._create_file(f"file--{attribute['uuid']}", attribute['value'])
         self._handle_attribute_observable(attribute, [file_object])
 
     def _parse_hash_attribute_observable(self, attribute: dict):
@@ -380,7 +375,21 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     ################################################################################
 
     @staticmethod
-    def _extract_object_attributes_with_multiple_and_uuid(attributes: list, force_single: list = [], with_uuid: list = []) -> dict:
+    def _extract_multiple_object_attributes_with_uuid_and_data(attributes: list, with_uuid: tuple = (), with_data: tuple = ()) -> dict:
+        attributes_dict = defaultdict(list)
+        for attribute in attributes:
+            relation = attribute['object_relation']
+            if relation not in with_uuid and relation not in with_data:
+                attributes_dict[relation].append(attribute['value'])
+                continue
+            value = [attribute['value'], attribute['uuid']]
+            if relation in with_data and attribute.get('data'):
+                value.append(attribute['data'])
+            attributes_dict[relation].append(value)
+        return attributes_dict
+
+    @staticmethod
+    def _extract_object_attributes_with_multiple_and_uuid(attributes: list, force_single: tuple = (), with_uuid: tuple = ()) -> dict:
         attributes_dict = defaultdict(list)
         for attribute in attributes:
             relation = attribute['object_relation']
@@ -420,8 +429,66 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             domain_args['resolves_to_refs'] = [stix_object.id for stix_object in objects]
         if attributes:
             domain_args.update(self._parse_domain_args(attributes))
-        domain_object = DomainName(**domain_args)
-        objects.insert(0, domain_object)
+        objects.insert(0, DomainName(**domain_args))
+        self._handle_object_observable(misp_object, objects)
+
+    def _parse_email_object_observable(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
+            misp_object['Attribute'],
+            with_uuid=email_uuid_fields,
+            with_data=email_data_fields
+        )
+        objects = []
+        email_message_args = defaultdict(dict)
+        email_message_args['is_multipart'] = True
+        if attributes.get('from'):
+            value, uuid = self._select_single_feature(attributes, 'from')
+            address_id = f'email-addr--{uuid}'
+            email_address = self._create_email_address(address_id, value)
+            objects.append(email_address)
+            email_message_args['from_ref'] = address_id
+        for feature in ('to', 'cc'):
+            if attributes.get(feature):
+                references = []
+                for value, uuid in attributes.pop(feature):
+                    address_id = f'email-addr--{uuid}'
+                    email_address = self._create_email_address(
+                        address_id,
+                        value
+                    )
+                    objects.append(email_address)
+                    references.append(address_id)
+                email_message_args[f'{feature}_refs'] = references
+        if any(key in attributes for key in email_data_fields):
+            body_multipart = []
+            for feature in email_data_fields:
+                if attributes.get(feature):
+                    for attribute in attributes.pop(feature):
+                        if len(attribute) == 3:
+                            value, uuid, data = attribute
+                            object_id = f'artifact--{uuid}'
+                            objects.append(
+                                self._create_artifact(object_id, data, filename=value)
+                            )
+                        else:
+                            value, uuid = attribute
+                            object_id = f'file--{uuid}'
+                            objects.append(self._create_file(object_id, value))
+                        body_multipart.append(
+                            {
+                                'content_disposition': f"{feature}; filename='{value}'",
+                                'body_raw_ref': object_id
+                            }
+                        )
+            email_message_args.update(
+                {
+                    'body_multipart': body_multipart,
+                    'is_multipart': True
+                }
+            )
+        if attributes:
+            email_message_args.update(self._parse_email_args(attributes))
+        objects.insert(0, EmailMessage(**email_message_args))
         self._handle_object_observable(misp_object, objects)
 
     def _parse_ip_port_object_observable(self, misp_object: dict):
@@ -450,13 +517,18 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         network_traffic_args['protocols'] = protocols
         if attributes:
             network_traffic_args.update(self._parse_ip_port_args(attributes))
-        network_traffic = NetworkTraffic(**network_traffic_args)
-        objects.insert(0, network_traffic)
+        objects.insert(0, NetworkTraffic(**network_traffic_args))
         self._handle_object_observable(misp_object, objects)
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
+
+    def _create_artifact(self, artifact_id: str, content: str, filename: Optional[str] = None) -> Artifact:
+        args = {'id': artifact_id, 'payload_bin': content}
+        if filename is not None:
+            args['x_misp_filename'] = filename
+        return Artifact(**args)
 
     def _create_attack_pattern_from_galaxy(self, args: dict, cluster: dict) -> AttackPattern:
         args['kill_chain_phases'] = self._create_killchain(cluster['type'])
@@ -487,6 +559,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if custom_args.get('markings'):
             stix_markings.clean(custom_args['markings'])
         return CustomAttribute_v21(**custom_args)
+
+    @staticmethod
+    def _create_email_address(address_id: str, email_address: str) -> EmailAddress:
+        return EmailAddress(id=address_id, value=email_address)
+
+    @staticmethod
+    def _create_file(file_id: str, filename: str) -> File:
+        return File(id=file_id, name=filename)
 
     def _create_identity_object(self, orgname: str) -> Identity:
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
