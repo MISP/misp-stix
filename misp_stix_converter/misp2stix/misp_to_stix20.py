@@ -65,9 +65,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 _valid_refs={'1': 'artifact'},
                 content_ref='1'
             ),
-            '1': Artifact(
-                payload_bin=attribute['data']
-            )
+            '1': self._create_artifact(attribute['data'])
         }
         self._handle_attribute_observable(attribute, observable_object)
 
@@ -107,7 +105,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                     )
                 ]
             ),
-            '1': File(name=attribute['value'])
+            '1': self._create_file(attribute['value'])
         }
         self._handle_attribute_observable(attribute, observable_object)
 
@@ -192,7 +190,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_filename_attribute_observable(self, attribute: dict):
         observable_object = {
-            '0': File(name=attribute['value'])
+            '0': self._create_file(attribute['value'])
         }
         self._handle_attribute_observable(attribute, observable_object)
 
@@ -282,9 +280,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 _valid_refs={'1': 'artifact'},
                 content_ref='1'
             ),
-            '1': Artifact(
-                payload_bin=attribute['data']
-            )
+            '1': self._create_artifact(attribute['data'])
         }
         self._handle_attribute_observable(attribute, observable_object)
 
@@ -479,6 +475,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 
+    @staticmethod
+    def _create_artifact(content: str, filename: Optional[str] = None) -> Artifact:
+        args = {'payload_bin': content}
+        if filename is not None:
+            args['x_misp_filename'] = filename
+        return Artifact(**args)
+
     def _create_attack_pattern_from_galaxy(self, args: dict, cluster: dict) -> AttackPattern:
         args['kill_chain_phases'] = self._create_killchain(cluster['type'])
         return AttackPattern(**args)
@@ -510,6 +513,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_email_address(email_address: str) -> EmailAddress:
         return EmailAddress(value=email_address)
+
+    @staticmethod
+    def _create_file(name: str) -> File:
+        return File(name=name)
 
     def _create_identity_object(self, orgname: str) -> Identity:
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
