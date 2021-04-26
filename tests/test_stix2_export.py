@@ -2668,6 +2668,50 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(user_agent_, f"email-message:x_misp_user_agent = '{_user_agent}'")
         self.assertEqual(boundary_, f"email-message:x_misp_mime_boundary = '{_boundary}'")
 
+    def test_event_with_email_observable_object(self):
+        event = get_event_with_email_object()
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary = (attribute['value'] for attribute in attributes)
+        message, address1, address2, address3, address4, file1, file2 = observables
+        for grouping_ref, object_ref in zip(grouping_refs, object_refs):
+            self.assertEqual(grouping_ref, object_ref)
+        message_ref, address1_ref, address2_ref, address3_ref, address4_ref, file1_ref, file2_ref = grouping_refs
+        self.assertEqual(message.id, message_ref)
+        self.assertEqual(message.type, 'email-message')
+        self.assertEqual(message.is_multipart, True)
+        self.assertEqual(message.subject, _subject)
+        additional_header = message.additional_header_fields
+        self.assertEqual(additional_header['Reply-To'], _reply_to)
+        self.assertEqual(additional_header['X-Mailer'], _x_mailer)
+        self.assertEqual(message.x_misp_mime_boundary, _boundary)
+        self.assertEqual(message.x_misp_user_agent, _user_agent)
+        self.assertEqual(message.from_ref, address1_ref)
+        self.assertEqual(message.to_refs, [address2_ref])
+        self.assertEqual(message.cc_refs, [address3_ref, address4_ref])
+        body1, body2 = message.body_multipart
+        self.assertEqual(body1['body_raw_ref'], file1_ref)
+        self.assertEqual(body1['content_disposition'], f"attachment; filename='{_attachment1}'")
+        self.assertEqual(body2['body_raw_ref'], file2_ref)
+        self.assertEqual(body2['content_disposition'], f"attachment; filename='{_attachment2}'")
+        self.assertEqual(address1.id, address1_ref)
+        self.assertEqual(address1.type, 'email-addr')
+        self.assertEqual(address1.value, _from)
+        self.assertEqual(address2.id, address2_ref)
+        self.assertEqual(address2.type, 'email-addr')
+        self.assertEqual(address2.value, _to)
+        self.assertEqual(address3.id, address3_ref)
+        self.assertEqual(address3.type, 'email-addr')
+        self.assertEqual(address3.value, _cc1)
+        self.assertEqual(address4.id, address4_ref)
+        self.assertEqual(address4.type, 'email-addr')
+        self.assertEqual(address4.value, _cc2)
+        self.assertEqual(file1.id, file1_ref)
+        self.assertEqual(file1.type, 'file')
+        self.assertEqual(file1.name, _attachment1)
+        self.assertEqual(file2.id, file2_ref)
+        self.assertEqual(file2.type, 'file')
+        self.assertEqual(file2.name, _attachment2)
+
     def test_event_with_file_indicator_object(self):
         event = get_event_with_file_object_with_artifact()
         attributes, pattern = self._run_indicator_from_object_tests(event)
@@ -2708,10 +2752,10 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_ip_port_observable_object(self):
         event = get_event_with_ip_port_object()
-        attributes, grouping_refs, object_refs, observable = self._run_observable_from_object_tests(event)
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
         ip, port, domain, first_seen = (attribute['value'] for attribute in attributes)
         network_traffic_ref, address_ref = object_refs
-        network_traffic, address_object = observable
+        network_traffic, address_object = observables
         self.assertEqual(network_traffic_ref, grouping_refs[0])
         self.assertEqual(address_ref, grouping_refs[1])
         self.assertEqual(network_traffic.id, network_traffic_ref)
