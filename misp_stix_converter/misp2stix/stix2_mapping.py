@@ -255,14 +255,32 @@ file_data_fields = (
     'attachment',
     'malware-sample'
 )
+file_hash_main_types = (
+    'md5',
+    'sha1',
+    'sha224',
+    'sha256',
+    'sha384',
+    'sha512',
+    'sha3-224',
+    'sha3-256',
+    'sha3-384',
+    'sha3-512',
+    'ssdeep',
+    'tlsh'
+)
+file_hash_types = (
+    'sha512/224',
+    'sha512/256',
+)
 file_object_mapping = {
     'filename': 'name',
     'file-encoding': 'name_enc',
     'mime-type': 'mime_type',
-    'path': 'parent_directory_ref.path',
     'size-in-bytes': 'size'
 }
-file_single_fields = file_data_fields + _hash_attribute_types
+file_uuid_fields = file_data_fields + ('path',)
+file_single_fields = file_uuid_fields + _hash_attribute_types
 
 ip_port_object_mapping = {
     'ip_features': {

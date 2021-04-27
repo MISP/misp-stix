@@ -804,6 +804,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 if key in attributes:
                     for value in attributes.pop(key):
                         pattern.append(f"{prefix}:{feature} = '{value}'")
+            if 'path' in attributes:
+                value = attributes.pop('path')
+                pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")
             if 'malware-sample' in attributes:
                 value = attributes.pop('malware-sample')
                 malware_sample = []
@@ -1181,6 +1184,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             credential_args.update(self._handle_observable_multiple_properties(attributes))
         return credential_args
 
+    def _parse_domain_args(self, attributes: dict) -> dict:
+        domain_args = {}
+        for feature in ('domain', 'hostname'):
+            if attributes.get(feature):
+                domain_args['value'] = self._select_single_feature(
+                    attributes,
+                    feature
+                )
+                break
+        if attributes:
+            domain_args.update(self._handle_observable_multiple_properties(attributes))
+        return domain_args
+
     def _parse_email_args(self, attributes: dict) -> dict:
         email_args = {}
         if any(key in attributes for key in stix2_mapping.email_header_fields.keys()):
@@ -1199,18 +1215,27 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             email_args.update(self._handle_observable_multiple_properties(attributes))
         return email_args
 
-    def _parse_domain_args(self, attributes: dict) -> dict:
-        domain_args = {}
-        for feature in ('domain', 'hostname'):
-            if attributes.get(feature):
-                domain_args['value'] = self._select_single_feature(
-                    attributes,
-                    feature
-                )
-                break
+    def _parse_file_args(self, attributes: dict) -> dict:
+        file_args = defaultdict(dict)
+        for hash_type in stix2_mapping.file_hash_main_types:
+            if hash_type in attributes:
+                value = self._select_single_feature(attributes, hash_type)
+                file_args['hashes'][self._define_hash_type(hash_type)] = value
+        for hash_type in stix2_mapping.file_hash_types:
+            if hash_type in attributes:
+                feature = self._define_hash_type(hash_type)
+                value = self._select_single_feature(attributes, hash_type)
+                if feature not in file_args['hashes']:
+                    file_args['hashes'][feature] = value
+                else:
+                    attributes[hash_type] = [value]
+        for key, feature in stix2_mapping.file_object_mapping.items():
+            if key in attributes:
+                value = self._select_single_feature(attributes, key)
+                file_args[feature] = value
         if attributes:
-            domain_args.update(self._handle_observable_multiple_properties(attributes))
-        return domain_args
+            file_args.update(self._handle_observable_multiple_properties(attributes))
+        return file_args
 
     def _parse_ip_port_args(self, attributes: dict) -> dict:
         args = {}

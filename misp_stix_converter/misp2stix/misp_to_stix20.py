@@ -3,17 +3,17 @@
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix2_mapping import (CustomAttribute_v20, CustomNote, email_data_fields,
-                            email_header_fields, email_object_mapping,
-                            ip_port_single_fields, tlp_markings_v20)
+                            email_header_fields, email_object_mapping, file_data_fields,
+                            file_single_fields, ip_port_single_fields, tlp_markings_v20)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle
-from stix2.v20.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
-                                   EmailMessage, EmailMIMEComponent, File, IPv4Address,
-                                   IPv6Address, MACAddress, Mutex, NetworkTraffic,
-                                   URL, UserAccount, WindowsRegistryKey,
+from stix2.v20.observables import (Artifact, AutonomousSystem, Directory, DomainName,
+                                   EmailAddress, EmailMessage, EmailMIMEComponent,
+                                   File, IPv4Address, IPv6Address, MACAddress, Mutex,
+                                   NetworkTraffic, URL, UserAccount, WindowsRegistryKey,
                                    WindowsRegistryValueType, X509Certificate)
 from stix2.v20.sdo import (AttackPattern, Campaign, CourseOfAction, Identity,
                            Indicator, Malware, ObservedData, Report, ThreatActor,
@@ -442,6 +442,52 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         email_address = self._create_email_address(address)
         observable[index] = email_address
         email_args['_valid_refs'][index] = email_address._type
+
+    def _parse_file_object_observable(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes_with_data(
+            misp_object['Attribute'],
+            force_single=file_single_fields,
+            with_data=file_data_fields
+        )
+        observable_object = {}
+        file_args = defaultdict(dict)
+        index = 1
+        if 'path' in attributes:
+            str_index = str(index)
+            observable_object[str_index] = Directory(path=attributes.pop('path'))
+            file_args['parent_directory_ref'] = str_index
+            file_args['_valid_refs'][str_index] = 'directory'
+            index += 1
+        if 'malware-sample' in attributes:
+            value = attributes.pop('malware-sample')
+            args = {'allow_custom': True}
+            if isinstance(value, tuple):
+                value, data = value
+                args['payload_bin'] = data
+            filename, md5 = value.split('|')
+            args.update(
+                {
+                    'hashes': {'MD5': md5},
+                    'x_misp_filename': filename
+                }
+            )
+            str_index = str(index)
+            observable_object[str_index] = Artifact(**args)
+            file_args['content_ref'] = str_index
+            file_args['_valid_refs'][str_index] = 'artifact'
+            index += 1
+        if 'attachment' in attributes:
+            value = attributes.pop('attachment')
+            args = {'allow_custom': True}
+            if isinstance(value, tuple):
+                value, data = value
+                args['payload_bin'] = data
+            args['x_misp_filename'] = value
+            observable_object[str(index)] = Artifact(**args)
+        if attributes:
+            file_args.update(self._parse_file_args(attributes))
+        observable_object['0'] = File(**file_args)
+        self._handle_object_observable(misp_object, observable_object)
 
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(

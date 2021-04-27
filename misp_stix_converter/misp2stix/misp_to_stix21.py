@@ -3,17 +3,17 @@
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix2_mapping import (CustomAttribute_v21, domain_ip_uuid_fields, email_data_fields,
-                            email_uuid_fields, tlp_markings_v21, ip_port_single_fields,
-                            ip_port_uuid_fields)
+                            email_uuid_fields, file_data_fields, file_uuid_fields,
+                            tlp_markings_v21, ip_port_single_fields, ip_port_uuid_fields)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
 from stix2.properties import ListProperty, StringProperty
 from stix2.v21.bundle import Bundle
-from stix2.v21.observables import (Artifact, AutonomousSystem, DomainName, EmailAddress,
-                                   EmailMessage, EmailMIMEComponent, File, IPv4Address,
-                                   IPv6Address, MACAddress, Mutex, NetworkTraffic,
-                                   URL, UserAccount, WindowsRegistryKey,
+from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, DomainName,
+                                   EmailAddress, EmailMessage, EmailMIMEComponent,
+                                   File, IPv4Address, IPv6Address, MACAddress, Mutex,
+                                   NetworkTraffic, URL, UserAccount, WindowsRegistryKey,
                                    WindowsRegistryValueType, X509Certificate)
 from stix2.v21.sdo import (AttackPattern, Campaign, CourseOfAction, Grouping, Identity,
                            Indicator, Malware, Note, ObservedData, Report, ThreatActor,
@@ -489,6 +489,58 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if attributes:
             email_message_args.update(self._parse_email_args(attributes))
         objects.insert(0, EmailMessage(**email_message_args))
+        self._handle_object_observable(misp_object, objects)
+
+    def _parse_file_object_observable(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
+            misp_object['Attribute'],
+            with_uuid=file_uuid_fields,
+            with_data=file_data_fields
+        )
+        objects = []
+        file_args = defaultdict(dict)
+        if 'path' in attributes:
+            value, uuid = self._select_single_feature(attributes, 'path')
+            directory_id = f'directory--{uuid}'
+            objects.append(Directory(id=directory_id, path=value))
+            file_args['parent_directory_ref'] = directory_id
+        if 'malware-sample' in attributes:
+            value = self._select_single_feature(attributes, 'malware-sample')
+            args = {'allow_custom': True}
+            if len(value) == 3:
+                value, uuid, data = value
+                args['payload_bin'] = data
+            else:
+                value, uuid = value
+            filename, md5 = value.split('|')
+            artifact_id = f'artifact--{uuid}'
+            args.update(
+                {
+                    'id': artifact_id,
+                    'hashes': {'MD5': md5},
+                    'x_misp_filename': filename
+                }
+            )
+            objects.append(Artifact(**args))
+            file_args['content_ref'] = artifact_id
+        if 'attachment' in attributes:
+            value = self._select_single_feature(attributes, 'attachment')
+            args = {'allow_custom': True}
+            if len(value) == 3:
+                filename, uuid, data = value
+                args['payload_bin'] = data
+            else:
+                filename, uuid = value
+            args.update(
+                {
+                    'id': f'artifact--{uuid}',
+                    'x_misp_filename': filename
+                }
+            )
+            objects.append(Artifact(**args))
+        if attributes:
+            file_args.update(self._parse_file_args(attributes))
+        objects.insert(0, File(**file_args))
         self._handle_object_observable(misp_object, objects)
 
     def _parse_ip_port_object_observable(self, misp_object: dict):
