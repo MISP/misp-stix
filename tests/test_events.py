@@ -514,6 +514,7 @@ _TEST_FILE_OBJECT = {
             "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
         },
         {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
             "type": "text",
             "object_relation": "path",
             "value": "/var/www/MISP/app/files/scripts/tmp"
