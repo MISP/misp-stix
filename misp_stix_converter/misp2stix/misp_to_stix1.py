@@ -894,10 +894,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_credential_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=tuple(stix1_mapping.credential_single_fields.keys())
+            force_single=tuple(stix1_mapping.credential_object_mapping.keys())
         )
         account_object = UserAccount()
-        for feature, field in stix1_mapping.credential_single_fields.items():
+        for feature, field in stix1_mapping.credential_object_mapping.items():
             if feature in attributes:
                 setattr(account_object, field, attributes.pop(feature))
         authentication_list = self._parse_credential_authentication(attributes)
