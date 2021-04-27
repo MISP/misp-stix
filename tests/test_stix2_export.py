@@ -1271,12 +1271,11 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(file2.type, 'file')
         self.assertEqual(file2.name, _attachment2)
 
-
     def test_event_with_file_indicator_object(self):
         event = get_event_with_file_object_with_artifact()
         attributes, pattern = self._run_indicator_from_object_tests(event)
         _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute['value'] for attribute in attributes)
-        md5_, sha1_, sha256_, filename_, encoding_, path_, size_, malware_sample_, attachment_ = self._reassemble_pattern(pattern[1:-1])
+        md5_, sha1_, sha256_, filename_, encoding_, size_, path_, malware_sample_, attachment_ = self._reassemble_pattern(pattern[1:-1])
         self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5}'")
         self.assertEqual(sha1_, f"file:hashes.SHA1 = '{_sha1}'")
         self.assertEqual(sha256_, f"file:hashes.SHA256 = '{_sha256}'")
@@ -1292,6 +1291,35 @@ class TestSTIX20Export(TestSTIX2Export):
         a_data, a_filename = attachment_.split(' AND ')
         self.assertEqual(a_data, f"(file:content_ref.payload_bin = '{attributes[6]['data']}'")
         self.assertEqual(a_filename, f"file:content_ref.x_misp_filename = '{_attachment}')")
+
+    def test_event_with_file_observable_object(self):
+        event = get_event_with_file_object_with_artifact()
+        attributes, observable_objects = self._run_observable_from_object_tests(event)
+        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute['value'] for attribute in attributes)
+        file = observable_objects['0']
+        self.assertEqual(file.type, 'file')
+        self.assertEqual(file.size, int(_size))
+        self.assertEqual(file.name, _filename)
+        self.assertEqual(file.name_enc, _encoding)
+        hashes = file.hashes
+        self.assertEqual(hashes['MD5'], _md5)
+        self.assertEqual(hashes['SHA-1'], _sha1)
+        self.assertEqual(hashes['SHA-256'], _sha256)
+        self.assertEqual(file.parent_directory_ref, '1')
+        self.assertEqual(file.content_ref, '2')
+        directory = observable_objects['1']
+        self.assertEqual(directory.type, 'directory')
+        self.assertEqual(directory.path, _path)
+        artifact1 = observable_objects['2']
+        self.assertEqual(artifact1.type, 'artifact')
+        self.assertEqual(artifact1.payload_bin, attributes[0]['data'])
+        filename, md5 = _malware_sample.split('|')
+        self.assertEqual(artifact1.hashes['MD5'], md5)
+        self.assertEqual(artifact1.x_misp_filename, filename)
+        artifact2 = observable_objects['3']
+        self.assertEqual(artifact2.type, 'artifact')
+        self.assertEqual(artifact2.payload_bin, attributes[6]['data'])
+        self.assertEqual(artifact2.x_misp_filename, _attachment)
 
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
@@ -2716,7 +2744,7 @@ class TestSTIX21Export(TestSTIX2Export):
         event = get_event_with_file_object_with_artifact()
         attributes, pattern = self._run_indicator_from_object_tests(event)
         _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute['value'] for attribute in attributes)
-        md5_, sha1_, sha256_, filename_, encoding_, path_, size_, malware_sample_, attachment_ = self._reassemble_pattern(pattern[1:-1])
+        md5_, sha1_, sha256_, filename_, encoding_, size_, path_, malware_sample_, attachment_ = self._reassemble_pattern(pattern[1:-1])
         self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5}'")
         self.assertEqual(sha1_, f"file:hashes.SHA1 = '{_sha1}'")
         self.assertEqual(sha256_, f"file:hashes.SHA256 = '{_sha256}'")
@@ -2732,6 +2760,39 @@ class TestSTIX21Export(TestSTIX2Export):
         a_data, a_filename = attachment_.split(' AND ')
         self.assertEqual(a_data, f"(file:content_ref.payload_bin = '{attributes[6]['data']}'")
         self.assertEqual(a_filename, f"file:content_ref.x_misp_filename = '{_attachment}')")
+
+    def test_event_with_file_observable_object(self):
+        event = get_event_with_file_object_with_artifact()
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute['value'] for attribute in attributes)
+        file, directory, artifact1, artifact2 = observables
+        for grouping_ref, object_ref in zip(grouping_refs, object_refs):
+            self.assertEqual(grouping_ref, object_ref)
+        file_ref, directory_ref, artifact1_ref, artifact2_ref = grouping_refs
+        self.assertEqual(file.id, file_ref)
+        self.assertEqual(file.type, 'file')
+        self.assertEqual(file.size, int(_size))
+        self.assertEqual(file.name, _filename)
+        self.assertEqual(file.name_enc, _encoding)
+        hashes = file.hashes
+        self.assertEqual(hashes['MD5'], _md5)
+        self.assertEqual(hashes['SHA-1'], _sha1)
+        self.assertEqual(hashes['SHA-256'], _sha256)
+        self.assertEqual(file.parent_directory_ref, directory_ref)
+        self.assertEqual(file.content_ref, artifact1_ref)
+        self.assertEqual(directory.id, directory_ref)
+        self.assertEqual(directory.type, 'directory')
+        self.assertEqual(directory.path, _path)
+        self.assertEqual(artifact1.id, artifact1_ref)
+        self.assertEqual(artifact1.type, 'artifact')
+        self.assertEqual(artifact1.payload_bin, attributes[0]['data'])
+        filename, md5 = _malware_sample.split('|')
+        self.assertEqual(artifact1.hashes['MD5'], md5)
+        self.assertEqual(artifact1.x_misp_filename, filename)
+        self.assertEqual(artifact2.id, artifact2_ref)
+        self.assertEqual(artifact2.type, 'artifact')
+        self.assertEqual(artifact2.payload_bin, attributes[6]['data'])
+        self.assertEqual(artifact2.x_misp_filename, _attachment)
 
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
