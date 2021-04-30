@@ -623,6 +623,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 pattern.append(f"{prefix}:x_misp_{key} = '{value}'")
         return pattern
 
+    @staticmethod
+    def _handle_pattern_properties(attributes: dict, prefix: str) -> list:
+        pattern = []
+        for key, value in attributes.items():
+            pattern.append(f"{prefix}:x_misp_{key.replace('-', '_')} = '{value}'")
+        return pattern
+
     def _parse_asn_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'autonomous-system'
@@ -870,6 +877,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_object_indicator(misp_object, patterns)
         else:
             self._parse_ip_port_object_observable(misp_object)
+
+    def _parse_network_connection_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'network-traffic'
+            attributes = self._extract_object_attributes(misp_object['Attribute'])
+            pattern = []
+            for feature in ('src', 'dst'):
+                pttrn = f'{prefix}:{feature}_ref'
+                if f'ip-{feature}' in attributes:
+                    value = attributes.pop(f'ip-{feature}')
+                    ip_type = self._define_address_type(value)
+                    pattern.append(f"({pttrn}.type = '{ip_type}' AND {pttrn}.value = '{value}')")
+                if f'hostname-{feature}' in attributes:
+                    value = attributes.pop(f'hostname-{feature}')
+                    pattern.append(f"({pttrn}.type = 'domain-name' AND {pttrn}.value = '{value}')")
+            for key, feature in stix2_mapping.network_connection_mapping['features'].items():
+                if key in attributes:
+                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            index = 0
+            for key in stix2_mapping.network_connection_mapping['protocols']:
+                if key in attributes:
+                    pattern.append(f"{prefix}:protocols[{index}] = '{attributes.pop(key)}'")
+                    index += 1
+            if attributes:
+                pattern.extend(
+                    self._handle_pattern_properties(
+                        attributes,
+                        prefix
+                    )
+                )
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_network_connection_object_observable(misp_object)
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
@@ -1245,6 +1285,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             args.update(self._handle_observable_multiple_properties(attributes))
         return args
+
+    def _parse_network_connection_args(self, attributes: dict) -> dict:
+        network_traffic_args = {}
+        for key, feature in stix2_mapping.network_connection_mapping['features'].items():
+            if key in attributes:
+                network_traffic_args[feature] = attributes.pop(key)
+        protocols = []
+        for key in stix2_mapping.network_connection_mapping['protocols']:
+            if key in attributes:
+                protocols.append(attributes.pop(key))
+        if not protocols:
+            protocols.append('TCP')
+        network_traffic_args['protocols'] = protocols
+        if attributes:
+            network_traffic_args.update(self._handle_observable_properties(attributes))
+        return network_traffic_args
 
     ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #

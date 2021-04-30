@@ -83,6 +83,16 @@ class MISPtoSTIXParser():
     def _extract_object_attributes(attributes: list) -> dict:
         return {attribute['object_relation']: attribute['value'] for attribute in attributes}
 
+    @staticmethod
+    def _extract_object_attributes_with_uuid(attributes: list, with_uuid: Optional[tuple] = None) -> dict:
+        if with_uuid is not None:
+            attributes_dict = {}
+            for attribute in attributes:
+                relation = attribute['object_relation']
+                attributes_dict[relation] = (attribute['value'], attribute['uuid']) if relation in with_uuid else attribute['value']
+            return attributes_dict
+        return {attribute['object_relation']: (attribute['value'], attribute['uuid']) for attribute in attributes}
+
     def _extract_object_attribute_tags_and_galaxies(self, misp_object: dict, mapping: str) -> tuple:
         tags = set()
         galaxies = {}

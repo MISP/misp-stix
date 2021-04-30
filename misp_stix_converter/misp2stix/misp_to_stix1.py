@@ -727,10 +727,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         return attributes_dict
 
     @staticmethod
-    def _extract_object_attributes_with_uuid(attributes: list) -> dict:
-        return {attribute['object_relation']: (attribute['value'], attribute['uuid']) for attribute in attributes}
-
-    @staticmethod
     def _fetch_ids_flags(attributes: list) -> bool:
         for attribute in attributes:
             if attribute.get('to_ids', False):

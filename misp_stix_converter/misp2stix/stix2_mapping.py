@@ -309,6 +309,25 @@ ip_port_uuid_fields = (
     'ip-src'
 )
 
+network_connection_mapping = {
+    "features": {
+        'dst-port': 'dst_port',
+        'first-packet-seen': 'start',
+        'src-port': 'src_port'
+    },
+    'protocols': (
+        'layer3-protocol',
+        'layer4-protocol',
+        'layer7-protocol'
+    )
+}
+network_connection_uuid_fields = (
+    'hostname-dst',
+    'hostname-src',
+    'ip-dst',
+    'ip-src'
+)
+
 
 # GALAXIES MAPPING
 galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}

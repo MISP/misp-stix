@@ -4,7 +4,8 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix2_mapping import (CustomAttribute_v21, domain_ip_uuid_fields, email_data_fields,
                             email_uuid_fields, file_data_fields, file_uuid_fields,
-                            tlp_markings_v21, ip_port_single_fields, ip_port_uuid_fields)
+                            tlp_markings_v21, ip_port_single_fields, ip_port_uuid_fields,
+                            network_connection_uuid_fields)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
@@ -569,6 +570,34 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         network_traffic_args['protocols'] = protocols
         if attributes:
             network_traffic_args.update(self._parse_ip_port_args(attributes))
+        objects.insert(0, NetworkTraffic(**network_traffic_args))
+        self._handle_object_observable(misp_object, objects)
+
+    def _parse_network_connection_object_observable(self, misp_object: dict):
+        attributes = self._extract_object_attributes_with_uuid(
+            misp_object['Attribute'],
+            with_uuid=network_connection_uuid_fields
+        )
+        network_traffic_args = {}
+        objects = []
+        for feature in ('src', 'dst'):
+            hostname = f'hostname-{feature}'
+            if f'ip-{feature}' in attributes:
+                value, uuid = attributes.pop(f'ip-{feature}')
+                address_type = self._get_address_type(value)
+                address_id = f'{address_type._type}--{uuid}'
+                objects.append(address_type(id=address_id, value=value))
+                network_traffic_args[f'{feature}_ref'] = address_id
+                if hostname in attributes:
+                    attributes[hostname] = attributes.pop(hostname)[0]
+                continue
+            if hostname in attributes:
+                value, uuid = attributes.pop(hostname)
+                domain_id = f'domain-name--{uuid}'
+                objects.append(DomainName(id=domain_id, value=value))
+                network_traffic_args[f'{feature}_ref'] = domain_id
+        if attributes:
+            network_traffic_args.update(self._parse_network_connection_args(attributes))
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         self._handle_object_observable(misp_object, objects)
 

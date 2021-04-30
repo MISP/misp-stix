@@ -517,6 +517,32 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object['0'] = NetworkTraffic(**network_traffic_args)
         self._handle_object_observable(misp_object, observable_object)
 
+    def _parse_network_connection_object_observable(self, misp_object: dict):
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        observable_object = {}
+        network_traffic_args = defaultdict(dict)
+        index = 1
+        for feature in ('src', 'dst'):
+            if attributes.get(f'ip-{feature}'):
+                str_index = str(index)
+                ip_value = attributes.pop(f'ip-{feature}')
+                address_object = self._get_address_type(ip_value)(value=ip_value)
+                observable_object[str_index] = address_object
+                network_traffic_args['_valid_refs'][str_index] = address_object._type
+                network_traffic_args[f'{feature}_ref'] = str_index
+                index += 1
+                continue
+            if attributes.get(f'hostname-{feature}'):
+                str_index = str(index)
+                observable_object[str_index] = DomainName(value=attributes.pop(f'hostname-{feature}'))
+                network_traffic_args['_valid_refs'][str_index] = 'domain-name'
+                network_traffic[f'{feature}_ref'] = str_index
+                index += 1
+        if attributes:
+            network_traffic_args.update(self._parse_network_connection_args(attributes))
+        observable_object['0'] = NetworkTraffic(**network_traffic_args)
+        self._handle_object_observable(misp_object, observable_object)
+
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
