@@ -818,7 +818,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             force_single=stix1_mapping.as_single_fields
         )
         as_object = self._create_autonomous_system_object(attributes.pop('asn'))
-        if 'description' in attributes:
+        if attributes.get('description'):
             as_object.name = attributes.pop('description')
         if attributes:
             as_object.custom_properties = self._handle_custom_properties(attributes)
@@ -831,7 +831,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         attack_pattern.id_ = f"{self._orgname}:AttackPattern-{misp_object['uuid']}"
         attributes = self._extract_object_attributes(misp_object['Attribute'])
         for key, feature in stix1_mapping.attack_pattern_object_mapping.items():
-            if key in attributes:
+            if attributes.get(key):
                 setattr(attack_pattern, feature, attributes.pop(key))
         if attack_pattern.capec_id and not attack_pattern.capec_id.startswith('CAPEC'):
             attack_pattern.capec_id = f'CAPEC-{attack_pattern.capec_id}'
@@ -849,7 +849,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         course_of_action.id_ = f'{self._orgname}:CourseOfAction-{uuid}'
         attributes = self._extract_object_attributes(misp_object['Attribute'])
         for key, feature in stix1_mapping.course_of_action_object_mapping.items():
-            if key in attributes:
+            if attributes.get(key):
                 setattr(course_of_action, feature, attributes.pop(key))
         tags = self._handle_non_indicator_object_tags_and_galaxies(
             misp_object,
@@ -867,18 +867,18 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
 
     def _parse_credential_arguments(self, attributes: dict) -> dict:
         args = {}
-        if 'format' in attributes:
+        if attributes.get('format'):
             struct_auth_meca = StructuredAuthenticationMechanism()
             struct_auth_meca.description = attributes.pop('format')[0]
             args['auth_format'] = struct_auth_meca
-        if 'type' in attributes:
+        if attributes.get('type'):
             args['auth_type'] = attributes.pop('type')[0]
         return args
 
     def _parse_credential_authentication(self, attributes: dict) -> list:
         args = self._parse_credential_arguments(attributes)
         authentication_list = []
-        if 'password' in attributes:
+        if attributes.get('password'):
             for password in attributes.pop('password'):
                 authentication = self._create_authentication_object(password=password, **args)
                 authentication_list.append(authentication)
@@ -894,7 +894,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         )
         account_object = UserAccount()
         for feature, field in stix1_mapping.credential_object_mapping.items():
-            if feature in attributes:
+            if attributes.get(feature):
                 setattr(account_object, field, attributes.pop(feature))
         authentication_list = self._parse_credential_authentication(attributes)
         if authentication_list:
@@ -922,13 +922,13 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_domain_ip_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes_with_uuid(misp_object['Attribute'])
         observables = []
-        if 'domain' in attributes:
+        if attributes.get('domain'):
             for attribute in attributes['domain']:
                 observables.append(self._create_domain_observable(*attribute))
-        if 'ip' in attributes:
+        if attributes.get('ip'):
             for attribute in attributes['ip']:
                 observables.append(self._create_address_observable('ip-dst', *attribute))
-        if 'port' in attributes:
+        if attributes.get('port'):
             for attribute in attributes['port']:
                 observables.append(self._create_port_observable(*attribute))
         observable_composition = self._create_observable_composition(
@@ -946,17 +946,17 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         email_object = EmailMessage()
         email_header = EmailHeader()
         for feature in ('to', 'cc'):
-            if feature in attributes:
+            if attributes.get(feature):
                 recipients = EmailRecipients()
                 for value in attributes.pop(feature):
                     recipients.append(value)
                 setattr(email_header, feature, recipients)
         for feature, key in stix1_mapping.email_object_mapping.items():
-            if feature in attributes:
+            if attributes.get(feature) :
                 setattr(email_header, key, attributes.pop(feature)[0])
                 setattr(getattr(email_header, key), 'condition', 'Equals')
         email_object.header = email_header
-        if 'attachment' in attributes:
+        if attributes.get('attachment'):
             email_object.attachments = Attachments()
             for attachment in attributes.pop('attachment'):
                 filename, uuid = attachment
@@ -976,12 +976,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         return observable
 
     def _parse_file_attributes(self, attributes: dict, file_object: Union[File, WinExecutableFile]):
-        if 'filename' in attributes:
+        if attributes.get('filename'):
             filename = self._select_single_feature(attributes, 'filename')
             file_object.file_name = filename
             file_object.file_name.condition = 'Equals'
         for feature, key in stix1_mapping.file_object_mapping.items():
-            if feature in attributes:
+            if attributes.get(feature):
                 value = attributes[feature].pop(0) if isinstance(attributes[feature], list) else attributes.pop(feature)
                 setattr(file_object, key, value)
                 setattr(getattr(file_object, key), 'condition', 'Equals')
@@ -1012,14 +1012,14 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
 
     def _parse_file_observables(self, attributes: dict) -> list:
         observables = []
-        if 'malware-sample' in attributes:
+        if attributes.get('malware-sample'):
             if isinstance(attributes['malware-sample'], tuple):
                 value, data, uuid = attributes.pop('malware-sample')
                 malware_observable = self._create_malware_sample_observable(value, data, uuid)
                 observables.append(malware_observable)
             else:
                 attributes['malware-sample'] = [attributes['malware-sample']]
-        if 'attachment' in attributes:
+        if attributes.get('attachment'):
             if isinstance(attributes['attachment'], tuple):
                 filename, data, uuid = attributes.pop('attachment')
                 attachment_observable = self._create_attachment_observable(filename, data, uuid)
@@ -1053,23 +1053,23 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         attributes = self._extract_multiple_object_attributes_with_uuid(misp_object['Attribute'])
         observables = []
         for feature in ('ip-src', 'ip-dst'):
-            if feature in attributes:
+            if attributes.get(feature):
                 for attribute in attributes[feature]:
                     observables.append(self._create_address_observable(feature, *attribute))
-        if 'ip' in attributes:
+        if attributes.get('ip'):
             for attribute in attributes['ip']:
                 observables.append(self._create_address_observable('ip-dst', *attribute))
         for feature in ('src-port', 'dst-port'):
-            if feature in attributes:
+            if attributes.get(feature):
                 for attribute in attributes[feature]:
                     observables.append(self._create_port_observable(
                         *attribute,
                         feature=feature.split('-')[0]
                     ))
-        if 'domain' in attributes:
+        if attributes.get('domain'):
             for attribute in attributes['domain']:
                 observables.append(self._create_domain_observable(*attribute))
-        if 'hostname' in attributes:
+        if attributes.get('hostname'):
             for attribute in attributes['hostname']:
                 observables.append(self._create_hostname_observable(*attribute))
         observable_composition = self._create_observable_composition(
@@ -1088,7 +1088,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             ('source_socket', 'destination_socket')
         )
         for feature in ('layer3-protocol', 'layer4-protocol', 'layer7-protocol'):
-            if feature in attributes:
+            if attributes.get(feature):
                 field = feature.replace('-', '_')
                 setattr(connection_object, field, attributes.pop(feature))
                 setattr(getattr(connection_object, field), 'condition', 'Equals')
@@ -1109,10 +1109,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         socket_object = NetworkSocket()
         self._parse_socket_addresses(socket_object, attributes, ('local', 'remote'))
         for key, feature in stix1_mapping.network_socket_mapping.items():
-            if key in attributes:
+            if attributes.get(key):
                 setattr(socket_object, feature, attributes.pop(key))
                 setattr(getattr(socket_object, feature), 'condition', 'Equals')
-        if 'state' in attributes:
+        if attributes.get('state'):
             states = attributes.pop('state')
             socket_object.is_listening = True if 'listening' in states else False
             socket_object.is_blocking = True if 'blocking' in states else False
@@ -1129,7 +1129,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         if any(feature in attributes for feature in stix1_mapping.pe_resource_mapping):
             resource = PEVersionInfoResource()
             for key, feature in stix1_mapping.pe_resource_mapping.items():
-                if key in attributes:
+                if attributes.get(key):
                     setattr(resource, feature, attributes.pop(key))
                     setattr(getattr(resource, feature), 'condition', 'Equals')
             resource_list = PEResourceList()
@@ -1138,18 +1138,18 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         headers_fields = ('entrypoint-address', 'impfuzzy', 'imphash', 'number-sections', 'pehash')
         if any(feature in attributes for feature in headers_fields):
             pe_headers = PEHeaders()
-            if 'entrypoint-address' in attributes:
+            if attributes.get('entrypoint-address'):
                 optional_header = PEOptionalHeader()
                 optional_header.address_of_entry_point = attributes.pop('entrypoint-address')
                 optional_header.address_of_entry_point.condition = 'Equals'
                 pe_headers.optional_header = optional_header
-            if 'number-sections' in attributes:
+            if attributes.get('number-sections'):
                 file_header = PEFileHeader()
                 file_header.number_of_sections = attributes.pop('number-sections')
                 file_header.number_of_sections.condition = 'Equals'
                 pe_headers.file_header = file_header
             file_object.headers = pe_headers
-        if 'type' in attributes:
+        if attributes.get('type'):
             file_object.type_ = attributes.pop('type')
             file_object.type_.condition = 'Equals'
         if attributes:
@@ -1178,15 +1178,15 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_pe_section_object(self, misp_pe_section: dict) -> PESection:
         section_attributes = self._extract_object_attributes(misp_pe_section['Attribute'])
         pe_section = PESection()
-        if 'entropy' in section_attributes:
+        if section_attributes.get('entropy'):
             pe_section.entropy = Entropy()
             pe_section.entropy.value = section_attributes.pop('entropy')
         if any(feature in section_attributes for feature in ('name', 'size-in-bytes')):
             pe_section.section_header = PESectionHeaderStruct()
-            if 'name' in section_attributes:
+            if section_attributes.get('name'):
                 pe_section.section_header.name = section_attributes.pop('name')
                 pe_section.section_header.name.condition = 'Equals'
-            if 'size-in-bytes' in section_attributes:
+            if section_attributes.get('size-in-bytes'):
                 pe_section.section_header.size_of_raw_data = section_attributes.pop('size-in-bytes')
                 pe_section.section_header.size_of_raw_data.condition = 'Equals'
         hashlist = []
@@ -1205,14 +1205,14 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         )
         process_object = Process()
         for key, feature in stix1_mapping.process_object_mapping.items():
-            if key in attributes:
+            if attributes.get(key):
                 setattr(process_object, feature, attributes.pop(key))
                 setattr(getattr(process_object, feature), 'condition', 'Equals')
-        if 'child-pid' in attributes:
+        if attributes.get('child-pid'):
             process_object.child_pid_list = ChildPIDList()
             for child in attributes.pop('child-pid'):
                 process_object.child_pid_list.append(child)
-        if 'port' in attributes:
+        if attributes.get('port'):
             process_object.port_list = PortList()
             for port in attributes.pop('port'):
                 port_object = self._create_port_object(port)
@@ -1221,7 +1221,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         if any(key in attributes for key in image_info_keys):
             process_object.image_info = ImageInfo()
             for key, feature in zip(image_info_keys, ('file_name', 'command_line')):
-                if key in attributes:
+                if attributes.get(key):
                     setattr(process_object.image_info, feature, attributes.pop(key))
                     setattr(getattr(process_object.image_info, feature), 'condition', 'Equals')
         if attributes:
@@ -1231,8 +1231,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
 
     def _parse_registry_key_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_object_attributes(misp_object['Attribute'])
-        registry_object = self._create_registry_key_object(attributes.pop('key')) if 'key' in attributes else WinRegistryKey()
-        if 'hive' in attributes:
+        registry_object = self._create_registry_key_object(attributes.pop('key')) if attributes.get('key') else WinRegistryKey()
+        if attributes.get('hive'):
             hive = attributes.pop('hive').lstrip('\\').upper()
             if hive in stix1_mapping.misp_reghive:
                 hive = stix1_mapping.misp_reghive[hive]
@@ -1241,11 +1241,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         if any(key in attributes for key in stix1_mapping.regkey_object_mapping.keys()):
             value_object = RegistryValue()
             for key, feature in stix1_mapping.regkey_object_mapping.items():
-                if key in attributes:
+                if attributes.get(key):
                     setattr(value_object, feature, attributes.pop(key))
                     setattr(getattr(value_object, feature), 'condition', 'Equals')
             registry_object.values = RegistryValues(value_object)
-        if 'last-modified' in attributes:
+        if attributes.get('last-modified'):
             registry_object.modified_time = attributes.pop('last-modified')
             registry_object.modified_time.condition = 'Equals'
         if attributes:
@@ -1263,12 +1263,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_socket_addresses(self, stix_object: Union[NetworkConnection, NetworkSocket], attributes: dict, fields: tuple):
         for key, field in zip(('src', 'dst'), fields):
             args = {}
-            if f'ip-{key}' in attributes:
+            if attributes.get(f'ip-{key}'):
                 attribute_type = f'ip-{key}'
                 args['ip'] = (attribute_type, attributes.pop(attribute_type))
-            if f'hostname-{key}' in attributes:
+            if attributes.get(f'hostname-{key}'):
                 args['hostname'] = attributes.pop(f'hostname-{key}')
-            if f'{key}-port' in attributes:
+            if attributes.get(f'{key}-port'):
                 args['port'] = attributes.pop(f'{key}-port')
             if args:
                 setattr(
@@ -1280,15 +1280,15 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_url_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_object_attributes_with_uuid(misp_object['Attribute'])
         observables = []
-        if 'url' in attributes:
+        if attributes.get('url'):
             observables.append(self._create_uri_observable(*attributes['url']))
-        if 'domain' in attributes:
+        if attributes.get('domain'):
             observables.append(self._create_domain_observable(*attributes['domain']))
-        if 'host' in attributes:
+        if attributes.get('host'):
             observables.append(self._create_hostname_observable(*attributes['host']))
-        if 'ip' in attributes:
+        if attributes.get('ip'):
             observables.append(self._create_address_observable('ip-dst', *attributes['ip']))
-        if 'port' in attributes:
+        if attributes.get('port'):
             observables.append(self._create_port_observable(*attributes['port']))
         observable_composition = self._create_observable_composition(
             observables,
@@ -1303,13 +1303,13 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             force_single=stix1_mapping.user_account_single_fields
         )
         account_object = self._create_user_account_object(attributes)
-        if 'password' in attributes:
+        if attributes.get('password'):
             account_object.authentication = self._create_authentication_object(
                 auth_type='password',
                 password=attributes.pop('password')
             )
         for key, feature in stix1_mapping.user_account_object_mapping.items():
-            if key in attributes:
+            if attributes.get(key):
                 setattr(account_object, feature, attributes.pop(key))
                 setattr(getattr(account_object, feature), 'condition', 'Equals')
         if attributes:
@@ -1328,18 +1328,18 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             misp_object['Attribute'],
             force_single=stix1_mapping.vulnerability_single_fields
         )
-        if 'id' in attributes:
+        if attributes.get('id'):
             cve_id = self._select_single_feature(attributes, 'id')
             vulnerability.cve_id = cve_id
-        if 'cvss-score' in attributes:
+        if attributes.get('cvss-score'):
             cvss = CVSSVector()
             cvss.overall_score = attributes.pop('cvss-score')
             vulnerability.cvss_score = cvss
         for key, feature in stix1_mapping.vulnerability_object_mapping.items():
-            if key in attributes:
+            if attributes.get(key):
                 setattr(vulnerability, feature, attributes.pop(key))
                 setattr(getattr(vulnerability, feature), 'condition', 'Equals')
-        if 'references' in attributes:
+        if attributes.get('references'):
             for reference in attributes.pop('references'):
                 vulnerability.add_reference(reference)
         if misp_object.get('ObjectReference'):
@@ -1356,7 +1356,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         weakness = Weakness()
         attributes = self._extract_object_attributes(misp_object['Attribute'])
         for key, feature in stix1_mapping.weakness_object_mapping.items():
-            if key in attributes:
+            if attributes.get(key):
                 setattr(weakness, feature, attributes.pop(key))
         if misp_object.get('ObjectReference'):
             references = tuple((reference['referenced_uuid'], reference['relationship_type']) for reference in misp_object['ObjectReference'])
@@ -1373,7 +1373,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             force_single=stix1_mapping.whois_single_fields
         )
         whois_object = WhoisEntry()
-        if 'registrar' in attributes:
+        if attributes.get('registrar'):
             whois_registrar = WhoisRegistrar()
             whois_registrar.name = attributes.pop('registrar')
             whois_object.registrar_info = whois_registrar
@@ -1381,29 +1381,29 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             registrants = WhoisRegistrants()
             registrant = WhoisRegistrant()
             for key, feature in stix1_mapping.whois_registrant_mapping.items():
-                if key in attributes:
+                if attributes.get(key):
                     setattr(registrant, feature, attributes.pop(key))
                     setattr(getattr(registrant, feature), 'condition', 'Equals')
             registrants.append(registrant)
             whois_object.registrants = registrants
         for key, feature in stix1_mapping.whois_object_mapping.items():
-            if key in attributes:
+            if attributes.get(key):
                 setattr(whois_object, feature, attributes.pop(key))
                 setattr(getattr(whois_object, feature), 'condition', 'Equals')
-        if 'nameserver' in attributes:
+        if attributes.get('nameserver'):
             nameservers = WhoisNameservers()
             for nameserver in attributes.pop('nameserver'):
                 nameservers.append(URI(value=nameserver))
             whois_object.nameservers = nameservers
-        if 'domain' in attributes:
+        if attributes.get('domain'):
             domain_name = self._select_single_feature(attributes, 'domain')
             whois_object.domain_name = URI(value=domain_name)
-        if 'ip-address' in attributes:
+        if attributes.get('ip-address'):
             ip_address = self._select_single_feature(attributes, 'ip-address')
             whois_object.ip_address = Address(address_value=ip_address)
-        if 'comment' in attributes:
+        if attributes.get('comment'):
             whois_object.remarks = attributes.pop('comment')
-        elif 'text' in attributes:
+        elif attributes.get('text'):
             whois_object.remarks = attributes.pop('text')
         if attributes:
             whois_object.custom_properties = self._handle_custom_properties(attributes)
@@ -1426,26 +1426,26 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             x509_cert = X509Cert()
             if content['certificate']:
                 for key, feature in stix1_mapping.x509_object_mapping.items():
-                    if key in attributes:
+                    if attributes.get(key):
                         setattr(x509_cert, feature, attributes.pop(key))
                         setattr(getattr(x509_cert, feature), 'condition', 'Equals')
             if content['validity']:
                 validity = Validity()
                 for key in ('before', 'after'):
-                    if f'validity-not-{key}' in attributes:
+                    if attributes.get(f'validity-not-{key}'):
                         setattr(validity, f'not_{key}', attributes.pop(f'validity-not-{key}'))
                         setattr(getattr(validity, f'not_{key}'), 'condition', 'Equals')
                 x509_cert.validity = validity
             if content['pubkey']:
                 pubkey = SubjectPublicKey()
-                if 'pubkey-info-algorithm' in attributes:
+                if attributes.get('pubkey-info-algorithm'):
                     pubkey.public_key_algorithm = attributes.pop('pubkey-info-algorithm')
                     pubkey.public_key_algorithm.condition = 'Equals'
                 pubkey_keys = ('exponent', 'modulus')
                 if any(f'pubkey-info-{key}' in attributes for key in pubkey_keys):
                     rsa_pubkey = RSAPublicKey()
                     for key in pubkey_keys:
-                        if f'pubkey-info-{key}' in attributes:
+                        if attributes.get(f'pubkey-info-{key}'):
                             setattr(rsa_pubkey, key, attributes.pop(f'pubkey-info-{key}'))
                             setattr(getattr(rsa_pubkey, key), 'condition', 'Equals')
                     pubkey.rsa_public_key = rsa_pubkey
@@ -1454,9 +1454,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         if content['raw_certificate']:
             if 'pem' in attributes:
                 x509_object.raw_certificate = attributes.pop('pem')
-                if 'raw-base64' in attributes:
-                    attributes['raw-base64'] = [attributes['raw-base64']]
-            elif 'raw-base64' in attributes:
+                if attributes.get('raw-base64'):
+                    attributes['raw-base64'] = [attributes.pop('raw-base64')]
+            elif attributes.get('raw-base64'):
                 x509_object.raw_certificate = attributes.pop('raw-base64')
             x509_object.raw_certificate.condition = 'Equals'
         if content['signature']:
@@ -1465,10 +1465,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             for algo in ('sha256', 'sha1', 'md5'):
                 key = f'x509-fingerprint-{algo}'
                 if signature_set:
-                    if key in attributes:
-                        attributes[key] = [attributes[key]]
+                    if attributes.get(key):
+                        attributes[key] = [attributes.pop(key)]
                     continue
-                if key in attributes:
+                if attributes.get(key):
                     signature.signature_algorithm = algo.upper()
                     signature.signature_algorithm.condition = 'Equals'
                     signature.signature = attributes.pop(key)
@@ -1982,12 +1982,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
 
     def _create_unix_user_account_object(self, attributes: dict) -> UnixUserAccount:
         account_object = UnixUserAccount()
-        if 'user-id' in attributes:
+        if attributes.get('user-id'):
             self._set_user_id(account_object, attributes, 'user_id')
-        if 'group-id' in attributes:
+        if attributes.get('group-id'):
             account_object.group_id = attributes.pop('group-id')[0]
             account_object.group_id.condition = 'Equals'
-        if 'group' in attributes:
+        if attributes.get('group'):
             self._set_group_list(account_object, attributes, UnixGroupList, UnixGroup, 'group_id')
             group_list = UnixGroupList()
             groups = attributes.pop('group')
@@ -2014,9 +2014,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
 
     def _create_windows_user_account_object(self, attributes: dict) -> WinUser:
         account_object = WinUser()
-        if 'user-id' in attributes:
+        if attributes.get('user-id'):
             self._set_user_id(account_object, attributes, 'security_id')
-        if 'group' in attributes:
+        if attributes.get('group'):
             self._set_group_list(account_object, attributes, WinGroupList, WinGroup, 'name')
         return account_object
 

@@ -638,7 +638,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 force_single=stix2_mapping.as_single_fields
             )
             pattern = [self._create_AS_pattern(attributes.pop('asn'))]
-            if 'description' in attributes:
+            if attributes.get('description'):
                 pattern.append(f"{prefix}:name = '{attributes.pop('description')}'")
             if attributes:
                 pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
@@ -736,9 +736,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 force_single=stix2_mapping.credential_single_fields
             )
             pattern = []
-            if 'username' in attributes:
+            if attributes.get('username'):
                 pattern.append(f"{prefix}:user_id = '{attributes.pop('username')}'")
-            if 'password' in attributes:
+            if attributes.get('password'):
                 for password in attributes.pop('password'):
                     pattern.append(f"{prefix}:credential = '{password}'")
             if attributes:
@@ -771,13 +771,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             pattern = []
             for key, feature in stix2_mapping.email_object_mapping.items():
-                if key in attributes:
+                if attributes.get(key):
                     for value in attributes.pop(key):
                         pattern.append(f"{prefix}:{feature} = '{value}'")
             if attributes:
                 n = 0
                 for key in stix2_mapping.email_data_fields:
-                    if key in attributes:
+                    if attributes.get(key):
                         for value in attributes.pop(key):
                             feature = f'body_multipart[{n}].body_raw_ref'
                             if isinstance(value, tuple):
@@ -800,7 +800,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             pattern = []
             for hash_type in stix2_mapping._hash_attribute_types:
-                if hash_type in attributes:
+                if attributes.get(hash_type):
                     pattern.append(
                         self._create_hash_pattern(
                             hash_type,
@@ -808,13 +808,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         )
                     )
             for key, feature in stix2_mapping.file_object_mapping.items():
-                if key in attributes:
+                if attributes.get(key):
                     for value in attributes.pop(key):
                         pattern.append(f"{prefix}:{feature} = '{value}'")
-            if 'path' in attributes:
+            if attributes.get('path'):
                 value = attributes.pop('path')
                 pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")
-            if 'malware-sample' in attributes:
+            if attributes.get('malware-sample'):
                 value = attributes.pop('malware-sample')
                 malware_sample = []
                 if isinstance(value, tuple):
@@ -834,7 +834,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     )
                 )
                 pattern.append(f"({' AND '.join(malware_sample)})")
-            if 'attachment' in attributes:
+            if attributes.get('attachment'):
                 value = attributes.pop('attachment')
                 if isinstance(value, tuple):
                     value, data = value
@@ -855,16 +855,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             attributes = self._extract_multiple_object_attributes(misp_object['Attribute'])
             patterns = []
             for key, pattern in stix2_mapping.ip_port_object_mapping['ip_features'].items():
-                if key in attributes:
+                if attributes.get(key):
                     for ip_value in attributes.pop(key):
                         identifier = pattern.format(self._define_address_type(ip_value))
                         patterns.append(f"({prefix}:{identifier} = '{ip_value}')")
             for key, pattern in stix2_mapping.ip_port_object_mapping['domain_features'].items():
-                if key in attributes:
+                if attributes.get(key):
                     for domain_value in attributes.pop(key):
                         patterns.append(f"({prefix}:{pattern} = '{domain_value}')")
             for key, feature in stix2_mapping.ip_port_object_mapping['features'].items():
-                if key in attributes:
+                if attributes.get(key):
                     for value in attributes.pop(key):
                         patterns.append(f"{prefix}:{feature} = '{value}'")
             if attributes:
@@ -885,19 +885,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             pattern = []
             for feature in ('src', 'dst'):
                 pttrn = f'{prefix}:{feature}_ref'
-                if f'ip-{feature}' in attributes:
+                if attributes.get(f'ip-{feature}'):
                     value = attributes.pop(f'ip-{feature}')
                     ip_type = self._define_address_type(value)
                     pattern.append(f"({pttrn}.type = '{ip_type}' AND {pttrn}.value = '{value}')")
-                if f'hostname-{feature}' in attributes:
+                if attributes.get(f'hostname-{feature}'):
                     value = attributes.pop(f'hostname-{feature}')
                     pattern.append(f"({pttrn}.type = 'domain-name' AND {pttrn}.value = '{value}')")
             for key, feature in stix2_mapping.network_connection_mapping['features'].items():
-                if key in attributes:
+                if attributes.get(key):
                     pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
             index = 0
             for key in stix2_mapping.network_connection_mapping['protocols']:
-                if key in attributes:
+                if attributes.get(key):
                     pattern.append(f"{prefix}:protocols[{index}] = '{attributes.pop(key)}'")
                     index += 1
             if attributes:
@@ -1201,7 +1201,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             force_single=stix2_mapping.as_single_fields
         )
         as_args = {'number': self._parse_AS_value(attributes.pop('asn'))}
-        if 'description' in attributes:
+        if attributes.get('description'):
             as_args['name'] = attributes.pop('description')
         if attributes:
             as_args.update(self._handle_observable_multiple_properties(attributes))
@@ -1213,9 +1213,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             force_single=stix2_mapping.credential_single_fields
         )
         credential_args = {}
-        if 'username' in attributes:
+        if attributes.get('username'):
             credential_args['user_id'] = attributes.pop('username')
-        if 'password' in attributes:
+        if attributes.get('password'):
             credential_args['credential'] = self._select_single_feature(
                 attributes,
                 'password'
@@ -1258,11 +1258,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_file_args(self, attributes: dict) -> dict:
         file_args = defaultdict(dict)
         for hash_type in stix2_mapping.file_hash_main_types:
-            if hash_type in attributes:
+            if attributes.get(hash_type):
                 value = self._select_single_feature(attributes, hash_type)
                 file_args['hashes'][self._define_hash_type(hash_type)] = value
         for hash_type in stix2_mapping.file_hash_types:
-            if hash_type in attributes:
+            if attributes.get(hash_type):
                 feature = self._define_hash_type(hash_type)
                 value = self._select_single_feature(attributes, hash_type)
                 if feature not in file_args['hashes']:
@@ -1270,7 +1270,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 else:
                     attributes[hash_type] = [value]
         for key, feature in stix2_mapping.file_object_mapping.items():
-            if key in attributes:
+            if attributes.get(key):
                 value = self._select_single_feature(attributes, key)
                 file_args[feature] = value
         if attributes:
@@ -1289,11 +1289,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_network_connection_args(self, attributes: dict) -> dict:
         network_traffic_args = {}
         for key, feature in stix2_mapping.network_connection_mapping['features'].items():
-            if key in attributes:
+            if attributes.get(key):
                 network_traffic_args[feature] = attributes.pop(key)
         protocols = []
         for key in stix2_mapping.network_connection_mapping['protocols']:
-            if key in attributes:
+            if attributes.get(key):
                 protocols.append(attributes.pop(key))
         if not protocols:
             protocols.append('TCP')

@@ -452,13 +452,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {}
         file_args = defaultdict(dict)
         index = 1
-        if 'path' in attributes:
+        if attributes.get('path'):
             str_index = str(index)
             observable_object[str_index] = Directory(path=attributes.pop('path'))
             file_args['parent_directory_ref'] = str_index
             file_args['_valid_refs'][str_index] = 'directory'
             index += 1
-        if 'malware-sample' in attributes:
+        if attributes.get('malware-sample'):
             value = attributes.pop('malware-sample')
             args = {'allow_custom': True}
             if isinstance(value, tuple):
@@ -476,7 +476,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             file_args['content_ref'] = str_index
             file_args['_valid_refs'][str_index] = 'artifact'
             index += 1
-        if 'attachment' in attributes:
+        if attributes.get('attachment'):
             value = attributes.pop('attachment')
             args = {'allow_custom': True}
             if isinstance(value, tuple):

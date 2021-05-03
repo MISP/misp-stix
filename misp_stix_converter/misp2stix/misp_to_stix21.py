@@ -481,12 +481,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                                 'body_raw_ref': object_id
                             }
                         )
-            email_message_args.update(
-                {
-                    'body_multipart': body_multipart,
-                    'is_multipart': True
-                }
-            )
+            if body_multipart:
+                email_message_args.update(
+                    {
+                        'body_multipart': body_multipart,
+                        'is_multipart': True
+                    }
+                )
         if attributes:
             email_message_args.update(self._parse_email_args(attributes))
         objects.insert(0, EmailMessage(**email_message_args))
@@ -500,12 +501,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         objects = []
         file_args = defaultdict(dict)
-        if 'path' in attributes:
+        if attributes.get('path'):
             value, uuid = self._select_single_feature(attributes, 'path')
             directory_id = f'directory--{uuid}'
             objects.append(Directory(id=directory_id, path=value))
             file_args['parent_directory_ref'] = directory_id
-        if 'malware-sample' in attributes:
+        if attributes.get('malware-sample'):
             value = self._select_single_feature(attributes, 'malware-sample')
             args = {'allow_custom': True}
             if len(value) == 3:
@@ -524,7 +525,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             )
             objects.append(Artifact(**args))
             file_args['content_ref'] = artifact_id
-        if 'attachment' in attributes:
+        if attributes.get('attachment'):
             value = self._select_single_feature(attributes, 'attachment')
             args = {'allow_custom': True}
             if len(value) == 3:
@@ -582,16 +583,16 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         objects = []
         for feature in ('src', 'dst'):
             hostname = f'hostname-{feature}'
-            if f'ip-{feature}' in attributes:
+            if attributes.get(f'ip-{feature}'):
                 value, uuid = attributes.pop(f'ip-{feature}')
                 address_type = self._get_address_type(value)
                 address_id = f'{address_type._type}--{uuid}'
                 objects.append(address_type(id=address_id, value=value))
                 network_traffic_args[f'{feature}_ref'] = address_id
-                if hostname in attributes:
+                if attributes.get(hostname):
                     attributes[hostname] = attributes.pop(hostname)[0]
                 continue
-            if hostname in attributes:
+            if attributes.get(hostname):
                 value, uuid = attributes.pop(hostname)
                 domain_id = f'domain-name--{uuid}'
                 objects.append(DomainName(id=domain_id, value=value))
