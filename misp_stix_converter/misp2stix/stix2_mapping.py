@@ -321,7 +321,33 @@ network_connection_mapping = {
         'layer7-protocol'
     )
 }
-network_connection_uuid_fields = (
+
+network_socket_mapping = {
+    'features': {
+        'dst-port': 'dst_port',
+        'src-port': 'src_port'
+    },
+    'extension': {
+        'address-family': 'address_family'
+    }
+}
+network_socket_single_fields = (
+    'address-family',
+    'domain-family',
+    'dst-port',
+    'hostname-dst',
+    'hostname-src',
+    'ip-dst',
+    'ip-src',
+    'protocol',
+    'src-port'
+)
+network_socket_state_fields = (
+    'blocking',
+    'listening'
+)
+
+network_traffic_uuid_fields = (
     'hostname-dst',
     'hostname-src',
     'ip-dst',

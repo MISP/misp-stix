@@ -4,7 +4,9 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix2_mapping import (CustomAttribute_v20, CustomNote, email_data_fields,
                             email_header_fields, email_object_mapping, file_data_fields,
-                            file_single_fields, ip_port_single_fields, tlp_markings_v20)
+                            file_single_fields, ip_port_single_fields,
+                            network_socket_single_fields, network_traffic_uuid_fields,
+                            tlp_markings_v20)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
@@ -26,6 +28,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def __init__(self):
         super().__init__()
         self._version = '2.0'
+        self._update_mapping_v20()
 
     def _handle_empty_object_refs(self, object_id: str, timestamp: datetime):
         object_type = 'x-misp-event-note'
@@ -519,9 +522,27 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_network_connection_object_observable(self, misp_object: dict):
         attributes = self._extract_object_attributes(misp_object['Attribute'])
-        observable_object = {}
-        network_traffic_args = defaultdict(dict)
+        network_traffic_args, observable_object = self._parse_network_references(attributes)
+        if attributes:
+            network_traffic_args.update(self._parse_network_connection_args(attributes))
+        observable_object['0'] = NetworkTraffic(**network_traffic_args)
+        self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_network_socket_object_observable(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=network_socket_single_fields
+        )
+        network_traffic_args, observable_object = self._parse_network_references(attributes)
+        if attributes:
+            network_traffic_args.update(self._parse_network_socket_args(attributes))
+        observable_object['0'] = NetworkTraffic(**network_traffic_args)
+        self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_network_references(self, attributes: dict) -> tuple:
         index = 1
+        network_traffic_args = defaultdict(dict)
+        observable_object = {}
         for feature in ('src', 'dst'):
             if attributes.get(f'ip-{feature}'):
                 str_index = str(index)
@@ -538,10 +559,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 network_traffic_args['_valid_refs'][str_index] = 'domain-name'
                 network_traffic[f'{feature}_ref'] = str_index
                 index += 1
-        if attributes:
-            network_traffic_args.update(self._parse_network_connection_args(attributes))
-        observable_object['0'] = NetworkTraffic(**network_traffic_args)
-        self._handle_object_observable(misp_object, observable_object)
+        return network_traffic_args, observable_object
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #

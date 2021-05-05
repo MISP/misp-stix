@@ -5,7 +5,7 @@ from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix2_mapping import (CustomAttribute_v21, domain_ip_uuid_fields, email_data_fields,
                             email_uuid_fields, file_data_fields, file_uuid_fields,
                             tlp_markings_v21, ip_port_single_fields, ip_port_uuid_fields,
-                            network_connection_uuid_fields)
+                            network_socket_single_fields, network_traffic_uuid_fields)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
@@ -577,8 +577,27 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_network_connection_object_observable(self, misp_object: dict):
         attributes = self._extract_object_attributes_with_uuid(
             misp_object['Attribute'],
-            with_uuid=network_connection_uuid_fields
+            with_uuid=network_traffic_uuid_fields
         )
+        network_traffic_args, objects = self._parse_network_references(attributes)
+        if attributes:
+            network_traffic_args.update(self._parse_network_connection_args(attributes))
+        objects.insert(0, NetworkTraffic(**network_traffic_args))
+        self._handle_object_observable(misp_object, objects)
+
+    def _parse_network_socket_object_observable(self, misp_object: dict):
+        attributes = self._extract_object_attributes_with_multiple_and_uuid(
+            misp_object['Attribute'],
+            force_single=network_socket_single_fields,
+            with_uuid=network_traffic_uuid_fields
+        )
+        network_traffic_args, objects = self._parse_network_references(attributes)
+        if attributes:
+            network_traffic_args.update(self._parse_network_socket_args(attributes))
+        objects.insert(0, NetworkTraffic(**network_traffic_args))
+        self._handle_object_observable(misp_object, objects)
+
+    def _parse_network_references(self, attributes: dict) -> tuple:
         network_traffic_args = {}
         objects = []
         for feature in ('src', 'dst'):
@@ -597,10 +616,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 domain_id = f'domain-name--{uuid}'
                 objects.append(DomainName(id=domain_id, value=value))
                 network_traffic_args[f'{feature}_ref'] = domain_id
-        if attributes:
-            network_traffic_args.update(self._parse_network_connection_args(attributes))
-        objects.insert(0, NetworkTraffic(**network_traffic_args))
-        self._handle_object_observable(misp_object, objects)
+        return network_traffic_args, objects
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #

@@ -53,6 +53,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return self._objects
 
     @staticmethod
+    def _update_mapping_v20():
+        stix2_mapping.network_socket_mapping['extension'].update(
+            {
+                'domain-family': 'protocol_family'
+            }
+        )
+
+    @staticmethod
     def _update_mapping_v21():
         stix2_mapping.attribute_types_mapping.update(
             {
@@ -882,16 +890,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'
             attributes = self._extract_object_attributes(misp_object['Attribute'])
-            pattern = []
-            for feature in ('src', 'dst'):
-                pttrn = f'{prefix}:{feature}_ref'
-                if attributes.get(f'ip-{feature}'):
-                    value = attributes.pop(f'ip-{feature}')
-                    ip_type = self._define_address_type(value)
-                    pattern.append(f"({pttrn}.type = '{ip_type}' AND {pttrn}.value = '{value}')")
-                if attributes.get(f'hostname-{feature}'):
-                    value = attributes.pop(f'hostname-{feature}')
-                    pattern.append(f"({pttrn}.type = 'domain-name' AND {pttrn}.value = '{value}')")
+            pattern = self._parse_network_references_pattern(attributes)
             for key, feature in stix2_mapping.network_connection_mapping['features'].items():
                 if attributes.get(key):
                     pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
@@ -910,6 +909,53 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_network_connection_object_observable(misp_object)
+
+    def _parse_network_socket_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'network-traffic'
+            attributes = self._extract_multiple_object_attributes(
+                misp_object['Attribute'],
+                force_single=stix2_mapping.network_socket_single_fields
+            )
+            pattern = self._parse_network_references_pattern(attributes)
+            for key, feature in stix2_mapping.network_socket_mapping['features'].items():
+                if attributes.get(key):
+                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            if attributes.get('protocol'):
+                pattern.append(f"{prefix}:protocols[0] = '{attributes.pop('protocol')}'")
+            prefix = f"{prefix}:extensions.'socket-ext'"
+            for key, feature in stix2_mapping.network_socket_mapping['extension'].items():
+                if attributes.get(key):
+                    pattern.append(f"{prefix}.{feature} = '{attributes.pop(key)}'")
+            if attributes.get('state'):
+                for state in attributes.pop('state'):
+                    if state in stix2_mapping.network_socket_state_fields:
+                        pattern.append(f"{prefix}.is_{state} = '{True}'")
+                    else:
+                        attributes['state'].append(state)
+            if attributes:
+                pattern.extend(
+                    self._handle_pattern_multiple_properties(
+                        attributes,
+                        prefix
+                    )
+                )
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_network_socket_object_observable(misp_object)
+
+    def _parse_network_references_pattern(self, attributes: dict) -> list:
+        pattern = []
+        for feature in ('src', 'dst'):
+            pttrn = f'network-traffic:{feature}_ref'
+            if attributes.get(f'ip-{feature}'):
+                value = attributes.pop(f'ip-{feature}')
+                ip_type = self._define_address_type(value)
+                pattern.append(f"({pttrn}.type = '{ip_type}' AND {pttrn}.value = '{value}')")
+            if attributes.get(f'hostname-{feature}'):
+                value = attributes.pop(f'hostname-{feature}')
+                pattern.append(f"({pttrn}.type = 'domain-name' AND {pttrn}.value = '{value}')")
+        return pattern
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
@@ -1300,6 +1346,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         network_traffic_args['protocols'] = protocols
         if attributes:
             network_traffic_args.update(self._handle_observable_properties(attributes))
+        return network_traffic_args
+
+    def _parse_network_socket_args(self, attributes: dict) -> dict:
+        network_traffic_args = defaultdict(dict)
+        network_traffic_args['protocols'] = [attributes.pop('protocol')] if attributes.get('protocol') else ['tcp']
+        socket_ext = {}
+        for key, feature in stix2_mapping.network_socket_mapping['extension'].items():
+            if attributes.get(key):
+                socket_ext[feature] = attributes.pop(key)
+        if attributes.get('state'):
+            for state in attributes.pop('state'):
+                if state in stix2_mapping.network_socket_state_fields:
+                    socket_ext[f'is_{state}'] = True
+                else:
+                    attributes['state'].append(state)
+        if socket_ext:
+            network_traffic_args['extensions']['socket-ext'] = socket_ext
         return network_traffic_args
 
     ################################################################################
