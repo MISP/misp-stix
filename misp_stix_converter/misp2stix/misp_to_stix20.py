@@ -5,7 +5,7 @@ from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix2_mapping import (CustomAttribute_v20, CustomNote, email_data_fields,
                             email_header_fields, email_object_mapping, file_data_fields,
                             file_single_fields, ip_port_single_fields,
-                            network_socket_single_fields, network_traffic_uuid_fields,
+                            network_socket_v20_single_fields, network_traffic_uuid_fields,
                             tlp_markings_v20)
 from collections import defaultdict
 from copy import deepcopy
@@ -528,16 +528,20 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object['0'] = NetworkTraffic(**network_traffic_args)
         self._handle_object_observable(misp_object, observable_object)
 
-    def _parse_network_socket_object_observable(self, misp_object: dict):
+    def _parse_network_socket_object(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=network_socket_single_fields
+            force_single=network_socket_v20_single_fields
         )
-        network_traffic_args, observable_object = self._parse_network_references(attributes)
-        if attributes:
-            network_traffic_args.update(self._parse_network_socket_args(attributes))
-        observable_object['0'] = NetworkTraffic(**network_traffic_args)
-        self._handle_object_observable(misp_object, observable_object)
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            pattern = self._parse_network_socket_object_pattern(attributes)
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            network_traffic_args, observable_object = self._parse_network_references(attributes)
+            if attributes:
+                network_traffic_args.update(self._parse_network_socket_args(attributes))
+            observable_object['0'] = NetworkTraffic(**network_traffic_args)
+            self._handle_object_observable(misp_object, observable_object)
 
     def _parse_network_references(self, attributes: dict) -> tuple:
         index = 1

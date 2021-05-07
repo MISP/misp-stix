@@ -331,9 +331,7 @@ network_socket_mapping = {
         'address-family': 'address_family'
     }
 }
-network_socket_single_fields = (
-    'address-family',
-    'domain-family',
+__network_socket_single_fields = (
     'dst-port',
     'hostname-dst',
     'hostname-src',
@@ -342,6 +340,8 @@ network_socket_single_fields = (
     'protocol',
     'src-port'
 )
+network_socket_v21_single_fields = __network_socket_single_fields + ('address-family', )
+network_socket_v20_single_fields = network_socket_v21_single_fields + ('domain-family', )
 network_socket_state_fields = (
     'blocking',
     'listening'

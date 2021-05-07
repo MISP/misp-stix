@@ -910,51 +910,44 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_network_connection_object_observable(misp_object)
 
-    def _parse_network_socket_object(self, misp_object: dict):
-        if self._fetch_ids_flag(misp_object['Attribute']):
-            prefix = 'network-traffic'
-            attributes = self._extract_multiple_object_attributes(
-                misp_object['Attribute'],
-                force_single=stix2_mapping.network_socket_single_fields
-            )
-            pattern = self._parse_network_references_pattern(attributes)
-            for key, feature in stix2_mapping.network_socket_mapping['features'].items():
-                if attributes.get(key):
-                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
-            if attributes.get('protocol'):
-                pattern.append(f"{prefix}:protocols[0] = '{attributes.pop('protocol')}'")
-            prefix = f"{prefix}:extensions.'socket-ext'"
-            for key, feature in stix2_mapping.network_socket_mapping['extension'].items():
-                if attributes.get(key):
-                    pattern.append(f"{prefix}.{feature} = '{attributes.pop(key)}'")
-            if attributes.get('state'):
-                for state in attributes.pop('state'):
-                    if state in stix2_mapping.network_socket_state_fields:
-                        pattern.append(f"{prefix}.is_{state} = '{True}'")
-                    else:
-                        attributes['state'].append(state)
-            if attributes:
-                pattern.extend(
-                    self._handle_pattern_multiple_properties(
-                        attributes,
-                        prefix
-                    )
-                )
-            self._handle_object_indicator(misp_object, pattern)
-        else:
-            self._parse_network_socket_object_observable(misp_object)
-
     def _parse_network_references_pattern(self, attributes: dict) -> list:
         pattern = []
-        for feature in ('src', 'dst'):
-            pttrn = f'network-traffic:{feature}_ref'
-            if attributes.get(f'ip-{feature}'):
-                value = attributes.pop(f'ip-{feature}')
+        for key in ('src', 'dst'):
+            feature = f'network-traffic:{key}_ref'
+            if attributes.get(f'ip-{key}'):
+                value = attributes.pop(f'ip-{key}')
                 ip_type = self._define_address_type(value)
-                pattern.append(f"({pttrn}.type = '{ip_type}' AND {pttrn}.value = '{value}')")
-            if attributes.get(f'hostname-{feature}'):
-                value = attributes.pop(f'hostname-{feature}')
-                pattern.append(f"({pttrn}.type = 'domain-name' AND {pttrn}.value = '{value}')")
+                pattern.append(f"({feature}.type = '{ip_type}' AND {feature}.value = '{value}')")
+            if attributes.get(f'hostname-{key}'):
+                value = attributes.pop(f'hostname-{key}')
+                pattern.append(f"({feature}.type = 'domain-name' AND {feature}.value = '{value}')")
+        return pattern
+
+    def _parse_network_socket_object_pattern(self, attributes: dict) -> list:
+        prefix = 'network-traffic'
+        pattern = self._parse_network_references_pattern(attributes)
+        for key, feature in stix2_mapping.network_socket_mapping['features'].items():
+            if attributes.get(key):
+                pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+        if attributes.get('protocol'):
+            pattern.append(f"{prefix}:protocols[0] = '{attributes.pop('protocol')}'")
+        prefix = f"{prefix}:extensions.'socket-ext'"
+        for key, feature in stix2_mapping.network_socket_mapping['extension'].items():
+            if attributes.get(key):
+                pattern.append(f"{prefix}.{feature} = '{attributes.pop(key)}'")
+        if attributes.get('state'):
+            for state in attributes.pop('state'):
+                if state in stix2_mapping.network_socket_state_fields:
+                    pattern.append(f"{prefix}.is_{state} = '{True}'")
+                else:
+                    attributes['state'].append(state)
+        if attributes:
+            pattern.extend(
+                self._handle_pattern_multiple_properties(
+                    attributes,
+                    'network-traffic'
+                )
+            )
         return pattern
 
     ################################################################################
