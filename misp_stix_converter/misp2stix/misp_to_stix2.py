@@ -1343,19 +1343,29 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_network_socket_args(self, attributes: dict) -> dict:
         network_traffic_args = defaultdict(dict)
-        network_traffic_args['protocols'] = [attributes.pop('protocol')] if attributes.get('protocol') else ['tcp']
-        socket_ext = {}
-        for key, feature in stix2_mapping.network_socket_mapping['extension'].items():
+        for key, feature in stix2_mapping.network_socket_mapping['features'].items():
             if attributes.get(key):
-                socket_ext[feature] = attributes.pop(key)
-        if attributes.get('state'):
-            for state in attributes.pop('state'):
-                if state in stix2_mapping.network_socket_state_fields:
-                    socket_ext[f'is_{state}'] = True
-                else:
-                    attributes['state'].append(state)
-        if socket_ext:
+                network_traffic_args[feature] = attributes.pop(key)
+        network_traffic_args['protocols'] = [attributes.pop('protocol')] if attributes.get('protocol') else ['tcp']
+        if attributes.get('address-family') in stix2_mapping.address_family_enum_list:
+            socket_ext = {}
+            for key, field in stix2_mapping.network_socket_mapping['extension'].items():
+                if attributes.get(key):
+                    value = attributes.pop(key)
+                    feature = key.replace('-', '_')
+                    if value in getattr(stix2_mapping, f"{feature}_enum_list"):
+                        socket_ext[field] = value
+                    else:
+                        network_traffic_args[f'x_misp_{feature}'] = value
+            if attributes.get('state'):
+                for state in attributes.pop('state'):
+                    if state in stix2_mapping.network_socket_state_fields:
+                        socket_ext[f'is_{state}'] = True
+                    else:
+                        attributes['state'].append(state)
             network_traffic_args['extensions']['socket-ext'] = socket_ext
+        if attributes:
+            network_traffic_args.update(self._handle_observable_multiple_properties(attributes))
         return network_traffic_args
 
     ################################################################################

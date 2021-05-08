@@ -585,26 +585,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         self._handle_object_observable(misp_object, objects)
 
-    def _parse_network_socket_object(self, misp_object: dict):
-        if self._fetch_ids_flag(misp_object['Attribute']):
-            attributes = self._extract_multiple_object_attributes(
-                misp_object['Attribute'],
-                force_single=network_socket_v21_single_fields
-            )
-            pattern = self._parse_network_socket_object_pattern(attributes)
-            self._handle_object_indicator(misp_object, pattern)
-        else:
-            attributes = self._extract_object_attributes_with_multiple_and_uuid(
-                misp_object['Attribute'],
-                force_single=network_socket_v21_single_fields,
-                with_uuid=network_traffic_uuid_fields
-            )
-            network_traffic_args, objects = self._parse_network_references(attributes)
-            if attributes:
-                network_traffic_args.update(self._parse_network_socket_args(attributes))
-            objects.insert(0, NetworkTraffic(**network_traffic_args))
-            self._handle_object_observable(misp_object, objects)
-
     def _parse_network_references(self, attributes: dict) -> tuple:
         network_traffic_args = {}
         objects = []
@@ -625,6 +605,26 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 objects.append(DomainName(id=domain_id, value=value))
                 network_traffic_args[f'{feature}_ref'] = domain_id
         return network_traffic_args, objects
+
+    def _parse_network_socket_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            attributes = self._extract_multiple_object_attributes(
+                misp_object['Attribute'],
+                force_single=network_socket_v21_single_fields
+            )
+            pattern = self._parse_network_socket_object_pattern(attributes)
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            attributes = self._extract_object_attributes_with_multiple_and_uuid(
+                misp_object['Attribute'],
+                force_single=network_socket_v21_single_fields,
+                with_uuid=network_traffic_uuid_fields
+            )
+            network_traffic_args, objects = self._parse_network_references(attributes)
+            if attributes:
+                network_traffic_args.update(self._parse_network_socket_args(attributes))
+            objects.insert(0, NetworkTraffic(**network_traffic_args))
+            self._handle_object_observable(misp_object, objects)
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #

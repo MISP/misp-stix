@@ -528,21 +528,6 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object['0'] = NetworkTraffic(**network_traffic_args)
         self._handle_object_observable(misp_object, observable_object)
 
-    def _parse_network_socket_object(self, misp_object: dict):
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=network_socket_v20_single_fields
-        )
-        if self._fetch_ids_flag(misp_object['Attribute']):
-            pattern = self._parse_network_socket_object_pattern(attributes)
-            self._handle_object_indicator(misp_object, pattern)
-        else:
-            network_traffic_args, observable_object = self._parse_network_references(attributes)
-            if attributes:
-                network_traffic_args.update(self._parse_network_socket_args(attributes))
-            observable_object['0'] = NetworkTraffic(**network_traffic_args)
-            self._handle_object_observable(misp_object, observable_object)
-
     def _parse_network_references(self, attributes: dict) -> tuple:
         index = 1
         network_traffic_args = defaultdict(dict)
@@ -564,6 +549,21 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 network_traffic[f'{feature}_ref'] = str_index
                 index += 1
         return network_traffic_args, observable_object
+
+    def _parse_network_socket_object(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=network_socket_v20_single_fields
+        )
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            pattern = self._parse_network_socket_object_pattern(attributes)
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            network_traffic_args, observable_object = self._parse_network_references(attributes)
+            if attributes:
+                network_traffic_args.update(self._parse_network_socket_args(attributes))
+            observable_object['0'] = NetworkTraffic(**network_traffic_args)
+            self._handle_object_observable(misp_object, observable_object)
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #

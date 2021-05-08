@@ -420,6 +420,7 @@ galaxy_types_mapping.update(
 )
 
 
+# RELATIONSHIPS BETWEEN STIX OBJECTS
 relationship_specs = {
     'campaign': {
         'attack-pattern': 'uses',
@@ -435,6 +436,35 @@ relationship_specs = {
     }
 }
 
+
+# STIX OBJECTS PREDEFINED MAPPINGS
+address_family_enum_list = (
+    "AF_UNSPEC",
+    "AF_INET",
+    "AF_IPX",
+    "AF_APPLETALK",
+    "AF_NETBIOS",
+    "AF_INET6",
+    "AF_IRDA",
+    "AF_BTH"
+)
+
+domain_family_enum_list = (
+    "PF_INET",
+    "PF_IPX",
+    "PF_APPLETALK",
+    "PF_INET6",
+    "PF_AX25",
+    "PF_NETROM"
+)
+
+socket_type_enum_list = (
+    "SOCK_STREAM",
+    "SOCK_DGRAM",
+    "SOCK_RAW",
+    "SOCK_RDM",
+    "SOCK_SEQPACKET"
+)
 
 tlp_markings_v20 = {
     'tlp:white': TLP_WHITE_v20,
