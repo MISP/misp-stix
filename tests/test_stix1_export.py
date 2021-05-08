@@ -286,7 +286,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(properties.layer7_protocol.value, layer7['value'])
 
     def _check_network_socket_prooperties(self, properties, attributes):
-        ip_src, ip_dst, src_port, dst_port, hostname, address, domain, state, protocol = attributes
+        ip_src, ip_dst, src_port, dst_port, hostname, address, domain, type_, state, protocol = attributes
         src_socket = properties.local_address
         self.assertEqual(src_socket.ip_address.address_value.value, ip_src['value'])
         self.assertEqual(src_socket.port.port_value.value, int(src_port['value']))
@@ -296,6 +296,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(dst_socket.port.port_value.value, int(dst_port['value']))
         self.assertEqual(properties.address_family.value, address['value'])
         self.assertEqual(properties.domain.value, domain['value'])
+        self.assertEqual(properties.type_.value, type_['value'])
         self.assertEqual(properties.protocol.value, protocol['value'])
         self.assertEqual(getattr(properties, f"is_{state['value']}"), True)
 

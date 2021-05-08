@@ -714,6 +714,11 @@ _TEST_NETWORK_SOCKET_OBJECT = {
         },
         {
             "type": "text",
+            "object_relation": "protocol-type",
+            "value": "SOCK_RAW"
+        },
+        {
+            "type": "text",
             "object_relation": "state",
             "value": "listening"
         },
