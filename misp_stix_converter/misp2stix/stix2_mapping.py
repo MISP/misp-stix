@@ -328,7 +328,8 @@ network_socket_mapping = {
         'src-port': 'src_port'
     },
     'extension': {
-        'address-family': 'address_family'
+        'address-family': 'address_family',
+        'socket-type': 'socket_type'
     }
 }
 __network_socket_single_fields = (
