@@ -678,51 +678,61 @@ _TEST_NETWORK_SOCKET_OBJECT = {
     "timestamp": str(int(datetime.now().timestamp())),
     "Attribute": [
         {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "ip-src",
             "object_relation": "ip-src",
             "value": "1.2.3.4"
         },
         {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
             "type": "ip-dst",
             "object_relation": "ip-dst",
             "value": "5.6.7.8"
         },
         {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
             "type": "port",
             "object_relation": "src-port",
             "value": "8080"
         },
         {
+            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
             "type": "port",
             "object_relation": "dst-port",
             "value": "8080"
         },
         {
+            "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
             "type": "hostname",
             "object_relation": "hostname-dst",
             "value": "circl.lu"
         },
         {
+            "uuid": "e072dfbb-c6fd-4312-8201-d140575536c4",
             "type": "text",
             "object_relation": "address-family",
-            "value": "AF_FILE"
+            "value": "AF_INET"
         },
         {
+            "uuid": "5acce519-b670-4cb2-af19-9c6d7b6f256c",
             "type": "text",
             "object_relation": "domain-family",
             "value": "PF_INET"
         },
         {
+            "uuid": "a79ac2c8-c8c6-4a93-9f11-71a217ef3107",
             "type": "text",
             "object_relation": "socket-type",
             "value": "SOCK_RAW"
         },
         {
+            "uuid": "53a12da9-4b66-4809-b0b4-e9de3172e7a0",
             "type": "text",
             "object_relation": "state",
             "value": "listening"
         },
         {
+            "uuid": "2f057cc4-b70b-4305-9442-638dbb807a5c",
             "type": "text",
             "object_relation": "protocol",
             "value": "TCP"
