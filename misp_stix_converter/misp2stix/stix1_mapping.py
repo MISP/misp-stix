@@ -437,7 +437,7 @@ network_socket_mapping = {
     'address-family': 'address_family',
     'domain-family': 'domain',
     'protocol': 'protocol',
-    'protocol-type': 'type_'
+    'socket-type': 'type_'
 }
 network_socket_single_fields = (
     'address-family',
@@ -448,7 +448,7 @@ network_socket_single_fields = (
     'ip-dst',
     'ip-src',
     'protocol',
-    'protocol-type',
+    'socket-type',
     'src-port'
 )
 
