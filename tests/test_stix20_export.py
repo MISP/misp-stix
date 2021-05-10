@@ -1196,6 +1196,52 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(address2.type, 'ipv4-addr')
         self.assertEqual(address2.value, ip_dst)
 
+    def test_event_with_network_socket_object_indicator(self):
+        event = get_event_with_network_socket_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        _ip_src, _ip_dst, _src_port, _dst_port, _hostname, _address_family, _domain_family, _socket_type, _state, _protocol = (attribute['value'] for attribute in attributes)
+        ip_src_, ip_dst_, hostname_, dst_port_, src_port_, protocol_, address_family_, socket_type_, domain_family_, state_ = self._reassemble_pattern(pattern[1:-1])
+        ip_src_type, ip_src_value = ip_src_.split(' AND ')
+        self.assertEqual(ip_src_type, "(network-traffic:src_ref.type = 'ipv4-addr'")
+        self.assertEqual(ip_src_value, f"network-traffic:src_ref.value = '{_ip_src}')")
+        ip_dst_type, ip_dst_value = ip_dst_.split(' AND ')
+        self.assertEqual(ip_dst_type, "(network-traffic:dst_ref.type = 'ipv4-addr'")
+        self.assertEqual(ip_dst_value, f"network-traffic:dst_ref.value = '{_ip_dst}')")
+        hostname_type, hostname_value = hostname_.split(' AND ')
+        self.assertEqual(hostname_type, "(network-traffic:dst_ref.type = 'domain-name'")
+        self.assertEqual(hostname_value, f"network-traffic:dst_ref.value = '{_hostname}')")
+        self.assertEqual(dst_port_, f"network-traffic:dst_port = '{_dst_port}'")
+        self.assertEqual(src_port_, f"network-traffic:src_port = '{_src_port}'")
+        self.assertEqual(protocol_, f"network-traffic:protocols[0] = '{_protocol}'")
+        self.assertEqual(address_family_, f"network-traffic:extensions.'socket-ext'.address_family = '{_address_family}'")
+        self.assertEqual(socket_type_, f"network-traffic:extensions.'socket-ext'.socket_type = '{_socket_type}'")
+        self.assertEqual(domain_family_, f"network-traffic:extensions.'socket-ext'.protocol_family = '{_domain_family}'")
+        self.assertEqual(state_, f"network-traffic:extensions.'socket-ext'.is_{_state} = true")
+
+    def test_event_with_network_socket_object_observable(self):
+        event = get_event_with_network_socket_object()
+        attributes, observable_objects = self._run_observable_from_object_tests(event)
+        ip_src, ip_dst, src_port, dst_port, hostname, address_family, domain_family, socket_type, state, protocol = (attribute['value'] for attribute in attributes)
+        network_traffic = observable_objects['0']
+        self.assertEqual(network_traffic.type, 'network-traffic')
+        self.assertEqual(network_traffic.src_port, int(src_port))
+        self.assertEqual(network_traffic.dst_port, int(dst_port))
+        self.assertEqual(network_traffic.protocols, [protocol])
+        socket_ext = network_traffic.extensions['socket-ext']
+        self.assertEqual(socket_ext.address_family, address_family)
+        self.assertEqual(socket_ext.protocol_family, domain_family)
+        self.assertEqual(socket_ext.socket_type, socket_type)
+        self.assertEqual(getattr(socket_ext, f'is_{state}'), True)
+        self.assertEqual(network_traffic.x_misp_hostname_dst, hostname)
+        self.assertEqual(network_traffic.src_ref, '1')
+        self.assertEqual(network_traffic.dst_ref, '2')
+        address1 = observable_objects['1']
+        self.assertEqual(address1.type, 'ipv4-addr')
+        self.assertEqual(address1.value, ip_src)
+        address2 = observable_objects['2']
+        self.assertEqual(address2.type, 'ipv4-addr')
+        self.assertEqual(address2.value, ip_dst)
+
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
     ################################################################################
