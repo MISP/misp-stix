@@ -938,7 +938,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes.get('state'):
             for state in attributes.pop('state'):
                 if state in stix2_mapping.network_socket_state_fields:
-                    pattern.append(f"{prefix}.is_{state} = '{True}'")
+                    pattern.append(f"{prefix}.is_{state} = true")
                 else:
                     attributes['state'].append(state)
         if attributes:

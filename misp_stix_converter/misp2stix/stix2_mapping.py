@@ -332,16 +332,18 @@ network_socket_mapping = {
         'socket-type': 'socket_type'
     }
 }
-__network_socket_single_fields = (
+
+network_socket_v21_single_fields = (
+    'address-family',
     'dst-port',
     'hostname-dst',
     'hostname-src',
     'ip-dst',
     'ip-src',
     'protocol',
+    'socket-type',
     'src-port'
 )
-network_socket_v21_single_fields = __network_socket_single_fields + ('address-family', )
 network_socket_v20_single_fields = network_socket_v21_single_fields + ('domain-family', )
 network_socket_state_fields = (
     'blocking',
