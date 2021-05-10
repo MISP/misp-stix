@@ -714,7 +714,7 @@ _TEST_NETWORK_SOCKET_OBJECT = {
         },
         {
             "type": "text",
-            "object_relation": "protocol-type",
+            "object_relation": "socket-type",
             "value": "SOCK_RAW"
         },
         {
