@@ -929,31 +929,37 @@ _TEST_PROCESS_OBJECT = {
     "timestamp": str(int(datetime.now().timestamp())),
     "Attribute": [
         {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "text",
             "object_relation": "pid",
             "value": "2510"
         },
         {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
             "type": "text",
             "object_relation": "child-pid",
             "value": "1401"
         },
         {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
             "type": "text",
             "object_relation": "parent-pid",
             "value": "2107"
         },
         {
+            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
             "type": "text",
             "object_relation": "name",
             "value": "test_process.exe"
         },
         {
+            "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
             "type": "filename",
             "object_relation": "image",
             "value": "TestProcess"
         },
         {
+            "uuid": "e072dfbb-c6fd-4312-8201-d140575536c4",
             "type": "port",
             "object_relation": "port",
             "value": "1234"

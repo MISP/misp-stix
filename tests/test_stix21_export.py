@@ -1473,7 +1473,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(address2.type, 'ipv4-addr')
         self.assertEqual(address2.value, ip_dst)
 
-    def test_event_with_network_socket_object_indicator(self):
+    def test_event_with_network_socket_indicator_object(self):
         event = get_event_with_network_socket_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
         _ip_src, _ip_dst, _src_port, _dst_port, _hostname, _address_family, _domain_family, _socket_type, _state, _protocol = (attribute['value'] for attribute in attributes)
@@ -1495,7 +1495,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(state_, f"network-traffic:extensions.'socket-ext'.is_{_state} = true")
         self.assertEqual(domain_family_, f"network-traffic:x_misp_domain_family = '{_domain_family}'")
 
-    def test_event_with_network_socket_object_observable(self):
+    def test_event_with_network_socket_observable_object(self):
         event = get_event_with_network_socket_object()
         attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
         ip_src, ip_dst, src_port, dst_port, hostname, address_family, domain_family, socket_type, state, protocol = (attribute['value'] for attribute in attributes)
@@ -1522,6 +1522,44 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(address2.id, address2_ref)
         self.assertEqual(address2.type, 'ipv4-addr')
         self.assertEqual(address2.value, ip_dst)
+
+    def test_event_with_process_indicator_object(self):
+        event = get_event_with_process_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        _pid, _child_pid, _parent_pid, _name, _image, _port = (attribute['value'] for attribute in attributes)
+        pid_, image_, parent_pid_, child_pid_, name_, port_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(pid_, f"process:pid = '{_pid}'")
+        self.assertEqual(image_, f"process:image_ref.name = '{_image}'")
+        self.assertEqual(parent_pid_, f"process:parent_ref.pid = '{_parent_pid}'")
+        self.assertEqual(child_pid_, f"process:child_refs[0].pid = '{_child_pid}'")
+        self.assertEqual(name_, f"process:x_misp_name = '{_name}'")
+        self.assertEqual(port_, f"process:x_misp_port = '{_port}'")
+
+    def test_event_with_process_observable_object(self):
+        event = get_event_with_process_object()
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        pid, child_pid, parent_pid, name, image, port = (attribute['value'] for attribute in attributes)
+        for grouping_ref, object_ref in zip(grouping_refs, object_refs):
+            self.assertEqual(grouping_ref, object_ref)
+        process, parent_process, child_process, image_object = observables
+        process_ref, parent_ref, child_ref, image_ref = grouping_refs
+        self.assertEqual(process.id, process_ref)
+        self.assertEqual(process.type, 'process')
+        self.assertEqual(process.pid, int(pid))
+        self.assertEqual(process.x_misp_name, name)
+        self.assertEqual(process.x_misp_port, port)
+        self.assertEqual(process.parent_ref, parent_ref)
+        self.assertEqual(process.child_refs, [child_ref])
+        self.assertEqual(process.image_ref, image_ref)
+        self.assertEqual(parent_process.id, parent_ref)
+        self.assertEqual(parent_process.type, 'process')
+        self.assertEqual(parent_process.pid, int(parent_pid))
+        self.assertEqual(child_process.id, child_ref)
+        self.assertEqual(child_process.type, 'process')
+        self.assertEqual(child_process.pid, int(child_pid))
+        self.assertEqual(image_object.id, image_ref)
+        self.assertEqual(image_object.type, 'file')
+        self.assertEqual(image_object.name, image)
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
