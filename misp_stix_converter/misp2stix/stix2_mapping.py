@@ -357,6 +357,37 @@ network_traffic_uuid_fields = (
     'ip-src'
 )
 
+process_object_mapping = {
+    'features': {
+        'command-line': 'command_line',
+        'creation-time': 'created',
+        'current-directory': 'cwd',
+        'pid': 'pid'
+    },
+    'parent': {
+        'parent-command-line': 'command_line',
+        'parent-pid': 'pid'
+    }
+}
+process_uuid_fields = (
+    'child-pid',
+    'image',
+    'parent-command-line',
+    'parent-image',
+    'parent-pid'
+)
+process_v21_single_fields = (
+    'command-line',
+    'creation-time',
+    'current-directory',
+    'image',
+    'parent-command-line',
+    'parent-image',
+    'parent-pid',
+    'pid'
+)
+process_v20_single_fields = process_v21_single_fields + ('args', 'name', 'parent-process-name')
+
 
 # GALAXIES MAPPING
 galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}

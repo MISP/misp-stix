@@ -59,6 +59,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'domain-family': 'protocol_family'
             }
         )
+        stix2_mapping.process_object_mapping['features'].update(
+            {
+                'args': 'arguments',
+                'name': 'name'
+            }
+        )
+        stix2_mapping.process_object_mapping['parent'].update(
+            {
+                'parent-process-name': 'name'
+            }
+        )
 
     @staticmethod
     def _update_mapping_v21():
@@ -876,12 +887,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     for value in attributes.pop(key):
                         patterns.append(f"{prefix}:{feature} = '{value}'")
             if attributes:
-                patterns.extend(
-                    self._handle_pattern_multiple_properties(
-                        attributes,
-                        prefix
-                    )
-                )
+                patterns.extend(self._handle_pattern_multiple_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, patterns)
         else:
             self._parse_ip_port_object_observable(misp_object)
@@ -900,12 +906,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     pattern.append(f"{prefix}:protocols[{index}] = '{attributes.pop(key)}'")
                     index += 1
             if attributes:
-                pattern.extend(
-                    self._handle_pattern_properties(
-                        attributes,
-                        prefix
-                    )
-                )
+                pattern.extend(self._handle_pattern_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_network_connection_object_observable(misp_object)
@@ -943,11 +944,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     attributes['state'].append(state)
         if attributes:
             pattern.extend(
-                self._handle_pattern_multiple_properties(
-                    attributes,
-                    'network-traffic'
-                )
+                self._handle_pattern_multiple_properties(attributes, 'network-traffic')
             )
+        return pattern
+
+    def _parse_process_args(self, attributes: dict, level: str) -> dict:
+        process_args = {}
+        for key, feature in stix2_mapping.process_object_mapping[level].items():
+            if attributes.get(key):
+                process_args[feature] = attributes.pop(key)
+        if attributes:
+            process_args.update(self._handle_observable_multiple_properties(attributes))
+        return process_args
+
+    def _parse_process_object_pattern(self, attributes: dict) -> list:
+        prefix = 'process'
+        pattern = []
+        for key, feature in stix2_mapping.process_object_mapping['features'].items():
+            if attributes.get(key):
+                pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+        if attributes.get('image'):
+            pattern.append(f"{prefix}:image_ref.name = '{attributes.pop('image')}'")
+        for key, feature in stix2_mapping.process_object_mapping['parent'].items():
+            if attributes.get(key):
+                pattern.append(f"{prefix}:parent_ref.{feature} = '{attributes.pop(key)}'")
+        if attributes.get('parent-image'):
+            pattern.append(f"{prefix}:parent_ref.image_ref.name = '{attributes.pop('parent-image')}'")
+        if attributes.get('child-pid'):
+            index = 0
+            for child_pid in attributes.pop('child-pid'):
+                pattern.append(f"{prefix}:child_refs[{index}].pid = '{child_pid}'")
+                index += 1
+        if attributes:
+            pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
         return pattern
 
     ################################################################################
