@@ -979,6 +979,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
         return pattern
 
+    def _parse_registry_key_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'windows-registry-key'
+            attributes = self._extract_object_attributes(misp_object['Attribute'])
+            pattern = []
+            for key, feature in stix2_mapping.registry_key_mapping['features'].items():
+                if attributes.get(key):
+                    value = attributes.pop(key).replace('\\', '\\\\')
+                    pattern.append(f"{prefix}:{feature} = '{value}'")
+            values_prefix = f"{prefix}:values[0]"
+            for key, feature in stix2_mapping.registry_key_mapping['values'].items():
+                if attributes.get(key):
+                    pattern.append(f"{values_prefix}.{feature} = '{attributes.pop(key)}'")
+            if attributes:
+                pattern.extend(self._handle_pattern_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_registry_key_object_observable(misp_object)
+
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
@@ -1396,6 +1415,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             network_traffic_args.update(self._handle_observable_multiple_properties(attributes))
         return network_traffic_args
+
+    def _parse_registry_key_args(self, attributes: dict) -> dict:
+        attributes = self._extract_object_attributes(attributes)
+        if attributes.get('last-modified') and not attributes['last-modified'].endswith('Z'):
+            attributes['last-modified'] = f"{attributes.pop('last-modified')}Z"
+        registry_key_args = {}
+        for key, feature in stix2_mapping.registry_key_mapping['features'].items():
+            if attributes.get(key):
+                registry_key_args[feature] = attributes.pop(key)
+        values_args = {}
+        for key, feature in stix2_mapping.registry_key_mapping['values'].items():
+            if attributes.get(key):
+                values_args[feature] = attributes.pop(key)
+        if values_args:
+            registry_key_args['values'] = [values_args]
+        if attributes:
+            registry_key_args.update(self._handle_observable_properties(attributes))
+        return registry_key_args
 
     ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #

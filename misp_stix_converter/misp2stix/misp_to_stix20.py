@@ -610,6 +610,11 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             observable_object['0'] = Process(**process_args)
             self._handle_object_observable(misp_object, observable_object)
 
+    def _parse_registry_key_object_observable(self, misp_object: dict):
+        registry_key_args = self._parse_registry_key_args(misp_object['Attribute'])
+        observable_object = {'0': WindowsRegistryKey(**registry_key_args)}
+        self._handle_object_observable(misp_object, observable_object)
+
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################

@@ -388,6 +388,18 @@ process_v21_single_fields = (
 )
 process_v20_single_fields = process_v21_single_fields + ('args', 'name', 'parent-process-name')
 
+registry_key_mapping = {
+    'features': {
+        'key': 'key',
+        'last-modified': 'modified'
+    },
+    'values': {
+        'data': 'data',
+        'data-type': 'data_type',
+        'name': 'name'
+    }
+}
+
 
 # GALAXIES MAPPING
 galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
