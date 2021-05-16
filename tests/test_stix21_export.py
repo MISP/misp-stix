@@ -1561,6 +1561,35 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(image_object.type, 'file')
         self.assertEqual(image_object.name, image)
 
+    def test_event_with_registry_key_indicator_object(self):
+        event = get_event_with_registry_key_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        _key, _hive, _name, _data, _data_type, _modified = (attribute['value'] for attribute in attributes)
+        key_, modified_, data_, data_type_, name_, hive_ = pattern[1:-1].split(' AND ')
+        key = _key.replace('\\', '\\\\')
+        self.assertEqual(key_, f"windows-registry-key:key = '{key}'")
+        self.assertEqual(modified_, f"windows-registry-key:modified = '{_modified}'")
+        self.assertEqual(data_, f"windows-registry-key:values[0].data = '{_data}'")
+        self.assertEqual(data_type_, f"windows-registry-key:values[0].data_type = '{_data_type}'")
+        self.assertEqual(name_, f"windows-registry-key:values[0].name = '{_name}'")
+        self.assertEqual(hive_, f"windows-registry-key:x_misp_hive = '{_hive}'")
+
+    def test_event_with_registry_key_observable_object(self):
+        event = get_event_with_registry_key_object()
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        key, hive, name, data, data_type, modified = (attribute['value'] for attribute in attributes)
+        self.assertEqual(grouping_refs[0], object_refs[0])
+        registry_key = observables[0]
+        self.assertEqual(registry_key.id, object_refs[0])
+        self.assertEqual(registry_key.type, 'windows-registry-key')
+        self.assertEqual(registry_key.key, key)
+        self.assertEqual(registry_key.modified, f'{modified}Z')
+        self.assertEqual(registry_key.x_misp_hive, hive)
+        registry_value = registry_key['values'][0]
+        self.assertEqual(registry_value.data, data)
+        self.assertEqual(registry_value.data_type, data_type)
+        self.assertEqual(registry_value.name, name)
+
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
     ################################################################################
