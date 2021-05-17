@@ -683,6 +683,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         registry_key = WindowsRegistryKey(**registry_key_args)
         self._handle_object_observable(misp_object, [registry_key])
 
+    def _parse_url_object_observable(self, misp_object: dict):
+        url_args = self._parse_url_args(misp_object['Attribute'])
+        self._handle_object_observable(misp_object, [URL(**url_args)])
+
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################

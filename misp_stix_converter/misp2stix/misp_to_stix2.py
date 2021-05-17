@@ -998,6 +998,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_registry_key_object_observable(misp_object)
 
+    def _parse_url_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'url'
+            attributes = self._extract_object_attributes(misp_object['Attribute'])
+            pattern = []
+            if attributes.get('url'):
+                pattern.append(f"{prefix}:value = '{attributes.pop('url')}'")
+            if attributes:
+                pattern.extend(self._handle_pattern_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_url_object_observable(misp_object)
+
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
@@ -1433,6 +1446,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             registry_key_args.update(self._handle_observable_properties(attributes))
         return registry_key_args
+
+    def _parse_url_args(self, attributes: dict) -> dict:
+        attributes = self._extract_object_attributes(attributes)
+        url_args = {}
+        if attributes.get('url'):
+            url_args['value'] = attributes.pop('url')
+        if attributes:
+            url_args.update(self._handle_observable_properties(attributes))
+        return url_args
 
     ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #
