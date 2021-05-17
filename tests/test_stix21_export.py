@@ -1590,6 +1590,31 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(registry_value.data_type, data_type)
         self.assertEqual(registry_value.name, name)
 
+    def test_event_with_url_indicator_object(self):
+        event = get_event_with_url_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        _url, _domain, _host, _ip, _port = (attribute['value'] for attribute in attributes)
+        url_, domain_, host_, ip_, port_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(url_, f"url:value = '{_url}'")
+        self.assertEqual(domain_, f"url:x_misp_domain = '{_domain}'")
+        self.assertEqual(host_, f"url:x_misp_host = '{_host}'")
+        self.assertEqual(ip_, f"url:x_misp_ip = '{_ip}'")
+        self.assertEqual(port_, f"url:x_misp_port = '{_port}'")
+
+    def test_event_with_url_observable_object(self):
+        event = get_event_with_url_object()
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        url, domain, host, ip, port = (attribute['value'] for attribute in attributes)
+        self.assertEqual(grouping_refs[0], object_refs[0])
+        url_object = observables[0]
+        self.assertEqual(url_object.id, object_refs[0])
+        self.assertEqual(url_object.type, 'url')
+        self.assertEqual(url_object.value, url)
+        self.assertEqual(url_object.x_misp_domain, domain)
+        self.assertEqual(url_object.x_misp_host, host)
+        self.assertEqual(url_object.x_misp_ip, ip)
+        self.assertEqual(url_object.x_misp_port, port)
+
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
     ################################################################################
