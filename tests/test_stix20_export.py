@@ -1326,6 +1326,52 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(url_object.x_misp_ip, ip)
         self.assertEqual(url_object.x_misp_port, port)
 
+    def test_event_with_x509_indicator_object(self):
+        event = get_event_with_x509_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        _issuer, _pem, _pia, _pie, _pim, _srlnmbr, _signalg, _subject, _vnb, _vna, _version, _md5, _sha1 = (attribute['value'] for attribute in attributes)
+        md5_, sha1_, issuer_, pia_, pie_, pim_, srlnmbr_, signalg_, subject_, version_, vna_, vnb_, pem_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(md5_, f"x509-certificate:hashes.MD5 = '{_md5}'")
+        self.assertEqual(sha1_, f"x509-certificate:hashes.SHA1 = '{_sha1}'")
+        self.assertEqual(issuer_, f"x509-certificate:issuer = '{_issuer}'")
+        self.assertEqual(pia_, f"x509-certificate:subject_public_key_algorithm = '{_pia}'")
+        self.assertEqual(pie_, f"x509-certificate:subject_public_key_exponent = '{_pie}'")
+        self.assertEqual(pim_, f"x509-certificate:subject_public_key_modulus = '{_pim}'")
+        self.assertEqual(srlnmbr_, f"x509-certificate:serial_number = '{_srlnmbr}'")
+        self.assertEqual(signalg_, f"x509-certificate:signature_algorithm = '{_signalg}'")
+        self.assertEqual(subject_, f"x509-certificate:subject = '{_subject}'")
+        self.assertEqual(version_, f"x509-certificate:version = '{_version}'")
+        self.assertEqual(vna_, f"x509-certificate:validity_not_after = '{_vna}'")
+        self.assertEqual(vnb_, f"x509-certificate:validity_not_before = '{_vnb}'")
+        self.assertEqual(pem_, f"x509-certificate:x_misp_pem = '{_pem}'")
+
+    def test_event_with_x509_observable_object(self):
+        event = get_event_with_x509_object()
+        attributes, observable_objects = self._run_observable_from_object_tests(event)
+        issuer, pem, pia, pie, pim, srlnmbr, signalg, subject, vnb, vna, version, md5, sha1 = (attribute['value'] for attribute in attributes)
+        x509 = observable_objects['0']
+        self.assertEqual(x509.type, 'x509-certificate')
+        hashes = x509.hashes
+        self.assertEqual(hashes['MD5'], md5)
+        self.assertEqual(hashes['SHA-1'], sha1)
+        self.assertEqual(x509.version, version)
+        self.assertEqual(x509.serial_number, srlnmbr)
+        self.assertEqual(x509.signature_algorithm, signalg)
+        self.assertEqual(x509.issuer, issuer)
+        self.assertEqual(
+            datetime.strftime(x509.validity_not_before, '%Y-%m-%dT%H:%M:%S'),
+            vnb
+        )
+        self.assertEqual(
+            datetime.strftime(x509.validity_not_after, '%Y-%m-%dT%H:%M:%S'),
+            vna
+        )
+        self.assertEqual(x509.subject, subject)
+        self.assertEqual(x509.subject_public_key_algorithm, pia)
+        self.assertEqual(x509.subject_public_key_modulus, pim)
+        self.assertEqual(x509.subject_public_key_exponent, int(pie))
+        self.assertEqual(x509.x_misp_pem, pem)
+
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
     ################################################################################
