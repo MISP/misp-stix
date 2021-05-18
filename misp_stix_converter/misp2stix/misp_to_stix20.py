@@ -615,9 +615,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {'0': WindowsRegistryKey(**registry_key_args)}
         self._handle_object_observable(misp_object, observable_object)
 
-    def _parse_url_object_observable(self, misp_object):
+    def _parse_url_object_observable(self, misp_object: dict):
         url_args = self._parse_url_args(misp_object['Attribute'])
         observable_object = {'0': URL(**url_args)}
+        self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_x509_object_observable(self, misp_object: dict):
+        x509_args = self._parse_x509_args(misp_object['Attribute'])
+        observable_object = {'0': X509Certificate(**x509_args)}
         self._handle_object_observable(misp_object, observable_object)
 
     ################################################################################

@@ -1011,6 +1011,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_url_object_observable(misp_object)
 
+    def _parse_x509_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'x509-certificate'
+            attributes = self._extract_multiple_object_attributes(
+                misp_object['Attribute'],
+                force_single=stix2_mapping.x509_single_fields
+            )
+            pattern = []
+            if attributes.get('self_signed'):
+                self_signed = 'true' if bool(int(attributes.pop('self_signed'))) else 'false'
+                pattern.append(f"{prefix}:is_self_signed = '{self_signed}'")
+            for feature in stix2_mapping.x509_hash_fields:
+                if attributes.get(feature):
+                    hash_type = self._define_hash_type(feature.split('-')[-1])
+                    pattern.append(f"{prefix}:hashes.{hash_type} = '{attributes.pop(feature)}'")
+            for data_type in ('features', 'timeline'):
+                for key, feature in stix2_mapping.x509_object_mapping[data_type].items():
+                    if attributes.get(key):
+                        pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            extension = []
+            for key, feature in stix2_mapping.x509_object_mapping['extension'].items():
+                if attributes.get(key):
+                    for value in attributes.pop(key):
+                        extension.append(f"{feature}:{value}")
+            if extension:
+                name = ','.join(extension)
+                pattern.append(f"{prefix}:x509_v3_extensions.subject_alternative_name = '{name}'")
+            if attributes:
+                pattern.extend(self._handle_pattern_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_x509_object_observable(misp_object)
+
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
@@ -1455,6 +1488,36 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             url_args.update(self._handle_observable_properties(attributes))
         return url_args
+
+    def _parse_x509_args(self, attributes: dict) -> dict:
+        attributes = self._extract_multiple_object_attributes(
+            attributes,
+            force_single=stix2_mapping.x509_single_fields
+        )
+        x509_args = defaultdict(dict)
+        if attributes.get('self_signed'):
+            x509_args['is_self_signed'] = bool(int(attributes.pop('self_signed')))
+        for feature in stix2_mapping.x509_hash_fields:
+            if attributes.get(feature):
+                hash_type = self._define_hash_type(feature.split('-')[-1])
+                x509_args['hashes'][hash_type] = attributes.pop(feature)
+        for key, feature in stix2_mapping.x509_object_mapping['features'].items():
+            if attributes.get(key):
+                x509_args[feature] = attributes.pop(key)
+        for key, feature in stix2_mapping.x509_object_mapping['timeline'].items():
+            if attributes.get(key):
+                x509_args[feature] = datetime.strptime(attributes.pop(key), '%Y-%m-%dT%H:%M:%S')
+        extension = []
+        for key, feature in stix2_mapping.x509_object_mapping['extension'].items():
+            if attributes.get(key):
+                for value in attributes.pop(key):
+                    extension.append(f"{feature}:{value}")
+        if extension:
+            name = ','.join(extension)
+            x509_args['x509_v3_extensions']['subject_alternative_name'] = name
+        if attributes:
+            x509_args.update(self._handle_observable_properties(attributes))
+        return x509_args
 
     ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #

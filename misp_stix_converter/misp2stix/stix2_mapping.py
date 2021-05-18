@@ -180,7 +180,6 @@ objects_mapping = {
     'url': '_parse_url_object',
     'user-account': '_parse_user_account_object',
     'vulnerability': '_parse_vulnerability_object',
-    'whois': '_parse_whois_object',
     'x509': '_parse_x509_object'
 }
 
@@ -399,6 +398,56 @@ registry_key_mapping = {
         'name': 'name'
     }
 }
+
+x509_hash_fields = (
+    'x509-fingerprint-md5',
+    'x509-fingerprint-sha1',
+    'x509-fingerprint-sha256'
+)
+x509_object_mapping = {
+    'extension': {
+        'dns_names': 'DNS name',
+        'email': 'email',
+        'ip': 'IP',
+        'rid': 'RID',
+        'uri': 'URI'
+    },
+    'features': {
+        'issuer': 'issuer',
+        'pubkey-info-algorithm': 'subject_public_key_algorithm',
+        'pubkey-info-exponent': 'subject_public_key_exponent',
+        'pubkey-info-modulus': 'subject_public_key_modulus',
+        'serial-number': 'serial_number',
+        'signature_algorithm': 'signature_algorithm',
+        'subject': 'subject',
+        'version': 'version'
+    },
+    'timeline': {
+        'validity-not-after': 'validity_not_after',
+        'validity-not-before': 'validity_not_before'
+    }
+}
+x509_single_fields = (
+    'is_ca',
+    'issuer',
+    'pem',
+    'pubkey-info-algorithm',
+    'pubkey-info-exponent',
+    'pubkey-info-modulus',
+    'pubkey-info-size',
+    'raw-base64',
+    'self_signed',
+    'serial-number',
+    'signature_algorithm',
+    'subject',
+    'text',
+    'validity-not-after',
+    'validity-not-before',
+    'version',
+    'x509-fingerprint-md5',
+    'x509-fingerprint-sha1',
+    'x509-fingerprint-sha256'
+)
 
 
 # GALAXIES MAPPING
