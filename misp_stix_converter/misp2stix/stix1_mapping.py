@@ -573,7 +573,7 @@ x509_creation_mapping = {
     'serial-number': 'certificate',
     'issuer': 'certificate',
     'subject': 'certificate',
-    'signature-algorithm': 'certificate',
+    'signature_algorithm': 'certificate',
     'validity-not-before': 'validity',
     'validity-not-after': 'validity',
     'pubkey-info-algorithm': 'pubkey',
@@ -589,7 +589,7 @@ x509_object_mapping = {
     'version': 'version',
     'serial-number': 'serial_number',
     'issuer': 'issuer',
-    'signature-algorithm': 'signature_algorithm',
+    'signature_algorithm': 'signature_algorithm',
     'subject': 'subject'
 }
 
