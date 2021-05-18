@@ -1266,7 +1266,7 @@ _TEST_X509_OBJECT = {
         },
         {
             "type": "text",
-            "object_relation": "signature-algorithm",
+            "object_relation": "signature_algorithm",
             "value": "SHA1_WITH_RSA_ENCRYPTION"
         },
         {
