@@ -688,7 +688,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, [URL(**url_args)])
 
     def _parse_x509_object_observable(self, misp_object: dict):
-        x509_args = self._parse_url_args(misp_object['Attribute'])
+        x509_args = self._parse_x509_args(misp_object['Attribute'])
         x509_certificate = X509Certificate(**x509_args)
         self._handle_object_observable(misp_object, [x509_certificate])
 
