@@ -1615,6 +1615,44 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(url_object.x_misp_ip, ip)
         self.assertEqual(url_object.x_misp_port, port)
 
+    def test_event_with_user_account_indicator_object(self):
+        event = get_event_with_user_account_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        _username, _userid, _display_name, _passwd, _group1, _group2, _groupid, _home, _account_type, _plc = (attribute['value'] for attribute in attributes)
+        account_type_, display_name_, userid_, username_, passwd_, plc_, group1_, group2_, groupid_, home_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type_, f"user-account:account_type = '{_account_type}'")
+        self.assertEqual(display_name_, f"user-account:display_name = '{_display_name}'")
+        self.assertEqual(userid_, f"user-account:user_id = '{_userid}'")
+        self.assertEqual(username_, f"user-account:account_login = '{_username}'")
+        self.assertEqual(passwd_, f"user-account:credential = '{_passwd}'")
+        self.assertEqual(plc_, f"user-account:credential_last_changed = '{_plc}'")
+        self.assertEqual(group1_, f"user-account:extensions.'unix-account-ext'.groups = '{_group1}'")
+        self.assertEqual(group2_, f"user-account:extensions.'unix-account-ext'.groups = '{_group2}'")
+        self.assertEqual(groupid_, f"user-account:extensions.'unix-account-ext'.gid = '{_groupid}'")
+        self.assertEqual(home_, f"user-account:extensions.'unix-account-ext'.home_dir = '{_home}'")
+
+    def test_event_with_user_account_observable_object(self):
+        event = get_event_with_user_account_object()
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        username, userid, display_name, passwd, group1, group2, groupid, home, account_type, plc = (attribute['value'] for attribute in attributes)
+        self.assertEqual(grouping_refs[0], object_refs[0])
+        user_account = observables[0]
+        self.assertEqual(user_account.id, object_refs[0])
+        self.assertEqual(user_account.type, 'user-account')
+        self.assertEqual(user_account.user_id, userid)
+        self.assertEqual(user_account.credential, passwd)
+        self.assertEqual(user_account.account_login, username)
+        self.assertEqual(user_account.account_type, account_type)
+        self.assertEqual(user_account.display_name, display_name)
+        extension = user_account.extensions['unix-account-ext']
+        self.assertEqual(extension.gid, int(groupid))
+        self.assertEqual(extension.groups, [group1, group2])
+        self.assertEqual(extension.home_dir, home)
+        self.assertEqual(
+            datetime.strftime(user_account.credential_last_changed, '%Y-%m-%dT%H:%M:%S'),
+            plc
+        )
+
     def test_event_with_x509_indicator_object(self):
         event = get_event_with_x509_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)

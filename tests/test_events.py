@@ -2507,6 +2507,27 @@ def get_event_with_url_object():
     return event
 
 
+def get_event_with_user_account_object():
+    event = deepcopy(_BASE_EVENT)
+    user_account = deepcopy(_TEST_USER_ACCOUNT_OBJECT)
+    user_account['Attribute'].extend(
+        [
+            {
+                "type": "text",
+                "object_relation": "account-type",
+                "value": "unix"
+            },
+            {
+                "type": "datetime",
+                "object_relation": "password_last_changed",
+                "value": "2020-10-25T16:22:00"
+            }
+        ]
+    )
+    event['Event']['Object'] = [user_account]
+    return event
+
+
 def get_event_with_user_account_objects():
     event = deepcopy(_BASE_EVENT)
     unix_user_account = deepcopy(_TEST_USER_ACCOUNT_OBJECT)
