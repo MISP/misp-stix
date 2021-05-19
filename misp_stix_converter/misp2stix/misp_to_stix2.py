@@ -83,6 +83,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'message-id': 'message_id'
             }
         )
+        stix2_mapping.user_account_object_mapping['features'].update(
+            {
+                'password': 'credential'
+            }
+        )
+        stix2_mapping.user_account_object_mapping['timeline'].update(
+            {
+                'password_last_changed': 'credential_last_changed'
+            }
+        )
 
     ################################################################################
     #                            MAIN PARSING FUNCTIONS                            #
@@ -1014,6 +1024,33 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_url_object_observable(misp_object)
 
+    def _parse_user_account_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'user-account'
+            attributes = self._extract_multiple_object_attributes(
+                misp_object['Attribute'],
+                force_single=stix2_mapping.user_account_single_fields
+            )
+            pattern = []
+            for data_type in ('features', 'timeline'):
+                for key, feature in stix2_mapping.user_account_object_mapping[data_type].items():
+                    if attributes.get(key):
+                        pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            extension_prefix = f"{prefix}:extensions.'unix-account-ext'"
+            for key, feature in stix2_mapping.user_account_object_mapping['extension'].items():
+                if attributes.get(key):
+                    values = attributes.pop(key)
+                    if isinstance(values, list):
+                        for value in values:
+                            pattern.append(f"{extension_prefix}.{feature} = '{value}'")
+                    else:
+                        pattern.append(f"{extension_prefix}.{feature} = '{values}'")
+            if attributes:
+                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_user_account_object_observable(misp_object)
+
     def _parse_x509_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'x509-certificate'
@@ -1491,6 +1528,28 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             url_args.update(self._handle_observable_properties(attributes))
         return url_args
+
+    def _parse_user_account_args(self, attributes: dict) -> dict:
+        attributes = self._extract_multiple_object_attributes(
+            attributes,
+            force_single=stix2_mapping.user_account_single_fields
+        )
+        user_account_args = {}
+        for key, feature in stix2_mapping.user_account_object_mapping['features'].items():
+            if attributes.get(key):
+                user_account_args[feature] = attributes.pop(key)
+        for key, feature in stix2_mapping.user_account_object_mapping['timeline'].items():
+            if attributes.get(key):
+                user_account_args[feature] = datetime.strptime(attributes.pop(key), '%Y-%m-%dT%H:%M:%S')
+        extension = {}
+        for key, feature in stix2_mapping.user_account_object_mapping['extension'].items():
+            if attributes.get(key):
+                extension[feature] = attributes.pop(key)
+        if extension:
+            user_account_args['extensions'] = {'unix-account-ext': extension}
+        if attributes:
+            user_account_args.update(self._handle_observable_multiple_properties(attributes))
+        return user_account_args
 
     def _parse_x509_args(self, attributes: dict) -> dict:
         attributes = self._extract_multiple_object_attributes(

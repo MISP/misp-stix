@@ -399,6 +399,51 @@ registry_key_mapping = {
     }
 }
 
+user_account_object_mapping = {
+    'features': {
+        'account-type': 'account_type',
+        'can_escalate_privs': 'can_escalate_privs',
+        'disabled': 'is_disabled',
+        'display-name': 'display_name',
+        'is_service_account': 'is_service_account',
+        'privileged': 'is_privileged',
+        'user-id': 'user_id',
+        'username': 'account_login'
+    },
+    'extension': {
+        'group': 'groups',
+        'group-id': 'gid',
+        'home_dir': 'home_dir',
+        'shell': 'shell'
+    },
+    'timeline': {
+        'created': 'account_created',
+        'expires': 'account_expires',
+        'first_login': 'account_first_login',
+        'last_login': 'account_last_login',
+        'password_last_changed': 'password_last_changed'
+    }
+}
+user_account_single_fields = (
+    'account-type',
+    'can_escalate_privs',
+    'created',
+    'disabled',
+    'display-name',
+    'expires',
+    'first_login',
+    'group-id',
+    'home_dir',
+    'is_service_account',
+    'last_login',
+    'password',
+    'password_last_changed',
+    'privileged',
+    'shell',
+    'user-id',
+    'username'
+)
+
 x509_hash_fields = (
     'x509-fingerprint-md5',
     'x509-fingerprint-sha1',

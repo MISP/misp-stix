@@ -687,6 +687,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         url_args = self._parse_url_args(misp_object['Attribute'])
         self._handle_object_observable(misp_object, [URL(**url_args)])
 
+    def _parse_user_account_object_observable(self, misp_object: dict):
+        user_account_args = self._parse_user_account_args(misp_object['Attribute'])
+        user_account = UserAccount(**user_account_args)
+        self._handle_object_observable(misp_object, [user_account])
+
     def _parse_x509_object_observable(self, misp_object: dict):
         x509_args = self._parse_x509_args(misp_object['Attribute'])
         x509_certificate = X509Certificate(**x509_args)
