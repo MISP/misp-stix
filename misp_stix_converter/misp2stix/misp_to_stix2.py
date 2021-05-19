@@ -623,7 +623,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         properties = {'allow_custom': True}
         for key, values in attributes.items():
             feature = f"x_misp_{key.replace('-', '_')}"
-            properties[feature] = values[0] if len(values) == 1 else values
+            properties[feature] = values[0] if isinstance(values, list) and len(values) == 1 else values
         return properties
 
     @staticmethod
@@ -638,6 +638,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         pattern = []
         for key, values in attributes.items():
             key = key.replace('-', '_')
+            if not isinstance(values, list):
+                pattern.append(f"{prefix}:x_misp_{key} = '{values}'")
+                continue
             for value in values:
                 pattern.append(f"{prefix}:x_misp_{key} = '{value}'")
         return pattern
