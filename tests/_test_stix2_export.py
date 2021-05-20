@@ -127,6 +127,30 @@ class TestSTIX2Export(unittest.TestCase):
         self._check_object_labels(misp_object, observed_data.labels, to_ids=False)
         self._check_observable_time_features(observed_data, misp_object['timestamp'])
 
+    def _check_object_vulnerability_features(self, vulnerability, misp_object, identity_id, object_ref):
+        uuid = f"vulnerability--{misp_object['uuid']}"
+        self.assertEqual(uuid, object_ref)
+        self.assertEqual(vulnerability.id, uuid)
+        self.assertEqual(vulnerability.type, 'vulnerability')
+        self.assertEqual(vulnerability.created_by_ref, identity_id)
+        self._check_object_labels(misp_object, vulnerability.labels)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(vulnerability.created, timestamp)
+        self.assertEqual(vulnerability.modified, timestamp)
+        cve, cvss, summary, created, published, references1, references2 = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(vulnerability.name, cve)
+        self.assertEqual(vulnerability.description, summary)
+        cve_ref, url1, url2 = vulnerability.external_references
+        self.assertEqual(cve_ref.source_name, 'cve')
+        self.assertEqual(cve_ref.external_id, cve)
+        self.assertEqual(url1.source_name, 'url')
+        self.assertEqual(url1.url, references1)
+        self.assertEqual(url2.source_name, 'url')
+        self.assertEqual(url2.url, references2)
+        self.assertEqual(vulnerability.x_misp_created, created)
+        self.assertEqual(vulnerability.x_misp_cvss_score, cvss)
+        self.assertEqual(vulnerability.x_misp_published, published)
+
     def _check_observable_features(self, observed_data, identity_id, object_ref, object_uuid):
         uuid = f"observed-data--{object_uuid}"
         self.assertEqual(uuid, object_ref)

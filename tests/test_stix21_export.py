@@ -1653,6 +1653,23 @@ class TestSTIX21Export(TestSTIX2Export):
             plc
         )
 
+    def test_event_with_vulnerability_object(self):
+        event = get_event_with_vulnerability_object()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, vulnerability = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        args = (grouping, event['Event'], identity_id)
+        object_ref = self._check_grouping_features(*args)[0]
+        self._check_object_vulnerability_features(vulnerability, misp_object, identity_id, object_ref)
+
     def test_event_with_x509_indicator_object(self):
         event = get_event_with_x509_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
