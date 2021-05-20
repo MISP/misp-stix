@@ -1051,6 +1051,54 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_user_account_object_observable(misp_object)
 
+    def _parse_vulnerability_object(self, misp_object: dict):
+        vulnerability_id = f"vulnerability--{misp_object['uuid']}"
+        vulnerability_args = defaultdict(list)
+        vulnerability_args.update(
+            {
+                'id': vulnerability_id,
+                'type': 'vulnerability',
+                'labels': self._create_object_labels(misp_object),
+                'created_by_ref': self._identity_id,
+                'interoperability': True
+            }
+        )
+        vulnerability_args.update(self._handle_indicator_time_fields(misp_object))
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            vulnerability_id,
+            vulnerability_args['modified']
+        )
+        if markings:
+            self._handle_markings(indicator_args, markings)
+        attributes = self._extract_multiple_object_attributes(misp_object['Attribute'])
+        if attributes.get('id'):
+            vulnerability_args['name'] = attributes['id'][0]
+            for vuln in attributes.pop('id'):
+                reference = {
+                    'source_name': 'cve' if vuln.startswith('CVE') else 'vulnerability',
+                    'external_id': vuln
+                }
+                vulnerability_args['external_references'].append(reference)
+        for feature in ('description', 'summary'):
+            if attributes.get(feature):
+                vulnerability_args['description'] = self._select_single_feature(
+                    attributes,
+                    feature
+                )
+                break
+        if attributes.get('references'):
+            for reference in attributes.pop('references'):
+                vulnerability_args['external_references'].append(
+                    {
+                        'source_name': 'url',
+                        'url': reference
+                    }
+                )
+        if attributes:
+            vulnerability_args.update(self._handle_observable_multiple_properties(attributes))
+        self._append_SDO(self._create_vulnerability(vulnerability_args))
+
     def _parse_x509_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'x509-certificate'
