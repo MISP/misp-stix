@@ -961,14 +961,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
         return pattern
 
-    def _parse_process_args(self, attributes: dict, level: str) -> dict:
-        process_args = {}
-        for key, feature in stix2_mapping.process_object_mapping[level].items():
-            if attributes.get(key):
-                process_args[feature] = attributes.pop(key)
-        if attributes:
-            process_args.update(self._handle_observable_multiple_properties(attributes))
-        return process_args
 
     def _parse_process_object_pattern(self, attributes: dict) -> list:
         prefix = 'process'
@@ -1549,6 +1541,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             network_traffic_args.update(self._handle_observable_multiple_properties(attributes))
         return network_traffic_args
+
+    def _parse_process_args(self, attributes: dict, level: str) -> dict:
+        process_args = {}
+        for key, feature in stix2_mapping.process_object_mapping[level].items():
+            if attributes.get(key):
+                process_args[feature] = attributes.pop(key)
+        if attributes:
+            process_args.update(self._handle_observable_multiple_properties(attributes))
+        return process_args
 
     def _parse_registry_key_args(self, attributes: dict) -> dict:
         attributes = self._extract_object_attributes(attributes)
