@@ -881,7 +881,7 @@ _TEST_PE_SECTION_OBJECT = {
         {
             "type": "ssdeep",
             "object_relation": "ssdeep",
-            "value": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ\/UjHSEuSvK",
+            "value": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK",
         }
     ]
 }
