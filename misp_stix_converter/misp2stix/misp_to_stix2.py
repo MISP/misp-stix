@@ -40,7 +40,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if self._misp_event.get('Attribute'):
             self._resolve_attributes()
         if self._misp_event.get('Object'):
+            self._objects_to_parse = defaultdict(dict)
             self._resolve_objects()
+            if self._objects_to_parse:
+                self._resolve_objects_to_parse()
         report = self._generate_event_report()
         self._objects.insert(index, report)
 
@@ -566,6 +569,42 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 self._parse_custom_object(misp_object)
                 self._warnings.add(f'MISP Object name {object_name} not mapped.')
 
+    def _resolve_objects_to_parse(self):
+        for file_uuid, misp_object in self._objects_to_parse['file'].items():
+            file_ids, file_object = misp_object
+            pe_uuid = self._fetch_included_reference_uuids(file_object['ObjectReference'], 'pe')
+            if len(pe_uuid) != 1:
+                self._raise_file_and_pe_references_warning(file_uuid, pe_uuid)
+                if file_ids:
+                    pattern = self._parse_file_object_pattern(file_object['Attribute'])
+                    self._handle_object_indicator(file_object, pattern)
+                else:
+                    self._parse_file_object_observable(file_object)
+                continue
+            pe_uuid = pe_uuid[0]
+            pe_ids, pe_object = self._objects_to_parse['pe'][pe_uuid]
+            ids_list = [file_ids, pe_ids]
+            args = [pe_uuid]
+            if pe_object.get('ObjectReference'):
+                section_uuids = self._fetch_included_reference_uuids(
+                    pe_object['ObjectReference'],
+                    'pe-section'
+                )
+                if section_uuids:
+                    for section_uuid in section_uuids:
+                        section_ids, _ = self._objects_to_parse['pe-section'][section_uuid]
+                        ids_list.append(section_ids)
+                    args.append(section_uuids)
+            if True in ids_list:
+                pattern = self._parse_file_object_pattern(file_object['Attribute'])
+                pattern.extend(self._parse_pe_extensions_pattern(*args))
+                self._handle_object_indicator(file_object, pattern)
+            else:
+                file_args, observable = self._parse_file_observable_object(file_object['Attribute'])
+                file_args['extensions'] = self._parse_pe_extensions_observable(*args)
+                self._handle_file_observable_objects(file_args, observable)
+                self._handle_object_observable(file_object, observable)
+
     def _handle_object_indicator(self, misp_object: dict, pattern: list):
         indicator_id = f"indicator--{misp_object['uuid']}"
         indicator_args = {
@@ -644,22 +683,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return properties
 
     @staticmethod
-    def _handle_pattern_multiple_properties(attributes: dict, prefix: str) -> list:
+    def _handle_pattern_multiple_properties(attributes: dict, prefix: str, separator: Optional[str]=':') -> list:
         pattern = []
         for key, values in attributes.items():
             key = key.replace('-', '_')
             if not isinstance(values, list):
-                pattern.append(f"{prefix}:x_misp_{key} = '{values}'")
+                pattern.append(f"{prefix}{separator}x_misp_{key} = '{values}'")
                 continue
             for value in values:
-                pattern.append(f"{prefix}:x_misp_{key} = '{value}'")
+                pattern.append(f"{prefix}{separator}x_misp_{key} = '{value}'")
         return pattern
 
     @staticmethod
-    def _handle_pattern_properties(attributes: dict, prefix: str) -> list:
+    def _handle_pattern_properties(attributes: dict, prefix: str, separator: Optional[str]=':') -> list:
         pattern = []
         for key, value in attributes.items():
-            pattern.append(f"{prefix}:x_misp_{key.replace('-', '_')} = '{value}'")
+            pattern.append(f"{prefix}{separator}x_misp_{key.replace('-', '_')} = '{value}'")
         return pattern
 
     def _parse_asn_object(self, misp_object: dict):
@@ -823,63 +862,73 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._parse_email_object_observable(misp_object)
 
     def _parse_file_object(self, misp_object: dict):
-        if self._fetch_ids_flag(misp_object['Attribute']):
-            prefix = 'file'
-            attributes = self._extract_multiple_object_attributes_with_data(
-                misp_object['Attribute'],
-                force_single=stix2_mapping.file_single_fields,
-                with_data=stix2_mapping.file_data_fields
-            )
-            pattern = []
-            for hash_type in stix2_mapping._hash_attribute_types:
-                if attributes.get(hash_type):
-                    pattern.append(
-                        self._create_hash_pattern(
-                            hash_type,
-                            attributes.pop(hash_type)
-                        )
-                    )
-            for key, feature in stix2_mapping.file_object_mapping.items():
-                if attributes.get(key):
-                    for value in attributes.pop(key):
-                        pattern.append(f"{prefix}:{feature} = '{value}'")
-            if attributes.get('path'):
-                value = attributes.pop('path')
-                pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")
-            if attributes.get('malware-sample'):
-                value = attributes.pop('malware-sample')
-                malware_sample = []
-                if isinstance(value, tuple):
-                    value, data = value
-                    malware_sample.append(self._create_content_ref_pattern(data))
-                filename, md5 = value.split('|')
-                malware_sample.append(
-                    self._create_content_ref_pattern(
-                        filename,
-                        'x_misp_filename'
-                    )
-                )
-                malware_sample.append(
-                    self._create_content_ref_pattern(
-                        md5,
-                        'hashes.MD5'
-                    )
-                )
-                pattern.append(f"({' AND '.join(malware_sample)})")
-            if attributes.get('attachment'):
-                value = attributes.pop('attachment')
-                if isinstance(value, tuple):
-                    value, data = value
-                    filename_pattern = self._create_content_ref_pattern(value, 'x_misp_filename')
-                    data_pattern = self._create_content_ref_pattern(data)
-                    pattern.append(f'({data_pattern} AND {filename_pattern})')
-                else:
-                    pattern.append(self._create_content_ref_pattern(value, 'x_misp_filename'))
-            if attributes:
-                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+        to_ids = self._fetch_ids_flag(misp_object['Attribute'])
+        if misp_object.get('ObjectReference'):
+            for reference in misp_object['ObjectReference']:
+                if self._is_reference_included(reference, 'pe'):
+                    self._objects_to_parse['file'][misp_object['uuid']] = to_ids, misp_object
+                    return
+        if to_ids:
+            pattern = self._parse_file_object_pattern(misp_object['Attribute'])
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_file_object_observable(misp_object)
+
+    def _parse_file_object_pattern(self, attributes: list) -> list:
+        prefix = 'file'
+        attributes = self._extract_multiple_object_attributes_with_data(
+            attributes,
+            force_single=stix2_mapping.file_single_fields,
+            with_data=stix2_mapping.file_data_fields
+        )
+        pattern = []
+        for hash_type in stix2_mapping._hash_attribute_types:
+            if attributes.get(hash_type):
+                pattern.append(
+                    self._create_hash_pattern(
+                        hash_type,
+                        attributes.pop(hash_type)
+                    )
+                )
+        for key, feature in stix2_mapping.file_object_mapping.items():
+            if attributes.get(key):
+                for value in attributes.pop(key):
+                    pattern.append(f"{prefix}:{feature} = '{value}'")
+        if attributes.get('path'):
+            value = attributes.pop('path')
+            pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")
+        if attributes.get('malware-sample'):
+            value = attributes.pop('malware-sample')
+            malware_sample = []
+            if isinstance(value, tuple):
+                value, data = value
+                malware_sample.append(self._create_content_ref_pattern(data))
+            filename, md5 = value.split('|')
+            malware_sample.append(
+                self._create_content_ref_pattern(
+                    filename,
+                    'x_misp_filename'
+                )
+            )
+            malware_sample.append(
+                self._create_content_ref_pattern(
+                    md5,
+                    'hashes.MD5'
+                )
+            )
+            pattern.append(f"({' AND '.join(malware_sample)})")
+        if attributes.get('attachment'):
+            value = attributes.pop('attachment')
+            if isinstance(value, tuple):
+                value, data = value
+                filename_pattern = self._create_content_ref_pattern(value, 'x_misp_filename')
+                data_pattern = self._create_content_ref_pattern(data)
+                pattern.append(f'({data_pattern} AND {filename_pattern})')
+            else:
+                pattern.append(self._create_content_ref_pattern(value, 'x_misp_filename'))
+        if attributes:
+            pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+        return pattern
 
     def _parse_ip_port_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
@@ -961,6 +1010,89 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
         return pattern
 
+    def _parse_pe_extensions_observable(self, pe_uuid: str, uuids: Optional[list]=None) -> dict:
+        attributes = self._extract_multiple_object_attributes(
+            self._objects_to_parse['pe'][pe_uuid][1]['Attribute'],
+            force_single=stix2_mapping.pe_object_single_fields
+        )
+        extension = defaultdict(list)
+        for key, feature in stix2_mapping.pe_object_mapping['features'].items():
+            if attributes.get(key):
+                extension[feature] = attributes.pop(key)
+        optional_header = {}
+        for key, feature in stix2_mapping.pe_object_mapping['header'].items():
+            if attributes.get(key):
+                optional_header[feature] = attributes.pop(key)
+        if optional_header:
+            extension['optional_header'] = optional_header
+        if attributes:
+            extension.update(self._handle_observable_multiple_properties(attributes))
+        if uuids is not None:
+            for section_uuid in uuids:
+                section = defaultdict(dict)
+                attributes = self._extract_object_attributes(
+                    self._objects_to_parse['pe-section'][section_uuid][1]['Attribute']
+                )
+                for key, feature in stix2_mapping.pe_section_mapping.items():
+                    if attributes.get(key):
+                        section[feature] = attributes.pop(key)
+                for hash_type in stix2_mapping.file_hash_main_types:
+                    if attributes.get(hash_type):
+                        value = self._select_single_feature(attributes, hash_type)
+                        section['hashes'][self._define_hash_type(hash_type)] = value
+                if attributes:
+                    section.update(self._handle_observable_properties(attributes))
+                extension['sections'].append(self._create_windowsPESection(section))
+        return {'windows-pebinary-ext': extension}
+
+    def _parse_pe_extensions_pattern(self, pe_uuid: str, uuids: Optional[list]=None) -> list:
+        prefix = "file:extensions.'windows-pebinary-ext'"
+        attributes = self._extract_multiple_object_attributes(
+            self._objects_to_parse['pe'][pe_uuid][1]['Attribute'],
+            force_single=stix2_mapping.pe_object_single_fields
+        )
+        pattern = []
+        for key, feature in stix2_mapping.pe_object_mapping['features'].items():
+            if attributes.get(key):
+                pattern.append(f"{prefix}.{feature} = '{attributes.pop(key)}'")
+        for key, feature in stix2_mapping.pe_object_mapping['header'].items():
+            if attributes.get(key):
+                pattern.append(f"{prefix}.optional_header.{feature} = '{attributes.pop(key)}'")
+        if attributes:
+            pattern.extend(
+                self._handle_pattern_multiple_properties(
+                    attributes,
+                    prefix,
+                    separator='.'
+                )
+            )
+        if uuids is not None:
+            for section_uuid in uuids:
+                section_prefix = f"{prefix}.sections[{uuids.index(section_uuid)}]"
+                attributes = self._extract_object_attributes(
+                    self._objects_to_parse['pe-section'][section_uuid][1]['Attribute']
+                )
+                for key, feature in stix2_mapping.pe_section_mapping.items():
+                    if attributes.get(key):
+                        pattern.append(f"{section_prefix}.{feature} = '{attributes.pop(key)}'")
+                for hash_type in stix2_mapping._hash_attribute_types:
+                    if attributes.get(hash_type):
+                        pattern.append(
+                            self._create_hash_pattern(
+                                hash_type,
+                                attributes.pop(hash_type),
+                                prefix=f'{section_prefix}.hashes'
+                            )
+                        )
+                if attributes:
+                    pattern.extend(
+                        self._handle_pattern_properties(
+                            attributes,
+                            section_prefix,
+                            separator='.'
+                        )
+                    )
+        return pattern
 
     def _parse_process_object_pattern(self, attributes: dict) -> list:
         prefix = 'process'
@@ -1123,6 +1255,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_x509_object_observable(misp_object)
+
+    def _populate_objects_to_parse(self, misp_object: dict):
+        to_ids = self._fetch_ids_flag(misp_object['Attribute'])
+        self._objects_to_parse[misp_object['name']][misp_object['uuid']] = to_ids, misp_object
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
@@ -1659,8 +1795,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_filename_pattern(value: str) -> str:
         return f"file:name = '{value}'"
 
-    def _create_hash_pattern(self, hash_type: str, value: str) -> str:
-        return f"file:hashes.{self._define_hash_type(hash_type)} = '{value}'"
+    def _create_hash_pattern(self, hash_type: str, value: str, prefix: Optional[str]='file:hashes') -> str:
+        return f"{prefix}.{self._define_hash_type(hash_type)} = '{value}'"
 
     def _create_ip_pattern(self, ip_type: str, value: str) -> str:
         address_type = self._define_address_type(value)
@@ -1702,6 +1838,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if attribute.get('to_ids'):
                 return True
         return False
+
+    def _fetch_included_reference_uuids(self, references: list, name: str) -> list:
+        uuids = []
+        for reference in references:
+            if self._is_reference_included(reference, name):
+                referenced_uuid = reference['referenced_uuid']
+                if referenced_uuid not in self._objects_to_parse[name]:
+                    self._warnings.add(f'Referenced {name} object {referenced_uuid} not correctly handled with objects to parse.')
+                    continue
+                uuids.append(referenced_uuid)
+        return uuids
 
     @staticmethod
     def _get_vulnerability_references(vulnerability: str) -> dict:
@@ -1763,3 +1910,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         timestamp
                     )
                 )
+
+    @staticmethod
+    def _is_reference_included(reference: dict, name: str) -> bool:
+        return reference['relationship_type'] in ('includes', 'included-in') and reference['Object']['name'] == name
+
+    def _raise_file_and_pe_references_warning(self, file_uuid: str, pe_uuid: list):
+        if len(pe_uuid) == 0:
+            self._warnings.add(f'Unable to parse the pe object related to the file object {file_uuid}.')
+        else:
+            self._warnings.add(f'The file object {file_uuid} has more than one reference to pe_objects: {", ".join(pe_uuid)}')

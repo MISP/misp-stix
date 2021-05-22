@@ -175,6 +175,8 @@ objects_mapping = {
     'ip-port': '_parse_ip_port_object',
     'network-connection': '_parse_network_connection_object',
     'network-socket': '_parse_network_socket_object',
+    'pe': '_populate_objects_to_parse',
+    'pe-section': '_populate_objects_to_parse',
     'process': '_parse_process_object',
     'registry-key': '_parse_registry_key_object',
     'url': '_parse_url_object',
@@ -355,6 +357,29 @@ network_traffic_uuid_fields = (
     'ip-dst',
     'ip-src'
 )
+
+pe_object_mapping = {
+    'features': {
+        'imphash': 'imphash',
+        'number-sections': 'number_of_sections',
+        'type': 'pe_type'
+    },
+    'header': {
+        'entrypoint-address': 'address_of_entry_point',
+    }
+}
+pe_object_single_fields = (
+    'entrypoint-address',
+    'imphash',
+    'number-sections',
+    'type'
+)
+
+pe_section_mapping = {
+    'entropy': 'entropy',
+    'name': 'name',
+    'size-in-bytes': 'size'
+}
 
 process_object_mapping = {
     'features': {

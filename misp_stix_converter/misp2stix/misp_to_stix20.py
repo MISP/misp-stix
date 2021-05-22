@@ -16,8 +16,8 @@ from stix2.v20.observables import (Artifact, AutonomousSystem, Directory, Domain
                                    EmailAddress, EmailMessage, EmailMIMEComponent,
                                    File, IPv4Address, IPv6Address, MACAddress, Mutex,
                                    NetworkTraffic, Process, URL, UserAccount,
-                                   WindowsRegistryKey, WindowsRegistryValueType,
-                                   X509Certificate)
+                                   WindowsPESection, WindowsRegistryKey,
+                                   WindowsRegistryValueType, X509Certificate)
 from stix2.v20.sdo import (AttackPattern, Campaign, CourseOfAction, Identity,
                            Indicator, Malware, ObservedData, Report, ThreatActor,
                            Tool, Vulnerability)
@@ -340,6 +340,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
     ################################################################################
 
+    def _handle_file_observable_objects(self, args: dict, observable_object: dict):
+        observable_object['0'] = self._create_file_object(args)
+
     def _parse_asn_object_observable(self, misp_object: dict):
         as_args = self._create_AS_args(misp_object['Attribute'])
         observable_object = {
@@ -448,8 +451,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         email_args['_valid_refs'][index] = email_address._type
 
     def _parse_file_object_observable(self, misp_object: dict):
+        file_args, observable_object = self._parse_file_observable_object(misp_object['Attribute'])
+        self._handle_file_observable_objects(file_args, observable_object)
+        self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_file_observable_object(self, attributes: list) -> tuple:
         attributes = self._extract_multiple_object_attributes_with_data(
-            misp_object['Attribute'],
+            attributes,
             force_single=file_single_fields,
             with_data=file_data_fields
         )
@@ -490,8 +498,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             observable_object[str(index)] = Artifact(**args)
         if attributes:
             file_args.update(self._parse_file_args(attributes))
-        observable_object['0'] = File(**file_args)
-        self._handle_object_observable(misp_object, observable_object)
+        return file_args, observable_object
 
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(
@@ -677,6 +684,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_file(name: str) -> File:
         return File(name=name)
 
+    @staticmethod
+    def _create_file_object(file_args: dict) -> File:
+        return File(**file_args)
+
     def _create_identity_object(self, orgname: str) -> Identity:
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
         identity_args = {
@@ -721,6 +732,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_vulnerability(vulnerability_args: dict) -> Vulnerability:
         return Vulnerability(**vulnerability_args)
+
+    @staticmethod
+    def _create_windowsPESection(section_args: dict) -> WindowsPESection:
+        return WindowsPESection(**section_args)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
