@@ -51,6 +51,25 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(stix_object.id, object_ref)
         return stix_object
 
+    def _run_indicators_from_objects_tests(self, event):
+        self._add_object_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        misp_objects = deepcopy(event['Event']['Object'])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, indicator = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        args = (grouping, event['Event'], identity_id)
+        object_ref = self._check_grouping_features(*args)[0]
+        self._check_object_indicator_features(indicator, misp_objects[0], identity_id, object_ref)
+        self._check_pattern_features(indicator)
+        return misp_objects, indicator.pattern
+
     def _run_indicator_from_object_tests(self, event):
         self._add_object_ids_flag(event)
         orgc = event['Event']['Orgc']
@@ -110,6 +129,33 @@ class TestSTIX21Export(TestSTIX2Export):
         attribute_values = (attribute['value'] for attribute in attributes)
         patterns = (indicator.pattern for indicator in indicators)
         return attribute_values, patterns
+
+    def _run_observables_from_objects_tests(self, event):
+        self._remove_object_ids_flags(event)
+        orgc = event['Event']['Orgc']
+        misp_objects = deepcopy(event['Event']['Object'])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, observed_data, *observable = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        observable_id, *ids = self._check_grouping_features(
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        self._check_object_observable_features(
+            observed_data,
+            misp_objects[0],
+            identity_id,
+            observable_id
+        )
+        return misp_objects, ids, observed_data['object_refs'], observable
+
 
     def _run_observable_from_object_tests(self, event):
         self._remove_object_ids_flags(event)
@@ -1336,6 +1382,94 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(file2.id, file2_ref)
         self.assertEqual(file2.type, 'file')
         self.assertEqual(file2.name, _attachment2)
+
+    def test_event_with_file_and_pe_indicator_objects(self):
+        event = get_event_with_file_and_pe_objects()
+        misp_objects, pattern = self._run_indicators_from_objects_tests(event)
+        file, pe, section = misp_objects
+        _filename, _md5, _sha1, _sha256, _size, _entropy = (attribute['value'] for attribute in file['Attribute'])
+        pattern = pattern[1:-1].split(' AND ')
+        md5_, sha1_, sha256_, name_, size_, entropy_ = pattern[:6]
+        self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5}'")
+        self.assertEqual(sha1_, f"file:hashes.SHA1 = '{_sha1}'")
+        self.assertEqual(sha256_, f"file:hashes.SHA256 = '{_sha256}'")
+        self.assertEqual(name_, f"file:name = '{_filename}'")
+        self.assertEqual(size_, f"file:size = '{_size}'")
+        self.assertEqual(entropy_, f"file:x_misp_entropy = '{_entropy}'")
+        _type, _compilation, _entrypoint, _original, _internal, _desc, _version, _lang, _prod_name, _prod_version, _company, _copyright, _sections, _imphash, _impfuzzy = (attribute['value'] for attribute in pe['Attribute'])
+        imphash_, sections_, type_, entrypoint_, compilation_, original_, internal_, desc_, version_, lang_, prod_name_, prod_version_, company_, copyright_, impfuzzy_ = pattern[6:21]
+        prefix = "file:extensions.'windows-pebinary-ext'"
+        self.assertEqual(imphash_, f"{prefix}.imphash = '{_imphash}'")
+        self.assertEqual(sections_, f"{prefix}.number_of_sections = '{_sections}'")
+        self.assertEqual(type_, f"{prefix}.pe_type = '{_type}'")
+        self.assertEqual(entrypoint_, f"{prefix}.optional_header.address_of_entry_point = '{_entrypoint}'")
+        self.assertEqual(compilation_, f"{prefix}.x_misp_compilation_timestamp = '{_compilation}'")
+        self.assertEqual(original_, f"{prefix}.x_misp_original_filename = '{_original}'")
+        self.assertEqual(internal_, f"{prefix}.x_misp_internal_filename = '{_internal}'")
+        self.assertEqual(desc_, f"{prefix}.x_misp_file_description = '{_desc}'")
+        self.assertEqual(version_, f"{prefix}.x_misp_file_version = '{_version}'")
+        self.assertEqual(lang_, f"{prefix}.x_misp_lang_id = '{_lang}'")
+        self.assertEqual(prod_name_, f"{prefix}.x_misp_product_name = '{_prod_name}'")
+        self.assertEqual(prod_version_, f"{prefix}.x_misp_product_version = '{_prod_version}'")
+        self.assertEqual(company_, f"{prefix}.x_misp_company_name = '{_company}'")
+        self.assertEqual(copyright_, f"{prefix}.x_misp_legal_copyright = '{_copyright}'")
+        self.assertEqual(impfuzzy_, f"{prefix}.x_misp_impfuzzy = '{_impfuzzy}'")
+        _name, _size, _entropy, _md5, _sha1, _sha256, _sha512, _ssdeep = (attribute['value'] for attribute in section['Attribute'])
+        entropy_, name_, size_, md5_, sha1_, sha256_, sha512_, ssdeep_ = pattern[21:]
+        prefix = f"{prefix}.sections[0]"
+        self.assertEqual(entropy_, f"{prefix}.entropy = '{_entropy}'")
+        self.assertEqual(name_, f"{prefix}.name = '{_name}'")
+        self.assertEqual(size_, f"{prefix}.size = '{_size}'")
+        self.assertEqual(md5_, f"{prefix}.hashes.MD5 = '{_md5}'")
+        self.assertEqual(sha1_, f"{prefix}.hashes.SHA1 = '{_sha1}'")
+        self.assertEqual(sha256_, f"{prefix}.hashes.SHA256 = '{_sha256}'")
+        self.assertEqual(sha512_, f"{prefix}.hashes.SHA512 = '{_sha512}'")
+        self.assertEqual(ssdeep_, f"{prefix}.hashes.SSDEEP = '{_ssdeep}'")
+
+    def test_event_with_file_and_pe_observable_objects(self):
+        event = get_event_with_file_and_pe_objects()
+        misp_objects, grouping_refs, object_refs, observables = self._run_observables_from_objects_tests(event)
+        _file, pe, section = misp_objects
+        self.assertEqual(grouping_refs[0], object_refs[0])
+        filename, md5, sha1, sha256, size, entropy = (attribute['value'] for attribute in _file['Attribute'])
+        file_object = observables[0]
+        self.assertEqual(file_object.id, object_refs[0])
+        self.assertEqual(file_object.type, 'file')
+        self.assertEqual(file_object.name, filename)
+        hashes = file_object.hashes
+        self.assertEqual(hashes['MD5'], md5)
+        self.assertEqual(hashes['SHA-1'], sha1)
+        self.assertEqual(hashes['SHA-256'], sha256)
+        self.assertEqual(file_object.size, int(size))
+        self.assertEqual(file_object.x_misp_entropy, entropy)
+        _type, compilation, entrypoint, original, internal, desc, version, lang, prod_name, prod_version, company, copyright, sections, imphash, impfuzzy = (attribute['value'] for attribute in pe['Attribute'])
+        pe_extension = file_object.extensions['windows-pebinary-ext']
+        self.assertEqual(pe_extension.pe_type, _type)
+        self.assertEqual(pe_extension.imphash, imphash)
+        self.assertEqual(pe_extension.number_of_sections, int(sections))
+        self.assertEqual(pe_extension.optional_header['address_of_entry_point'], int(entrypoint))
+        self.assertEqual(pe_extension.x_misp_company_name, company)
+        self.assertEqual(pe_extension.x_misp_compilation_timestamp, compilation)
+        self.assertEqual(pe_extension.x_misp_file_description, desc)
+        self.assertEqual(pe_extension.x_misp_file_version, version)
+        self.assertEqual(pe_extension.x_misp_impfuzzy, impfuzzy)
+        self.assertEqual(pe_extension.x_misp_internal_filename, internal)
+        self.assertEqual(pe_extension.x_misp_lang_id, lang)
+        self.assertEqual(pe_extension.x_misp_legal_copyright, copyright)
+        self.assertEqual(pe_extension.x_misp_original_filename, original)
+        self.assertEqual(pe_extension.x_misp_product_name, prod_name)
+        self.assertEqual(pe_extension.x_misp_product_version, prod_version)
+        name, size, entropy, md5, sha1, sha256, sha512, ssdeep = (attribute['value'] for attribute in section['Attribute'])
+        section = pe_extension.sections[0]
+        self.assertEqual(section.name, name)
+        self.assertEqual(section.size, int(size))
+        self.assertEqual(section.entropy, float(entropy))
+        hashes = section.hashes
+        self.assertEqual(hashes['MD5'], md5)
+        self.assertEqual(hashes['SHA-1'], sha1)
+        self.assertEqual(hashes['SHA-256'], sha256)
+        self.assertEqual(hashes['SHA-512'], sha512)
+        self.assertEqual(hashes['SSDEEP'], ssdeep)
 
     def test_event_with_file_indicator_object(self):
         event = get_event_with_file_object_with_artifact()
