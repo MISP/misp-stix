@@ -252,6 +252,15 @@ email_uuid_fields = (
     'to'
 )
 
+facebook_account_object_mapping = {
+    'account-id': 'user_id',
+    'account-name': 'account_login'
+}
+facebook_account_single_fields = (
+    'account-id',
+    'account-name'
+)
+
 file_data_fields = (
     'attachment',
     'malware-sample'
@@ -423,6 +432,17 @@ registry_key_mapping = {
         'name': 'name'
     }
 }
+
+twitter_account_object_mapping = {
+    'displayed-name': 'display_name',
+    'id': 'user_id',
+    'name': 'account_login'
+}
+twitter_account_single_fields = (
+    'displayed-name',
+    'id',
+    'name'
+)
 
 user_account_object_mapping = {
     'features': {

@@ -701,6 +701,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             pattern.append(f"{prefix}{separator}x_misp_{key.replace('-', '_')} = '{value}'")
         return pattern
 
+    def _parse_account_object(self, misp_object: dict):
+        account_type = misp_object['name'].split('-')[0]
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'user-account'
+            attributes = self._extract_multiple_object_attributes(
+                misp_object['Attribute'],
+                force_single=getattr(stix2_mapping, f"{account_type}_account_single_fields")
+            )
+            pattern = [f"{prefix}:account_type = '{account_type}'"]
+            for key, feature in getattr(stix2_mapping, f"{account_type}_account_object_mapping").items():
+                if attributes.get(key):
+                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            if attributes:
+                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_account_object_observable(misp_object, account_type)
+
     def _parse_asn_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'autonomous-system'
@@ -1543,6 +1561,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     ################################################################################
     #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #
     ################################################################################
+
+    def _parse_account_args(self, attributes: list, account_type: str) -> dict:
+        attributes = self._extract_multiple_object_attributes(
+            attributes,
+            force_single=getattr(stix2_mapping, f"{account_type}_account_single_fields")
+        )
+        account_args = {'account_type': account_type}
+        for key, feature in getattr(stix2_mapping, f"{account_type}_account_object_mapping").items():
+            if attributes.get(key):
+                account_args[feature] = attributes.pop(key)
+        if attributes:
+            account_args.update(self._handle_observable_multiple_properties(attributes))
+        return account_args
 
     def _parse_AS_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
