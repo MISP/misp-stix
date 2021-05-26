@@ -1544,7 +1544,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #
     ################################################################################
 
-    def _create_AS_args(self, attributes: list) -> dict:
+    def _parse_AS_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
             attributes,
             force_single=stix2_mapping.as_single_fields
@@ -1556,7 +1556,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             as_args.update(self._handle_observable_multiple_properties(attributes))
         return as_args
 
-    def _create_credential_args(self, attributes: list) -> dict:
+    def _parse_credential_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
             attributes,
             force_single=stix2_mapping.credential_single_fields

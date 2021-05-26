@@ -344,14 +344,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object['0'] = self._create_file_object(args)
 
     def _parse_asn_object_observable(self, misp_object: dict):
-        as_args = self._create_AS_args(misp_object['Attribute'])
+        as_args = self._parse_AS_args(misp_object['Attribute'])
         observable_object = {
             '0': AutonomousSystem(**as_args)
         }
         self._handle_object_observable(misp_object, observable_object)
 
     def _parse_credential_object_observable(self, misp_object: dict):
-        credential_args = self._create_credential_args(misp_object['Attribute'])
+        credential_args = self._parse_credential_args(misp_object['Attribute'])
         observable_object = {
             '0': UserAccount(**credential_args)
         }

@@ -407,12 +407,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         objects.insert(0, self._create_file_object(args))
 
     def _parse_asn_object_observable(self, misp_object: dict):
-        as_args = self._create_AS_args(misp_object['Attribute'])
+        as_args = self._parse_AS_args(misp_object['Attribute'])
         AS_object = AutonomousSystem(**as_args)
         self._handle_object_observable(misp_object, [AS_object])
 
     def _parse_credential_object_observable(self, misp_object: dict):
-        credential_args = self._create_credential_args(misp_object['Attribute'])
+        credential_args = self._parse_credential_args(misp_object['Attribute'])
         user_object = UserAccount(**credential_args)
         self._handle_object_observable(misp_object, [user_object])
 
