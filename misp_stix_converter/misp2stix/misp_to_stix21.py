@@ -406,8 +406,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _handle_file_observable_objects(self, args: dict, objects: list):
         objects.insert(0, self._create_file_object(args))
 
-    def _parse_user_account_object_observable(self, misp_object: dict, account_type: str):
-        account_args = self._create_account_args(misp_object['Attribute'], account_type)
+    def _parse_account_object_observable(self, misp_object: dict, account_type: str):
+        account_args = self._parse_account_args(misp_object['Attribute'], account_type)
         account_object = UserAccount(**account_args)
         self._handle_object_observable(misp_object, [account_object])
 
