@@ -544,22 +544,7 @@ class TestSTIX21Export(TestSTIX2Export):
         )
         object_refs = self._check_grouping_features(*args)
         for attribute, custom_object, object_ref in zip(attributes, custom_objects, object_refs):
-            attribute_type = attribute['type']
-            category = attribute['category']
-            custom_type = f"x-misp-attribute"
-            self.assertEqual(custom_object.type, custom_type)
-            self.assertEqual(object_ref, f"{custom_type}--{attribute['uuid']}")
-            self.assertEqual(custom_object.id, object_ref)
-            self.assertEqual(custom_object.created_by_ref, identity_id)
-            self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
-            self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
-            if attribute.get('to_ids', False):
-                self.assertEqual(custom_object.labels[2], 'misp:to_ids="True"')
-            self.assertEqual(custom_object.x_misp_type, attribute['type'])
-            self.assertEqual(custom_object.x_misp_category, category)
-            if attribute.get('comment'):
-                self.assertEqual(custom_object.x_misp_comment, attribute['comment'])
-            self.assertEqual(custom_object.x_misp_value, attribute['value'])
+            self._run_custom_attribute_tests(attribute, custom_object, object_ref, identity_id)
 
     def test_event_with_domain_indicator_attribute(self):
         event = get_event_with_domain_attribute()
@@ -1394,6 +1379,28 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(user_account.credential, password[1])
         for feature, value in attributes:
             self.assertEqual(getattr(user_account, f'x_misp_{feature}'), value)
+
+    def test_event_with_custom_objects(self):
+        event = get_event_with_custom_objects()
+        orgc = event['Event']['Orgc']
+        misp_objects = deepcopy(event['Event']['Object'])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, *custom_objects = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        object_refs = self._check_grouping_features(*args)
+        for misp_object, custom_object, object_ref in zip(misp_objects, custom_objects, object_refs):
+            self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
 
     def test_event_with_domain_ip_indicator_object(self):
         event = get_event_with_domain_ip_object()

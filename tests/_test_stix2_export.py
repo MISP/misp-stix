@@ -224,3 +224,42 @@ class TestSTIX2Export(unittest.TestCase):
         for misp_object in event['Event']['Object']:
             for attribute in misp_object['Attribute']:
                 attribute['to_ids'] = False
+
+    def _run_custom_attribute_tests(self, attribute, custom_object, object_ref, identity_id):
+        attribute_type = attribute['type']
+        category = attribute['category']
+        custom_type = f"x-misp-attribute"
+        self.assertEqual(custom_object.type, custom_type)
+        self.assertEqual(object_ref, f"{custom_type}--{attribute['uuid']}")
+        self.assertEqual(custom_object.id, object_ref)
+        self.assertEqual(custom_object.created_by_ref, identity_id)
+        self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
+        self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
+        if attribute.get('to_ids', False):
+            self.assertEqual(custom_object.labels[2], 'misp:to_ids="True"')
+        self.assertEqual(custom_object.x_misp_type, attribute_type)
+        self.assertEqual(custom_object.x_misp_category, category)
+        if attribute.get('comment'):
+            self.assertEqual(custom_object.x_misp_comment, attribute['comment'])
+        self.assertEqual(custom_object.x_misp_value, attribute['value'])
+
+    def _run_custom_object_tests(self, misp_object, custom_object, object_ref, identity_id):
+        name = misp_object['name']
+        category = misp_object['meta-category']
+        custom_type = 'x-misp-object'
+        self.assertEqual(custom_object.type, custom_type)
+        self.assertEqual(object_ref, f"{custom_type}--{misp_object['uuid']}")
+        self.assertEqual(custom_object.id, object_ref)
+        self.assertEqual(custom_object.created_by_ref, identity_id)
+        self.assertEqual(custom_object.labels[0], f'misp:category="{category}"')
+        self.assertEqual(custom_object.labels[1], f'misp:name="{name}"')
+        self.assertEqual(custom_object.x_misp_name, name)
+        self.assertEqual(custom_object.x_misp_meta_category, category)
+        if misp_object.get('comment'):
+            self.assertEqual(custom_object.x_misp_comment, misp_object['comment'])
+        for custom_attribute, attribute in zip(custom_object.x_misp_attributes, misp_object['Attribute']):
+            for feature in ('type', 'object_relation', 'value'):
+                self.assertEqual(custom_attribute[feature], attribute[feature])
+            for feature in ('category', 'comment', 'to_ids', 'uuid'):
+                if attribute.get(feature):
+                    self.assertEqual(custom_attribute[feature], attribute[feature])
