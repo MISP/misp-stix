@@ -2,15 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
-from .stix2_mapping import (CustomAttribute_v20, CustomNote, email_data_fields,
-                            email_header_fields, email_object_mapping, file_data_fields,
-                            file_single_fields, ip_port_single_fields,
+from .stix2_mapping import (CustomAttribute_v20, CustomMispObject_v20, CustomNote,
+                            email_data_fields, email_header_fields, email_object_mapping,
+                            file_data_fields, file_single_fields, ip_port_single_fields,
                             network_socket_v20_single_fields, network_traffic_uuid_fields,
                             process_v20_single_fields, tlp_markings_v20)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle
 from stix2.v20.observables import (Artifact, AutonomousSystem, Directory, DomainName,
                                    EmailAddress, EmailMessage, EmailMIMEComponent,
@@ -672,14 +671,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_course_of_action(course_of_action_args: dict) -> CourseOfAction:
         return CourseOfAction(**course_of_action_args)
 
-    @staticmethod
-    def _create_custom_object(custom_args: dict) -> CustomAttribute_v20:
-        stix_labels = ListProperty(StringProperty)
-        stix_labels.clean(custom_args['labels'])
-        stix_markings = ListProperty(StringProperty)
-        if custom_args.get('markings'):
-            stix_markings.clean(custom_args['markings'])
+    def _create_custom_attribute(self, custom_args: dict) -> CustomAttribute_v20:
+        self._clean_custom_properties(custom_args)
         return CustomAttribute_v20(**custom_args)
+
+    def _create_custom_object(self, custom_args: dict) -> CustomMispObject_v20:
+        self._clean_custom_properties(custom_args)
+        return CustomMispObject_v20(**custom_args)
 
     @staticmethod
     def _create_email_address(email_address: str) -> EmailAddress:

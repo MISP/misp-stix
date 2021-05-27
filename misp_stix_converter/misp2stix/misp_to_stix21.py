@@ -2,15 +2,15 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
-from .stix2_mapping import (CustomAttribute_v21, domain_ip_uuid_fields, email_data_fields,
-                            email_uuid_fields, file_data_fields, file_uuid_fields,
-                            tlp_markings_v21, ip_port_single_fields, ip_port_uuid_fields,
-                            network_socket_v21_single_fields, network_traffic_uuid_fields,
-                            process_uuid_fields, process_v21_single_fields)
+from .stix2_mapping import (CustomAttribute_v21, CustomMispObject_v21, domain_ip_uuid_fields,
+                            email_data_fields, email_uuid_fields, file_data_fields,
+                            file_uuid_fields, tlp_markings_v21, ip_port_single_fields,
+                            ip_port_uuid_fields, network_socket_v21_single_fields,
+                            network_traffic_uuid_fields, process_uuid_fields,
+                            process_v21_single_fields)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from stix2.properties import ListProperty, StringProperty
 from stix2.v21.bundle import Bundle
 from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, DomainName,
                                    EmailAddress, EmailMessage, EmailMIMEComponent,
@@ -740,14 +740,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_course_of_action(course_of_action_args: dict) -> CourseOfAction:
         return CourseOfAction(**course_of_action_args)
 
-    @staticmethod
-    def _create_custom_object(custom_args: dict) -> CustomAttribute_v21:
-        stix_labels = ListProperty(StringProperty)
-        stix_labels.clean(custom_args['labels'])
-        stix_markings = ListProperty(StringProperty)
-        if custom_args.get('markings'):
-            stix_markings.clean(custom_args['markings'])
+    def _create_custom_attribute(self, custom_args: dict) -> CustomAttribute_v21:
+        self._clean_custom_properties(custom_args)
         return CustomAttribute_v21(**custom_args)
+
+    def _create_custom_object(self, custom_args: dict) -> CustomMispObject_v21:
+        self._clean_custom_properties(custom_args)
+        return CustomMispObject_v21(**custom_args)
 
     @staticmethod
     def _create_email_address(address_id: str, email_address: str) -> EmailAddress:

@@ -5,6 +5,7 @@ from . import stix2_mapping
 from .exportparser import MISPtoSTIXParser
 from collections import defaultdict
 from datetime import datetime
+from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
 from typing import Optional, Union
@@ -12,6 +13,8 @@ from uuid import uuid4
 
 _label_fields = ('type', 'category', 'to_ids')
 _misp_time_fields = ('first_seen', 'last_seen')
+_object_attributes_additional_fields = ('category', 'comment', 'to_ids', 'uuid')
+_object_attributes_fields = ('type', 'object_relation', 'value')
 _stix_time_fields = {
     'indicator': ('valid_from', 'valid_until'),
     'observed-data': ('first_observed', 'last_observed')
@@ -309,7 +312,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(custom_args, markings)
-        self._append_SDO(self._create_custom_object(custom_args))
+        self._append_SDO(self._create_custom_attribute(custom_args))
 
     def _parse_domain_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
@@ -835,6 +838,40 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_credential_object_observable(misp_object)
+
+    def _parse_custom_object(self, misp_object: dict):
+        custom_id = f"x-misp-object--{misp_object['uuid']}"
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        custom_args = {
+            'id': custom_id,
+            'created': timestamp,
+            'modified': timestamp,
+            'labels': self._create_object_labels(misp_object),
+            'created_by_ref': self._identity_id,
+            'x_misp_name': misp_object['name'],
+            'x_misp_meta_category': misp_object['meta-category'],
+            'x_misp_attributes': [
+                self._parse_custom_object_attribute(attribute) for attribute in misp_object['Attribute']
+            ]
+        }
+        if misp_object.get('comment'):
+            custom_args['x_misp_comment'] = misp_object['comment']
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            custom_id,
+            timestamp
+        )
+        if markings:
+            self._handle_markings(custom_args, markings)
+        self._append_SDO(self._create_custom_object(custom_args))
+
+    @staticmethod
+    def _parse_custom_object_attribute(attribute: dict) -> dict:
+        custom_attribute = {key: attribute[key] for key in _object_attributes_fields}
+        for field in _object_attributes_additional_fields:
+            if attribute.get(field):
+                custom_attribute[field] = attribute[field]
+        return custom_attribute
 
     def _parse_domain_ip_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
@@ -1846,6 +1883,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
+
+    @staticmethod
+    def _clean_custom_properties(custom_args: dict):
+        stix_labels = ListProperty(StringProperty)
+        stix_labels.clean(custom_args['labels'])
+        if custom_args.get('markings'):
+            stix_markings = ListProperty(StringProperty)
+            stix_markings.clean(custom_args['markings'])
 
     @staticmethod
     def _datetime_from_str(timestamp: str) -> datetime:
