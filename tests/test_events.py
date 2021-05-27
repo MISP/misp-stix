@@ -2373,6 +2373,66 @@ def get_embedded_observable_object_galaxy():
     return event
 
 
+def get_event_with_account_objects():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        {
+            "name": "facebook-account",
+            "description": "Facebook account.",
+            "meta-category": "misc",
+            "uuid": "7d8ac653-b65c-42a6-8420-ddc71d65f50d",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "account-id",
+                    "value": "1392781243"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "account-name",
+                    "value": "marcopolo"
+                },
+                {
+                    "type": "link",
+                    "object_relation": "link",
+                    "value": "https://facebook.com/marcopolo"
+                }
+            ]
+        },
+        {
+            "name": "twitter-account",
+            "description": "Twitter account.",
+            "meta-category": "misc",
+            "uuid": "6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
+            "timestamp": str(int(datetime.now().timestamp())),
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "id",
+                    "value": "1357111317"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "johndoe"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "displayed-name",
+                    "value": "John Doe"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "followers",
+                    "value": "666"
+                }
+            ]
+        }
+    ]
+    return event
+
+
 def get_event_with_asn_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [

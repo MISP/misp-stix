@@ -36,6 +36,21 @@ class TestSTIX20Export(TestSTIX2Export):
         orgc = event['Event']['Orgc']
         misp_objects = deepcopy(event['Event']['Object'])
         self.parser.parse_misp_event(event)
+        identity, report, *indicators = self.parser.stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (report, event['Event'], identity_id, timestamp)
+        object_refs = self._check_report_features(*args)
+        self.assertEqual(report.published, timestamp)
+        for indicator, misp_object, object_ref in zip(indicators, misp_objects, object_refs):
+            self._check_object_indicator_features(indicator, misp_object, identity_id, object_ref)
+        return misp_objects, tuple(indicator.pattern for indicator in indicators)
+
+    def _run_indicator_from_objects_tests(self, event):
+        self._add_object_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        misp_objects = deepcopy(event['Event']['Object'])
+        self.parser.parse_misp_event(event)
         identity, report, indicator = self.parser.stix_objects
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         identity_id = self._check_identity_features(identity, orgc, timestamp)
@@ -89,6 +104,26 @@ class TestSTIX20Export(TestSTIX2Export):
         return attribute_values, patterns
 
     def _run_observables_from_objects_tests(self, event):
+        self._remove_object_ids_flags(event)
+        orgc = event['Event']['Orgc']
+        misp_objects = deepcopy(event['Event']['Object'])
+        self.parser.parse_misp_event(event)
+        identity, report, *observed_datas = self.parser.stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (report, event['Event'], identity_id, timestamp)
+        object_refs = self._check_report_features(*args)
+        self.assertEqual(report.published, timestamp)
+        for observed_data, misp_object, object_ref in zip(observed_datas, misp_objects, object_refs):
+            self._check_object_observable_features(
+                observed_data,
+                misp_object,
+                identity_id,
+                object_ref
+            )
+        return misp_objects, tuple(observed_data['objects'] for observed_data in observed_datas)
+
+    def _run_observable_from_objects_tests(self, event):
         self._remove_object_ids_flags(event)
         orgc = event['Event']['Orgc']
         misp_objects = deepcopy(event['Event']['Object'])
@@ -908,6 +943,46 @@ class TestSTIX20Export(TestSTIX2Export):
     #                          MISP OBJECTS EXPORT TESTS.                          #
     ################################################################################
 
+    def test_event_with_account_indicator_objects(self):
+        event = get_event_with_account_objects()
+        misp_objects, patterns = self._run_indicators_from_objects_tests(event)
+        facebook_object, twitter_object = misp_objects
+        facebook_pattern, twitter_pattern = patterns
+        account_id, account_name, link = (attribute['value'] for attribute in facebook_object['Attribute'])
+        account_type, user_id, account_login, _link = facebook_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'facebook'")
+        self.assertEqual(user_id, f"user-account:user_id = '{account_id}'")
+        self.assertEqual(account_login, f"user-account:account_login = '{account_name}'")
+        self.assertEqual(_link, f"user-account:x_misp_link = '{link}'")
+        _id, name, displayed_name, followers = (attribute['value'] for attribute in twitter_object['Attribute'])
+        account_type, display_name, user_id, account_login, _followers = twitter_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'twitter'")
+        self.assertEqual(display_name, f"user-account:display_name = '{displayed_name}'")
+        self.assertEqual(user_id, f"user-account:user_id = '{_id}'")
+        self.assertEqual(account_login, f"user-account:account_login = '{name}'")
+        self.assertEqual(_followers, f"user-account:x_misp_followers = '{followers}'")
+
+    def test_event_with_account_observable_objects(self):
+        event = get_event_with_account_objects()
+        misp_objects, observable_objects = self._run_observables_from_objects_tests(event)
+        facebook_object, twitter_object = misp_objects
+        facebook, twitter = observable_objects
+        account_id, account_name, link = (attribute['value'] for attribute in facebook_object['Attribute'])
+        facebook = facebook['0']
+        self.assertEqual(facebook.type, 'user-account')
+        self.assertEqual(facebook.account_type, 'facebook')
+        self.assertEqual(facebook.user_id, account_id)
+        self.assertEqual(facebook.account_login, account_name)
+        self.assertEqual(facebook.x_misp_link, link)
+        _id, name, displayed_name, followers = (attribute['value'] for attribute in twitter_object['Attribute'])
+        twitter = twitter['0']
+        self.assertEqual(twitter.type, 'user-account')
+        self.assertEqual(twitter.account_type, 'twitter')
+        self.assertEqual(twitter.user_id, _id)
+        self.assertEqual(twitter.account_login, name)
+        self.assertEqual(twitter.display_name, displayed_name)
+        self.assertEqual(twitter.x_misp_followers, followers)
+
     def test_event_with_asn_indicator_object(self):
         event = get_event_with_asn_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
@@ -1107,7 +1182,7 @@ class TestSTIX20Export(TestSTIX2Export):
 
     def test_event_with_file_and_pe_indicator_objects(self):
         event = get_event_with_file_and_pe_objects()
-        misp_objects, pattern = self._run_indicators_from_objects_tests(event)
+        misp_objects, pattern = self._run_indicator_from_objects_tests(event)
         _file, pe, section = misp_objects
         _filename, _md5, _sha1, _sha256, _size, _entropy = (attribute['value'] for attribute in _file['Attribute'])
         pattern = pattern[1:-1].split(' AND ')
@@ -1150,7 +1225,7 @@ class TestSTIX20Export(TestSTIX2Export):
 
     def test_event_with_file_and_pe_observable_objects(self):
         event = get_event_with_file_and_pe_objects()
-        misp_objects, observable_objects = self._run_observables_from_objects_tests(event)
+        misp_objects, observable_objects = self._run_observable_from_objects_tests(event)
         _file, pe, section = misp_objects
         filename, md5, sha1, sha256, size, entropy = (attribute['value'] for attribute in _file['Attribute'])
         file_object = observable_objects['0']
