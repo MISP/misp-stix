@@ -344,7 +344,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object['0'] = self._create_file_object(args)
 
     def _parse_account_object_observable(self, misp_object: dict, account_type: str):
-        account_args = self._create_account_args(misp_object['Attribute'], account_type)
+        account_args = self._parse_account_args(misp_object['Attribute'], account_type)
         observable_object = {'0': UserAccount(**account_args)}
         self._handle_object_observable(misp_object, observable_object)
 
