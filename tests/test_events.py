@@ -578,6 +578,56 @@ _TEST_FILE_FOR_PE_OBJECT = {
     ]
 }
 
+_TEST_GEOLOCATION_OBJECT = {
+    "name": "geolocation",
+    "meta-category": "misc",
+    "description": "An object to describe a geographic location.",
+    "uuid": "6a10dac8-71ac-4d9b-8269-1e9c73ea4d8f",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "address",
+            "value": "9800 Savage Rd. Suite 6272"
+        },
+        {
+            "type": "text",
+            "object_relation": "zipcode",
+            "value": "MD 20755"
+        },
+        {
+            "type": "text",
+            "object_relation": "city",
+            "value": "Fort Meade"
+        },
+        {
+            "type": "text",
+            "object_relation": "country",
+            "value": "USA"
+        },
+        {
+            "type": "text",
+            "object_relation": "region",
+            "value": "northern-america"
+        },
+        {
+            "type": "float",
+            "object_relation": "latitude",
+            "value": "39.108889"
+        },
+        {
+            "type": "float",
+            "object_relation": "longitude",
+            "value": "-76.771389"
+        },
+        {
+            "type": "float",
+            "object_relation": "altitude",
+            "value": "55"
+        }
+    ]
+}
+
 _TEST_IP_PORT_OBJECT = {
     "name": "ip-port",
     "meta-category": "network",
@@ -608,6 +658,31 @@ _TEST_IP_PORT_OBJECT = {
             "type": "datetime",
             "object_relation": "first-seen",
             "value": "2020-10-25T16:22:00Z"
+        }
+    ]
+}
+
+_TEST_MUTEX_OBJECT = {
+    "name": "mutex",
+    "meta-category": "misc",
+    "description": "Object to describe mutual exclusion locks (mutex) as seen in memory or computer program",
+    "uuid": "b0f55591-6a63-4fbd-a169-064e64738d95",
+    "timestamp": str(int(datetime.now().timestamp())),
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "MutexTest"
+        },
+        {
+            "type": "text",
+            "object_relation": "description",
+            "value": "Test mutex on unix"
+        },
+        {
+            "type": "text",
+            "object_relation": "operating-system",
+            "value": "Unix"
         }
     ]
 }
@@ -2519,10 +2594,26 @@ def get_event_with_file_object():
     return event
 
 
+def get_event_with_geolocation_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_GEOLOCATION_OBJECT)
+    ]
+    return event
+
+
 def get_event_with_ip_port_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_IP_PORT_OBJECT)
+    ]
+    return event
+
+
+def get_event_with_mutex_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_MUTEX_OBJECT)
     ]
     return event
 

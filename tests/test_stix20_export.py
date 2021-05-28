@@ -1350,6 +1350,25 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(address_object.type, 'ipv4-addr')
         self.assertEqual(address_object.value, ip)
 
+    def test_event_with_mutex_indicator_object(self):
+        event = get_event_with_mutex_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        _name, _description, _os = (attribute['value'] for attribute in attributes)
+        name_, description_, os_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(name_, f"mutex:name = '{_name}'")
+        self.assertEqual(description_, f"mutex:x_misp_description = '{_description}'")
+        self.assertEqual(os_, f"mutex:x_misp_operating_system = '{_os}'")
+
+    def test_event_with_mutex_observable_object(self):
+        event = get_event_with_mutex_object()
+        attributes, observable_object = self._run_observable_from_object_tests(event)
+        name, description, _os = (attribute['value'] for attribute in attributes)
+        mutex = observable_object['0']
+        self.assertEqual(mutex.type, 'mutex')
+        self.assertEqual(mutex.name, name)
+        self.assertEqual(mutex.x_misp_description, description)
+        self.assertEqual(mutex.x_misp_operating_system, _os)
+
     def test_event_with_network_connection_indicator_object(self):
         event = get_event_with_network_connection_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)

@@ -1640,6 +1640,39 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(artifact2.payload_bin, attributes[6]['data'])
         self.assertEqual(artifact2.x_misp_filename, _attachment)
 
+    def test_event_with_geolocation_object(self):
+        event = get_event_with_geolocation_object()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'])[0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, location = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        args = (grouping, event['Event'], identity_id)
+        object_ref = self._check_grouping_features(*args)[0]
+        address, zipcode, city, country, region, latitude, longitude, altitude = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(location.type, 'location')
+        self.assertEqual(location.id, f"location--{misp_object['uuid']}")
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(location.created, timestamp)
+        self.assertEqual(location.modified, timestamp)
+        self.assertEqual(location.labels[0], f'misp:category="{misp_object["meta-category"]}"')
+        self.assertEqual(location.labels[1], f'misp:name="{misp_object["name"]}"')
+        self.assertEqual(location.labels[2], f'misp:to_ids="False"')
+        self.assertEqual(location.street_address, address)
+        self.assertEqual(location.postal_code, zipcode)
+        self.assertEqual(location.city, city)
+        self.assertEqual(location.country, country)
+        self.assertEqual(location.region, region)
+        self.assertEqual(location.latitude, float(latitude))
+        self.assertEqual(location.longitude, float(longitude))
+        self.assertEqual(location.x_misp_altitude, altitude)
+
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
         event = get_event_with_ip_port_object()
@@ -1678,6 +1711,27 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(address_object.id, address_ref)
         self.assertEqual(address_object.type, 'ipv4-addr')
         self.assertEqual(address_object.value, ip)
+
+    def test_event_with_mutex_indicator_object(self):
+        event = get_event_with_mutex_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        _name, _description, _os = (attribute['value'] for attribute in attributes)
+        name_, description_, os_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(name_, f"mutex:name = '{_name}'")
+        self.assertEqual(description_, f"mutex:x_misp_description = '{_description}'")
+        self.assertEqual(os_, f"mutex:x_misp_operating_system = '{_os}'")
+
+    def test_event_with_mutex_observable_object(self):
+        event = get_event_with_mutex_object()
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        name, description, _os = (attribute['value'] for attribute in attributes)
+        self.assertEqual(grouping_refs[0], object_refs[0])
+        mutex = observables[0]
+        self.assertEqual(mutex.id, grouping_refs[0])
+        self.assertEqual(mutex.type, 'mutex')
+        self.assertEqual(mutex.name, name)
+        self.assertEqual(mutex.x_misp_description, description)
+        self.assertEqual(mutex.x_misp_operating_system, _os)
 
     def test_event_with_network_connection_indicator_object(self):
         event = get_event_with_network_connection_object()
