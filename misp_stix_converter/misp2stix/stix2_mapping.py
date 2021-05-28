@@ -212,6 +212,7 @@ objects_mapping = {
     'facebook-account': '_parse_account_object',
     'file': '_parse_file_object',
     'ip-port': '_parse_ip_port_object',
+    'mutex': '_parse_mutex_object',
     'network-connection': '_parse_network_connection_object',
     'network-socket': '_parse_network_socket_object',
     'pe': '_populate_objects_to_parse',
@@ -331,6 +332,16 @@ file_object_mapping = {
 }
 file_uuid_fields = file_data_fields + ('path',)
 file_single_fields = file_uuid_fields + _hash_attribute_types
+
+geolocation_object_mapping = {
+    'address': 'street_address',
+    'city': 'city',
+    'country': 'country',
+    'latitude': 'latitude',
+    'longitude': 'longitude',
+    'region': 'region',
+    'zipcode': 'postal_code'
+}
 
 ip_port_object_mapping = {
     'ip_features': {

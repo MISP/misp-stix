@@ -4,8 +4,8 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix2_mapping import (CustomAttribute_v21, CustomMispObject_v21,
     domain_ip_uuid_fields, email_data_fields, email_uuid_fields, file_data_fields,
-    file_uuid_fields, ip_port_single_fields, ip_port_uuid_fields,
-    network_socket_v21_single_fields, network_traffic_uuid_fields,
+    file_uuid_fields, geolocation_object_mapping, ip_port_single_fields,
+    ip_port_uuid_fields, network_socket_v21_single_fields, network_traffic_uuid_fields,
     process_uuid_fields, process_v21_single_fields, tlp_markings_v21)
 from collections import defaultdict
 from copy import deepcopy
@@ -16,7 +16,7 @@ from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, Domain
     MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPESection,
     WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
 from stix2.v21.sdo import (AttackPattern, Campaign, CourseOfAction, Grouping,
-    Identity, Indicator, Malware, Note, ObservedData, Report, ThreatActor,
+    Identity, Indicator, Location, Malware, Note, ObservedData, Report, ThreatActor,
     Tool, Vulnerability)
 from stix2.v21.sro import Relationship
 from typing import Optional, Union
@@ -556,6 +556,36 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             file_args.update(self._parse_file_args(attributes))
         return file_args, objects
 
+    def _parse_geolocation_object(self, misp_object: dict):
+        location_id = f"location--{misp_object['uuid']}"
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        location_args = {
+            'id': location_id,
+            'created': timestamp,
+            'modified': timestamp,
+            'labels': self._create_object_labels(
+                misp_object,
+                to_ids=self._fetch_ids_flag(misp_object['Attribute'])
+            ),
+            'interoperability': True
+        }
+        if misp_object.get('comment'):
+            location_args['description'] = misp_object['comment']
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            location_id,
+            location_args['modified']
+        )
+        if markings:
+            self._handle_markings(location_args, markings)
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        for key, feature in geolocation_object_mapping.items():
+            if attributes.get(key):
+                location_args[feature] = attributes.pop(key)
+        if attributes:
+            location_args.update(self._handle_observable_properties(attributes))
+        self._append_SDO(Location(**location_args))
+
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(
             misp_object['Attribute'],
@@ -584,6 +614,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             network_traffic_args.update(self._parse_ip_port_args(attributes))
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         self._handle_object_observable(misp_object, objects)
+
+    def _parse_mutex_object_observable(self, misp_object: dict):
+        mutex_args = self._parse_mutex_args(misp_object['Attribute'])
+        self._handle_object_observable(misp_object, [Mutex(**mutex_args)])
 
     def _parse_network_connection_object_observable(self, misp_object: dict):
         attributes = self._extract_object_attributes_with_uuid(

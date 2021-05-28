@@ -99,6 +99,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'password_last_changed': 'credential_last_changed'
             }
         )
+        stix2_mapping.objects_mapping.update(
+            {
+                'geolocation': '_parse_geolocation_object'
+            }
+        )
 
     ################################################################################
     #                            MAIN PARSING FUNCTIONS                            #
@@ -1011,6 +1016,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_ip_port_object_observable(misp_object)
 
+    def _parse_mutex_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'mutex'
+            attributes = self._extract_object_attributes(misp_object['Attribute'])
+            pattern = []
+            if attributes.get('name'):
+                pattern.append(f"{prefix}:name = '{attributes.pop('name')}'")
+            if attributes:
+                pattern.extend(self._handle_pattern_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_mutex_object_observable(misp_object)
+
     def _parse_network_connection_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'
@@ -1704,6 +1722,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             args.update(self._handle_observable_multiple_properties(attributes))
         return args
+
+    def _parse_mutex_args(self, attributes: dict) -> dict:
+        attributes = self._extract_object_attributes(attributes)
+        mutex_args = {}
+        if attributes.get('name'):
+            mutex_args['name'] = attributes.pop('name')
+        if attributes:
+            mutex_args.update(self._handle_observable_properties(attributes))
+        return mutex_args
 
     def _parse_network_connection_args(self, attributes: dict) -> dict:
         network_traffic_args = {}
