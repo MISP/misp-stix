@@ -301,7 +301,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'created_by_ref': self._identity_id,
             'x_misp_value': attribute['value'],
             'x_misp_type': attribute['type'],
-            'x_misp_category': attribute['category']
+            'x_misp_category': attribute['category'],
+            'interoperability': True
         }
         if attribute.get('comment'):
             custom_args['x_misp_comment'] = attribute['comment']
@@ -852,7 +853,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'x_misp_meta_category': misp_object['meta-category'],
             'x_misp_attributes': [
                 self._parse_custom_object_attribute(attribute) for attribute in misp_object['Attribute']
-            ]
+            ],
+            'interoperability': True
         }
         if misp_object.get('comment'):
             custom_args['x_misp_comment'] = misp_object['comment']
