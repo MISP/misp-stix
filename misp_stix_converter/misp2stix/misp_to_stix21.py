@@ -2,25 +2,22 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
-from .stix2_mapping import (CustomAttribute_v21, CustomMispObject_v21, domain_ip_uuid_fields,
-                            email_data_fields, email_uuid_fields, file_data_fields,
-                            file_uuid_fields, tlp_markings_v21, ip_port_single_fields,
-                            ip_port_uuid_fields, network_socket_v21_single_fields,
-                            network_traffic_uuid_fields, process_uuid_fields,
-                            process_v21_single_fields)
+from .stix2_mapping import (CustomAttribute_v21, CustomMispObject_v21,
+    domain_ip_uuid_fields, email_data_fields, email_uuid_fields, file_data_fields,
+    file_uuid_fields, ip_port_single_fields, ip_port_uuid_fields,
+    network_socket_v21_single_fields, network_traffic_uuid_fields,
+    process_uuid_fields, process_v21_single_fields, tlp_markings_v21)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
 from stix2.v21.bundle import Bundle
 from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, DomainName,
-                                   EmailAddress, EmailMessage, EmailMIMEComponent,
-                                   File, IPv4Address, IPv6Address, MACAddress, Mutex,
-                                   NetworkTraffic, Process, URL, UserAccount,
-                                   WindowsPESection, WindowsRegistryKey,
-                                   WindowsRegistryValueType, X509Certificate)
-from stix2.v21.sdo import (AttackPattern, Campaign, CourseOfAction, Grouping, Identity,
-                           Indicator, Malware, Note, ObservedData, Report, ThreatActor,
-                           Tool, Vulnerability)
+    EmailAddress, EmailMessage, EmailMIMEComponent, File, IPv4Address, IPv6Address,
+    MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPESection,
+    WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
+from stix2.v21.sdo import (AttackPattern, Campaign, CourseOfAction, Grouping,
+    Identity, Indicator, Malware, Note, ObservedData, Report, ThreatActor,
+    Tool, Vulnerability)
 from stix2.v21.sro import Relationship
 from typing import Optional, Union
 
