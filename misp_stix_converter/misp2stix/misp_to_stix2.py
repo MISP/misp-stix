@@ -1341,9 +1341,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _handle_attribute_galaxy_relationships(self, object_id: str, object_refs: list, timestamp: datetime):
         self._parse_relationships(object_id, object_refs, timestamp)
-        for object_ref in object_refs:
-            if object_ref not in self._object_refs:
-                self._object_refs.append(object_ref)
+        self._handle_object_refs(object_refs)
 
     @staticmethod
     def _handle_external_ids(values: list, prefix: str) -> list:
