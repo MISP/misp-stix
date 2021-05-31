@@ -38,7 +38,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._objects = []
         self._object_refs = []
         self._links = []
-        self._relationships = defaultdict(list)
+        self._relationships = []
         index = self._set_identity()
         if self._misp_event.get('Attribute'):
             self._resolve_attributes()
@@ -130,17 +130,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if markings:
             self._handle_markings(report_args, markings)
         if self._relationships:
-            for source_id, relationships in self._relationships.items():
-                for relationship in relationships:
-                    target_id, relationship_type, timestamp = relationship
-                    relationship_args = {
-                        'source_ref': source_id,
-                        'target_ref': target_id,
-                        'relationship_type': relationship_type,
-                        'created': timestamp,
-                        'modified': timestamp
-                    }
-                    self._append_SDO(self._create_relationship(relationship_args))
+            for relationship in self._relationships:
+                self._append_SDO(self._create_relationship(relationship))
         if self._markings:
             for marking in self._markings.values():
                 self._objects.append(marking)
@@ -1339,9 +1330,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
 
-    def _handle_attribute_galaxy_relationships(self, object_id: str, object_refs: list, timestamp: datetime):
-        self._parse_relationships(object_id, object_refs, timestamp)
-        self._handle_object_refs(object_refs)
+    def _handle_attribute_galaxy_relationships(self, source_id: str, target_ids: list, timestamp: datetime):
+        source_type = source_id.split('--')[0]
+        if source_type not in stix2_mapping.relationship_specs:
+            for target_id in target_ids:
+                self._parse_galaxy_relationship(source_id, target_id, 'has', timestamp)
+        else:
+            for target_id in target_ids:
+                target_type = target_id.split('--')[0]
+                if target_type in stix2_mapping.relationship_specs[source_type]:
+                    self._parse_galaxy_relationship(
+                        source_id,
+                        target_id,
+                        stix2_mapping.relationship_specs[source_type][target_type],
+                        timestamp
+                    )
+                    continue
+                self._parse_galaxy_relationship(source_id, target_id, 'has', timestamp)
+        self._handle_object_refs(target_ids)
 
     @staticmethod
     def _handle_external_ids(values: list, prefix: str) -> list:
@@ -1989,34 +1995,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _handle_value_for_pattern(attribute_value: str) -> str:
         return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
 
-    def _parse_relationships(self, source_id: str, target_ids: list, timestamp: datetime) -> list:
-        source_type = source_id.split('--')[0]
-        if source_type not in stix2_mapping.relationship_specs:
-            self._relationships[source_id].extend((target_id, 'has', timestamp) for target_id in target_ids)
-        else:
-            for target_id in target_ids:
-                target_type = target_id.split('--')[0]
-                if target_type in stix2_mapping.relationship_specs[source_type]:
-                    relationship_type = stix2_mapping.relationship_specs[source_type][target_type]
-                    self._relationships[source_id].append(
-                        (
-                            target_id,
-                            relationship_type,
-                            timestamp
-                        )
-                    )
-                    continue
-                self._relationships[source_id].append(
-                    (
-                        target_id,
-                        'has',
-                        timestamp
-                    )
-                )
-
     @staticmethod
     def _is_reference_included(reference: dict, name: str) -> bool:
         return reference['relationship_type'] in ('includes', 'included-in') and reference['Object']['name'] == name
+
+    def _parse_galaxy_relationship(self, source_id: str, target_id: str, relationship_type: str, timestamp: datetime):
+        self._relationships.append(
+            {
+                'source_ref': source_id,
+                'target_ref': target_id,
+                'relationship_type': relationship_type,
+                'created': timestamp,
+                'modified': timestamp
+            }
+        )
 
     def _raise_file_and_pe_references_warning(self, file_uuid: str, pe_uuid: list):
         if len(pe_uuid) == 0:
