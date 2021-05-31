@@ -658,11 +658,23 @@ galaxy_types_mapping.update(
 
 # RELATIONSHIPS BETWEEN STIX OBJECTS
 relationship_specs = {
+    'attack-pattern': {
+        'malware': 'uses',
+        'tool': 'uses',
+        'vulnerability': 'targets'
+    },
     'campaign': {
         'attack-pattern': 'uses',
         'malware': 'uses',
         'threat-actor': 'attributed-to',
-        'tool': 'uses'
+        'tool': 'uses',
+        'vulnerability': 'targets'
+    },
+    'course-of-action': {
+        'attack-pattern': 'mitigates',
+        'malware': 'mitigates',
+        'tool': 'mitigates',
+        'vulnerability': 'mitigates'
     },
     'indicator': {
         'attack-pattern': 'indicates',
