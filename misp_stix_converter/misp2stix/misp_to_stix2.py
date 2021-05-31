@@ -131,6 +131,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_markings(report_args, markings)
         if self._relationships:
             for relationship in self._relationships:
+                if relationship.get('undefined_target_ref'):
+                    target_ref = self._find_target_uuid(relationship.pop('undefined_target_ref'))
+                    if target_ref is None:
+                        continue
+                    relationship['target_ref'] = target_ref
                 self._append_SDO(self._create_relationship(relationship))
         if self._markings:
             for marking in self._markings.values():
@@ -627,6 +632,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(indicator_args, markings)
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                misp_object['ObjectReference'],
+                indicator_id,
+                indicator_args['modified']
+            )
         self._append_SDO(self._create_indicator(indicator_args))
 
     def _handle_object_observable(self, misp_object: dict, observable: Union[dict, list]):
@@ -776,6 +787,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(attack_pattern_args, markings)
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                misp_object['ObjectReference'],
+                attack_patter_id,
+                timestamp
+            )
         self._append_SDO(self._create_attack_pattern_from_object(attack_pattern_args))
 
     @staticmethod
@@ -815,6 +832,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(course_of_action_args, markings)
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                misp_object['ObjectReference'],
+                course_of_action_id,
+                timestamp
+            )
         self._append_SDO(self._create_course_of_action(course_of_action_args))
 
     def _parse_credential_object(self, misp_object: dict):
@@ -861,6 +884,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(custom_args, markings)
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                misp_object['ObjectReference'],
+                custom_id,
+                timestamp
+            )
         self._append_SDO(self._create_custom_object(custom_args))
 
     @staticmethod
@@ -1287,6 +1316,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 )
         if attributes:
             vulnerability_args.update(self._handle_observable_multiple_properties(attributes))
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                misp_object['ObjectReference'],
+                vulnerability_id,
+                vulnerability_args['modified']
+            )
         self._append_SDO(self._create_vulnerability(vulnerability_args))
 
     def _parse_x509_object(self, misp_object: dict):
@@ -1959,6 +1994,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 uuids.append(referenced_uuid)
         return uuids
 
+    def _find_target_uuid(self, reference: str) -> Union[str, None]:
+        for object_ref in self._object_refs:
+            if reference in object_ref:
+                return object_ref.split('--')[0]
+
     @staticmethod
     def _get_vulnerability_references(vulnerability: str) -> dict:
         return {
@@ -2009,6 +2049,33 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'modified': timestamp
             }
         )
+
+    def _parse_object_relationships(self, references: list, source_id: str, timestamp: datetime):
+        for reference in references:
+            referenced_uuid = reference['referenced_uuid']
+            if any(referenced_uuid in objects for objects in self._objects_to_parse.values()):
+                continue
+            relationship = {
+                'source_ref': source_id,
+                'undefined_target_ref': referenced_uuid,
+                'relationship_type': reference['relationship_type']
+            }
+            if reference.get('timestamp'):
+                reference_timestamp = self._datetime_from_timestamp(reference['timestamp'])
+                relationship.update(
+                    {
+                        'created': reference_timestamp,
+                        'modified': reference_timestamp
+                    }
+                )
+            else:
+                relationship.update(
+                    {
+                        'created': timestamp,
+                        'modified': timestamp
+                    }
+                )
+            self._relationships.append(relationship)
 
     def _raise_file_and_pe_references_warning(self, file_uuid: str, pe_uuid: list):
         if len(pe_uuid) == 0:
