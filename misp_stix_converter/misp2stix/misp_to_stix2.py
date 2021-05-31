@@ -661,7 +661,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 if galaxy_type in stix2_mapping.galaxy_types_mapping:
                     to_call = stix2_mapping.galaxy_types_mapping[galaxy_type]
                     getattr(self, to_call.format('attribute'))(galaxy, object_id, timestamp)
-                    tag_names.extend(self._quick_fetch_tag_names(galaxy))
+                    tag_names.update(self._quick_fetch_tag_names(galaxy))
                 else:
                     self._warnings.add(f"{galaxy_type} galaxy in {misp_object['name']} object not mapped.")
             return tuple(tag for tag in tags if tag not in tag_names)
