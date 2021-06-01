@@ -659,6 +659,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(observable_args, markings)
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                misp_object['ObjectReference'],
+                observable_id,
+                observable_args['modified']
+            )
         self._create_observed_data(observable_args, observable)
 
     def _handle_object_tags_and_galaxies(self, misp_object: dict, object_id: str, timestamp: datetime) -> tuple:
