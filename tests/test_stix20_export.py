@@ -929,6 +929,107 @@ class TestSTIX20Export(TestSTIX2Export):
     #                          MISP OBJECTS EXPORT TESTS.                          #
     ################################################################################
 
+    def test_embedded_indicator_object_galaxy(self):
+        event = get_embedded_indicator_object_galaxy()
+        self._add_object_ids_flag(event)
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        bundle = self._check_bundle_features(8)
+        identity, report, malware, coa, indicator, tool, *relationships = bundle.objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
+        self.assertEqual(report.published, timestamp)
+        malware_ref, coa_ref, indicator_ref, tool_ref, mr_ref, coar_ref = object_refs
+        malware_relationship, coa_relationship = relationships
+        self.assertEqual(malware.id, malware_ref)
+        self.assertEqual(coa.id, coa_ref)
+        self.assertEqual(indicator.id, indicator_ref)
+        self.assertEqual(tool.id, tool_ref)
+        self.assertEqual(malware_relationship.id, mr_ref)
+        self.assertEqual(coa_relationship.id, coar_ref)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self._check_relationship_features(malware_relationship, indicator_ref, malware_ref, 'indicates', timestamp)
+        self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'has', timestamp)
+
+
+    def test_embedded_non_indicator_object_galaxy(self):
+        event = get_embedded_non_indicator_object_galaxy()
+        orgc = event['Event']['Orgc']
+        coa_object, vulnerability_object = deepcopy(event['Event']['Object'])
+        self.parser.parse_misp_event(event)
+        bundle = self._check_bundle_features(12)
+        identity, report, ap, g_coa, o_coa, malware, vulnerability, tool, *relationships = bundle.objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
+        self.assertEqual(report.published, timestamp)
+        ap_ref, g_coa_ref, o_coa_ref, malware_ref, vulnerability_ref, tool_ref, *relationship_refs = object_refs
+        self.assertEqual(ap.id, ap_ref)
+        self.assertEqual(g_coa.id, g_coa_ref)
+        self.assertEqual(o_coa.id, o_coa_ref)
+        self.assertEqual(malware.id, malware_ref)
+        self.assertEqual(vulnerability.id, vulnerability_ref)
+        self.assertEqual(tool.id, tool_ref)
+        relationship1, relationship2, relationship3, relationship4 = relationships
+        r_ref1, r_ref2, r_ref3, r_ref4 = relationship_refs
+        self.assertEqual(relationship1.id, r_ref1)
+        self.assertEqual(relationship2.id, r_ref2)
+        self.assertEqual(relationship3.id, r_ref3)
+        self.assertEqual(relationship4.id, r_ref4)
+        coa_timestamp = self._datetime_from_timestamp(coa_object['timestamp'])
+        self._check_relationship_features(relationship1, o_coa_ref, ap_ref, 'mitigates', coa_timestamp)
+        self._check_relationship_features(relationship2, o_coa_ref, g_coa_ref, 'has', coa_timestamp)
+        vulnerability_timestamp = self._datetime_from_timestamp(vulnerability_object['timestamp'])
+        self._check_relationship_features(relationship3, vulnerability_ref, malware_ref, 'has', vulnerability_timestamp)
+        self._check_relationship_features(relationship4, vulnerability_ref, g_coa_ref, 'has', vulnerability_timestamp)
+
+    def test_embedded_object_galaxy_with_multiple_clusters(self):
+        event = get_embedded_object_galaxy_with_multiple_clusters()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        bundle = self._check_bundle_features(7)
+        identity, report, malware1, malware2, observed_data, relationship1, relationship2 = bundle.objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
+        self.assertEqual(report.published, timestamp)
+        malware1_ref, malware2_ref, observed_data_ref, relationship1_ref, relationship2_ref = object_refs
+        self.assertEqual(malware1.id, malware1_ref)
+        self.assertEqual(malware2.id, malware2_ref)
+        self.assertEqual(observed_data.id, observed_data_ref)
+        self.assertEqual(relationship1.id, relationship1_ref)
+        self.assertEqual(relationship2.id, relationship2_ref)
+        object_timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self._check_relationship_features(relationship1, observed_data_ref, malware1_ref, 'has', object_timestamp)
+        self._check_relationship_features(relationship2, observed_data_ref, malware2_ref, 'has', object_timestamp)
+
+    def test_embedded_observable_object_galaxy(self):
+        event = get_embedded_observable_object_galaxy()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        bundle = self._check_bundle_features(6)
+        identity, report, malware, observed_data, tool, relationship = bundle.objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
+        self.assertEqual(report.published, timestamp)
+        malware_ref, observed_data_ref, tool_ref, relationship_ref = object_refs
+        self.assertEqual(malware.id, malware_ref)
+        self.assertEqual(observed_data.id, observed_data_ref)
+        self.assertEqual(tool.id, tool_ref)
+        self.assertEqual(relationship.id, relationship_ref)
+        self._check_relationship_features(
+            relationship,
+            observed_data_ref,
+            malware_ref,
+            'has',
+            self._datetime_from_timestamp(misp_object['timestamp'])
+        )
+
     def test_event_with_account_indicator_objects(self):
         event = get_event_with_account_objects()
         misp_objects, patterns = self._run_indicators_from_objects_tests(event)

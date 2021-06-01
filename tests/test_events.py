@@ -2424,6 +2424,7 @@ def get_embedded_object_galaxy_with_multiple_clusters():
             "GalaxyCluster": [
                 {
                     "uuid": "8787e86d-8475-4f13-acea-d33eb83b6105",
+                    "type": "mitre-malware",
                     "value": "Winnti for Linux - S0430",
                     "description": "Winnti for Linux is a trojan designed specifically for targeting Linux systems.",
                     "meta": {
