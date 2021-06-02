@@ -1279,23 +1279,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_vulnerability_object(self, misp_object: dict):
         vulnerability_id = f"vulnerability--{misp_object['uuid']}"
         vulnerability_args = defaultdict(list)
-        vulnerability_args.update(
-            {
-                'id': vulnerability_id,
-                'type': 'vulnerability',
-                'labels': self._create_object_labels(misp_object),
-                'created_by_ref': self._identity_id,
-                'interoperability': True
-            }
-        )
-        vulnerability_args.update(self._handle_indicator_time_fields(misp_object))
-        markings = self._handle_object_tags_and_galaxies(
-            misp_object,
-            vulnerability_id,
-            vulnerability_args['modified']
-        )
-        if markings:
-            self._handle_markings(indicator_args, markings)
         attributes = self._extract_multiple_object_attributes(misp_object['Attribute'])
         if attributes.get('id'):
             vulnerability_args['name'] = attributes['id'][0]
@@ -1320,8 +1303,27 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         'url': reference
                     }
                 )
+        time_fields = self._handle_time_fields(misp_object['timestamp'])
+        for time_field, time_value in time_fields.items():
+            vulnerability_args[time_fields] = self._datetime_from_str(self._select_single_feature(attributes, time_field)) if attributes.get(time_field) else time_value
         if attributes:
             vulnerability_args.update(self._handle_observable_multiple_properties(attributes))
+        vulnerability_args.update(
+            {
+                'id': vulnerability_id,
+                'type': 'vulnerability',
+                'labels': self._create_object_labels(misp_object),
+                'created_by_ref': self._identity_id,
+                'interoperability': True
+            }
+        )
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            vulnerability_id,
+            vulnerability_args['modified']
+        )
+        if markings:
+            self._handle_markings(indicator_args, markings)
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
                 misp_object['ObjectReference'],
@@ -1968,7 +1970,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     @staticmethod
     def _datetime_from_str(timestamp: str) -> datetime:
-        return datetime.strptime(timestamp.split('+')[0], '%Y-%m-%dT%H:%M:%S.%f')
+        regex = '%Y-%m-%dT%H:%M:%S'
+        if '.' in timestamp:
+            regex = f'{regex}.%f'
+        return datetime.strptime(timestamp.split('+')[0], regex)
 
     @staticmethod
     def _define_address_type(address):
@@ -2036,6 +2041,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
             to_return[stix_field] = self._datetime_from_str(attribute[misp_field]) if attribute.get(misp_field) else timestamp
         return to_return
+
+    def _handle_time_fields(self, timestamp: str) -> dict:
+        datetime_timestamp = self._datetime_from_timestamp(timestamp)
+        return {'created': datetime_timestamp, 'modified': datetime_timestamp}
 
     @staticmethod
     def _handle_value_for_pattern(attribute_value: str) -> str:
