@@ -2141,6 +2141,76 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(x509.subject_public_key_exponent, int(pie))
         self.assertEqual(x509.x_misp_pem, pem)
 
+    def test_object_references(self):
+        event = get_event_with_object_references()
+        orgc = event['Event']['Orgc']
+        ap_object, as_object, btc_object, coa_object, ip_object, vuln_object = deepcopy(event['Event']['Object'])
+        self.parser.parse_misp_event(event)
+        stix_objects = self._check_bundle_features(15)
+        self._check_spec_versions(stix_objects)
+        identity, grouping, attack_pattern, observed_data, autonomous_system, custom, coa, indicator, vulnerability, *relationships  = stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        object_refs = self._check_grouping_features(*args)
+        ap_ref, observed_data_ref, as_ref, custom_ref, coa_ref, indicator_ref, vuln_ref, *relationship_refs = object_refs
+        self.assertEqual(attack_pattern.id, ap_ref)
+        self.assertEqual(observed_data.id, observed_data_ref)
+        self.assertEqual(autonomous_system.id, as_ref)
+        self.assertEqual(custom.id, custom_ref)
+        self.assertEqual(coa.id, coa_ref)
+        self.assertEqual(indicator.id, indicator_ref)
+        self.assertEqual(vulnerability.id, vuln_ref)
+        for relationship, relationship_ref in zip(relationships, relationship_refs):
+            self.assertEqual(relationship.id, relationship_ref)
+        relation1, relation2, relation3, relation4, relation5, relation6 = relationships
+        self._check_relationship_features(
+            relation1,
+            ap_ref,
+            indicator_ref,
+            'threatens',
+            self._datetime_from_timestamp(ap_object['timestamp'])
+        )
+        self._check_relationship_features(
+            relation2,
+            observed_data_ref,
+            indicator_ref,
+            'includes',
+            self._datetime_from_timestamp(as_object['timestamp'])
+        )
+        self._check_relationship_features(
+            relation3,
+            custom_ref,
+            indicator_ref,
+            'connected-to',
+            self._datetime_from_timestamp(btc_object['timestamp'])
+        )
+        self._check_relationship_features(
+            relation4,
+            coa_ref,
+            vuln_ref,
+            'protects-against',
+            self._datetime_from_timestamp(coa_object['timestamp'])
+        )
+        self._check_relationship_features(
+            relation5,
+            indicator_ref,
+            coa_ref,
+            'protected-with',
+            self._datetime_from_timestamp(ip_object['timestamp'])
+        )
+        self._check_relationship_features(
+            relation6,
+            vuln_ref,
+            indicator_ref,
+            'affects',
+            self._datetime_from_timestamp(vuln_object['timestamp'])
+        )
+
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
     ################################################################################

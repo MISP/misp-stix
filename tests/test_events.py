@@ -2635,6 +2635,80 @@ def get_event_with_network_socket_object():
     return event
 
 
+def get_event_with_object_references():
+    ap_object = deepcopy(_TEST_ATTACK_PATTERN_OBJECT)
+    as_object = deepcopy(_TEST_ASN_OBJECT)
+    btc_object = deepcopy(_TEST_BTC_WALLET_OBJECT)
+    coa_object = deepcopy(_TEST_COURSE_OF_ACTION_OBJECT)
+    ip_object = deepcopy(_TEST_IP_PORT_OBJECT)
+    vuln_object = {
+        "name": "vulnerability",
+        "meta-category": "vulnerability",
+        "description": "Vulnerability object describing a common vulnerability",
+        "uuid": "651a981f-6f59-4609-b735-e57efb9d44df",
+        "timestamp": str(int(datetime.now().timestamp())),
+        "Attribute": [
+            {
+                "type": "vulnerability",
+                "object_relation": "id",
+                "value": "CVE-2021-29921"
+            },
+            {
+                "type": "text",
+                "object_relation": "summary",
+                "value": "In Python before 3.9.5, the ipaddress library mishandles leading zero characters in the octets of an IP address string."
+            }
+        ],
+        "ObjectReference": [
+            {
+                "referenced_uuid": ip_object['uuid'],
+                "relationship_type": "affects"
+            }
+        ]
+    }
+    ap_object['ObjectReference'] = [
+        {
+            "referenced_uuid": ip_object['uuid'],
+            "relationship_type": "threatens"
+        }
+    ]
+    as_object['ObjectReference'] = [
+        {
+            "referenced_uuid": ip_object['uuid'],
+            "relationship_type": "includes"
+        }
+    ]
+    btc_object['ObjectReference'] = [
+        {
+            "referenced_uuid": ip_object['uuid'],
+            "relationship_type": "connected-to"
+        }
+    ]
+    coa_object['ObjectReference'] = [
+        {
+            "referenced_uuid": vuln_object['uuid'],
+            "relationship_type": "protects-against"
+        }
+    ]
+    ip_object['Attribute'][0]['to_ids'] = True
+    ip_object['ObjectReference'] = [
+        {
+            "referenced_uuid": coa_object['uuid'],
+            "relationship_type": "protected-with"
+        }
+    ]
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        ap_object,
+        as_object,
+        btc_object,
+        coa_object,
+        ip_object,
+        vuln_object
+    ]
+    return event
+
+
 def get_event_with_process_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
