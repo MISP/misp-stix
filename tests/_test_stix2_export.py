@@ -135,11 +135,11 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(vulnerability.created_by_ref, identity_id)
         self._check_object_labels(misp_object, vulnerability.labels)
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        self.assertEqual(vulnerability.created, timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
         cve, cvss, summary, created, published, references1, references2 = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(vulnerability.name, cve)
         self.assertEqual(vulnerability.description, summary)
+        self.assertEqual(datetime.strftime(vulnerability.created, '%Y-%m-%dT%H:%M:%S'), created)
         cve_ref, url1, url2 = vulnerability.external_references
         self.assertEqual(cve_ref.source_name, 'cve')
         self.assertEqual(cve_ref.external_id, cve)
@@ -147,7 +147,6 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(url1.url, references1)
         self.assertEqual(url2.source_name, 'url')
         self.assertEqual(url2.url, references2)
-        self.assertEqual(vulnerability.x_misp_created, created)
         self.assertEqual(vulnerability.x_misp_cvss_score, cvss)
         self.assertEqual(vulnerability.x_misp_published, published)
 
