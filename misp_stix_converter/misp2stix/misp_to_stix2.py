@@ -796,7 +796,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
                 misp_object['ObjectReference'],
-                attack_patter_id,
+                attack_pattern_id,
                 timestamp
             )
         self._append_SDO(self._create_attack_pattern_from_object(attack_pattern_args))
@@ -1305,7 +1305,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 )
         time_fields = self._handle_time_fields(misp_object['timestamp'])
         for time_field, time_value in time_fields.items():
-            vulnerability_args[time_fields] = self._datetime_from_str(self._select_single_feature(attributes, time_field)) if attributes.get(time_field) else time_value
+            vulnerability_args[time_field] = self._datetime_from_str(self._select_single_feature(attributes, time_field)) if attributes.get(time_field) else time_value
         if attributes:
             vulnerability_args.update(self._handle_observable_multiple_properties(attributes))
         vulnerability_args.update(
@@ -2008,7 +2008,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _find_target_uuid(self, reference: str) -> Union[str, None]:
         for object_ref in self._object_refs:
             if reference in object_ref:
-                return object_ref.split('--')[0]
+                return object_ref
 
     @staticmethod
     def _get_vulnerability_references(vulnerability: str) -> dict:
@@ -2019,28 +2019,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _handle_indicator_time_fields(self, attribute: dict) -> dict:
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
-        to_return = {
-            'created': timestamp,
-            'modified': timestamp
-        }
+        time_fields = {'created': timestamp, 'modified': timestamp}
         if not any(attribute.get(feature) for feature in _misp_time_fields):
-            to_return['valid_from'] = timestamp
-            return to_return
+            time_fields['valid_from'] = timestamp
+            return time_fields
         stix_fields = _stix_time_fields['indicator']
         for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
-            to_return[stix_field] = self._datetime_from_str(attribute[misp_field]) if attribute.get(misp_field) else timestamp
-        return to_return
+            time_fields[stix_field] = self._datetime_from_str(attribute[misp_field]) if attribute.get(misp_field) else timestamp
+        return time_fields
 
     def _handle_observable_time_fields(self, attribute: dict) -> dict:
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
-        to_return = {
-            'created': timestamp,
-            'modified': timestamp
-        }
+        time_fields = {'created': timestamp, 'modified': timestamp}
         stix_fields = _stix_time_fields['observed-data']
         for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
-            to_return[stix_field] = self._datetime_from_str(attribute[misp_field]) if attribute.get(misp_field) else timestamp
-        return to_return
+            time_fields[stix_field] = self._datetime_from_str(attribute[misp_field]) if attribute.get(misp_field) else timestamp
+        return time_fields
 
     def _handle_time_fields(self, timestamp: str) -> dict:
         datetime_timestamp = self._datetime_from_timestamp(timestamp)
