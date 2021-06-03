@@ -103,6 +103,28 @@ So for the rest of this documentation, in order to keep the content clear enough
     </indicator:Indicator>
     ```
 
+- campaign-name
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "campaign-name",
+        "category": "Attribution",
+        "value": "MartyMcFly",
+        "comment": "campaign-name test attribute"
+    }
+    ```
+  - STIX
+    ```xml
+    <campaign:Campaign id="MISP-Project:Campaign-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" timestamp="2021-06-03T11:01:56" xsi:type='campaign:CampaignType'>
+        <campaign:Title>Attribution: MartyMcFly (MISP Attribute)</campaign:Title>
+        <campaign:Description>campaign-name test attribute</campaign:Description>
+        <campaign:Names>
+            <campaign:Name>MartyMcFly</campaign:Name>
+        </campaign:Names>
+    </campaign:Campaign>
+    ```
+
 - cdhash
   - MISP
     ```json
@@ -302,6 +324,28 @@ So for the rest of this documentation, in order to keep the content clear enough
     </indicator:Indicator>
     ```
 
+- email-body
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email-body",
+        "category": "Payload delivery",
+        "value": "Email body test",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP-Project:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+        <cybox:Object id="MISP-Project:EmailMessage-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+            <cybox:Properties xsi:type="EmailMessageObj:EmailMessageObjectType">
+                <EmailMessageObj:Raw_Body condition="Equals"><![CDATA[Email bodytest]]></EmailMessageObj:Raw_Body>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
+    ```
+
 - email-dst
   - MISP
     ```json
@@ -347,6 +391,102 @@ So for the rest of this documentation, in order to keep the content clear enough
     </indicator:Indicator>
     ```
 
+- email-header
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email-header",
+        "category": "Payload delivery",
+        "value": "from mail.example.com ([198.51.100.3]) by smtp.gmail.com",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP-Project:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+        <cybox:Object id="MISP-Project:EmailMessage-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+            <cybox:Properties xsi:type="EmailMessageObj:EmailMessageObjectType">
+                <EmailMessageObj:Raw_Header condition="Equals"><![CDATA[from mail.example.com ([198.51.100.3]) by smtp.gmail.com]]></EmailMessageObj:Raw_Header>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
+    ```
+
+- email-message-id
+  - MISP
+    ```json
+    {
+        "uuid": "f3745b11-2b82-4798-80ba-d32c506135ec",
+        "type": "email-message-id",
+        "category": "Payload delivery",
+        "value": "1234",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP-Project:Observable-f3745b11-2b82-4798-80ba-d32c506135ec">
+        <cybox:Object id="MISP-Project:EmailMessage-f3745b11-2b82-4798-80ba-d32c506135ec">
+            <cybox:Properties xsi:type="EmailMessageObj:EmailMessageObjectType">
+                <EmailMessageObj:Header>
+                    <EmailMessageObj:Message_ID condition="Equals">1234</EmailMessageObj:Message_ID>
+                </EmailMessageObj:Header>
+            </cybox:Properties>
+        </cybox:Object>
+  </cybox:ObservableType>
+    ```
+
+- email-mime-boundary
+  - MISP
+    ```json
+    {
+        "uuid": "30c728ce-4ee4-4dc4-b7f6-ae4e900f4aa9",
+        "type": "email-mime-boundary",
+        "category": "Payload delivery",
+        "value": "----=_NextPart_001_1F9B_01D27892.CB6A37E0",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP-Project:Observable-30c728ce-4ee4-4dc4-b7f6-ae4e900f4aa9">
+        <cybox:Object id="MISP-Project:EmailMessage-30c728ce-4ee4-4dc4-b7f6-ae4e900f4aa9">
+            <cybox:Properties xsi:type="EmailMessageObj:EmailMessageObjectType">
+                <EmailMessageObj:Header>
+                    <EmailMessageObj:Boundary condition="Equals">----=_NextPart_001_1F9B_01D27892.CB6A37E0</EmailMessageObj:Boundary>
+                </EmailMessageObj:Header>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
+    ```
+
+- email-reply-to
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "email-reply-to",
+        "category": "Payload delivery",
+        "value": "reply-to@email.test",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP:Observable-94a2b00f-bec3-4f8a-bea4-e4ccf0de776f">
+        <cybox:Object id="MISP:EmailMessage-94a2b00f-bec3-4f8a-bea4-e4ccf0de776f">
+            <cybox:Properties xsi:type="EmailMessageObj:EmailMessageObjectType">
+                <EmailMessageObj:Header>
+                    <EmailMessageObj:Reply_To xsi:type="AddressObj:AddressObjectType" category="e-mail">
+                        <AddressObj:Address_Value condition="Equals">reply-to@email.test</AddressObj:Address_Value>
+                    </EmailMessageObj:Reply_To>
+                </EmailMessageObj:Header>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
+    ```
+
 - email-src
   - MISP
     ```json
@@ -390,32 +530,6 @@ So for the rest of this documentation, in order to keep the content clear enough
     </indicator:Indicator>
     ```
 
-- email-reply-to
-  - MISP
-    ```json
-    {
-        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-        "type": "email-reply-to",
-        "category": "Payload delivery",
-        "value": "reply-to@email.test",
-        "to_ids": false
-    }
-    ```
-  - STIX
-    ```xml
-    <cybox:ObservableType id="MISP:Observable-94a2b00f-bec3-4f8a-bea4-e4ccf0de776f">
-        <cybox:Object id="MISP:EmailMessage-94a2b00f-bec3-4f8a-bea4-e4ccf0de776f">
-            <cybox:Properties xsi:type="EmailMessageObj:EmailMessageObjectType">
-                <EmailMessageObj:Header>
-                    <EmailMessageObj:Reply_To xsi:type="AddressObj:AddressObjectType" category="e-mail">
-                        <AddressObj:Address_Value condition="Equals">reply-to@email.test</AddressObj:Address_Value>
-                    </EmailMessageObj:Reply_To>
-                </EmailMessageObj:Header>
-            </cybox:Properties>
-        </cybox:Object>
-    </cybox:ObservableType>
-    ```
-
 - email-subject
   - MISP
     ```json
@@ -434,6 +548,30 @@ So for the rest of this documentation, in order to keep the content clear enough
             <cybox:Properties xsi:type="EmailMessageObj:EmailMessageObjectType">
                 <EmailMessageObj:Header>
                     <EmailMessageObj:Subject condition="Equals">Test Subject</EmailMessageObj:Subject>
+                </EmailMessageObj:Header>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
+    ```
+
+- email-x-mailer
+  - MISP
+    ```json
+    {
+        "uuid": "f09d8496-e2ba-4250-878a-bec9b85c7e96",
+        "type": "email-x-mailer",
+        "category": "Payload delivery",
+        "value": "Email X-Mailer test",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP-Project:Observable-f09d8496-e2ba-4250-878a-bec9b85c7e96">
+        <cybox:Object id="MISP-Project:EmailMessage-f09d8496-e2ba-4250-878a-bec9b85c7e96">
+            <cybox:Properties xsi:type="EmailMessageObj:EmailMessageObjectType">
+                <EmailMessageObj:Header>
+                    <EmailMessageObj:X_Mailer condition="Equals">Email X-Mailer test</EmailMessageObj:X_Mailer>
                 </EmailMessageObj:Header>
             </cybox:Properties>
         </cybox:Object>
@@ -1519,6 +1657,28 @@ So for the rest of this documentation, in order to keep the content clear enough
     </indicator:Indicator>
     ```
 
+- link
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "link",
+        "category": "Network activity",
+        "value": "https://github.com/MISP/MISP",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP-Project:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+        <cybox:Object id="MISP-Project:URI-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+       <cybox:Properties xsi:type="URIObj:URIObjectType" type="URL">
+                <URIObj:Value condition="Equals">https://github.com/MISP/MISP</URIObj:Value>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
+    ```
+
 - mac-address
   - MISP
     ```json
@@ -2214,6 +2374,28 @@ So for the rest of this documentation, in order to keep the content clear enough
     </indicator:Indicator>
     ```
 
+- size-in-bytes
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "size-in-bytes",
+        "category": "Other",
+        "value": "1234",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP-Project:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+        <cybox:Object id="MISP-Project:File-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+            <cybox:Properties xsi:type="FileObj:FileObjectType">
+                <FileObj:Size_In_Bytes condition="Equals">1234</FileObj:Size_In_Bytes>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
+    ```
+
 - snort
   - MISP
     ```json
@@ -2510,6 +2692,45 @@ So for the rest of this documentation, in order to keep the content clear enough
     </indicator:Indicator>
     ```
 
+- uri
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "uri",
+        "category": "Network activity",
+        "value": "http://176.58.32.109/upd/51",
+        "timestamp": "1603642920",
+        "comment": "URI test attribute",
+        "to_ids": true
+    }
+    ```
+  - STIX
+    ```xml
+    <indicator:Indicator id="MISP-Project:Indicator-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f" timestamp="2021-06-03T12:50:21" xsi:type='indicator:IndicatorType'>
+        <indicator:Title>Network activity: http://176.58.32.109/upd/51 (MISP Attribute)</indicator:Title>
+        <indicator:Type xsi:type="stixVocabs:IndicatorTypeVocab-1.1">Malware Artifacts</indicator:Type>
+        <indicator:Description>URI test attribute</indicator:Description>
+        <indicator:Valid_Time_Position/>
+        <indicator:Observable id="MISP-Project:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+            <cybox:Object id="MISP-Project:URI-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+                <cybox:Properties xsi:type="URIObj:URIObjectType" type="URL">
+                    <URIObj:Value condition="Equals">http://176.58.32.109/upd/51</URIObj:Value>
+                </cybox:Properties>
+            </cybox:Object>
+        </indicator:Observable>
+        <indicator:Confidence timestamp="2021-06-03T12:50:21">
+            <stixCommon:Value>High</stixCommon:Value>
+<stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>
+        </indicator:Confidence>
+        <indicator:Producer>
+            <stixCommon:Identity>
+                <stixCommon:Name>MISP-Project</stixCommon:Name>
+            </stixCommon:Identity>
+        </indicator:Producer>
+    </indicator:Indicator>
+    ```
+
 - url
   - MISP
     ```json
@@ -2682,6 +2903,137 @@ So for the rest of this documentation, in order to keep the content clear enough
             </ttp:Exploit_Target>
         </ttp:Exploit_Targets>
     </ttp:TTP>
+    ```
+
+- whois-registrant-email
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "whois-registrant-email",
+        "category": "Attribution",
+        "value": "registrant@email.org",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP-Project:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+        <cybox:Object id="MISP-Project:Whois-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+            <cybox:Properties xsi:type="WhoisObj:WhoisObjectType">
+                <WhoisObj:Registrants>
+                    <WhoisObj:Registrant>
+      <WhoisObj:Email_Address xsi:type="AddressObj:AddressObjectType" category="e-mail">
+                            <AddressObj:Address_Value condition="Equals">registrant@email.org</AddressObj:Address_Value>
+                        </WhoisObj:Email_Address>
+                    </WhoisObj:Registrant>
+                </WhoisObj:Registrants>
+</cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
+    ```
+
+- whois-registrant-name
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "whois-registrant-name",
+        "category": "Attribution",
+        "value": "Registrant Name",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP-Project:Observable-518b4bcb-a86b-4783-9457-391d548b605b">
+        <cybox:Object id="MISP-Project:Whois-518b4bcb-a86b-4783-9457-391d548b605b">
+         <cybox:Properties xsi:type="WhoisObj:WhoisObjectType">
+                <WhoisObj:Registrants>
+                    <WhoisObj:Registrant>
+                        <WhoisObj:Name condition="Equals">Registrant Name</WhoisObj:Name>
+                    </WhoisObj:Registrant>
+                </WhoisObj:Registrants>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
+    ```
+
+- whois-registrant-org
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "type": "whois-registrant-org",
+        "category": "Attribution",
+        "value": "Registrant Org",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP-Project:Observable-34cb1a7c-55ec-412a-8684-ba4a88d83a45">
+        <cybox:Object id="MISP-Project:Whois-34cb1a7c-55ec-412a-8684-ba4a88d83a45">
+         <cybox:Properties xsi:type="WhoisObj:WhoisObjectType">
+                <WhoisObj:Registrants>
+                    <WhoisObj:Registrant>
+                        <WhoisObj:Organization condition="Equals">Registrant Org</WhoisObj:Organization>
+                    </WhoisObj:Registrant>
+                </WhoisObj:Registrants>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
+    ```
+
+- whois-registrant-phone
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "whois-registrant-phone",
+        "category": "Attribution",
+        "value": "0123456789",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP-Project:Observable-94a2b00f-bec3-4f8a-bea4-e4ccf0de776f">
+        <cybox:Object id="MISP-Project:Whois-94a2b00f-bec3-4f8a-bea4-e4ccf0de776f">
+            <cybox:Properties xsi:type="WhoisObj:WhoisObjectType">
+                <WhoisObj:Registrants>
+                    <WhoisObj:Registrant>
+                        <WhoisObj:Phone_Number condition="Equals">0123456789</WhoisObj:Phone_Number>
+                    </WhoisObj:Registrant>
+                </WhoisObj:Registrants>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
+    ```
+
+- whois-registrar
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "whois-registrar",
+        "category": "Attribution",
+        "value": "Registrar.eu",
+        "comment": "Whois registrat test attribute",
+        "to_ids": false
+    }
+    ```
+  - STIX
+    ```xml
+    <cybox:ObservableType id="MISP-Project:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+        <cybox:Object id="MISP-Project:Whois-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f">
+            <cybox:Properties xsi:type="WhoisObj:WhoisObjectType">
+                <WhoisObj:Registrar_Info>
+                    <WhoisObj:Name>Registrar.eu</WhoisObj:Name>
+                </WhoisObj:Registrar_Info>
+            </cybox:Properties>
+        </cybox:Object>
+    </cybox:ObservableType>
     ```
 
 - windows-service-displayname
