@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+from datetime import datetime
 from misp_stix_converter import MISPtoSTIX20Parser, MISPtoSTIX21Parser
-from .test_events import *
 
 
 class TestSTIX2Export(unittest.TestCase):

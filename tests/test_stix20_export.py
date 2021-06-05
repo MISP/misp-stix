@@ -569,23 +569,9 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(observable.name, attribute_value)
 
     def test_event_with_hash_composite_indicator_attributes(self):
-        event = get_event_with_hash_composite_attributes(
-            ('md5', 'sha1', 'sha512/256', 'sha3-256'),
-            (
-                'filename1|b2a5abfeef9e36964281a31e17b57c97',
-                'filename2|2920d5e6c579fce772e5506caf03af65579088bd',
-                'filename3|82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93',
-                'filename4|39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4'
-            ),
-            (
-                '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
-                '518b4bcb-a86b-4783-9457-391d548b605b',
-                '34cb1a7c-55ec-412a-8684-ba4a88d83a45',
-                '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f'
-            )
-        )
+        event = get_event_with_hash_composite_attributes()
         attribute_values, patterns = self._run_indicators_tests(event)
-        hash_types = ('MD5', 'SHA1', 'SHA256', 'SHA3256')
+        hash_types = ('MD5', 'SHA1', 'SHA224', 'SHA256', 'SHA3256', 'SHA384', 'SSDEEP', 'TLSH')
         for attribute_value, pattern, hash_type in zip(attribute_values, patterns, hash_types):
             filename, hash_value = attribute_value.split('|')
             filename_pattern = f"file:name = '{filename}'"
@@ -593,23 +579,9 @@ class TestSTIX20Export(TestSTIX2Export):
             self.assertEqual(pattern, f"[{filename_pattern} AND {hash_pattern}]")
 
     def test_event_with_hash_composite_observable_attributes(self):
-        event = get_event_with_hash_composite_attributes(
-            ('md5', 'sha1', 'sha512/256', 'sha3-256'),
-            (
-                'filename1|b2a5abfeef9e36964281a31e17b57c97',
-                'filename2|2920d5e6c579fce772e5506caf03af65579088bd',
-                'filename3|82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93',
-                'filename4|39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4'
-            ),
-            (
-                '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
-                '518b4bcb-a86b-4783-9457-391d548b605b',
-                '34cb1a7c-55ec-412a-8684-ba4a88d83a45',
-                '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f'
-            )
-        )
+        event = get_event_with_hash_composite_attributes()
         attribute_values, observable_objects = self._run_observables_tests(event)
-        hash_types = ('MD5', 'SHA-1', 'SHA-256', 'SHA3-256')
+        hash_types = ('MD5', 'SHA-1', 'SHA-224', 'SHA-256', 'SHA3-256', 'SHA-384', 'ssdeep', 'TLSH')
         for attribute_value, observable_object, hash_type in zip(attribute_values, observable_objects, hash_types):
             filename, hash_value = attribute_value.split('|')
             self.assertEqual(observable_object['0'].type, 'file')
@@ -617,52 +589,19 @@ class TestSTIX20Export(TestSTIX2Export):
             self.assertEqual(observable_object['0'].hashes[hash_type], hash_value)
 
     def test_event_with_hash_indicator_attributes(self):
-        event = get_event_with_hash_attributes(
-            ('md5', 'sha1', 'sha512/256', 'sha3-256'),
-            (
-                'b2a5abfeef9e36964281a31e17b57c97',
-                '2920d5e6c579fce772e5506caf03af65579088bd',
-                '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93',
-                '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4'
-            ),
-            (
-                '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
-                '518b4bcb-a86b-4783-9457-391d548b605b',
-                '34cb1a7c-55ec-412a-8684-ba4a88d83a45',
-                '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f'
-            )
-        )
-        attribute_values, patterns = self._run_indicators_tests(event)
-        md5, sha1, sha2, sha3 = attribute_values
-        md5_pattern, sha1_pattern, sha2_pattern, sha3_pattern = patterns
-        self.assertEqual(md5_pattern, f"[file:hashes.MD5 = '{md5}']")
-        self.assertEqual(sha1_pattern, f"[file:hashes.SHA1 = '{sha1}']")
-        self.assertEqual(sha2_pattern, f"[file:hashes.SHA256 = '{sha2}']")
-        self.assertEqual(sha3_pattern, f"[file:hashes.SHA3256 = '{sha3}']")
+        event = get_event_with_hash_attributes()
+        values, patterns = self._run_indicators_tests(event)
+        hash_types = ('MD5', 'SHA1', 'SHA224', 'SHA256', 'SHA3256', 'SHA384', 'SSDEEP', 'TLSH')
+        for pattern, hash_type, value in zip(patterns, hash_types, values):
+            self.assertEqual(pattern, f"[file:hashes.{hash_type} = '{value}']")
 
     def test_event_with_hash_observable_attributes(self):
-        event = get_event_with_hash_attributes(
-            ('md5', 'sha1', 'sha512/256', 'sha3-256'),
-            (
-                'b2a5abfeef9e36964281a31e17b57c97',
-                '2920d5e6c579fce772e5506caf03af65579088bd',
-                '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93',
-                '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4'
-            ),
-            (
-                '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
-                '518b4bcb-a86b-4783-9457-391d548b605b',
-                '34cb1a7c-55ec-412a-8684-ba4a88d83a45',
-                '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f'
-            )
-        )
-        attribute_values, observable_objects = self._run_observables_tests(event)
-        md5, sha1, sha2, sha3 = attribute_values
-        md5_object, sha1_object, sha2_object, sha3_object = observable_objects
-        hash_types = ('MD5', 'SHA-1', 'SHA-256', 'SHA3-256')
-        for attribute_value, observable_object, hash_type in zip(attribute_values, observable_objects, hash_types):
+        event = get_event_with_hash_attributes()
+        values, observable_objects = self._run_observables_tests(event)
+        hash_types = ('MD5', 'SHA-1', 'SHA-224', 'SHA-256', 'SHA3-256', 'SHA-384', 'ssdeep', 'TLSH')
+        for value, observable_object, hash_type in zip(values, observable_objects, hash_types):
             self.assertEqual(observable_object['0'].type, 'file')
-            self.assertEqual(observable_object['0'].hashes[hash_type], attribute_value)
+            self.assertEqual(observable_object['0'].hashes[hash_type], value)
 
     def test_event_with_hostname_indicator_attribute(self):
         event = get_event_with_hostname_attribute()

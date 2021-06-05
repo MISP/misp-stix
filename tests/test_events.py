@@ -1884,46 +1884,18 @@ def get_event_with_filename_attribute():
     return event
 
 
-def _get_hash_attributes(types, values, uuids, to_ids):
-    for attribute_type, value, uuid in zip(types, values, uuids):
-        attribute = {
-            'uuid': uuid,
-            'type': attribute_type,
-            'category': 'Payload delivery',
-            'value': value,
-            'timestamp': str(int(datetime.now().timestamp())),
-            'comment': f'{attribute_type.upper()} test attribute',
-            'to_ids': to_ids
-        }
-        yield attribute
-
-
-def get_event_with_hash_attributes(types, values, uuids, to_ids=True):
+def get_event_with_hash_attributes(to_ids=True):
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = list(
-        _get_hash_attributes(types, values, uuids, to_ids)
+        _get_hash_attributes(to_ids)
     )
     return event
 
 
-def _get_hash_composite_attributes(types, values, uuids, to_ids):
-    for attribute_type, value, uuid in zip(types, values, uuids):
-        attribute = {
-            'uuid': uuid,
-            'type': f'filename|{attribute_type}',
-            'category': 'Payload delivery',
-            'value': value,
-            'timestamp': str(int(datetime.now().timestamp())),
-            'comment': f'Filename|{attribute_type} test attribute',
-            'to_ids': to_ids
-        }
-        yield attribute
-
-
-def get_event_with_hash_composite_attributes(types, values, uuids, to_ids=True):
+def get_event_with_hash_composite_attributes(to_ids=True):
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = list(
-        _get_hash_composite_attributes(types, values, uuids, to_ids)
+        _get_hash_composite_attributes(to_ids)
     )
     return event
 
@@ -2827,3 +2799,59 @@ def get_event_with_x509_object():
         deepcopy(_TEST_X509_OBJECT)
     ]
     return event
+
+
+def _get_hash_attributes(to_ids):
+    for attribute_type, value, uuid in zip(*get_hash_parameters()):
+        attribute = {
+            'uuid': uuid,
+            'type': attribute_type,
+            'category': 'Payload delivery',
+            'value': value,
+            'timestamp': str(int(datetime.now().timestamp())),
+            'comment': f'{attribute_type.upper()} test attribute',
+            'to_ids': to_ids
+        }
+        yield attribute
+
+
+def _get_hash_composite_attributes(to_ids):
+    indexes = (1, 2, 3, 4, 5, 6, 7, 8)
+    for index, attribute_type, value, uuid in zip(indexes, *get_hash_parameters()):
+        attribute = {
+            'uuid': uuid,
+            'type': f'filename|{attribute_type}',
+            'category': 'Payload delivery',
+            'value': f'filename{index}|{value}',
+            'timestamp': str(int(datetime.now().timestamp())),
+            'comment': f'Filename|{attribute_type} test attribute',
+            'to_ids': to_ids
+        }
+        yield attribute
+
+
+def get_hash_parameters():
+    parameters = (
+        ('md5', 'sha1', 'sha224', 'sha512/256', 'sha3-256', 'sha384', 'ssdeep', 'tlsh'),
+        (
+            'b2a5abfeef9e36964281a31e17b57c97',
+            '2920d5e6c579fce772e5506caf03af65579088bd',
+            '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9',
+            '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93',
+            '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4',
+            'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce',
+            '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi',
+            'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297'
+        ),
+        (
+            '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
+            '518b4bcb-a86b-4783-9457-391d548b605b',
+            '34cb1a7c-55ec-412a-8684-ba4a88d83a45',
+            '94a2b00f-bec3-4f8a-bea4-e4ccf0de776f',
+            'f2259650-bc33-4b64-a3a8-a324aa7ea6bb',
+            '90bd7dae-b78c-4025-9073-568950c780fb',
+            '2007ec09-8137-4a71-a3ce-6ef967bebacf',
+            '2d35a390-ccdd-4d6b-a36d-513b05e3682a'
+        )
+    )
+    return parameters

@@ -151,7 +151,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(properties.peak_entropy.value, float(entropy['value']))
         self.assertEqual(len(properties.hashes), 3)
         for hash_property, attribute in zip(properties.hashes, (md5, sha1, sha256)):
-            self._check_hash_property(hash_property, attribute['value'], attribute['type'].upper())
+            self._check_simple_hash_property(hash_property, attribute['value'], attribute['type'].upper())
         type_, compilation, entrypoint, original, internal, description, fileversion, langid, productname, productversion, companyname, copyright, sections, imphash, impfuzzy = pe_object['Attribute']
         self.assertEqual(properties.type_.value, type_['value'])
         headers = properties.headers
@@ -184,9 +184,8 @@ class TestStix1Export(unittest.TestCase):
         md5_hash, sha1_hash, sha256_hash, sha512_hash, ssdeep_hash = hashes
         hashes = (md5_hash, sha1_hash, sha256_hash, sha512_hash)
         for hash_property, attribute in zip(hashes, attributes):
-            self._check_hash_property(hash_property, attribute['value'], attribute['type'].upper())
-        self.assertEqual(ssdeep_hash.type_.value, ssdeep['type'].upper())
-        self.assertEqual(ssdeep_hash.fuzzy_hash_value.value, ssdeep['value'])
+            self._check_simple_hash_property(hash_property, attribute['value'], attribute['type'].upper())
+        self._check_fuzzy_hash_property(ssdeep_hash, ssdeep['value'], ssdeep['type'].upper())
 
     def _check_file_observables(self, observables, misp_object):
         self.assertEqual(len(observables), 3)
@@ -213,11 +212,11 @@ class TestStix1Export(unittest.TestCase):
         hashes = properties.hashes
         self.assertEqual(len(hashes), 3)
         for hash_property, attribute in zip(hashes, (md5, sha1, sha256)):
-            self._check_hash_property(hash_property, attribute['value'], attribute['type'].upper())
+            self._check_simple_hash_property(hash_property, attribute['value'], attribute['type'].upper())
 
-    def _check_hash_property(self, hash_property, value, hash_type):
+    def _check_fuzzy_hash_property(self, hash_property, value, hash_type):
         self.assertEqual(hash_property.type_.value, hash_type)
-        self.assertEqual(hash_property.simple_hash_value.value, value)
+        self.assertEqual(hash_property.fuzzy_hash_value.value, value)
 
     def _check_identity_features(self, identity, attribute):
         self.assertEqual(identity.id_, f"{_DEFAULT_ORGNAME}:Identity-{attribute['uuid']}")
@@ -270,7 +269,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(observable.title, filename)
         properties = self._check_observable_features(observable, attribute, 'Artifact')
         self.assertEqual(properties.raw_artifact.value, attribute['data'])
-        self._check_hash_property(properties.hashes[0], md5, 'MD5')
+        self._check_simple_hash_property(properties.hashes[0], md5, 'MD5')
 
     def _check_network_connection_properties(self, properties, attributes):
         ip_src, ip_dst, src_port, dst_port, hostname, layer3, layer4, layer7 = attributes
@@ -339,6 +338,10 @@ class TestStix1Export(unittest.TestCase):
                 related_ttp.item.timestamp,
                 datetime.utcfromtimestamp(int(timestamp))
             )
+
+    def _check_simple_hash_property(self, hash_property, value, hash_type):
+        self.assertEqual(hash_property.type_.value, hash_type)
+        self.assertEqual(hash_property.simple_hash_value.value, value)
 
     def _check_source_address(self, properties, category='ipv4-addr'):
         self.assertEqual(properties.category, category)
@@ -877,56 +880,82 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(properties.file_name.value, attribute['value'])
 
     def test_event_with_hash_attributes(self):
-        event = get_event_with_hash_attributes(
-            ('md5', 'tlsh'),
-            (
-                'b2a5abfeef9e36964281a31e17b57c97',
-                '1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1'
-            ),
-            (
-                '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
-                '518b4bcb-a86b-4783-9457-391d548b605b'
-            )
-        )
-        md5, tlsh = event['Event']['Attribute']
+        event = get_event_with_hash_attributes()
+        md5, sha1, sha224, sha256, sha3_256, sha384, ssdeep, tlsh = event['Event']['Attribute']
         orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
-        md5_r_indicator, tlsh_r_indicator = incident.related_indicators.indicator
-        md5_indicator = self._check_indicator_attribute_features(md5_r_indicator, md5, orgc)
+        md5_r_i, sha1_r_i, sha224_r_i, sha256_r_i, sha3_256_r_i, sha384_r_i, ssdeep_r_i, tlsh_r_i = incident.related_indicators.indicator
+        md5_indicator = self._check_indicator_attribute_features(md5_r_i, md5, orgc)
         md5_properties = self._check_observable_features(md5_indicator.observable, md5, 'File')
-        self._check_hash_property(md5_properties.hashes[0], md5['value'], 'MD5')
-        tlsh_indicator = self._check_indicator_attribute_features(tlsh_r_indicator, tlsh, orgc)
+        self._check_simple_hash_property(md5_properties.hashes[0], md5['value'], 'MD5')
+        sha1_indicator = self._check_indicator_attribute_features(sha1_r_i, sha1, orgc)
+        sha1_properties = self._check_observable_features(sha1_indicator.observable, sha1, 'File')
+        self._check_simple_hash_property(sha1_properties.hashes[0], sha1['value'], 'SHA1')
+        sha224_indicator = self._check_indicator_attribute_features(sha224_r_i, sha224, orgc)
+        sha224_properties = self._check_observable_features(sha224_indicator.observable, sha224, 'File')
+        self._check_simple_hash_property(sha224_properties.hashes[0], sha224['value'], 'SHA224')
+        sha256_indicator = self._check_indicator_attribute_features(sha256_r_i, sha256, orgc)
+        sha256_properties = self._check_observable_features(sha256_indicator.observable, sha256, 'File')
+        self._check_simple_hash_property(sha256_properties.hashes[0], sha256['value'], 'SHA256')
+        sha3_256_indicator = self._check_indicator_attribute_features(sha3_256_r_i, sha3_256, orgc)
+        sha3_256_properties = self._check_observable_features(sha3_256_indicator.observable, sha3_256, 'Custom')
+        self._check_custom_property(sha3_256, sha3_256_properties.custom_properties.property_[0])
+        sha384_indicator = self._check_indicator_attribute_features(sha384_r_i, sha384, orgc)
+        sha384_properties = self._check_observable_features(sha384_indicator.observable, sha384, 'File')
+        self._check_simple_hash_property(sha384_properties.hashes[0], sha384['value'], 'SHA384')
+        ssdeep_indicator = self._check_indicator_attribute_features(ssdeep_r_i, ssdeep, orgc)
+        ssdeep_properties = self._check_observable_features(ssdeep_indicator.observable, ssdeep, 'File')
+        self._check_fuzzy_hash_property(ssdeep_properties.hashes[0], ssdeep['value'], 'SSDEEP')
+        tlsh_indicator = self._check_indicator_attribute_features(tlsh_r_i, tlsh, orgc)
         tlsh_properties = self._check_observable_features(tlsh_indicator.observable, tlsh, 'File')
-        self._check_hash_property(tlsh_properties.hashes[0], tlsh['value'], 'Other')
+        self._check_simple_hash_property(tlsh_properties.hashes[0], tlsh['value'], 'Other')
 
     def test_event_with_hash_composite_attributes(self):
-        event = get_event_with_hash_composite_attributes(
-            ('md5', 'tlsh'),
-            (
-                'filename1|b2a5abfeef9e36964281a31e17b57c97',
-                'filename2|1b14cf6a6e934907e8133934b2cec5e01fbc5dafabc3156fdb51bd2c48d410986869f1'
-            ),
-            (
-                '91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f',
-                '518b4bcb-a86b-4783-9457-391d548b605b'
-            )
-        )
-        md5, tlsh = event['Event']['Attribute']
+        event = get_event_with_hash_composite_attributes()
+        md5, sha1, sha224, sha256, sha3_256, sha384, ssdeep, tlsh = event['Event']['Attribute']
         orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event, '1.1.1')
         incident = self.parser.stix_package.incidents[0]
-        md5_r_indicator, tlsh_r_indicator = incident.related_indicators.indicator
-        md5_indicator = self._check_indicator_attribute_features(md5_r_indicator, md5, orgc)
+        md5_r_i, sha1_r_i, sha224_r_i, sha256_r_i, sha3_256_r_i, sha384_r_i, ssdeep_r_i, tlsh_r_i = incident.related_indicators.indicator
+        md5_indicator = self._check_indicator_attribute_features(md5_r_i, md5, orgc)
         md5_properties = self._check_observable_features(md5_indicator.observable, md5, 'File')
         filename, md5_value = md5['value'].split('|')
         self.assertEqual(md5_properties.file_name.value, filename)
-        self._check_hash_property(md5_properties.hashes[0], md5_value, 'MD5')
-        tlsh_indicator = self._check_indicator_attribute_features(tlsh_r_indicator, tlsh, orgc)
+        self._check_simple_hash_property(md5_properties.hashes[0], md5_value, 'MD5')
+        sha1_indicator = self._check_indicator_attribute_features(sha1_r_i, sha1, orgc)
+        sha1_properties = self._check_observable_features(sha1_indicator.observable, sha1, 'File')
+        filename, sha1_value = sha1['value'].split('|')
+        self.assertEqual(sha1_properties.file_name.value, filename)
+        self._check_simple_hash_property(sha1_properties.hashes[0], sha1_value, 'SHA1')
+        sha224_indicator = self._check_indicator_attribute_features(sha224_r_i, sha224, orgc)
+        sha224_properties = self._check_observable_features(sha224_indicator.observable, sha224, 'File')
+        filename, sha224_value = sha224['value'].split('|')
+        self.assertEqual(sha224_properties.file_name.value, filename)
+        self._check_simple_hash_property(sha224_properties.hashes[0], sha224_value, 'SHA224')
+        sha256_indicator = self._check_indicator_attribute_features(sha256_r_i, sha256, orgc)
+        sha256_properties = self._check_observable_features(sha256_indicator.observable, sha256, 'File')
+        filename, sha256_value = sha256['value'].split('|')
+        self.assertEqual(sha256_properties.file_name.value, filename)
+        self._check_simple_hash_property(sha256_properties.hashes[0], sha256_value, 'SHA256')
+        sha3_256_indicator = self._check_indicator_attribute_features(sha3_256_r_i, sha3_256, orgc)
+        sha3_256_properties = self._check_observable_features(sha3_256_indicator.observable, sha3_256, 'Custom')
+        self._check_custom_property(sha3_256, sha3_256_properties.custom_properties.property_[0])
+        sha384_indicator = self._check_indicator_attribute_features(sha384_r_i, sha384, orgc)
+        sha384_properties = self._check_observable_features(sha384_indicator.observable, sha384, 'File')
+        filename, sha384_value = sha384['value'].split('|')
+        self.assertEqual(sha384_properties.file_name.value, filename)
+        self._check_simple_hash_property(sha384_properties.hashes[0], sha384_value, 'SHA384')
+        ssdeep_indicator = self._check_indicator_attribute_features(ssdeep_r_i, ssdeep, orgc)
+        ssdeep_properties = self._check_observable_features(ssdeep_indicator.observable, ssdeep, 'File')
+        filename, ssdeep_value = ssdeep['value'].split('|')
+        self.assertEqual(ssdeep_properties.file_name.value, filename)
+        self._check_fuzzy_hash_property(ssdeep_properties.hashes[0], ssdeep_value, 'SSDEEP')
+        tlsh_indicator = self._check_indicator_attribute_features(tlsh_r_i, tlsh, orgc)
         tlsh_properties = self._check_observable_features(tlsh_indicator.observable, tlsh, 'File')
         filename, tlsh_value = tlsh['value'].split('|')
         self.assertEqual(tlsh_properties.file_name.value, filename)
-        self._check_hash_property(tlsh_properties.hashes[0], tlsh_value, 'Other')
+        self._check_simple_hash_property(tlsh_properties.hashes[0], tlsh_value, 'Other')
 
     def test_event_with_hostname_attribute(self):
         event = get_event_with_hostname_attribute()
