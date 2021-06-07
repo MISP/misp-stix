@@ -15,7 +15,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "pattern": "[autonomous-system:number = '174']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -34,8 +34,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -67,7 +67,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "pattern": "[file:name = 'attachment.test' AND file:content_ref.payload_bin = 'ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -86,8 +86,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -148,7 +148,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Domain test attribute",
                 "pattern": "[domain-name:value = 'circl.lu']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -167,8 +167,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -201,7 +201,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Domain|ip test attribute",
                 "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -220,8 +220,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -261,7 +261,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Email attachment test attribute",
                 "pattern": "[email-message:body_multipart[*].body_raw_ref.name = 'email_attachment.test']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -280,8 +280,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -322,7 +322,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "pattern": "[email-message:body = 'Email body test']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -341,8 +341,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -376,7 +376,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Destination email address test attribute",
                 "pattern": "[email-message:to_refs[*].value = 'dst@email.test']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -395,8 +395,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -434,7 +434,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "pattern": "[email-message:received_lines = 'from mail.example.com ([198.51.100.3]) by smtp.gmail.com']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -453,8 +453,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -488,7 +488,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "pattern": "[email-addr:value = 'address@email.test']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -507,8 +507,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -539,7 +539,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "pattern": "[email-message:additional_header_fields.reply_to = 'reply-to@email.test']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -558,8 +558,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -597,7 +597,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Source email address test attribute",
                 "pattern": "[email-message:from_ref.value = 'src@email.test']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -616,8 +616,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -653,7 +653,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "pattern": "[email-message:subject = 'Test Subject']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -672,8 +672,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -705,7 +705,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "pattern": "[email-message:additional_header_fields.x_mailer = 'Email X-Mailer test']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -724,8 +724,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -761,7 +761,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename test attribute",
                 "pattern": "[file:name = 'test_file_name']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -780,8 +780,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:40Z",
-                "last_observed": "2021-03-09T12:10:40Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -814,7 +814,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|md5 test attribute",
                 "pattern": "[file:name = 'filename1' AND file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -833,8 +833,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -870,7 +870,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|sha1 test attribute",
                 "pattern": "[file:name = 'filename2' AND file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -889,8 +889,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -926,7 +926,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|sha512/256 test attribute",
                 "pattern": "[file:name = 'filename3' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -945,8 +945,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -982,7 +982,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|sha3-256 test attribute",
                 "pattern": "[file:name = 'filename4' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
-                "valid_from": "2021-03-09T12:10:40Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1001,8 +1001,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -1258,7 +1258,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Hostname test attribute",
                 "pattern": "[domain-name:value = 'circl.lu']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1277,8 +1277,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -1311,7 +1311,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Hostname|port test attribute",
                 "pattern": "[domain-name:value = 'circl.lu' AND network-traffic:dst_port = '8443']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1330,8 +1330,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -1371,7 +1371,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "pattern": "[network-traffic:extensions.'http-request-ext'.request_method = 'POST']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1404,7 +1404,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Source IP test attribute",
                 "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1423,8 +1423,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -1464,7 +1464,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Destination IP test attribute",
                 "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1483,8 +1483,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -1524,7 +1524,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Source IP | Port test attribute",
                 "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:src_port = '1234']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1543,8 +1543,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -1585,7 +1585,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Destination IP | Port test attribute",
                 "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = '5678']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1604,8 +1604,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -1644,7 +1644,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "pattern": "[mac-addr:value = '12:34:56:78:90:AB']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1663,8 +1663,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -1698,7 +1698,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Malware Sample test attribute",
                 "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1717,8 +1717,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -1759,7 +1759,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Mutex test attribute",
                 "pattern": "[mutex:name = 'MutexTest']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1778,8 +1778,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -1811,7 +1811,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "pattern": "[network-traffic:dst_port = '8443']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1844,7 +1844,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Regkey test attribute",
                 "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1863,8 +1863,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -1897,7 +1897,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Regkey | value test attribute",
                 "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk' AND windows-registry-key:values.data = '1234567890']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1916,8 +1916,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -1955,7 +1955,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "pattern": "[file:size = '1234']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -1988,7 +1988,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "URL test attribute",
                 "pattern": "[url:value = 'https://misp-project.org/download/']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -2007,8 +2007,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -2042,7 +2042,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "User-agent test attribute",
                 "pattern": "[network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = 'Mozilla Firefox']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -2106,7 +2106,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "X509 MD5 fingerprint test attribute",
                 "pattern": "[x509-certificate:hashes.MD5 = '8764605c6f388c89096b534d33565802']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -2125,8 +2125,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -2161,7 +2161,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "X509 SHA1 fingerprint test attribute",
                 "pattern": "[x509-certificate:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -2180,8 +2180,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
@@ -2216,7 +2216,7 @@
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "X509 SHA256 fingerprint test attribute",
                 "pattern": "[x509-certificate:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
-                "valid_from": "2021-03-09T12:10:41Z",
+                "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
@@ -2235,8 +2235,8 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "first_observed": "2021-03-09T12:10:41Z",
-                "last_observed": "2021-03-09T12:10:41Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
                 "number_observed": 1,
                 "objects": {
                     "0": {
