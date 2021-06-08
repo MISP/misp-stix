@@ -152,40 +152,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(len(properties.hashes), 3)
         for hash_property, attribute in zip(properties.hashes, (md5, sha1, sha256)):
             self._check_simple_hash_property(hash_property, attribute['value'], attribute['type'].upper())
-        type_, compilation, entrypoint, original, internal, description, fileversion, langid, productname, productversion, companyname, copyright, sections, imphash, impfuzzy = pe_object['Attribute']
-        self.assertEqual(properties.type_.value, type_['value'])
-        headers = properties.headers
-        self.assertEqual(headers.optional_header.address_of_entry_point.value, entrypoint['value'])
-        file_header = headers.file_header
-        self.assertEqual(file_header.number_of_sections.value, int(sections['value']))
-        self.assertEqual(len(file_header.hashes), 2)
-        for hash_property, attribute in zip(file_header.hashes, (imphash, impfuzzy)):
-            self.assertEqual(hash_property.simple_hash_value.value, attribute['value'])
-        resource = properties.resources[0]
-        self.assertEqual(resource.companyname.value, companyname['value'])
-        self.assertEqual(resource.filedescription.value, description['value'])
-        self.assertEqual(resource.fileversion.value, fileversion['value'])
-        self.assertEqual(resource.internalname.value, internal['value'])
-        self.assertEqual(resource.langid.value, langid['value'])
-        self.assertEqual(resource.legalcopyright.value, copyright['value'])
-        self.assertEqual(resource.originalfilename.value, original['value'])
-        self.assertEqual(resource.productname.value, productname['value'])
-        self.assertEqual(resource.productversion.value, productversion['value'])
-        self._check_custom_properties([compilation], properties.custom_properties)
-        name, size, entropy, md5, sha1, sha256, sha512, ssdeep = section_object['Attribute']
-        self.assertEqual(len(properties.sections), 1)
-        section = properties.sections[0]
-        self.assertEqual(section.entropy.value, float(entropy['value']))
-        section_header = section.section_header
-        self.assertEqual(section_header.name.value, name['value'])
-        self.assertEqual(section_header.size_of_raw_data.value, size['value'])
-        hashes = section.data_hashes
-        attributes = (md5, sha1, sha256, sha512)
-        md5_hash, sha1_hash, sha256_hash, sha512_hash, ssdeep_hash = hashes
-        hashes = (md5_hash, sha1_hash, sha256_hash, sha512_hash)
-        for hash_property, attribute in zip(hashes, attributes):
-            self._check_simple_hash_property(hash_property, attribute['value'], attribute['type'].upper())
-        self._check_fuzzy_hash_property(ssdeep_hash, ssdeep['value'], ssdeep['type'].upper())
+        self._check_pe_and_section_properties(properties, pe_object, section_object)
 
     def _check_file_observables(self, observables, misp_object):
         self.assertEqual(len(observables), 3)
@@ -306,6 +273,42 @@ class TestStix1Export(unittest.TestCase):
         properties = observable_object.properties
         self.assertEqual(properties._XSI_TYPE, f'{name}ObjectType')
         return properties
+
+    def _check_pe_and_section_properties(self, properties, pe_object, section_object):
+        type_, compilation, entrypoint, original, internal, description, fileversion, langid, productname, productversion, companyname, copyright, sections, imphash, impfuzzy = pe_object['Attribute']
+        self.assertEqual(properties.type_.value, type_['value'])
+        headers = properties.headers
+        self.assertEqual(headers.optional_header.address_of_entry_point.value, entrypoint['value'])
+        file_header = headers.file_header
+        self.assertEqual(file_header.number_of_sections.value, int(sections['value']))
+        self.assertEqual(len(file_header.hashes), 2)
+        for hash_property, attribute in zip(file_header.hashes, (imphash, impfuzzy)):
+            self.assertEqual(hash_property.simple_hash_value.value, attribute['value'])
+        resource = properties.resources[0]
+        self.assertEqual(resource.companyname.value, companyname['value'])
+        self.assertEqual(resource.filedescription.value, description['value'])
+        self.assertEqual(resource.fileversion.value, fileversion['value'])
+        self.assertEqual(resource.internalname.value, internal['value'])
+        self.assertEqual(resource.langid.value, langid['value'])
+        self.assertEqual(resource.legalcopyright.value, copyright['value'])
+        self.assertEqual(resource.originalfilename.value, original['value'])
+        self.assertEqual(resource.productname.value, productname['value'])
+        self.assertEqual(resource.productversion.value, productversion['value'])
+        self._check_custom_properties([compilation], properties.custom_properties)
+        name, size, entropy, md5, sha1, sha256, sha512, ssdeep = section_object['Attribute']
+        self.assertEqual(len(properties.sections), 1)
+        section = properties.sections[0]
+        self.assertEqual(section.entropy.value, float(entropy['value']))
+        section_header = section.section_header
+        self.assertEqual(section_header.name.value, name['value'])
+        self.assertEqual(section_header.size_of_raw_data.value, size['value'])
+        hashes = section.data_hashes
+        attributes = (md5, sha1, sha256, sha512)
+        md5_hash, sha1_hash, sha256_hash, sha512_hash, ssdeep_hash = hashes
+        hashes = (md5_hash, sha1_hash, sha256_hash, sha512_hash)
+        for hash_property, attribute in zip(hashes, attributes):
+            self._check_simple_hash_property(hash_property, attribute['value'], attribute['type'].upper())
+        self._check_fuzzy_hash_property(ssdeep_hash, ssdeep['value'], ssdeep['type'].upper())
 
     def _check_process_properties(self, properties, attributes):
         pid, child, parent, name, image, port = attributes
@@ -560,6 +563,72 @@ class TestStix1Export(unittest.TestCase):
         self.assertIn('WHITE', markings)
         self.assertIn('misp:tool="misp2stix"', markings)
         self.assertIn('misp-galaxy:mitre-attack-pattern="Code Signing - T1116"', markings)
+
+    def _run_indicator_from_object_tests(self, event, object_type):
+        self._add_ids_flag(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(
+            related_indicator,
+            misp_object,
+            orgc
+        )
+        properties = self._check_observable_features(
+            indicator.observable,
+            misp_object,
+            object_type
+        )
+        return properties, misp_object['Attribute']
+
+    def _run_indicator_from_objects_tests(self, event, object_type):
+        self._add_ids_flag(event)
+        misp_objects = deepcopy(event['Event']['Object'])
+        orgc = event['Event']['Orgc']['name']
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        related_indicator = incident.related_indicators.indicator[0]
+        indicator = self._check_indicator_object_features(
+            related_indicator,
+            misp_objects[0],
+            orgc
+        )
+        properties = self._check_observable_features(
+            indicator.observable,
+            misp_objects[0],
+            object_type
+        )
+        return properties, misp_objects
+
+    def _run_observable_from_object_tests(self, event, object_type):
+        self._remove_ids_flags(event)
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, misp_object['meta-category'])
+        properties = self._check_observable_features(
+            observable.item,
+            misp_object,
+            object_type
+        )
+        return properties, misp_object['Attribute']
+
+    def _run_observable_from_objects_tests(self, event, object_type):
+        self._remove_ids_flags(event)
+        misp_objects = deepcopy(event['Event']['Object'])
+        self.parser.parse_misp_event(event, '1.1.1')
+        incident = self.parser.stix_package.incidents[0]
+        observable = incident.related_observables.observable[0]
+        self.assertEqual(observable.relationship, misp_objects[0]['meta-category'])
+        properties = self._check_observable_features(
+            observable.item,
+            misp_objects[0],
+            object_type
+        )
+        return properties, misp_objects
 
     ################################################################################
     #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
@@ -1665,27 +1734,19 @@ class TestStix1Export(unittest.TestCase):
 
     def test_event_with_file_and_pe_objects_indicators(self):
         event = get_event_with_file_and_pe_objects()
-        self._add_ids_flag(event)
-        file, pe, section = deepcopy(event['Event']['Object'])
-        orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
-        incident = self.parser.stix_package.incidents[0]
-        related_indicator = incident.related_indicators.indicator[0]
-        indicator = self._check_indicator_object_features(related_indicator, file, orgc)
-        properties = self._check_observable_features(indicator.observable, file, 'WindowsExecutableFile')
-        self._check_file_and_pe_properties(properties, file, pe, section)
+        properties, misp_objects = self._run_indicator_from_objects_tests(
+            event,
+            'WindowsExecutableFile'
+        )
+        self._check_file_and_pe_properties(properties, *misp_objects)
 
     def test_event_with_file_and_pe_objects_observables(self):
         event = get_event_with_file_and_pe_objects()
-        self._remove_ids_flags(event)
-        file, pe, section = deepcopy(event['Event']['Object'])
-        self.parser.parse_misp_event(event, '1.1.1')
-        incident = self.parser.stix_package.incidents[0]
-        observable = incident.related_observables.observable[0]
-        self.assertEqual(observable.relationship, file['meta-category'])
-        properties = self._check_observable_features(observable.item, file, 'WindowsExecutableFile')
-        # related_objects = observable.item.object_.related_objects
-        self._check_file_and_pe_properties(properties, file, pe, section)
+        properties, misp_objects = self._run_observable_from_objects_tests(
+            event,
+            'WindowsExecutableFile'
+        )
+        self._check_file_and_pe_properties(properties, *misp_objects)
 
     def test_event_with_file_object_indicator(self):
         event = get_event_with_file_object()
@@ -1801,6 +1862,22 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(observable.relationship, misp_object['meta-category'])
         properties = self._check_observable_features(observable.item, misp_object, 'NetworkSocket')
         self._check_network_socket_properties(properties, attributes)
+
+    def test_event_with_pe_and_section_object_indicator(self):
+        event = get_event_with_pe_objects()
+        properties, misp_objects = self._run_indicator_from_objects_tests(
+            event,
+            'WindowsExecutableFile'
+        )
+        self._check_pe_and_section_properties(properties, *misp_objects)
+
+    def test_event_with_pe_and_section_object_observable(self):
+        event = get_event_with_pe_objects()
+        properties, misp_objects = self._run_observable_from_objects_tests(
+            event,
+            'WindowsExecutableFile'
+        )
+        self._check_pe_and_section_properties(properties, *misp_objects)
 
     def test_event_with_process_object_indicator(self):
         event = get_event_with_process_object()
