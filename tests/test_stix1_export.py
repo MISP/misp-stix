@@ -284,7 +284,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(properties.layer4_protocol.value, layer4['value'])
         self.assertEqual(properties.layer7_protocol.value, layer7['value'])
 
-    def _check_network_socket_prooperties(self, properties, attributes):
+    def _check_network_socket_properties(self, properties, attributes):
         ip_src, ip_dst, src_port, dst_port, hostname, address, domain, type_, state, protocol = attributes
         src_socket = properties.local_address
         self.assertEqual(src_socket.ip_address.address_value.value, ip_src['value'])
@@ -1789,7 +1789,7 @@ class TestStix1Export(unittest.TestCase):
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
         properties = self._check_observable_features(indicator.observable, misp_object, 'NetworkSocket')
-        self._check_network_socket_prooperties(properties, misp_object['Attribute'])
+        self._check_network_socket_properties(properties, attributes)
 
     def test_event_with_network_socket_object_observable(self):
         event = get_event_with_network_socket_object()
@@ -1800,7 +1800,7 @@ class TestStix1Export(unittest.TestCase):
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, misp_object['meta-category'])
         properties = self._check_observable_features(observable.item, misp_object, 'NetworkSocket')
-        self._check_network_socket_prooperties(properties, misp_object['Attribute'])
+        self._check_network_socket_properties(properties, attributes)
 
     def test_event_with_process_object_indicator(self):
         event = get_event_with_process_object()
