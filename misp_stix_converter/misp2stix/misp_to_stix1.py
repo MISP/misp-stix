@@ -671,8 +671,23 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             except Exception:
                 self._errors.append(f"Error with the {object_name} object: {misp_object['uuid']}.")
         if self._objects_to_parse:
-            if 'file' in self._objects_to_parse:
-                self._resolve_files_to_parse()
+            if self._objects_to_parse.get('file'):
+                for misp_object in self._objects_to_parse.pop('file').values():
+                    to_ids = self._fetch_ids_flags(misp_object['Attribute'])
+                    ids_list, observable = self._parse_file_with_pe_object(misp_object)
+                    if to_ids or True in ids_list:
+                        self._handle_misp_object_with_context(misp_object, observable)
+                    else:
+                        self._handle_misp_object(observable, misp_object.get('meta-category'))
+            if self._objects_to_parse.get('pe'):
+                for misp_object in self._objects_to_parse.pop('pe').values():
+                    file_object = WinExecutableFile()
+                    ids_list = self._parse_pe_object(file_object, misp_object)
+                    observable = self._create_observable(file_object, misp_object['uuid'], 'WindowsExecutableFile')
+                    if True in ids_list:
+                        self._handle_misp_object_with_context(misp_object, observable)
+                    else:
+                        self._handle_misp_object(observable, misp_object.get('meta-category'))
 
     def _add_custom_property(self, stix_object: File, name: str, value: str):
         prop = self._create_property(name, value)
@@ -1029,6 +1044,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         return observables
 
     def _parse_file_with_pe_object(self, misp_object: dict) -> Observable:
+        ids_list = [self._fetch_ids_flags(misp_object['Attribute'])]
         attributes = self._extract_file_attributes(misp_object['Attribute'])
         observables = self._parse_file_observables(attributes)
         file_object = WinExecutableFile()
@@ -1036,7 +1052,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         for reference in misp_object['ObjectReference']:
             if self._check_reference(reference, _PE_RELATIONSHIP_TYPES, 'pe'):
                 misp_pe = self._objects_to_parse['pe'].pop(reference['referenced_uuid'])
-                self._parse_pe_object(file_object, misp_pe)
+                ids_list.extend(self._parse_pe_object(file_object, misp_pe))
                 break
         file_observable = self._create_observable(file_object, misp_object['uuid'], 'WindowsExecutableFile')
         if observables:
@@ -1046,8 +1062,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 misp_object['name'],
                 misp_object['uuid']
             )
-            return observable_composition
-        return file_observable
+            return ids_list, observable_composition
+        return ids_list, file_observable
 
     def _parse_ip_port_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes_with_uuid(misp_object['Attribute'])
@@ -1122,6 +1138,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         return observable
 
     def _parse_pe_object(self, file_object: WinExecutableFile, misp_pe: dict):
+        ids_list = [self._fetch_ids_flags(misp_pe['Attribute'])]
         attributes = self._extract_multiple_object_attributes(
             misp_pe['Attribute'],
             force_single=stix1_mapping.pe_single_fields
@@ -1168,12 +1185,16 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             for reference in misp_pe['ObjectReference']:
                 if self._check_reference(reference, _PE_RELATIONSHIP_TYPES, 'pe-section'):
                     misp_pe_section = self._objects_to_parse['pe-section'][reference['referenced_uuid']]
+                    ids_list.append(
+                        self._fetch_ids_flags(misp_pe_section['Attribute'])
+                    )
                     pe_section = self._parse_pe_section_object(misp_pe_section)
                     try:
                         file_object.sections.append(pe_section)
                     except AttributeError:
                         file_object.sections = PESectionList()
                         file_object.sections.append(pe_section)
+        return ids_list
 
     def _parse_pe_section_object(self, misp_pe_section: dict) -> PESection:
         section_attributes = self._extract_object_attributes(misp_pe_section['Attribute'])
@@ -1479,18 +1500,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             x509_object.custom_properties = self._handle_custom_properties(attributes)
         observable = self._create_observable(x509_object, misp_object['uuid'], 'X509Certificate')
         return observable
-
-    def _resolve_files_to_parse(self):
-        for uuid, misp_object in self._objects_to_parse.pop('file').items():
-            try:
-                to_ids = self._fetch_ids_flags(misp_object['Attribute'])
-                observable = self._parse_file_with_pe_object(misp_object)
-                if to_ids:
-                    self._handle_misp_object_with_context(misp_object, observable)
-                else:
-                    self._handle_misp_object(observable, misp_object.get('meta-category'))
-            except Exception:
-                self._errors.append(f"Error with the {misp_object['name']} object: {misp_object['uuid']}.")
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
