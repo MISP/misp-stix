@@ -400,6 +400,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 attributes_dict[relation].append(value)
         return attributes_dict
 
+    def _handle_file_observable_object(self, args: dict) -> list:
+        return [self._create_file_object(args)]
+
     def _handle_file_observable_objects(self, args: dict, objects: list):
         objects.insert(0, self._create_file_object(args))
 

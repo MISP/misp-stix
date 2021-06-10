@@ -335,6 +335,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
     ################################################################################
 
+    def _handle_file_observable_object(self, args: dict) -> dict:
+        return {'0': self._create_file_object(args)}
+
     def _handle_file_observable_objects(self, args: dict, observable_object: dict):
         observable_object['0'] = self._create_file_object(args)
 
