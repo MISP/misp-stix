@@ -165,6 +165,66 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(observed_data.first_observed, timestamp)
         self.assertEqual(observed_data.last_observed, timestamp)
 
+    def _check_pe_and_section_observable(self, extension, pe, section):
+        _type, compilation, entrypoint, original, internal, desc, version, lang, prod_name, prod_version, company, copyright, sections, imphash, impfuzzy = (attribute['value'] for attribute in pe['Attribute'])
+        self.assertEqual(extension.pe_type, _type)
+        self.assertEqual(extension.imphash, imphash)
+        self.assertEqual(extension.number_of_sections, int(sections))
+        self.assertEqual(extension.optional_header['address_of_entry_point'], int(entrypoint))
+        self.assertEqual(extension.x_misp_company_name, company)
+        self.assertEqual(extension.x_misp_compilation_timestamp, compilation)
+        self.assertEqual(extension.x_misp_file_description, desc)
+        self.assertEqual(extension.x_misp_file_version, version)
+        self.assertEqual(extension.x_misp_impfuzzy, impfuzzy)
+        self.assertEqual(extension.x_misp_internal_filename, internal)
+        self.assertEqual(extension.x_misp_lang_id, lang)
+        self.assertEqual(extension.x_misp_legal_copyright, copyright)
+        self.assertEqual(extension.x_misp_original_filename, original)
+        self.assertEqual(extension.x_misp_product_name, prod_name)
+        self.assertEqual(extension.x_misp_product_version, prod_version)
+        name, size, entropy, md5, sha1, sha256, sha512, ssdeep = (attribute['value'] for attribute in section['Attribute'])
+        section = extension.sections[0]
+        self.assertEqual(section.name, name)
+        self.assertEqual(section.size, int(size))
+        self.assertEqual(section.entropy, float(entropy))
+        hashes = section.hashes
+        self.assertEqual(hashes['MD5'], md5)
+        self.assertEqual(hashes['SHA-1'], sha1)
+        self.assertEqual(hashes['SHA-256'], sha256)
+        self.assertEqual(hashes['SHA-512'], sha512)
+        self.assertEqual(hashes['ssdeep' if 'ssdeep' in hashes else 'SSDEEP'], ssdeep)
+
+    def _check_pe_and_section_pattern(self, pattern, pe, section):
+        _type, _compilation, _entrypoint, _original, _internal, _desc, _version, _lang, _prod_name, _prod_version, _company, _copyright, _sections, _imphash, _impfuzzy = (attribute['value'] for attribute in pe['Attribute'])
+        imphash_, sections_, type_, entrypoint_, compilation_, original_, internal_, desc_, version_, lang_, prod_name_, prod_version_, company_, copyright_, impfuzzy_ = pattern[:15]
+        prefix = "file:extensions.'windows-pebinary-ext'"
+        self.assertEqual(imphash_, f"{prefix}.imphash = '{_imphash}'")
+        self.assertEqual(sections_, f"{prefix}.number_of_sections = '{_sections}'")
+        self.assertEqual(type_, f"{prefix}.pe_type = '{_type}'")
+        self.assertEqual(entrypoint_, f"{prefix}.optional_header.address_of_entry_point = '{_entrypoint}'")
+        self.assertEqual(compilation_, f"{prefix}.x_misp_compilation_timestamp = '{_compilation}'")
+        self.assertEqual(original_, f"{prefix}.x_misp_original_filename = '{_original}'")
+        self.assertEqual(internal_, f"{prefix}.x_misp_internal_filename = '{_internal}'")
+        self.assertEqual(desc_, f"{prefix}.x_misp_file_description = '{_desc}'")
+        self.assertEqual(version_, f"{prefix}.x_misp_file_version = '{_version}'")
+        self.assertEqual(lang_, f"{prefix}.x_misp_lang_id = '{_lang}'")
+        self.assertEqual(prod_name_, f"{prefix}.x_misp_product_name = '{_prod_name}'")
+        self.assertEqual(prod_version_, f"{prefix}.x_misp_product_version = '{_prod_version}'")
+        self.assertEqual(company_, f"{prefix}.x_misp_company_name = '{_company}'")
+        self.assertEqual(copyright_, f"{prefix}.x_misp_legal_copyright = '{_copyright}'")
+        self.assertEqual(impfuzzy_, f"{prefix}.x_misp_impfuzzy = '{_impfuzzy}'")
+        _name, _size, _entropy, _md5, _sha1, _sha256, _sha512, _ssdeep = (attribute['value'] for attribute in section['Attribute'])
+        entropy_, name_, size_, md5_, sha1_, sha256_, sha512_, ssdeep_ = pattern[15:]
+        prefix = f"{prefix}.sections[0]"
+        self.assertEqual(entropy_, f"{prefix}.entropy = '{_entropy}'")
+        self.assertEqual(name_, f"{prefix}.name = '{_name}'")
+        self.assertEqual(size_, f"{prefix}.size = '{_size}'")
+        self.assertEqual(md5_, f"{prefix}.hashes.MD5 = '{_md5}'")
+        self.assertEqual(sha1_, f"{prefix}.hashes.SHA1 = '{_sha1}'")
+        self.assertEqual(sha256_, f"{prefix}.hashes.SHA256 = '{_sha256}'")
+        self.assertEqual(sha512_, f"{prefix}.hashes.SHA512 = '{_sha512}'")
+        self.assertEqual(ssdeep_, f"{prefix}.hashes.SSDEEP = '{_ssdeep}'")
+
     def _check_relationship_features(self, relationship, source_id, target_id, relationship_type, timestamp):
         self.assertEqual(relationship.type, 'relationship')
         self.assertEqual(relationship.source_ref, source_id)

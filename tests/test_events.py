@@ -2681,6 +2681,15 @@ def get_event_with_object_references():
     return event
 
 
+def get_event_with_pe_objects():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_PE_OBJECT),
+        deepcopy(_TEST_PE_SECTION_OBJECT)
+    ]
+    return event
+
+
 def get_event_with_process_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
