@@ -637,6 +637,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         if extension_args.get(f'x_misp_{feature}_filename'):
                             file_args['name'] = extension_args[f'x_misp_{feature}_filename']
                             break
+                    else:
+                        file_args['name'] = ''
                     observable = self._handle_file_observable_object(file_args)
                     self._handle_object_observable(pe_object, observable)
 
