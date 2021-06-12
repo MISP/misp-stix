@@ -1095,6 +1095,20 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         )
         return observable_composition
 
+    def _parse_mutex_object(self, misp_object: dict) -> Observable:
+        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        mutex_object = Mutex()
+        if attributes.get('name'):
+            mutex_object.name = attributes.pop('name')
+        if attributes:
+            mutex_object.custom_properties = self._handle_custom_properties(attributes, multiple=False)
+        observable = self._create_observable(
+            mutex_object,
+            misp_object['uuid'],
+            'Mutex'
+        )
+        return observable
+
     def _parse_network_connection_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_object_attributes(misp_object['Attribute'])
         connection_object = NetworkConnection()

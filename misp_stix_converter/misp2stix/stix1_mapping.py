@@ -377,6 +377,7 @@ objects_mapping = {
     "email": '_parse_email_object',
     "file": '_parse_file_object',
     "ip-port": '_parse_ip_port_object',
+    "mutex": "_parse_mutex_object",
     "network-connection": '_parse_network_connection_object',
     "network-socket": '_parse_network_socket_object',
     "process": '_parse_process_object',
