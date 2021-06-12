@@ -238,6 +238,11 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(properties.raw_artifact.value, attribute['data'])
         self._check_simple_hash_property(properties.hashes[0], md5, 'MD5')
 
+    def _check_mutex_properties(self, properties, attributes):
+        name, *custom_attributes = attributes
+        self.assertEqual(properties.name, name['value'])
+        self._check_custom_properties(custom_attributes, properties.custom_properties)
+
     def _check_network_connection_properties(self, properties, attributes):
         ip_src, ip_dst, src_port, dst_port, hostname, layer3, layer4, layer7 = attributes
         src_socket = properties.source_socket_address
@@ -1664,6 +1669,16 @@ class TestStix1Export(unittest.TestCase):
         event = get_event_with_ip_port_object()
         args = self._run_composition_from_observable_object_tests(event)
         self._check_ip_port_observables(*args)
+
+    def test_event_with_mutex_object_indicator(self):
+        event = get_event_with_mutex_object()
+        properties, attributes = self._run_indicator_from_object_tests(event, 'Mutex')
+        self._check_mutex_properties(properties, attributes)
+
+    def test_event_with_mutex_object_observable(self):
+        event = get_event_with_mutex_object()
+        properties, attributes = self._run_observable_from_object_tests(event, 'Mutex')
+        self._check_mutex_properties(properties, attributes)
 
     def test_event_with_network_connection_object_indicator(self):
         event = get_event_with_network_connection_object()
