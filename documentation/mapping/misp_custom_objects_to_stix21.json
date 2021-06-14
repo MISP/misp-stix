@@ -1,0 +1,247 @@
+{
+    "bank-account": {
+        "MISP": {
+            "name": "bank-account",
+            "meta-category": "financial",
+            "description": "An object describing bank account information based on account description from goAML 4.0",
+            "uuid": "695e7924-2518-4054-9cea-f82853d37410",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "iban",
+                    "object_relation": "iban",
+                    "value": "LU1234567890ABCDEF1234567890",
+                    "to_ids": true
+                },
+                {
+                    "type": "bic",
+                    "object_relation": "swift",
+                    "value": "CTBKLUPP"
+                },
+                {
+                    "type": "bank-account-nr",
+                    "object_relation": "account",
+                    "value": "1234567890"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "institution-name",
+                    "value": "Central Bank"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "account-name",
+                    "value": "John Smith's bank account"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "beneficiary",
+                    "value": "John Smith"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "currency-code",
+                    "value": "EUR"
+                }
+            ]
+        },
+        "STIX": {
+            "type": "x-misp-object",
+            "spec_version": "2.1",
+            "id": "x-misp-object--695e7924-2518-4054-9cea-f82853d37410",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "labels": [
+                "misp:category=\"financial\"",
+                "misp:name=\"bank-account\""
+            ],
+            "x_misp_attributes": [
+                {
+                    "object_relation": "iban",
+                    "to_ids": true,
+                    "type": "iban",
+                    "value": "LU1234567890ABCDEF1234567890"
+                },
+                {
+                    "object_relation": "swift",
+                    "type": "bic",
+                    "value": "CTBKLUPP"
+                },
+                {
+                    "object_relation": "account",
+                    "type": "bank-account-nr",
+                    "value": "1234567890"
+                },
+                {
+                    "object_relation": "institution-name",
+                    "type": "text",
+                    "value": "Central Bank"
+                },
+                {
+                    "object_relation": "account-name",
+                    "type": "text",
+                    "value": "John Smith's bank account"
+                },
+                {
+                    "object_relation": "beneficiary",
+                    "type": "text",
+                    "value": "John Smith"
+                },
+                {
+                    "object_relation": "currency-code",
+                    "type": "text",
+                    "value": "EUR"
+                }
+            ],
+            "x_misp_meta_category": "financial",
+            "x_misp_name": "bank-account"
+        }
+    },
+    "btc-wallet": {
+        "MISP": {
+            "name": "btc-wallet",
+            "meta-category": "financial",
+            "description": "An object to describe a Bitcoin wallet.",
+            "uuid": "6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "btc",
+                    "object_relation": "wallet-address",
+                    "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+                    "to_ids": true
+                },
+                {
+                    "type": "float",
+                    "object_relation": "balance_BTC",
+                    "value": "2.25036953"
+                },
+                {
+                    "type": "float",
+                    "object_relation": "BTC_received",
+                    "value": "3.35036953"
+                },
+                {
+                    "type": "float",
+                    "object_relation": "BTC_sent",
+                    "value": "1.1"
+                }
+            ]
+        },
+        "STIX": {
+            "type": "x-misp-object",
+            "spec_version": "2.1",
+            "id": "x-misp-object--6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "labels": [
+                "misp:category=\"financial\"",
+                "misp:name=\"btc-wallet\""
+            ],
+            "x_misp_attributes": [
+                {
+                    "object_relation": "wallet-address",
+                    "to_ids": true,
+                    "type": "btc",
+                    "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE"
+                },
+                {
+                    "object_relation": "balance_BTC",
+                    "type": "float",
+                    "value": "2.25036953"
+                },
+                {
+                    "object_relation": "BTC_received",
+                    "type": "float",
+                    "value": "3.35036953"
+                },
+                {
+                    "object_relation": "BTC_sent",
+                    "type": "float",
+                    "value": "1.1"
+                }
+            ],
+            "x_misp_meta_category": "financial",
+            "x_misp_name": "btc-wallet"
+        }
+    },
+    "person": {
+        "MISP": {
+            "name": "person",
+            "meta-category": "misc",
+            "description": "An object which describes a person or an identity.",
+            "uuid": "868037d5-d804-4f1d-8016-f296361f9c68",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "first-name",
+                    "object_relation": "first-name",
+                    "value": "John"
+                },
+                {
+                    "type": "last-name",
+                    "object_relation": "last-name",
+                    "value": "Smith"
+                },
+                {
+                    "type": "nationality",
+                    "object_relation": "nationality",
+                    "value": "USA"
+                },
+                {
+                    "type": "passport-number",
+                    "object_relation": "passport-number",
+                    "value": "ABA9875413"
+                },
+                {
+                    "type": "phone-number",
+                    "object_relation": "phone-number",
+                    "value": "0123456789"
+                }
+            ]
+        },
+        "STIX": {
+            "type": "x-misp-object",
+            "spec_version": "2.1",
+            "id": "x-misp-object--868037d5-d804-4f1d-8016-f296361f9c68",
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "labels": [
+                "misp:category=\"misc\"",
+                "misp:name=\"person\""
+            ],
+            "x_misp_attributes": [
+                {
+                    "object_relation": "first-name",
+                    "type": "first-name",
+                    "value": "John"
+                },
+                {
+                    "object_relation": "last-name",
+                    "type": "last-name",
+                    "value": "Smith"
+                },
+                {
+                    "object_relation": "nationality",
+                    "type": "nationality",
+                    "value": "USA"
+                },
+                {
+                    "object_relation": "passport-number",
+                    "type": "passport-number",
+                    "value": "ABA9875413"
+                },
+                {
+                    "object_relation": "phone-number",
+                    "type": "phone-number",
+                    "value": "0123456789"
+                }
+            ],
+            "x_misp_meta_category": "misc",
+            "x_misp_name": "person"
+        }
+    }
+}

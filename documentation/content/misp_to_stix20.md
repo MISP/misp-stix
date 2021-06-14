@@ -95,6 +95,39 @@ When another object type is mentioned in bold, it means the corresponding attrib
 
 The detailed mapping for attributes, with explanations and examples, is available [here](misp_attributes_to_stix20.md)
 
+#### Objects to STIX 2.0 mapping
+
+##### Summary
+
+| MISP Object name | STIX Object type |
+| -- | -- |
+| asn | Autonomous System Object |
+| attack-pattern | **Attack Pattern** |
+| course-of-action | **Course of Action** |
+| credential | User Account Object |
+| domain-ip | Domain Name & IPv4/IPv6 Address Objects |
+| email | Email Message & Email Address Objects |
+| facebook-account | User Account Object |
+| file | File Object |
+| file with references to pe & pe-section | File Object with Windows PE binary extension |
+| ip-port | Network Traffic & IPv4/IPv6 Address Objects |
+| mutex | Mutex Object |
+| network-connection | Network Traffic, IPv4/IPv6 Address & Domain Name Objects |
+| network-socket | Network Traffic with socket extension, IPv4/IPv6 Address & Domain Name Objects |
+| pe | Windows PE binary extension within a File Object |
+| pe-section | Sections fields in the Windows PE binary extension (always exported with the related pe object) |
+| process | Process Object |
+| registry-key | Windows Registry Key Object |
+| twitter-account | User Account Object |
+| url | URL Object |
+| user-account | User Account Object |
+| vulnerability | **Vulnerability** |
+| x509 | X509 Certificate Object |
+
+##### Detailed mapping
+
+The detailed mapping for MISP objects, with explanations and examples, is available [here](misp_objects_to_stix20.md)
+
 #### Galaxies to STIX 2.0 mapping
 
 ##### Summary

@@ -15,10 +15,12 @@ Thus, it gives a detailed description of the inputs and outputs that are to expe
     * [MISP to STIX 2.0](#MISP-to-STIX-20)
         * [Events to STIX 2.0](#Events-to-STIX-20-mapping)
         * [Attributes to STIX 2.0](#Attributes-to-STIX-20-mapping)
+        * [Objects to STIX 2.0](#Objects-to-STIX-20-mapping)
         * [Galaxies to STIX 2.0](#Galaxies-to-STIX-20-mapping)
     * [MISP to STIX 2.1](#MISP-to-STIX-21)
         * [Events to STIX 2.1](#Events-to-STIX-21-mapping)
         * [Attributes to STIX 2.1](#Attributes-to-STIX-21-mapping)
+        * [Objects to STIX 2.1](#Objects-to-STIX21-mapping)
         * [Galaxies to STIX 2.1](#Galaxies-to-STIX-21-mapping)
 * [Future improvements](#Future-Improvements)
 
