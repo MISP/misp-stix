@@ -1,6 +1,34 @@
 {
     "asn": {
-        "MISP": ,
+        "MISP": {
+            "name": "asn",
+            "meta-category": "network",
+            "description": "Autonomous system object describing an autonomous system",
+            "uuid": "5b23c82b-6508-4bdc-b580-045b0a00020f",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "AS",
+                    "object_relation": "asn",
+                    "value": "AS66642"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "description",
+                    "value": "AS name"
+                },
+                {
+                    "type": "ip-src",
+                    "object_relation": "subnet-announced",
+                    "value": "1.2.3.4"
+                },
+                {
+                    "type": "ip-src",
+                    "object_relation": "subnet-announced",
+                    "value": "8.8.8.8"
+                }
+            ]
+        },
         "STIX": {
             "Indicator": {
                 "type": "indicator",
