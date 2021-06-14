@@ -1077,7 +1077,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "modified": "2021-06-07T14:36:59.000Z",
           "description": "Filename|sha224 test attribute",
           "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
-          "valid_from": "2021-06-07T14:36:59Z",
+          "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
@@ -1099,8 +1099,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2021-06-07T14:36:59.000Z",
           "modified": "2021-06-07T14:36:59.000Z",
-          "first_observed": "2021-06-07T14:36:59Z",
-          "last_observed": "2021-06-07T14:36:59Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
           "objects": {
               "0": {
@@ -1205,7 +1205,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "modified": "2021-06-07T14:36:59.000Z",
           "description": "Filename|sha384 test attribute",
           "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
-          "valid_from": "2021-06-07T14:36:59Z",
+          "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
@@ -1227,8 +1227,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2021-06-07T14:36:59.000Z",
           "modified": "2021-06-07T14:36:59.000Z",
-          "first_observed": "2021-06-07T14:36:59Z",
-          "last_observed": "2021-06-07T14:36:59Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
           "objects": {
               "0": {
@@ -1717,7 +1717,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "modified": "2021-06-07T14:36:59.000Z",
           "description": "Filename|ssdeep test attribute",
           "pattern": "[file:name = 'testfile.name' AND file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
-          "valid_from": "2021-06-07T14:36:59Z",
+          "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
@@ -1739,8 +1739,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2021-06-07T14:36:59.000Z",
           "modified": "2021-06-07T14:36:59.000Z",
-          "first_observed": "2021-06-07T14:36:59Z",
-          "last_observed": "2021-06-07T14:36:59Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
           "objects": {
               "0": {
@@ -1781,7 +1781,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "modified": "2021-06-07T14:36:59.000Z",
           "description": "Filename|tlsh test attribute",
           "pattern": "[file:name = 'testfile.name' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
-          "valid_from": "2021-06-07T14:36:59Z",
+          "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
@@ -1803,8 +1803,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2021-06-07T14:36:59.000Z",
           "modified": "2021-06-07T14:36:59.000Z",
-          "first_observed": "2021-06-07T14:36:59Z",
-          "last_observed": "2021-06-07T14:36:59Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
           "objects": {
               "0": {
@@ -2850,8 +2850,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2021-06-07T13:25:36.000Z",
           "modified": "2021-06-07T13:25:36.000Z",
-          "first_observed": "2021-06-07T13:25:36Z",
-          "last_observed": "2021-06-07T13:25:36Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
           "objects": {
               "0": {
@@ -2976,8 +2976,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2021-06-07T13:25:36.000Z",
           "modified": "2021-06-07T13:25:36.000Z",
-          "first_observed": "2021-06-07T13:25:36Z",
-          "last_observed": "2021-06-07T13:25:36Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
           "objects": {
               "0": {
@@ -3517,8 +3517,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2021-06-07T13:25:36.000Z",
           "modified": "2021-06-07T13:25:36.000Z",
-          "first_observed": "2021-06-07T13:25:36Z",
-          "last_observed": "2021-06-07T13:25:36Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
           "objects": {
               "0": {
@@ -3580,8 +3580,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2021-06-07T13:25:36.000Z",
           "modified": "2021-06-07T13:25:36.000Z",
-          "first_observed": "2021-06-07T13:25:36Z",
-          "last_observed": "2021-06-07T13:25:36Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
           "objects": {
               "0": {

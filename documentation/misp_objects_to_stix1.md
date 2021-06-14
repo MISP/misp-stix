@@ -979,6 +979,45 @@ So for he rest of this documentation, in order to keep the content clear enough 
     </indicator:Indicator>
     ```
 
+- mutex
+  - MISP
+    ```json
+    {
+        "name": "mutex",
+        "meta-category": "misc",
+        "description": "Object to describe mutual exclusion locks (mutex) as seen in memory or computer program",
+        "uuid": "b0f55591-6a63-4fbd-a169-064e64738d95",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "name",
+                "value": "MutexTest"
+            },
+            {
+                "type": "text",
+                "object_relation": "description",
+                "value": "Test mutex on unix"
+            },
+            {
+                "type": "text",
+                "object_relation": "operating-system",
+                "value": "Unix"
+            }
+        ]
+    }
+    ```
+  - STIX
+    ```xml
+    <MutexObj:MutexObjectType xsi:type="MutexObj:MutexObjectType">
+        <cyboxCommon:Custom_Properties>
+            <cyboxCommon:Property name="description">Test mutex on unix</cyboxCommon:Property>
+            <cyboxCommon:Property name="operating-system">Unix</cyboxCommon:Property>
+        </cyboxCommon:Custom_Properties>
+        <MutexObj:Name>MutexTest</MutexObj:Name>
+    </MutexObj:MutexObjectType>
+    ```
+
 - network-connection
   - MISP
     ```json

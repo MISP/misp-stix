@@ -1310,7 +1310,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
-          "valid_from": "2021-06-07T15:38:29Z",
+          "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
@@ -1334,8 +1334,8 @@ For the rest of this documentation, we will then, in order to keep the content c
               "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
               "created": "2021-06-07T15:38:30.000Z",
               "modified": "2021-06-07T15:38:30.000Z",
-              "first_observed": "2021-06-07T15:38:30Z",
-              "last_observed": "2021-06-07T15:38:30Z",
+              "first_observed": "2020-10-25T16:22:00Z",
+              "last_observed": "2020-10-25T16:22:00Z",
               "number_observed": 1,
               "object_refs": [
                   "file--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
@@ -1456,7 +1456,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
-          "valid_from": "2021-06-07T15:38:29Z",
+          "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
@@ -1480,8 +1480,8 @@ For the rest of this documentation, we will then, in order to keep the content c
               "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
               "created": "2021-06-07T15:38:30.000Z",
               "modified": "2021-06-07T15:38:30.000Z",
-              "first_observed": "2021-06-07T15:38:30Z",
-              "last_observed": "2021-06-07T15:38:30Z",
+              "first_observed": "2020-10-25T16:22:00Z",
+              "last_observed": "2020-10-25T16:22:00Z",
               "number_observed": 1,
               "object_refs": [
                   "file--90bd7dae-b78c-4025-9073-568950c780fb"
@@ -2040,7 +2040,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "pattern": "[file:name = 'testfile.name' AND file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
-          "valid_from": "2021-06-07T15:38:29Z",
+          "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
@@ -2064,8 +2064,8 @@ For the rest of this documentation, we will then, in order to keep the content c
               "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
               "created": "2021-06-07T15:38:30.000Z",
               "modified": "2021-06-07T15:38:30.000Z",
-              "first_observed": "2021-06-07T15:38:30Z",
-              "last_observed": "2021-06-07T15:38:30Z",
+              "first_observed": "2020-10-25T16:22:00Z",
+              "last_observed": "2020-10-25T16:22:00Z",
               "number_observed": 1,
               "object_refs": [
                   "file--2007ec09-8137-4a71-a3ce-6ef967bebacf"
@@ -2113,7 +2113,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "pattern": "[file:name = 'testfile.name' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
-          "valid_from": "2021-06-07T15:38:29Z",
+          "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
@@ -2137,8 +2137,8 @@ For the rest of this documentation, we will then, in order to keep the content c
               "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
               "created": "2021-06-07T15:38:30.000Z",
               "modified": "2021-06-07T15:38:30.000Z",
-              "first_observed": "2021-06-07T15:38:30Z",
-              "last_observed": "2021-06-07T15:38:30Z",
+              "first_observed": "2020-10-25T16:22:00Z",
+              "last_observed": "2020-10-25T16:22:00Z",
               "number_observed": 1,
               "object_refs": [
                   "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
@@ -3316,7 +3316,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
-          "valid_from": "2021-06-07T15:38:30Z",
+          "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
@@ -3340,8 +3340,8 @@ For the rest of this documentation, we will then, in order to keep the content c
               "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
               "created": "2021-06-07T15:38:30.000Z",
               "modified": "2021-06-07T15:38:30.000Z",
-              "first_observed": "2021-06-07T15:38:30Z",
-              "last_observed": "2021-06-07T15:38:30Z",
+              "first_observed": "2020-10-25T16:22:00Z",
+              "last_observed": "2020-10-25T16:22:00Z",
               "number_observed": 1,
               "object_refs": [
                   "file--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
@@ -3460,7 +3460,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "pattern": "[file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
-          "valid_from": "2021-06-07T15:38:30Z",
+          "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
@@ -3484,8 +3484,8 @@ For the rest of this documentation, we will then, in order to keep the content c
               "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
               "created": "2021-06-07T15:38:30.000Z",
               "modified": "2021-06-07T15:38:30.000Z",
-              "first_observed": "2021-06-07T15:38:30Z",
-              "last_observed": "2021-06-07T15:38:30Z",
+              "first_observed": "2020-10-25T16:22:00Z",
+              "last_observed": "2020-10-25T16:22:00Z",
               "number_observed": 1,
               "object_refs": [
                   "file--90bd7dae-b78c-4025-9073-568950c780fb"
@@ -4075,7 +4075,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "pattern": "[file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
-          "valid_from": "2021-06-07T15:38:30Z",
+          "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
@@ -4099,8 +4099,8 @@ For the rest of this documentation, we will then, in order to keep the content c
               "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
               "created": "2021-06-07T15:38:30.000Z",
               "modified": "2021-06-07T15:38:30.000Z",
-              "first_observed": "2021-06-07T15:38:30Z",
-              "last_observed": "2021-06-07T15:38:30Z",
+              "first_observed": "2020-10-25T16:22:00Z",
+              "last_observed": "2020-10-25T16:22:00Z",
               "number_observed": 1,
               "object_refs": [
                   "file--2007ec09-8137-4a71-a3ce-6ef967bebacf"
@@ -4147,7 +4147,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "pattern": "[file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
-          "valid_from": "2021-06-07T15:38:30Z",
+          "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
@@ -4171,8 +4171,8 @@ For the rest of this documentation, we will then, in order to keep the content c
               "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
               "created": "2021-06-07T15:38:30.000Z",
               "modified": "2021-06-07T15:38:30.000Z",
-              "first_observed": "2021-06-07T15:38:30Z",
-              "last_observed": "2021-06-07T15:38:30Z",
+              "first_observed": "2020-10-25T16:22:00Z",
+              "last_observed": "2020-10-25T16:22:00Z",
               "number_observed": 1,
               "object_refs": [
                   "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
