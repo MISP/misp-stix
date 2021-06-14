@@ -533,6 +533,33 @@
         },
         "STIX": "    <indicator:Indicator id=\"MISP:Indicator-5ac47edc-31e4-4402-a7b6-040d0a00020f\" timestamp=\"2021-01-12T15:34:10+00:00\" xsi:type='indicator:IndicatorType'>\n        <indicator:Title>network: ip-port (MISP Object)</indicator:Title>\n        <indicator:Type xsi:type=\"stixVocabs:IndicatorTypeVocab-1.1\">Malware Artifacts</indicator:Type>\n        <indicator:Description>An IP address (or domain) and a port</indicator:Description>\n        <indicator:Valid_Time_Position/>\n        <indicator:Observable id=\"MISP:ip-port_ObservableComposition-5ac47edc-31e4-4402-a7b6-040d0a00020f\">\n            <cybox:Observable_Composition operator=\"AND\">\n                <cybox:Observable id=\"MISP:Observable-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                    <cybox:Object id=\"MISP:Address-91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f\">\n                        <cybox:Properties xsi:type=\"AddressObj:AddressObjectType\" category=\"ipv4-addr\" is_source=\"false\" is_destination=\"true\">\n                            <AddressObj:Address_Value condition=\"Equals\">149.13.33.14</AddressObj:Address_Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n                <cybox:Observable id=\"MISP:Observable-518b4bcb-a86b-4783-9457-391d548b605b\">\n                    <cybox:Object id=\"MISP:dstPort-518b4bcb-a86b-4783-9457-391d548b605b\">\n                        <cybox:Properties xsi:type=\"PortObj:PortObjectType\">\n                            <PortObj:Port_Value condition=\"Equals\">443</PortObj:Port_Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n                <cybox:Observable id=\"MISP:Observable-34cb1a7c-55ec-412a-8684-ba4a88d83a45\">\n                    <cybox:Object id=\"MISP:DomainName-34cb1a7c-55ec-412a-8684-ba4a88d83a45\">\n                        <cybox:Properties xsi:type=\"DomainNameObj:DomainNameObjectType\">\n                            <DomainNameObj:Value condition=\"Equals\">circl.lu</DomainNameObj:Value>\n                        </cybox:Properties>\n                    </cybox:Object>\n                </cybox:Observable>\n            </cybox:Observable_Composition>\n        </indicator:Observable>\n        <indicator:Confidence timestamp=\"2021-01-12T15:34:10+00:00\">\n            <stixCommon:Value>High</stixCommon:Value>\n            <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>\n        </indicator:Confidence>\n        <indicator:Producer>\n            <stixCommon:Identity>\n                <stixCommon:Name>MISP</stixCommon:Name>\n            </stixCommon:Identity>\n        </indicator:Producer>\n    </indicator:Indicator>"
     },
+    "mutex": {
+        "MISP": {
+            "name": "mutex",
+            "meta-category": "misc",
+            "description": "Object to describe mutual exclusion locks (mutex) as seen in memory or computer program",
+            "uuid": "b0f55591-6a63-4fbd-a169-064e64738d95",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "MutexTest"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "description",
+                    "value": "Test mutex on unix"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "operating-system",
+                    "value": "Unix"
+                }
+            ]
+        },
+        "STIX": "    <MutexObj:MutexObjectType xsi:type=\"MutexObj:MutexObjectType\">\n        <cyboxCommon:Custom_Properties>\n            <cyboxCommon:Property name=\"description\">Test mutex on unix</cyboxCommon:Property>\n            <cyboxCommon:Property name=\"operating-system\">Unix</cyboxCommon:Property>\n        </cyboxCommon:Custom_Properties>\n        <MutexObj:Name>MutexTest</MutexObj:Name>\n    </MutexObj:MutexObjectType>"
+    },
     "network-connection": {
         "MISP": {
             "name": "network-connection",

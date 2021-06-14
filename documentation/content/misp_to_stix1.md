@@ -135,6 +135,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | file | **FileObjectType** |
 | file with references to pe \& pe-section objects | **WindowsExecutableFileObjectType** |
 | ip-port | ObservableComposition -> **AddressObjectType** \| **PortObjectType** |
+| mutex | **MutexObjectType** |
 | network-connection | **NetworkConnectionObjectType** |
 | network-socket | **NetworkSocketObjectType** |
 | process | **ProcessObjectType** |
