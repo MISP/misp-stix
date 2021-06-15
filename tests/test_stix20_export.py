@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
 from misp_stix_converter import MISPtoSTIX20Parser
 from .test_events import *
 from ._test_stix2_export import TestSTIX2Export

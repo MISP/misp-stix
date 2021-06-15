@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from copy import deepcopy
-from datetime import date, datetime
 
 ################################################################################
 #                           DATA STRUCTURES EXAMPLES                           #
@@ -12,8 +11,8 @@ _BASE_EVENT = {
     "Event": {
         "uuid": "a6ef17d6-91cb-4a05-b10b-2f045daf874c",
         "info": "MISP-STIX-Converter test event",
-        "date": date.today().strftime("%Y-%m-%d"),
-        "timestamp": str(int(datetime.now().timestamp())),
+        "date": "2020-10-25",
+        "timestamp": "1603642920",
         "Org": {
             "name": "MISP-Project",
             "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
@@ -152,7 +151,7 @@ _TEST_ASN_OBJECT = {
     "meta-category": "network",
     "description": "Autonomous system object describing an autonomous system",
     "uuid": "5b23c82b-6508-4bdc-b580-045b0a00020f",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "AS",
@@ -182,7 +181,7 @@ _TEST_ATTACK_PATTERN_OBJECT = {
     "meta-category": "vulnerability",
     "description": "Attack pattern describing a common attack pattern enumeration and classification.",
     "uuid": "7205da54-70de-4fa7-9b34-e14e63fe6787",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "text",
@@ -207,7 +206,7 @@ _TEST_BANK_ACCOUNT_OBJECT = {
     "meta-category": "financial",
     "description": "An object describing bank account information based on account description from goAML 4.0",
     "uuid": "695e7924-2518-4054-9cea-f82853d37410",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "iban",
@@ -253,7 +252,7 @@ _TEST_BTC_WALLET_OBJECT = {
     "meta-category": "financial",
     "description": "An object to describe a Bitcoin wallet.",
     "uuid": "6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "btc",
@@ -284,7 +283,7 @@ _TEST_COURSE_OF_ACTION_OBJECT = {
     "meta-category": "misc",
     "description": "An object describing a specific measure taken to prevent or respond to an attack.",
     "uuid": "5d514ff9-ac30-4fb5-b9e7-3eb4a964451a",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "text",
@@ -329,7 +328,7 @@ _TEST_CREDENTIAL_OBJECT = {
     "meta-category": "misc",
     "description": "Credential describes one or more credential(s)",
     "uuid": "5b1f9378-46d4-494b-a4c1-044e0a00020f",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "text",
@@ -374,7 +373,7 @@ _TEST_DOMAIN_IP_OBJECT = {
     "meta-category": "network",
     "description": "A domain and IP address seen as a tuple",
     "uuid": "5ac337df-e078-4e99-8b17-02550a00020f",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -396,7 +395,7 @@ _TEST_EMAIL_OBJECT = {
     "meta-category": "network",
     "description": "Email object describing an email with meta-information",
     "uuid": "5e396622-2a54-4c8d-b61d-159da964451a",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -472,7 +471,7 @@ _TEST_FILE_OBJECT = {
     "meta-category": "file",
     "description": "File object describing a file with meta-information",
     "uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -532,7 +531,7 @@ _TEST_FILE_FOR_PE_OBJECT = {
     "meta-category": "file",
     "description": "File object describing a file with meta-information",
     "uuid": "5ac47782-e1b8-40b6-96b4-02510a00020f",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "filename",
@@ -583,7 +582,7 @@ _TEST_GEOLOCATION_OBJECT = {
     "meta-category": "misc",
     "description": "An object to describe a geographic location.",
     "uuid": "6a10dac8-71ac-4d9b-8269-1e9c73ea4d8f",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "text",
@@ -633,7 +632,7 @@ _TEST_IP_PORT_OBJECT = {
     "meta-category": "network",
     "description": "An IP address (or domain) and a port",
     "uuid": "5ac47edc-31e4-4402-a7b6-040d0a00020f",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -667,7 +666,7 @@ _TEST_MUTEX_OBJECT = {
     "meta-category": "misc",
     "description": "Object to describe mutual exclusion locks (mutex) as seen in memory or computer program",
     "uuid": "b0f55591-6a63-4fbd-a169-064e64738d95",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "text",
@@ -692,7 +691,7 @@ _TEST_NETWORK_CONNECTION_OBJECT = {
     "meta-category": "network",
     "description": "A local or remote network connection",
     "uuid": "5afacc53-c0b0-4825-a6ee-03c80a00020f",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -750,7 +749,7 @@ _TEST_NETWORK_SOCKET_OBJECT = {
     "meta-category": "network",
     "description": "Network socket object describes a local or remote network connections based on the socket data structure",
     "uuid": "5afb3223-0988-4ef1-a920-02070a00020f",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -820,7 +819,7 @@ _TEST_PE_OBJECT = {
     "meta-category": "file",
     "description": "Object describing a Portable Executable",
     "uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "text",
@@ -916,7 +915,7 @@ _TEST_PE_SECTION_OBJECT = {
     "meta-category": "file",
     "description": "Object describing a section of a Portable Executable",
     "uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "text",
@@ -966,7 +965,7 @@ _TEST_PERSON_OBJECT = {
     "meta-category": "misc",
     "description": "An object which describes a person or an identity.",
     "uuid": "868037d5-d804-4f1d-8016-f296361f9c68",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "first-name",
@@ -1001,7 +1000,7 @@ _TEST_PROCESS_OBJECT = {
     "meta-category": "misc",
     "description": "Object describing a system process.",
     "uuid": "5e39776a-b284-40b3-8079-22fea964451a",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -1047,7 +1046,7 @@ _TEST_REGISTRY_KEY_OBJECT = {
     "meta-category": "file",
     "description": "Registry key object describing a Windows registry key",
     "uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "regkey",
@@ -1087,7 +1086,7 @@ _TEST_URL_OBJECT = {
     "meta-category": "network",
     "description": "url object describes an url along with its normalized field",
     "uuid": "5ac347ca-dac4-4562-9775-04120a00020f",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -1127,7 +1126,7 @@ _TEST_USER_ACCOUNT_OBJECT = {
     "meta-category": "misc",
     "description": "Object describing an user account",
     "uuid": "5d234f25-539c-4d12-bf93-2c46a964451a",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "text",
@@ -1177,7 +1176,7 @@ _TEST_VULNERABILITY_OBJECT = {
     "meta-category": "vulnerability",
     "description": "Vulnerability object describing a common vulnerability",
     "uuid": "5e579975-e9cc-46c6-a6ad-1611a964451a",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "text",
@@ -1222,7 +1221,7 @@ _TEST_WEAKNESS_OBJECT = {
     "meta-category": "vulnerability",
     "description": "Weakness object describing a common weakness",
     "uuid": "a1285743-3962-40e3-a824-0f21f10f3e19",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "text": "text",
@@ -1242,7 +1241,7 @@ _TEST_WHOIS_OBJECT = {
     "meta-category": "network",
     "description": "Whois records information for a domain name or an IP address.",
     "uuid": "5b0d1b61-6c00-4387-a5fa-04370a00020f",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "whois-registrar",
@@ -1307,7 +1306,7 @@ _TEST_X509_OBJECT = {
     "meta-category": "network",
     "description": "x509 object describing a X.509 certificate",
     "uuid": "5ac3444e-145c-4749-8467-02550a00020f",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "Attribute": [
         {
             "type": "text",
@@ -1391,7 +1390,7 @@ def get_published_event():
     base_event['Event']['date'] = '2020-10-25'
     base_event['Event']['timestamp'] = '1603642920'
     base_event['Event']['published'] = True
-    base_event['Event']['publish_timestamp'] = str(int(datetime.now().timestamp()))
+    base_event['Event']['publish_timestamp'] = "1603642920"
     return base_event
 
 
@@ -1471,7 +1470,7 @@ _BTC_ATTRIBUTE = {
     "type": "btc",
     "category": "Financial fraud",
     "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "comment": "Btc test attribute",
     "to_ids": True
 }
@@ -1481,7 +1480,7 @@ _EMAIL_DESTINATION_ATTRIBUTE = {
     "type": "email-dst",
     "category": "Payload delivery",
     "value": "dst@email.test",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "comment": "Destination email address test attribute",
     "to_ids": True
 }
@@ -1491,7 +1490,7 @@ _EMAIL_MESSAGE_ID_ATTRIBUTE = {
     "type": "email-message-id",
     "category": "Payload delivery",
     "value": "1234",
-    "timestamp": str(int(datetime.now().timestamp()))
+    "timestamp": "1603642920"
 }
 
 _EMAIL_REPLY_TO_ATTRIBUTE = {
@@ -1499,7 +1498,7 @@ _EMAIL_REPLY_TO_ATTRIBUTE = {
     "type": "email-reply-to",
     "category": "Payload delivery",
     "value": "reply-to@email.test",
-    "timestamp": str(int(datetime.now().timestamp()))
+    "timestamp": "1603642920"
 }
 
 _EMAIL_SOURCE_ATTRIBUTE = {
@@ -1507,7 +1506,7 @@ _EMAIL_SOURCE_ATTRIBUTE = {
     "type": "email-src",
     "category": "Payload delivery",
     "value": "src@email.test",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "comment": "Source email address test attribute",
     "to_ids": True
 }
@@ -1517,7 +1516,7 @@ _EMAIL_SUBJECT_ATTRIBUTE = {
     "type": "email-subject",
     "category": "Payload delivery",
     "value": "Test Subject",
-    "timestamp": str(int(datetime.now().timestamp()))
+    "timestamp": "1603642920"
 }
 
 _EMAIL_X_MAILER_ATTRIBUTE = {
@@ -1525,7 +1524,7 @@ _EMAIL_X_MAILER_ATTRIBUTE = {
     "type": "email-x-mailer",
     "category": "Payload delivery",
     "value": "Email X-Mailer test",
-    "timestamp": str(int(datetime.now().timestamp()))
+    "timestamp": "1603642920"
 }
 
 _HTTP_METHOD_ATTRIBUTE = {
@@ -1533,7 +1532,7 @@ _HTTP_METHOD_ATTRIBUTE = {
     "type": "http-method",
     "category": "Network activity",
     "value": "POST",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "to_ids": False
 }
 
@@ -1542,7 +1541,7 @@ _IBAN_ATTRIBUTE = {
     "type": "iban",
     "category": "Financial fraud",
     "value": "LU1234567890ABCDEF1234567890",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "comment": "IBAN test attribute",
     "to_ids": True
 }
@@ -1552,7 +1551,7 @@ _INDICATOR_ATTRIBUTE = {
     "type": "domain",
     "category": "Network activity",
     "value": "circl.lu",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "comment": "Domain test attribute",
     "to_ids": True
 }
@@ -1562,7 +1561,7 @@ _NON_INDICATOR_ATTRIBUTE = {
     "type": "vulnerability",
     "category": "External analysis",
     "value": "CVE-2017-11774",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "comment": "Vulnerability test attribute"
 }
 
@@ -1570,7 +1569,7 @@ _OBSERVABLE_ATTRIBUTE = {
     "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
     "type": "AS",
     "category": "Network activity",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "value": "AS174"
 }
 
@@ -1579,7 +1578,7 @@ _PORT_ATTRIBUTE = {
     "type": "port",
     "category": "Network activity",
     "value": "8443",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "to_ids": False
 }
 
@@ -1588,7 +1587,7 @@ _SIZE_IN_BYTES_ATTRIBUTE = {
     "type": "size-in-bytes",
     "value": "1234",
     "category": "Other",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "to_ids": False
 }
 
@@ -1597,7 +1596,7 @@ _USER_AGENT_ATTRIBUTE = {
     "type": "user-agent",
     "category": "Network activity",
     "value": "Mozilla Firefox",
-    "timestamp": str(int(datetime.now().timestamp())),
+    "timestamp": "1603642920",
     "comment": "User-agent test attribute",
     "to_ids": False
 }
@@ -1662,7 +1661,7 @@ def get_event_with_attachment_attribute():
             "category": "Payload delivery",
             "value": "attachment.test",
             "data": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK",
-            "timestamp": str(int(datetime.now().timestamp()))
+            "timestamp": "1603642920"
         }
     ]
     return event
@@ -1676,7 +1675,7 @@ def get_event_with_campaign_name_attribute():
             "type": "campaign-name",
             "category": "Attribution",
             "value": "MartyMcFly",
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "to_ids": False
         }
     ]
@@ -1733,7 +1732,7 @@ def get_event_with_domain_ip_attribute():
             "type": "domain|ip",
             "category": "Network activity",
             "value": "circl.lu|149.13.33.14",
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Domain|ip test attribute",
             "to_ids": True
         }
@@ -1749,7 +1748,7 @@ def get_event_with_email_attachment_attribute():
             "type": "email-attachment",
             "category": "Payload delivery",
             "value": "email_attachment.test",
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Email attachment test attribute",
             "to_ids": True
         }
@@ -1771,7 +1770,7 @@ def get_event_with_email_attributes():
             "type": "email-mime-boundary",
             "category": "Payload delivery",
             "value": "----=_NextPart_001_1F9B_01D27892.CB6A37E0",
-            "timestamp": str(int(datetime.now().timestamp()))
+            "timestamp": "1603642920"
         }
     ]
     return event
@@ -1785,7 +1784,7 @@ def get_event_with_email_address_attribute():
             "type": "email",
             "category": "Payload delivery",
             "value": "address@email.test",
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             'to_ids': True
         }
     ]
@@ -1800,7 +1799,7 @@ def get_event_with_email_body_attribute():
             "type": "email-body",
             "category": "Payload delivery",
             "value": "Email body test",
-            "timestamp": str(int(datetime.now().timestamp()))
+            "timestamp": "1603642920"
         }
     ]
     return event
@@ -1822,7 +1821,7 @@ def get_event_with_email_header_attribute():
             "type": "email-header",
             "category": "Payload delivery",
             "value": "from mail.example.com ([198.51.100.3]) by smtp.gmail.com",
-            "timestamp": str(int(datetime.now().timestamp()))
+            "timestamp": "1603642920"
         }
     ]
     return event
@@ -1876,7 +1875,7 @@ def get_event_with_filename_attribute():
             "type": "filename",
             "category": "Payload delivery",
             "value": "test_file_name",
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Filename test attribute",
             "to_ids": True
         }
@@ -1908,7 +1907,7 @@ def get_event_with_hostname_attribute():
             "type": "hostname",
             "category": "Network activity",
             "value": "circl.lu",
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Hostname test attribute",
             "to_ids": True
         }
@@ -1924,7 +1923,7 @@ def get_event_with_hostname_port_attribute():
             "type": "hostname|port",
             "category": "Network activity",
             "value": "circl.lu|8443",
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Hostname|port test attribute",
             "to_ids": True
         }
@@ -1950,7 +1949,7 @@ def get_event_with_ip_attributes():
             "category": "Network activity",
             "value": "1.2.3.4",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Source IP test attribute"
         },
         {
@@ -1959,7 +1958,7 @@ def get_event_with_ip_attributes():
             "category": "Network activity",
             "value": "5.6.7.8",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Destination IP test attribute"
         }
     ]
@@ -1975,7 +1974,7 @@ def get_event_with_ip_port_attributes():
             "category": "Network activity",
             "value": "1.2.3.4|1234",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Source IP | Port test attribute"
         },
         {
@@ -1984,7 +1983,7 @@ def get_event_with_ip_port_attributes():
             "category": "Network activity",
             "value": "5.6.7.8|5678",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Destination IP | Port test attribute"
         }
     ]
@@ -1999,7 +1998,7 @@ def get_event_with_mac_address_attribute():
             "type": "mac-address",
             "category": "Payload delivery",
             "value": "12:34:56:78:90:AB",
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
         }
     ]
     return event
@@ -2015,7 +2014,7 @@ def get_event_with_malware_sample_attribute():
             "value": "oui|8764605c6f388c89096b534d33565802",
             "data": "UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Malware Sample test attribute"
         }
     ]
@@ -2031,7 +2030,7 @@ def get_event_with_mutex_attribute():
             "category": "Artifacts dropped",
             "value": "MutexTest",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Mutex test attribute"
         }
     ]
@@ -2060,7 +2059,7 @@ def get_event_with_pattern_attribute():
             "category": "Artifacts dropped",
             "value": "P4tt3rn_1n_f1l3_t3st",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Named pipe test attribute"
         }
     ]
@@ -2084,7 +2083,7 @@ def get_event_with_regkey_attribute():
             "category": "Persistence mechanism",
             "value": "HKLM\Software\mthjk",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Regkey test attribute"
         }
     ]
@@ -2100,7 +2099,7 @@ def get_event_with_regkey_value_attribute():
             "category": "Persistence mechanism",
             "value": "HKLM\Software\mthjk|1234567890",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Regkey | value test attribute"
         }
     ]
@@ -2167,7 +2166,7 @@ def get_event_with_test_mechanism_attributes():
             "category": "Network activity",
             "value": 'alert tcp any any -> any any (msg:"oui")',
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Snort test attribute"
         },
         {
@@ -2176,7 +2175,7 @@ def get_event_with_test_mechanism_attributes():
             "category": "Payload installation",
             "value": 'import "pe" rule single_section{condition:pe.number_of_sections == 1}',
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Yara test attribute"
         }
     ]
@@ -2212,7 +2211,7 @@ def get_event_with_url_attribute():
             "category": "Network activity",
             "value": "https://misp-project.org/download/",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "URL test attribute"
         }
     ]
@@ -2235,7 +2234,7 @@ def get_event_with_weakness_attribute():
             "type": "weakness",
             "category": "External analysis",
             "value": "CWE-25",
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "Weakness test attribute"
         }
     ]
@@ -2314,7 +2313,7 @@ def get_event_with_x509_fingerprint_attributes():
             "category": "Payload delivery",
             "value": "8764605c6f388c89096b534d33565802",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "X509 MD5 fingerprint test attribute"
         },
         {
@@ -2323,7 +2322,7 @@ def get_event_with_x509_fingerprint_attributes():
             "category": "Payload delivery",
             "value": "46aba99aa7158e4609aaa72b50990842fd22ae86",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "X509 SHA1 fingerprint test attribute"
         },
         {
@@ -2332,7 +2331,7 @@ def get_event_with_x509_fingerprint_attributes():
             "category": "Payload delivery",
             "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
             "to_ids": True,
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "comment": "X509 SHA256 fingerprint test attribute"
         }
     ]
@@ -2429,7 +2428,7 @@ def get_event_with_account_objects():
             "description": "Facebook account.",
             "meta-category": "misc",
             "uuid": "7d8ac653-b65c-42a6-8420-ddc71d65f50d",
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "Attribute": [
                 {
                     "type": "text",
@@ -2453,7 +2452,7 @@ def get_event_with_account_objects():
             "description": "Twitter account.",
             "meta-category": "misc",
             "uuid": "6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
-            "timestamp": str(int(datetime.now().timestamp())),
+            "timestamp": "1603642920",
             "Attribute": [
                 {
                     "type": "text",
@@ -2618,7 +2617,7 @@ def get_event_with_object_references():
         "meta-category": "vulnerability",
         "description": "Vulnerability object describing a common vulnerability",
         "uuid": "651a981f-6f59-4609-b735-e57efb9d44df",
-        "timestamp": str(int(datetime.now().timestamp())),
+        "timestamp": "1603642920",
         "Attribute": [
             {
                 "type": "vulnerability",
@@ -2817,7 +2816,7 @@ def _get_hash_attributes(to_ids):
             'type': attribute_type,
             'category': 'Payload delivery',
             'value': value,
-            'timestamp': str(int(datetime.now().timestamp())),
+            'timestamp': "1603642920",
             'comment': f'{attribute_type.upper()} test attribute',
             'to_ids': to_ids
         }
@@ -2832,7 +2831,7 @@ def _get_hash_composite_attributes(to_ids):
             'type': f'filename|{attribute_type}',
             'category': 'Payload delivery',
             'value': f'filename{index}|{value}',
-            'timestamp': str(int(datetime.now().timestamp())),
+            'timestamp': "1603642920",
             'comment': f'Filename|{attribute_type} test attribute',
             'to_ids': to_ids
         }
