@@ -145,7 +145,7 @@ This is a very basic example to show how the MISP Event fields are ported into S
     ```
 
 We can already see the published timestamp is exported as well when the event is published and instead of a `Grouping` object, the event metadata fields are exported with a `Report` object.  
-Now we can have a look at the results when we add attributes, objects, galaxies, or tags (**TLinks to the detailed mappings for each structure type are available below**).
+Now we can have a look at the results when we add attributes, objects, galaxies, or tags (**Links to the detailed mappings for each structure type are available below**).
 
 Exporting tags is pretty much straight forward and does not require a complex mapping.  
 Nonetheless, with STIX 2.1 and STIX2 in general, `Marking` objects only support the `tlp` and the `statement` definition type. Thus, with the following example you can see that out of the 4 different tags, only one is exported in a `Marking` object, and the other one are set as labels.
