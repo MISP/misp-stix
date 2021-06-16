@@ -3,14 +3,17 @@
 
 import json
 import re
+from stix2.base import STIXJSONEncoder
 from .misp2stix.framing import stix_xml_separator
 from .misp2stix.stix1_export import Stix1ExportParser
+from .misp2stix.stix20_export import Stix20ExportParser
+from .misp2stix.stix21_export import Stix21ExportParser
 
 _default_namespace = 'https://github.com/MISP/MISP'
 _default_org = 'MISP'
 
 
-def misp_to_stix(filename, return_format, version, include_namespaces = False, namespace=_default_namespace, org=_default_org):
+def misp_to_stix1(filename, return_format, version, include_namespaces = False, namespace=_default_namespace, org=_default_org):
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
     export_parser = Stix1ExportParser(return_format, namespace, org, include_namespaces)
@@ -23,8 +26,22 @@ def misp_to_stix(filename, return_format, version, include_namespaces = False, n
     return _stix_to_json(export_parser.decoded_package, filename)
 
 
-def misp_to_stix2():
-    return
+def misp_to_stix2_0(filename):
+    parser = Stix20ExportParser()
+    parser.load_file(filename)
+    parser.generate_stix20_bundle()
+    with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+        f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
+    return 1
+
+
+def misp_to_stix2_1(filename):
+    parser = Stix21ExportParser()
+    parser.load_file(filename)
+    parser.generate_stix21_bundle()
+    with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+        f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
+    return 1
 
 
 def stix_to_misp(filename):
