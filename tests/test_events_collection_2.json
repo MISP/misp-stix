@@ -8,10 +8,12 @@
                 "timestamp": "1603642920",
                 "threat_level_id": "2",
                 "Org": {
-                    "name": "MISP-Project"
+                    "name": "MISP-Project",
+                    "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
                 },
                 "Orgc": {
-                    "name": "MISP-Project"
+                    "name": "MISP-Project",
+                    "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
                 },
                 "Attribute": [
                     {
@@ -37,10 +39,12 @@
                 "timestamp": "1603642920",
                 "threat_level_id": "2",
                 "Org": {
-                    "name": "MISP-Project"
+                    "name": "MISP-Project",
+                    "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
                 },
                 "Orgc": {
-                    "name": "MISP-Project"
+                    "name": "MISP-Project",
+                    "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
                 },
                 "Attribute": [
                     {

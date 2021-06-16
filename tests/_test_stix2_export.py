@@ -1,9 +1,31 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
+import os
 import unittest
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX20Parser, MISPtoSTIX21Parser
+
+
+class TestCollectionSTIX2Export(unittest.TestCase):
+    def setUp(self):
+        self._current_path = os.path.dirname(os.path.realpath(__file__))
+
+    def tearDown(self):
+        for filename in self._filenames:
+            os.remove(f'{filename}.out')
+
+    def _run_collection_test(self, version):
+        name = 'test_events_collection'
+        self._filenames = tuple(f"{self._current_path}/{name}_{n}.json" for n in (1, 2))
+        bundles = self._check_misp_to_stix_export()
+        stix_objects = []
+        for bundle in bundles:
+            stix_objects.extend(bundle['objects'])
+        with open(f'{self._current_path}/{name}_{version}.json', 'rt', encoding='utf-8') as f:
+            bundle = json.loads(f.read())
+        self.assertEqual(bundle['objects'], stix_objects)
 
 
 class TestSTIX2Export(unittest.TestCase):

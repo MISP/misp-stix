@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 from datetime import datetime
-from misp_stix_converter import MISPtoSTIX20Parser
+from misp_stix_converter import MISPtoSTIX20Parser, misp_to_stix2_0
 from .test_events import *
-from ._test_stix2_export import TestSTIX2Export
+from ._test_stix2_export import TestCollectionSTIX2Export, TestSTIX2Export
 
 
 class TestSTIX20Export(TestSTIX2Export):
@@ -1751,3 +1752,14 @@ class TestSTIX20Export(TestSTIX2Export):
         vulnerability = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(vulnerability.type, 'vulnerability')
         self._check_galaxy_features(vulnerability, galaxy, timestamp, False, False)
+
+class TestCollectionStix20Export(TestCollectionSTIX2Export):
+    def _check_misp_to_stix_export(self):
+        for filename in self._filenames:
+            return_code = misp_to_stix2_0(filename)
+            self.assertEqual(return_code, 1)
+            with open(f'{filename}.out', 'rt', encoding='utf-8') as f:
+                yield json.loads(f.read())
+
+    def test_events_collection(self):
+        self._run_collection_test('stix20')

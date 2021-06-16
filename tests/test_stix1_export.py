@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import unittest
-import json
 import os
+import unittest
 from datetime import datetime, timezone
-from misp_stix_converter import MISPtoSTIX1Parser, misp_to_stix, stix_framing
+from misp_stix_converter import MISPtoSTIX1Parser, misp_to_stix1, stix_framing
 from .test_events import *
 
 _DEFAULT_NAMESPACE = 'https://github.com/MISP/MISP'
@@ -1974,7 +1973,8 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(vulnerability.cve_id, cluster['meta']['aliases'][0])
         self._check_related_object(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
 
-class TestCollectionExport(unittest.TestCase):
+
+class TestCollectionStix1Export(unittest.TestCase):
     def setUp(self):
         self._current_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -1984,7 +1984,7 @@ class TestCollectionExport(unittest.TestCase):
 
     def _check_misp_to_stix_export(self):
         for filename in self._filenames:
-            return_code = misp_to_stix(
+            return_code = misp_to_stix1(
                 filename,
                 'xml',
                 '1.1.1',
