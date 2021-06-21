@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 from . import stix2_mapping
 from .exportparser import MISPtoSTIXParser
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
@@ -22,8 +24,9 @@ _stix_time_fields = {
 
 
 class MISPtoSTIX2Parser(MISPtoSTIXParser):
-    def __init__(self):
+    def __init__(self, interoperability):
         super().__init__()
+        self._interoperability = interoperability
         self._ids = set()
 
     def parse_misp_event(self, misp_event: dict):
@@ -159,6 +162,32 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             return self._create_report(report_args)
         return self._handle_unpublished_report(report_args)
+
+    def _generate_galaxies_catalog(self):
+        current_path = Path(os.path.dirname(os.path.realpath(__file__)))
+        cti_path = current_path.parent.parent / 'cti'
+        self._galaxies_catalog = defaultdict(lambda: defaultdict(list))
+        self._identities = {}
+        for filename in cti_path.glob('*/*.json'):
+            feature = str(filename).split('/')[-2]
+            with open(filename, 'rt', encoding='utf-8') as f:
+                bundle = json.loads(f.read())
+            for stix_object in bundle['objects']:
+                if stix_object['type'] == 'identity':
+                    object_id = stix_object['id']
+                    if object_id not in self._ids or object_id not in self._identities:
+                        self._identities[object_id] = stix_object
+                    continue
+                if not stix_object.get('name'):
+                    continue
+                name = stix_object['name']
+                self._galaxies_catalog[name][feature].append(stix_object)
+                if stix_object.get('external_references'):
+                    for reference in stix_object['external_references']:
+                        if reference['source_name'].startswith('mitre-'):
+                            external_id = reference['external_id']
+                            self._galaxies_catalog[external_id][feature].append(stix_object)
+                            break
 
     def _handle_markings(self, object_args: dict, markings: tuple):
         marking_ids = []
@@ -1458,6 +1487,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if object_ref not in self._object_refs:
                 self._object_refs.append(object_ref)
 
+    def _is_galaxy_parsed(self, object_refs: list, object_id: str, *args: list) -> bool:
+        if object_id in self._ids:
+            object_refs.append(object_id)
+            return True
+        return self._interoperability and self._match_galaxy(object_refs, *args)
+
+    def _match_galaxy(self, object_refs: list, galaxy_type: str, galaxy_value: str) -> bool:
+        try:
+            in_catalog = galaxy_value in self._galaxies_catalog
+        except AttributeError:
+            self._generate_galaxies_catalog()
+            in_catalog = galaxy_value in self._galaxies_catalog
+
     def _parse_attack_pattern_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
         object_refs = self._parse_attack_pattern_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
@@ -1471,8 +1513,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             attack_pattern_id = f"attack-pattern--{cluster['uuid']}"
-            if attack_pattern_id in self._ids:
-                object_refs.append(attack_pattern_id)
+            args = (object_refs, attack_pattern_id, cluster['type'], cluster['value'])
+            if self._is_galaxy_parsed(*args):
                 continue
             attack_pattern_args = self._create_galaxy_args(
                 cluster,
@@ -1511,8 +1553,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             course_of_action_id = f"course-of-action--{cluster['uuid']}"
-            if course_of_action_id in self._ids:
-                object_refs.append(course_of_action_id)
+            args = (object_refs, course_of_action_id, cluster['type'], cluster['value'])
+            if self._is_galaxy_parsed(*args):
                 continue
             course_of_action_args = self._create_galaxy_args(
                 cluster,
@@ -1540,8 +1582,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             malware_id = f"malware--{cluster['uuid']}"
-            if malware_id in self._ids:
-                object_refs.append(malware_id)
+            args = (object_refs, malware_id, cluster['type'], cluster['value'])
+            if self._is_galaxy_parsed(*args):
                 continue
             malware_args = self._create_galaxy_args(
                 cluster,
@@ -1569,8 +1611,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             threat_actor_id = f"threat-actor--{cluster['uuid']}"
-            if threat_actor_id in self._ids:
-                object_refs.append(threat_actor_id)
+            args = (object_refs, threat_actor_id, cluster['type'], cluster['value'])
+            if self._is_galaxy_parsed(*args):
                 continue
             threat_actor_args = self._create_galaxy_args(
                 cluster,
@@ -1600,8 +1642,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             tool_id = f"tool--{cluster['uuid']}"
-            if tool_id in self._ids:
-                object_refs.append(tool_id)
+            args = (object_refs, tool_id, cluster['type'], cluster['value'])
+            if self._is_galaxy_parsed(*args):
                 continue
             tool_args = self._create_galaxy_args(
                 cluster,
@@ -1629,8 +1671,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         object_refs = []
         for cluster in galaxy['GalaxyCluster']:
             vulnerability_id = f"vulnerability--{cluster['uuid']}"
-            if vulnerability_id in self._ids:
-                object_refs.append(vulnerability_id)
+            args = (object_refs, vulnerability_id, cluster['type'], cluster['value'])
+            if self._is_galaxy_parsed(*args):
                 continue
             vulnerability_args = self._create_galaxy_args(
                 cluster,

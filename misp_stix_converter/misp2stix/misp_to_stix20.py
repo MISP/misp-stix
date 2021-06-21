@@ -21,8 +21,8 @@ from typing import Optional, Union
 
 
 class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, interoperability=False):
+        super().__init__(interoperability)
         self._version = '2.0'
         self._update_mapping_v20()
 
