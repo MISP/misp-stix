@@ -63,6 +63,26 @@ _TEST_COURSE_OF_ACTION_GALAXY = {
     ]
 }
 
+_TEST_INTRUSION_SET = {
+    "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
+    "name": "Intrusion Set",
+    "type": "mitre-intrusion-set",
+    "description": "Name of ATT&CK Group",
+    "GalaxyCluster": [
+        {
+            "uuid": "d6e88e18-81e8-4709-82d8-973095da1e70",
+            "type": "mitre-intrusion-set",
+            "value": "APT16 - G0023",
+            "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
+            "meta": {
+                "synonyms": [
+                    "APT16"
+                ]
+            }
+        }
+    ]
+}
+
 _TEST_MALWARE_GALAXY = {
     "uuid": "d752161c-78f6-11e7-a0ea-bfa79b407ce4",
     "name": "Malware",
@@ -1425,6 +1445,14 @@ def get_event_with_course_of_action_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
+    ]
+    return event
+
+
+def get_event_with_intrusion_set_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_INTRUSION_SET)
     ]
     return event
 

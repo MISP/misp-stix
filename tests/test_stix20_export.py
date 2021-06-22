@@ -1721,6 +1721,14 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(course_of_action.type, 'course-of-action')
         self._check_galaxy_features(course_of_action, galaxy, timestamp, False, False)
 
+    def test_event_with_intrusion_set_galaxy(self):
+        event = get_event_with_intrusion_set_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        intrusion_set = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(intrusion_set.type, 'intrusion-set')
+        self._check_galaxy_features(intrusion_set, galaxy, timestamp, False, True)
+
     def test_event_with_malware_galaxy(self):
         event = get_event_with_malware_galaxy()
         galaxy = event['Event']['Galaxy'][0]
