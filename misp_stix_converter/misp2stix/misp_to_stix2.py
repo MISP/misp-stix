@@ -1569,6 +1569,37 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._ids.add(course_of_action_id)
         return object_refs
 
+    def _parse_intrusion_set_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
+        object_refs = self._parse_intrusion_set_galaxy(galaxy, timestamp)
+        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+
+    def _parse_intrusion_set_event_galaxy(self, galaxy: dict):
+        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
+        object_refs = self._parse_intrusion_set_galaxy(galaxy, timestamp)
+        self._handle_object_refs(object_refs)
+
+    def _parse_intrusion_set_galaxy(self, galaxy: dict, timestamp: datetime) -> list:
+        object_refs = []
+        for cluster in galaxy['GalaxyCluster']:
+            intrusion_set_id = f"intrusion-set--{cluster['uuid']}"
+            args = (object_refs, intrusion_set_id, cluster['type'], cluster['value'])
+            if self._is_galaxy_parsed(*args):
+                continue
+            intrusion_set_args = self._create_galaxy_args(
+                cluster,
+                galaxy['description'],
+                galaxy['name'],
+                intrusion_set_id,
+                timestamp
+            )
+            if cluster.get('meta', {}).get('synonyms'):
+                intrusion_set_args['aliases'] = cluster['meta']['synonyms']
+            intrusion_set = self._create_intrusion_set(intrusion_set_args)
+            self._objects.append(intrusion_set)
+            object_refs.append(intrusion_set_id)
+            self._ids.add(intrusion_set_id)
+        return object_refs
+
     def _parse_malware_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
         object_refs = self._parse_malware_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)

@@ -15,7 +15,8 @@ from stix2.v20.observables import (Artifact, AutonomousSystem, Directory, Domain
     MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPESection,
     WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
 from stix2.v20.sdo import (AttackPattern, Campaign, CourseOfAction, Identity,
-    Indicator, Malware, ObservedData, Report, ThreatActor, Tool, Vulnerability)
+    Indicator, IntrusionSet, Malware, ObservedData, Report, ThreatActor, Tool,
+    Vulnerability)
 from stix2.v20.sro import Relationship
 from typing import Optional, Union
 
@@ -710,6 +711,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_indicator(indicator_args: dict) -> Indicator:
         return Indicator(**indicator_args)
+
+    @staticmethod
+    def _create_intrusion_set(intrusion_set_args: dict) -> IntrusionSet:
+        return IntrusionSet(**intrusion_set_args)
 
     def _create_malware(self, malware_args: dict, cluster: dict) -> Malware:
         malware_args['kill_chain_phases'] = self._create_killchain(cluster['type'])

@@ -617,6 +617,17 @@ galaxy_types_mapping.update(
 galaxy_types_mapping.update(
     dict.fromkeys(
         (
+            'mitre-enterprise-attack-intrusion-set',
+            'mitre-intrusion-set',
+            'mitre-mobile-attack-intrusion-set',
+            'mitre-pre-attack-intrusion-set'
+        ),
+        '_parse_intrusion_set_{}_galaxy'
+    )
+)
+galaxy_types_mapping.update(
+    dict.fromkeys(
+        (
             'android',
             'banker',
             'stealer',
@@ -665,6 +676,7 @@ relationship_specs = {
     },
     'campaign': {
         'attack-pattern': 'uses',
+        'intrusion-set': 'attributed-to',
         'malware': 'uses',
         'threat-actor': 'attributed-to',
         'tool': 'uses',
@@ -678,6 +690,7 @@ relationship_specs = {
     },
     'indicator': {
         'attack-pattern': 'indicates',
+        'intrusion-set': 'indicates',
         'malware': 'indicates',
         'threat-actor': 'indicates',
         'tool': 'indicates'
