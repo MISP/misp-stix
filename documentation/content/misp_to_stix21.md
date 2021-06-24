@@ -137,6 +137,7 @@ The detailed mapping for MISP objects, with explanations and examples, is availa
 | -- | -- |
 | mitre-attack-pattern, mitre-enterprise-attack-attack-pattern, mitre-mobile-attack-attack-pattern, mitre-pre-attack-attack-pattern | **AttackPattern** |
 | mitre-course-of-action, mitre-enterprise-attack-course-of-action, mitre-mobile-attack-course-of-action | **CourseOfAction** |
+| mitre-enterprise-attack-intrusion-set, mitre-intrusion-set, mitre-mobile-attack-intrusion-set, mitre-pre-attack-intrusion-set | **IntrusionSet** |
 | android, backdoor, banker, malpedia, mitre-enterprise-attack-malware, mitre-malware, mitre-mobile-attack-malware, ransomware, stealer | **Malware** |
 | microsoft-activity-group, threat-actor | **ThreatActor** |
 | botnet, exploit-kit, mitre-enterprise-attack-tool, mitre-mobile-attack-tool, mitre-tool, rat, tds, tool | **Tool** |

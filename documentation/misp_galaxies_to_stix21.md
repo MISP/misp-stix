@@ -133,6 +133,51 @@ Since not all the fields of the galaxies and their clusters are exported into ST
     }
     ```
 
+- Intrusion Set
+  - MISP
+    ```json
+    {
+        "uuid": "698774c7-8022-42c4-917f-8d6e4f06ada3",
+        "name": "Threat Actor",
+        "type": "threat-actor",
+        "description": "Threat actors are characteristics of malicious actors.",
+        "GalaxyCluster": [
+            {
+                "uuid": "11e17436-6ede-4733-8547-4ce0254ea19e",
+                "type": "threat-actor",
+                "value": "Cutting Kitten",
+                "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
+                "meta": {
+                    "cfr-type-of-incident": [
+                        "Denial of service"
+                    ],
+                    "synonyms": [
+                        "Ghambar"
+                    ]
+                }
+            }
+        ]
+    }
+    ```
+  - STIX
+    ```json
+    {
+        "type": "intrusion-set",
+        "spec_version": "2.1",
+        "id": "intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "APT16 - G0023",
+        "description": "Name of ATT&CK Group | APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
+        "aliases": [
+            "APT16"
+        ],
+        "labels": [
+            "misp:name=\"Intrusion Set\""
+        ]
+    }
+    ```
+
 - Malware
   - MISP
     ```json
@@ -197,6 +242,9 @@ Since not all the fields of the galaxies and their clusters are exported into ST
                 "meta": {
                     "cfr-type-of-incident": [
                         "Denial of service"
+                    ],
+                    "synonyms": [
+                        "Ghambar"
                     ]
                 }
             }
