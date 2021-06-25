@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import json
 import os
 from . import stix2_mapping
 from .exportparser import MISPtoSTIXParser
@@ -10,7 +11,7 @@ from pathlib import Path
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
-from typing import Optional, Union
+from typing import Generator, Optional, Union
 from uuid import uuid4
 
 _label_fields = ('type', 'category', 'to_ids')
@@ -169,7 +170,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._galaxies_catalog = defaultdict(lambda: defaultdict(list))
         self._identities = {}
         for filename in cti_path.glob('*/*.json'):
-            feature = str(filename).split('/')[-2]
             with open(filename, 'rt', encoding='utf-8') as f:
                 bundle = json.loads(f.read())
             for stix_object in bundle['objects']:
@@ -181,13 +181,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 if not stix_object.get('name'):
                     continue
                 name = stix_object['name']
-                self._galaxies_catalog[name][feature].append(stix_object)
+                object_type = stix_object['type']
+                object_id = stix_object['id']
+                if object_id not in self._get_object_ids(name, object_type):
+                    self._galaxies_catalog[name][object_type].append(stix_object)
                 if stix_object.get('external_references'):
                     for reference in stix_object['external_references']:
                         if reference['source_name'].startswith('mitre-'):
                             external_id = reference['external_id']
-                            self._galaxies_catalog[external_id][feature].append(stix_object)
+                            if object_id not in self._get_object_ids(external_id, object_type):
+                                self._galaxies_catalog[external_id][object_type].append(stix_object)
                             break
+
+    def _get_object_ids(self, name: str, object_type: str) -> Generator[None, None, str]:
+        return (stix_object['id'] for stix_object in self._galaxies_catalog[name][object_type])
 
     def _handle_markings(self, object_args: dict, markings: tuple):
         marking_ids = []
