@@ -11,7 +11,7 @@ from pathlib import Path
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
-from typing import Generator, Optional, Union
+from typing import Generator, Optional, Tuple, Union
 from uuid import uuid4
 
 _label_fields = ('type', 'category', 'to_ids')
@@ -40,7 +40,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._objects = []
         self._object_refs = []
         self._relationships = []
-        index = self._set_identity()
+        self._index = self._set_identity()
         if self._misp_event.get('Attribute'):
             self._resolve_attributes()
         if self._misp_event.get('Object'):
@@ -49,7 +49,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if self._objects_to_parse:
                 self._resolve_objects_to_parse()
         report = self._generate_event_report()
-        self._objects.insert(index, report)
+        self._objects.insert(self._index, report)
 
     @property
     def bundle(self) -> Union[Bundle_v20, Bundle_v21]:
@@ -187,7 +187,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     self._galaxies_catalog[name][object_type].append(stix_object)
                 if stix_object.get('external_references'):
                     for reference in stix_object['external_references']:
-                        if reference['source_name'].startswith('mitre-'):
+                        if reference['source_name'] in stix2_mapping.source_names:
                             external_id = reference['external_id']
                             if object_id not in self._get_object_ids(external_id, object_type):
                                 self._galaxies_catalog[external_id][object_type].append(stix_object)
@@ -1458,37 +1458,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
 
-    def _check_external_id(self, references: list, value: str) -> bool:
+    def _check_external_references(self, references: list, values: list, feature: str) -> bool:
         for reference in references:
-            if reference['source_name'].startswith('mitre-') and reference['external_id'] == value:
+            if reference['source_name'] in stix2_mapping.source_names and reference[feature] in values:
                 return True
         return False
 
-    def _check_external_references(self, external_references: list, references: list) -> bool:
-        for reference in external_references:
-            if reference['source_name'].startswith('mitre-') and reference['url'] in references:
-                return True
-        return False
-
-    def _check_galaxy_id(self, name: str, object_type: str, external_id: str) -> bool:
-        ids = 0
-        for stix_object in self._galaxies_catalog[name][object_type]:
-            if stix_object['name'] != name or not stix_object.get('external_references'):
-                continue
-            if self._check_external_id(stix_object['external_references'], external_id):
-                ids += 1
-        return ids == 1
-
-    def _check_galaxy_matching(self, name: str, object_type: str, cluster: dict) -> bool:
-        if self._check_galaxy_name(name, object_type):
-            return self._fetch_galaxy_matching_by_name(name, object_type, cluster)
+    def _check_galaxy_matching(self, cluster: dict, *args: Tuple[str, str]) -> Union[str, None]:
+        if self._check_galaxy_name(*args):
+            return self._fetch_galaxy_matching_by_name(cluster, *args)
         if cluster.get('meta'):
             meta = cluster['meta']
-            if meta.get('external_id') and self._check_galaxy_id(name, object_type, meta['external_id']):
-                return self._fetch_galaxy_matching_by_id(name, object_type, cluster)
-            if meta.get('refs') and self._check_galaxy_references(name, object_type, meta['refs']):
-                return self._fetch_galaxy_matching_by_reference(name, object_type, cluster)
-        return False
+            feature = 'external_id'
+            if meta.get(feature) and self._check_galaxy_references(meta[feature], feature, *args):
+                return self._fetch_galaxy_matching_by_reference(meta[feature], feature, *args)
+            if meta.get('refs') and self._check_galaxy_references(meta['refs'], 'url', *args):
+                return self._fetch_galaxy_matching_by_reference(meta['refs'], 'url', *args)
 
     def _check_galaxy_name(self, name: str, object_type: str) -> bool:
         names = 0
@@ -1497,41 +1482,28 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 names += 1
         return names == 1
 
-    def _check_galaxy_references(self, name: str, object_type: str, references: list) -> bool:
-        urls = 0
+    def _check_galaxy_references(self, values: str, feature: str, name: str, object_type: str) -> bool:
+        numbers = 0
         for stix_object in self._galaxies_catalog[name][object_type]:
             if stix_object['name'] != name or not stix_object.get('external_references'):
                 continue
-            if self._check_external_references(stix_object['external_references'], references):
-                urls += 1
-        return urls == 1
+            if self._check_external_references(stix_object['external_references'], values, feature):
+                numbers += 1
+        return numbers == 1
 
-    def _fetch_galaxy_matching_by_id(self, name: str, object_type: str, cluster: dict) -> bool:
-        external_id = cluster['meta']['external_id']
-        for stix_object in self._galaxies_catalog[name][object_type]:
-            if stix_object['name'] != name or not stix_object.get('external_references'):
-                continue
-            if self._check_external_id(stix_object['external_references'], external_id):
-                self._handle_galaxy_matching(cluster, stix_object)
-                return True
-        return False
-
-    def _fetch_galaxy_matching_by_name(self, name: str, object_type: str, cluster: dict) -> bool:
+    def _fetch_galaxy_matching_by_name(self, cluster: dict, name: str, object_type: str) -> Union[str, None]:
         for stix_object in self._galaxies_catalog[name][object_type]:
             if stix_object['name'] == name:
-                self._handle_galaxy_matching(cluster, stix_object)
-                return True
-        return False
+                self._handle_galaxy_matching(object_type, stix_object)
+                return stix_object['id']
 
-    def _fetch_galaxy_matching_by_reference(self, name: str, object_type: str, cluster: dict) -> Union[str, None]:
-        references = cluster['meta']['refs']
+    def _fetch_galaxy_matching_by_reference(self, values: list, feature: str, name: str, object_type: str) -> Union[str, None]:
         for stix_object in self._galaxies_catalog[name][object_type]:
             if stix_object['name'] != name or not stix_object.get('external_references'):
                 continue
-            if self._check_external_references(stix_object['external_references'], references):
-                self._handle_galaxy_matching(cluster, stix_object)
-                return True
-        return False
+            if self._check_external_references(stix_object['external_references'], values, feature):
+                self._handle_galaxy_matching(object_type, stix_object)
+                return stix_object['id']
 
     def _handle_attribute_galaxy_relationships(self, source_id: str, target_ids: list, timestamp: datetime):
         source_type = source_id.split('--')[0]
@@ -1567,7 +1539,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _handle_galaxy_matching(self, object_type: str, stix_object: dict):
         identity_id = stix_object['created_by_ref']
         if identity_id not in self._ids:
-            self._handle_external_identity(identity_id)
+            identity = self._create_identity(self._identities[identity_id])
+            self._objects.insert(0, identity)
+            self._index += 1
+            self._ids[identity_id] = identity_id
         stix_object['allow_custom'] = True
         self._objects.append(getattr(self, f"_create_{object_type.replace('-', '_')}")(stix_object))
 
@@ -1591,7 +1566,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 in_catalog = value in self._galaxies_catalog
             if in_catalog:
                 if object_type in self._galaxies_catalog[value]:
-                    stix_object_id = self._check_galaxy_matching(name, object_type, cluster)
+                    args = (value, object_type)
+                    stix_object_id = self._check_galaxy_matching(cluster, *args)
                     if stix_object_id is not None:
                         object_refs.append(stix_object_id)
                         self._ids[object_id] = stix_object_id
@@ -1599,8 +1575,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 return False
             if ' - ' in value:
                 for part in value.split(' - '):
-                    if part in self._galaxies_catalog and object_type in self._galaxies_catalog[value]:
-                        stix_object_id = self._check_galaxy_matching(part, object_type, cluster)
+                    if part in self._galaxies_catalog and object_type in self._galaxies_catalog[part]:
+                        args = (part, object_type)
+                        stix_object_id = self._check_galaxy_matching(cluster, *args)
                         if stix_object_id is not None:
                             object_refs.append(stix_object_id)
                             self._ids[object_id] = stix_object_id

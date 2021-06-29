@@ -772,6 +772,20 @@ socket_type_enum_list = (
     "SOCK_SEQPACKET"
 )
 
+source_names = (
+    'ATTACK',
+    'NIST Mobile Threat Catalogue',
+    'WASC',
+    'capec',
+    'cve',
+    'cwe',
+    'mitre-attack',
+    'mitre-ics-attack',
+    'mitre-mobile-attack',
+    'mitre-pre-attack',
+    'reference_from_CAPEC'
+)
+
 tlp_markings_v20 = {
     'tlp:white': TLP_WHITE_v20,
     'tlp:green': TLP_GREEN_v20,
