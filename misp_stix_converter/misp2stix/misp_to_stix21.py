@@ -760,7 +760,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return AttackPattern(**args)
 
     @staticmethod
-    def _create_attack_pattern_from_object(attack_pattern_args: dict) -> AttackPattern:
+    def _create_attack_pattern(attack_pattern_args: dict) -> AttackPattern:
         return AttackPattern(**attack_pattern_args)
 
     def _create_bundle(self) -> Bundle:
@@ -855,7 +855,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_threat_actor(threat_actor_args: dict) -> ThreatActor:
         return ThreatActor(**threat_actor_args)
 
-    def _create_tool(self, tool_args: dict, cluster: dict) -> Tool:
+    def _create_tool_from_galaxy(self, tool_args: dict, cluster: dict) -> Tool:
         tool_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
         if cluster.get('meta', {}).get('synonyms'):
             tool_args['aliases'] = cluster['meta']['synonyms']
