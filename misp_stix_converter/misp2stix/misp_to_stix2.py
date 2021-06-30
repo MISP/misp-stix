@@ -259,6 +259,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'labels': self._create_labels(attribute),
             'number_observed': 1,
             'created_by_ref': self._identity_id,
+            'allow_custom': True,
             'interoperability': True
         }
         observable_args.update(self._handle_observable_time_fields(attribute))

@@ -18,6 +18,7 @@ from stix2.v20.sdo import (AttackPattern, Campaign, CourseOfAction, Identity,
     Indicator, IntrusionSet, Malware, ObservedData, Report, ThreatActor, Tool,
     Vulnerability)
 from stix2.v20.sro import Relationship
+from stix2.v20.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
 
 
@@ -196,26 +197,34 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_hash_attribute_observable(self, attribute: dict):
+        hash_type = self._define_hash_type(attribute['type'])
+        file_args = {
+            'hashes': {
+                hash_type: attribute['value']
+            }
+        }
+        if hash_type not in HASHING_ALGORITHM:
+            file_args['allow_custom'] = True
         observable_object = {
-            '0': File(
-                hashes={
-                    self._define_hash_type(attribute['type']): attribute['value']
-                }
-            )
+            '0': File(**file_args)
         }
         self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_hash_composite_attribute_observable(self, attribute: dict, hash_type: Optional[str] = None):
         if hash_type is None:
             hash_type = attribute['type'].split('|')[1]
+        hash_type = self._define_hash_type(hash_type)
         filename, hash_value = attribute['value'].split('|')
+        file_args = {
+            'name': filename,
+            'hashes': {
+                hash_type: hash_value
+            }
+        }
+        if hash_type not in HASHING_ALGORITHM:
+            file_args['allow_custom'] = True
         observable_object = {
-            '0': File(
-                name=filename,
-                hashes={
-                    self._define_hash_type(hash_type): hash_value
-                }
-            )
+            '0': File(**file_args)
         }
         self._handle_attribute_observable(attribute, observable_object)
 
