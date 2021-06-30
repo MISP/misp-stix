@@ -13,8 +13,8 @@ from datetime import datetime
 from stix2.v21.bundle import Bundle
 from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, DomainName,
     EmailAddress, EmailMessage, EmailMIMEComponent, File, IPv4Address, IPv6Address,
-    MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPESection,
-    WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
+    MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPEBinaryExt,
+    WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
 from stix2.v21.sdo import (AttackPattern, Campaign, CourseOfAction, Grouping,
     Identity, Indicator, IntrusionSet, Location, Malware, Note, ObservedData, Report,
     ThreatActor, Tool, Vulnerability)
@@ -52,7 +52,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 'id': grouping_id,
                 'type': 'grouping',
                 'context': 'suspicious-activity',
-                'object_refs': self._object_refs
+                'object_refs': self._object_refs,
+                'allow_custom': True
             }
         )
         return Grouping(**report_args)
@@ -812,10 +813,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return Identity(**identity_args)
 
     @staticmethod
-    def _create_grouping(grouping_args: dict) -> Grouping:
-        return Grouping(**grouping_args)
-
-    @staticmethod
     def _create_indicator(indicator_args: dict) -> Indicator:
         indicator_args.update(
             {
@@ -846,6 +843,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._append_SDO(ObservedData(**args))
         for observable in observables:
             self._append_SDO(observable)
+
+    @staticmethod
+    def _create_PE_extension(extension_args: dict) -> WindowsPEBinaryExt:
+        return WindowsPEBinaryExt(**extension_args)
 
     @staticmethod
     def _create_relationship(relationship_args: dict) -> Relationship:
