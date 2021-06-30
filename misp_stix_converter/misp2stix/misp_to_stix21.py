@@ -794,6 +794,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_file_object(file_args: dict) -> File:
         return File(**file_args)
 
+    @staticmethod
+    def _create_identity(identity_args: dict) -> Identity:
+        return Identity(**identity_args)
+
     def _create_identity_object(self, orgname: str) -> Identity:
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
         identity_args = {

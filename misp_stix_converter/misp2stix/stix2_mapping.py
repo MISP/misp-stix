@@ -711,6 +711,15 @@ cluster_to_stix_object.update(
     )
 )
 
+external_id_to_source_name = {
+    'CAPEC': 'capec',
+    'CVE': 'cve',
+    'CWE': 'cwe',
+    'MOB': 'mitre-mobile-attack',
+    'PRE': 'mitre-pre-attack',
+    'REF': 'reference_from_CAPEC'
+}
+
 
 # RELATIONSHIPS BETWEEN STIX OBJECTS
 relationship_specs = {
@@ -770,6 +779,20 @@ socket_type_enum_list = (
     "SOCK_RAW",
     "SOCK_RDM",
     "SOCK_SEQPACKET"
+)
+
+source_names = (
+    'ATTACK',
+    'NIST Mobile Threat Catalogue',
+    'WASC',
+    'capec',
+    'cve',
+    'cwe',
+    'mitre-attack',
+    'mitre-ics-attack',
+    'mitre-mobile-attack',
+    'mitre-pre-attack',
+    'reference_from_CAPEC'
 )
 
 tlp_markings_v20 = {
