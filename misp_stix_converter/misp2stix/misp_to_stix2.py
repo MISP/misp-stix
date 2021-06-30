@@ -1652,7 +1652,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             if cluster.get('meta', {}).get('external_id'):
                 references = self._handle_external_references(cluster['meta']['external_id'])
-                attack_pattern_args['external_references'] = references
+                course_of_action_args['external_references'] = references
             course_of_action = self._create_course_of_action(course_of_action_args)
             self._objects.append(course_of_action)
             object_refs.append(course_of_action_id)
@@ -1683,7 +1683,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             if cluster.get('meta', {}).get('external_id'):
                 references = self._handle_external_references(cluster['meta']['external_id'])
-                attack_pattern_args['external_references'] = references
+                intrusion_set_args['external_references'] = references
             if cluster.get('meta', {}).get('synonyms'):
                 intrusion_set_args['aliases'] = cluster['meta']['synonyms']
             intrusion_set = self._create_intrusion_set(intrusion_set_args)
@@ -1716,7 +1716,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             if cluster.get('meta', {}).get('external_id'):
                 references = self._handle_external_references(cluster['meta']['external_id'])
-                attack_pattern_args['external_references'] = references
+                malware_args['external_references'] = references
             malware = self._create_malware(malware_args, cluster)
             self._objects.append(malware)
             object_refs.append(malware_id)
@@ -1777,7 +1777,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             if cluster.get('meta', {}).get('external_id'):
                 references = self._handle_external_references(cluster['meta']['external_id'])
-                attack_pattern_args['external_references'] = references
+                tool_args['external_references'] = references
             tool = self._create_tool_from_galaxy(tool_args, cluster)
             self._objects.append(tool)
             object_refs.append(tool_id)
@@ -1808,8 +1808,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             if cluster.get('meta', {}).get('aliases'):
                 references = self._handle_external_references(cluster['meta']['aliases'])
-                if references:
-                    vulnerability_args['external_references'] = references
+                vulnerability_args['external_references'] = references
             vulnerability = self._create_vulnerability(vulnerability_args)
             self._objects.append(vulnerability)
             object_refs.append(vulnerability_id)
