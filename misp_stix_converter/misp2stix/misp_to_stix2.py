@@ -1491,6 +1491,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 numbers += 1
         return numbers == 1
 
+    @staticmethod
+    def _define_source_name(value: str) -> str:
+        for prefix, source_name in stix2_mapping.external_id_to_source_name.items():
+            if value.startswith(f'{prefix}-'):
+                return source_name
+        if '-' in value:
+            return 'NIST Mobile Threat Catalogue'
+        if value.isnumeric():
+            return 'WASC'
+        return 'mitre-attack'
+
     def _fetch_galaxy_matching_by_name(self, cluster: dict, name: str, object_type: str) -> Union[str, None]:
         for stix_object in self._galaxies_catalog[name][object_type]:
             if stix_object['name'] == name:
@@ -1524,17 +1535,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 self._parse_galaxy_relationship(source_id, target_id, 'has', timestamp)
         self._handle_object_refs(target_ids)
 
-    @staticmethod
-    def _handle_external_ids(values: list, prefix: str) -> list:
-        external_ids = []
+    def _handle_external_references(self, values: list) -> list:
+        references = []
         for value in values:
-            if value.startswith(prefix):
-                external_id = {
-                    'source_name': prefix.lower(),
-                    'external_id': value
-                }
-                external_ids.append(external_id)
-        return external_ids
+            external_id = {
+                'source_name': self._define_source_name(value),
+                'external_id': value
+            }
+            references.append(external_id)
+        return references
 
     def _handle_galaxy_matching(self, object_type: str, stix_object: dict):
         identity_id = stix_object['created_by_ref']
@@ -1607,12 +1616,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 timestamp
             )
             if cluster.get('meta', {}).get('external_id'):
-                external_ids = self._handle_external_ids(
-                    cluster['meta']['external_id'],
-                    'CAPEC'
-                )
-                if external_ids:
-                    attack_pattern_args['external_references'] = external_ids
+                references = self._handle_external_references(cluster['meta']['external_id'])
+                attack_pattern_args['external_references'] = references
             self._objects.append(
                 self._create_attack_pattern_from_galaxy(
                     attack_pattern_args,
@@ -1645,6 +1650,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 course_of_action_id,
                 timestamp
             )
+            if cluster.get('meta', {}).get('external_id'):
+                references = self._handle_external_references(cluster['meta']['external_id'])
+                attack_pattern_args['external_references'] = references
             course_of_action = self._create_course_of_action(course_of_action_args)
             self._objects.append(course_of_action)
             object_refs.append(course_of_action_id)
@@ -1673,6 +1681,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 intrusion_set_id,
                 timestamp
             )
+            if cluster.get('meta', {}).get('external_id'):
+                references = self._handle_external_references(cluster['meta']['external_id'])
+                attack_pattern_args['external_references'] = references
             if cluster.get('meta', {}).get('synonyms'):
                 intrusion_set_args['aliases'] = cluster['meta']['synonyms']
             intrusion_set = self._create_intrusion_set(intrusion_set_args)
@@ -1703,6 +1714,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 malware_id,
                 timestamp
             )
+            if cluster.get('meta', {}).get('external_id'):
+                references = self._handle_external_references(cluster['meta']['external_id'])
+                attack_pattern_args['external_references'] = references
             malware = self._create_malware(malware_args, cluster)
             self._objects.append(malware)
             object_refs.append(malware_id)
@@ -1761,6 +1775,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 tool_id,
                 timestamp
             )
+            if cluster.get('meta', {}).get('external_id'):
+                references = self._handle_external_references(cluster['meta']['external_id'])
+                attack_pattern_args['external_references'] = references
             tool = self._create_tool_from_galaxy(tool_args, cluster)
             self._objects.append(tool)
             object_refs.append(tool_id)
@@ -1790,12 +1807,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 timestamp
             )
             if cluster.get('meta', {}).get('aliases'):
-                external_ids = self._handle_external_ids(
-                    cluster['meta']['aliases'],
-                    'CVE'
-                )
-                if external_ids:
-                    vulnerability_args['external_references'] = external_ids
+                references = self._handle_external_references(cluster['meta']['aliases'])
+                if references:
+                    vulnerability_args['external_references'] = references
             vulnerability = self._create_vulnerability(vulnerability_args)
             self._objects.append(vulnerability)
             object_refs.append(vulnerability_id)
