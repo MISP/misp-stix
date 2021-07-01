@@ -802,7 +802,7 @@ class TestSTIX21Export(TestSTIX2Export):
             self.assertEqual(grouping_ref, object_ref)
             self.assertEqual(observable.id, object_ref)
             self.assertEqual(observable.type, 'file')
-        hash_types = ('MD5', 'SHA-1', 'SHA-224', 'SHA-256', 'SHA3-256', 'SHA-384', 'SSDEEP', 'TLSH')
+        hash_types = ('MD5', 'SHA-1', 'SHA224', 'SHA-256', 'SHA3-256', 'SHA384', 'SSDEEP', 'TLSH')
         for value, observable, hash_type in zip(values, observables, hash_types):
             filename, hash_value = value.split('|')
             self.assertEqual(observable.name, filename)
@@ -822,7 +822,7 @@ class TestSTIX21Export(TestSTIX2Export):
             self.assertEqual(grouping_ref, object_ref)
             self.assertEqual(observable.id, object_ref)
             self.assertEqual(observable.type, 'file')
-        hash_types = ('MD5', 'SHA-1', 'SHA-224', 'SHA-256', 'SHA3-256', 'SHA-384', 'SSDEEP', 'TLSH')
+        hash_types = ('MD5', 'SHA-1', 'SHA224', 'SHA-256', 'SHA3-256', 'SHA384', 'SSDEEP', 'TLSH')
         for observable, hash_type, value in zip(observables, hash_types, values):
             self.assertEqual(observable.hashes[hash_type], value)
 
