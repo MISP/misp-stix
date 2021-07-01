@@ -1086,7 +1086,7 @@ _TEST_REGISTRY_KEY_OBJECT = {
         {
             "type": "text",
             "object_relation": "data",
-            "value": "qwertyuiop"
+            "value": "%DATA%\\qwertyuiop"
         },
         {
             "type": "text",
@@ -2125,7 +2125,7 @@ def get_event_with_regkey_value_attribute():
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "regkey|value",
             "category": "Persistence mechanism",
-            "value": "HKLM\Software\mthjk|1234567890",
+            "value": "HKLM\Software\mthjk|%DATA%\\1234567890",
             "to_ids": True,
             "timestamp": "1603642920",
             "comment": "Regkey | value test attribute"
