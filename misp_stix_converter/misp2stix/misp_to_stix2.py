@@ -532,9 +532,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_regkey_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            key = attribute['value']
-            if '\\\\' not in key:
-                key = key.replace('\\', '\\\\')
+            key = self._sanitize_registry_key_value(attribute['value'])
             pattern = f"[{self._create_regkey_pattern(key)}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
@@ -542,9 +540,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_regkey_value_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            key, value = attribute['value'].split('|')
-            if '\\\\' not in key:
-                key = key.replace('\\', '\\\\')
+            key, value = self._sanitize_registry_key_value(attribute['value']).split('|')
             key_pattern = self._create_regkey_pattern(key)
             pattern = f"[{key_pattern} AND windows-registry-key:values.data = '{value.strip()}']"
             self._handle_attribute_indicator(attribute, pattern)
@@ -1319,12 +1315,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             pattern = []
             for key, feature in stix2_mapping.registry_key_mapping['features'].items():
                 if attributes.get(key):
-                    value = attributes.pop(key).replace('\\', '\\\\')
+                    value = self._sanitize_registry_key_value(attributes.pop(key))
                     pattern.append(f"{prefix}:{feature} = '{value}'")
             values_prefix = f"{prefix}:values[0]"
             for key, feature in stix2_mapping.registry_key_mapping['values'].items():
                 if attributes.get(key):
-                    pattern.append(f"{values_prefix}.{feature} = '{attributes.pop(key)}'")
+                    value = self._sanitize_registry_key_value(attributes.pop(key))
+                    pattern.append(f"{values_prefix}.{feature} = '{value}'")
             if attributes:
                 pattern.extend(self._handle_pattern_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
@@ -2315,6 +2312,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._warnings.add(f'Unable to parse the pe object related to the file object {file_uuid}.')
         else:
             self._warnings.add(f'The file object {file_uuid} has more than one reference to pe_objects: {", ".join(pe_uuid)}')
+
+    @staticmethod
+    def _sanitize_registry_key_value(value: str) -> str:
+        sanitized = value.strip().replace('\\', '\\\\')
+        if '%' not in sanitized or '\\\\%' in sanitized:
+            return sanitized
+        if '\\%' in sanitized:
+            return sanitized.replace('\\%', '\\\\%')
+        return sanitized.replace('%', '\\\\%')
 
     def _select_pe_object(self, pe_uuid: str) -> dict:
         to_ids, pe_object = self._objects_to_parse['pe'][pe_uuid]
