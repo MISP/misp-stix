@@ -12,12 +12,13 @@ from datetime import datetime
 from stix2.v20.bundle import Bundle
 from stix2.v20.observables import (Artifact, AutonomousSystem, Directory, DomainName,
     EmailAddress, EmailMessage, EmailMIMEComponent, File, IPv4Address, IPv6Address,
-    MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPESection,
-    WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
+    MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPEBinaryExt,
+    WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
 from stix2.v20.sdo import (AttackPattern, Campaign, CourseOfAction, Identity,
     Indicator, IntrusionSet, Malware, ObservedData, Report, ThreatActor, Tool,
     Vulnerability)
 from stix2.v20.sro import Relationship
+from stix2.v20.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
 
 
@@ -49,7 +50,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 'id': report_id,
                 'type': 'report',
                 'published': report_args['modified'],
-                'object_refs': self._object_refs
+                'object_refs': self._object_refs,
+                'allow_custom': True
             }
         )
         return Report(**report_args)
@@ -195,26 +197,34 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_hash_attribute_observable(self, attribute: dict):
+        hash_type = self._define_hash_type(attribute['type'])
+        file_args = {
+            'hashes': {
+                hash_type: attribute['value']
+            }
+        }
+        if hash_type not in HASHING_ALGORITHM:
+            file_args['allow_custom'] = True
         observable_object = {
-            '0': File(
-                hashes={
-                    self._define_hash_type(attribute['type']): attribute['value']
-                }
-            )
+            '0': File(**file_args)
         }
         self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_hash_composite_attribute_observable(self, attribute: dict, hash_type: Optional[str] = None):
         if hash_type is None:
             hash_type = attribute['type'].split('|')[1]
+        hash_type = self._define_hash_type(hash_type)
         filename, hash_value = attribute['value'].split('|')
+        file_args = {
+            'name': filename,
+            'hashes': {
+                hash_type: hash_value
+            }
+        }
+        if hash_type not in HASHING_ALGORITHM:
+            file_args['allow_custom'] = True
         observable_object = {
-            '0': File(
-                name=filename,
-                hashes={
-                    self._define_hash_type(hash_type): hash_value
-                }
-            )
+            '0': File(**file_args)
         }
         self._handle_attribute_observable(attribute, observable_object)
 
@@ -665,7 +675,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return AttackPattern(**attack_pattern_args)
 
     def _create_bundle(self) -> Bundle:
-        return Bundle(self._objects)
+        return Bundle(self._objects, allow_custom=True)
 
     @staticmethod
     def _create_campaign(campaign_args: dict) -> Campaign:
@@ -727,6 +737,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_observed_data(self, args: dict, observable: dict):
         args['objects'] = observable
         self._append_SDO(ObservedData(**args))
+
+    @staticmethod
+    def _create_PE_extension(extension_args: dict) -> WindowsPEBinaryExt:
+        return WindowsPEBinaryExt(**extension_args)
 
     @staticmethod
     def _create_relationship(relationship_args: dict) -> Relationship:

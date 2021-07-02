@@ -13,12 +13,13 @@ from datetime import datetime
 from stix2.v21.bundle import Bundle
 from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, DomainName,
     EmailAddress, EmailMessage, EmailMIMEComponent, File, IPv4Address, IPv6Address,
-    MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPESection,
-    WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
+    MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPEBinaryExt,
+    WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
 from stix2.v21.sdo import (AttackPattern, Campaign, CourseOfAction, Grouping,
     Identity, Indicator, IntrusionSet, Location, Malware, Note, ObservedData, Report,
     ThreatActor, Tool, Vulnerability)
 from stix2.v21.sro import Relationship
+from stix2.v21.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
 
 _OBSERVABLE_OBJECT_TYPES = Union[
@@ -52,7 +53,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 'id': grouping_id,
                 'type': 'grouping',
                 'context': 'suspicious-activity',
-                'object_refs': self._object_refs
+                'object_refs': self._object_refs,
+                'allow_custom': True
             }
         )
         return Grouping(**report_args)
@@ -224,25 +226,33 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [file_object])
 
     def _parse_hash_attribute_observable(self, attribute: dict):
-        file_object = File(
-            id=f"file--{attribute['uuid']}",
-            hashes={
-                self._define_hash_type(attribute['type']): attribute['value']
+        hash_type = self._define_hash_type(attribute['type'])
+        file_args = {
+            'id': f"file--{attribute['uuid']}",
+            'hashes': {
+                hash_type: attribute['value']
             }
-        )
+        }
+        if hash_type not in HASHING_ALGORITHM:
+            file_args['allow_custom'] = True
+        file_object = File(**file_args)
         self._handle_attribute_observable(attribute, [file_object])
 
     def _parse_hash_composite_attribute_observable(self, attribute: dict, hash_type: Optional[str] = None):
         if hash_type is None:
             hash_type = attribute['type'].split('|')[1]
+        hash_type = self._define_hash_type(hash_type)
         filename, hash_value = attribute['value'].split('|')
-        file_object = File(
-            id=f"file--{attribute['uuid']}",
-            name=filename,
-            hashes={
-                self._define_hash_type(hash_type): hash_value
+        file_args = {
+            'id': f"file--{attribute['uuid']}",
+            'name': filename,
+            'hashes': {
+                hash_type: hash_value
             }
-        )
+        }
+        if hash_type not in HASHING_ALGORITHM:
+            file_args['allow_custom'] = True
+        file_object = File(**file_args)
         self._handle_attribute_observable(attribute, [file_object])
 
     def _parse_hostname_port_attribute_observable(self, attribute: dict):
@@ -812,10 +822,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return Identity(**identity_args)
 
     @staticmethod
-    def _create_grouping(grouping_args: dict) -> Grouping:
-        return Grouping(**grouping_args)
-
-    @staticmethod
     def _create_indicator(indicator_args: dict) -> Indicator:
         indicator_args.update(
             {
@@ -846,6 +852,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._append_SDO(ObservedData(**args))
         for observable in observables:
             self._append_SDO(observable)
+
+    @staticmethod
+    def _create_PE_extension(extension_args: dict) -> WindowsPEBinaryExt:
+        return WindowsPEBinaryExt(**extension_args)
 
     @staticmethod
     def _create_relationship(relationship_args: dict) -> Relationship:

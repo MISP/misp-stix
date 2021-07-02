@@ -158,7 +158,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     'id': report_id,
                     'type': 'report',
                     'published': published,
-                    'object_refs': self._object_refs
+                    'object_refs': self._object_refs,
+                    'allow_custom': True
                 }
             )
             return self._create_report(report_args)
@@ -258,6 +259,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'labels': self._create_labels(attribute),
             'number_observed': 1,
             'created_by_ref': self._identity_id,
+            'allow_custom': True,
             'interoperability': True
         }
         observable_args.update(self._handle_observable_time_fields(attribute))
@@ -530,9 +532,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_regkey_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            key = attribute['value']
-            if '\\\\' not in key:
-                key = key.replace('\\', '\\\\')
+            key = self._sanitize_registry_key_value(attribute['value'])
             pattern = f"[{self._create_regkey_pattern(key)}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
@@ -540,9 +540,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_regkey_value_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            key, value = attribute['value'].split('|')
-            if '\\\\' not in key:
-                key = key.replace('\\', '\\\\')
+            key, value = self._sanitize_registry_key_value(attribute['value']).split('|')
             key_pattern = self._create_regkey_pattern(key)
             pattern = f"[{key_pattern} AND windows-registry-key:values.data = '{value.strip()}']"
             self._handle_attribute_indicator(attribute, pattern)
@@ -643,9 +641,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 self._handle_object_indicator(file_object, pattern)
             else:
                 file_args, observable = self._parse_file_observable_object(file_object['Attribute'])
+                extension_args, custom = self._parse_pe_extensions_observable(*args)
                 file_args['extensions'] = {
-                    'windows-pebinary-ext': self._parse_pe_extensions_observable(*args)
+                    'windows-pebinary-ext': extension_args
                 }
+                if 'allow_custom' not in file_args and custom:
+                    file_args['allow_custom'] = custom
                 self._handle_file_observable_objects(file_args, observable)
                 self._handle_object_observable(file_object, observable)
         if self._objects_to_parse.get('pe'):
@@ -667,12 +668,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     pattern = self._parse_pe_extensions_pattern(*args)
                     self._handle_object_indicator(pe_object, pattern)
                 else:
-                    extension_args = self._parse_pe_extensions_observable(*args)
+                    extension_args, custom = self._parse_pe_extensions_observable(*args)
                     file_args = {
                         'extensions': {
                             'windows-pebinary-ext': extension_args
                         }
                     }
+                    if custom:
+                        file_args['allow_custom'] = custom
                     for feature in ('original', 'internal'):
                         if extension_args.get(f'x_misp_{feature}_filename'):
                             file_args['name'] = extension_args[f'x_misp_{feature}_filename']
@@ -1197,6 +1200,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return pattern
 
     def _parse_pe_extensions_observable(self, pe_uuid: str, uuids: Optional[list]=None) -> dict:
+        custom = False
         attributes = self._extract_multiple_object_attributes(
             self._select_pe_object(pe_uuid)['Attribute'],
             force_single=stix2_mapping.pe_object_single_fields
@@ -1212,6 +1216,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if optional_header:
             extension['optional_header'] = optional_header
         if attributes:
+            custom = True
             extension.update(self._handle_observable_multiple_properties(attributes))
         if uuids is not None:
             for section_uuid in uuids:
@@ -1227,9 +1232,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         value = self._select_single_feature(attributes, hash_type)
                         section['hashes'][self._define_hash_type(hash_type)] = value
                 if attributes:
+                    custom = True
                     section.update(self._handle_observable_properties(attributes))
                 extension['sections'].append(self._create_windowsPESection(section))
-        return extension
+        return self._create_PE_extension(extension), custom
 
     def _parse_pe_extensions_pattern(self, pe_uuid: str, uuids: Optional[list]=None) -> list:
         prefix = "file:extensions.'windows-pebinary-ext'"
@@ -1309,12 +1315,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             pattern = []
             for key, feature in stix2_mapping.registry_key_mapping['features'].items():
                 if attributes.get(key):
-                    value = attributes.pop(key).replace('\\', '\\\\')
+                    value = self._sanitize_registry_key_value(attributes.pop(key))
                     pattern.append(f"{prefix}:{feature} = '{value}'")
             values_prefix = f"{prefix}:values[0]"
             for key, feature in stix2_mapping.registry_key_mapping['values'].items():
                 if attributes.get(key):
-                    pattern.append(f"{values_prefix}.{feature} = '{attributes.pop(key)}'")
+                    value = self._sanitize_registry_key_value(attributes.pop(key))
+                    pattern.append(f"{values_prefix}.{feature} = '{value}'")
             if attributes:
                 pattern.extend(self._handle_pattern_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
@@ -1652,7 +1659,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             if cluster.get('meta', {}).get('external_id'):
                 references = self._handle_external_references(cluster['meta']['external_id'])
-                attack_pattern_args['external_references'] = references
+                course_of_action_args['external_references'] = references
             course_of_action = self._create_course_of_action(course_of_action_args)
             self._objects.append(course_of_action)
             object_refs.append(course_of_action_id)
@@ -1683,7 +1690,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             if cluster.get('meta', {}).get('external_id'):
                 references = self._handle_external_references(cluster['meta']['external_id'])
-                attack_pattern_args['external_references'] = references
+                intrusion_set_args['external_references'] = references
             if cluster.get('meta', {}).get('synonyms'):
                 intrusion_set_args['aliases'] = cluster['meta']['synonyms']
             intrusion_set = self._create_intrusion_set(intrusion_set_args)
@@ -1716,7 +1723,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             if cluster.get('meta', {}).get('external_id'):
                 references = self._handle_external_references(cluster['meta']['external_id'])
-                attack_pattern_args['external_references'] = references
+                malware_args['external_references'] = references
             malware = self._create_malware(malware_args, cluster)
             self._objects.append(malware)
             object_refs.append(malware_id)
@@ -1777,7 +1784,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             if cluster.get('meta', {}).get('external_id'):
                 references = self._handle_external_references(cluster['meta']['external_id'])
-                attack_pattern_args['external_references'] = references
+                tool_args['external_references'] = references
             tool = self._create_tool_from_galaxy(tool_args, cluster)
             self._objects.append(tool)
             object_refs.append(tool_id)
@@ -1808,8 +1815,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             if cluster.get('meta', {}).get('aliases'):
                 references = self._handle_external_references(cluster['meta']['aliases'])
-                if references:
-                    vulnerability_args['external_references'] = references
+                vulnerability_args['external_references'] = references
             vulnerability = self._create_vulnerability(vulnerability_args)
             self._objects.append(vulnerability)
             object_refs.append(vulnerability_id)
@@ -2176,7 +2182,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _clean_custom_properties(custom_args: dict):
         stix_labels = ListProperty(StringProperty)
-        stix_labels.clean(custom_args['labels'])
+        stix_labels.clean(custom_args['labels'], True)
         if custom_args.get('markings'):
             stix_markings = ListProperty(StringProperty)
             stix_markings.clean(custom_args['markings'])
@@ -2268,7 +2274,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'target_ref': target_id,
                 'relationship_type': relationship_type,
                 'created': timestamp,
-                'modified': timestamp
+                'modified': timestamp,
+                'allow_custom': True
             }
         )
 
@@ -2280,7 +2287,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             relationship = {
                 'source_ref': source_id,
                 'undefined_target_ref': referenced_uuid,
-                'relationship_type': reference['relationship_type']
+                'relationship_type': reference['relationship_type'],
+                'allow_custom': True
             }
             if reference.get('timestamp'):
                 reference_timestamp = self._datetime_from_timestamp(reference['timestamp'])
@@ -2304,6 +2312,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._warnings.add(f'Unable to parse the pe object related to the file object {file_uuid}.')
         else:
             self._warnings.add(f'The file object {file_uuid} has more than one reference to pe_objects: {", ".join(pe_uuid)}')
+
+    @staticmethod
+    def _sanitize_registry_key_value(value: str) -> str:
+        sanitized = value.strip().replace('\\', '\\\\')
+        if '%' not in sanitized or '\\\\%' in sanitized:
+            return sanitized
+        if '\\%' in sanitized:
+            return sanitized.replace('\\%', '\\\\%')
+        return sanitized.replace('%', '\\\\%')
 
     def _select_pe_object(self, pe_uuid: str) -> dict:
         to_ids, pe_object = self._objects_to_parse['pe'][pe_uuid]

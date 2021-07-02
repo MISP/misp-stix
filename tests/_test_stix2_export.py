@@ -344,3 +344,12 @@ class TestSTIX2Export(unittest.TestCase):
             for feature in ('category', 'comment', 'to_ids', 'uuid'):
                 if attribute.get(feature):
                     self.assertEqual(custom_attribute[feature], attribute[feature])
+
+    @staticmethod
+    def _sanitize_registry_key_value(value: str) -> str:
+        sanitized = value.strip().replace('\\', '\\\\')
+        if '%' not in sanitized or '\\\\%' in sanitized:
+            return sanitized
+        if '\\%' in sanitized:
+            return sanitized.replace('\\%', '\\\\%')
+        return sanitized.replace('%', '\\\\%')

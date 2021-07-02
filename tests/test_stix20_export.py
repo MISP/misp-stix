@@ -792,12 +792,9 @@ class TestSTIX20Export(TestSTIX2Export):
         event = get_event_with_regkey_value_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         key, value = attribute_value.split('|')
-        key_pattern = f"windows-registry-key:key = '{key.strip()}'"
-        value_pattern = f"windows-registry-key:values.data = '{value.strip()}'"
-        self.assertEqual(
-            pattern.replace('\\\\', '\\'),
-            f"[{key_pattern} AND {value_pattern}]"
-        )
+        key_pattern = f"windows-registry-key:key = '{self._sanitize_registry_key_value(key)}'"
+        value_pattern = f"windows-registry-key:values.data = '{self._sanitize_registry_key_value(value)}'"
+        self.assertEqual(pattern, f"[{key_pattern} AND {value_pattern}]")
 
     def test_event_with_regkey_value_observable_attribute(self):
         event = get_event_with_regkey_value_attribute()
@@ -1500,7 +1497,7 @@ class TestSTIX20Export(TestSTIX2Export):
         key = _key.replace('\\', '\\\\')
         self.assertEqual(key_, f"windows-registry-key:key = '{key}'")
         self.assertEqual(modified_, f"windows-registry-key:modified = '{_modified}'")
-        self.assertEqual(data_, f"windows-registry-key:values[0].data = '{_data}'")
+        self.assertEqual(data_, f"windows-registry-key:values[0].data = '{self._sanitize_registry_key_value(_data)}'")
         self.assertEqual(data_type_, f"windows-registry-key:values[0].data_type = '{_data_type}'")
         self.assertEqual(name_, f"windows-registry-key:values[0].name = '{_name}'")
         self.assertEqual(hive_, f"windows-registry-key:x_misp_hive = '{_hive}'")
