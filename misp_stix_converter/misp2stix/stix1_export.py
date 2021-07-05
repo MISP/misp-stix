@@ -24,16 +24,16 @@ class Stix1ExportParser(ExportParser):
         self._namespace = idgen.get_id_namespace_alias()
 
     def generate_stix1_package(self, version):
-        if self._json_event.get('response'):
+        if self._json_content.get('response'):
             self._stix_package = STIXPackage()
             self._stix_package.version = version
-            for event in self._json_event['response']:
+            for event in self._json_content['response']:
                 package_generator = MISPtoSTIX1Parser(self._orgname)
                 package_generator.parse_misp_event(event, version)
                 self._stix_package.add_related_package(package_generator.stix_package)
         else:
             package_generator = MISPtoSTIX1Parser(self._namespace, self._orgname)
-            package_generator.parse_misp_event(self._json_event, version)
+            package_generator.parse_misp_event(self._json_content, version)
             self._stix_package = package_generator.stix_package
 
     @property

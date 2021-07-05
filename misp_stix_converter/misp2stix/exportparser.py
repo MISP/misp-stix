@@ -13,7 +13,7 @@ from typing import Optional
 class ExportParser():
     def load_file(self, filename):
         with open(filename, 'rt', encoding='utf-8') as f:
-            self._json_event = json.loads(f.read())
+            self._json_content = json.loads(f.read())
 
 
 class MISPtoSTIXParser():

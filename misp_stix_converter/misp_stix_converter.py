@@ -6,8 +6,7 @@ import re
 from stix2.base import STIXJSONEncoder
 from .misp2stix.framing import stix_xml_separator
 from .misp2stix.stix1_export import Stix1ExportParser
-from .misp2stix.stix20_export import Stix20ExportParser
-from .misp2stix.stix21_export import Stix21ExportParser
+from .misp2stix.stix2_export import Stix20ExportParser, Stix21ExportParser
 
 _default_namespace = 'https://github.com/MISP/MISP'
 _default_org = 'MISP'
