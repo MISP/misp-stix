@@ -30,19 +30,50 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._interoperability = interoperability
         self._ids = {}
 
+    def parse_json_content(self, filename: str):
+        with open(filename, 'rt', encoding='utf-8') as f:
+            json_content = json.loads(f.read())
+        if json_content.get('response'):
+            json_content = json_content['response']
+            if isinstance(json_content, list):
+                self._index = 0
+                self._objects = []
+                for event in json_content:
+                    self._parse_misp_event(event)
+                    self._index = len(self._objects)
+            else:
+                self.parse_misp_attributes(json_content)
+        else:
+            self.parse_misp_event(json_content)
+
+    def parse_misp_attributes(self, attributes: dict):
+        if 'Attribute' in attributes:
+            attributes = attributes['Attribute']
+        self._objects = []
+        self._identity_id = stix2_mapping.misp_identity_args['id']
+        if self._identity_id not in self._ids:
+            identity = self._create_identity(stix2_mapping.misp_identity_args)
+            self._objects.append(identity)
+            self._ids[self._identity_id] = self._identity_id
+        for attribute in attributes:
+            self._resolve_attribute(attribute)
+
     def parse_misp_event(self, misp_event: dict):
+        self._index = 0
+        self._objects = []
+        self._parse_misp_event(misp_event)
+
+    def _parse_misp_event(self, misp_event: dict):
         if 'Event' in misp_event:
             misp_event = misp_event['Event']
         self._misp_event = misp_event
-        self._custom_objects = {}
-        self._links = []
         self._markings = {}
-        self._objects = []
         self._object_refs = []
         self._relationships = []
-        self._index = self._set_identity()
+        self._set_identity()
         if self._misp_event.get('Attribute'):
-            self._resolve_attributes()
+            for attribute in self._misp_event['Attribute']:
+                self._resolve_attribute(attribute)
         if self._misp_event.get('Object'):
             self._objects_to_parse = defaultdict(dict)
             self._resolve_objects()
@@ -216,17 +247,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
     ################################################################################
 
-    def _resolve_attributes(self):
-        for attribute in self._misp_event['Attribute']:
-            attribute_type = attribute['type']
-            try:
-                if attribute_type in stix2_mapping.attribute_types_mapping:
-                    getattr(self, stix2_mapping.attribute_types_mapping[attribute_type])(attribute)
-                else:
-                    self._parse_custom_attribute(attribute)
-                    self._warnings.add(f'MISP Attribute type {attribute_type} not mapped.')
-            except Exception:
-                self._errors.append(f"Error with the {attribute_type} attribute: {attribute['value']}.")
+    def _resolve_attribute(self, attribute: dict):
+        attribute_type = attribute['type']
+        try:
+            if attribute_type in stix2_mapping.attribute_types_mapping:
+                getattr(self, stix2_mapping.attribute_types_mapping[attribute_type])(attribute)
+            else:
+                self._parse_custom_attribute(attribute)
+                self._warnings.add(f'MISP Attribute type {attribute_type} not mapped.')
+        except Exception:
+            self._errors.append(f"Error with the {attribute_type} attribute: {attribute['value']}.")
 
     def _handle_attribute_indicator(self, attribute: dict, pattern: str):
         indicator_id = f"indicator--{attribute['uuid']}"
@@ -1878,8 +1908,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._ids[orgc_id] = self._identity_id
             identity = self._create_identity_object(orgc['name'])
             self._objects.append(identity)
-            return 1
-        return 0
+            self._index += 1
 
     ################################################################################
     #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #

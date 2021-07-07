@@ -3,13 +3,62 @@
 
 import json
 import re
-from stix2.base import STIXJSONEncoder
 from .misp2stix.framing import stix_xml_separator
-from .misp2stix.stix1_export import Stix1ExportParser
-from .misp2stix.stix2_export import Stix20ExportParser, Stix21ExportParser
+from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
+from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
+from stix2.base import STIXJSONEncoder
+from stix2.v20 import Bundle as Bundle_v20
+from stix2.v21 import Bundle as Bundle_v21
+from typing import List
 
 _default_namespace = 'https://github.com/MISP/MISP'
 _default_org = 'MISP'
+
+
+def misp_collection_to_stix2_0(output_filename: str, *input_files: List[str], in_memory: bool=False):
+    parser = MISPtoSTIX20Parser()
+    if in_memory or len(input_files) == 1:
+        objects = []
+        for filename in input_files:
+            parser.parse_json_content(filename)
+            objects.extend(parser.stix_objects)
+        with open(output_filename, 'wt', encoding='utf-8') as f:
+            f.write(json.dumps(Bundle_v20(objects), cls=STIXJSONEncoder, indent=4))
+        return 1
+    with open(output_filename, 'wt', encoding='utf-8') as f:
+        f.write(f'{json.dumps(Bundle_v20(), cls=STIXJSONEncoder, indent=4)[:-2]},\n    "objects": [\n')
+    for filename in input_files[:-1]:
+        parser.parse_json_content(filename)
+        with open(output_filename, 'at', encoding='utf-8') as f:
+            f.write(f'{json.dumps([parser.stix_objects], cls=STIXJSONEncoder, indent=4)[8:-8]},\n')
+    parser.parse_json_content(input_files[-1])
+    with open(output_filename, 'at', encoding='utf-8') as f:
+        footer = '    ]\n}'
+        f.write(f'{json.dumps([parser.stix_objects], cls=STIXJSONEncoder, indent=4)[8:-8]}\n{footer}')
+    return 1
+
+
+def misp_collection_to_stix2_1(output_filename: str, *input_files: List[str], in_memory: bool=False):
+    parser = MISPtoSTIX21Parser()
+    if in_memory or len(input_files) == 1:
+        objects = []
+        for filename in input_files:
+            parser.parse_json_content(filename)
+            objects.extend(parser.stix_objects)
+        with open(output_filename, 'wt', encoding='utf-8') as f:
+            f.write(json.dumps(Bundle_v21(objects), cls=STIXJSONEncoder, indent=4))
+        return 1
+    with open(output_filename, 'wt', encoding='utf-8') as f:
+        f.write(f'{json.dumps(Bundle_v21(), cls=STIXJSONEncoder, indent=4)[:-2]},\n    "objects": [\n')
+    for filename in input_files[:-1]:
+        parser.parse_json_content(filename)
+        with open(output_filename, 'at', encoding='utf-8') as f:
+            f.write(f'{json.dumps([parser.stix_objects], cls=STIXJSONEncoder, indent=4)[8:-8]},\n')
+    parser.parse_json_content(input_files[-1])
+    with open(output_filename, 'at', encoding='utf-8') as f:
+        footer = '    ]\n}'
+        f.write(f'{json.dumps([parser.stix_objects], cls=STIXJSONEncoder, indent=4)[8:-8]}\n{footer}')
+    return 1
 
 
 def misp_to_stix1(filename, return_format, version, include_namespaces = False, namespace=_default_namespace, org=_default_org):
@@ -26,18 +75,16 @@ def misp_to_stix1(filename, return_format, version, include_namespaces = False, 
 
 
 def misp_to_stix2_0(filename):
-    parser = Stix20ExportParser()
-    parser.load_file(filename)
-    parser.generate_stix20_bundle()
+    parser = MISPtoSTIX20Parser()
+    parser.parse_json_content(filename)
     with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
         f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
     return 1
 
 
 def misp_to_stix2_1(filename):
-    parser = Stix21ExportParser()
-    parser.load_file(filename)
-    parser.generate_stix21_bundle()
+    parser = MISPtoSTIX21Parser()
+    parser.parse_json_content(filename)
     with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
         f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
     return 1

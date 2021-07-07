@@ -10,12 +10,6 @@ from stix.indicator import Indicator
 from typing import Optional
 
 
-class ExportParser():
-    def load_file(self, filename):
-        with open(filename, 'rt', encoding='utf-8') as f:
-            self._json_content = json.loads(f.read())
-
-
 class MISPtoSTIXParser():
     __published_fields = ('published', 'publish_timestamp')
 
