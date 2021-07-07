@@ -1,0 +1,88 @@
+{
+    "id": "bundle--460f8b28-6635-4747-92f0-bd808cf63f58",
+    "type": "bundle",
+    "spec_version": "2.0",
+    "objects": [
+        {
+            "type": "identity",
+            "id": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "MISP-Project",
+            "identity_class": "organization"
+        },
+        {
+            "name": "MISP-STIX-Converter test event with AS attribute",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "labels": [
+                "Threat-Report",
+                "misp:tool=\"MISP-STIX-Converter\""
+            ],
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "id": "report--e2e6a6ea-f69b-4d93-8564-f51d67cafe51",
+            "type": "report",
+            "published": "2020-10-25T16:22:00Z",
+            "object_refs": [
+                "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544"
+            ]
+        },
+        {
+            "id": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+            "type": "observed-data",
+            "labels": [
+                "misp:type=\"AS\"",
+                "misp:category=\"Network activity\""
+            ],
+            "number_observed": 1,
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "objects": {
+                "0": {
+                    "number": 174,
+                    "type": "autonomous-system"
+                }
+            }
+        },
+        {
+            "name": "MISP-STIX-Converter test event with domain attribute",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "labels": [
+                "Threat-Report",
+                "misp:tool=\"MISP-STIX-Converter\""
+            ],
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "id": "report--d402185f-c129-4f65-8678-43edb2cee1cf",
+            "type": "report",
+            "published": "2020-10-25T16:22:00Z",
+            "object_refs": [
+                "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb"
+            ]
+        },
+        {
+            "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+            "type": "indicator",
+            "labels": [
+                "misp:type=\"domain\"",
+                "misp:category=\"Network activity\"",
+                "misp:to_ids=\"True\""
+            ],
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+            "pattern": "[domain-name:value = 'circl.lu']",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "description": "Domain test attribute"
+        }
+    ]
+}

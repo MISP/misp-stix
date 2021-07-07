@@ -1,0 +1,24 @@
+{
+    "response": {
+        "Attribute": [
+            {
+                "uuid": "726f90e2-2ad6-44a2-b345-c05e55e850e5",
+                "type": "domain|ip",
+                "category": "Network activity",
+                "value": "circl.lu|149.13.33.14",
+                "timestamp": "1603642920",
+                "comment": "Domain|ip test attribute",
+                "to_ids": true
+            },
+            {
+                "uuid": "02de0847-dccf-481a-a96a-6a7654328658",
+                "type": "filename",
+                "category": "Payload delivery",
+                "value": "test_file_name",
+                "timestamp": "1603642920",
+                "comment": "Filename test attribute",
+                "to_ids": true
+            }
+        ]
+    }
+}

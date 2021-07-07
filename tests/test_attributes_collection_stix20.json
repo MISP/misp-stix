@@ -1,0 +1,98 @@
+{
+    "id": "bundle--460f8b28-6635-4747-92f0-bd808cf63f58",
+    "type": "bundle",
+    "spec_version": "2.0",
+    "objects": [
+        {
+            "id": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "type": "identity",
+            "identity_class": "organization",
+            "name": "MISP",
+            "created": "2015-09-14T15:40:21.000Z",
+            "modified": "2015-09-14T15:40:21.000Z"
+        },
+        {
+            "id": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+            "type": "observed-data",
+            "labels": [
+                "misp:type=\"AS\"",
+                "misp:category=\"Network activity\""
+            ],
+            "number_observed": 1,
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "first_observed": "2020-10-25T16:22:00Z",
+            "last_observed": "2020-10-25T16:22:00Z",
+            "objects": {
+                "0": {
+                    "number": 174,
+                    "type": "autonomous-system"
+                }
+            }
+        },
+        {
+            "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+            "type": "indicator",
+            "labels": [
+                "misp:type=\"domain\"",
+                "misp:category=\"Network activity\"",
+                "misp:to_ids=\"True\""
+            ],
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "pattern": "[domain-name:value = 'circl.lu']",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "description": "Domain test attribute"
+        },
+        {
+            "id": "indicator--726f90e2-2ad6-44a2-b345-c05e55e850e5",
+            "type": "indicator",
+            "labels": [
+                "misp:type=\"domain|ip\"",
+                "misp:category=\"Network activity\"",
+                "misp:to_ids=\"True\""
+            ],
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Network activity"
+                }
+            ],
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "description": "Domain|ip test attribute"
+        },
+        {
+            "id": "indicator--02de0847-dccf-481a-a96a-6a7654328658",
+            "type": "indicator",
+            "labels": [
+                "misp:type=\"filename\"",
+                "misp:category=\"Payload delivery\"",
+                "misp:to_ids=\"True\""
+            ],
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "Payload delivery"
+                }
+            ],
+            "created_by_ref": "identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f",
+            "pattern": "[file:name = 'test_file_name']",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "valid_from": "2020-10-25T16:22:00Z",
+            "description": "Filename test attribute"
+        }
+    ]
+}

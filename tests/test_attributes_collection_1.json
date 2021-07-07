@@ -1,0 +1,22 @@
+{
+    "response": {
+        "Attribute": [
+            {
+                "uuid": "2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+                "type": "AS",
+                "category": "Network activity",
+                "timestamp": "1603642920",
+                "value": "AS174"
+            },
+            {
+                "uuid": "4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+                "type": "domain",
+                "category": "Network activity",
+                "value": "circl.lu",
+                "timestamp": "1603642920",
+                "comment": "Domain test attribute",
+                "to_ids": true
+            }
+        ]
+    }
+}
