@@ -14,7 +14,7 @@ class TestCollectionSTIX2Export(unittest.TestCase):
         self._current_path = Path(__file__).parent
 
     def tearDown(self):
-        for filename in self._current_path.glob('test_events_collection*.json.out'):
+        for filename in self._current_path.glob('test_*_collection*.json.out'):
             os.remove(filename)
 
     def _check_results_export(self, to_test_name, reference_name):
