@@ -773,6 +773,13 @@ domain_family_enum_list = (
     "PF_NETROM"
 )
 
+misp_identity_args = {
+    'id': 'identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f',
+    'type': 'identity',
+    'identity_class': 'organization',
+    'name': 'MISP'
+}
+
 socket_type_enum_list = (
     "SOCK_STREAM",
     "SOCK_DGRAM",
