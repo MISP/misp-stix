@@ -6,26 +6,24 @@ import os
 import unittest
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX20Parser, MISPtoSTIX21Parser
+from pathlib import Path
 
 
 class TestCollectionSTIX2Export(unittest.TestCase):
     def setUp(self):
-        self._current_path = os.path.dirname(os.path.realpath(__file__))
+        self._current_path = Path(__file__).parent
 
     def tearDown(self):
-        for filename in self._filenames:
-            os.remove(f'{filename}.out')
+        for filename in self._current_path.glob('test_events_collection*.json.out'):
+            os.remove(filename)
 
-    def _run_collection_test(self, version):
-        name = 'test_events_collection'
-        self._filenames = tuple(f"{self._current_path}/{name}_{n}.json" for n in (1, 2))
-        bundles = self._check_misp_to_stix_export()
-        stix_objects = []
-        for bundle in bundles:
-            stix_objects.extend(bundle['objects'])
-        with open(f'{self._current_path}/{name}_{version}.json', 'rt', encoding='utf-8') as f:
-            bundle = json.loads(f.read())
-        self.assertEqual(bundle['objects'], stix_objects)
+    def _check_results_export(self, to_test_name, reference_name):
+        with open(self._current_path / to_test_name, 'rt', encoding='utf-8') as f:
+            to_test = json.loads(f.read())
+        print(json.dumps(to_test, indent=4))
+        with open(self._current_path / reference_name, 'rt', encoding='utf-8') as f:
+            reference = json.loads(f.read())
+        self.assertEqual(reference['objects'], to_test['objects'])
 
 
 class TestSTIX2Export(unittest.TestCase):

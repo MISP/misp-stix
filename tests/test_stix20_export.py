@@ -3,7 +3,7 @@
 
 import json
 from datetime import datetime
-from misp_stix_converter import MISPtoSTIX20Parser, misp_to_stix2_0
+from misp_stix_converter import MISPtoSTIX20Parser, misp_collection_to_stix2_0, misp_to_stix2_0
 from .test_events import *
 from ._test_stix2_export import TestCollectionSTIX2Export, TestSTIX2Export
 
@@ -1759,12 +1759,13 @@ class TestSTIX20Export(TestSTIX2Export):
         self._check_galaxy_features(vulnerability, galaxy, timestamp, False, False)
 
 class TestCollectionStix20Export(TestCollectionSTIX2Export):
-    def _check_misp_to_stix_export(self):
-        for filename in self._filenames:
-            return_code = misp_to_stix2_0(filename)
-            self.assertEqual(return_code, 1)
-            with open(f'{filename}.out', 'rt', encoding='utf-8') as f:
-                yield json.loads(f.read())
-
     def test_events_collection(self):
-        self._run_collection_test('stix20')
+        name = 'test_events_collection'
+        to_test_name = f'{name}.json.out'
+        reference_name = f'{name}_stix20.json'
+        output_file = self._current_path / to_test_name
+        input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
+        self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files), 1)
+        self._check_results_export(to_test_name, reference_name)
+        self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files, in_memory=True), 1)
+        self._check_results_export(to_test_name, reference_name)
