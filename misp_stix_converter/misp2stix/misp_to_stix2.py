@@ -643,42 +643,43 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 self._warnings.add(f'MISP Object name {object_name} not mapped.')
 
     def _resolve_objects_to_parse(self):
-        for file_uuid, misp_object in self._objects_to_parse['file'].items():
-            file_ids, file_object = misp_object
-            pe_uuid = self._fetch_included_reference_uuids(file_object['ObjectReference'], 'pe')
-            if len(pe_uuid) != 1:
-                self._raise_file_and_pe_references_warning(file_uuid, pe_uuid)
-                if file_ids:
+        if self._objects_to_parse.get('file'):
+            for file_uuid, misp_object in self._objects_to_parse['file'].items():
+                file_ids, file_object = misp_object
+                pe_uuid = self._fetch_included_reference_uuids(file_object['ObjectReference'], 'pe')
+                if len(pe_uuid) != 1:
+                    self._raise_file_and_pe_references_warning(file_uuid, pe_uuid)
+                    if file_ids:
+                        pattern = self._parse_file_object_pattern(file_object['Attribute'])
+                        self._handle_object_indicator(file_object, pattern)
+                    else:
+                        self._parse_file_object_observable(file_object)
+                    continue
+                pe_uuid = pe_uuid[0]
+                pe_ids, pe_object = self._objects_to_parse['pe'][pe_uuid]
+                ids_list = [file_ids, pe_ids]
+                args = [pe_uuid]
+                if pe_object.get('ObjectReference'):
+                    ids_list.extend(
+                        self._handle_pe_object_reference(
+                            pe_object['ObjectReference'],
+                            args
+                        )
+                    )
+                if True in ids_list:
                     pattern = self._parse_file_object_pattern(file_object['Attribute'])
+                    pattern.extend(self._parse_pe_extensions_pattern(*args))
                     self._handle_object_indicator(file_object, pattern)
                 else:
-                    self._parse_file_object_observable(file_object)
-                continue
-            pe_uuid = pe_uuid[0]
-            pe_ids, pe_object = self._objects_to_parse['pe'][pe_uuid]
-            ids_list = [file_ids, pe_ids]
-            args = [pe_uuid]
-            if pe_object.get('ObjectReference'):
-                ids_list.extend(
-                    self._handle_pe_object_reference(
-                        pe_object['ObjectReference'],
-                        args
-                    )
-                )
-            if True in ids_list:
-                pattern = self._parse_file_object_pattern(file_object['Attribute'])
-                pattern.extend(self._parse_pe_extensions_pattern(*args))
-                self._handle_object_indicator(file_object, pattern)
-            else:
-                file_args, observable = self._parse_file_observable_object(file_object['Attribute'])
-                extension_args, custom = self._parse_pe_extensions_observable(*args)
-                file_args['extensions'] = {
-                    'windows-pebinary-ext': extension_args
-                }
-                if 'allow_custom' not in file_args and custom:
-                    file_args['allow_custom'] = custom
-                self._handle_file_observable_objects(file_args, observable)
-                self._handle_object_observable(file_object, observable)
+                    file_args, observable = self._parse_file_observable_object(file_object['Attribute'])
+                    extension_args, custom = self._parse_pe_extensions_observable(*args)
+                    file_args['extensions'] = {
+                        'windows-pebinary-ext': extension_args
+                    }
+                    if 'allow_custom' not in file_args and custom:
+                        file_args['allow_custom'] = custom
+                    self._handle_file_observable_objects(file_args, observable)
+                    self._handle_object_observable(file_object, observable)
         if self._objects_to_parse.get('pe'):
             for pe_uuid, misp_object in self._objects_to_parse['pe'].items():
                 try:
