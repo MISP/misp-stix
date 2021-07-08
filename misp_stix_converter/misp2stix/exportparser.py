@@ -12,6 +12,7 @@ from typing import Optional
 
 class MISPtoSTIXParser():
     __published_fields = ('published', 'publish_timestamp')
+    __PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
 
     def __init__(self):
         super().__init__()
@@ -125,6 +126,11 @@ class MISPtoSTIXParser():
 
     def _is_published(self) -> bool:
         return all(self._misp_event.get(feature) for feature in self.__published_fields)
+
+    def _is_reference_included(self, reference: dict, name: str) -> bool:
+        if reference['relationship_type'] not in self.__PE_RELATIONSHIP_TYPES:
+            return False
+        return 'Object' in reference and reference['Object'].get('name') == name
 
     @staticmethod
     def _merge_galaxy_clusters(galaxies: dict, galaxy: dict):

@@ -2293,10 +2293,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _handle_value_for_pattern(attribute_value: str) -> str:
         return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
 
-    @staticmethod
-    def _is_reference_included(reference: dict, name: str) -> bool:
-        return reference['relationship_type'] in ('includes', 'included-in') and reference['Object']['name'] == name
-
     def _parse_galaxy_relationship(self, source_id: str, target_id: str, relationship_type: str, timestamp: datetime):
         self._relationships.append(
             {

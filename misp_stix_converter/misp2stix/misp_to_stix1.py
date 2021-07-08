@@ -80,7 +80,6 @@ _OBSERVABLE_OBJECT_TYPES = Union[
     File, Hostname, HTTPSession, Mutex, Pipe, Port, SocketAddress, System,
     URI, WinRegistryKey, WinService, X509Certificate
 ]
-_PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
 
 
 class MISPtoSTIX1Parser(MISPtoSTIXParser):
@@ -706,24 +705,16 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             return True
         if object_name == 'file' and misp_object.get('ObjectReference'):
             for reference in misp_object['ObjectReference']:
-                if self._check_references_fields(reference, ('includes', 'included-in'), 'pe'):
+                if self._is_reference_included(reference, 'pe'):
                     self._objects_to_parse[object_name][misp_object['uuid']] = misp_object
                     return True
         return False
 
-    def _check_reference(self, reference: dict, relationship_types: tuple, object_name: str) -> bool:
-        if self._check_references_fields(reference, relationship_types, object_name):
+    def _check_reference(self, reference: dict, object_name: str) -> bool:
+        if self._is_reference_included(reference, object_name):
             if reference['referenced_uuid'] not in self._objects_to_parse[object_name]:
                 self._warnings.add(f"Reference to a non existing {object_name} object: {reference['referenced_uuid']}")
                 return False
-            return True
-        return False
-
-    @staticmethod
-    def _check_references_fields(reference: dict, relationship_types: tuple, object_name: str) -> bool:
-        if reference['relationship_type'] not in relationship_types:
-            return False
-        if reference.get('Object') and reference['Object']['name'] == object_name:
             return True
         return False
 
@@ -1050,7 +1041,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         file_object = WinExecutableFile()
         self._parse_file_attributes(attributes, file_object)
         for reference in misp_object['ObjectReference']:
-            if self._check_reference(reference, _PE_RELATIONSHIP_TYPES, 'pe'):
+            if self._check_reference(reference, 'pe'):
                 misp_pe = self._objects_to_parse['pe'].pop(reference['referenced_uuid'])
                 ids_list.extend(self._parse_pe_object(file_object, misp_pe))
                 break
@@ -1197,7 +1188,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 file_object.headers.file_header.hashes = hashlist
         if misp_pe.get('ObjectReference'):
             for reference in misp_pe['ObjectReference']:
-                if self._check_reference(reference, _PE_RELATIONSHIP_TYPES, 'pe-section'):
+                if self._check_reference(reference, 'pe-section'):
                     misp_pe_section = self._objects_to_parse['pe-section'][reference['referenced_uuid']]
                     ids_list.append(
                         self._fetch_ids_flags(misp_pe_section['Attribute'])
