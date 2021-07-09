@@ -83,9 +83,12 @@ _OBSERVABLE_OBJECT_TYPES = Union[
 
 
 class MISPtoSTIX1Parser(MISPtoSTIXParser):
-    def __init__(self, orgname: str):
-        super().__init__()
-        self._orgname = orgname
+    def __init__(self, orgname: str, version: str, interoperability: bool=False):
+        super().__init__(interoperability)
+        self._default_orgname = orgname
+        self._version = version
+
+    def parse_misp_event(self, misp_event: dict):
         self._header_comment = []
         self._objects_to_parse = defaultdict(dict)
         self._contextualised_data = defaultdict(dict)
@@ -93,12 +96,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         self._threat_actors = {}
         self._ttps = {}
         self._ttp_references = {}
-
-    def parse_misp_event(self, misp_event: dict, version: str):
         if 'Event' in misp_event:
             misp_event = misp_event['Event']
         self._misp_event = misp_event
-        self._stix_package = self._create_stix_package(version)
+        self._orgname = self._set_creator()
+        self._stix_package = self._create_stix_package()
         self._incident = self._create_incident()
         self._generate_stix_objects()
         if 'course_of_action' in self._contextualised_data:
@@ -157,11 +159,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         incident.time = incident_time
         return incident
 
-    def _create_stix_package(self, version: str) -> STIXPackage:
+    def _create_stix_package(self) -> STIXPackage:
         package_id = f"{self._orgname}:STIXPackage-{self._misp_event['uuid']}"
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
         stix_package = STIXPackage(id_=package_id, timestamp=timestamp)
-        stix_package.version = version
+        stix_package.version = self._version
         return stix_package
 
     def _generate_stix_objects(self):
@@ -178,7 +180,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         if self._misp_event.get('analysis'):
             status = stix1_mapping.status_mapping[int(self._misp_event['analysis'])]
             self._incident.status = IncidentStatus(status)
-        self.orgc_name = self._set_creator()
         self._incident.information_source = self._set_producer()
         self._incident.reporter = self._set_reporter()
         if self._misp_event.get('Attribute'):
@@ -2049,9 +2050,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         return color_value
 
     def _set_creator(self) -> str:
-        if self._misp_event.get('Orgc'):
+        if self._misp_event.get('Orgc') and self._misp_event['Orgc'].get('name'):
             return self._misp_event['Orgc']['name']
-        return self._orgname
+        if self._misp_event.get('Org') and self._misp_event['Org'].get('name'):
+            return self._misp_event['Org']['name']
+        return self._default_orgname
 
     @staticmethod
     def _set_group_list(
@@ -2097,7 +2100,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         return 'Malware Artifacts'
 
     def _set_producer(self) -> Identity:
-        identity = Identity(name=self.orgc_name)
+        identity = Identity(name=self._orgname)
         return self._create_information_source(identity)
 
     def _set_reporter(self) -> Identity:

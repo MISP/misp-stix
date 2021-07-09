@@ -14,8 +14,8 @@ class MISPtoSTIXParser():
     __published_fields = ('published', 'publish_timestamp')
     __PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, interoperability: bool):
+        self._interoperability = interoperability
         self._errors = []
         self._warnings = set()
 
