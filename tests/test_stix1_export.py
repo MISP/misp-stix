@@ -33,8 +33,6 @@ misp_reghive = {
 
 
 class TestStix1Export(unittest.TestCase):
-    def setUp(self):
-        self.parser = MISPtoSTIX1Parser(_DEFAULT_ORGNAME)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
@@ -533,61 +531,11 @@ class TestStix1Export(unittest.TestCase):
             for attribute in misp_object['Attribute']:
                 attribute['to_ids'] = False
 
-    ################################################################################
-    #                              EVENT FIELDS TESTS                              #
-    ################################################################################
-
-    def test_base_event(self):
-        event = get_base_event()
-        uuid = event['Event']['uuid']
-        info = event['Event']['info']
-        self.parser.parse_misp_event(event, '1.1.1')
-        stix_package = self.parser.stix_package
-        self.assertEqual(stix_package.id_, f"{_DEFAULT_ORGNAME}:STIXPackage-{uuid}")
-        self.assertEqual(
-            self._get_utc_timestamp(stix_package.timestamp),
-            int(event['Event']['timestamp'])
-        )
-        self.assertEqual(stix_package.version, '1.1.1')
-        self.assertEqual(stix_package.stix_header.title, f"Export from {_DEFAULT_ORGNAME}'s MISP")
-        incident = stix_package.incidents[0]
-        self.assertEqual(incident.id_, f"{_DEFAULT_ORGNAME}:Incident-{uuid}")
-        self.assertEqual(incident.title, info)
-        self.assertEqual(incident.information_source.identity.name, _DEFAULT_ORGNAME)
-        self.assertEqual(incident.reporter.identity.name, _DEFAULT_ORGNAME)
-
-    def test_published_event(self):
-        event = get_published_event()
-        self.parser.parse_misp_event(event, '1.1.1')
-        incident = self.parser.stix_package.incidents[0]
-        self.assertEqual(
-            self._get_utc_timestamp(incident.timestamp),
-            int(event['Event']['timestamp'])
-        )
-        self.assertEqual(
-            incident.time.incident_discovery.value.strftime("%Y-%m-%d"),
-            event['Event']['date']
-        )
-        self.assertEqual(
-            self._get_utc_timestamp(incident.time.incident_reported.value),
-            int(event['Event']['publish_timestamp'])
-        )
-
-    def test_event_with_tags(self):
-        event = get_event_with_tags()
-        self.parser.parse_misp_event(event, '1.1.1')
-        marking = self.parser.stix_package.incidents[0].handling[0]
-        self.assertEqual(len(marking.marking_structures), 3)
-        markings = tuple(self._get_marking_value(marking) for marking in marking.marking_structures)
-        self.assertIn('WHITE', markings)
-        self.assertIn('misp:tool="misp2stix"', markings)
-        self.assertIn('misp-galaxy:mitre-attack-pattern="Code Signing - T1116"', markings)
-
     def _run_composition_from_indicator_object_tests(self, event):
         self._add_ids_flag(event)
         misp_object = deepcopy(event['Event']['Object'][0])
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
@@ -597,7 +545,7 @@ class TestStix1Export(unittest.TestCase):
     def _run_composition_from_observable_object_tests(self, event):
         self._remove_ids_flags(event)
         misp_object = deepcopy(event['Event']['Object'][0])
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
         prefix = f"{_DEFAULT_ORGNAME}:{misp_object['name']}"
@@ -612,7 +560,7 @@ class TestStix1Export(unittest.TestCase):
         self._add_ids_flag(event)
         misp_object = deepcopy(event['Event']['Object'][0])
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_object_features(
@@ -631,7 +579,7 @@ class TestStix1Export(unittest.TestCase):
         self._add_ids_flag(event)
         misp_objects = deepcopy(event['Event']['Object'])
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_object_features(
@@ -649,7 +597,7 @@ class TestStix1Export(unittest.TestCase):
     def _run_indicator_tests(self, event, object_type):
         attribute = event['Event']['Attribute'][0]
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_attribute_features(
@@ -667,7 +615,7 @@ class TestStix1Export(unittest.TestCase):
     def _run_indicators_tests(self, event, object_type):
         attributes = event['Event']['Attribute']
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         related_indicators = incident.related_indicators.indicator
         properties = []
@@ -689,7 +637,7 @@ class TestStix1Export(unittest.TestCase):
     def _run_observable_from_object_tests(self, event, object_type):
         self._remove_ids_flags(event)
         misp_object = deepcopy(event['Event']['Object'][0])
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, misp_object['meta-category'])
@@ -703,7 +651,7 @@ class TestStix1Export(unittest.TestCase):
     def _run_observable_from_objects_tests(self, event, object_type):
         self._remove_ids_flags(event)
         misp_objects = deepcopy(event['Event']['Object'])
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, misp_objects[0]['meta-category'])
@@ -717,7 +665,7 @@ class TestStix1Export(unittest.TestCase):
     def _run_observable_tests(self, event, object_type):
         attribute = event['Event']['Attribute'][0]
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, attribute['category'])
@@ -730,7 +678,7 @@ class TestStix1Export(unittest.TestCase):
 
     def _run_observables_tests(self, event, object_type):
         attributes = event['Event']['Attribute']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         related_observables = incident.related_observables.observable
         properties = []
@@ -743,10 +691,60 @@ class TestStix1Export(unittest.TestCase):
         return properties, attributes
 
     ################################################################################
+    #                              EVENT FIELDS TESTS                              #
+    ################################################################################
+
+    def _test_base_event(self, version):
+        event = get_base_event()
+        uuid = event['Event']['uuid']
+        info = event['Event']['info']
+        self.parser.parse_misp_event(event)
+        stix_package = self.parser.stix_package
+        self.assertEqual(stix_package.id_, f"{_DEFAULT_ORGNAME}:STIXPackage-{uuid}")
+        self.assertEqual(
+            self._get_utc_timestamp(stix_package.timestamp),
+            int(event['Event']['timestamp'])
+        )
+        self.assertEqual(stix_package.version, version)
+        self.assertEqual(stix_package.stix_header.title, f"Export from {_DEFAULT_ORGNAME}'s MISP")
+        incident = stix_package.incidents[0]
+        self.assertEqual(incident.id_, f"{_DEFAULT_ORGNAME}:Incident-{uuid}")
+        self.assertEqual(incident.title, info)
+        self.assertEqual(incident.information_source.identity.name, _DEFAULT_ORGNAME)
+        self.assertEqual(incident.reporter.identity.name, _DEFAULT_ORGNAME)
+
+    def _test_published_event(self):
+        event = get_published_event()
+        self.parser.parse_misp_event(event)
+        incident = self.parser.stix_package.incidents[0]
+        self.assertEqual(
+            self._get_utc_timestamp(incident.timestamp),
+            int(event['Event']['timestamp'])
+        )
+        self.assertEqual(
+            incident.time.incident_discovery.value.strftime("%Y-%m-%d"),
+            event['Event']['date']
+        )
+        self.assertEqual(
+            self._get_utc_timestamp(incident.time.incident_reported.value),
+            int(event['Event']['publish_timestamp'])
+        )
+
+    def _test_event_with_tags(self):
+        event = get_event_with_tags()
+        self.parser.parse_misp_event(event)
+        marking = self.parser.stix_package.incidents[0].handling[0]
+        self.assertEqual(len(marking.marking_structures), 3)
+        markings = tuple(self._get_marking_value(marking) for marking in marking.marking_structures)
+        self.assertIn('WHITE', markings)
+        self.assertIn('misp:tool="misp2stix"', markings)
+        self.assertIn('misp-galaxy:mitre-attack-pattern="Code Signing - T1116"', markings)
+
+    ################################################################################
     #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
     ################################################################################
 
-    def test_embedded_indicator_attribute_galaxy(self):
+    def _test_embedded_indicator_attribute_galaxy(self):
         event = get_embedded_indicator_attribute_galaxy()
         attribute = event['Event']['Attribute'][0]
         ap_galaxy, coa_galaxy = attribute['Galaxy']
@@ -754,7 +752,7 @@ class TestStix1Export(unittest.TestCase):
         coa_cluster = coa_galaxy['GalaxyCluster'][0]
         galaxy = event['Event']['Galaxy'][0]
         cluster = galaxy['GalaxyCluster'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         malware_ttp, attack_pattern_ttp = self._check_ttps_from_galaxies(
             stix_package,
@@ -782,7 +780,7 @@ class TestStix1Export(unittest.TestCase):
             object_type='CourseOfAction'
         )
 
-    def test_embedded_non_indicator_attribute_galaxy(self):
+    def _test_embedded_non_indicator_attribute_galaxy(self):
         event = get_embedded_non_indicator_attribute_galaxy()
         attribute = event['Event']['Attribute'][0]
         attribute_galaxy = attribute['Galaxy'][0]
@@ -790,7 +788,7 @@ class TestStix1Export(unittest.TestCase):
         coa_galaxy, malware_galaxy = event['Event']['Galaxy']
         coa_cluster = coa_galaxy['GalaxyCluster'][0]
         malware_cluster = malware_galaxy['GalaxyCluster'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         malware_ttp, attack_pattern_ttp, vulnerability_ttp = self._check_ttp_length(
             stix_package,
@@ -842,12 +840,12 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_coa_taken(incident.coa_taken[0], coa_cluster['uuid'])
 
-    def test_embedded_observable_attribute_galaxy(self):
+    def _test_embedded_observable_attribute_galaxy(self):
         event = get_embedded_observable_attribute_galaxy()
         attribute = event['Event']['Attribute'][0]
         galaxy = event['Event']['Galaxy'][0]
         cluster = galaxy['GalaxyCluster'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         malware = ttp.behavior.malware_instances[0]
@@ -866,24 +864,24 @@ class TestStix1Export(unittest.TestCase):
             cluster['uuid']
         )
 
-    def test_event_with_as_attribute(self):
+    def _test_event_with_as_attribute(self):
         event = get_event_with_as_attribute()
         properties, attribute = self._run_observable_tests(event, 'AS')
         self.assertEqual(properties.handle.value, attribute['value'])
 
-    def test_event_with_attachment_attribute(self):
+    def _test_event_with_attachment_attribute(self):
         event = get_event_with_attachment_attribute()
         attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, attribute['category'])
         self._check_attachment_properties(observable.item, attribute)
 
-    def test_event_with_campaign_name_attribute(self):
+    def _test_event_with_campaign_name_attribute(self):
         event = get_event_with_campaign_name_attribute()
         attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         campaign = self.parser.stix_package.campaigns[0]
         self.assertEqual(campaign.id_, f"{_DEFAULT_ORGNAME}:Campaign-{attribute['uuid']}")
         self.assertEqual(
@@ -896,11 +894,11 @@ class TestStix1Export(unittest.TestCase):
             datetime.utcfromtimestamp(int(attribute['timestamp']))
         )
 
-    def test_event_with_custom_attributes(self):
+    def _test_event_with_custom_attributes(self):
         event = get_event_with_stix1_custom_attributes()
         btc, iban, phone, passport = event['Event']['Attribute']
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         btc_rindicator, iban_rindicator = incident.related_indicators.indicator
         btc_indicator = self._check_indicator_attribute_features(btc_rindicator, btc, orgc)
@@ -921,16 +919,16 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_custom_property(passport, passport_properties.custom_properties.property_[0])
 
-    def test_event_with_domain_attribute(self):
+    def _test_event_with_domain_attribute(self):
         event = get_event_with_domain_attribute()
         properties, attribute = self._run_indicator_tests(event, 'DomainName')
         self.assertEqual(properties.value.value, attribute['value'])
 
-    def test_event_with_domain_ip_attribute(self):
+    def _test_event_with_domain_ip_attribute(self):
         event = get_event_with_domain_ip_attribute()
         attribute = event['Event']['Attribute'][0]
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
@@ -944,11 +942,11 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(address_properties.address_value.value, ip)
         self._check_destination_address(address_properties)
 
-    def test_event_with_email_attachment_attribute(self):
+    def _test_event_with_email_attachment_attribute(self):
         event = get_event_with_email_attachment_attribute()
         attribute = event['Event']['Attribute'][0]
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
@@ -960,11 +958,11 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(related_object.properties.file_name.value, attribute['value'])
         self.assertEqual(related_object.relationship.value, 'Contains')
 
-    def test_event_with_email_attributes(self):
+    def _test_event_with_email_attributes(self):
         event = get_event_with_email_attributes()
         source, destination, subject, reply_to, message_id, x_mailer, boundary = event['Event']['Attribute']
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         src_indicator, dst_indicator = incident.related_indicators.indicator
         source_indicator = self._check_indicator_attribute_features(src_indicator, source, orgc)
@@ -1016,22 +1014,22 @@ class TestStix1Export(unittest.TestCase):
         )
         self.assertEqual(boundary_properties.header.boundary.value, boundary['value'])
 
-    def test_event_with_email_body_attribute(self):
+    def _test_event_with_email_body_attribute(self):
         event = get_event_with_email_body_attribute()
         properties, attribute = self._run_observable_tests(event, 'EmailMessage')
         self.assertEqual(properties.raw_body.value, attribute['value'])
 
-    def test_event_with_email_header_attribute(self):
+    def _test_event_with_email_header_attribute(self):
         event = get_event_with_email_header_attribute()
         properties, attribute = self._run_observable_tests(event, 'EmailMessage')
         self.assertEqual(properties.raw_header.value, attribute['value'])
 
-    def test_event_with_filename_attribute(self):
+    def _test_event_with_filename_attribute(self):
         event = get_event_with_filename_attribute()
         properties, attribute = self._run_indicator_tests(event, 'File')
         self.assertEqual(properties.file_name.value, attribute['value'])
 
-    def test_event_with_hash_attributes(self):
+    def _test_event_with_hash_attributes(self):
         event = get_event_with_hash_attributes()
         properties, attributes = self._run_indicators_tests(event, 'File')
         md5_properties, sha1_properties, sha224_properties, sha256_properties, sha3_256_properties, sha384_properties, ssdeep_properties, tlsh_properties = properties
@@ -1045,7 +1043,7 @@ class TestStix1Export(unittest.TestCase):
         self._check_fuzzy_hash_property(ssdeep_properties.hashes[0], ssdeep['value'], 'SSDEEP')
         self._check_simple_hash_property(tlsh_properties.hashes[0], tlsh['value'], 'Other')
 
-    def test_event_with_hash_composite_attributes(self):
+    def _test_event_with_hash_composite_attributes(self):
         event = get_event_with_hash_composite_attributes()
         properties, attributes = self._run_indicators_tests(event, 'File')
         md5_properties, sha1_properties, sha224_properties, sha256_properties, sha3_256_properties, sha384_properties, ssdeep_properties, tlsh_properties = properties
@@ -1073,19 +1071,19 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(tlsh_properties.file_name.value, filename)
         self._check_simple_hash_property(tlsh_properties.hashes[0], tlsh_value, 'Other')
 
-    def test_event_with_hostname_attribute(self):
+    def _test_event_with_hostname_attribute(self):
         event = get_event_with_hostname_attribute()
         properties, attribute = self._run_indicator_tests(event, 'Hostname')
         self.assertEqual(properties.hostname_value.value, attribute['value'])
 
-    def test_event_with_hostname_port_attribute(self):
+    def _test_event_with_hostname_port_attribute(self):
         event = get_event_with_hostname_port_attribute()
         properties, attribute = self._run_indicator_tests(event, 'SocketAddress')
         hostname, port = attribute['value'].split('|')
         self.assertEqual(properties.hostname.hostname_value.value, hostname)
         self.assertEqual(properties.port.port_value.value, int(port))
 
-    def test_event_with_http_attributes(self):
+    def _test_event_with_http_attributes(self):
         event = get_event_with_http_attributes()
         properties, attributes = self._run_observables_tests(event, 'HTTPSession')
         http_method_properties, user_agent_properties = properties
@@ -1101,7 +1099,7 @@ class TestStix1Export(unittest.TestCase):
             user_agent['value']
         )
 
-    def test_event_with_ip_attributes(self):
+    def _test_event_with_ip_attributes(self):
         event = get_event_with_ip_attributes()
         properties, attributes = self._run_indicators_tests(event, 'Address')
         src_properties, dst_properties = properties
@@ -1111,7 +1109,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(dst_properties.address_value.value, ip_dst['value'])
         self._check_destination_address(dst_properties)
 
-    def test_event_with_ip_port_attributes(self):
+    def _test_event_with_ip_port_attributes(self):
         event = get_event_with_ip_port_attributes()
         properties, attributes = self._run_indicators_tests(event, 'SocketAddress')
         src_properties, dst_properties = properties
@@ -1125,63 +1123,63 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(dst_properties.ip_address.address_value.value, ip)
         self._check_destination_address(dst_properties.ip_address)
 
-    def test_event_with_mac_address_attribute(self):
+    def _test_event_with_mac_address_attribute(self):
         event = get_event_with_mac_address_attribute()
         properties, attribute = self._run_observable_tests(event, 'System')
         self.assertEqual(properties.network_interface_list[0].mac, attribute['value'])
 
-    def test_event_with_malware_sample_attribute(self):
+    def _test_event_with_malware_sample_attribute(self):
         event = get_event_with_malware_sample_attribute()
         attribute = event['Event']['Attribute'][0]
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         self._check_malware_sample_properties(indicator.observable, attribute)
 
-    def test_event_with_mutex_attribute(self):
+    def _test_event_with_mutex_attribute(self):
         event = get_event_with_mutex_attribute()
         properties, attribute = self._run_indicator_tests(event, 'Mutex')
         self.assertEqual(properties.name.value, attribute['value'])
 
-    def test_event_with_named_pipe_attribute(self):
+    def _test_event_with_named_pipe_attribute(self):
         event = get_event_with_named_pipe_attribute()
         properties, attribute = self._run_observable_tests(event, 'Pipe')
         self.assertTrue(properties.named)
         self.assertEqual(properties.name.value, attribute['value'])
 
-    def test_event_with_pattern_attribute(self):
+    def _test_event_with_pattern_attribute(self):
         event = get_event_with_pattern_attribute()
         properties, attribute = self._run_indicator_tests(event, 'File')
         self.assertEqual(properties.byte_runs[0].byte_run_data, attribute['value'])
 
-    def test_event_with_port_attribute(self):
+    def _test_event_with_port_attribute(self):
         event = get_event_with_port_attribute()
         properties, attribute = self._run_observable_tests(event, 'Port')
         self.assertEqual(properties.port_value.value, int(attribute['value']))
 
-    def test_event_with_regkey_attribute(self):
+    def _test_event_with_regkey_attribute(self):
         event = get_event_with_regkey_attribute()
         properties, attribute = self._run_indicator_tests(event, 'WindowsRegistryKey')
         self.assertEqual(properties.key.value, attribute['value'])
 
-    def test_event_with_regkey_value_attribute(self):
+    def _test_event_with_regkey_value_attribute(self):
         event = get_event_with_regkey_value_attribute()
         properties, attribute = self._run_indicator_tests(event, 'WindowsRegistryKey')
         regkey, value = attribute['value'].split('|')
         self.assertEqual(properties.key.value, regkey)
         self.assertEqual(properties.values[0].data.value, value)
 
-    def test_event_with_size_in_bytes_attribute(self):
+    def _test_event_with_size_in_bytes_attribute(self):
         event = get_event_with_size_in_bytes_attribute()
         properties, attribute = self._run_observable_tests(event, 'File')
         self.assertEqual(properties.size_in_bytes.value, int(attribute['value']))
 
-    def test_event_with_target_attributes(self):
+    def _test_event_with_target_attributes(self):
         event = get_event_with_target_attributes()
         email, external, location, machine, org, user = event['Event']['Attribute']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         self.assertEqual(
             incident.affected_assets[0].description.value,
@@ -1214,11 +1212,11 @@ class TestStix1Export(unittest.TestCase):
             user['value']
         )
 
-    def test_event_with_test_mechanism_attributes(self):
+    def _test_event_with_test_mechanism_attributes(self):
         event = get_event_with_test_mechanism_attributes()
         snort, yara = event['Event']['Attribute']
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         r_snort, r_yara = incident.related_indicators.indicator
         snort_indicator = self._check_indicator_attribute_features(r_snort, snort, orgc)
@@ -1230,10 +1228,10 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(yara_tm._XSI_TYPE, 'yaraTM:YaraTestMechanismType')
         self.assertEqual(yara_tm.rule.value['value'], yara['value'])
 
-    def test_event_with_undefined_attributes(self):
+    def _test_event_with_undefined_attributes(self):
         event = get_event_with_undefined_attributes()
         header, comment = event['Event']['Attribute']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         self.assertEqual(stix_package.stix_header.description.value, header['value'])
         incident = self.parser.stix_package.incidents[0]
@@ -1247,16 +1245,16 @@ class TestStix1Export(unittest.TestCase):
             f"Attribute ({comment['category']} - {comment['type']}): {comment['value']}"
         )
 
-    def test_event_with_url_attribute(self):
+    def _test_event_with_url_attribute(self):
         event = get_event_with_url_attribute()
         properties, attribute = self._run_indicator_tests(event, 'URI')
         self.assertEqual(properties.value.value, attribute['value'])
 
-    def test_event_with_vulnerability_attribute(self):
+    def _test_event_with_vulnerability_attribute(self):
         event = get_event_with_vulnerability_attribute()
         attribute = event['Event']['Attribute'][0]
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_attribute(stix_package, attribute)
         exploit_target = ttp.exploit_targets.exploit_target[0].item
@@ -1270,10 +1268,10 @@ class TestStix1Export(unittest.TestCase):
             attribute['uuid']
         )
 
-    def test_event_with_weakness_attribute(self):
+    def _test_event_with_weakness_attribute(self):
         event = get_event_with_weakness_attribute()
         attribute = event['Event']['Attribute'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_attribute(stix_package, attribute)
         exploit_target = ttp.exploit_targets.exploit_target[0].item
@@ -1286,7 +1284,7 @@ class TestStix1Export(unittest.TestCase):
             attribute['uuid']
         )
 
-    def test_event_with_whois_registrant_attributes(self):
+    def _test_event_with_whois_registrant_attributes(self):
         event = get_event_with_whois_registrant_attributes()
         properties, attributes = self._run_observables_tests(event, 'Whois')
         email_properties, name_properties, org_properties, phone_properties = properties
@@ -1305,12 +1303,12 @@ class TestStix1Export(unittest.TestCase):
             phone['value']
         )
 
-    def test_event_with_whois_registrar_attribute(self):
+    def _test_event_with_whois_registrar_attribute(self):
         event = get_event_with_whois_registrar_attribute()
         properties, attribute = self._run_observable_tests(event, 'Whois')
         self.assertEqual(properties.registrar_info.name, attribute['value'])
 
-    def test_event_with_windows_service_attributes(self):
+    def _test_event_with_windows_service_attributes(self):
         event = get_event_with_windows_service_attributes()
         properties, attributes = self._run_observables_tests(event, 'WindowsService')
         displayname_properties, name_properties = properties
@@ -1318,7 +1316,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(displayname_properties.display_name, displayname['value'])
         self.assertEqual(name_properties.service_name, name['value'])
 
-    def test_event_with_x509_fingerprint_attributes(self):
+    def _test_event_with_x509_fingerprint_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
         properties, attributes = self._run_indicators_tests(event, 'X509Certificate')
         md5_properties, sha1_properties, sha256_properties = properties
@@ -1337,7 +1335,7 @@ class TestStix1Export(unittest.TestCase):
     #                          MISP OBJECTS EXPORT TESTS.                          #
     ################################################################################
 
-    def test_embedded_indicator_object_galaxy(self):
+    def _test_embedded_indicator_object_galaxy(self):
         event = get_embedded_indicator_object_galaxy()
         self._add_ids_flag(event)
         misp_object = deepcopy(event['Event']['Object'][0])
@@ -1349,7 +1347,7 @@ class TestStix1Export(unittest.TestCase):
         tool_cluster = tool_galaxy['GalaxyCluster'][0]
         coa_event_cluster = coa_event_galaxy['GalaxyCluster'][0]
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         tool_ttp, malware_ttp = self._check_ttps_from_galaxies(
             stix_package,
@@ -1384,7 +1382,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_coa_taken(incident.coa_taken[0], coa_event_cluster['uuid'])
 
-    def test_embedded_non_indicator_object_galaxy(self):
+    def _test_embedded_non_indicator_object_galaxy(self):
         event = get_embedded_non_indicator_object_galaxy()
         coa_object, ttp_object = deepcopy(event['Event']['Object'])
         malware_galaxy = ttp_object['Attribute'][0]['Galaxy'][0]
@@ -1392,7 +1390,7 @@ class TestStix1Export(unittest.TestCase):
         coa_galaxy, tool_galaxy = event['Event']['Galaxy']
         coa_cluster = coa_galaxy['GalaxyCluster'][0]
         tool_cluster = tool_galaxy['GalaxyCluster'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         tool_ttp, malware_ttp, vulnerability_ttp = self._check_ttp_length(
             stix_package,
@@ -1448,7 +1446,7 @@ class TestStix1Export(unittest.TestCase):
         self._check_coa_taken(gcoa_taken, coa_cluster['uuid'])
         self._check_coa_taken(ecoa_taken, coa_object['uuid'])
 
-    def test_embedded_object_galaxy_with_multiple_clusters(self):
+    def _test_embedded_object_galaxy_with_multiple_clusters(self):
         event = get_embedded_object_galaxy_with_multiple_clusters()
         self._add_ids_flag(event)
         misp_object = deepcopy(event['Event']['Object'][0])
@@ -1456,7 +1454,7 @@ class TestStix1Export(unittest.TestCase):
         cluster1 = galaxy1['GalaxyCluster'][0]
         galaxy2 = misp_object['Attribute'][1]['Galaxy'][0]
         cluster2 = galaxy2['GalaxyCluster'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp1, ttp2 = self._check_ttp_length(stix_package, 2)
         self._check_ttp_fields(ttp1, cluster1['uuid'], galaxy1['name'], 'Galaxy')
@@ -1470,13 +1468,13 @@ class TestStix1Export(unittest.TestCase):
         self._check_related_object(related_ttp1, galaxy1['name'], cluster1['uuid'])
         self._check_related_object(related_ttp2, galaxy2['name'], cluster2['uuid'])
 
-    def test_embedded_observable_object_galaxy(self):
+    def _test_embedded_observable_object_galaxy(self):
         event = get_embedded_observable_object_galaxy()
         self._remove_ids_flags(event)
         misp_object = deepcopy(event['Event']['Object'][0])
         galaxy = event['Event']['Galaxy'][0]
         cluster = galaxy['GalaxyCluster'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         tool = ttp.resources.tools[0]
@@ -1487,20 +1485,20 @@ class TestStix1Export(unittest.TestCase):
             cluster['uuid']
         )
 
-    def test_event_with_asn_object_indicator(self):
+    def _test_event_with_asn_object_indicator(self):
         event = get_event_with_asn_object()
         properties, attributes = self._run_indicator_from_object_tests(event, 'AS')
         self._check_asn_properties(properties, attributes)
 
-    def test_event_with_asn_object_observable(self):
+    def _test_event_with_asn_object_observable(self):
         event = get_event_with_asn_object()
         properties, attributes = self._run_observable_from_object_tests(event, 'AS')
         self._check_asn_properties(properties, attributes)
 
-    def test_event_with_attack_pattern_object(self):
+    def _test_event_with_attack_pattern_object(self):
         event = get_event_with_attack_pattern_object()
         misp_object = deepcopy(event['Event']['Object'][0])
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_object(stix_package, misp_object)
         attack_pattern = ttp.behavior.attack_patterns[0]
@@ -1516,10 +1514,10 @@ class TestStix1Export(unittest.TestCase):
             timestamp=misp_object['timestamp']
         )
 
-    def test_event_with_course_of_action_object(self):
+    def _test_event_with_course_of_action_object(self):
         event = get_event_with_course_of_action_object()
         misp_object = deepcopy(event['Event']['Object'][0])
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         self.assertEqual(len(stix_package.courses_of_action), 1)
         course_of_action = stix_package.courses_of_action[0]
@@ -1530,7 +1528,7 @@ class TestStix1Export(unittest.TestCase):
             timestamp=misp_object['timestamp']
         )
 
-    def test_event_with_credential_object_indicator(self):
+    def _test_event_with_credential_object_indicator(self):
         event = get_event_with_credential_object()
         properties, attributes = self._run_indicator_from_object_tests(
             event,
@@ -1538,7 +1536,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_credential_properties(properties, attributes)
 
-    def test_event_with_credential_object_observable(self):
+    def _test_event_with_credential_object_observable(self):
         event = get_event_with_credential_object()
         properties, attributes = self._run_observable_from_object_tests(
             event,
@@ -1546,11 +1544,11 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_credential_properties(properties, attributes)
 
-    def test_event_with_custom_objects(self):
+    def _test_event_with_custom_objects(self):
         event = get_event_with_custom_objects()
         account, btc, person = deepcopy(event['Event']['Object'])
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         account_rindicator, btc_rindicator = incident.related_indicators.indicator
         account_indicator = self._check_indicator_object_features(
@@ -1580,24 +1578,24 @@ class TestStix1Export(unittest.TestCase):
         properties = self._check_observable_features(observable.item, person, 'Custom')
         self._check_custom_properties(person['Attribute'], properties.custom_properties)
 
-    def test_event_with_domain_ip_object_indicator(self):
+    def _test_event_with_domain_ip_object_indicator(self):
         event = get_event_with_domain_ip_object()
         args = self._run_composition_from_indicator_object_tests(event)
         observables, misp_object = args
         self._check_domain_ip_observables(observables, misp_object['Attribute'])
 
-    def test_event_with_domain_ip_object_observable(self):
+    def _test_event_with_domain_ip_object_observable(self):
         event = get_event_with_domain_ip_object()
         args = self._run_composition_from_observable_object_tests(event)
         observables, misp_object = args
         self._check_domain_ip_observables(observables, misp_object['Attribute'])
 
-    def test_event_with_email_object_indicator(self):
+    def _test_event_with_email_object_indicator(self):
         event = get_event_with_email_object()
         self._add_ids_flag(event)
         misp_object = deepcopy(event['Event']['Object'][0])
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_object_features(related_indicator, misp_object, orgc)
@@ -1605,11 +1603,11 @@ class TestStix1Export(unittest.TestCase):
         related_objects = indicator.observable.object_.related_objects
         self._check_email_properties(properties, related_objects, misp_object['Attribute'])
 
-    def test_event_with_email_object_observable(self):
+    def _test_event_with_email_object_observable(self):
         event = get_event_with_email_object()
         self._remove_ids_flags(event)
         misp_object = deepcopy(event['Event']['Object'][0])
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
         self.assertEqual(observable.relationship, misp_object['meta-category'])
@@ -1617,7 +1615,7 @@ class TestStix1Export(unittest.TestCase):
         related_objects = observable.item.object_.related_objects
         self._check_email_properties(properties, related_objects, misp_object['Attribute'])
 
-    def test_event_with_file_and_pe_objects_indicators(self):
+    def _test_event_with_file_and_pe_objects_indicators(self):
         event = get_event_with_file_and_pe_objects()
         properties, misp_objects = self._run_indicator_from_objects_tests(
             event,
@@ -1625,7 +1623,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_file_and_pe_properties(properties, *misp_objects)
 
-    def test_event_with_file_and_pe_objects_observables(self):
+    def _test_event_with_file_and_pe_objects_observables(self):
         event = get_event_with_file_and_pe_objects()
         properties, misp_objects = self._run_observable_from_objects_tests(
             event,
@@ -1633,7 +1631,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_file_and_pe_properties(properties, *misp_objects)
 
-    def test_event_with_file_object_indicator(self):
+    def _test_event_with_file_object_indicator(self):
         event = get_event_with_file_object()
         properties, attributes = self._run_indicator_from_object_tests(
             event,
@@ -1641,7 +1639,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_file_properties(properties, attributes)
 
-    def test_event_with_file_object_observable(self):
+    def _test_event_with_file_object_observable(self):
         event = get_event_with_file_object()
         properties, attributes = self._run_observable_from_object_tests(
             event,
@@ -1649,37 +1647,37 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_file_properties(properties, attributes)
 
-    def test_event_with_file_object_with_artifact_indicator(self):
+    def _test_event_with_file_object_with_artifact_indicator(self):
         event = get_event_with_file_object_with_artifact()
         args = self._run_composition_from_indicator_object_tests(event)
         self._check_file_observables(*args)
 
-    def test_event_with_file_object_with_artifact_observable(self):
+    def _test_event_with_file_object_with_artifact_observable(self):
         event = get_event_with_file_object_with_artifact()
         args = self._run_composition_from_observable_object_tests(event)
         self._check_file_observables(*args)
 
-    def test_event_with_ip_port_object_indicator(self):
+    def _test_event_with_ip_port_object_indicator(self):
         event = get_event_with_ip_port_object()
         args = self._run_composition_from_indicator_object_tests(event)
         self._check_ip_port_observables(*args)
 
-    def test_event_with_ip_port_object_observable(self):
+    def _test_event_with_ip_port_object_observable(self):
         event = get_event_with_ip_port_object()
         args = self._run_composition_from_observable_object_tests(event)
         self._check_ip_port_observables(*args)
 
-    def test_event_with_mutex_object_indicator(self):
+    def _test_event_with_mutex_object_indicator(self):
         event = get_event_with_mutex_object()
         properties, attributes = self._run_indicator_from_object_tests(event, 'Mutex')
         self._check_mutex_properties(properties, attributes)
 
-    def test_event_with_mutex_object_observable(self):
+    def _test_event_with_mutex_object_observable(self):
         event = get_event_with_mutex_object()
         properties, attributes = self._run_observable_from_object_tests(event, 'Mutex')
         self._check_mutex_properties(properties, attributes)
 
-    def test_event_with_network_connection_object_indicator(self):
+    def _test_event_with_network_connection_object_indicator(self):
         event = get_event_with_network_connection_object()
         properties, attributes = self._run_indicator_from_object_tests(
             event,
@@ -1687,7 +1685,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_network_connection_properties(properties, attributes)
 
-    def test_event_with_network_connection_object_observable(self):
+    def _test_event_with_network_connection_object_observable(self):
         event = get_event_with_network_connection_object()
         properties, attributes = self._run_observable_from_object_tests(
             event,
@@ -1695,7 +1693,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_network_connection_properties(properties, attributes)
 
-    def test_event_with_network_socket_object_indicator(self):
+    def _test_event_with_network_socket_object_indicator(self):
         event = get_event_with_network_socket_object()
         properties, attributes = self._run_indicator_from_object_tests(
             event,
@@ -1703,7 +1701,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_network_socket_properties(properties, attributes)
 
-    def test_event_with_network_socket_object_observable(self):
+    def _test_event_with_network_socket_object_observable(self):
         event = get_event_with_network_socket_object()
         properties, attributes = self._run_observable_from_object_tests(
             event,
@@ -1711,7 +1709,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_network_socket_properties(properties, attributes)
 
-    def test_event_with_pe_and_section_object_indicator(self):
+    def _test_event_with_pe_and_section_object_indicator(self):
         event = get_event_with_pe_objects()
         properties, misp_objects = self._run_indicator_from_objects_tests(
             event,
@@ -1719,7 +1717,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_pe_and_section_properties(properties, *misp_objects)
 
-    def test_event_with_pe_and_section_object_observable(self):
+    def _test_event_with_pe_and_section_object_observable(self):
         event = get_event_with_pe_objects()
         properties, misp_objects = self._run_observable_from_objects_tests(
             event,
@@ -1727,7 +1725,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_pe_and_section_properties(properties, *misp_objects)
 
-    def test_event_with_process_object_indicator(self):
+    def _test_event_with_process_object_indicator(self):
         event = get_event_with_process_object()
         properties, attributes = self._run_indicator_from_object_tests(
             event,
@@ -1735,7 +1733,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_process_properties(properties, attributes)
 
-    def test_event_with_process_object_observable(self):
+    def _test_event_with_process_object_observable(self):
         event = get_event_with_process_object()
         properties, attributes = self._run_observable_from_object_tests(
             event,
@@ -1743,7 +1741,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_process_properties(properties, attributes)
 
-    def test_event_with_registry_key_object_indicator(self):
+    def _test_event_with_registry_key_object_indicator(self):
         event = get_event_with_registry_key_object()
         properties, attributes = self._run_indicator_from_object_tests(
             event,
@@ -1751,7 +1749,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_registry_key_properties(properties, attributes)
 
-    def test_event_with_registry_key_object_observable(self):
+    def _test_event_with_registry_key_object_observable(self):
         event = get_event_with_registry_key_object()
         properties, attributes = self._run_observable_from_object_tests(
             event,
@@ -1759,22 +1757,22 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_registry_key_properties(properties, attributes)
 
-    def test_event_with_url_object_indicator(self):
+    def _test_event_with_url_object_indicator(self):
         event = get_event_with_url_object()
         args = self._run_composition_from_indicator_object_tests(event)
         self._check_url_observables(*args)
 
-    def test_event_with_url_object_observable(self):
+    def _test_event_with_url_object_observable(self):
         event = get_event_with_url_object()
         args = self._run_composition_from_observable_object_tests(event)
         self._check_url_observables(*args)
 
-    def test_event_with_user_account_objects_indicator(self):
+    def _test_event_with_user_account_objects_indicator(self):
         event = get_event_with_user_account_objects()
         self._add_ids_flag(event)
         user, unix, windows = deepcopy(event['Event']['Object'])
         orgc = event['Event']['Orgc']['name']
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         user_rindicator, unix_rindicator, windows_rindicator = incident.related_indicators.indicator
         user_indicator = self._check_indicator_object_features(user_rindicator, user, orgc)
@@ -1787,11 +1785,11 @@ class TestStix1Export(unittest.TestCase):
         windows_properties = self._check_observable_features(windows_indicator.observable, windows, 'WindowsUserAccount')
         self._check_windows_user_account_properties(windows_properties, windows['Attribute'])
 
-    def test_event_with_user_account_objects_observable(self):
+    def _test_event_with_user_account_objects_observable(self):
         event = get_event_with_user_account_objects()
         self._remove_ids_flags(event)
         user, unix, windows = deepcopy(event['Event']['Object'])
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         user_observable, unix_observable, windows_observable = incident.related_observables.observable
         self.assertEqual(user_observable.relationship, user['meta-category'])
@@ -1804,10 +1802,10 @@ class TestStix1Export(unittest.TestCase):
         windows_properties = self._check_observable_features(windows_observable.item, windows, 'WindowsUserAccount')
         self._check_windows_user_account_properties(windows_properties, windows['Attribute'])
 
-    def test_event_with_vulnerability_and_weakness_related_object(self):
+    def _test_event_with_vulnerability_and_weakness_related_object(self):
         event = get_event_with_vulnerability_and_weakness_objects()
         vulnerability, weakness = deepcopy(event['Event']['Object'])
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         vulnerability_ttp, weakness_ttp = self._check_ttp_length(stix_package, 2)
         self._check_related_object(
@@ -1817,10 +1815,10 @@ class TestStix1Export(unittest.TestCase):
             timestamp=weakness['timestamp']
         )
 
-    def test_event_with_vulnerability_object(self):
+    def _test_event_with_vulnerability_object(self):
         event = get_event_with_vulnerability_object()
         misp_object = deepcopy(event['Event']['Object'][0])
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_object(stix_package, misp_object)
         exploit_target = ttp.exploit_targets.exploit_target[0].item
@@ -1843,10 +1841,10 @@ class TestStix1Export(unittest.TestCase):
             timestamp=misp_object['timestamp']
         )
 
-    def test_event_with_weakness_object(self):
+    def _test_event_with_weakness_object(self):
         event = get_event_with_weakness_object()
         misp_object = deepcopy(event['Event']['Object'][0])
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_object(stix_package, misp_object)
         exploit_target = ttp.exploit_targets.exploit_target[0].item
@@ -1862,7 +1860,7 @@ class TestStix1Export(unittest.TestCase):
             timestamp=misp_object['timestamp']
         )
 
-    def test_event_with_whois_object_indicator(self):
+    def _test_event_with_whois_object_indicator(self):
         event = get_event_with_whois_object()
         properties, attributes = self._run_indicator_from_object_tests(
             event,
@@ -1870,7 +1868,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_whois_properties(properties, attributes)
 
-    def test_event_with_whois_object_observable(self):
+    def _test_event_with_whois_object_observable(self):
         event = get_event_with_whois_object()
         properties, attributes = self._run_observable_from_object_tests(
             event,
@@ -1878,7 +1876,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_whois_properties(properties, attributes)
 
-    def test_event_with_x509_object_indicator(self):
+    def _test_event_with_x509_object_indicator(self):
         event = get_event_with_x509_object()
         properties, attributes = self._run_indicator_from_object_tests(
             event,
@@ -1886,7 +1884,7 @@ class TestStix1Export(unittest.TestCase):
         )
         self._check_x509_properties(properties, attributes)
 
-    def test_event_with_x509_object_observable(self):
+    def _test_event_with_x509_object_observable(self):
         event = get_event_with_x509_object()
         properties, attributes = self._run_observable_from_object_tests(
             event,
@@ -1898,43 +1896,43 @@ class TestStix1Export(unittest.TestCase):
     #                            GALAXIES EXPORT TESTS.                            #
     ################################################################################
 
-    def test_event_with_attack_pattern_galaxy(self):
+    def _test_event_with_attack_pattern_galaxy(self):
         event = get_event_with_attack_pattern_galaxy()
         galaxy = event['Event']['Galaxy'][0]
         cluster = galaxy['GalaxyCluster'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         attack_pattern = ttp.behavior.attack_patterns[0]
         self._check_embedded_features(attack_pattern, cluster, 'AttackPattern')
         self._check_related_object(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
 
-    def test_event_with_course_of_action_galaxy(self):
+    def _test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
         cluster = event['Event']['Galaxy'][0]['GalaxyCluster'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         self.assertEqual(len(stix_package.courses_of_action), 1)
         course_of_action = stix_package.courses_of_action[0]
         self._check_embedded_features(course_of_action, cluster, 'CourseOfAction')
         self._check_coa_taken(stix_package.incidents[0].coa_taken[0], cluster['uuid'])
 
-    def test_event_with_malware_galaxy(self):
+    def _test_event_with_malware_galaxy(self):
         event = get_event_with_malware_galaxy()
         galaxy = event['Event']['Galaxy'][0]
         cluster = galaxy['GalaxyCluster'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         malware = ttp.behavior.malware_instances[0]
         self._check_embedded_features(malware, cluster, 'MalwareInstance')
         self._check_related_object(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
 
-    def test_event_with_threat_actor_galaxy(self):
+    def _test_event_with_threat_actor_galaxy(self):
         event = get_event_with_threat_actor_galaxy()
         galaxy = event['Event']['Galaxy'][0]
         cluster = galaxy['GalaxyCluster'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         self.assertEqual(len(stix_package.threat_actors), 1)
         threat_actor = stix_package.threat_actors[0]
@@ -1948,22 +1946,22 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(related_threat_actor.relationship.value, galaxy['name'])
         self.assertEqual(related_threat_actor.item.idref, threat_actor_id)
 
-    def test_event_with_tool_galaxy(self):
+    def _test_event_with_tool_galaxy(self):
         event = get_event_with_tool_galaxy()
         galaxy = event['Event']['Galaxy'][0]
         cluster = galaxy['GalaxyCluster'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         tool = ttp.resources.tools[0]
         self._check_embedded_features(tool, cluster, 'ToolInformation', feature='name')
         self._check_related_object(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
 
-    def test_event_with_vulnerability_galaxy(self):
+    def _test_event_with_vulnerability_galaxy(self):
         event = get_event_with_vulnerability_galaxy()
         galaxy = event['Event']['Galaxy'][0]
         cluster = galaxy['GalaxyCluster'][0]
-        self.parser.parse_misp_event(event, '1.1.1')
+        self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         exploit_target = ttp.exploit_targets.exploit_target[0].item
@@ -1972,6 +1970,618 @@ class TestStix1Export(unittest.TestCase):
         self._check_embedded_features(vulnerability, cluster, 'Vulnerability')
         self.assertEqual(vulnerability.cve_id, cluster['meta']['aliases'][0])
         self._check_related_object(stix_package.incidents[0].leveraged_ttps.ttp[0], galaxy['name'], cluster['uuid'])
+
+
+class TestStix11Export(TestStix1Export):
+    def setUp(self):
+        self.parser = MISPtoSTIX1Parser(_DEFAULT_ORGNAME, '1.1.1')
+
+    ################################################################################
+    #                              EVENT FIELDS TESTS                              #
+    ################################################################################
+
+    def test_base_event(self):
+        self._test_base_event('1.1.1')
+
+    def test_published_event(self):
+        self._test_published_event()
+
+    def test_event_with_tags(self):
+        self._test_event_with_tags()
+
+    ################################################################################
+    #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
+    ################################################################################
+
+    def test_embedded_indicator_attribute_galaxy(self):
+        self._test_embedded_indicator_attribute_galaxy()
+
+    def test_embedded_non_indicator_attribute_galaxy(self):
+        self._test_embedded_non_indicator_attribute_galaxy()
+
+    def test_embedded_observable_attribute_galaxy(self):
+        self._test_embedded_observable_attribute_galaxy()
+
+    def test_event_with_as_attribute(self):
+        self._test_event_with_as_attribute()
+
+    def _test_event_with_attachment_attribute(self):
+        self._test_event_with_attachment_attribute()
+
+    def test_event_with_campaign_name_attribute(self):
+        self._test_event_with_campaign_name_attribute()
+
+    def test_event_with_custom_attributes(self):
+        self._test_event_with_custom_attributes()
+
+    def test_event_with_domain_attribute(self):
+        self._test_event_with_domain_attribute()
+
+    def test_event_with_domain_ip_attribute(self):
+        self._test_event_with_domain_ip_attribute()
+
+    def test_event_with_email_attachment_attribute(self):
+        self._test_event_with_email_attachment_attribute()
+
+    def test_event_with_email_attributes(self):
+        self._test_event_with_email_attributes()
+
+    def test_event_with_email_body_attribute(self):
+        self._test_event_with_email_body_attribute()
+
+    def test_event_with_email_header_attribute(self):
+        self._test_event_with_email_header_attribute()
+
+    def test_event_with_filename_attribute(self):
+        self._test_event_with_filename_attribute()
+
+    def test_event_with_hash_attributes(self):
+        self._test_event_with_hash_attributes()
+
+    def test_event_with_hash_composite_attributes(self):
+        self._test_event_with_hash_composite_attributes()
+
+    def test_event_with_hostname_attribute(self):
+        self._test_event_with_hostname_attribute()
+
+    def test_event_with_hostname_port_attribute(self):
+        self._test_event_with_hostname_port_attribute()
+
+    def test_event_with_http_attributes(self):
+        self._test_event_with_http_attributes()
+
+    def test_event_with_ip_attributes(self):
+        self._test_event_with_ip_attributes()
+
+    def test_event_with_ip_port_attributes(self):
+        self._test_event_with_ip_port_attributes()
+
+    def test_event_with_mac_address_attribute(self):
+        self._test_event_with_mac_address_attribute()
+
+    def test_event_with_malware_sample_attribute(self):
+        self._test_event_with_malware_sample_attribute()
+
+    def test_event_with_mutex_attribute(self):
+        self._test_event_with_mutex_attribute()
+
+    def test_event_with_named_pipe_attribute(self):
+        self._test_event_with_named_pipe_attribute()
+
+    def test_event_with_pattern_attribute(self):
+        self._test_event_with_pattern_attribute()
+
+    def test_event_with_port_attribute(self):
+        self._test_event_with_port_attribute()
+
+    def test_event_with_regkey_attribute(self):
+        self._test_event_with_regkey_attribute()
+
+    def test_event_with_regkey_value_attribute(self):
+        self._test_event_with_regkey_value_attribute()
+
+    def test_event_with_size_in_bytes_attribute(self):
+        self._test_event_with_size_in_bytes_attribute()
+
+    def test_event_with_target_attributes(self):
+        self._test_event_with_target_attributes()
+
+    def test_event_with_test_mechanism_attributes(self):
+        self._test_event_with_test_mechanism_attributes()
+
+    def test_event_with_undefined_attributes(self):
+        self._test_event_with_undefined_attributes()
+
+    def test_event_with_url_attribute(self):
+        self._test_event_with_url_attribute()
+
+    def test_event_with_vulnerability_attribute(self):
+        self._test_event_with_vulnerability_attribute()
+
+    def test_event_with_weakness_attribute(self):
+        self._test_event_with_weakness_attribute()
+
+    def test_event_with_whois_registrant_attributes(self):
+        self._test_event_with_whois_registrant_attributes()
+
+    def test_event_with_whois_registrar_attribute(self):
+        self._test_event_with_whois_registrar_attribute()
+
+    def test_event_with_windows_service_attributes(self):
+        self._test_event_with_windows_service_attributes()
+
+    def test_event_with_x509_fingerprint_attributes(self):
+        self._test_event_with_x509_fingerprint_attributes()
+
+    ################################################################################
+    #                          MISP OBJECTS EXPORT TESTS.                          #
+    ################################################################################
+
+    def test_embedded_indicator_object_galaxy(self):
+        self._test_embedded_indicator_object_galaxy()
+
+    def test_embedded_non_indicator_object_galaxy(self):
+        self._test_embedded_non_indicator_object_galaxy()
+
+    def test_embedded_object_galaxy_with_multiple_clusters(self):
+        self._test_embedded_object_galaxy_with_multiple_clusters()
+
+    def test_embedded_observable_object_galaxy(self):
+        self._test_embedded_observable_object_galaxy()
+
+    def test_event_with_asn_object_indicator(self):
+        self._test_event_with_asn_object_indicator()
+
+    def test_event_with_asn_object_observable(self):
+        self._test_event_with_asn_object_observable()
+
+    def est_event_with_attack_pattern_object(self):
+        self._test_event_with_attack_pattern_object()
+
+    def test_event_with_course_of_action_object(self):
+        self._test_event_with_course_of_action_object()
+
+    def test_event_with_credential_object_indicator(self):
+        self._test_event_with_credential_object_indicator()
+
+    def test_event_with_credential_object_observable(self):
+        self._test_event_with_credential_object_observable()
+
+    def test_event_with_custom_objects(self):
+        self._test_event_with_custom_objects()
+
+    def test_event_with_domain_ip_object_indicator(self):
+        self._test_event_with_domain_ip_object_indicator()
+
+    def test_event_with_domain_ip_object_observable(self):
+        self._test_event_with_domain_ip_object_observable()
+
+    def test_event_with_email_object_indicator(self):
+        self._test_event_with_email_object_indicator()
+
+    def test_event_with_email_object_observable(self):
+        self._test_event_with_email_object_observable()
+
+    def test_event_with_file_and_pe_objects_indicators(self):
+        self._test_event_with_file_and_pe_objects_indicators()
+
+    def test_event_with_file_and_pe_objects_observables(self):
+        self._test_event_with_file_and_pe_objects_observables()
+
+    def test_event_with_file_object_indicator(self):
+        self._test_event_with_file_object_indicator()
+
+    def test_event_with_file_object_observable(self):
+        self._test_event_with_file_object_observable()
+
+    def test_event_with_file_object_with_artifact_indicator(self):
+        self._test_event_with_file_object_with_artifact_indicator()
+
+    def test_event_with_file_object_with_artifact_observable(self):
+        self._test_event_with_file_object_with_artifact_observable()
+
+    def test_event_with_ip_port_object_indicator(self):
+        self._test_event_with_ip_port_object_indicator()
+
+    def test_event_with_ip_port_object_observable(self):
+        self._test_event_with_ip_port_object_observable()
+
+    def test_event_with_mutex_object_indicator(self):
+        self._test_event_with_mutex_object_indicator()
+
+    def test_event_with_mutex_object_observable(self):
+        self._test_event_with_mutex_object_observable()
+
+    def test_event_with_network_connection_object_indicator(self):
+        self._test_event_with_network_connection_object_indicator()
+
+    def test_event_with_network_connection_object_observable(self):
+        self._test_event_with_network_connection_object_observable()
+
+    def test_event_with_network_socket_object_indicator(self):
+        self._test_event_with_network_socket_object_indicator()
+
+    def test_event_with_network_socket_object_observable(self):
+        self._test_event_with_network_socket_object_observable()
+
+    def test_event_with_pe_and_section_object_indicator(self):
+        self._test_event_with_pe_and_section_object_indicator()
+
+    def test_event_with_pe_and_section_object_observable(self):
+        self._test_event_with_pe_and_section_object_observable()
+
+    def test_event_with_process_object_indicator(self):
+        self._test_event_with_process_object_indicator()
+
+    def test_event_with_process_object_observable(self):
+        self._test_event_with_process_object_observable()
+
+    def test_event_with_registry_key_object_indicator(self):
+        self._test_event_with_registry_key_object_indicator()
+
+    def test_event_with_registry_key_object_observable(self):
+        self._test_event_with_registry_key_object_observable()
+
+    def test_event_with_url_object_indicator(self):
+        self._test_event_with_url_object_indicator()
+
+    def test_event_with_url_object_observable(self):
+        self._test_event_with_url_object_observable()
+
+    def test_event_with_user_account_objects_indicator(self):
+        self._test_event_with_user_account_objects_indicator()
+
+    def test_event_with_user_account_objects_observable(self):
+        self._test_event_with_user_account_objects_observable()
+
+    def test_event_with_vulnerability_and_weakness_related_object(self):
+        self._test_event_with_vulnerability_and_weakness_related_object()
+
+    def test_event_with_vulnerability_object(self):
+        self._test_event_with_vulnerability_object()
+
+    def test_event_with_weakness_object(self):
+        self._test_event_with_weakness_object()
+
+    def test_event_with_whois_object_indicator(self):
+        self._test_event_with_whois_object_indicator()
+
+    def test_event_with_whois_object_observable(self):
+        self._test_event_with_whois_object_observable()
+
+    def test_event_with_x509_object_indicator(self):
+        self._test_event_with_x509_object_indicator()
+
+    def test_event_with_x509_object_observable(self):
+        self._test_event_with_x509_object_observable()
+
+    ################################################################################
+    #                            GALAXIES EXPORT TESTS.                            #
+    ################################################################################
+
+    def test_event_with_attack_pattern_galaxy(self):
+        self._test_event_with_attack_pattern_galaxy()
+
+    def test_event_with_course_of_action_galaxy(self):
+        self._test_event_with_course_of_action_galaxy()
+
+    def test_event_with_malware_galaxy(self):
+        self._test_event_with_malware_galaxy()
+
+    def test_event_with_threat_actor_galaxy(self):
+        self._test_event_with_threat_actor_galaxy()
+
+    def test_event_with_tool_galaxy(self):
+        self._test_event_with_tool_galaxy()
+
+    def test_event_with_vulnerability_galaxy(self):
+        self._test_event_with_vulnerability_galaxy()
+
+
+class TestStix12Export(TestStix1Export):
+    def setUp(self):
+        self.parser = MISPtoSTIX1Parser(_DEFAULT_ORGNAME, '1.2')
+
+    ################################################################################
+    #                              EVENT FIELDS TESTS                              #
+    ################################################################################
+
+    def test_base_event(self):
+        self._test_base_event('1.2')
+
+    def test_published_event(self):
+        self._test_published_event()
+
+    def test_event_with_tags(self):
+        self._test_event_with_tags()
+
+    ################################################################################
+    #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
+    ################################################################################
+
+    def test_embedded_indicator_attribute_galaxy(self):
+        self._test_embedded_indicator_attribute_galaxy()
+
+    def test_embedded_non_indicator_attribute_galaxy(self):
+        self._test_embedded_non_indicator_attribute_galaxy()
+
+    def test_embedded_observable_attribute_galaxy(self):
+        self._test_embedded_observable_attribute_galaxy()
+
+    def test_event_with_as_attribute(self):
+        self._test_event_with_as_attribute()
+
+    def _test_event_with_attachment_attribute(self):
+        self._test_event_with_attachment_attribute()
+
+    def test_event_with_campaign_name_attribute(self):
+        self._test_event_with_campaign_name_attribute()
+
+    def test_event_with_custom_attributes(self):
+        self._test_event_with_custom_attributes()
+
+    def test_event_with_domain_attribute(self):
+        self._test_event_with_domain_attribute()
+
+    def test_event_with_domain_ip_attribute(self):
+        self._test_event_with_domain_ip_attribute()
+
+    def test_event_with_email_attachment_attribute(self):
+        self._test_event_with_email_attachment_attribute()
+
+    def test_event_with_email_attributes(self):
+        self._test_event_with_email_attributes()
+
+    def test_event_with_email_body_attribute(self):
+        self._test_event_with_email_body_attribute()
+
+    def test_event_with_email_header_attribute(self):
+        self._test_event_with_email_header_attribute()
+
+    def test_event_with_filename_attribute(self):
+        self._test_event_with_filename_attribute()
+
+    def test_event_with_hash_attributes(self):
+        self._test_event_with_hash_attributes()
+
+    def test_event_with_hash_composite_attributes(self):
+        self._test_event_with_hash_composite_attributes()
+
+    def test_event_with_hostname_attribute(self):
+        self._test_event_with_hostname_attribute()
+
+    def test_event_with_hostname_port_attribute(self):
+        self._test_event_with_hostname_port_attribute()
+
+    def test_event_with_http_attributes(self):
+        self._test_event_with_http_attributes()
+
+    def test_event_with_ip_attributes(self):
+        self._test_event_with_ip_attributes()
+
+    def test_event_with_ip_port_attributes(self):
+        self._test_event_with_ip_port_attributes()
+
+    def test_event_with_mac_address_attribute(self):
+        self._test_event_with_mac_address_attribute()
+
+    def test_event_with_malware_sample_attribute(self):
+        self._test_event_with_malware_sample_attribute()
+
+    def _test_event_with_mutex_attribute(self):
+        self._test_event_with_mutex_attribute()
+
+    def _test_event_with_named_pipe_attribute(self):
+        self._test_event_with_named_pipe_attribute()
+
+    def _test_event_with_pattern_attribute(self):
+        self._test_event_with_pattern_attribute()
+
+    def _test_event_with_port_attribute(self):
+        self._test_event_with_port_attribute()
+
+    def _test_event_with_regkey_attribute(self):
+        self._test_event_with_regkey_attribute()
+
+    def _test_event_with_regkey_value_attribute(self):
+        self._test_event_with_regkey_value_attribute()
+
+    def _test_event_with_size_in_bytes_attribute(self):
+        self._test_event_with_size_in_bytes_attribute()
+
+    def _test_event_with_target_attributes(self):
+        self._test_event_with_target_attributes()
+
+    def _test_event_with_test_mechanism_attributes(self):
+        self._test_event_with_test_mechanism_attributes()
+
+    def _test_event_with_undefined_attributes(self):
+        self._test_event_with_undefined_attributes()
+
+    def _test_event_with_url_attribute(self):
+        self._test_event_with_url_attribute()
+
+    def _test_event_with_vulnerability_attribute(self):
+        self._test_event_with_vulnerability_attribute()
+
+    def _test_event_with_weakness_attribute(self):
+        self._test_event_with_weakness_attribute()
+
+    def _test_event_with_whois_registrant_attributes(self):
+        self._test_event_with_whois_registrant_attributes()
+
+    def _test_event_with_whois_registrar_attribute(self):
+        self._test_event_with_whois_registrar_attribute()
+
+    def _test_event_with_windows_service_attributes(self):
+        self._test_event_with_windows_service_attributes()
+
+    def _test_event_with_x509_fingerprint_attributes(self):
+        self._test_event_with_x509_fingerprint_attributes()
+
+    ################################################################################
+    #                          MISP OBJECTS EXPORT TESTS.                          #
+    ################################################################################
+
+    def test_embedded_indicator_object_galaxy(self):
+        self._test_embedded_indicator_object_galaxy()
+
+    def test_embedded_non_indicator_object_galaxy(self):
+        self._test_embedded_non_indicator_object_galaxy()
+
+    def test_embedded_object_galaxy_with_multiple_clusters(self):
+        self._test_embedded_object_galaxy_with_multiple_clusters()
+
+    def test_embedded_observable_object_galaxy(self):
+        self._test_embedded_observable_object_galaxy()
+
+    def test_event_with_asn_object_indicator(self):
+        self._test_event_with_asn_object_indicator()
+
+    def test_event_with_asn_object_observable(self):
+        self._test_event_with_asn_object_observable()
+
+    def est_event_with_attack_pattern_object(self):
+        self._test_event_with_attack_pattern_object()
+
+    def test_event_with_course_of_action_object(self):
+        self._test_event_with_course_of_action_object()
+
+    def test_event_with_credential_object_indicator(self):
+        self._test_event_with_credential_object_indicator()
+
+    def test_event_with_credential_object_observable(self):
+        self._test_event_with_credential_object_observable()
+
+    def test_event_with_custom_objects(self):
+        self._test_event_with_custom_objects()
+
+    def test_event_with_domain_ip_object_indicator(self):
+        self._test_event_with_domain_ip_object_indicator()
+
+    def test_event_with_domain_ip_object_observable(self):
+        self._test_event_with_domain_ip_object_observable()
+
+    def test_event_with_email_object_indicator(self):
+        self._test_event_with_email_object_indicator()
+
+    def test_event_with_email_object_observable(self):
+        self._test_event_with_email_object_observable()
+
+    def test_event_with_file_and_pe_objects_indicators(self):
+        self._test_event_with_file_and_pe_objects_indicators()
+
+    def test_event_with_file_and_pe_objects_observables(self):
+        self._test_event_with_file_and_pe_objects_observables()
+
+    def test_event_with_file_object_indicator(self):
+        self._test_event_with_file_object_indicator()
+
+    def test_event_with_file_object_observable(self):
+        self._test_event_with_file_object_observable()
+
+    def test_event_with_file_object_with_artifact_indicator(self):
+        self._test_event_with_file_object_with_artifact_indicator()
+
+    def test_event_with_file_object_with_artifact_observable(self):
+        self._test_event_with_file_object_with_artifact_observable()
+
+    def test_event_with_ip_port_object_indicator(self):
+        self._test_event_with_ip_port_object_indicator()
+
+    def test_event_with_ip_port_object_observable(self):
+        self._test_event_with_ip_port_object_observable()
+
+    def test_event_with_mutex_object_indicator(self):
+        self._test_event_with_mutex_object_indicator()
+
+    def test_event_with_mutex_object_observable(self):
+        self._test_event_with_mutex_object_observable()
+
+    def test_event_with_network_connection_object_indicator(self):
+        self._test_event_with_network_connection_object_indicator()
+
+    def test_event_with_network_connection_object_observable(self):
+        self._test_event_with_network_connection_object_observable()
+
+    def test_event_with_network_socket_object_indicator(self):
+        self._test_event_with_network_socket_object_indicator()
+
+    def test_event_with_network_socket_object_observable(self):
+        self._test_event_with_network_socket_object_observable()
+
+    def test_event_with_pe_and_section_object_indicator(self):
+        self._test_event_with_pe_and_section_object_indicator()
+
+    def test_event_with_pe_and_section_object_observable(self):
+        self._test_event_with_pe_and_section_object_observable()
+
+    def test_event_with_process_object_indicator(self):
+        self._test_event_with_process_object_indicator()
+
+    def test_event_with_process_object_observable(self):
+        self._test_event_with_process_object_observable()
+
+    def test_event_with_registry_key_object_indicator(self):
+        self._test_event_with_registry_key_object_indicator()
+
+    def test_event_with_registry_key_object_observable(self):
+        self._test_event_with_registry_key_object_observable()
+
+    def test_event_with_url_object_indicator(self):
+        self._test_event_with_url_object_indicator()
+
+    def test_event_with_url_object_observable(self):
+        self._test_event_with_url_object_observable()
+
+    def test_event_with_user_account_objects_indicator(self):
+        self._test_event_with_user_account_objects_indicator()
+
+    def test_event_with_user_account_objects_observable(self):
+        self._test_event_with_user_account_objects_observable()
+
+    def test_event_with_vulnerability_and_weakness_related_object(self):
+        self._test_event_with_vulnerability_and_weakness_related_object()
+
+    def test_event_with_vulnerability_object(self):
+        self._test_event_with_vulnerability_object()
+
+    def test_event_with_weakness_object(self):
+        self._test_event_with_weakness_object()
+
+    def test_event_with_whois_object_indicator(self):
+        self._test_event_with_whois_object_indicator()
+
+    def test_event_with_whois_object_observable(self):
+        self._test_event_with_whois_object_observable()
+
+    def test_event_with_x509_object_indicator(self):
+        self._test_event_with_x509_object_indicator()
+
+    def test_event_with_x509_object_observable(self):
+        self._test_event_with_x509_object_observable()
+
+    ################################################################################
+    #                            GALAXIES EXPORT TESTS.                            #
+    ################################################################################
+
+    def test_event_with_attack_pattern_galaxy(self):
+        self._test_event_with_attack_pattern_galaxy()
+
+    def test_event_with_course_of_action_galaxy(self):
+        self._test_event_with_course_of_action_galaxy()
+
+    def test_event_with_malware_galaxy(self):
+        self._test_event_with_malware_galaxy()
+
+    def test_event_with_threat_actor_galaxy(self):
+        self._test_event_with_threat_actor_galaxy()
+
+    def test_event_with_tool_galaxy(self):
+        self._test_event_with_tool_galaxy()
+
+    def test_event_with_vulnerability_galaxy(self):
+        self._test_event_with_vulnerability_galaxy()
 
 
 class TestCollectionStix1Export(unittest.TestCase):
