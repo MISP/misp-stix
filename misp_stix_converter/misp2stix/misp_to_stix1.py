@@ -91,10 +91,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def parse_misp_event(self, misp_event: dict):
         self._header_comment = []
         self._objects_to_parse = defaultdict(dict)
-        self._contextualised_data = defaultdict(dict)
-        self._courses_of_action = {}
-        self._threat_actors = {}
-        self._ttps = {}
+        self._contextualised_data = set()
+        self._ids = set()
         self._ttp_references = {}
         if 'Event' in misp_event:
             misp_event = misp_event['Event']
@@ -103,32 +101,20 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         self._stix_package = self._create_stix_package()
         self._incident = self._create_incident()
         self._generate_stix_objects()
-        if 'course_of_action' in self._contextualised_data:
-            for course_of_action in self._contextualised_data['course_of_action'].values():
-                self._incident.add_coa_taken(course_of_action)
-        if 'threat_actor' in self._contextualised_data:
-            self._incident.attributed_threat_actors = AttributedThreatActors()
-            for threat_actor in self._contextualised_data['threat_actor'].values():
-                self._incident.attributed_threat_actors.append(threat_actor)
-        if 'ttp' in self._contextualised_data:
-            for ttp in self._contextualised_data['ttp'].values():
-                self._incident.add_leveraged_ttps(ttp)
-        for course_of_action in self._courses_of_action.values():
-            self._stix_package.add_course_of_action(course_of_action)
-        for threat_actor in self._threat_actors.values():
-            self._stix_package.add_threat_actor(threat_actor)
-        for uuid, ttp in self._ttps.items():
-            if uuid in self._ttp_references:
-                for referenced_uuid, relationship in self._ttp_references[uuid]:
-                    if referenced_uuid in self._ttps:
-                        referenced_ttp = self._ttps[referenced_uuid]
-                        related_ttp = self._create_related_ttp(
-                            referenced_ttp.id_,
-                            relationship,
-                            timestamp=referenced_ttp.timestamp
-                        )
-                        ttp.add_related_ttp(related_ttp)
-            self._stix_package.add_ttp(ttp)
+        if self._stix_package.ttps is not None:
+            for ttp in self._stix_package.ttps.ttp:
+                uuid = '-'.join(ttp.id_.split('-')[-5:])
+                if uuid in self._ttp_references:
+                    for referenced_uuid, relationship in self._ttp_references[uuid]:
+                        if referenced_uuid in self._contextualised_data:
+                            referenced_id = f'{self._orgname}:TTP-{referenced_uuid}'
+                            timestamp = self._quick_fetch_ttp_timestamp(referenced_id)
+                            related_ttp = self._create_related_ttp(
+                                f'{self._orgname}:TTP-{referenced_uuid}',
+                                relationship,
+                                timestamp=timestamp
+                            )
+                            ttp.add_related_ttp(related_ttp)
         self._stix_package.add_incident(self._incident)
         stix_header = STIXHeader()
         stix_header.title = f"Export from {self._orgname}'s MISP"
@@ -253,8 +239,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         if tags:
             ttp.handling = self._set_handling(tags)
         related_ttp = self._create_related_ttp(ttp.id_, attribute['type'], timestamp=timestamp)
-        self._handle_related_ttps({attribute_uuid: related_ttp})
-        self._ttps[attribute_uuid] = ttp
+        self._incident.add_leveraged_ttps(related_ttp)
+        self._stix_package.add_ttp(ttp)
 
     def _handle_non_indicator_attribute_tags_and_galaxies(self, attribute: dict, ttp: TTP) -> tuple:
         if attribute.get('Galaxy'):
@@ -816,8 +802,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             misp_object['name'],
             timestamp=self._datetime_from_timestamp(misp_object['timestamp'])
         )
-        self._contextualised_data['ttp'][misp_object['uuid']] = related_ttp
-        self._ttps[misp_object['uuid']] = ttp
+        self._incident.add_leveraged_ttps(related_ttp)
+        self._contextualised_data.add(misp_object['uuid'])
+        self._stix_package.add_ttp(ttp)
 
     def _parse_asn_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
@@ -869,8 +856,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             course_of_action.id_,
             timestamp=self._datetime_from_timestamp(misp_object['timestamp'])
         )
-        self._contextualised_data['course_of_action'][uuid] = coa_taken
-        self._courses_of_action[uuid] = course_of_action
+        self._incident.add_coa_taken(coa_taken)
+        self._stix_package.add_course_of_action(course_of_action)
 
     def _parse_credential_arguments(self, attributes: dict) -> dict:
         args = {}
@@ -1511,35 +1498,21 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
 
-    def _get_related_ttps(self, galaxy: dict, feature: str) -> dict:
-        related_ttps = {}
-        for cluster in galaxy['GalaxyCluster']:
-            cluster_uuid = cluster['uuid']
-            if cluster_uuid in self._ttps:
-                related_ttps[cluster_uuid] = self._create_related_ttp(
-                    self._ttps[cluster_uuid].id_,
-                    galaxy['name']
-                )
-                continue
-            ttp = self._create_ttp_from_galaxy(galaxy['name'], cluster_uuid)
-            getattr(self, f'_parse_{feature}_galaxy')(cluster, ttp)
-            related_ttps[cluster_uuid] = self._create_related_ttp(ttp.id_, galaxy['name'])
-            self._ttps[cluster_uuid] = ttp
-        return related_ttps
-
-    def _handle_related_ttps(self, related_ttps: dict):
-        for uuid, related_ttp in related_ttps.items():
-            if uuid not in self._contextualised_data['ttp']:
-                self._contextualised_data['ttp'][uuid] = related_ttp
-
     def _parse_attack_pattern_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        related_ttps = self._get_related_ttps(galaxy, 'attack_pattern')
-        for related_ttp in related_ttps.values():
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'attack_pattern', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
             indicator.add_indicated_ttp(related_ttp)
 
     def _parse_attack_pattern_event_galaxy(self, galaxy: dict):
-        related_ttps = self._get_related_ttps(galaxy, 'attack_pattern')
-        self._handle_related_ttps(related_ttps)
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'attack_pattern', galaxy_name)
+            if cluster['uuid'] not in self._contextualised_data:
+                related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
+                self._incident.add_leveraged_ttps(related_ttp)
+                self._contextualised_data.add(cluster['uuid'])
 
     def _parse_attack_pattern_galaxy(self, cluster: dict, ttp: TTP):
         behavior = Behavior()
@@ -1555,60 +1528,55 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         ttp.behavior = behavior
 
     def _parse_attack_pattern_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
-        related_ttps = self._get_related_ttps(galaxy, 'attack_pattern')
-        for related_ttp in related_ttps.values():
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'attack_pattern', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
             stix_object.add_related_ttp(related_ttp)
 
     def _parse_course_of_action_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         for cluster in galaxy['GalaxyCluster']:
-            cluster_uuid = cluster['uuid']
-            if cluster_uuid in self._courses_of_action:
-                related_coa = self._create_related_coa(
-                    self._courses_of_action[cluster_uuid].id_,
-                    galaxy['name']
-                )
-                indicator.suggested_coas.append(related_coa)
-                continue
-            course_of_action = self._create_course_of_action_from_galaxy(cluster)
-            related_coa = self._create_related_coa(course_of_action.id_, galaxy['name'])
+            coa_id = self._parse_course_of_action_galaxy(cluster)
+            related_coa = self._create_related_coa(coa_id, galaxy['name'])
             indicator.suggested_coas.append(related_coa)
-            self._courses_of_action[cluster_uuid] = course_of_action
 
     def _parse_course_of_action_event_galaxy(self, galaxy: dict):
         for cluster in galaxy['GalaxyCluster']:
-            cluster_uuid = cluster['uuid']
-            if cluster_uuid in self._courses_of_action:
-                coa_taken = self._create_coa_taken(self._courses_of_action[cluster_uuid].id_)
-                self._contextualised_data['course_of_action'][cluster_uuid] = coa_taken
-                continue
+            coa_id = self._parse_course_of_action_galaxy(cluster)
+            if cluster['uuid'] not in self._contextualised_data:
+                coa_taken = self._create_coa_taken(coa_id)
+                self._incident.add_coa_taken(coa_taken)
+                self._contextualised_data.add(cluster['uuid'])
+
+    def _parse_course_of_action_galaxy(self, cluster: dict) -> str:
+        if cluster['uuid'] not in self._ids:
             course_of_action = self._create_course_of_action_from_galaxy(cluster)
-            coa_taken = self._create_coa_taken(course_of_action.id_)
-            self._contextualised_data['course_of_action'][cluster_uuid] = coa_taken
-            self._courses_of_action[cluster_uuid] = course_of_action
+            self._stix_package.add_course_of_action(course_of_action)
+            self._ids.add(cluster['uuid'])
+            return course_of_action.id_
+        return f"{self._orgname}:CourseOfAction-{cluster['uuid']}"
 
     def _parse_course_of_action_object_galaxy(self, galaxy: dict, object_coa: CourseOfAction):
         for cluster in galaxy['GalaxyCluster']:
-            cluster_uuid = cluster['uuid']
-            if cluster_uuid in self._courses_of_action:
-                related_coa = self._create_related_coa(
-                    self._courses_of_action[cluster_uuid].id_,
-                    galaxy['name']
-                )
-                object_coa.related_coas.append(related_coa)
-                continue
-            course_of_action = self._create_course_of_action_from_galaxy(cluster)
-            related_coa = self._create_related_coa(course_of_action.id_, galaxy['name'])
+            coa_id = self._parse_course_of_action_galaxy(cluster)
+            related_coa = self._create_related_coa(coa_id, galaxy['name'])
             object_coa.related_coas.append(related_coa)
-            self._courses_of_action[cluster_uuid] = course_of_action
 
     def _parse_malware_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        related_ttps = self._get_related_ttps(galaxy, 'malware')
-        for related_ttp in related_ttps.values():
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'malware', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
             indicator.add_indicated_ttp(related_ttp)
 
     def _parse_malware_event_galaxy(self, galaxy: dict):
-        related_ttps = self._get_related_ttps(galaxy, 'malware')
-        self._handle_related_ttps(related_ttps)
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'malware', galaxy_name)
+            if cluster['uuid'] not in self._contextualised_data:
+                related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
+                self._incident.add_leveraged_ttps(related_ttp)
+                self._contextualised_data.add(cluster['uuid'])
 
     def _parse_malware_galaxy(self, cluster: dict, ttp: TTP):
         behavior = Behavior()
@@ -1624,37 +1592,50 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         ttp.behavior = behavior
 
     def _parse_malware_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
-        related_ttps = self._get_related_ttps(galaxy, 'malware')
-        for related_ttp in related_ttps.values():
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'malware', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
             stix_object.add_related_ttp(related_ttp)
+
+    def _parser_threat_actor(self, cluster: dict) -> str:
+        if cluster['uuid'] not in self._ids:
+            threat_actor = self._create_threat_actor_from_galaxy(cluster)
+            self._stix_package.add_threat_actor(threat_actor)
+            self._ids.add(cluster['uuid'])
+            return threat_actor.id_
+        return f"{self._orgname}:ThreatActor-{cluster['uuid']}"
 
     def _parse_threat_actor_galaxy(self, galaxy: dict):
         for cluster in galaxy['GalaxyCluster']:
-            cluster_uuid = cluster['uuid']
-            if cluster_uuid not in self._contextualised_data['threat_actor']:
-                if cluster_uuid in self._threat_actors:
-                    related_threat_actor = self._create_related_threat_actor(
-                        self._threat_actors[cluster_uuid].id_,
-                        galaxy['name']
-                    )
-                    self._contextualised_data['threat_actor'][cluster_uuid] = related_threat_actor
-                    continue
-                threat_actor = self._create_threat_actor_from_galaxy(cluster)
+            threat_actor_id = self._parser_threat_actor(cluster)
+            if cluster['uuid'] not in self._contextualised_data:
                 related_threat_actor = self._create_related_threat_actor(
-                    threat_actor.id_,
+                    threat_actor_id,
                     galaxy['name']
                 )
-                self._contextualised_data['threat_actor'][cluster_uuid] = related_threat_actor
-                self._threat_actors[cluster_uuid] = threat_actor
+                try:
+                    self._incident.attributed_threat_actors.append(related_threat_actor)
+                except AttributeError:
+                    self._incident.attributed_threat_actors = AttributedThreatActors()
+                    self._incident.attributed_threat_actors.append(related_threat_actor)
+                self._contextualised_data.add(cluster['uuid'])
 
     def _parse_tool_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        related_ttps = self._get_related_ttps(galaxy, 'tool')
-        for related_ttp in related_ttps.values():
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'tool', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
             indicator.add_indicated_ttp(related_ttp)
 
     def _parse_tool_event_galaxy(self, galaxy: dict):
-        related_ttps = self._get_related_ttps(galaxy, 'tool')
-        self._handle_related_ttps(related_ttps)
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'tool', galaxy_name)
+            if cluster['uuid'] not in self._contextualised_data:
+                related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
+                self._incident.add_leveraged_ttps(related_ttp)
+                self._contextualised_data.add(cluster['uuid'])
 
     def _parse_tool_galaxy(self, cluster: dict, ttp: TTP):
         tools = Tools()
@@ -1669,18 +1650,35 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         ttp.resources = resource
 
     def _parse_tool_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
-        related_ttps = self._get_related_ttps(galaxy, 'tool')
-        for related_ttp in related_ttps.values():
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'tool', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
             stix_object.add_related_ttp(related_ttp)
 
+    def _parse_ttp(self, cluster: dict, feature: str, galaxy_name: str) -> str:
+        if cluster['uuid'] not in self._ids:
+            ttp = self._create_ttp_from_galaxy(galaxy_name, cluster['uuid'])
+            getattr(self, f'_parse_{feature}_galaxy')(cluster, ttp)
+            self._stix_package.add_ttp(ttp)
+            return ttp.id_
+        return f"{self._orgname}:TTP-{cluster['uuid']}"
+
     def _parse_vulnerability_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        related_ttps = self._get_related_ttps(galaxy, 'vulnerability')
-        for related_ttp in related_ttps.values():
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'vulnerability', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
             indicator.add_indicated_ttp(related_ttp)
 
     def _parse_vulnerability_event_galaxy(self, galaxy: dict):
-        related_ttps = self._get_related_ttps(galaxy, 'vulnerability')
-        self._handle_related_ttps(related_ttps)
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'vulnerability', galaxy_name)
+            if cluster['uuid'] not in self._contextualised_data:
+                related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
+                self._incident.add_leveraged_ttps(related_ttp)
+                self._contextualised_data.add(cluster['uuid'])
 
     def _parse_vulnerability_galaxy(self, cluster: dict, ttp: TTP):
         exploit_target = ExploitTarget()
@@ -1698,8 +1696,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         ttp.add_exploit_target(exploit_target)
 
     def _parse_vulnerability_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
-        related_ttps = self._get_related_ttps(galaxy, 'vulnerability')
-        for related_ttp in related_ttps.values():
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'vulnerability', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
             stix_object.add_related_ttp(related_ttp)
 
     ################################################################################
@@ -2124,3 +2124,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     @staticmethod
     def _from_datetime_to_str(date):
         return date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+    def _quick_fetch_ttp_timestamp(self, object_id: str) -> datetime:
+        for ttp in self._stix_package.ttps.ttp:
+            if ttp.id_ == object_id:
+                return ttp.timestamp
