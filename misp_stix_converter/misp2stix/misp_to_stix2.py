@@ -26,8 +26,9 @@ _stix_time_fields = {
 
 class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def __init__(self, interoperability: bool):
-        super().__init__(interoperability)
+        super().__init__()
         self._ids = {}
+        self._interoperability = interoperability
 
     def parse_json_content(self, filename: str):
         with open(filename, 'rt', encoding='utf-8') as f:

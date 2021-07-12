@@ -83,8 +83,8 @@ _OBSERVABLE_OBJECT_TYPES = Union[
 
 
 class MISPtoSTIX1Parser(MISPtoSTIXParser):
-    def __init__(self, orgname: str, version: str, interoperability: bool=False):
-        super().__init__(interoperability)
+    def __init__(self, orgname: str, version: str):
+        super().__init__()
         self._default_orgname = orgname
         self._version = version
 
