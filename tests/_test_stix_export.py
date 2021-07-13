@@ -9,7 +9,7 @@ from misp_stix_converter import MISPtoSTIX20Parser, MISPtoSTIX21Parser
 from pathlib import Path
 
 
-class TestCollectionSTIX2Export(unittest.TestCase):
+class TestCollectionSTIXExport(unittest.TestCase):
     def setUp(self):
         self._current_path = Path(__file__).parent
 
@@ -20,7 +20,6 @@ class TestCollectionSTIX2Export(unittest.TestCase):
     def _check_results_export(self, to_test_name, reference_name):
         with open(self._current_path / to_test_name, 'rt', encoding='utf-8') as f:
             to_test = json.loads(f.read())
-        print(json.dumps(to_test, indent=4))
         with open(self._current_path / reference_name, 'rt', encoding='utf-8') as f:
             reference = json.loads(f.read())
         self.assertEqual(reference['objects'], to_test['objects'])

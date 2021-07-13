@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX21Parser, misp_collection_to_stix2_1, misp_to_stix2_1
 from .test_events import *
-from ._test_stix2_export import TestCollectionSTIX2Export, TestSTIX2Export
+from ._test_stix_export import TestCollectionSTIXExport, TestSTIX2Export
 
 
 class TestSTIX21Export(TestSTIX2Export):
@@ -2171,8 +2171,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(vulnerability.type, 'vulnerability')
         self._check_galaxy_features(vulnerability, galaxy, timestamp, False, False)
 
-
-class TestCollectionStix21Export(TestCollectionSTIX2Export):
+class TestCollectionStix21Export(TestCollectionSTIXExport):
     def test_attributes_collection(self):
         name = 'test_attributes_collection'
         to_test_name = f'{name}.json.out'
