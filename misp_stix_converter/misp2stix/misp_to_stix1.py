@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import json
 import socket
 from . import stix1_mapping
 from .exportparser import MISPtoSTIXParser
@@ -87,6 +88,22 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         super().__init__()
         self._default_orgname = orgname
         self._version = version
+
+    def parse_json_content(self, filename):
+        with open(filename, 'rt', encoding='utf-8') as f:
+            json_content = json.loads(f.read())
+        if json_content.get('response'):
+            json_content = json_content['response']
+            if isinstance(json_content, list):
+                packages = []
+                for event in json_content:
+                    self.parse_misp_event(event)
+                    packages.append(self._stix_package)
+                self._stix_package = packages
+            else:
+                self.parse_misp_attributes(json_content)
+        else:
+            self.parse_misp_event(json_content)
 
     def parse_misp_event(self, misp_event: dict):
         self._header_comment = []

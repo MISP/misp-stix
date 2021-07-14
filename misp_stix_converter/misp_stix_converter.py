@@ -4,18 +4,30 @@
 import json
 import re
 from .misp2stix.framing import stix_xml_separator
+from .misp2stix.misp_to_stix1 import MISPtoSTIX1Parser
 from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
+from .misp2stix.stix1_mapping import NS_DICT, SCHEMALOC_DICT
+from mixbox import idgen
+from mixbox.namespaces import Namespace, register_namespace
+from pathlib import Path
+from stix.core import STIXHeader, STIXPackage
 from stix2.base import STIXJSONEncoder
 from stix2.v20 import Bundle as Bundle_v20
 from stix2.v21 import Bundle as Bundle_v21
-from typing import List
+from typing import List, TypedDict, Union
 
 _default_namespace = 'https://github.com/MISP/MISP'
 _default_org = 'MISP'
+_files_type = Union[Path, str]
 
 
-def misp_collection_to_stix2_0(output_filename: str, *input_files: List[str], in_memory: bool=False):
+################################################################################
+#                         MISP to STIX MAIN FUNCTIONS.                         #
+################################################################################
+
+
+def misp_collection_to_stix2_0(output_filename: _files_type, *input_files: List[_files_type], in_memory: bool=False):
     parser = MISPtoSTIX20Parser()
     if in_memory or len(input_files) == 1:
         objects = []
@@ -38,7 +50,7 @@ def misp_collection_to_stix2_0(output_filename: str, *input_files: List[str], in
     return 1
 
 
-def misp_collection_to_stix2_1(output_filename: str, *input_files: List[str], in_memory: bool=False):
+def misp_collection_to_stix2_1(output_filename: _files_type, *input_files: List[_files_type], in_memory: bool=False):
     parser = MISPtoSTIX21Parser()
     if in_memory or len(input_files) == 1:
         objects = []
@@ -61,20 +73,23 @@ def misp_collection_to_stix2_1(output_filename: str, *input_files: List[str], in
     return 1
 
 
-def misp_to_stix1(filename, return_format, version, include_namespaces = False, namespace=_default_namespace, org=_default_org):
+def misp_to_stix1(*args: List[_files_type], include_namespaces = False, namespace=_default_namespace, org=_default_org):
+    filename, return_format, version = args
+    package = create_stix_package(org, version)
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
-    export_parser = Stix1ExportParser(return_format, namespace, org, include_namespaces)
-    export_parser.load_file(filename)
-    export_parser.generate_stix1_package(version)
+    parser = MISPtoSTIX1Parser(org, version)
+    parser.parse_json_content(filename)
+    for related_package in parser.stix_package:
+        package.add_related_package(related_package)
     if include_namespaces:
-        return _write_raw_stix(export_parser.decoded_package, filename, return_format)
+        return _write_raw_stix(package, org, namespace, filename, return_format)
     if return_format == 'xml':
         return _stix_to_xml(export_parser.stix_package, export_parser.xml_args, filename)
     return _stix_to_json(export_parser.decoded_package, filename)
 
 
-def misp_to_stix2_0(filename):
+def misp_to_stix2_0(filename: _files_type):
     parser = MISPtoSTIX20Parser()
     parser.parse_json_content(filename)
     with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
@@ -82,12 +97,17 @@ def misp_to_stix2_0(filename):
     return 1
 
 
-def misp_to_stix2_1(filename):
+def misp_to_stix2_1(filename: _files_type):
     parser = MISPtoSTIX21Parser()
     parser.parse_json_content(filename)
     with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
         f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
     return 1
+
+
+################################################################################
+#                         STIX to MISP MAIN FUNCTIONS.                         #
+################################################################################
 
 
 def stix_to_misp(filename):
@@ -110,6 +130,26 @@ def stix2_to_misp(filename):
     stix_parser.handler(event, filename)
     stix_parser.save_file()
     return
+
+
+################################################################################
+#                        STIX PACKAGE CREATION HELPERS.                        #
+################################################################################
+
+
+def create_stix_package(orgname: str, version: str) -> STIXPackage:
+    package = STIXPackage()
+    package.version = version
+    header = STIXHeader()
+    header.title = f"Export from {orgname}'s MISP"
+    header.package_intents="Threat Report"
+    package.stix_header = header
+    return package
+
+
+################################################################################
+#                        STIX CONTENT LOADING FUNCTIONS                        #
+################################################################################
 
 
 def _from_misp(stix_objects):
@@ -140,6 +180,11 @@ def _load_stix_event(filename, tries=0):
     return 0
 
 
+################################################################################
+#                        STIX CONTENT WRITING FUNCTIONS                        #
+################################################################################
+
+
 def _stix_to_json(stix_package, filename):
     stix_package = stix_package['related_packages']['related_packages'] if stix_package.get('related_packages') else [{'package': package}]
     with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
@@ -161,7 +206,6 @@ def _stix_to_xml(stix_package, xml_args, filename):
 
 
 def _update_namespaces():
-    from mixbox.namespaces import Namespace, register_namespace
     # LIST OF ADDITIONAL NAMESPACES
     # can add additional ones whenever it is needed
     ADDITIONAL_NAMESPACES = [
@@ -196,11 +240,17 @@ def _write_single_package(package, args):
     return f'            {package}\n'
 
 
-def _write_raw_stix(decoded, filename, return_format):
+def _write_raw_stix(package, org, namespace, filename, return_format):
+    namespaces = namespaces = {namespace: org}
+    namespaces.update(NS_DICT)
+    try:
+        idgen.set_id_namespace(Namespace(namespace, org))
+    except TypeError:
+        idgen.set_id_namespace(Namespace(namespace, org, "MISP"))
     if return_format == 'xml':
         with open(f'{filename}.out', 'wb') as f:
-            f.write(decoded)
+            f.write(package.to_xml(auto_namespace=False, ns_dict=namespaces, schemaloc_dict=SCHEMALOC_DICT))
     else:
         with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
-            f.write(json.dumps(decoded))
+            f.write(json.dumps(package.to_dict(), indent=4))
     return 1
