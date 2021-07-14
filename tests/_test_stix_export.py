@@ -7,6 +7,7 @@ import unittest
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX20Parser, MISPtoSTIX21Parser
 from pathlib import Path
+from stix.core import STIXPackage
 
 
 class TestCollectionSTIXExport(unittest.TestCase):
@@ -17,7 +18,13 @@ class TestCollectionSTIXExport(unittest.TestCase):
         for filename in self._current_path.glob('test_*_collection*.json.out'):
             os.remove(filename)
 
-    def _check_results_export(self, to_test_name, reference_name):
+    def _check_stix1_results_export(self, to_test_name, reference_name):
+        to_test = STIXPackage.from_xml(str(self._current_path / to_test_name)).to_dict()
+        reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
+        for key in (key for key in reference.keys() if key != 'id'):
+            self.assertEqual(to_test[key], reference[key])
+
+    def _check_stix2_results_export(self, to_test_name, reference_name):
         with open(self._current_path / to_test_name, 'rt', encoding='utf-8') as f:
             to_test = json.loads(f.read())
         with open(self._current_path / reference_name, 'rt', encoding='utf-8') as f:

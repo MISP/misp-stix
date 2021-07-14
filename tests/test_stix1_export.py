@@ -5,7 +5,9 @@ import os
 import unittest
 from datetime import datetime, timezone
 from misp_stix_converter import MISPtoSTIX1Parser, misp_to_stix1, stix_framing
+from pathlib import Path
 from .test_events import *
+from ._test_stix_export import TestCollectionSTIXExport
 
 _DEFAULT_NAMESPACE = 'https://github.com/MISP/MISP'
 _DEFAULT_ORGNAME = 'MISP-Project'
@@ -2584,40 +2586,29 @@ class TestStix12Export(TestStix1Export):
         self._test_event_with_vulnerability_galaxy()
 
 
-class TestCollectionStix1Export(unittest.TestCase):
-    def setUp(self):
-        self._current_path = os.path.dirname(os.path.realpath(__file__))
-
-    def tearDown(self):
-        for filename in self._filenames:
-            os.remove(f'{filename}.out')
-
-    def _check_misp_to_stix_export(self):
-        for filename in self._filenames:
-            return_code = misp_to_stix1(
-                filename,
+class TestCollectionStix1Export(TestCollectionSTIXExport):
+    def test_event_export_with_namespaces_11(self):
+        name = 'test_events_collection_1.json'
+        self.assertEqual(
+            misp_to_stix1(
+                self._current_path / name,
                 'xml',
                 '1.1.1',
-                namespace=_DEFAULT_NAMESPACE,
-                org=_DEFAULT_ORGNAME
-            )
-            self.assertEqual(return_code, 1)
-            with open(f'{filename}.out', 'rt', encoding='utf-8') as f:
-                yield f.read()
-
-    def test_events_collection(self):
-        stripped_orgname = _DEFAULT_ORGNAME.replace('-', '')
-        fixed_line = f'\t id="{stripped_orgname}:Package-0c467501-2514-462f-90d6-3ea04bb0e721" version="1.1.1" timestamp="2020-10-25T16:22:00">'
-        header, separator, footer = stix_framing(
-            _DEFAULT_NAMESPACE,
-            _DEFAULT_ORGNAME,
-            'xml'
+                include_namespaces=True
+            ),
+            1
         )
-        start = f'id="{stripped_orgname.replace("-", "")}:Package-'
-        header = '\n'.join(fixed_line if line.strip().startswith(start) else line for line in header.split('\n'))
-        name = 'test_events_collection'
-        self._filenames = tuple(f"{self._current_path}/{name}_{n}.json" for n in (1, 2))
-        packages = self._check_misp_to_stix_export()
-        content = separator.join(packages)
-        with open(f'{self._current_path}/{name}.xml', 'rt', encoding='utf-8') as f:
-            self.assertEqual(f'{header}{content}{footer}', f.read())
+        self._check_stix1_results_export(f'{name}.out', 'test_event_stix11.xml')
+
+    def test_event_export_with_namespaces_12(self):
+        name = 'test_events_collection_1.json'
+        self.assertEqual(
+            misp_to_stix1(
+                self._current_path / name,
+                'xml',
+                '1.2',
+                include_namespaces=True
+            ),
+            1
+        )
+        self._check_stix1_results_export(f'{name}.out', 'test_event_stix12.xml')

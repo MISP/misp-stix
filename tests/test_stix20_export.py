@@ -1766,9 +1766,9 @@ class TestCollectionStix20Export(TestCollectionSTIXExport):
         output_file = self._current_path / to_test_name
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
         self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files), 1)
-        self._check_results_export(to_test_name, reference_name)
+        self._check_stix2_results_export(to_test_name, reference_name)
         self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files, in_memory=True), 1)
-        self._check_results_export(to_test_name, reference_name)
+        self._check_stix2_results_export(to_test_name, reference_name)
 
     def test_events_collection(self):
         name = 'test_events_collection'
@@ -1777,11 +1777,11 @@ class TestCollectionStix20Export(TestCollectionSTIXExport):
         output_file = self._current_path / to_test_name
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
         self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files), 1)
-        self._check_results_export(to_test_name, reference_name)
+        self._check_stix2_results_export(to_test_name, reference_name)
         self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files, in_memory=True), 1)
-        self._check_results_export(to_test_name, reference_name)
+        self._check_stix2_results_export(to_test_name, reference_name)
 
     def test_event_export(self):
         name = 'test_events_collection_1.json'
         self.assertEqual(misp_to_stix2_0(self._current_path / name), 1)
-        self._check_results_export(f'{name}.out', 'test_event_stix20.json')
+        self._check_stix2_results_export(f'{name}.out', 'test_event_stix20.json')
