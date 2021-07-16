@@ -73,7 +73,7 @@ def misp_collection_to_stix2_1(output_filename: _files_type, *input_files: List[
     return 1
 
 
-def misp_to_stix1(*args: List[_files_type], include_namespaces = False, namespace=_default_namespace, org=_default_org):
+def misp_to_stix1(*args: List[_files_type], namespace=_default_namespace, org=_default_org):
     filename, return_format, version = args
     package = create_stix_package(org, version)
     if org != _default_org:
@@ -82,11 +82,7 @@ def misp_to_stix1(*args: List[_files_type], include_namespaces = False, namespac
     parser.parse_json_content(filename)
     for related_package in parser.stix_package:
         package.add_related_package(related_package)
-    if include_namespaces:
-        return _write_raw_stix(package, org, namespace, filename, return_format)
-    if return_format == 'xml':
-        return _stix_to_xml(export_parser.stix_package, export_parser.xml_args, filename)
-    return _stix_to_json(export_parser.decoded_package, filename)
+    return _write_raw_stix(package, org, namespace, filename, return_format)
 
 
 def misp_to_stix2_0(filename: _files_type):
