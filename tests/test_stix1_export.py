@@ -2587,28 +2587,12 @@ class TestStix12Export(TestStix1Export):
 
 
 class TestCollectionStix1Export(TestCollectionSTIXExport):
-    def test_event_export_with_namespaces_11(self):
+    def test_event_export_11(self):
         name = 'test_events_collection_1.json'
-        self.assertEqual(
-            misp_to_stix1(
-                self._current_path / name,
-                'xml',
-                '1.1.1',
-                include_namespaces=True
-            ),
-            1
-        )
+        self.assertEqual(misp_to_stix1(self._current_path / name, 'xml', '1.1.1'), 1)
         self._check_stix1_results_export(f'{name}.out', 'test_event_stix11.xml')
 
-    def test_event_export_with_namespaces_12(self):
+    def test_event_export_12(self):
         name = 'test_events_collection_1.json'
-        self.assertEqual(
-            misp_to_stix1(
-                self._current_path / name,
-                'xml',
-                '1.2',
-                include_namespaces=True
-            ),
-            1
-        )
+        self.assertEqual(misp_to_stix1(self._current_path / name, 'xml', '1.2'), 1)
         self._check_stix1_results_export(f'{name}.out', 'test_event_stix12.xml')
