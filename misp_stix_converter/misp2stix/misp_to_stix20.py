@@ -375,7 +375,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         attributes = self._extract_multiple_object_attributes(misp_object['Attribute'])
         if not any(feature in attributes for feature in ('domain', 'hostname')):
             self._parse_custom_object(misp_object)
-            self._warnings.add('Missing minimum requirement to build a DomainName object from a domain-ip MISP Object.')
+            self._required_fields_missing_warning('DomainName', 'domain-ip')
             return
         observable_object = {}
         domain_args = {}

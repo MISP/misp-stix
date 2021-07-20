@@ -202,9 +202,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                     getattr(self, stix1_mapping.attribute_types_mapping[attribute_type])(attribute)
                 else:
                     self._parse_custom_attribute(attribute)
-                    self._warnings.add(f'MISP Attribute type {attribute_type} not mapped.')
+                    self._attribute_not_mapped_warning(attribute_type)
             except Exception:
-                self._errors.append(f"Error with the {attribute_type} attribute: {attribute['value']}.")
+                self._attribute_error(attribute)
 
     def _handle_attribute(self, attribute: dict, observable: Observable):
         if attribute.get('to_ids', False):
@@ -237,7 +237,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                     getattr(self, to_call.format('attribute'))(galaxy, indicator)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
-                    self._warnings.add(f"{galaxy_type} galaxy in {attribute['type']} attribute not mapped.")
+                    self._attribute_galaxy_not_mapped_warning(galaxy_type, attribute['type'])
             return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
         return tuple(tag['name'] for tag in attribute.get('Tag', []))
 
@@ -266,7 +266,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 galaxy_type = galaxy['type']
                 if galaxy_type not in stix1_mapping.ttp_names:
                     if galaxy_type not in stix1_mapping.galaxy_types_mapping:
-                        self._warnings.add(f"{galaxy_type} galaxy in {attribute['type']} attribute not mapped.")
+                        self._attribute_galaxy_not_mapped_warning(galaxy_type, attribute['type'])
                     continue
                 to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
                 getattr(self, to_call.format('object'))(galaxy, ttp)
@@ -672,7 +672,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                     else:
                         self._handle_misp_object(observable, misp_object.get('meta-category'))
             except Exception:
-                self._errors.append(f"Error with the {object_name} object: {misp_object['uuid']}.")
+                self._object_error(misp_object)
         if self._objects_to_parse:
             if self._objects_to_parse.get('file'):
                 for misp_object in self._objects_to_parse.pop('file').values():
@@ -717,7 +717,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _check_reference(self, reference: dict, object_name: str) -> bool:
         if self._is_reference_included(reference, object_name):
             if reference['referenced_uuid'] not in self._objects_to_parse[object_name]:
-                self._warnings.add(f"Reference to a non existing {object_name} object: {reference['referenced_uuid']}")
+                self._referenced_object_name_warning(object_name, reference['referenced_uuid'])
                 return False
             return True
         return False
@@ -927,7 +927,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 attribute['value']
             ))
         observable = self._create_observable(custom_object, misp_object['uuid'], 'Custom')
-        self._warnings.add(f"MISP Object name {misp_object['name']} not mapped.")
+        self._object_not_mapped_warning(misp_object['name'])
         return observable
 
     def _parse_domain_ip_object(self, misp_object: dict) -> Observable:

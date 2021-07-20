@@ -254,9 +254,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 getattr(self, stix2_mapping.attribute_types_mapping[attribute_type])(attribute)
             else:
                 self._parse_custom_attribute(attribute)
-                self._warnings.add(f'MISP Attribute type {attribute_type} not mapped.')
+                self._attribute_not_mapped_warning(attribute_type)
         except Exception:
-            self._errors.append(f"Error with the {attribute_type} attribute: {attribute['value']}.")
+            self._attribute_error(attribute)
 
     def _handle_attribute_indicator(self, attribute: dict, pattern: str):
         indicator_id = f"indicator--{attribute['uuid']}"
@@ -312,7 +312,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     getattr(self, to_call.format('attribute'))(galaxy, object_id, timestamp)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
-                    self._warnings.add(f"{galaxy_type} galaxy in {attribute['type']} attribute not mapped.")
+                    self._attribute_galaxy_not_mapped_warning(galaxy_type, attribute['type'])
             return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
         return tuple(tag['name'] for tag in attribute.get('Tag', []))
 
@@ -647,8 +647,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for file_uuid, misp_object in self._objects_to_parse['file'].items():
                 file_ids, file_object = misp_object
                 pe_uuid = self._fetch_included_reference_uuids(file_object['ObjectReference'], 'pe')
-                if len(pe_uuid) != 1:
-                    self._raise_file_and_pe_references_warning(file_uuid, pe_uuid)
+                pe_found = len(pe_uuid)
+                if pe_found != 1:
+                    if pe_found == 0:
+                        self._pe_reference_warning(file_uuid)
+                    else:
+                        self._unclear_pe_references_warning(file_uuid, pe_uuid)
                     if file_ids:
                         pattern = self._parse_file_object_pattern(file_object['Attribute'])
                         self._handle_object_indicator(file_object, pattern)
@@ -786,7 +790,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     getattr(self, to_call.format('attribute'))(galaxy, object_id, timestamp)
                     tag_names.update(self._quick_fetch_tag_names(galaxy))
                 else:
-                    self._warnings.add(f"{galaxy_type} galaxy in {misp_object['name']} object not mapped.")
+                    self._object_galaxy_not_mapped_warning(galaxy_type, misp_object['name'])
             return tuple(tag for tag in tags if tag not in tag_names)
         return tuple(tags)
 
@@ -2249,7 +2253,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if self._is_reference_included(reference, name):
                 referenced_uuid = reference['referenced_uuid']
                 if referenced_uuid not in self._objects_to_parse[name]:
-                    self._warnings.add(f'Referenced {name} object {referenced_uuid} not correctly handled with objects to parse.')
+                    self._referenced_object_name_warning(name, referenced_uuid)
                     continue
                 uuids.append(referenced_uuid)
         return uuids
@@ -2332,12 +2336,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     }
                 )
             self._relationships.append(relationship)
-
-    def _raise_file_and_pe_references_warning(self, file_uuid: str, pe_uuid: list):
-        if len(pe_uuid) == 0:
-            self._warnings.add(f'Unable to parse the pe object related to the file object {file_uuid}.')
-        else:
-            self._warnings.add(f'The file object {file_uuid} has more than one reference to pe_objects: {", ".join(pe_uuid)}')
 
     @staticmethod
     def _sanitize_registry_key_value(value: str) -> str:
