@@ -635,12 +635,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _resolve_objects(self):
         for misp_object in self._misp_event['Object']:
-            object_name = misp_object['name']
-            if object_name in stix2_mapping.objects_mapping:
-                getattr(self, stix2_mapping.objects_mapping[object_name])(misp_object)
-            else:
-                self._parse_custom_object(misp_object)
-                self._warnings.add(f'MISP Object name {object_name} not mapped.')
+            try:
+                object_name = misp_object['name']
+                if object_name in stix2_mapping.objects_mapping:
+                    getattr(self, stix2_mapping.objects_mapping[object_name])(misp_object)
+                else:
+                    self._parse_custom_object(misp_object)
+                    self._object_not_mapped_warning(object_name)
+            except Exception:
+                self._object_error(misp_object)
 
     def _resolve_objects_to_parse(self):
         if self._objects_to_parse.get('file'):
