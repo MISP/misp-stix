@@ -49,6 +49,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def parse_misp_attributes(self, attributes: dict):
         if 'Attribute' in attributes:
             attributes = attributes['Attribute']
+        self._identifier = 'attributes collection'
         self._objects = []
         self._identity_id = stix2_mapping.misp_identity_args['id']
         if self._identity_id not in self._ids:
@@ -67,6 +68,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if 'Event' in misp_event:
             misp_event = misp_event['Event']
         self._misp_event = misp_event
+        self._identifier = self._misp_event['uuid']
         self._markings = {}
         self._object_refs = []
         self._relationships = []

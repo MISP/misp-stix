@@ -114,6 +114,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         if 'Event' in misp_event:
             misp_event = misp_event['Event']
         self._misp_event = misp_event
+        self._identifier = self._misp_event['uuid']
         self._orgname = self._set_creator()
         self._stix_package = self._create_stix_package()
         self._incident = self._create_incident()

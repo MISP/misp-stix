@@ -15,24 +15,12 @@ class MISPtoSTIXParser():
     __PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
 
     def __init__(self):
-        self.__initiate_errors_and_warnings()
-
-    def __initiate_errors_and_warnings(self):
-        self.__errors = []
-        self.__warnings = set()
+        self.__errors = defaultdict(list)
+        self.__warnings = defaultdict(set)
 
     @property
     def errors(self) -> dict:
         return self.__errors
-
-    @property
-    def fetch_errors_and_warnings(self):
-        to_return = {
-            'errors': self.__errors,
-            'warnings': self.__warnings
-        }
-        self.__initiate_errors_and_warnings()
-        return to_return
 
     @property
     def warnings(self) -> dict:
@@ -179,40 +167,40 @@ class MISPtoSTIXParser():
 
     def _attribute_error(self, attribute: dict):
         message = f"Error with the {attribute['type']} attribute: {attribute['value']} (uuid: {attribute['uuid']})."
-        self.__errors.append(message)
+        self.__errors[self._identifier].append(message)
 
     def _attribute_galaxy_not_mapped_warning(self, galaxy_type: str, attribute_type: str):
         message = f"{galaxy_type} galaxy in {attribute_type} attribute not mapped."
-        self.__warnings.add(message)
+        self.__warnings[self._identifier].add(message)
 
     def _attribute_not_mapped_warning(self, attribute_type: str):
         message = f"MISP Attribute type {attribute_type} not mapped."
-        self.__warnings.add(message)
+        self.__warnings[self._identifier].add(message)
 
     def _object_error(self, misp_object: dict):
         message = f"Error with the {misp_object['name']}: {misp_object['uuid']}."
-        self.__errors.append(message)
+        self.__errors[self._identifier].append(message)
 
     def _object_galaxy_not_mapped_warning(self, galaxy_type: str, object_name: str):
         message = f"{galaxy_type} galaxy in {object_name} object not mapped."
-        self.__warnings.add(message)
+        self.__warnings[self._identifier].add(message)
 
     def _object_not_mapped_warning(self, object_name: str):
         message = f"MISP Object name {object_name} not mapped."
-        self.__warnings.add(message)
+        self.__warnings[self._identifier].add(message)
 
     def _pe_reference_warning(self, file_uuid: str):
         message = f"Unable to find the pe object related to the file object {file_uuid}."
-        self.__wargning.add(message)
+        self.__wargning[self._identifier].add(message)
 
     def _referenced_object_name_warning(self, object_name: str, referenced_uuid: str):
         message = f"Reference to a non existing {object_name} object with uuid: {referenced_uuid}."
-        self.__warnings.add(message)
+        self.__warnings[self._identifier].add(message)
 
     def _required_fields_missing_warning(self, object_type: str, object_name: str):
         message = f"Missing minimum requirement to build a {object_type} object from a {object_name} MISP Object."
-        self.__warnings.add(message)
+        self.__warnings[self._identifier].add(message)
 
     def _unclear_pe_references_warning(self, file_uuid: str, pe_uuids: list):
         message = f"The file object {file_uuid} has more than one reference to pe objects: {', '.join(pe_uuids)}"
-        self.__warnings.add(message)
+        self.__warnings[self._identifier].add(message)
