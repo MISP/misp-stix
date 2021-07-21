@@ -20,11 +20,11 @@ class MISPtoSTIXParser():
 
     @property
     def errors(self) -> dict:
-        return tuple(self.__errors)
+        return self.__errors
 
     @property
     def warnings(self) -> dict:
-        return tuple(self.__warnings)
+        return self.__warnings
 
     ################################################################################
     #                           COMMON PARSING FUNCTIONS                           #
