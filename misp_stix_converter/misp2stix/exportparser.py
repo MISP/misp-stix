@@ -178,7 +178,7 @@ class MISPtoSTIXParser():
         self.__warnings[self._identifier].add(message)
 
     def _object_error(self, misp_object: dict):
-        message = f"Error with the {misp_object['name']}: {misp_object['uuid']}."
+        message = f"Error with the {misp_object['name']} object: {misp_object['uuid']}."
         self.__errors[self._identifier].append(message)
 
     def _object_galaxy_not_mapped_warning(self, galaxy_type: str, object_name: str):
