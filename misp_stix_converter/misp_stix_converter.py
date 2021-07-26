@@ -4,7 +4,7 @@
 import json
 import re
 from .misp2stix.framing import stix_xml_separator
-from .misp2stix.misp_to_stix1 import MISPtoSTIX1Parser
+from .misp2stix.misp_to_stix1 import MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser
 from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
 from .misp2stix.stix1_mapping import NS_DICT, SCHEMALOC_DICT
@@ -75,12 +75,12 @@ def misp_collection_to_stix2_1(output_filename: _files_type, *input_files: List[
 
 def misp_to_stix1(*args: List[_files_type], namespace=_default_namespace, org=_default_org):
     filename, return_format, version = args
-    package = create_stix_package(org, version)
+    package = _create_stix_package(org, version)
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
-    parser = MISPtoSTIX1Parser(org, version)
+    parser = MISPtoSTIX1EventsParser(org, version)
     parser.parse_json_content(filename)
-    for related_package in parser.stix_package:
+    for related_package in parser.stix_package.related_packages:
         package.add_related_package(related_package)
     return _write_raw_stix(package, org, namespace, filename, return_format)
 
@@ -133,7 +133,7 @@ def stix2_to_misp(filename):
 ################################################################################
 
 
-def create_stix_package(orgname: str, version: str) -> STIXPackage:
+def _create_stix_package(orgname: str, version: str) -> STIXPackage:
     package = STIXPackage()
     package.version = version
     header = STIXHeader()
@@ -188,8 +188,8 @@ def _stix_to_json(stix_package, filename):
     return 1
 
 
-def _stix_to_xml(stix_package, xml_args, filename):
-    if stix_package.related_packages is not None:
+def _stix_to_xml(package, filename):
+    if package.related_packages is not None:
         with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
             f.write(_write_indented_package(_write_decoded_packages(
                 stix_package.related_packages.related_package,
