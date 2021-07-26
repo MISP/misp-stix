@@ -4,7 +4,7 @@
 import os
 import unittest
 from datetime import datetime, timezone
-from misp_stix_converter import MISPtoSTIX1Parser, misp_to_stix1, stix_framing
+from misp_stix_converter import MISPtoSTIX1EventsParser, misp_to_stix1, stix1_framing
 from pathlib import Path
 from .test_events import *
 from ._test_stix_export import TestCollectionSTIXExport
@@ -1976,7 +1976,7 @@ class TestStix1Export(unittest.TestCase):
 
 class TestStix11Export(TestStix1Export):
     def setUp(self):
-        self.parser = MISPtoSTIX1Parser(_DEFAULT_ORGNAME, '1.1.1')
+        self.parser = MISPtoSTIX1EventsParser(_DEFAULT_ORGNAME, '1.1.1')
 
     ################################################################################
     #                              EVENT FIELDS TESTS                              #
@@ -2282,7 +2282,7 @@ class TestStix11Export(TestStix1Export):
 
 class TestStix12Export(TestStix1Export):
     def setUp(self):
-        self.parser = MISPtoSTIX1Parser(_DEFAULT_ORGNAME, '1.2')
+        self.parser = MISPtoSTIX1EventsParser(_DEFAULT_ORGNAME, '1.2')
 
     ################################################################################
     #                              EVENT FIELDS TESTS                              #
