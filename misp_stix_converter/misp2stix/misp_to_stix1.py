@@ -68,6 +68,7 @@ from stix.ttp import TTP, Behavior
 from stix.ttp.attack_pattern import AttackPattern
 from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
+from stix.ttp.victim_targeting import VictimTargeting
 from typing import Optional, Union
 
 _FILE_SINGLE_ATTRIBUTES = (
@@ -84,62 +85,9 @@ _OBSERVABLE_OBJECT_TYPES = Union[
 
 
 class MISPtoSTIX1Parser(MISPtoSTIXParser):
-    def __init__(self, orgname: str, version: str):
+    def __init__(self, version: str):
         super().__init__()
-        self._default_orgname = orgname
         self._version = version
-
-    def parse_json_content(self, filename):
-        with open(filename, 'rt', encoding='utf-8') as f:
-            json_content = json.loads(f.read())
-        if json_content.get('response'):
-            json_content = json_content['response']
-            if isinstance(json_content, list):
-                packages = []
-                for event in json_content:
-                    self.parse_misp_event(event)
-                    packages.append(self._stix_package)
-                self._stix_package = packages
-            else:
-                self.parse_misp_attributes(json_content)
-        else:
-            self.parse_misp_event(json_content)
-
-    def parse_misp_event(self, misp_event: dict):
-        self._header_comment = []
-        self._objects_to_parse = defaultdict(dict)
-        self._contextualised_data = set()
-        self._ids = set()
-        self._ttp_references = {}
-        if 'Event' in misp_event:
-            misp_event = misp_event['Event']
-        self._misp_event = misp_event
-        self._identifier = self._misp_event['uuid']
-        self._orgname = self._set_creator()
-        self._stix_package = self._create_stix_package()
-        self._incident = self._create_incident()
-        self._generate_stix_objects()
-        if self._stix_package.ttps is not None:
-            for ttp in self._stix_package.ttps.ttp:
-                uuid = '-'.join(ttp.id_.split('-')[-5:])
-                if uuid in self._ttp_references:
-                    for referenced_uuid, relationship in self._ttp_references[uuid]:
-                        if referenced_uuid in self._contextualised_data:
-                            referenced_id = f'{self._orgname}:TTP-{referenced_uuid}'
-                            timestamp = self._quick_fetch_ttp_timestamp(referenced_id)
-                            related_ttp = self._create_related_ttp(
-                                f'{self._orgname}:TTP-{referenced_uuid}',
-                                relationship,
-                                timestamp=timestamp
-                            )
-                            ttp.add_related_ttp(related_ttp)
-        self._stix_package.add_incident(self._incident)
-        stix_header = STIXHeader()
-        stix_header.title = f"Export from {self._orgname}'s MISP"
-        stix_header.package_intents = "Threat Report"
-        if self._header_comment and len(self._header_comment) == 1:
-            stix_header.description = self._header_comment[0]
-        self._stix_package.stix_header = stix_header
 
     @property
     def stix_package(self) -> STIXPackage:
@@ -149,20 +97,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     #                     MAIN STIX PACKAGE CREATION FUNCTIONS                     #
     ################################################################################
 
-    def _create_incident(self) -> Incident:
-        incident_id = f"{self._orgname}:Incident-{self._misp_event['uuid']}"
-        incident = Incident(
-            id_=incident_id,
-            title=self._misp_event['info'],
-            timestamp=self._datetime_from_timestamp(self._misp_event['timestamp'])
-        )
-        incident_time = Time()
-        incident_time.incident_discovery = self._misp_event['date']
-        if self._is_published():
-            incident_time.incident_reported = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
-        incident.time = incident_time
-        return incident
-
     def _create_stix_package(self) -> STIXPackage:
         package_id = f"{self._orgname}:STIXPackage-{self._misp_event['uuid']}"
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
@@ -170,63 +104,29 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         stix_package.version = self._version
         return stix_package
 
-    def _generate_stix_objects(self):
-        if self._misp_event.get('threat_level_id'):
-            threat_level = stix1_mapping.threat_level_mapping[int(self._misp_event['threat_level_id'])]
-            self._add_journal_entry(f'Event Threat Level: {threat_level}')
-        self._add_journal_entry('MISP Tag: misp:tool="MISP-STIX-Converter"')
-        tags = self._handle_event_tags_and_galaxies('stix1_galaxy_mapping')
-        if tags:
-            self._incident.handling = self._set_handling(tags)
-        if self._misp_event.get('id'):
-            external_id = ExternalID(value=self._misp_event['id'], source='MISP Event')
-            self._incident.add_external_id(external_id)
-        if self._misp_event.get('analysis'):
-            status = stix1_mapping.status_mapping[int(self._misp_event['analysis'])]
-            self._incident.status = IncidentStatus(status)
-        self._incident.information_source = self._set_producer()
-        self._incident.reporter = self._set_reporter()
-        if self._misp_event.get('Attribute'):
-            self._resolve_attributes()
-        if self._misp_event.get('Object'):
-            self._resolve_objects()
-
     ################################################################################
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
     ################################################################################
 
-    def _resolve_attributes(self):
-        for attribute in self._misp_event['Attribute']:
-            attribute_type = attribute['type']
-            try:
-                if attribute_type in stix1_mapping.attribute_types_mapping:
-                    getattr(self, stix1_mapping.attribute_types_mapping[attribute_type])(attribute)
-                else:
-                    self._parse_custom_attribute(attribute)
-                    self._attribute_not_mapped_warning(attribute_type)
-            except Exception:
-                self._attribute_error(attribute)
+    def _resolve_attribute(self, attribute: dict):
+        attribute_type = attribute['type']
+        try:
+            if attribute_type in stix1_mapping.attribute_types_mapping:
+                getattr(self, stix1_mapping.attribute_types_mapping[attribute_type])(attribute)
+            else:
+                self._parse_custom_attribute(attribute)
+                self._attribute_not_mapped_warning(attribute_type)
+        except Exception:
+            self._attribute_error(attribute)
 
-    def _handle_attribute(self, attribute: dict, observable: Observable):
-        if attribute.get('to_ids', False):
-            indicator = self._create_indicator_from_attribute(attribute)
-            indicator.add_indicator_type(self._set_indicator_type(attribute['type']))
-            indicator.add_valid_time_position(ValidTime())
-            indicator.add_observable(observable)
-            tags = self._handle_attribute_tags_and_galaxies(attribute, indicator)
-            if tags:
-                indicator.handling = self._set_handling(tags)
-            related_indicator = RelatedIndicator(
-                indicator,
-                relationship=attribute['category']
-            )
-            self._incident.related_indicators.append(related_indicator)
-        else:
-            related_observable = RelatedObservable(
-                observable,
-                relationship=attribute['category']
-            )
-            self._incident.related_observables.append(related_observable)
+    def _handle_attribute_indicator(self, attribute: dict, observable: Observable) -> Indicator:
+        indicator = self._create_indicator_from_attribute(attribute)
+        indicator.add_observable(observable)
+        related_indicator = RelatedIndicator(
+            indicator,
+            relationship=attribute['category']
+        )
+        return indicator
 
     def _handle_attribute_tags_and_galaxies(self, attribute: dict, indicator: Indicator) -> tuple:
         if attribute.get('Galaxy'):
@@ -256,9 +156,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         tags = self._handle_non_indicator_attribute_tags_and_galaxies(attribute, ttp)
         if tags:
             ttp.handling = self._set_handling(tags)
-        related_ttp = self._create_related_ttp(ttp.id_, attribute['type'], timestamp=timestamp)
-        self._incident.add_leveraged_ttps(related_ttp)
         self._stix_package.add_ttp(ttp)
+        if self._identifier != 'attributes collection':
+            related_ttp = self._create_related_ttp(ttp.id_, attribute['type'], timestamp=timestamp)
+            self._incident.add_leveraged_ttps(related_ttp)
 
     def _handle_non_indicator_attribute_tags_and_galaxies(self, attribute: dict, ttp: TTP) -> tuple:
         if attribute.get('Galaxy'):
@@ -517,31 +418,24 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                     "encoded": True
                 }
             ]
-            self._parse_test_mechanism(attribute, test_mechanism)
+            self._handle_test_mechanism(attribute, test_mechanism)
         else:
             self._parse_custom_attribute(attribute)
-
-    def _parse_target_attribute(self, attribute: dict, identity_spec: STIXCIQIdentity3_0):
-        ciq_identity = CIQIdentity3_0Instance()
-        ciq_identity.specification = identity_spec
-        ciq_identity.id_ = f"{self._orgname}:Identity-{attribute['uuid']}"
-        ciq_identity.name = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
-        self._incident.add_victim(ciq_identity)
 
     def _parse_target_email(self, attribute: dict):
         identity_spec = STIXCIQIdentity3_0()
         identity_spec.add_electronic_address_identifier(ElectronicAddressIdentifier(value=attribute['value']))
-        self._parse_target_attribute(attribute, identity_spec)
+        self._handle_target_attribute(attribute, identity_spec)
 
     def _parse_target_external(self, attribute: dict):
         identity_spec = STIXCIQIdentity3_0()
         identity_spec.party_name = PartyName(name_lines=[f"External target: {attribute['value']}"])
-        self._parse_target_attribute(attribute, identity_spec)
+        self._handle_target_attribute(attribute, identity_spec)
 
     def _parse_target_location(self, attribute: dict):
         identity_spec = STIXCIQIdentity3_0()
         identity_spec.add_address(ciq_Address(FreeTextAddress(address_lines=[attribute['value']])))
-        self._parse_target_attribute(attribute, identity_spec)
+        self._handle_target_attribute(attribute, identity_spec)
 
     def _parse_target_machine(self, attribute: dict):
         affected_asset = AffectedAsset()
@@ -554,23 +448,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_target_org(self, attribute: dict):
         identity_spec = STIXCIQIdentity3_0()
         identity_spec.party_name = PartyName(organisation_names=[attribute['value']])
-        self._parse_target_attribute(attribute, identity_spec)
+        self._handle_target_attribute(attribute, identity_spec)
 
     def _parse_target_user(self, attribute: dict):
         identity_spec = STIXCIQIdentity3_0()
         identity_spec.party_name = PartyName(person_names=[attribute['value']])
-        self._parse_target_attribute(attribute, identity_spec)
-
-    def _parse_test_mechanism(self, attribute: dict, test_mechanism: Union[SnortTestMechanism, YaraTestMechanism]):
-        indicator = self._create_indicator_from_attribute(attribute)
-        tags = self._handle_attribute_tags_and_galaxies(attribute, indicator)
-        if tags:
-            indicator.handling = self._set_handling(tags)
-        indicator.add_indicator_type("Malware Artifacts")
-        indicator.add_valid_time_position(ValidTime())
-        indicator.add_test_mechanism(test_mechanism)
-        related_indicator = RelatedIndicator(indicator, relationship=attribute['category'])
-        self._incident.related_indicators.append(related_indicator)
+        self._handle_target_attribute(attribute, identity_spec)
 
     def _parse_url_attribute(self, attribute: dict):
         observable = self._create_uri_observable(attribute['value'], attribute['uuid'])
@@ -648,9 +531,779 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 "value": attribute['value'],
                 "encoded": True
             }
-            self._parse_test_mechanism(attribute, test_mechanism)
+            self._handle_test_mechanism(attribute, test_mechanism)
         else:
             self._parse_custom_attribute(attribute)
+
+    ################################################################################
+    #                          GALAXIES PARSING FUNCTIONS                          #
+    ################################################################################
+
+    def _parse_attack_pattern_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'attack_pattern', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
+            indicator.add_indicated_ttp(related_ttp)
+
+    def _parse_attack_pattern_galaxy(self, cluster: dict, ttp: TTP):
+        behavior = Behavior()
+        attack_pattern = AttackPattern()
+        attack_pattern.id_ = f"{self._orgname}:AttackPattern-{cluster['uuid']}"
+        attack_pattern.title = cluster['value']
+        attack_pattern.description = cluster['description']
+        if cluster['meta'].get('external_id'):
+            external_id = cluster['meta']['external_id'][0]
+            if external_id.startswith('CAPEC'):
+                attack_pattern.capec_id = external_id
+        behavior.add_attack_pattern(attack_pattern)
+        ttp.behavior = behavior
+
+    def _parse_attack_pattern_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'attack_pattern', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
+            stix_object.add_related_ttp(related_ttp)
+
+    def _parse_course_of_action_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
+        for cluster in galaxy['GalaxyCluster']:
+            coa_id = self._parse_course_of_action_galaxy(cluster)
+            related_coa = self._create_related_coa(coa_id, galaxy['name'])
+            indicator.suggested_coas.append(related_coa)
+
+    def _parse_course_of_action_galaxy(self, cluster: dict) -> str:
+        if cluster['uuid'] not in self._ids:
+            course_of_action = self._create_course_of_action_from_galaxy(cluster)
+            self._stix_package.add_course_of_action(course_of_action)
+            self._ids.add(cluster['uuid'])
+            return course_of_action.id_
+        return f"{self._orgname}:CourseOfAction-{cluster['uuid']}"
+
+    def _parse_course_of_action_object_galaxy(self, galaxy: dict, object_coa: CourseOfAction):
+        for cluster in galaxy['GalaxyCluster']:
+            coa_id = self._parse_course_of_action_galaxy(cluster)
+            related_coa = self._create_related_coa(coa_id, galaxy['name'])
+            object_coa.related_coas.append(related_coa)
+
+    def _parse_malware_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'malware', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
+            indicator.add_indicated_ttp(related_ttp)
+
+    def _parse_malware_galaxy(self, cluster: dict, ttp: TTP):
+        behavior = Behavior()
+        malware = MalwareInstance()
+        malware.id_ = f"{self._orgname}:MalwareInstance-{cluster['uuid']}"
+        malware.title = cluster['value']
+        if cluster.get('description'):
+            malware.description = cluster['description']
+        if cluster['meta'].get('synonyms'):
+            for synonym in cluster['meta']['synonyms']:
+                malware.add_name(synonym)
+        behavior.add_malware_instance(malware)
+        ttp.behavior = behavior
+
+    def _parse_malware_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'malware', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
+            stix_object.add_related_ttp(related_ttp)
+
+    def _parse_threat_actor(self, cluster: dict) -> str:
+        if cluster['uuid'] not in self._ids:
+            threat_actor = self._create_threat_actor_from_galaxy(cluster)
+            self._stix_package.add_threat_actor(threat_actor)
+            self._ids.add(cluster['uuid'])
+            return threat_actor.id_
+        return f"{self._orgname}:ThreatActor-{cluster['uuid']}"
+
+    def _parse_threat_actor_galaxy(self, galaxy: dict):
+        for cluster in galaxy['GalaxyCluster']:
+            threat_actor_id = self._parse_threat_actor(cluster)
+            if cluster['uuid'] not in self._contextualised_data:
+                related_threat_actor = self._create_related_threat_actor(
+                    threat_actor_id,
+                    galaxy['name']
+                )
+                try:
+                    self._incident.attributed_threat_actors.append(related_threat_actor)
+                except AttributeError:
+                    self._incident.attributed_threat_actors = AttributedThreatActors()
+                    self._incident.attributed_threat_actors.append(related_threat_actor)
+                self._contextualised_data.add(cluster['uuid'])
+
+    def _parse_tool_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'tool', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
+            indicator.add_indicated_ttp(related_ttp)
+
+    def _parse_tool_galaxy(self, cluster: dict, ttp: TTP):
+        tools = Tools()
+        tool = ToolInformation()
+        tool.id_ = f"{self._orgname}:ToolInformation-{cluster['uuid']}"
+        tool.name = cluster['value']
+        if cluster.get('description'):
+            tool.description = cluster['description']
+        tools.append(tool)
+        resource = Resource()
+        resource.tools = tools
+        ttp.resources = resource
+
+    def _parse_tool_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'tool', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
+            stix_object.add_related_ttp(related_ttp)
+
+    def _parse_ttp(self, cluster: dict, feature: str, galaxy_name: str) -> str:
+        if cluster['uuid'] not in self._ids:
+            ttp = self._create_ttp_from_galaxy(galaxy_name, cluster['uuid'])
+            getattr(self, f'_parse_{feature}_galaxy')(cluster, ttp)
+            self._stix_package.add_ttp(ttp)
+            self._ids.add(cluster['uuid'])
+            return ttp.id_
+        return f"{self._orgname}:TTP-{cluster['uuid']}"
+
+    def _parse_vulnerability_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'vulnerability', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
+            indicator.add_indicated_ttp(related_ttp)
+
+    def _parse_vulnerability_galaxy(self, cluster: dict, ttp: TTP):
+        exploit_target = ExploitTarget()
+        exploit_target.id_ = f"{self._orgname}:ExploitTarget-{cluster['uuid']}"
+        vulnerability = Vulnerability()
+        vulnerability.id_ = f"{self._orgname}:Vulnerability-{cluster['uuid']}"
+        vulnerability.title = cluster['value']
+        vulnerability.description = cluster['description']
+        if cluster['meta'].get('aliases'):
+            vulnerability.cve_id = cluster['meta']['aliases'][0]
+        if cluster['meta'].get('refs'):
+            for reference in cluster['meta']['refs']:
+                vulnerability.add_reference(reference)
+        exploit_target.add_vulnerability(vulnerability)
+        ttp.add_exploit_target(exploit_target)
+
+    def _parse_vulnerability_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
+        galaxy_name = galaxy['name']
+        for cluster in galaxy['GalaxyCluster']:
+            ttp_id = self._parse_ttp(cluster, 'vulnerability', galaxy_name)
+            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
+            stix_object.add_related_ttp(related_ttp)
+
+    ################################################################################
+    #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
+    ################################################################################
+
+    def _add_journal_entry(self, entryline: str):
+        history_item = HistoryItem()
+        history_item.journal_entry = entryline
+        try:
+            self._incident.history.append(history_item)
+        except AttributeError:
+            self._incident.history = History()
+            self._incident.history.append(history_item)
+
+    @staticmethod
+    def _create_address_object(attribute_type: str, attribute_value: str) -> Address:
+        address_object = Address()
+        if '/' in attribute_value:
+            address_object.category = "cidr"
+            condition = "Contains"
+        else:
+            try:
+                socket.inet_aton(attribute_value)
+                address_object.category = "ipv4-addr"
+            except socket.error:
+                address_object.category = "ipv6-addr"
+            condition = "Equals"
+        if 'src' in attribute_type:
+            address_object.is_source = True
+            address_object.is_destination = False
+        else:
+            address_object.is_source = False
+            address_object.is_destination = True
+        address_object.address_value = attribute_value
+        address_object.address_value.condition = condition
+        return address_object
+
+    def _create_address_observable(self, feature: str, value: str, uuid: str) -> Observable:
+        address_object = self._create_address_object(feature, value)
+        observable = self._create_observable(address_object, uuid, 'Address')
+        return observable
+
+    def _create_artifact_object(self, data: BytesIO) -> Artifact:
+        raw_artifact = RawArtifact(data)
+        artifact = Artifact()
+        artifact.raw_artifact = raw_artifact
+        artifact.raw_artifact.condition = "Equals"
+        return artifact
+
+    def _create_attachment_observable(self, filename: str, data: BytesIO, uuid: str) -> Observable:
+        artifact_object = self._create_artifact_object(data)
+        observable = self._create_observable(artifact_object, uuid, 'Artifact')
+        observable.title = filename
+        return observable
+
+    @staticmethod
+    def _create_authentication_object(auth_type: str = None, auth_format: str = None, password: str = None) -> Authentication:
+        authentication = Authentication()
+        # At least one of the params is not None, otherwise we do not actually call the function
+        if auth_type is not None:
+            authentication.authentication_type = auth_type
+        if auth_format is not None:
+            authentication.structured_authentication_mechanism = auth_format
+        if password is not None:
+            authentication.authentication_data = password
+        return authentication
+
+    @staticmethod
+    def _create_autonomous_system_object(AS: str) -> AutonomousSystem:
+        autonomous_system = AutonomousSystem()
+        feature = 'handle' if AS.startswith('AS') else 'number'
+        setattr(autonomous_system, feature, AS)
+        setattr(getattr(autonomous_system, feature), 'condition', 'Equals')
+        return autonomous_system
+
+    def _create_ciq_identity_instance(self, attribute: dict, identity_spec):
+        ciq_identity = CIQIdentity3_0Instance()
+        ciq_identity.specification = identity_spec
+        ciq_identity.id_ = f"{self._orgname}:Identity-{attribute['uuid']}"
+        ciq_identity.name = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
+        return ciq_identity
+
+    @staticmethod
+    def _create_coa_taken(coa_id: str, timestamp: Optional[datetime] = None) -> COATaken:
+        coa = CourseOfAction(idref=coa_id)
+        if timestamp is not None:
+            coa.timestamp = timestamp
+        coa_taken = COATaken(coa)
+        return coa_taken
+
+    def _create_course_of_action_from_galaxy(self, cluster: dict) -> CourseOfAction:
+        course_of_action = CourseOfAction()
+        course_of_action.id_ = f"{self._orgname}:CourseOfAction-{cluster['uuid']}"
+        course_of_action.title = cluster['value']
+        course_of_action.description = cluster['description']
+        return course_of_action
+
+    @staticmethod
+    def _create_domain_object(domain: str) -> DomainName:
+        domain_object = DomainName()
+        domain_object.value = domain
+        domain_object.value.condition = "Equals"
+        return domain_object
+
+    def _create_domain_observable(self, domain: str, uuid: str) -> Observable:
+        domain_object = self._create_domain_object(domain)
+        observable = self._create_observable(domain_object, uuid, 'DomainName')
+        return observable
+
+    @staticmethod
+    def _create_file_object(filename: str) -> File:
+        file_object = File()
+        file_object.file_name = filename
+        file_object.file_name.condition = "Equals"
+        return file_object
+
+    @staticmethod
+    def _create_hostname_object(hostname: str) -> Hostname:
+        hostname_object = Hostname()
+        hostname_object.hostname_value = hostname
+        hostname_object.hostname_value.condition = "Equals"
+        return hostname_object
+
+    def _create_hostname_observable(self, hostname: str, uuid: str) -> Observable:
+        hostname_object = self._create_hostname_object(hostname)
+        observable = self._create_observable(hostname_object, uuid, 'Hostname')
+        return observable
+
+    def _create_indicator_from_attribute(self, attribute: dict) -> Indicator:
+        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        indicator = Indicator(timestamp=timestamp)
+        indicator.id_ = f"{self._orgname}:Indicator-{attribute['uuid']}"
+        indicator.producer = self._set_producer()
+        indicator.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
+        indicator.description = attribute['comment'] if attribute.get('comment') else indicator.title
+        indicator.confidence = Confidence(
+            value=stix1_mapping.confidence_value,
+            description=stix1_mapping.confidence_description,
+            timestamp=timestamp
+        )
+        indicator.add_indicator_type(self._set_indicator_type(attribute['type']))
+        indicator.add_valid_time_position(ValidTime())
+        tags = self._handle_attribute_tags_and_galaxies(attribute, indicator)
+        if tags:
+            indicator.handling = self._set_handling(tags)
+        return indicator
+
+    def _create_indicator_from_object(self, misp_object: dict) -> Indicator:
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        indicator = Indicator(timestamp=timestamp)
+        indicator.id_ = f"{self._orgname}:Indicator-{misp_object['uuid']}"
+        indicator.producer = self._set_producer()
+        indicator.title = f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
+        if any(misp_object.get(feature) for feature in ('comment', 'description')):
+            indicator.description = misp_object['comment'] if misp_object.get('comment') else misp_object['description']
+        indicator.confidence = Confidence(
+            value=stix1_mapping.confidence_value,
+            description=stix1_mapping.confidence_description,
+            timestamp=timestamp
+        )
+        return indicator
+
+    @staticmethod
+    def _create_information_source(identity: Identity) -> InformationSource:
+        information_source = InformationSource(identity=identity)
+        return information_source
+
+    def _create_malware_sample_observable(self, value: str, data: BytesIO, uuid: str) -> Observable:
+        filename, hash_value = value.split('|')
+        artifact_object = self._create_artifact_object(data)
+        artifact_object.hashes = HashList(self._parse_hash_value('md5', hash_value))
+        observable = self._create_observable(artifact_object, uuid, 'Artifact')
+        observable.title = filename
+        return observable
+
+    @staticmethod
+    def _create_mutex_object(name: str) -> Mutex:
+        mutex_object = Mutex()
+        mutex_object.name = name
+        mutex_object.name.condition = "Equals"
+        return mutex_object
+
+    def _create_observable(self, stix_object: _OBSERVABLE_OBJECT_TYPES, attribute_uuid: str, feature: str) -> Observable:
+        stix_object.parent.id_ = f"{self._orgname}:{feature}-{attribute_uuid}"
+        observable = Observable(stix_object)
+        observable.id_ = f"{self._orgname}:Observable-{attribute_uuid}"
+        return observable
+
+    def _create_observable_composition(self, observables: list, name: str, uuid: str) -> Observable:
+        observable_composition = ObservableComposition(observables=observables)
+        observable_composition.operator = 'AND'
+        observable = Observable(id_=f'{self._orgname}:{name}_ObservableComposition-{uuid}')
+        observable.observable_composition = observable_composition
+        return observable
+
+    @staticmethod
+    def _create_port_object(port: str) -> Port:
+        port_object = Port()
+        port_object.port_value = port
+        port_object.port_value.condition = "Equals"
+        return port_object
+
+    def _create_port_observable(self, port: str, uuid: str, feature: str = None) -> Observable:
+        object_type = 'Port'
+        if feature is not None:
+            object_type = f'{feature}{object_type}'
+        port_object = self._create_port_object(port)
+        observable = self._create_observable(port_object, uuid, object_type)
+        return observable
+
+    @staticmethod
+    def _create_property(name: str, value: str) -> Property:
+        prop = Property()
+        prop.name = name
+        prop.value = value
+        return prop
+
+    @staticmethod
+    def _create_registry_key_object(regkey: str) -> WinRegistryKey:
+        registry_key = WinRegistryKey()
+        registry_key.key = regkey.strip()
+        registry_key.key.condition = "Equals"
+        return registry_key
+
+    @staticmethod
+    def _create_related_coa(coa_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedCOA:
+        coa = CourseOfAction(idref=coa_id)
+        if timestamp is not None:
+            coa.timestamp = timestamp
+        related_coa = RelatedCOA(coa, relationship=category)
+        return related_coa
+
+    @staticmethod
+    def _create_related_threat_actor(ta_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedThreatActor:
+        rta = ThreatActor(idref=ta_id)
+        if timestamp is not None:
+            rta.timestamp = timestamp
+        related_ta = RelatedThreatActor(rta, relationship=category)
+        return related_ta
+
+    @staticmethod
+    def _create_related_ttp(ttp_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedTTP:
+        rttp = TTP(idref=ttp_id)
+        if timestamp is not None:
+            rttp.timestamp = timestamp
+        related_ttp = RelatedTTP(rttp, relationship=category)
+        return related_ttp
+
+    def _create_socket_address_object(self, hostname: Optional[str] = None, ip: Optional[tuple] = None, port: Optional[str] = None) -> SocketAddress:
+        socket_address_object = SocketAddress()
+        if hostname is not None:
+            socket_address_object.hostname = self._create_hostname_object(hostname)
+        if ip is not None:
+            socket_address_object.ip_address = self._create_address_object(*ip)
+        if port is not None:
+            socket_address_object.port = self._create_port_object(port)
+        return socket_address_object
+
+    def _create_threat_actor_from_galaxy(self, cluster: dict) -> ThreatActor:
+        threat_actor = ThreatActor()
+        threat_actor.id_ = f"{self._orgname}:ThreatActor-{cluster['uuid']}"
+        threat_actor.title = cluster['value']
+        if cluster.get('description'):
+            threat_actor.description = cluster['description']
+        meta = cluster['meta']
+        if meta.get('cfr-type-of-incident'):
+            intended_effect = meta['cfr-type-of-incident']
+            if isinstance(intended_effect, list):
+                for effect in intended_effect:
+                    threat_actor.add_intended_effect(effect)
+            else:
+                threat_actor.add_intended_effect(intended_effect)
+        return threat_actor
+
+    def _create_ttp(self, attribute: dict) -> TTP:
+        ttp = TTP(timestamp=self._datetime_from_timestamp(attribute['timestamp']))
+        ttp.id_ = f"{self._orgname}:TTP-{attribute['uuid']}"
+        if attribute.get('Tag'):
+            tags = tuple(tag['name'] for tag in attribute['Tag'])
+            ttp.handling = self._set_handling(tags)
+        ttp.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
+        return ttp
+
+    def _create_ttp_from_galaxy(self, galaxy_name: str, uuid: str) -> TTP:
+        ttp = TTP()
+        ttp.id_ = f'{self._orgname}:TTP-{uuid}'
+        ttp.title = f'{galaxy_name} (MISP Galaxy)'
+        return ttp
+
+    def _create_ttp_from_object(self, misp_object: dict) -> TTP:
+        ttp = TTP(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
+        ttp.id_ = f"{self._orgname}:TTP-{misp_object['uuid']}"
+        ttp.title = f"{misp_object['meta-category']}: {misp_object['name']} (MISP Object)"
+        return ttp
+
+    @staticmethod
+    def _create_uri_object(url: str) -> URI:
+        uri_object = URI(value=url, type_='URL')
+        uri_object.value.condition = "Equals"
+        return uri_object
+
+    def _create_uri_observable(self, url: str, uuid: str) -> Observable:
+        uri_object = self._create_uri_object(url)
+        observable = self._create_observable(uri_object, uuid, 'URI')
+        return observable
+
+    def _create_unix_user_account_object(self, attributes: dict) -> UnixUserAccount:
+        account_object = UnixUserAccount()
+        if attributes.get('user-id'):
+            self._set_user_id(account_object, attributes, 'user_id')
+        if attributes.get('group-id'):
+            account_object.group_id = attributes.pop('group-id')[0]
+            account_object.group_id.condition = 'Equals'
+        if attributes.get('group'):
+            self._set_group_list(account_object, attributes, UnixGroupList, UnixGroup, 'group_id')
+            group_list = UnixGroupList()
+            groups = attributes.pop('group')
+            try:
+                for group in groups:
+                    unix_group = UnixGroup()
+                    unix_group.group_id = group
+                    group_list.append(unix_group)
+                account_object.group_list = group_list
+            except ValueError:
+                attributes['group'] = groups
+        return account_object
+
+    def _create_user_account_object(self, attributes: dict) -> Union[UnixUserAccount, UserAccount, WinUser]:
+        account_types = ('unix', 'windows-domain', 'windows-local')
+        if 'account-type' in attributes and attributes['account-type'] in account_types:
+            account_type = attributes.pop('account-type')
+            if account_type == 'unix':
+                return self._create_unix_user_account_object(attributes)
+            attributes['account-type'] = [account_type]
+            return self._create_windows_user_account_object(attributes)
+        account_object = UserAccount()
+        return account_object
+
+    def _create_windows_user_account_object(self, attributes: dict) -> WinUser:
+        account_object = WinUser()
+        if attributes.get('user-id'):
+            self._set_user_id(account_object, attributes, 'security_id')
+        if attributes.get('group'):
+            self._set_group_list(account_object, attributes, WinGroupList, WinGroup, 'name')
+        return account_object
+
+    @staticmethod
+    def _fetch_colors(tags: list) -> tuple:
+        return (tag.split(':')[-1].upper() for tag in tags)
+
+    @staticmethod
+    def _set_color(colors: list) -> str:
+        tlp_color = 0
+        for color in colors:
+            color_num = stix1_mapping.TLP_order[color]
+            if color_num > tlp_color:
+                tlp_color = color_num
+                color_value = color
+        return color_value
+
+    def _set_creator(self) -> str:
+        if self._misp_event.get('Orgc') and self._misp_event['Orgc'].get('name'):
+            return self._misp_event['Orgc']['name']
+        if self._misp_event.get('Org') and self._misp_event['Org'].get('name'):
+            return self._misp_event['Org']['name']
+        return self._default_orgname
+
+    @staticmethod
+    def _set_group_list(
+        account_object: Union[UnixUserAccount, WinUser],
+        attributes: dict,
+        group_list_class: Union[UnixGroupList, WinGroupList],
+        group_class: Union[UnixGroup, WinGroup],
+        feature: str
+    ):
+        group_list = group_list_class()
+        groups = attributes.pop('group')
+        try:
+            for grp in groups:
+                group = group_class()
+                setattr(group, feature, grp)
+                group_list.append(group)
+            account_object.group_list = group_list
+        except ValueError:
+            attributes['group'] = groups
+
+    def _set_handling(self, tags: list) -> Marking:
+        sorted_tags = defaultdict(list)
+        for tag in tags:
+            feature = 'tlp_tags' if tag.startswith('tlp:') else 'simple_tags'
+            sorted_tags[feature].append(tag)
+        handling = Marking()
+        marking_specification = MarkingSpecification()
+        if 'tlp_tags' in sorted_tags:
+            tlp_marking = TLPMarkingStructure()
+            tlp_marking.color = self._set_color(self._fetch_colors(sorted_tags['tlp_tags']))
+            marking_specification.marking_structures.append(tlp_marking)
+        for tag in sorted_tags['simple_tags']:
+            simple_marking = SimpleMarkingStructure()
+            simple_marking.statement = tag
+            marking_specification.marking_structures.append(simple_marking)
+        handling.add_marking(marking_specification)
+        return handling
+
+    @staticmethod
+    def _set_indicator_type(attribute_type: str) -> str:
+        if attribute_type in stix1_mapping.misp_indicator_type:
+            return stix1_mapping.misp_indicator_type[attribute_type]
+        return 'Malware Artifacts'
+
+    def _set_producer(self) -> Identity:
+        identity = Identity(name=self._orgname)
+        return self._create_information_source(identity)
+
+    def _set_reporter(self) -> Identity:
+        reporter = self._misp_event['Org']['name'] if self._misp_event.get('Org') else self._orgname
+        identity = Identity(name=reporter)
+        return self._create_information_source(identity)
+
+    @staticmethod
+    def _set_user_id(account_object: Union[UnixUserAccount, WinUser], attributes: dict, feature: str):
+        user_id = attributes.pop('user-id')[0]
+        try:
+            setattr(account_object, feature, user_id)
+            setattr(getattr(account_object, feature), 'condition', 'Equals')
+        except ValueError:
+            attributes['user-id'] = [user_id]
+
+    ################################################################################
+    #                              UTILITY FUNCTIONS.                              #
+    ################################################################################
+
+    @staticmethod
+    def _from_datetime_to_str(date):
+        return date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+    def _quick_fetch_ttp_timestamp(self, object_id: str) -> datetime:
+        for ttp in self._stix_package.ttps.ttp:
+            if ttp.id_ == object_id:
+                return ttp.timestamp
+
+
+class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
+    def __init__(self, orgname: str, version: str):
+        super().__init__(version)
+        self._orgname = orgname
+        self._identifier = 'attributes collection'
+
+    def parse_json_content(self, filename):
+        with open(filename, 'rt', encoding='utf-8') as f:
+            attributes = json.loads(f.read())['response']
+        if 'Attribute' in attributes:
+            attributes = attributes['Attribute']
+        for attribute in attributes:
+            self._resolve_attribute(attribute)
+
+    ################################################################################
+    #                         ATTRIBUTES PARSING FUNCTIONS                         #
+    ################################################################################
+
+    def _handle_attribute(self, attribute: dict, observable: Observable):
+        if attribute.get('to_ids', False):
+            indicator = self._handle_attribute_indicator(attribute, observable)
+            self._stix_package.add_indicator(indicator)
+        else:
+            self._stix_package.add_observable(observable)
+
+    def _handle_target_attribute(self, attribute: dict, identity_spec: STIXCIQIdentity3_0):
+        identity = self._create_ciq_identity_instance(attribute, identity_spec)
+        ttp = self._create_ttp(attribute)
+        victim_targeting = VictimTargeting()
+        victim_targeting.identity = identity
+        ttp.victim_targeting = victim_targeting
+        tags = self._handle_non_indicator_attribute_tags_and_galaxies(attribute, ttp)
+        if tags:
+            ttp.handling = self._set_handling(tags)
+        self._stix_package.add_ttp(ttp)
+
+    def _handle_test_mechanism(self, attribute: dict, test_mechanism: Union[SnortTestMechanism, YaraTestMechanism]):
+        indicator = self._create_indicator_from_attribute(attribute)
+        indicator.add_test_mechanism(test_mechanism)
+        self._stix_package.add_indicator(indicator)
+
+
+class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
+    def __init__(self, orgname: str, version: str):
+        super().__init__(version)
+        self._default_orgname = orgname
+
+    def parse_json_content(self, filename):
+        with open(filename, 'rt', encoding='utf-8') as f:
+            json_content = json.loads(f.read())
+        if json_content.get('response'):
+            package = STIXPackage()
+            for event in json_content['response']:
+                self.parse_misp_event(event)
+                package.add_related_package(self._stix_package)
+            self._stix_package = package
+        else:
+            self.parse_misp_event(json_content)
+
+    def parse_misp_event(self, misp_event: dict):
+        self._header_comment = []
+        self._objects_to_parse = defaultdict(dict)
+        self._contextualised_data = set()
+        self._ids = set()
+        self._ttp_references = {}
+        if 'Event' in misp_event:
+            misp_event = misp_event['Event']
+        self._misp_event = misp_event
+        self._identifier = self._misp_event['uuid']
+        self._orgname = self._set_creator()
+        self._stix_package = self._create_stix_package()
+        self._incident = self._create_incident()
+        self._generate_stix_objects()
+        if self._stix_package.ttps is not None:
+            for ttp in self._stix_package.ttps.ttp:
+                uuid = '-'.join(ttp.id_.split('-')[-5:])
+                if uuid in self._ttp_references:
+                    for referenced_uuid, relationship in self._ttp_references[uuid]:
+                        if referenced_uuid in self._contextualised_data:
+                            referenced_id = f'{self._orgname}:TTP-{referenced_uuid}'
+                            timestamp = self._quick_fetch_ttp_timestamp(referenced_id)
+                            related_ttp = self._create_related_ttp(
+                                f'{self._orgname}:TTP-{referenced_uuid}',
+                                relationship,
+                                timestamp=timestamp
+                            )
+                            ttp.add_related_ttp(related_ttp)
+        self._stix_package.add_incident(self._incident)
+        stix_header = STIXHeader()
+        stix_header.title = f"Export from {self._orgname}'s MISP"
+        stix_header.package_intents = "Threat Report"
+        if self._header_comment and len(self._header_comment) == 1:
+            stix_header.description = self._header_comment[0]
+        self._stix_package.stix_header = stix_header
+
+    ################################################################################
+    #                         INCIDENT HANDLING FUNCTIONS.                         #
+    ################################################################################
+
+    def _create_incident(self) -> Incident:
+        incident_id = f"{self._orgname}:Incident-{self._misp_event['uuid']}"
+        incident = Incident(
+            id_=incident_id,
+            title=self._misp_event['info'],
+            timestamp=self._datetime_from_timestamp(self._misp_event['timestamp'])
+        )
+        incident_time = Time()
+        incident_time.incident_discovery = self._misp_event['date']
+        if self._is_published():
+            incident_time.incident_reported = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
+        incident.time = incident_time
+        return incident
+
+    def _generate_stix_objects(self):
+        if self._misp_event.get('threat_level_id'):
+            threat_level = stix1_mapping.threat_level_mapping[int(self._misp_event['threat_level_id'])]
+            self._add_journal_entry(f'Event Threat Level: {threat_level}')
+        self._add_journal_entry('MISP Tag: misp:tool="MISP-STIX-Converter"')
+        tags = self._handle_event_tags_and_galaxies('stix1_galaxy_mapping')
+        if tags:
+            self._incident.handling = self._set_handling(tags)
+        if self._misp_event.get('id'):
+            external_id = ExternalID(value=self._misp_event['id'], source='MISP Event')
+            self._incident.add_external_id(external_id)
+        if self._misp_event.get('analysis'):
+            status = stix1_mapping.status_mapping[int(self._misp_event['analysis'])]
+            self._incident.status = IncidentStatus(status)
+        self._incident.information_source = self._set_producer()
+        self._incident.reporter = self._set_reporter()
+        if self._misp_event.get('Attribute'):
+            for attribute in self._misp_event['Attribute']:
+                self._resolve_attribute(attribute)
+        if self._misp_event.get('Object'):
+            self._resolve_objects()
+
+    ################################################################################
+    #                         ATTRIBUTES PARSING FUNCTIONS                         #
+    ################################################################################
+
+    def _handle_attribute(self, attribute: dict, observable: Observable):
+        if attribute.get('to_ids', False):
+            indicator = self._handle_attribute_indicator(attribute, observable)
+            related_indicator = RelatedIndicator(
+                indicator,
+                relationship=attribute['category']
+            )
+            self._incident.related_indicators.append(related_indicator)
+        else:
+            related_observable = RelatedObservable(
+                observable,
+                relationship=attribute['category']
+            )
+            self._incident.related_observables.append(related_observable)
+
+    def _handle_target_attribute(self, attribute: dict, identity_spec: STIXCIQIdentity3_0):
+        ciq_identity = self._create_ciq_identity_instance(attribute, identity_spec)
+        self._incident.add_victim(ciq_identity)
+
+    def _handle_test_mechanism(self, attribute: dict, test_mechanism: Union[SnortTestMechanism, YaraTestMechanism]):
+        indicator = self._create_indicator_from_attribute(attribute)
+        indicator.add_test_mechanism(test_mechanism)
+        related_indicator = RelatedIndicator(indicator, relationship=attribute['category'])
+        self._incident.related_indicators.append(related_indicator)
 
     ################################################################################
     #                        MISP OBJECTS PARSING FUNCTIONS                        #
@@ -1516,13 +2169,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
 
-    def _parse_attack_pattern_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        galaxy_name = galaxy['name']
-        for cluster in galaxy['GalaxyCluster']:
-            ttp_id = self._parse_ttp(cluster, 'attack_pattern', galaxy_name)
-            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
-            indicator.add_indicated_ttp(related_ttp)
-
     def _parse_attack_pattern_event_galaxy(self, galaxy: dict):
         galaxy_name = galaxy['name']
         for cluster in galaxy['GalaxyCluster']:
@@ -1532,32 +2178,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 self._incident.add_leveraged_ttps(related_ttp)
                 self._contextualised_data.add(cluster['uuid'])
 
-    def _parse_attack_pattern_galaxy(self, cluster: dict, ttp: TTP):
-        behavior = Behavior()
-        attack_pattern = AttackPattern()
-        attack_pattern.id_ = f"{self._orgname}:AttackPattern-{cluster['uuid']}"
-        attack_pattern.title = cluster['value']
-        attack_pattern.description = cluster['description']
-        if cluster['meta'].get('external_id'):
-            external_id = cluster['meta']['external_id'][0]
-            if external_id.startswith('CAPEC'):
-                attack_pattern.capec_id = external_id
-        behavior.add_attack_pattern(attack_pattern)
-        ttp.behavior = behavior
-
-    def _parse_attack_pattern_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
-        galaxy_name = galaxy['name']
-        for cluster in galaxy['GalaxyCluster']:
-            ttp_id = self._parse_ttp(cluster, 'attack_pattern', galaxy_name)
-            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
-            stix_object.add_related_ttp(related_ttp)
-
-    def _parse_course_of_action_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        for cluster in galaxy['GalaxyCluster']:
-            coa_id = self._parse_course_of_action_galaxy(cluster)
-            related_coa = self._create_related_coa(coa_id, galaxy['name'])
-            indicator.suggested_coas.append(related_coa)
-
     def _parse_course_of_action_event_galaxy(self, galaxy: dict):
         for cluster in galaxy['GalaxyCluster']:
             coa_id = self._parse_course_of_action_galaxy(cluster)
@@ -1565,27 +2185,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 coa_taken = self._create_coa_taken(coa_id)
                 self._incident.add_coa_taken(coa_taken)
                 self._contextualised_data.add(cluster['uuid'])
-
-    def _parse_course_of_action_galaxy(self, cluster: dict) -> str:
-        if cluster['uuid'] not in self._ids:
-            course_of_action = self._create_course_of_action_from_galaxy(cluster)
-            self._stix_package.add_course_of_action(course_of_action)
-            self._ids.add(cluster['uuid'])
-            return course_of_action.id_
-        return f"{self._orgname}:CourseOfAction-{cluster['uuid']}"
-
-    def _parse_course_of_action_object_galaxy(self, galaxy: dict, object_coa: CourseOfAction):
-        for cluster in galaxy['GalaxyCluster']:
-            coa_id = self._parse_course_of_action_galaxy(cluster)
-            related_coa = self._create_related_coa(coa_id, galaxy['name'])
-            object_coa.related_coas.append(related_coa)
-
-    def _parse_malware_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        galaxy_name = galaxy['name']
-        for cluster in galaxy['GalaxyCluster']:
-            ttp_id = self._parse_ttp(cluster, 'malware', galaxy_name)
-            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
-            indicator.add_indicated_ttp(related_ttp)
 
     def _parse_malware_event_galaxy(self, galaxy: dict):
         galaxy_name = galaxy['name']
@@ -1596,56 +2195,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 self._incident.add_leveraged_ttps(related_ttp)
                 self._contextualised_data.add(cluster['uuid'])
 
-    def _parse_malware_galaxy(self, cluster: dict, ttp: TTP):
-        behavior = Behavior()
-        malware = MalwareInstance()
-        malware.id_ = f"{self._orgname}:MalwareInstance-{cluster['uuid']}"
-        malware.title = cluster['value']
-        if cluster.get('description'):
-            malware.description = cluster['description']
-        if cluster['meta'].get('synonyms'):
-            for synonym in cluster['meta']['synonyms']:
-                malware.add_name(synonym)
-        behavior.add_malware_instance(malware)
-        ttp.behavior = behavior
-
-    def _parse_malware_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
-        galaxy_name = galaxy['name']
-        for cluster in galaxy['GalaxyCluster']:
-            ttp_id = self._parse_ttp(cluster, 'malware', galaxy_name)
-            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
-            stix_object.add_related_ttp(related_ttp)
-
-    def _parser_threat_actor(self, cluster: dict) -> str:
-        if cluster['uuid'] not in self._ids:
-            threat_actor = self._create_threat_actor_from_galaxy(cluster)
-            self._stix_package.add_threat_actor(threat_actor)
-            self._ids.add(cluster['uuid'])
-            return threat_actor.id_
-        return f"{self._orgname}:ThreatActor-{cluster['uuid']}"
-
-    def _parse_threat_actor_galaxy(self, galaxy: dict):
-        for cluster in galaxy['GalaxyCluster']:
-            threat_actor_id = self._parser_threat_actor(cluster)
-            if cluster['uuid'] not in self._contextualised_data:
-                related_threat_actor = self._create_related_threat_actor(
-                    threat_actor_id,
-                    galaxy['name']
-                )
-                try:
-                    self._incident.attributed_threat_actors.append(related_threat_actor)
-                except AttributeError:
-                    self._incident.attributed_threat_actors = AttributedThreatActors()
-                    self._incident.attributed_threat_actors.append(related_threat_actor)
-                self._contextualised_data.add(cluster['uuid'])
-
-    def _parse_tool_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        galaxy_name = galaxy['name']
-        for cluster in galaxy['GalaxyCluster']:
-            ttp_id = self._parse_ttp(cluster, 'tool', galaxy_name)
-            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
-            indicator.add_indicated_ttp(related_ttp)
-
     def _parse_tool_event_galaxy(self, galaxy: dict):
         galaxy_name = galaxy['name']
         for cluster in galaxy['GalaxyCluster']:
@@ -1655,41 +2204,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 self._incident.add_leveraged_ttps(related_ttp)
                 self._contextualised_data.add(cluster['uuid'])
 
-    def _parse_tool_galaxy(self, cluster: dict, ttp: TTP):
-        tools = Tools()
-        tool = ToolInformation()
-        tool.id_ = f"{self._orgname}:ToolInformation-{cluster['uuid']}"
-        tool.name = cluster['value']
-        if cluster.get('description'):
-            tool.description = cluster['description']
-        tools.append(tool)
-        resource = Resource()
-        resource.tools = tools
-        ttp.resources = resource
-
-    def _parse_tool_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
-        galaxy_name = galaxy['name']
-        for cluster in galaxy['GalaxyCluster']:
-            ttp_id = self._parse_ttp(cluster, 'tool', galaxy_name)
-            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
-            stix_object.add_related_ttp(related_ttp)
-
-    def _parse_ttp(self, cluster: dict, feature: str, galaxy_name: str) -> str:
-        if cluster['uuid'] not in self._ids:
-            ttp = self._create_ttp_from_galaxy(galaxy_name, cluster['uuid'])
-            getattr(self, f'_parse_{feature}_galaxy')(cluster, ttp)
-            self._stix_package.add_ttp(ttp)
-            self._ids.add(cluster['uuid'])
-            return ttp.id_
-        return f"{self._orgname}:TTP-{cluster['uuid']}"
-
-    def _parse_vulnerability_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
-        galaxy_name = galaxy['name']
-        for cluster in galaxy['GalaxyCluster']:
-            ttp_id = self._parse_ttp(cluster, 'vulnerability', galaxy_name)
-            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
-            indicator.add_indicated_ttp(related_ttp)
-
     def _parse_vulnerability_event_galaxy(self, galaxy: dict):
         galaxy_name = galaxy['name']
         for cluster in galaxy['GalaxyCluster']:
@@ -1698,453 +2212,3 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
                 self._incident.add_leveraged_ttps(related_ttp)
                 self._contextualised_data.add(cluster['uuid'])
-
-    def _parse_vulnerability_galaxy(self, cluster: dict, ttp: TTP):
-        exploit_target = ExploitTarget()
-        exploit_target.id_ = f"{self._orgname}:ExploitTarget-{cluster['uuid']}"
-        vulnerability = Vulnerability()
-        vulnerability.id_ = f"{self._orgname}:Vulnerability-{cluster['uuid']}"
-        vulnerability.title = cluster['value']
-        vulnerability.description = cluster['description']
-        if cluster['meta'].get('aliases'):
-            vulnerability.cve_id = cluster['meta']['aliases'][0]
-        if cluster['meta'].get('refs'):
-            for reference in cluster['meta']['refs']:
-                vulnerability.add_reference(reference)
-        exploit_target.add_vulnerability(vulnerability)
-        ttp.add_exploit_target(exploit_target)
-
-    def _parse_vulnerability_object_galaxy(self, galaxy: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES):
-        galaxy_name = galaxy['name']
-        for cluster in galaxy['GalaxyCluster']:
-            ttp_id = self._parse_ttp(cluster, 'vulnerability', galaxy_name)
-            related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
-            stix_object.add_related_ttp(related_ttp)
-
-    ################################################################################
-    #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
-    ################################################################################
-
-    def _add_journal_entry(self, entryline: str):
-        history_item = HistoryItem()
-        history_item.journal_entry = entryline
-        try:
-            self._incident.history.append(history_item)
-        except AttributeError:
-            self._incident.history = History()
-            self._incident.history.append(history_item)
-
-    @staticmethod
-    def _create_address_object(attribute_type: str, attribute_value: str) -> Address:
-        address_object = Address()
-        if '/' in attribute_value:
-            address_object.category = "cidr"
-            condition = "Contains"
-        else:
-            try:
-                socket.inet_aton(attribute_value)
-                address_object.category = "ipv4-addr"
-            except socket.error:
-                address_object.category = "ipv6-addr"
-            condition = "Equals"
-        if 'src' in attribute_type:
-            address_object.is_source = True
-            address_object.is_destination = False
-        else:
-            address_object.is_source = False
-            address_object.is_destination = True
-        address_object.address_value = attribute_value
-        address_object.address_value.condition = condition
-        return address_object
-
-    def _create_address_observable(self, feature: str, value: str, uuid: str) -> Observable:
-        address_object = self._create_address_object(feature, value)
-        observable = self._create_observable(address_object, uuid, 'Address')
-        return observable
-
-    def _create_artifact_object(self, data: BytesIO) -> Artifact:
-        raw_artifact = RawArtifact(data)
-        artifact = Artifact()
-        artifact.raw_artifact = raw_artifact
-        artifact.raw_artifact.condition = "Equals"
-        return artifact
-
-    def _create_attachment_observable(self, filename: str, data: BytesIO, uuid: str) -> Observable:
-        artifact_object = self._create_artifact_object(data)
-        observable = self._create_observable(artifact_object, uuid, 'Artifact')
-        observable.title = filename
-        return observable
-
-    @staticmethod
-    def _create_authentication_object(auth_type: str = None, auth_format: str = None, password: str = None) -> Authentication:
-        authentication = Authentication()
-        # At least one of the params is not None, otherwise we do not actually call the function
-        if auth_type is not None:
-            authentication.authentication_type = auth_type
-        if auth_format is not None:
-            authentication.structured_authentication_mechanism = auth_format
-        if password is not None:
-            authentication.authentication_data = password
-        return authentication
-
-    @staticmethod
-    def _create_autonomous_system_object(AS: str) -> AutonomousSystem:
-        autonomous_system = AutonomousSystem()
-        feature = 'handle' if AS.startswith('AS') else 'number'
-        setattr(autonomous_system, feature, AS)
-        setattr(getattr(autonomous_system, feature), 'condition', 'Equals')
-        return autonomous_system
-
-    @staticmethod
-    def _create_coa_taken(coa_id: str, timestamp: Optional[datetime] = None) -> COATaken:
-        coa = CourseOfAction(idref=coa_id)
-        if timestamp is not None:
-            coa.timestamp = timestamp
-        coa_taken = COATaken(coa)
-        return coa_taken
-
-    def _create_course_of_action_from_galaxy(self, cluster: dict) -> CourseOfAction:
-        course_of_action = CourseOfAction()
-        course_of_action.id_ = f"{self._orgname}:CourseOfAction-{cluster['uuid']}"
-        course_of_action.title = cluster['value']
-        course_of_action.description = cluster['description']
-        return course_of_action
-
-    @staticmethod
-    def _create_domain_object(domain: str) -> DomainName:
-        domain_object = DomainName()
-        domain_object.value = domain
-        domain_object.value.condition = "Equals"
-        return domain_object
-
-    def _create_domain_observable(self, domain: str, uuid: str) -> Observable:
-        domain_object = self._create_domain_object(domain)
-        observable = self._create_observable(domain_object, uuid, 'DomainName')
-        return observable
-
-    @staticmethod
-    def _create_file_object(filename: str) -> File:
-        file_object = File()
-        file_object.file_name = filename
-        file_object.file_name.condition = "Equals"
-        return file_object
-
-    @staticmethod
-    def _create_hostname_object(hostname: str) -> Hostname:
-        hostname_object = Hostname()
-        hostname_object.hostname_value = hostname
-        hostname_object.hostname_value.condition = "Equals"
-        return hostname_object
-
-    def _create_hostname_observable(self, hostname: str, uuid: str) -> Observable:
-        hostname_object = self._create_hostname_object(hostname)
-        observable = self._create_observable(hostname_object, uuid, 'Hostname')
-        return observable
-
-    def _create_indicator_from_attribute(self, attribute: dict) -> Indicator:
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
-        indicator = Indicator(timestamp=timestamp)
-        indicator.id_ = f"{self._orgname}:Indicator-{attribute['uuid']}"
-        indicator.producer = self._set_producer()
-        indicator.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
-        indicator.description = attribute['comment'] if attribute.get('comment') else indicator.title
-        indicator.confidence = Confidence(
-            value=stix1_mapping.confidence_value,
-            description=stix1_mapping.confidence_description,
-            timestamp=timestamp
-        )
-        return indicator
-
-    def _create_indicator_from_object(self, misp_object: dict) -> Indicator:
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        indicator = Indicator(timestamp=timestamp)
-        indicator.id_ = f"{self._orgname}:Indicator-{misp_object['uuid']}"
-        indicator.producer = self._set_producer()
-        indicator.title = f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
-        if any(misp_object.get(feature) for feature in ('comment', 'description')):
-            indicator.description = misp_object['comment'] if misp_object.get('comment') else misp_object['description']
-        indicator.confidence = Confidence(
-            value=stix1_mapping.confidence_value,
-            description=stix1_mapping.confidence_description,
-            timestamp=timestamp
-        )
-        return indicator
-
-    @staticmethod
-    def _create_information_source(identity: Identity) -> InformationSource:
-        information_source = InformationSource(identity=identity)
-        return information_source
-
-    def _create_malware_sample_observable(self, value: str, data: BytesIO, uuid: str) -> Observable:
-        filename, hash_value = value.split('|')
-        artifact_object = self._create_artifact_object(data)
-        artifact_object.hashes = HashList(self._parse_hash_value('md5', hash_value))
-        observable = self._create_observable(artifact_object, uuid, 'Artifact')
-        observable.title = filename
-        return observable
-
-    @staticmethod
-    def _create_mutex_object(name: str) -> Mutex:
-        mutex_object = Mutex()
-        mutex_object.name = name
-        mutex_object.name.condition = "Equals"
-        return mutex_object
-
-    def _create_observable(self, stix_object: _OBSERVABLE_OBJECT_TYPES, attribute_uuid: str, feature: str) -> Observable:
-        stix_object.parent.id_ = f"{self._orgname}:{feature}-{attribute_uuid}"
-        observable = Observable(stix_object)
-        observable.id_ = f"{self._orgname}:Observable-{attribute_uuid}"
-        return observable
-
-    def _create_observable_composition(self, observables: list, name: str, uuid: str) -> Observable:
-        observable_composition = ObservableComposition(observables=observables)
-        observable_composition.operator = 'AND'
-        observable = Observable(id_=f'{self._orgname}:{name}_ObservableComposition-{uuid}')
-        observable.observable_composition = observable_composition
-        return observable
-
-    @staticmethod
-    def _create_port_object(port: str) -> Port:
-        port_object = Port()
-        port_object.port_value = port
-        port_object.port_value.condition = "Equals"
-        return port_object
-
-    def _create_port_observable(self, port: str, uuid: str, feature: str = None) -> Observable:
-        object_type = 'Port'
-        if feature is not None:
-            object_type = f'{feature}{object_type}'
-        port_object = self._create_port_object(port)
-        observable = self._create_observable(port_object, uuid, object_type)
-        return observable
-
-    @staticmethod
-    def _create_property(name: str, value: str) -> Property:
-        prop = Property()
-        prop.name = name
-        prop.value = value
-        return prop
-
-    @staticmethod
-    def _create_registry_key_object(regkey: str) -> WinRegistryKey:
-        registry_key = WinRegistryKey()
-        registry_key.key = regkey.strip()
-        registry_key.key.condition = "Equals"
-        return registry_key
-
-    @staticmethod
-    def _create_related_coa(coa_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedCOA:
-        coa = CourseOfAction(idref=coa_id)
-        if timestamp is not None:
-            coa.timestamp = timestamp
-        related_coa = RelatedCOA(coa, relationship=category)
-        return related_coa
-
-    @staticmethod
-    def _create_related_threat_actor(ta_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedThreatActor:
-        rta = ThreatActor(idref=ta_id)
-        if timestamp is not None:
-            rta.timestamp = timestamp
-        related_ta = RelatedThreatActor(rta, relationship=category)
-        return related_ta
-
-    @staticmethod
-    def _create_related_ttp(ttp_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedTTP:
-        rttp = TTP(idref=ttp_id)
-        if timestamp is not None:
-            rttp.timestamp = timestamp
-        related_ttp = RelatedTTP(rttp, relationship=category)
-        return related_ttp
-
-    def _create_socket_address_object(self, hostname: Optional[str] = None, ip: Optional[tuple] = None, port: Optional[str] = None) -> SocketAddress:
-        socket_address_object = SocketAddress()
-        if hostname is not None:
-            socket_address_object.hostname = self._create_hostname_object(hostname)
-        if ip is not None:
-            socket_address_object.ip_address = self._create_address_object(*ip)
-        if port is not None:
-            socket_address_object.port = self._create_port_object(port)
-        return socket_address_object
-
-    def _create_threat_actor_from_galaxy(self, cluster: dict) -> ThreatActor:
-        threat_actor = ThreatActor()
-        threat_actor.id_ = f"{self._orgname}:ThreatActor-{cluster['uuid']}"
-        threat_actor.title = cluster['value']
-        if cluster.get('description'):
-            threat_actor.description = cluster['description']
-        meta = cluster['meta']
-        if meta.get('cfr-type-of-incident'):
-            intended_effect = meta['cfr-type-of-incident']
-            if isinstance(intended_effect, list):
-                for effect in intended_effect:
-                    threat_actor.add_intended_effect(effect)
-            else:
-                threat_actor.add_intended_effect(intended_effect)
-        return threat_actor
-
-    def _create_ttp(self, attribute: dict) -> TTP:
-        ttp = TTP(timestamp=self._datetime_from_timestamp(attribute['timestamp']))
-        ttp.id_ = f"{self._orgname}:TTP-{attribute['uuid']}"
-        if attribute.get('Tag'):
-            tags = tuple(tag['name'] for tag in attribute['Tag'])
-            ttp.handling = self._set_handling(tags)
-        ttp.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
-        return ttp
-
-    def _create_ttp_from_galaxy(self, galaxy_name: str, uuid: str) -> TTP:
-        ttp = TTP()
-        ttp.id_ = f'{self._orgname}:TTP-{uuid}'
-        ttp.title = f'{galaxy_name} (MISP Galaxy)'
-        return ttp
-
-    def _create_ttp_from_object(self, misp_object: dict) -> TTP:
-        ttp = TTP(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
-        ttp.id_ = f"{self._orgname}:TTP-{misp_object['uuid']}"
-        ttp.title = f"{misp_object['meta-category']}: {misp_object['name']} (MISP Object)"
-        return ttp
-
-    @staticmethod
-    def _create_uri_object(url: str) -> URI:
-        uri_object = URI(value=url, type_='URL')
-        uri_object.value.condition = "Equals"
-        return uri_object
-
-    def _create_uri_observable(self, url: str, uuid: str) -> Observable:
-        uri_object = self._create_uri_object(url)
-        observable = self._create_observable(uri_object, uuid, 'URI')
-        return observable
-
-    def _create_unix_user_account_object(self, attributes: dict) -> UnixUserAccount:
-        account_object = UnixUserAccount()
-        if attributes.get('user-id'):
-            self._set_user_id(account_object, attributes, 'user_id')
-        if attributes.get('group-id'):
-            account_object.group_id = attributes.pop('group-id')[0]
-            account_object.group_id.condition = 'Equals'
-        if attributes.get('group'):
-            self._set_group_list(account_object, attributes, UnixGroupList, UnixGroup, 'group_id')
-            group_list = UnixGroupList()
-            groups = attributes.pop('group')
-            try:
-                for group in groups:
-                    unix_group = UnixGroup()
-                    unix_group.group_id = group
-                    group_list.append(unix_group)
-                account_object.group_list = group_list
-            except ValueError:
-                attributes['group'] = groups
-        return account_object
-
-    def _create_user_account_object(self, attributes: dict) -> Union[UnixUserAccount, UserAccount, WinUser]:
-        account_types = ('unix', 'windows-domain', 'windows-local')
-        if 'account-type' in attributes and attributes['account-type'] in account_types:
-            account_type = attributes.pop('account-type')
-            if account_type == 'unix':
-                return self._create_unix_user_account_object(attributes)
-            attributes['account-type'] = [account_type]
-            return self._create_windows_user_account_object(attributes)
-        account_object = UserAccount()
-        return account_object
-
-    def _create_windows_user_account_object(self, attributes: dict) -> WinUser:
-        account_object = WinUser()
-        if attributes.get('user-id'):
-            self._set_user_id(account_object, attributes, 'security_id')
-        if attributes.get('group'):
-            self._set_group_list(account_object, attributes, WinGroupList, WinGroup, 'name')
-        return account_object
-
-    @staticmethod
-    def _fetch_colors(tags: list) -> tuple:
-        return (tag.split(':')[-1].upper() for tag in tags)
-
-    @staticmethod
-    def _set_color(colors: list) -> str:
-        tlp_color = 0
-        for color in colors:
-            color_num = stix1_mapping.TLP_order[color]
-            if color_num > tlp_color:
-                tlp_color = color_num
-                color_value = color
-        return color_value
-
-    def _set_creator(self) -> str:
-        if self._misp_event.get('Orgc') and self._misp_event['Orgc'].get('name'):
-            return self._misp_event['Orgc']['name']
-        if self._misp_event.get('Org') and self._misp_event['Org'].get('name'):
-            return self._misp_event['Org']['name']
-        return self._default_orgname
-
-    @staticmethod
-    def _set_group_list(
-        account_object: Union[UnixUserAccount, WinUser],
-        attributes: dict,
-        group_list_class: Union[UnixGroupList, WinGroupList],
-        group_class: Union[UnixGroup, WinGroup],
-        feature: str
-    ):
-        group_list = group_list_class()
-        groups = attributes.pop('group')
-        try:
-            for grp in groups:
-                group = group_class()
-                setattr(group, feature, grp)
-                group_list.append(group)
-            account_object.group_list = group_list
-        except ValueError:
-            attributes['group'] = groups
-
-    def _set_handling(self, tags: list) -> Marking:
-        sorted_tags = defaultdict(list)
-        for tag in tags:
-            feature = 'tlp_tags' if tag.startswith('tlp:') else 'simple_tags'
-            sorted_tags[feature].append(tag)
-        handling = Marking()
-        marking_specification = MarkingSpecification()
-        if 'tlp_tags' in sorted_tags:
-            tlp_marking = TLPMarkingStructure()
-            tlp_marking.color = self._set_color(self._fetch_colors(sorted_tags['tlp_tags']))
-            marking_specification.marking_structures.append(tlp_marking)
-        for tag in sorted_tags['simple_tags']:
-            simple_marking = SimpleMarkingStructure()
-            simple_marking.statement = tag
-            marking_specification.marking_structures.append(simple_marking)
-        handling.add_marking(marking_specification)
-        return handling
-
-    @staticmethod
-    def _set_indicator_type(attribute_type: str) -> str:
-        if attribute_type in stix1_mapping.misp_indicator_type:
-            return stix1_mapping.misp_indicator_type[attribute_type]
-        return 'Malware Artifacts'
-
-    def _set_producer(self) -> Identity:
-        identity = Identity(name=self._orgname)
-        return self._create_information_source(identity)
-
-    def _set_reporter(self) -> Identity:
-        reporter = self._misp_event['Org']['name'] if self._misp_event.get('Org') else self._orgname
-        identity = Identity(name=reporter)
-        return self._create_information_source(identity)
-
-    @staticmethod
-    def _set_user_id(account_object: Union[UnixUserAccount, WinUser], attributes: dict, feature: str):
-        user_id = attributes.pop('user-id')[0]
-        try:
-            setattr(account_object, feature, user_id)
-            setattr(getattr(account_object, feature), 'condition', 'Equals')
-        except ValueError:
-            attributes['user-id'] = [user_id]
-
-    ################################################################################
-    #                              UTILITY FUNCTIONS.                              #
-    ################################################################################
-
-    @staticmethod
-    def _from_datetime_to_str(date):
-        return date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-
-    def _quick_fetch_ttp_timestamp(self, object_id: str) -> datetime:
-        for ttp in self._stix_package.ttps.ttp:
-            if ttp.id_ == object_id:
-                return ttp.timestamp
