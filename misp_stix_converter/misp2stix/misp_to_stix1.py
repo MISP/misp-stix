@@ -1679,6 +1679,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             ttp = self._create_ttp_from_galaxy(galaxy_name, cluster['uuid'])
             getattr(self, f'_parse_{feature}_galaxy')(cluster, ttp)
             self._stix_package.add_ttp(ttp)
+            self._ids.add(cluster['uuid'])
             return ttp.id_
         return f"{self._orgname}:TTP-{cluster['uuid']}"
 
