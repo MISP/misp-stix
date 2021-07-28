@@ -44,20 +44,20 @@ def stix20_framing(uuid: Optional[str] = None) -> tuple:
     header = '{"type": "bundle", "spec_version": "2.0", "id":'
     if uuid is None:
         uuid = uuid4()
-    return f'{header} "bundle--{uuid}", "objects": [', ',', json_footer
+    return f'{header} "bundle--{uuid}", "objects": [', ', ', json_footer
 
 
 def stix21_framing(uuid: Optional[str] = None) -> tuple:
     header = '{"type": "bundle", "id":'
     if uuid is None:
         uuid = uuid4()
-    return f'{header} "bundle--{uuid}", "objects": [', ',', json_footer
+    return f'{header} "bundle--{uuid}", "objects": [', ', ', json_footer
 
 
 def _stix_json_framing(stix_package: STIXPackage) -> tuple:
     header = stix_package.to_json()[:-1]
     header = f'{header}, "related_packages": '
-    return header, ',', json_footer
+    return header, ', ', ']}}'
 
 
 def _stix_xml_framing(stix_package: STIXPackage, namespaces: dict, schemaloc: dict) -> tuple:
@@ -65,7 +65,7 @@ def _stix_xml_framing(stix_package: STIXPackage, namespaces: dict, schemaloc: di
     s_related = "stix:Related_Package"
     header = stix_package.to_xml(auto_namespace=False, ns_dict=namespaces, schemaloc_dict=schemaloc)
     header = header.decode()
-    header = f"{header}    <{s_related}s>\n        <{s_related}>\n".replace(s_stix, "")
+    header = f"{header.replace(s_stix, '')}    <{s_related}s>\n        <{s_related}>\n"
     footer = f"        </{s_related}>\n    </{s_related}s>\n{s_stix}"
     separator = f"        </{s_related}>\n        <{s_related}>\n"
     return header, separator, footer
