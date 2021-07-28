@@ -1146,6 +1146,7 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
     def parse_json_content(self, filename):
         with open(filename, 'rt', encoding='utf-8') as f:
             attributes = json.loads(f.read())['response']
+        self._stix_package = STIXPackage()
         if 'Attribute' in attributes:
             attributes = attributes['Attribute']
         for attribute in attributes:
