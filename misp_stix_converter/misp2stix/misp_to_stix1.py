@@ -85,8 +85,9 @@ _OBSERVABLE_OBJECT_TYPES = Union[
 
 
 class MISPtoSTIX1Parser(MISPtoSTIXParser):
-    def __init__(self, version: str):
+    def __init__(self, orgname: str, version: str):
         super().__init__()
+        self._orgname = orgname
         self._version = version
 
     @property
@@ -831,7 +832,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         indicator = Indicator(timestamp=timestamp)
         indicator.id_ = f"{self._orgname}:Indicator-{attribute['uuid']}"
-        indicator.producer = self._set_producer()
+        indicator.producer = self._producer
         indicator.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
         indicator.description = attribute['comment'] if attribute.get('comment') else indicator.title
         indicator.confidence = Confidence(
@@ -850,7 +851,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         indicator = Indicator(timestamp=timestamp)
         indicator.id_ = f"{self._orgname}:Indicator-{misp_object['uuid']}"
-        indicator.producer = self._set_producer()
+        indicator.producer = self._producer
         indicator.title = f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
         if any(misp_object.get(feature) for feature in ('comment', 'description')):
             indicator.description = misp_object['comment'] if misp_object.get('comment') else misp_object['description']
@@ -862,7 +863,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         return indicator
 
     @staticmethod
-    def _create_information_source(identity: Identity) -> InformationSource:
+    def _create_information_source(name: str) -> InformationSource:
+        identity = Identity(name=name)
         information_source = InformationSource(identity=identity)
         return information_source
 
@@ -1059,13 +1061,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 color_value = color
         return color_value
 
-    def _set_creator(self) -> str:
-        if self._misp_event.get('Orgc') and self._misp_event['Orgc'].get('name'):
-            return self._misp_event['Orgc']['name']
-        if self._misp_event.get('Org') and self._misp_event['Org'].get('name'):
-            return self._misp_event['Org']['name']
-        return self._default_orgname
-
     @staticmethod
     def _set_group_list(
         account_object: Union[UnixUserAccount, WinUser],
@@ -1109,14 +1104,15 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             return stix1_mapping.misp_indicator_type[attribute_type]
         return 'Malware Artifacts'
 
-    def _set_producer(self) -> Identity:
-        identity = Identity(name=self._orgname)
-        return self._create_information_source(identity)
+    def _set_information_source(self) -> str:
+        if self._misp_event.get('Org') and self._misp_event['Org'].get('name'):
+            return self._misp_event['Org']['name']
+        return self._orgname
 
-    def _set_reporter(self) -> Identity:
-        reporter = self._misp_event['Org']['name'] if self._misp_event.get('Org') else self._orgname
-        identity = Identity(name=reporter)
-        return self._create_information_source(identity)
+    def _set_producer(self) -> str:
+        if self._misp_event.get('Orgc') and self._misp_event['Orgc'].get('name'):
+            return self._misp_event['Orgc']['name']
+        return self._set_information_source()
 
     @staticmethod
     def _set_user_id(account_object: Union[UnixUserAccount, WinUser], attributes: dict, feature: str):
@@ -1143,8 +1139,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
 
 class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
     def __init__(self, orgname: str, version: str):
-        super().__init__(version)
-        self._orgname = orgname
+        super().__init__(orgname, version)
+        self._producer = self._create_information_source(orgname)
         self._identifier = 'attributes collection'
 
     def parse_json_content(self, filename):
@@ -1185,8 +1181,7 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
 
 class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def __init__(self, orgname: str, version: str):
-        super().__init__(version)
-        self._default_orgname = orgname
+        super().__init__(orgname, version)
 
     def parse_json_content(self, filename):
         with open(filename, 'rt', encoding='utf-8') as f:
@@ -1210,7 +1205,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             misp_event = misp_event['Event']
         self._misp_event = misp_event
         self._identifier = self._misp_event['uuid']
-        self._orgname = self._set_creator()
+        producer = self._set_producer()
+        self._producer = self._create_information_source(producer)
         self._stix_package = self._create_stix_package()
         self._incident = self._create_incident()
         self._generate_stix_objects()
@@ -1230,7 +1226,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                             ttp.add_related_ttp(related_ttp)
         self._stix_package.add_incident(self._incident)
         stix_header = STIXHeader()
-        stix_header.title = f"Export from {self._orgname}'s MISP"
+        stix_header.title = f"Export from {producer}'s MISP"
         stix_header.package_intents = "Threat Report"
         if self._header_comment and len(self._header_comment) == 1:
             stix_header.description = self._header_comment[0]
@@ -1268,8 +1264,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if self._misp_event.get('analysis'):
             status = stix1_mapping.status_mapping[int(self._misp_event['analysis'])]
             self._incident.status = IncidentStatus(status)
-        self._incident.information_source = self._set_producer()
-        self._incident.reporter = self._set_reporter()
+        source = self._set_information_source()
+        self._incident.information_source = self._create_information_source(source)
+        self._incident.reporter = self._producer
         if self._misp_event.get('Attribute'):
             for attribute in self._misp_event['Attribute']:
                 self._resolve_attribute(attribute)
