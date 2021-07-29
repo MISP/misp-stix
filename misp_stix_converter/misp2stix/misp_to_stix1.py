@@ -1474,7 +1474,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     recipients.append(value)
                 setattr(email_header, feature, recipients)
         for feature, key in stix1_mapping.email_object_mapping.items():
-            if attributes.get(feature) :
+            if attributes.get(feature):
                 setattr(email_header, key, attributes.pop(feature)[0])
                 setattr(getattr(email_header, key), 'condition', 'Equals')
         email_object.header = email_header
