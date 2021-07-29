@@ -2245,13 +2245,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             return f"SHA{hash_type.split('/')[1]}"
         return hash_type.replace('-', '').upper()
 
-    @staticmethod
-    def _fetch_ids_flag(attributes: list) -> bool:
-        for attribute in attributes:
-            if attribute.get('to_ids'):
-                return True
-        return False
-
     def _fetch_included_reference_uuids(self, references: list, name: str) -> list:
         uuids = []
         for reference in references:

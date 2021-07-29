@@ -131,6 +131,13 @@ class MISPtoSTIXParser():
     def _datetime_from_timestamp(timestamp: str) -> datetime:
         return datetime.utcfromtimestamp(int(timestamp))
 
+    @staticmethod
+    def _fetch_ids_flag(attributes: list) -> bool:
+        for attribute in attributes:
+            if attribute.get('to_ids', False):
+                return True
+        return False
+
     def _is_published(self) -> bool:
         return all(self._misp_event.get(feature) for feature in self.__published_fields)
 

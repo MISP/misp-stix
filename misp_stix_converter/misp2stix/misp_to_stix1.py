@@ -1316,7 +1316,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 if object_name in stix1_mapping.non_indicator_names:
                     getattr(self, stix1_mapping.non_indicator_names[object_name])(misp_object)
                 else:
-                    to_ids = self._fetch_ids_flags(misp_object['Attribute'])
+                    to_ids = self._fetch_ids_flag(misp_object['Attribute'])
                     to_call = self._fetch_objects_mapping_function(object_name)
                     observable = getattr(self, to_call)(misp_object)
                     if to_ids:
@@ -1328,7 +1328,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if self._objects_to_parse:
             if self._objects_to_parse.get('file'):
                 for misp_object in self._objects_to_parse.pop('file').values():
-                    to_ids = self._fetch_ids_flags(misp_object['Attribute'])
+                    to_ids = self._fetch_ids_flag(misp_object['Attribute'])
                     ids_list, observable = self._parse_file_with_pe_object(misp_object)
                     if to_ids or True in ids_list:
                         self._handle_misp_object_with_context(misp_object, observable)
@@ -1387,13 +1387,6 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             else:
                 attributes_dict[relation].append(value)
         return attributes_dict
-
-    @staticmethod
-    def _fetch_ids_flags(attributes: list) -> bool:
-        for attribute in attributes:
-            if attribute.get('to_ids', False):
-                return True
-        return False
 
     @staticmethod
     def _fetch_objects_mapping_function(object_name: str) -> str:
@@ -1692,7 +1685,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observables
 
     def _parse_file_with_pe_object(self, misp_object: dict) -> Observable:
-        ids_list = [self._fetch_ids_flags(misp_object['Attribute'])]
+        ids_list = [self._fetch_ids_flag(misp_object['Attribute'])]
         attributes = self._extract_file_attributes(misp_object['Attribute'])
         observables = self._parse_file_observables(attributes)
         file_object = WinExecutableFile()
@@ -1800,7 +1793,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable
 
     def _parse_pe_object(self, file_object: WinExecutableFile, misp_pe: dict):
-        ids_list = [self._fetch_ids_flags(misp_pe['Attribute'])]
+        ids_list = [self._fetch_ids_flag(misp_pe['Attribute'])]
         attributes = self._extract_multiple_object_attributes(
             misp_pe['Attribute'],
             force_single=stix1_mapping.pe_single_fields
@@ -1848,7 +1841,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 if self._check_reference(reference, 'pe-section'):
                     misp_pe_section = self._objects_to_parse['pe-section'][reference['referenced_uuid']]
                     ids_list.append(
-                        self._fetch_ids_flags(misp_pe_section['Attribute'])
+                        self._fetch_ids_flag(misp_pe_section['Attribute'])
                     )
                     pe_section = self._parse_pe_section_object(misp_pe_section)
                     try:
