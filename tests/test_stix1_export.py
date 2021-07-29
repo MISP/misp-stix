@@ -4,10 +4,10 @@
 import os
 import unittest
 from datetime import datetime, timezone
-from misp_stix_converter import MISPtoSTIX1EventsParser, misp_to_stix1, stix1_framing
+from misp_stix_converter import MISPtoSTIX1EventsParser, misp_event_collection_to_stix1, misp_to_stix1, stix1_framing
 from pathlib import Path
 from .test_events import *
-from ._test_stix_export import TestCollectionSTIXExport
+from ._test_stix_export import TestCollectionSTIX1Export
 
 _DEFAULT_NAMESPACE = 'https://github.com/MISP/MISP'
 _DEFAULT_ORGNAME = 'MISP-Project'
@@ -2586,13 +2586,35 @@ class TestStix12Export(TestStix1Export):
         self._test_event_with_vulnerability_galaxy()
 
 
-class TestCollectionStix1Export(TestCollectionSTIXExport):
+class TestCollectionStix1Export(TestCollectionSTIX1Export):
+    def test_event_collection_export_11(self):
+        name = 'test_events_collection'
+        to_test_name = f'{name}.json.out'
+        reference_name = f'{name}_stix11.xml'
+        output_file = self._current_path / to_test_name
+        input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
+        self.assertEqual(misp_event_collection_to_stix1(output_file, 'xml', '1.1.1', *input_files), 1)
+        self._check_stix1_collection_export_results(to_test_name, reference_name)
+        self.assertEqual(misp_event_collection_to_stix1(output_file, 'xml', '1.1.1', *input_files, in_memory=True), 1)
+        self._check_stix1_collection_export_results(to_test_name, reference_name)
+
+    def test_event_collection_export_12(self):
+        name = 'test_events_collection'
+        to_test_name = f'{name}.json.out'
+        reference_name = f'{name}_stix12.xml'
+        output_file = self._current_path / to_test_name
+        input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
+        self.assertEqual(misp_event_collection_to_stix1(output_file, 'xml', '1.2', *input_files), 1)
+        self._check_stix1_collection_export_results(to_test_name, reference_name)
+        self.assertEqual(misp_event_collection_to_stix1(output_file, 'xml', '1.2', *input_files, in_memory=True), 1)
+        self._check_stix1_collection_export_results(to_test_name, reference_name)
+
     def test_event_export_11(self):
         name = 'test_events_collection_1.json'
         self.assertEqual(misp_to_stix1(self._current_path / name, 'xml', '1.1.1'), 1)
-        self._check_stix1_results_export(f'{name}.out', 'test_event_stix11.xml')
+        self._check_stix1_export_results(f'{name}.out', 'test_event_stix11.xml')
 
     def test_event_export_12(self):
         name = 'test_events_collection_1.json'
         self.assertEqual(misp_to_stix1(self._current_path / name, 'xml', '1.2'), 1)
-        self._check_stix1_results_export(f'{name}.out', 'test_event_stix12.xml')
+        self._check_stix1_export_results(f'{name}.out', 'test_event_stix12.xml')

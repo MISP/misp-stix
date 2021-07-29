@@ -18,12 +18,22 @@ class TestCollectionSTIXExport(unittest.TestCase):
         for filename in self._current_path.glob('test_*_collection*.json.out'):
             os.remove(filename)
 
-    def _check_stix1_results_export(self, to_test_name, reference_name):
+
+class TestCollectionSTIX1Export(TestCollectionSTIXExport):
+    def _check_stix1_collection_export_results(self, to_test_name, reference_name):
+        to_test = STIXPackage.from_xml(str(self._current_path / to_test_name)).to_dict()
+        reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
+        for key in (key for key in reference.keys() if key not in ('id', 'timestamp')):
+            self.assertEqual(to_test[key], reference[key])
+
+    def _check_stix1_export_results(self, to_test_name, reference_name):
         to_test = STIXPackage.from_xml(str(self._current_path / to_test_name)).to_dict()
         reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
         for key in (key for key in reference.keys() if key != 'id'):
             self.assertEqual(to_test[key], reference[key])
 
+
+class TestCollectionSTIX2Export(TestCollectionSTIXExport):
     def _check_stix2_results_export(self, to_test_name, reference_name):
         with open(self._current_path / to_test_name, 'rt', encoding='utf-8') as f:
             to_test = json.loads(f.read())
