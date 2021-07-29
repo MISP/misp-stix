@@ -95,17 +95,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         return self._stix_package
 
     ################################################################################
-    #                     MAIN STIX PACKAGE CREATION FUNCTIONS                     #
-    ################################################################################
-
-    def _create_stix_package(self) -> STIXPackage:
-        package_id = f"{self._orgname}:STIXPackage-{self._misp_event['uuid']}"
-        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
-        stix_package = STIXPackage(id_=package_id, timestamp=timestamp)
-        stix_package.version = self._version
-        return stix_package
-
-    ################################################################################
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
     ################################################################################
 
@@ -622,21 +611,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             return threat_actor.id_
         return f"{self._orgname}:ThreatActor-{cluster['uuid']}"
 
-    def _parse_threat_actor_galaxy(self, galaxy: dict):
-        for cluster in galaxy['GalaxyCluster']:
-            threat_actor_id = self._parse_threat_actor(cluster)
-            if cluster['uuid'] not in self._contextualised_data:
-                related_threat_actor = self._create_related_threat_actor(
-                    threat_actor_id,
-                    galaxy['name']
-                )
-                try:
-                    self._incident.attributed_threat_actors.append(related_threat_actor)
-                except AttributeError:
-                    self._incident.attributed_threat_actors = AttributedThreatActors()
-                    self._incident.attributed_threat_actors.append(related_threat_actor)
-                self._contextualised_data.add(cluster['uuid'])
-
     def _parse_tool_attribute_galaxy(self, galaxy: dict, indicator: Indicator):
         galaxy_name = galaxy['name']
         for cluster in galaxy['GalaxyCluster']:
@@ -756,18 +730,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         return observable
 
     @staticmethod
-    def _create_authentication_object(auth_type: str = None, auth_format: str = None, password: str = None) -> Authentication:
-        authentication = Authentication()
-        # At least one of the params is not None, otherwise we do not actually call the function
-        if auth_type is not None:
-            authentication.authentication_type = auth_type
-        if auth_format is not None:
-            authentication.structured_authentication_mechanism = auth_format
-        if password is not None:
-            authentication.authentication_data = password
-        return authentication
-
-    @staticmethod
     def _create_autonomous_system_object(AS: str) -> AutonomousSystem:
         autonomous_system = AutonomousSystem()
         feature = 'handle' if AS.startswith('AS') else 'number'
@@ -781,14 +743,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         ciq_identity.id_ = f"{self._orgname}:Identity-{attribute['uuid']}"
         ciq_identity.name = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
         return ciq_identity
-
-    @staticmethod
-    def _create_coa_taken(coa_id: str, timestamp: Optional[datetime] = None) -> COATaken:
-        coa = CourseOfAction(idref=coa_id)
-        if timestamp is not None:
-            coa.timestamp = timestamp
-        coa_taken = COATaken(coa)
-        return coa_taken
 
     def _create_course_of_action_from_galaxy(self, cluster: dict) -> CourseOfAction:
         course_of_action = CourseOfAction()
@@ -847,21 +801,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             indicator.handling = self._set_handling(tags)
         return indicator
 
-    def _create_indicator_from_object(self, misp_object: dict) -> Indicator:
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        indicator = Indicator(timestamp=timestamp)
-        indicator.id_ = f"{self._orgname}:Indicator-{misp_object['uuid']}"
-        indicator.producer = self._producer
-        indicator.title = f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
-        if any(misp_object.get(feature) for feature in ('comment', 'description')):
-            indicator.description = misp_object['comment'] if misp_object.get('comment') else misp_object['description']
-        indicator.confidence = Confidence(
-            value=stix1_mapping.confidence_value,
-            description=stix1_mapping.confidence_description,
-            timestamp=timestamp
-        )
-        return indicator
-
     @staticmethod
     def _create_information_source(name: str) -> InformationSource:
         identity = Identity(name=name)
@@ -887,13 +826,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         stix_object.parent.id_ = f"{self._orgname}:{feature}-{attribute_uuid}"
         observable = Observable(stix_object)
         observable.id_ = f"{self._orgname}:Observable-{attribute_uuid}"
-        return observable
-
-    def _create_observable_composition(self, observables: list, name: str, uuid: str) -> Observable:
-        observable_composition = ObservableComposition(observables=observables)
-        observable_composition.operator = 'AND'
-        observable = Observable(id_=f'{self._orgname}:{name}_ObservableComposition-{uuid}')
-        observable.observable_composition = observable_composition
         return observable
 
     @staticmethod
@@ -932,14 +864,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             coa.timestamp = timestamp
         related_coa = RelatedCOA(coa, relationship=category)
         return related_coa
-
-    @staticmethod
-    def _create_related_threat_actor(ta_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedThreatActor:
-        rta = ThreatActor(idref=ta_id)
-        if timestamp is not None:
-            rta.timestamp = timestamp
-        related_ta = RelatedThreatActor(rta, relationship=category)
-        return related_ta
 
     @staticmethod
     def _create_related_ttp(ttp_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedTTP:
@@ -990,12 +914,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         ttp.title = f'{galaxy_name} (MISP Galaxy)'
         return ttp
 
-    def _create_ttp_from_object(self, misp_object: dict) -> TTP:
-        ttp = TTP(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
-        ttp.id_ = f"{self._orgname}:TTP-{misp_object['uuid']}"
-        ttp.title = f"{misp_object['meta-category']}: {misp_object['name']} (MISP Object)"
-        return ttp
-
     @staticmethod
     def _create_uri_object(url: str) -> URI:
         uri_object = URI(value=url, type_='URL')
@@ -1006,46 +924,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         uri_object = self._create_uri_object(url)
         observable = self._create_observable(uri_object, uuid, 'URI')
         return observable
-
-    def _create_unix_user_account_object(self, attributes: dict) -> UnixUserAccount:
-        account_object = UnixUserAccount()
-        if attributes.get('user-id'):
-            self._set_user_id(account_object, attributes, 'user_id')
-        if attributes.get('group-id'):
-            account_object.group_id = attributes.pop('group-id')[0]
-            account_object.group_id.condition = 'Equals'
-        if attributes.get('group'):
-            self._set_group_list(account_object, attributes, UnixGroupList, UnixGroup, 'group_id')
-            group_list = UnixGroupList()
-            groups = attributes.pop('group')
-            try:
-                for group in groups:
-                    unix_group = UnixGroup()
-                    unix_group.group_id = group
-                    group_list.append(unix_group)
-                account_object.group_list = group_list
-            except ValueError:
-                attributes['group'] = groups
-        return account_object
-
-    def _create_user_account_object(self, attributes: dict) -> Union[UnixUserAccount, UserAccount, WinUser]:
-        account_types = ('unix', 'windows-domain', 'windows-local')
-        if 'account-type' in attributes and attributes['account-type'] in account_types:
-            account_type = attributes.pop('account-type')
-            if account_type == 'unix':
-                return self._create_unix_user_account_object(attributes)
-            attributes['account-type'] = [account_type]
-            return self._create_windows_user_account_object(attributes)
-        account_object = UserAccount()
-        return account_object
-
-    def _create_windows_user_account_object(self, attributes: dict) -> WinUser:
-        account_object = WinUser()
-        if attributes.get('user-id'):
-            self._set_user_id(account_object, attributes, 'security_id')
-        if attributes.get('group'):
-            self._set_group_list(account_object, attributes, WinGroupList, WinGroup, 'name')
-        return account_object
 
     @staticmethod
     def _fetch_colors(tags: list) -> tuple:
@@ -1104,16 +982,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             return stix1_mapping.misp_indicator_type[attribute_type]
         return 'Malware Artifacts'
 
-    def _set_information_source(self) -> str:
-        if self._misp_event.get('Org') and self._misp_event['Org'].get('name'):
-            return self._misp_event['Org']['name']
-        return self._orgname
-
-    def _set_producer(self) -> str:
-        if self._misp_event.get('Orgc') and self._misp_event['Orgc'].get('name'):
-            return self._misp_event['Orgc']['name']
-        return self._set_information_source()
-
     @staticmethod
     def _set_user_id(account_object: Union[UnixUserAccount, WinUser], attributes: dict, feature: str):
         user_id = attributes.pop('user-id')[0]
@@ -1130,11 +998,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     @staticmethod
     def _from_datetime_to_str(date):
         return date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
-
-    def _quick_fetch_ttp_timestamp(self, object_id: str) -> datetime:
-        for ttp in self._stix_package.ttps.ttp:
-            if ttp.id_ == object_id:
-                return ttp.timestamp
 
 
 class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
@@ -1178,6 +1041,13 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
         indicator = self._create_indicator_from_attribute(attribute)
         indicator.add_test_mechanism(test_mechanism)
         self._stix_package.add_indicator(indicator)
+
+    ################################################################################
+    #                          GALAXIES PARSING FUNCTIONS                          #
+    ################################################################################
+    def _parse_threat_actor_galaxy(self, galaxy: dict):
+        for cluster in galaxy['GalaxyCluster']:
+            self._parse_threat_actor(cluster)
 
 
 class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
@@ -1521,7 +1391,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._incident.add_coa_taken(coa_taken)
         self._stix_package.add_course_of_action(course_of_action)
 
-    def _parse_credential_arguments(self, attributes: dict) -> dict:
+    def _parse_credential_authentication(self, attributes: dict) -> list:
         args = {}
         if attributes.get('format'):
             struct_auth_meca = StructuredAuthenticationMechanism()
@@ -1529,10 +1399,6 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             args['auth_format'] = struct_auth_meca
         if attributes.get('type'):
             args['auth_type'] = attributes.pop('type')[0]
-        return args
-
-    def _parse_credential_authentication(self, attributes: dict) -> list:
-        args = self._parse_credential_arguments(attributes)
         authentication_list = []
         if attributes.get('password'):
             for password in attributes.pop('password'):
@@ -2186,6 +2052,21 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 self._incident.add_leveraged_ttps(related_ttp)
                 self._contextualised_data.add(cluster['uuid'])
 
+    def _parse_threat_actor_galaxy(self, galaxy: dict):
+        for cluster in galaxy['GalaxyCluster']:
+            threat_actor_id = self._parse_threat_actor(cluster)
+            if cluster['uuid'] not in self._contextualised_data:
+                related_threat_actor = self._create_related_threat_actor(
+                    threat_actor_id,
+                    galaxy['name']
+                )
+                try:
+                    self._incident.attributed_threat_actors.append(related_threat_actor)
+                except AttributeError:
+                    self._incident.attributed_threat_actors = AttributedThreatActors()
+                    self._incident.attributed_threat_actors.append(related_threat_actor)
+                self._contextualised_data.add(cluster['uuid'])
+
     def _parse_tool_event_galaxy(self, galaxy: dict):
         galaxy_name = galaxy['name']
         for cluster in galaxy['GalaxyCluster']:
@@ -2203,3 +2084,129 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 related_ttp = self._create_related_ttp(ttp_id, galaxy_name)
                 self._incident.add_leveraged_ttps(related_ttp)
                 self._contextualised_data.add(cluster['uuid'])
+
+    ################################################################################
+    #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
+    ################################################################################
+
+    @staticmethod
+    def _create_authentication_object(auth_type: str = None, auth_format: str = None, password: str = None) -> Authentication:
+        authentication = Authentication()
+        # At least one of the params is not None, otherwise we do not actually call the function
+        if auth_type is not None:
+            authentication.authentication_type = auth_type
+        if auth_format is not None:
+            authentication.structured_authentication_mechanism = auth_format
+        if password is not None:
+            authentication.authentication_data = password
+        return authentication
+
+    @staticmethod
+    def _create_coa_taken(coa_id: str, timestamp: Optional[datetime] = None) -> COATaken:
+        coa = CourseOfAction(idref=coa_id)
+        if timestamp is not None:
+            coa.timestamp = timestamp
+        coa_taken = COATaken(coa)
+        return coa_taken
+
+    def _create_indicator_from_object(self, misp_object: dict) -> Indicator:
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        indicator = Indicator(timestamp=timestamp)
+        indicator.id_ = f"{self._orgname}:Indicator-{misp_object['uuid']}"
+        indicator.producer = self._producer
+        indicator.title = f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
+        if any(misp_object.get(feature) for feature in ('comment', 'description')):
+            indicator.description = misp_object['comment'] if misp_object.get('comment') else misp_object['description']
+        indicator.confidence = Confidence(
+            value=stix1_mapping.confidence_value,
+            description=stix1_mapping.confidence_description,
+            timestamp=timestamp
+        )
+        return indicator
+
+    def _create_observable_composition(self, observables: list, name: str, uuid: str) -> Observable:
+        observable_composition = ObservableComposition(observables=observables)
+        observable_composition.operator = 'AND'
+        observable = Observable(id_=f'{self._orgname}:{name}_ObservableComposition-{uuid}')
+        observable.observable_composition = observable_composition
+        return observable
+
+    @staticmethod
+    def _create_related_threat_actor(ta_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedThreatActor:
+        rta = ThreatActor(idref=ta_id)
+        if timestamp is not None:
+            rta.timestamp = timestamp
+        related_ta = RelatedThreatActor(rta, relationship=category)
+        return related_ta
+
+    def _create_stix_package(self) -> STIXPackage:
+        package_id = f"{self._orgname}:STIXPackage-{self._misp_event['uuid']}"
+        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
+        stix_package = STIXPackage(id_=package_id, timestamp=timestamp)
+        stix_package.version = self._version
+        return stix_package
+
+    def _create_ttp_from_object(self, misp_object: dict) -> TTP:
+        ttp = TTP(timestamp=self._datetime_from_timestamp(misp_object['timestamp']))
+        ttp.id_ = f"{self._orgname}:TTP-{misp_object['uuid']}"
+        ttp.title = f"{misp_object['meta-category']}: {misp_object['name']} (MISP Object)"
+        return ttp
+
+    def _create_unix_user_account_object(self, attributes: dict) -> UnixUserAccount:
+        account_object = UnixUserAccount()
+        if attributes.get('user-id'):
+            self._set_user_id(account_object, attributes, 'user_id')
+        if attributes.get('group-id'):
+            account_object.group_id = attributes.pop('group-id')[0]
+            account_object.group_id.condition = 'Equals'
+        if attributes.get('group'):
+            self._set_group_list(account_object, attributes, UnixGroupList, UnixGroup, 'group_id')
+            group_list = UnixGroupList()
+            groups = attributes.pop('group')
+            try:
+                for group in groups:
+                    unix_group = UnixGroup()
+                    unix_group.group_id = group
+                    group_list.append(unix_group)
+                account_object.group_list = group_list
+            except ValueError:
+                attributes['group'] = groups
+        return account_object
+
+    def _create_user_account_object(self, attributes: dict) -> Union[UnixUserAccount, UserAccount, WinUser]:
+        account_types = ('unix', 'windows-domain', 'windows-local')
+        if 'account-type' in attributes and attributes['account-type'] in account_types:
+            account_type = attributes.pop('account-type')
+            if account_type == 'unix':
+                return self._create_unix_user_account_object(attributes)
+            attributes['account-type'] = [account_type]
+            return self._create_windows_user_account_object(attributes)
+        account_object = UserAccount()
+        return account_object
+
+    def _create_windows_user_account_object(self, attributes: dict) -> WinUser:
+        account_object = WinUser()
+        if attributes.get('user-id'):
+            self._set_user_id(account_object, attributes, 'security_id')
+        if attributes.get('group'):
+            self._set_group_list(account_object, attributes, WinGroupList, WinGroup, 'name')
+        return account_object
+
+    def _set_information_source(self) -> str:
+        if self._misp_event.get('Org') and self._misp_event['Org'].get('name'):
+            return self._misp_event['Org']['name']
+        return self._orgname
+
+    def _set_producer(self) -> str:
+        if self._misp_event.get('Orgc') and self._misp_event['Orgc'].get('name'):
+            return self._misp_event['Orgc']['name']
+        return self._set_information_source()
+
+    ################################################################################
+    #                              UTILITY FUNCTIONS.                              #
+    ################################################################################
+
+    def _quick_fetch_ttp_timestamp(self, object_id: str) -> datetime:
+        for ttp in self._stix_package.ttps.ttp:
+            if ttp.id_ == object_id:
+                return ttp.timestamp
