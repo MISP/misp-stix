@@ -54,6 +54,7 @@ def misp_event_collection_to_stix1(*args: List[_files_type], in_memory: bool=Fal
             f.write(f'{separator}{content}')
     with open(output_filename, 'at', encoding='utf-8') as f:
         f.write(footer)
+    return 1
 
 
 def misp_collection_to_stix2_0(output_filename: _files_type, *input_files: List[_files_type], in_memory: bool=False):
@@ -114,7 +115,7 @@ def misp_to_stix1(*args: List[_files_type], namespace=_default_namespace, org=_d
             package.add_related_package(related_package)
     else:
         package.add_related_package(parser.stix_package)
-    return _write_raw_stix(package, filename, namespace, org, return_format)
+    return _write_raw_stix(package, f'{filename}.out', namespace, org, return_format)
 
 
 def misp_to_stix2_0(filename: _files_type):
@@ -263,9 +264,9 @@ def _write_raw_stix(package: STIXPackage, filename: str, namespace: str, org: st
             idgen.set_id_namespace(Namespace(namespace, org))
         except TypeError:
             idgen.set_id_namespace(Namespace(namespace, org, "MISP"))
-        with open(f'{filename}.out', 'wb') as f:
+        with open(filename, 'wb') as f:
             f.write(package.to_xml(auto_namespace=False, ns_dict=namespaces, schemaloc_dict=SCHEMALOC_DICT))
     else:
-        with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+        with open(filename, 'wt', encoding='utf-8') as f:
             f.write(json.dumps(package.to_dict(), indent=4))
     return 1
