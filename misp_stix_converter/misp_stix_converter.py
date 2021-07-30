@@ -27,6 +27,36 @@ _files_type = Union[Path, str]
 #                         MISP to STIX MAIN FUNCTIONS.                         #
 ################################################################################
 
+def misp_attribute_collection_to_stix1(*args: List[_files_type], namespace: str=_default_namespace, org: str=_default_org):
+    output_filename, return_format, version, *input_files = args
+    if org != _default_org:
+        org = re.sub('[\W]+', '', org.replace(" ", "_"))
+    parser = MISPtoSTIX1AttributesParser(org, version)
+    if len(input_files) == 1:
+        parser.parse_json_content(input_files[0])
+        return _write_raw_stix(parser.stix_package, output_filename, namespace, org, return_format)
+    package = _create_stix_package(org, version)
+    for filename in input_files:
+        parser.parse_json_content(filename)
+        current = parser.stix_package
+        for campaign in current.campaigns:
+            package.add_campaign(campaign)
+        for course_of_action in current.courses_of_action:
+            package.add_course_of_action(course_of_action)
+        for exploit_target in current.exploit_targets:
+            package.add_exploit_target(exploit_target)
+        for indicator in current.indicators:
+            package.add_indicator(indicator)
+        for observable in current.observables:
+            package.add_observable(observable)
+        for threat_actor in current.threat_actors:
+            package.add_threat_actor(threat_actor)
+        if current.ttps is not None:
+            for ttp in current.ttps:
+                package.add_ttp(ttp)
+    return _write_raw_stix(package, output_filename, namespace, org, return_format)
+
+
 def misp_event_collection_to_stix1(*args: List[_files_type], in_memory: bool=False, namespace: str=_default_namespace, org: str=_default_org):
     output_filename, return_format, version, *input_files = args
     if org != _default_org:
