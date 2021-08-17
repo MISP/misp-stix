@@ -14,24 +14,19 @@ from .stix1_mapping import NS_DICT, SCHEMALOC_DICT
 json_footer = ']}\n'
 
 
-def stix1_framing(namespace: str, orgname: str, return_format: str, version: str) -> tuple:
-    real_orgname = orgname
-    orgname = re.sub('[\W]+', '', orgname.replace(" ", "_"))
-    namespaces = {namespace: orgname}
-    namespaces.update(NS_DICT)
-    try:
-        idgen.set_id_namespace(Namespace(namespace, orgname))
-    except TypeError:
-        idgen.set_id_namespace(Namespace(namespace, orgname, "MISP"))
-    stix_package = STIXPackage()
-    stix_header = STIXHeader()
-    stix_header.title = f"Export from {real_orgname}'s MISP"
-    stix_header.package_intents="Threat Report"
-    stix_package.stix_header = stix_header
-    stix_package.version = version
-    stix_package.timestamp = datetime.datetime.now()
+def stix1_attributes_framing(namespace: str, orgname: str, return_format: str, version: str) -> tuple:
+    stix_package = _stix_package(orgname, version)
     if return_format == 'xml':
-        return _stix_xml_framing(stix_package, namespaces, SCHEMALOC_DICT)
+        namespaces = _handle_namespaces(namespace, orgname)
+        return _stix_xml_attributes_framing(stix_package, namespaces)
+    return _stix_json_attributes_framing(stix_package)
+
+
+def stix1_framing(namespace: str, orgname: str, return_format: str, version: str) -> tuple:
+    stix_package = _stix_package(orgname, version)
+    if return_format == 'xml':
+        namespaces = _handle_namespaces(namespace, orgname)
+        return _stix_xml_framing(stix_package, namespaces)
     return _stix_json_framing(stix_package)
 
 
@@ -54,18 +49,52 @@ def stix21_framing(uuid: Optional[str] = None) -> tuple:
     return f'{header} "bundle--{uuid}", "objects": [', ', ', json_footer
 
 
+def _handle_namespaces(namespace: str, orgname: str) -> tuple:
+    parsed_orgname = re.sub('[\W]+', '', orgname.replace(' ', '_'))
+    namespaces = {namespace: parsed_orgname}
+    namespaces.update(NS_DICT)
+    try:
+        idgen.set_id_namespace(Namespace(namespace, orgname))
+    except TypeError:
+        idgen.set_id_namespace(Namespace(namespace, orgname, 'MISP'))
+    return namespaces
+
+
+def _stix_json_attributes_framing(stix_package: STIXPackage) -> tuple:
+    header = stix_package.to_json()[:-1]
+    return header, '}'
+
+
 def _stix_json_framing(stix_package: STIXPackage) -> tuple:
     header = stix_package.to_json()[:-1]
-    header = f'{header}, "related_packages": '
+    bracket = '{'
+    header = f'{header}, "related_packages": {bracket}"related_packages": ['
     return header, ', ', ']}}'
 
 
-def _stix_xml_framing(stix_package: STIXPackage, namespaces: dict, schemaloc: dict) -> tuple:
+def _stix_package(orgname: str, version: str) -> tuple:
+    stix_package = STIXPackage()
+    stix_header = STIXHeader()
+    stix_header.title = f"Export from {orgname}'s MISP"
+    stix_header.package_intents = 'Threat Report'
+    stix_package.stix_header = stix_header
+    stix_package.version = version
+    stix_package.timestamp = datetime.datetime.now()
+    return stix_package
+
+
+def _stix_xml_attributes_framing(stix_package: STIXPackage, namespaces: dict) -> tuple:
+    s_stix = "</stix:STIX_Package>\n"
+    header = stix_package.to_xml(auto_namespace=False, ns_dict=namespaces, schemaloc_dict=SCHEMALOC_DICT)
+    return f"{header.decode().replace(s_stix, '')}\n", s_stix
+
+
+def _stix_xml_framing(stix_package: STIXPackage, namespaces: dict) -> tuple:
     s_stix = "</stix:STIX_Package>\n"
     s_related = "stix:Related_Package"
-    header = stix_package.to_xml(auto_namespace=False, ns_dict=namespaces, schemaloc_dict=schemaloc)
+    header = stix_package.to_xml(auto_namespace=False, ns_dict=namespaces, schemaloc_dict=SCHEMALOC_DICT)
     header = header.decode()
-    header = f"{header.replace(s_stix, '')}    <{s_related}s>\n        <{s_related}>\n"
+    header = f"{header.replace(s_stix, '')}\n    <{s_related}s>\n        <{s_related}>\n"
     footer = f"        </{s_related}>\n    </{s_related}s>\n{s_stix}"
     separator = f"        </{s_related}>\n        <{s_related}>\n"
     return header, separator, footer
