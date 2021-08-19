@@ -86,7 +86,7 @@ def _stix_package(orgname: str, version: str) -> tuple:
 def _stix_xml_attributes_framing(stix_package: STIXPackage, namespaces: dict) -> tuple:
     s_stix = "</stix:STIX_Package>\n"
     header = stix_package.to_xml(auto_namespace=False, ns_dict=namespaces, schemaloc_dict=SCHEMALOC_DICT)
-    return f"{header.decode().replace(s_stix, '')}\n", s_stix
+    return f"{header.decode().replace(s_stix, '')}", s_stix
 
 
 def _stix_xml_framing(stix_package: STIXPackage, namespaces: dict) -> tuple:
