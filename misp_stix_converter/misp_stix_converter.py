@@ -2,16 +2,19 @@
 #!/usr/bin/env python3
 
 import json
+import os
 import re
-from .misp2stix.framing import stix1_framing, stix20_framing, stix21_framing
+from .misp2stix.framing import stix1_attributes_framing, stix1_framing
 from .misp2stix.misp_to_stix1 import MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser
 from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
 from .misp2stix.stix1_mapping import NS_DICT, SCHEMALOC_DICT
+from cybox.core.observable import Observables
 from mixbox import idgen
 from mixbox.namespaces import Namespace, register_namespace
 from pathlib import Path
-from stix.core import STIXHeader, STIXPackage
+from stix.core import Campaigns, Indicators, STIXHeader, STIXPackage
+from stix.core.ttps import TTPs
 from stix2.base import STIXJSONEncoder
 from stix2.v20 import Bundle as Bundle_v20
 from stix2.v21 import Bundle as Bundle_v21
@@ -27,7 +30,94 @@ _files_type = Union[Path, str]
 #                         MISP to STIX MAIN FUNCTIONS.                         #
 ################################################################################
 
-def misp_attribute_collection_to_stix1(*args: List[_files_type], namespace: str=_default_namespace, org: str=_default_org):
+
+class AttributeCollectionHandler():
+    def __init__(self, return_format):
+        self.__return_format = return_format
+        identifiers = {
+            'json': (
+                'campaigns',
+                'courses_of_action',
+                'exploit_targets',
+                'indicators',
+                'observables',
+                'threat_actors',
+                'ttps'
+            ),
+            'xml': (
+                'Campaigns',
+                'CoursesOfAction',
+                'ExploitTargets',
+                'Indicators',
+                'Observables',
+                'ThreatActors',
+                'TTPs'
+            )
+        }
+        self.__features = {key: {'feature': value} for key, value in zip(identifiers['json'], identifiers[return_format])}
+
+    @property
+    def features(self):
+        return {key: feature['feature'] for key, feature in self.__features.items()}
+
+    @property
+    def campaigns(self):
+        return self.__features['campaigns'].get('filename')
+
+    @campaigns.setter
+    def campaigns(self, filename):
+        self.__features['campaigns']['filename'] = f'{filename}.{self.__return_format}'
+
+    @property
+    def courses_of_action(self):
+        return self.__features['courses_of_action'].get('filename')
+
+    @courses_of_action.setter
+    def courses_of_action(self, filename):
+        self.__features['courses_of_action']['filename'] = f'{filename}.{self.__return_format}'
+
+    @property
+    def exploit_targets(self):
+        return self.__features['exploit_targets'].get('filename')
+
+    @exploit_targets.setter
+    def exploit_targets(self, filename):
+        self.__features['exploit_targets']['filename'] = f'{filename}.{self.__return_format}'
+
+    @property
+    def indicators(self):
+        return self.__features['indicators'].get('filename')
+
+    @indicators.setter
+    def indicators(self, filename):
+        self.__features['indicators']['filename'] = f'{filename}.{self.__return_format}'
+
+    @property
+    def observables(self):
+        return self.__features['observables'].get('filename')
+
+    @observables.setter
+    def observables(self, filename):
+        self.__features['observables']['filename'] = f'{filename}.{self.__return_format}'
+
+    @property
+    def threat_actors(self):
+        return self.__features['threat_actors'].get('filename')
+
+    @threat_actors.setter
+    def threat_actors(self, filename):
+        self.__features['threat_actors']['filename'] = f'{filename}.{self.__return_format}'
+
+    @property
+    def ttps(self):
+        return self.__features['ttps'].get('filename')
+
+    @ttps.setter
+    def ttps(self, filename):
+        self.__features['ttps']['filename'] = f'{filename}.{self.__return_format}'
+
+
+def misp_attribute_collection_to_stix1(*args: List[_files_type], in_memory: bool=False, namespace: str=_default_namespace, org: str=_default_org):
     output_filename, return_format, version, *input_files = args
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
@@ -35,26 +125,59 @@ def misp_attribute_collection_to_stix1(*args: List[_files_type], namespace: str=
     if len(input_files) == 1:
         parser.parse_json_content(input_files[0])
         return _write_raw_stix(parser.stix_package, output_filename, namespace, org, return_format)
-    package = _create_stix_package(org, version)
-    for filename in input_files:
-        parser.parse_json_content(filename)
+    if in_memory:
+        package = _create_stix_package(org, version)
+        for filename in input_files:
+            parser.parse_json_content(filename)
+            current = parser.stix_package
+            for campaign in current.campaigns:
+                package.add_campaign(campaign)
+            for course_of_action in current.courses_of_action:
+                package.add_course_of_action(course_of_action)
+            for exploit_target in current.exploit_targets:
+                package.add_exploit_target(exploit_target)
+            for indicator in current.indicators:
+                package.add_indicator(indicator)
+            for observable in current.observables:
+                package.add_observable(observable)
+            for threat_actor in current.threat_actors:
+                package.add_threat_actor(threat_actor)
+            if current.ttps is not None:
+                for ttp in current.ttps:
+                    package.add_ttp(ttp)
+        return _write_raw_stix(package, output_filename, namespace, org, return_format)
+    current_path = Path(output_filename).parent.resolve()
+    handler = AttributeCollectionHandler(return_format)
+    header, footer = stix1_attributes_framing(namespace, org, return_format, version)
+    for input_file in input_files:
+        parser.parse_json_content(input_file)
         current = parser.stix_package
-        for campaign in current.campaigns:
-            package.add_campaign(campaign)
-        for course_of_action in current.courses_of_action:
-            package.add_course_of_action(course_of_action)
-        for exploit_target in current.exploit_targets:
-            package.add_exploit_target(exploit_target)
-        for indicator in current.indicators:
-            package.add_indicator(indicator)
-        for observable in current.observables:
-            package.add_observable(observable)
-        for threat_actor in current.threat_actors:
-            package.add_threat_actor(threat_actor)
-        if current.ttps is not None:
-            for ttp in current.ttps:
-                package.add_ttp(ttp)
-    return _write_raw_stix(package, output_filename, namespace, org, return_format)
+        for feature, identifier in handler.features.items():
+            values = getattr(current, feature)
+            if values is not None and values:
+                content = globals()[f'_get_{return_format}_{feature}'](values)
+                filename = getattr(handler, feature)
+                if filename is None:
+                    setattr(handler, feature, uuid4())
+                    filename = getattr(handler, feature)
+                    with open(current_path / filename, 'wt', encoding='utf-8') as f:
+                        current_header = globals()[f'_get_{return_format}_header'](identifier)
+                        f.write(f'{current_header}{content}')
+                    continue
+                with open(current_path / filename, 'at', encoding='utf-8') as f:
+                    f.write(content)
+    with open(output_filename, 'wt', encoding='utf-8') as result:
+        result.write(header)
+        for feature, identifier in handler.features.items():
+            filename = getattr(handler, feature)
+            if filename is not None:
+                with open(current_path / filename, 'rt', encoding='utf-8') as current:
+                    content = current.read()
+                current_footer = _get_xml_footer(identifier) if return_format == 'xml' else '}'
+                result.write(f'{content}{current_footer}')
+                os.remove(current_path / filename)
+        result.write(footer)
+    return 1
 
 
 def misp_event_collection_to_stix1(*args: List[_files_type], in_memory: bool=False, namespace: str=_default_namespace, org: str=_default_org):
@@ -199,7 +322,7 @@ def _create_stix_package(orgname: str, version: str) -> STIXPackage:
     package.version = version
     header = STIXHeader()
     header.title = f"Export from {orgname}'s MISP"
-    header.package_intents="Threat Report"
+    header.package_intents = "Threat Report"
     package.stix_header = header
     package.id_ = f"{orgname}:Package-{uuid4()}"
     return package
@@ -254,10 +377,23 @@ def _update_namespaces():
 #                        STIX CONTENT WRITING FUNCTIONS                        #
 ################################################################################
 
+def _get_json_attributes(stix_objects) -> str:
+    return json.dumps(stix_objects.to_dict())
+
+
 def _get_json_events(package: STIXPackage) -> str:
     if package.related_packages is not None:
         return ', '.join(related_package.to_json() for related_package in package.related_packages)
     return json.dumps({'package': package.to_dict()})
+
+
+def _get_json_header(identifier: str) -> str:
+    return f'{identifier}: '
+
+
+def _get_xml_campaigns(campaigns: Campaigns) -> str:
+    content = '\n        '.join(line for campaign in campaigns.campaign for line in campaign.to_xml(include_namespaces=False).decode().split('\n')[:-1])
+    return f'        {content}\n'
 
 
 def _get_xml_events(package: STIXPackage) -> str:
@@ -266,6 +402,29 @@ def _get_xml_events(package: STIXPackage) -> str:
         return package.to_xml(include_namespaces=False).decode()[length:-82]
     content = '\n            '.join(package.to_xml(include_namesapces=False).decode().split('\n'))
     return f'            {content}\n'
+
+
+def _get_xml_footer(identifier: str) -> str:
+    return f'    </stix:{identifier}>\n'
+
+
+def _get_xml_header(identifier: str) -> str:
+    return f'    <stix:{identifier}>\n'
+
+
+def _get_xml_indicators(indicators: Indicators) -> str:
+    content = '\n        '.join(line for indicator in indicators.indicator for line in indicator.to_xml(include_namespaces=False).decode().split('\n')[:-1])
+    return f'        {content}\n'
+
+
+def _get_xml_observables(observables: Observables) -> str:
+    content = '\n        '.join(line for observable in observables.observables for line in observable.to_xml(include_namespaces=False).decode().split('\n')[:-1])
+    return f"        {content.replace('ObservableType', 'Observable')}\n"
+
+
+def _get_xml_ttps(ttps: TTPs) -> str:
+    content = '\n        '.join(line for ttp in ttps.ttp for line in ttp.to_xml(include_namespaces=False).decode().split('\n')[:-1])
+    return f'        {content}\n'
 
 
 def _write_header(package: STIXPackage, filename: str, namespace: str, org: str, return_format: str) -> str:
