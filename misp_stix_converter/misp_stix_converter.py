@@ -9,6 +9,7 @@ from .misp2stix.misp_to_stix1 import MISPtoSTIX1AttributesParser, MISPtoSTIX1Eve
 from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
 from .misp2stix.stix1_mapping import NS_DICT, SCHEMALOC_DICT
+from collections import defaultdict
 from cybox.core.observable import Observables
 from mixbox import idgen
 from mixbox.namespaces import Namespace, register_namespace
@@ -34,31 +35,23 @@ _files_type = Union[Path, str]
 class AttributeCollectionHandler():
     def __init__(self, return_format):
         self.__return_format = return_format
-        identifiers = {
-            'json': (
-                'campaigns',
-                'courses_of_action',
-                'exploit_targets',
-                'indicators',
-                'observables',
-                'threat_actors',
-                'ttps'
-            ),
-            'xml': (
-                'Campaigns',
-                'CoursesOfAction',
-                'ExploitTargets',
-                'Indicators',
-                'Observables',
-                'ThreatActors',
-                'TTPs'
-            )
-        }
-        self.__features = {key: {'feature': value} for key, value in zip(identifiers['json'], identifiers[return_format])}
+        self.__features = defaultdict(dict)
+
+    @property
+    def actual_features(self):
+        return tuple(key for key, values in self.__features.items() if values)
 
     @property
     def features(self):
-        return {key: feature['feature'] for key, feature in self.__features.items()}
+        return (
+            'campaigns',
+            'courses_of_action',
+            'exploit_targets',
+            'indicators',
+            'observables',
+            'threat_actors',
+            'ttps'
+        )
 
     @property
     def campaigns(self):
@@ -67,6 +60,23 @@ class AttributeCollectionHandler():
     @campaigns.setter
     def campaigns(self, filename):
         self.__features['campaigns']['filename'] = f'{filename}.{self.__return_format}'
+        self.__features['campaigns'].update(
+            {
+                'header': '    <stix:Campaigns>\n',
+                'footer': '    </stix:Campaigns>\n'
+            } if self.__return_format == 'xml' else {
+                'header': '"campaigns": [',
+                'footer': '], '
+            }
+        )
+
+    @property
+    def campaigns_footer(self):
+        return self.__features['campaigns']['footer']
+
+    @property
+    def campaigns_header(self):
+        return self.__features['campaigns']['header']
 
     @property
     def courses_of_action(self):
@@ -75,6 +85,23 @@ class AttributeCollectionHandler():
     @courses_of_action.setter
     def courses_of_action(self, filename):
         self.__features['courses_of_action']['filename'] = f'{filename}.{self.__return_format}'
+        self.__features['courses_of_action'].update(
+            {
+                'header': '    <stix:CoursesOfAction>\n',
+                'footer': '    </stix:CoursesOfAction>\n'
+            } if self.__return_format == 'xml' else {
+                'header': '"courses_of_action": [',
+                'footer': '], '
+            }
+        )
+
+    @property
+    def courses_of_action_footer(self):
+        return self.__features['courses_of_action']['footer']
+
+    @property
+    def courses_of_action_header(self):
+        return self.__features['courses_of_action']['header']
 
     @property
     def exploit_targets(self):
@@ -83,6 +110,23 @@ class AttributeCollectionHandler():
     @exploit_targets.setter
     def exploit_targets(self, filename):
         self.__features['exploit_targets']['filename'] = f'{filename}.{self.__return_format}'
+        self.__features['exploit_targets'].update(
+            {
+                'header': '    <stix:ExploitTargets>\n',
+                'footer': '    </stix:ExploitTargets>\n'
+            } if self.__return_format == 'xml' else {
+                'header': '"exploit_targets": {"exploit_targets": [',
+                'footer': ']}, '
+            }
+        )
+
+    @property
+    def exploit_targets_footer(self):
+        return self.__features['exploit_targets']['footer']
+
+    @property
+    def exploit_targets_header(self):
+        return self.__features['exploit_targets']['header']
 
     @property
     def indicators(self):
@@ -91,6 +135,23 @@ class AttributeCollectionHandler():
     @indicators.setter
     def indicators(self, filename):
         self.__features['indicators']['filename'] = f'{filename}.{self.__return_format}'
+        self.__features['indicators'].update(
+            {
+                'header': '    <stix:Indicators>\n',
+                'footer': '    </stix:Indicators>\n'
+            } if self.__return_format == 'xml' else {
+                'header': '"indicators": [',
+                'footer': '], '
+            }
+        )
+
+    @property
+    def indicators_footer(self):
+        return self.__features['indicators']['footer']
+
+    @property
+    def indicators_header(self):
+        return self.__features['indicators']['header']
 
     @property
     def observables(self):
@@ -99,6 +160,23 @@ class AttributeCollectionHandler():
     @observables.setter
     def observables(self, filename):
         self.__features['observables']['filename'] = f'{filename}.{self.__return_format}'
+        self.__features['observables'].update(
+            {
+                'header': '    <stix:Observables>\n',
+                'footer': '    </stix:Observables>\n'
+            } if self.__return_format == 'xml' else {
+                'header': '"observables": {"observables": [',
+                'footer': ']}, '
+            }
+        )
+
+    @property
+    def observables_footer(self):
+        return self.__features['observables']['footer']
+
+    @property
+    def observables_header(self):
+        return self.__features['observables']['header']
 
     @property
     def threat_actors(self):
@@ -107,6 +185,23 @@ class AttributeCollectionHandler():
     @threat_actors.setter
     def threat_actors(self, filename):
         self.__features['threat_actors']['filename'] = f'{filename}.{self.__return_format}'
+        self.__features['threat_actors'].update(
+            {
+                'header': '    <stix:ThreatActors>\n',
+                'footer': '    </stix:ThreatActors>\n'
+            } if self.__return_format == 'xml' else {
+                'header': '"threat_actors": [',
+                'footer': '], '
+            }
+        )
+
+    @property
+    def threat_actors_footer(self):
+        return self.__features['threat_actors']['footer']
+
+    @property
+    def threat_actors_header(self):
+        return self.__features['threat_actors']['header']
 
     @property
     def ttps(self):
@@ -115,6 +210,23 @@ class AttributeCollectionHandler():
     @ttps.setter
     def ttps(self, filename):
         self.__features['ttps']['filename'] = f'{filename}.{self.__return_format}'
+        self.__features['ttps'].update(
+            {
+                'header': '    <stix:TTPs>\n',
+                'footer': '    </stix:TTPs>\n'
+            } if self.__return_format == 'xml' else {
+                'header': '"ttps": {"ttps": [',
+                'footer': ']}, '
+            }
+        )
+
+    @property
+    def ttps_footer(self):
+        return self.__features['ttps']['footer']
+
+    @property
+    def ttps_header(self):
+        return self.__features['ttps']['header']
 
 
 def misp_attribute_collection_to_stix1(*args: List[_files_type], in_memory: bool=False, namespace: str=_default_namespace, org: str=_default_org):
@@ -152,7 +264,7 @@ def misp_attribute_collection_to_stix1(*args: List[_files_type], in_memory: bool
     for input_file in input_files:
         parser.parse_json_content(input_file)
         current = parser.stix_package
-        for feature, identifier in handler.features.items():
+        for feature in handler.features:
             values = getattr(current, feature)
             if values is not None and values:
                 content = globals()[f'_get_{return_format}_{feature}'](values)
@@ -161,19 +273,22 @@ def misp_attribute_collection_to_stix1(*args: List[_files_type], in_memory: bool
                     setattr(handler, feature, uuid4())
                     filename = getattr(handler, feature)
                     with open(current_path / filename, 'wt', encoding='utf-8') as f:
-                        current_header = globals()[f'_get_{return_format}_header'](identifier)
+                        current_header = getattr(handler, f'{feature}_header')
                         f.write(f'{current_header}{content}')
                     continue
                 with open(current_path / filename, 'at', encoding='utf-8') as f:
                     f.write(content)
     with open(output_filename, 'wt', encoding='utf-8') as result:
         result.write(header)
-        for feature, identifier in handler.features.items():
+        actual_features = handler.actual_features
+        for feature in actual_features:
             filename = getattr(handler, feature)
             if filename is not None:
                 with open(current_path / filename, 'rt', encoding='utf-8') as current:
-                    content = current.read()
-                current_footer = _get_xml_footer(identifier) if return_format == 'xml' else '}'
+                    content = current.read() if return_format == 'xml' else current.read()[:-2]
+                current_footer = getattr(handler, f'{feature}_footer')
+                if feature == actual_features[-1]:
+                    current_footer = current_footer[:-2]
                 result.write(f'{content}{current_footer}')
                 os.remove(current_path / filename)
         result.write(footer)
@@ -377,8 +492,8 @@ def _update_namespaces():
 #                        STIX CONTENT WRITING FUNCTIONS                        #
 ################################################################################
 
-def _get_json_attributes(stix_objects) -> str:
-    return json.dumps(stix_objects.to_dict())
+def _get_json_campaigns(campaigns: Campaigns) -> str:
+    return f"{', '.join(campaign.to_json() for campaign in campaigns.campaign)}, "
 
 
 def _get_json_events(package: STIXPackage) -> str:
@@ -387,8 +502,16 @@ def _get_json_events(package: STIXPackage) -> str:
     return json.dumps({'package': package.to_dict()})
 
 
-def _get_json_header(identifier: str) -> str:
-    return f'{identifier}: '
+def _get_json_indicators(indicators: Indicators) -> str:
+    return f"{', '.join(indicator.to_json() for indicator in indicators.indicator)}, "
+
+
+def _get_json_observables(observables: Observables) -> str:
+    return f"{', '.join(observable.to_json() for observable in observables.observables)}, "
+
+
+def _get_json_ttps(ttps: TTPs) -> str:
+    return f"{', '.join(ttp.to_json() for ttp in ttps.ttp)}, "
 
 
 def _get_xml_campaigns(campaigns: Campaigns) -> str:
@@ -402,14 +525,6 @@ def _get_xml_events(package: STIXPackage) -> str:
         return package.to_xml(include_namespaces=False).decode()[length:-82]
     content = '\n            '.join(package.to_xml(include_namesapces=False).decode().split('\n'))
     return f'            {content}\n'
-
-
-def _get_xml_footer(identifier: str) -> str:
-    return f'    </stix:{identifier}>\n'
-
-
-def _get_xml_header(identifier: str) -> str:
-    return f'    <stix:{identifier}>\n'
 
 
 def _get_xml_indicators(indicators: Indicators) -> str:
