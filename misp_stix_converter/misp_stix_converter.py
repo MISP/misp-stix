@@ -268,6 +268,8 @@ def misp_attribute_collection_to_stix1(*args: List[_files_type], in_memory: bool
             values = getattr(current, feature)
             if values is not None and values:
                 content = globals()[f'_get_{return_format}_{feature}'](values)
+                if not content:
+                    continue
                 filename = getattr(handler, feature)
                 if filename is None:
                     setattr(handler, feature, uuid4())
@@ -533,8 +535,9 @@ def _get_xml_indicators(indicators: Indicators) -> str:
 
 
 def _get_xml_observables(observables: Observables) -> str:
-    content = '\n        '.join(line for observable in observables.observables for line in observable.to_xml(include_namespaces=False).decode().split('\n')[:-1])
-    return f"        {content.replace('ObservableType', 'Observable')}\n"
+    if len(observables.observables) > 0:
+        content = '\n        '.join(line for observable in observables.observables for line in observable.to_xml(include_namespaces=False).decode().split('\n')[:-1])
+        return f"        {content.replace('ObservableType', 'Observable')}\n"
 
 
 def _get_xml_ttps(ttps: TTPs) -> str:
