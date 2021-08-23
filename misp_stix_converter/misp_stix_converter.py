@@ -287,7 +287,7 @@ def misp_attribute_collection_to_stix1(*args: List[_files_type], in_memory: bool
                 with open(current_path / filename, 'rt', encoding='utf-8') as current:
                     content = current.read() if return_format == 'xml' else current.read()[:-2]
                 current_footer = getattr(handler, f'{feature}_footer')
-                if feature == actual_features[-1]:
+                if return_format == 'json' and feature == actual_features[-1]:
                     current_footer = current_footer[:-2]
                 result.write(f'{content}{current_footer}')
                 os.remove(current_path / filename)
