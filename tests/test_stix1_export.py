@@ -2596,6 +2596,8 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
         self.assertEqual(misp_attribute_collection_to_stix1(output_file, 'xml', '1.1.1', *input_files, in_memory=True), 1)
         self._check_stix1_export_results(to_test_name, reference_name)
+        self.assertEqual(misp_attribute_collection_to_stix1(output_file, 'xml', '1.1.1', *input_files), 1)
+        self._check_stix1_export_results(to_test_name, reference_name)
 
     def test_attribute_collection_export_12(self):
         name = 'test_attributes_collection'
@@ -2604,6 +2606,8 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         output_file = self._current_path / to_test_name
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
         self.assertEqual(misp_attribute_collection_to_stix1(output_file, 'xml', '1.2', *input_files, in_memory=True), 1)
+        self._check_stix1_export_results(to_test_name, reference_name)
+        self.assertEqual(misp_attribute_collection_to_stix1(output_file, 'xml', '1.2', *input_files), 1)
         self._check_stix1_export_results(to_test_name, reference_name)
 
     def test_event_collection_export_11(self):
