@@ -61,8 +61,8 @@ def _handle_namespaces(namespace: str, orgname: str) -> tuple:
 
 
 def _stix_json_attributes_framing(stix_package: STIXPackage) -> tuple:
-    header = stix_package.to_json()[:-1]
-    return header, '}'
+    header = {key: value for key, value in stix_package.to_dict().items() if key != 'observables'}
+    return f'{json.dumps(header)[:-1]}, ', '}'
 
 
 def _stix_json_framing(stix_package: STIXPackage) -> tuple:
