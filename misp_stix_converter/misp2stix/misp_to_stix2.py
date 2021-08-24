@@ -29,6 +29,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         super().__init__()
         self._ids = {}
         self._interoperability = interoperability
+        self._id_parsing_function = {
+            'attribute': '_define_stix_object_id',
+            'object': '_define_stix_object_id'
+        }
 
     def parse_json_content(self, filename: str):
         with open(filename, 'rt', encoding='utf-8') as f:
@@ -73,16 +77,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._object_refs = []
         self._relationships = []
         self._set_identity()
-        if self._misp_event.get('Attribute'):
-            for attribute in self._misp_event['Attribute']:
-                self._resolve_attribute(attribute)
-        if self._misp_event.get('Object'):
-            self._objects_to_parse = defaultdict(dict)
-            self._resolve_objects()
-            if self._objects_to_parse:
-                self._resolve_objects_to_parse()
+        self._parse_event_data()
         report = self._generate_event_report()
         self._objects.insert(self._index, report)
+
+    def _define_stix_object_id(self, feature: str, misp_object: dict) -> str:
+        return f"{feature}--{misp_object['uuid']}"
 
     @property
     def bundle(self) -> Union[Bundle_v20, Bundle_v21]:
@@ -261,7 +261,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._attribute_error(attribute)
 
     def _handle_attribute_indicator(self, attribute: dict, pattern: str):
-        indicator_id = f"indicator--{attribute['uuid']}"
+        indicator_id = getattr(self, self._id_parsing_function['attribute'])('indicator', attribute)
         indicator_args = {
             'id': indicator_id,
             'type': 'indicator',
@@ -284,7 +284,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._append_SDO(self._create_indicator(indicator_args))
 
     def _handle_attribute_observable(self, attribute: dict, observable: Union[dict, list]):
-        observable_id = f"observed-data--{attribute['uuid']}"
+        observable_id = getattr(self, self._id_parsing_function['attribute'])('observed-data', attribute)
         observable_args = {
             'id': observable_id,
             'type': 'observed-data',
@@ -344,7 +344,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._parse_autonomous_system_attribute_observable(attribute)
 
     def _parse_campaign_name_attribute(self, attribute: dict):
-        campaign_id = f"campaign--{attribute['uuid']}"
+        campaign_id = getattr(self, self._id_parsing_function['attribute'])('campaign', attribute)
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         campaign_args = {
             'id': campaign_id,
@@ -366,7 +366,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._append_SDO(self._create_campaign(campaign_args))
 
     def _parse_custom_attribute(self, attribute: dict):
-        custom_id = f"x-misp-attribute--{attribute['uuid']}"
+        custom_id = getattr(self, self._id_parsing_function['attribute'])('x-misp-attribute', attribute)
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         custom_args = {
             'id': custom_id,
@@ -601,7 +601,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._parse_custom_attribute(attribute)
 
     def _parse_vulnerability_attribute(self, attribute: dict):
-        vulnerability_id = f"vulnerability--{attribute['uuid']}"
+        vulnerability_id = getattr(self, self._id_parsing_function['attribute'])('vulnerability', attribute)
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         vulnerability_args = {
             'id': vulnerability_id,
@@ -726,7 +726,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     self._handle_object_observable(pe_object, observable)
 
     def _handle_object_indicator(self, misp_object: dict, pattern: list):
-        indicator_id = f"indicator--{misp_object['uuid']}"
+        indicator_id = getattr(self, self._id_parsing_function['object'])('indicator', misp_object)
         indicator_args = {
             'id': indicator_id,
             'type': 'indicator',
@@ -756,7 +756,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._append_SDO(self._create_indicator(indicator_args))
 
     def _handle_object_observable(self, misp_object: dict, observable: Union[dict, list]):
-        observable_id = f"observed-data--{misp_object['uuid']}"
+        observable_id = getattr(self, self._id_parsing_function['object'])('observed-data', misp_object)
         observable_args = {
             'id': observable_id,
             'type': 'observed-data',
@@ -886,7 +886,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             force_single=stix2_mapping.attack_pattern_single_fields
         )
         prefix = 'attack-pattern'
-        attack_pattern_id = f"{prefix}--{misp_object['uuid']}"
+        attack_pattern_id = getattr(self, self._id_parsing_function['object'])(prefix, misp_object)
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         attack_pattern_args = defaultdict(list)
         for key, feature in stix2_mapping.attack_pattern_object_mapping.items():
@@ -943,7 +943,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_course_of_action_object(self, misp_object: dict):
         attributes = self._extract_object_attributes(misp_object['Attribute'])
         prefix = 'course-of-action'
-        course_of_action_id = f"{prefix}--{misp_object['uuid']}"
+        course_of_action_id = getattr(self, self._id_parsing_function['object'])(prefix, misp_object)
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         course_of_action_args = {
             'id': course_of_action_id,
@@ -994,7 +994,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._parse_credential_object_observable(misp_object)
 
     def _parse_custom_object(self, misp_object: dict):
-        custom_id = f"x-misp-object--{misp_object['uuid']}"
+        custom_id = getattr(self, self._id_parsing_function['object'])('x-misp-object', misp_object)
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         custom_args = {
             'id': custom_id,
@@ -1409,7 +1409,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._parse_user_account_object_observable(misp_object)
 
     def _parse_vulnerability_object(self, misp_object: dict):
-        vulnerability_id = f"vulnerability--{misp_object['uuid']}"
+        vulnerability_id = getattr(self, self._id_parsing_function['object'])('vulnerability', misp_object)
         vulnerability_args = defaultdict(list)
         attributes = self._extract_multiple_object_attributes(misp_object['Attribute'])
         if attributes.get('id'):

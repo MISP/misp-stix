@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import re
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix2_mapping import (CustomAttribute_v21, CustomMispObject_v21,
     domain_ip_uuid_fields, email_data_fields, email_uuid_fields, file_data_fields,
@@ -32,6 +33,55 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         super().__init__(interoperability)
         self._version = '2.1'
         self._update_mapping_v21()
+
+    def _parse_event_data(self):
+        if self._misp_event.get('EventReport'):
+            self._id_parsing_function = {
+                'attribute': '_define_stix_object_id_from_attribute',
+                'object': '_define_stix_object_id_from_object'
+            }
+            self._event_report_matching = {}
+            self._handle_attributes_and_objects()
+            regex = r'@[!]?\[%s\]\([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\)'
+            for event_report in self._misp_event['EventReport']:
+                timestamp = self._datetime_from_timestamp(event_report['timestamp'])
+                note_args = {
+                    'id': f"note--{event_report['uuid']}",
+                    'created': timestamp,
+                    'modified': timestamp,
+                    'created_by_ref': self._identity_id,
+                    'content': event_report['content'],
+                    'abstract': event_report['name']
+                }
+                references = {reference.split('(')[1][:-1] for feature in ('attribute', 'object') for reference in re.findall(regex % feature, event_report['content'])}
+                note_args['object_refs'] = list({self._event_report_matching[reference] for reference in references if reference in self._event_report_matching})
+                self._append_SDO(Note(**note_args))
+        else:
+            self._handle_attributes_and_objects()
+
+    def _define_stix_object_id_from_attribute(self, feature: str, attribute: dict) -> str:
+        attribute_uuid = attribute['uuid']
+        stix_id = f'{feature}--{attribute_uuid}'
+        self._event_report_matching[attribute_uuid] = stix_id
+        return stix_id
+
+    def _define_stix_object_id_from_object(self, feature: str, misp_object: dict) -> str:
+        object_uuid = misp_object['uuid']
+        stix_id = f'{feature}--{object_uuid}'
+        self._event_report_matching[object_uuid] = stix_id
+        for attribute in misp_object['Attribute']:
+            self._event_report_matching[attribute['uuid']] = stix_id
+        return stix_id
+
+    def _handle_attributes_and_objects(self):
+        if self._misp_event.get('Attribute'):
+            for attribute in self._misp_event['Attribute']:
+                self._resolve_attribute(attribute)
+        if self._misp_event.get('Object'):
+            self._objects_to_parse = defaultdict(dict)
+            self._resolve_objects()
+            if self._objects_to_parse:
+                self._resolve_objects_to_parse()
 
     def _handle_empty_object_refs(self, object_id: str, timestamp: datetime):
         note_args = {
@@ -570,7 +620,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return file_args, objects
 
     def _parse_geolocation_object(self, misp_object: dict):
-        location_id = f"location--{misp_object['uuid']}"
+        location_id = getattr(self, self._id_parsing_function['object'])('location', misp_object)
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         location_args = {
             'id': location_id,

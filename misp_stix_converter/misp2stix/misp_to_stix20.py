@@ -28,6 +28,16 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._version = '2.0'
         self._update_mapping_v20()
 
+    def _parse_event_data(self):
+        if self._misp_event.get('Attribute'):
+            for attribute in self._misp_event['Attribute']:
+                self._resolve_attribute(attribute)
+        if self._misp_event.get('Object'):
+            self._objects_to_parse = defaultdict(dict)
+            self._resolve_objects()
+            if self._objects_to_parse:
+                self._resolve_objects_to_parse()
+
     def _handle_empty_object_refs(self, object_id: str, timestamp: datetime):
         object_type = 'x-misp-event-note'
         custom_args = {
