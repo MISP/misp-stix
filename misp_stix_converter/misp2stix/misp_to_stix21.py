@@ -49,7 +49,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     'id': f"note--{event_report['uuid']}",
                     'created': timestamp,
                     'modified': timestamp,
-                    'created_by_ref': self._identity_id,
+                    'created_by_ref': self.identity_id,
                     'content': event_report['content'],
                     'abstract': event_report['name']
                 }
@@ -88,7 +88,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'id': f"note--{self._misp_event['uuid']}",
             'created': timestamp,
             'modified': timestamp,
-            'created_by_ref': self._identity_id,
+            'created_by_ref': self.identity_id,
             'content': 'This MISP Event is empty and contains no attribute, object, galaxy or tag.',
             'object_refs': [object_id]
         }
@@ -96,14 +96,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _handle_unpublished_report(self, report_args: dict) -> Grouping:
         grouping_id = f"grouping--{self._misp_event['uuid']}"
-        if not self._object_refs:
+        if not self.object_refs:
             self._handle_empty_object_refs(grouping_id, report_args['modified'])
         report_args.update(
             {
                 'id': grouping_id,
                 'type': 'grouping',
                 'context': 'suspicious-activity',
-                'object_refs': self._object_refs,
+                'object_refs': self.object_refs,
                 'allow_custom': True
             }
         )
@@ -824,7 +824,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return AttackPattern(**attack_pattern_args)
 
     def _create_bundle(self) -> Bundle:
-        return Bundle(self._objects, allow_custom=True)
+        return Bundle(self.stix_objects, allow_custom=True)
 
     @staticmethod
     def _create_campaign(campaign_args: dict) -> Campaign:
@@ -862,7 +862,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
         identity_args = {
             'type': 'identity',
-            'id': self._identity_id,
+            'id': self.identity_id,
             'created': timestamp,
             'modified': timestamp,
             'name': orgname,

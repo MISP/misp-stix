@@ -44,7 +44,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             'id': f"{object_type}--{self._misp_event['uuid']}",
             'created': timestamp,
             'modified': timestamp,
-            'created_by_ref': self._identity_id,
+            'created_by_ref': self.identity_id,
             'x_misp_event_note': 'This MISP Event is empty and contains no attribute, object, galaxy or tag.',
             'object_ref': object_id,
             'interoperability': True
@@ -53,14 +53,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _handle_unpublished_report(self, report_args: dict) -> Report:
         report_id = f"report--{self._misp_event['uuid']}"
-        if not self._object_refs:
+        if not self.object_refs:
             self._handle_empty_object_refs(report_id, report_args['modified'])
         report_args.update(
             {
                 'id': report_id,
                 'type': 'report',
                 'published': report_args['modified'],
-                'object_refs': self._object_refs,
+                'object_refs': self.object_refs,
                 'allow_custom': True
             }
         )
@@ -685,7 +685,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return AttackPattern(**attack_pattern_args)
 
     def _create_bundle(self) -> Bundle:
-        return Bundle(self._objects, allow_custom=True)
+        return Bundle(self.stix_objects, allow_custom=True)
 
     @staticmethod
     def _create_campaign(campaign_args: dict) -> Campaign:
@@ -723,7 +723,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
         identity_args = {
             'type': 'identity',
-            'id': self._identity_id,
+            'id': self.identity_id,
             'created': timestamp,
             'modified': timestamp,
             'name': orgname,

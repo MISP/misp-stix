@@ -27,8 +27,8 @@ _stix_time_fields = {
 class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def __init__(self, interoperability: bool):
         super().__init__()
-        self._ids = {}
-        self._interoperability = interoperability
+        self.__ids = {}
+        self.__interoperability = interoperability
         self._id_parsing_function = {
             'attribute': '_define_stix_object_id',
             'object': '_define_stix_object_id'
@@ -40,11 +40,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if json_content.get('response'):
             json_content = json_content['response']
             if isinstance(json_content, list):
-                self._index = 0
-                self._objects = []
+                self.__index = 0
+                self.__objects = []
                 for event in json_content:
                     self._parse_misp_event(event)
-                    self._index = len(self._objects)
+                    self.__index = len(self.__objects)
             else:
                 self.parse_misp_attributes(json_content)
         else:
@@ -54,18 +54,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if 'Attribute' in attributes:
             attributes = attributes['Attribute']
         self._identifier = 'attributes collection'
-        self._objects = []
-        self._identity_id = stix2_mapping.misp_identity_args['id']
-        if self._identity_id not in self._ids:
+        self.__objects = []
+        self.__identity_id = stix2_mapping.misp_identity_args['id']
+        if self.__identity_id not in self.__ids:
             identity = self._create_identity(stix2_mapping.misp_identity_args)
-            self._objects.append(identity)
-            self._ids[self._identity_id] = self._identity_id
+            self.__objects.append(identity)
+            self.__ids[self.__identity_id] = self.__identity_id
         for attribute in attributes:
             self._resolve_attribute(attribute)
 
     def parse_misp_event(self, misp_event: dict):
-        self._index = 0
-        self._objects = []
+        self.__index = 0
+        self.__objects = []
         self._parse_misp_event(misp_event)
 
     def _parse_misp_event(self, misp_event: dict):
@@ -74,12 +74,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._misp_event = misp_event
         self._identifier = self._misp_event['uuid']
         self._markings = {}
-        self._object_refs = []
-        self._relationships = []
+        self.__object_refs = []
+        self.__relationships = []
         self._set_identity()
         self._parse_event_data()
         report = self._generate_event_report()
-        self._objects.insert(self._index, report)
+        self.__objects.insert(self.__index, report)
 
     def _define_stix_object_id(self, feature: str, misp_object: dict) -> str:
         return f"{feature}--{misp_object['uuid']}"
@@ -88,16 +88,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def bundle(self) -> Union[Bundle_v20, Bundle_v21]:
         return self._create_bundle()
 
+    @property
+    def identity_id(self) -> str:
+        return self.__identity_id
+
+    @property
+    def object_refs(self) -> list:
+        return self.__object_refs
+
     def populate_unique_ids(self, unique_ids: dict):
-        self._ids.update(unique_ids)
+        self.__ids.update(unique_ids)
 
     @property
     def stix_objects(self) -> list:
-        return self._objects
+        return self.__objects
 
     @property
     def unique_ids(self) -> list:
-        return self._ids
+        return self.__ids
 
     @staticmethod
     def _update_mapping_v20():
@@ -151,8 +159,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     ################################################################################
 
     def _append_SDO(self, stix_object):
-        self._objects.append(stix_object)
-        self._object_refs.append(stix_object.id)
+        self.__objects.append(stix_object)
+        self.__object_refs.append(stix_object.id)
 
     def _generate_event_report(self):
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
@@ -164,14 +172,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'Threat-Report',
                 'misp:tool="MISP-STIX-Converter"'
             ],
-            'created_by_ref': self._identity_id,
+            'created_by_ref': self.__identity_id,
             'interoperability': True
         }
         markings = self._handle_event_tags_and_galaxies('stix2_galaxy_mapping')
         if markings:
             self._handle_markings(report_args, markings)
-        if self._relationships:
-            for relationship in self._relationships:
+        if self.__relationships:
+            for relationship in self.__relationships:
                 if relationship.get('undefined_target_ref'):
                     target_ref = self._find_target_uuid(relationship.pop('undefined_target_ref'))
                     if target_ref is None:
@@ -180,10 +188,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 self._append_SDO(self._create_relationship(relationship))
         if self._markings:
             for marking in self._markings.values():
-                self._objects.append(marking)
+                self.__objects.append(marking)
         if self._is_published():
             report_id = f"report--{self._misp_event['uuid']}"
-            if not self._object_refs:
+            if not self.__object_refs:
                 self._handle_empty_object_refs(report_id, timestamp)
             published = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
             report_args.update(
@@ -191,7 +199,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     'id': report_id,
                     'type': 'report',
                     'published': published,
-                    'object_refs': self._object_refs,
+                    'object_refs': self.__object_refs,
                     'allow_custom': True
                 }
             )
@@ -209,7 +217,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for stix_object in bundle['objects']:
                 if stix_object['type'] == 'identity':
                     object_id = stix_object['id']
-                    if object_id not in self._ids or object_id not in self._identities:
+                    if object_id not in self.__ids or object_id not in self._identities:
                         self._identities[object_id] = stix_object
                     continue
                 if not stix_object.get('name'):
@@ -267,7 +275,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'type': 'indicator',
             'labels': self._create_labels(attribute),
             'kill_chain_phases': self._create_killchain(attribute['category']),
-            'created_by_ref': self._identity_id,
+            'created_by_ref': self.__identity_id,
             'pattern': pattern,
             'interoperability': True
         }
@@ -290,7 +298,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'type': 'observed-data',
             'labels': self._create_labels(attribute),
             'number_observed': 1,
-            'created_by_ref': self._identity_id,
+            'created_by_ref': self.__identity_id,
             'allow_custom': True,
             'interoperability': True
         }
@@ -350,7 +358,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'id': campaign_id,
             'type': 'campaign',
             'name': attribute['value'],
-            'created_by_ref': self._identity_id,
+            'created_by_ref': self.__identity_id,
             'labels': self._create_labels(attribute),
             'interoperability': True,
             'created': timestamp,
@@ -373,7 +381,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'created': timestamp,
             'modified': timestamp,
             'labels': self._create_labels(attribute),
-            'created_by_ref': self._identity_id,
+            'created_by_ref': self.__identity_id,
             'x_misp_value': attribute['value'],
             'x_misp_type': attribute['type'],
             'x_misp_category': attribute['category'],
@@ -608,7 +616,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'type': 'vulnerability',
             'name': attribute['value'],
             'external_references': [self._get_vulnerability_references(attribute['value'])],
-            'created_by_ref': self._identity_id,
+            'created_by_ref': self.__identity_id,
             'labels': self._create_labels(attribute),
             'interoperability': True,
             'created': timestamp,
@@ -732,7 +740,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'type': 'indicator',
             'labels': self._create_object_labels(misp_object, to_ids=True),
             'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
-            'created_by_ref': self._identity_id,
+            'created_by_ref': self.__identity_id,
             'pattern': f'[{" AND ".join(pattern)}]',
             'allow_custom': True,
             'interoperability': True
@@ -762,7 +770,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'type': 'observed-data',
             'labels': self._create_object_labels(misp_object, to_ids=False),
             'number_observed': 1,
-            'created_by_ref': self._identity_id,
+            'created_by_ref': self.__identity_id,
             'allow_custom': True,
             'interoperability': True
         }
@@ -906,7 +914,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             {
                 'id': attack_pattern_id,
                 'type': prefix,
-                'created_by_ref': self._identity_id,
+                'created_by_ref': self.__identity_id,
                 'labels': self._create_object_labels(misp_object),
                 'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
                 'created': timestamp,
@@ -948,7 +956,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         course_of_action_args = {
             'id': course_of_action_id,
             'type': prefix,
-            'created_by_ref': self._identity_id,
+            'created_by_ref': self.__identity_id,
             'labels': self._create_object_labels(misp_object),
             'created': timestamp,
             'modified': timestamp,
@@ -1001,7 +1009,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'created': timestamp,
             'modified': timestamp,
             'labels': self._create_object_labels(misp_object),
-            'created_by_ref': self._identity_id,
+            'created_by_ref': self.__identity_id,
             'x_misp_name': misp_object['name'],
             'x_misp_meta_category': misp_object['meta-category'],
             'x_misp_attributes': [
@@ -1445,7 +1453,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'id': vulnerability_id,
                 'type': 'vulnerability',
                 'labels': self._create_object_labels(misp_object),
-                'created_by_ref': self._identity_id,
+                'created_by_ref': self.__identity_id,
                 'interoperability': True
             }
         )
@@ -1594,25 +1602,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _handle_galaxy_matching(self, object_type: str, stix_object: dict):
         identity_id = stix_object['created_by_ref']
-        if identity_id not in self._ids:
+        if identity_id not in self.__ids:
             identity = self._create_identity(self._identities[identity_id])
-            self._objects.insert(0, identity)
-            self._index += 1
-            self._ids[identity_id] = identity_id
+            self.__objects.insert(0, identity)
+            self.__index += 1
+            self.__ids[identity_id] = identity_id
         stix_object['allow_custom'] = True
-        self._objects.append(getattr(self, f"_create_{object_type.replace('-', '_')}")(stix_object))
+        self.__objects.append(getattr(self, f"_create_{object_type.replace('-', '_')}")(stix_object))
 
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
-            if object_ref not in self._object_refs:
-                self._object_refs.append(object_ref)
+            if object_ref not in self.__object_refs:
+                self.__object_refs.append(object_ref)
 
     def _is_galaxy_parsed(self, object_refs: list, cluster: dict) -> bool:
         object_id = cluster['uuid']
-        if object_id in self._ids:
-            object_refs.append(self._ids[object_id])
+        if object_id in self.__ids:
+            object_refs.append(self.__ids[object_id])
             return True
-        if self._interoperability:
+        if self.__interoperability:
             object_type = stix2_mapping.cluster_to_stix_object[cluster['type']]
             value = cluster['value']
             try:
@@ -1626,7 +1634,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     stix_object_id = self._check_galaxy_matching(cluster, *args)
                     if stix_object_id is not None:
                         object_refs.append(stix_object_id)
-                        self._ids[object_id] = stix_object_id
+                        self.__ids[object_id] = stix_object_id
                         return True
                 return False
             if ' - ' in value:
@@ -1636,7 +1644,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         stix_object_id = self._check_galaxy_matching(cluster, *args)
                         if stix_object_id is not None:
                             object_refs.append(stix_object_id)
-                            self._ids[object_id] = stix_object_id
+                            self.__ids[object_id] = stix_object_id
                             return True
         return False
 
@@ -1665,14 +1673,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if cluster.get('meta', {}).get('external_id'):
                 references = self._handle_external_references(cluster['meta']['external_id'])
                 attack_pattern_args['external_references'] = references
-            self._objects.append(
+            self.__objects.append(
                 self._create_attack_pattern_from_galaxy(
                     attack_pattern_args,
                     cluster
                 )
             )
             object_refs.append(attack_pattern_id)
-            self._ids[cluster['uuid']] = attack_pattern_id
+            self.__ids[cluster['uuid']] = attack_pattern_id
         return object_refs
 
     def _parse_course_of_action_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
@@ -1701,9 +1709,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 references = self._handle_external_references(cluster['meta']['external_id'])
                 course_of_action_args['external_references'] = references
             course_of_action = self._create_course_of_action(course_of_action_args)
-            self._objects.append(course_of_action)
+            self.__objects.append(course_of_action)
             object_refs.append(course_of_action_id)
-            self._ids[cluster['uuid']] = course_of_action_id
+            self.__ids[cluster['uuid']] = course_of_action_id
         return object_refs
 
     def _parse_intrusion_set_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
@@ -1734,9 +1742,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if cluster.get('meta', {}).get('synonyms'):
                 intrusion_set_args['aliases'] = cluster['meta']['synonyms']
             intrusion_set = self._create_intrusion_set(intrusion_set_args)
-            self._objects.append(intrusion_set)
+            self.__objects.append(intrusion_set)
             object_refs.append(intrusion_set_id)
-            self._ids[cluster['uuid']] = intrusion_set_id
+            self.__ids[cluster['uuid']] = intrusion_set_id
         return object_refs
 
     def _parse_malware_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
@@ -1765,9 +1773,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 references = self._handle_external_references(cluster['meta']['external_id'])
                 malware_args['external_references'] = references
             malware = self._create_malware(malware_args, cluster)
-            self._objects.append(malware)
+            self.__objects.append(malware)
             object_refs.append(malware_id)
-            self._ids[cluster['uuid']] = malware_id
+            self.__ids[cluster['uuid']] = malware_id
         return object_refs
 
     def _parse_threat_actor_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
@@ -1795,9 +1803,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if cluster.get('meta', {}).get('synonyms'):
                 threat_actor_args['aliases'] = cluster['meta']['synonyms']
             threat_actor = self._create_threat_actor(threat_actor_args)
-            self._objects.append(threat_actor)
+            self.__objects.append(threat_actor)
             object_refs.append(threat_actor_id)
-            self._ids[cluster['uuid']] = threat_actor_id
+            self.__ids[cluster['uuid']] = threat_actor_id
         return object_refs
 
     def _parse_tool_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
@@ -1826,9 +1834,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 references = self._handle_external_references(cluster['meta']['external_id'])
                 tool_args['external_references'] = references
             tool = self._create_tool_from_galaxy(tool_args, cluster)
-            self._objects.append(tool)
+            self.__objects.append(tool)
             object_refs.append(tool_id)
-            self._ids[cluster['uuid']] = tool_id
+            self.__ids[cluster['uuid']] = tool_id
         return object_refs
 
     def _parse_vulnerability_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
@@ -1857,9 +1865,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 references = self._handle_external_references(cluster['meta']['aliases'])
                 vulnerability_args['external_references'] = references
             vulnerability = self._create_vulnerability(vulnerability_args)
-            self._objects.append(vulnerability)
+            self.__objects.append(vulnerability)
             object_refs.append(vulnerability_id)
-            self._ids[cluster['uuid']] = vulnerability_id
+            self.__ids[cluster['uuid']] = vulnerability_id
         return object_refs
 
     ################################################################################
@@ -1913,12 +1921,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _set_identity(self) -> int:
         orgc = self._misp_event['Orgc']
         orgc_id = orgc['uuid']
-        self._identity_id = f"identity--{orgc_id}"
-        if orgc_id not in self._ids:
-            self._ids[orgc_id] = self._identity_id
+        self.__identity_id = f"identity--{orgc_id}"
+        if orgc_id not in self.__ids:
+            self.__ids[orgc_id] = self.__identity_id
             identity = self._create_identity_object(orgc['name'])
-            self._objects.append(identity)
-            self._index += 1
+            self.__objects.append(identity)
+            self.__index += 1
 
     ################################################################################
     #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #
@@ -2257,7 +2265,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return uuids
 
     def _find_target_uuid(self, reference: str) -> Union[str, None]:
-        for object_ref in self._object_refs:
+        for object_ref in self.__object_refs:
             if reference in object_ref:
                 return object_ref
 
@@ -2296,7 +2304,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
 
     def _parse_galaxy_relationship(self, source_id: str, target_id: str, relationship_type: str, timestamp: datetime):
-        self._relationships.append(
+        self.__relationships.append(
             {
                 'source_ref': source_id,
                 'target_ref': target_id,
@@ -2333,7 +2341,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         'modified': timestamp
                     }
                 )
-            self._relationships.append(relationship)
+            self.__relationships.append(relationship)
 
     @staticmethod
     def _sanitize_registry_key_value(value: str) -> str:
