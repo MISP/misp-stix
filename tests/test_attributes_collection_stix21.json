@@ -30,6 +30,12 @@
             "spec_version": "2.1"
         },
         {
+            "type": "autonomous-system",
+            "spec_version": "2.1",
+            "id": "autonomous-system--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+            "number": 174
+        },
+        {
             "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
             "type": "indicator",
             "labels": [
