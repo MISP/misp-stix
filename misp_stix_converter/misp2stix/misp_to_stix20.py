@@ -746,7 +746,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _create_observed_data(self, args: dict, observable: dict):
         args['objects'] = observable
-        self._append_SDO(ObservedData(**args))
+        getattr(self, self._results_handling_function)(ObservedData(**args))
 
     @staticmethod
     def _create_PE_extension(extension_args: dict) -> WindowsPEBinaryExt:

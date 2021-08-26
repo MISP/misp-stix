@@ -29,6 +29,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         super().__init__()
         self.__ids = {}
         self.__interoperability = interoperability
+        self._results_handling_function = '_append_SDO'
         self._id_parsing_function = {
             'attribute': '_define_stix_object_id',
             'object': '_define_stix_object_id'
@@ -53,6 +54,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def parse_misp_attributes(self, attributes: dict):
         if 'Attribute' in attributes:
             attributes = attributes['Attribute']
+        self._results_handling_function = '_append_SDO_without_refs'
         self._identifier = 'attributes collection'
         self.__objects = []
         self.__identity_id = stix2_mapping.misp_identity_args['id']
@@ -161,6 +163,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _append_SDO(self, stix_object):
         self.__objects.append(stix_object)
         self.__object_refs.append(stix_object.id)
+
+    def _append_SDO_without_refs(self, stix_object):
+        self.__objects.append(stix_object)
 
     def _generate_event_report(self):
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
@@ -289,7 +294,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(indicator_args, markings)
-        self._append_SDO(self._create_indicator(indicator_args))
+        getattr(self, self._results_handling_function)(self._create_indicator(indicator_args))
 
     def _handle_attribute_observable(self, attribute: dict, observable: Union[dict, list]):
         observable_id = getattr(self, self._id_parsing_function['attribute'])('observed-data', attribute)
@@ -371,7 +376,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(campaign_args, markings)
-        self._append_SDO(self._create_campaign(campaign_args))
+        getattr(self, self._results_handling_function)(self._create_campaign(campaign_args))
 
     def _parse_custom_attribute(self, attribute: dict):
         custom_id = getattr(self, self._id_parsing_function['attribute'])('x-misp-attribute', attribute)
@@ -396,7 +401,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(custom_args, markings)
-        self._append_SDO(self._create_custom_attribute(custom_args))
+        getattr(self, self._results_handling_function)(self._create_custom_attribute(custom_args))
 
     def _parse_domain_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
@@ -629,7 +634,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         if markings:
             self._handle_markings(vulnerability_args, markings)
-        self._append_SDO(self._create_vulnerability(vulnerability_args))
+        getattr(self, self._results_handling_function)(self._create_vulnerability(vulnerability_args))
 
     def _parse_x509_fingerprint_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
