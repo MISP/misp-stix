@@ -2171,6 +2171,82 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(vulnerability.type, 'vulnerability')
         self._check_galaxy_features(vulnerability, galaxy, timestamp, False, False)
 
+
+class TestSTIX21ExportInteroperability(TestSTIX2Export):
+    def setUp(self):
+        self.parser = MISPtoSTIX21Parser(interoperability=True)
+
+    def _run_galaxy_tests(self, event, timestamp):
+        orgc = event['Event']['Orgc']
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        for stix_object in stix_objects:
+            self.assertEqual(stix_object.spec_version, '2.1')
+        mitre_identity, identity, grouping, stix_object = stix_objects
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (grouping, event['Event'], identity_id)
+        self.assertEqual(grouping.type, 'grouping')
+        self.assertEqual(grouping.id, f"grouping--{event['Event']['uuid']}")
+        self.assertEqual(grouping.created_by_ref, identity_id)
+        self.assertEqual(grouping.labels, self._labels)
+        self.assertEqual(grouping.name, event['Event']['info'])
+        self.assertEqual(grouping.created, timestamp)
+        self.assertEqual(grouping.modified, timestamp)
+        self.assertEqual(stix_object.id, grouping.object_refs[0])
+        self.assertEqual(stix_object.created_by_ref, mitre_identity.id)
+        return stix_object
+
+    def test_attack_pattern(self):
+        event = get_event_with_attack_pattern_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        attack_pattern = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(attack_pattern.type, 'attack-pattern')
+        name, reference = galaxy['GalaxyCluster'][0]['value'].split(' - ')
+        self.assertEqual(attack_pattern.name, name)
+        self.assertEqual(attack_pattern.external_references[0].external_id, reference)
+
+    def test_course_of_action(self):
+        event = get_event_with_course_of_action_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        course_of_action = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(course_of_action.type, 'course-of-action')
+        name, reference = galaxy['GalaxyCluster'][0]['value'].split(' - ')
+        self.assertEqual(course_of_action.name, name)
+        self.assertEqual(course_of_action.external_references[0].external_id, reference)
+
+    def test_intrusion_set(self):
+        event = get_event_with_intrusion_set_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        intrusion_set = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(intrusion_set.type, 'intrusion-set')
+        name, reference = galaxy['GalaxyCluster'][0]['value'].split(' - ')
+        self.assertEqual(intrusion_set.name, name)
+        self.assertEqual(intrusion_set.external_references[0].external_id, reference)
+
+    def test_malware(self):
+        event = get_event_with_malware_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        malware = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(malware.type, 'malware')
+        name, reference = galaxy['GalaxyCluster'][0]['value'].split(' - ')
+        self.assertEqual(malware.name, name)
+        self.assertEqual(malware.external_references[0].external_id, reference)
+
+    def test_tool(self):
+        event = get_event_with_tool_galaxy()
+        galaxy = event['Event']['Galaxy'][0]
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        tool = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(tool.type, 'tool')
+        name, reference = galaxy['GalaxyCluster'][0]['value'].split(' - ')
+        self.assertEqual(tool.name, name)
+        self.assertEqual(tool.external_references[0].external_id, reference)
+
+
 class TestCollectionStix21Export(TestCollectionSTIX2Export):
     def test_attributes_collection(self):
         name = 'test_attributes_collection'
