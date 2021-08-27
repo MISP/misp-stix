@@ -2048,7 +2048,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self.parser.parse_misp_event(event)
         stix_objects = self._check_bundle_features(15)
         self._check_spec_versions(stix_objects)
-        identity, grouping, attack_pattern, observed_data, autonomous_system, custom, coa, indicator, vulnerability, *relationships  = stix_objects
+        identity, grouping, attack_pattern, observed_data, autonomous_system, custom, coa, indicator, vulnerability, *relationships = stix_objects
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         args = (

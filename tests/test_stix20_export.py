@@ -891,7 +891,6 @@ class TestSTIX20Export(TestSTIX2Export):
         self._check_relationship_features(malware_relationship, indicator_ref, malware_ref, 'indicates', timestamp)
         self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'has', timestamp)
 
-
     def test_embedded_non_indicator_object_galaxy(self):
         event = get_embedded_non_indicator_object_galaxy()
         orgc = event['Event']['Orgc']
@@ -1639,7 +1638,7 @@ class TestSTIX20Export(TestSTIX2Export):
         ap_object, as_object, btc_object, coa_object, ip_object, vuln_object = deepcopy(event['Event']['Object'])
         self.parser.parse_misp_event(event)
         bundle = self._check_bundle_features(14)
-        identity, report, attack_pattern, observed_data, custom, coa, indicator, vulnerability, *relationships  = bundle.objects
+        identity, report, attack_pattern, observed_data, custom, coa, indicator, vulnerability, *relationships = bundle.objects
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
@@ -1696,7 +1695,6 @@ class TestSTIX20Export(TestSTIX2Export):
             'affects',
             self._datetime_from_timestamp(vuln_object['timestamp'])
         )
-
 
     ################################################################################
     #                            GALAXIES EXPORT TESTS.                            #
