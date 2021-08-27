@@ -740,8 +740,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_intrusion_set(intrusion_set_args: dict) -> IntrusionSet:
         return IntrusionSet(**intrusion_set_args)
 
-    def _create_malware(self, malware_args: dict, cluster: dict) -> Malware:
-        malware_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
+    def _create_malware(self, malware_args: dict, cluster: Optional[dict]=None) -> Malware:
+        if cluster is not None:
+            malware_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
         return Malware(**malware_args)
 
     def _create_observed_data(self, args: dict, observable: dict):
@@ -764,8 +765,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_threat_actor(threat_actor_args: dict) -> ThreatActor:
         return ThreatActor(**threat_actor_args)
 
-    def _create_tool_from_galaxy(self, tool_args: dict, cluster: dict) -> Tool:
-        tool_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
+    def _create_tool(self, tool_args: dict, cluster: Optional[dict]=None) -> Tool:
+        if cluster is not None:
+            tool_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
         return Tool(**tool_args)
 
     @staticmethod

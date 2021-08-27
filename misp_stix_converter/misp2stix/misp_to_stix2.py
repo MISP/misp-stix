@@ -1777,7 +1777,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if cluster.get('meta', {}).get('external_id'):
                 references = self._handle_external_references(cluster['meta']['external_id'])
                 malware_args['external_references'] = references
-            malware = self._create_malware(malware_args, cluster)
+            malware = self._create_malware(malware_args, cluster=cluster)
             self.__objects.append(malware)
             object_refs.append(malware_id)
             self.__ids[cluster['uuid']] = malware_id
@@ -1838,7 +1838,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if cluster.get('meta', {}).get('external_id'):
                 references = self._handle_external_references(cluster['meta']['external_id'])
                 tool_args['external_references'] = references
-            tool = self._create_tool_from_galaxy(tool_args, cluster)
+            tool = self._create_tool(tool_args, cluster=cluster)
             self.__objects.append(tool)
             object_refs.append(tool_id)
             self.__ids[cluster['uuid']] = tool_id
