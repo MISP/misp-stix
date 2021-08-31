@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from stix2.properties import (DictionaryProperty, ListProperty, ObjectReferenceProperty,
-                              StringProperty, TimestampProperty)
+                              ReferenceProperty, StringProperty, TimestampProperty)
 from stix2.v20.common import (TLP_WHITE as TLP_WHITE_v20, TLP_GREEN as TLP_GREEN_v20,
                               TLP_AMBER as TLP_AMBER_v20, TLP_RED as TLP_RED_v20)
 from stix2.v20.sdo import CustomObject as CustomObject_v20
@@ -18,7 +18,7 @@ from stix2.v21.sdo import CustomObject as CustomObject_v21
         ('labels', ListProperty(StringProperty, required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
-        ('created_by_ref', StringProperty(required=True)),
+        ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),
         ('object_marking_refs', ListProperty(ObjectReferenceProperty(valid_types=['marking']))),
         ('x_misp_type', StringProperty(required=True)),
         ('x_misp_value', StringProperty(required=True)),
@@ -37,7 +37,7 @@ class CustomAttribute_v20():
         ('labels', ListProperty(StringProperty, required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
-        ('created_by_ref', StringProperty(required=True)),
+        ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.1')),
         ('object_marking_refs', ListProperty(ObjectReferenceProperty(valid_types=['marking']))),
         ('x_misp_type', StringProperty(required=True)),
         ('x_misp_value', StringProperty(required=True)),
@@ -56,7 +56,7 @@ class CustomAttribute_v21():
         ('labels', ListProperty(StringProperty, required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
-        ('created_by_ref', StringProperty(required=True)),
+        ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),
         ('object_marking_refs', ListProperty(ObjectReferenceProperty(valid_types=['marking']))),
         ('x_misp_name', StringProperty(required=True)),
         ('x_misp_attributes', ListProperty(DictionaryProperty())),
@@ -75,7 +75,7 @@ class CustomMispObject_v20():
         ('labels', ListProperty(StringProperty, required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
-        ('created_by_ref', StringProperty(required=True)),
+        ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.1')),
         ('object_marking_refs', ListProperty(ObjectReferenceProperty(valid_types=['marking']))),
         ('x_misp_name', StringProperty(required=True)),
         ('x_misp_attributes', ListProperty(DictionaryProperty())),
@@ -93,9 +93,9 @@ class CustomMispObject_v21():
         ('id', StringProperty(required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
-        ('created_by_ref', StringProperty(required=True)),
+        ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),
         ('x_misp_event_note', StringProperty(required=True)),
-        ('object_ref', StringProperty(required=True))
+        ('object_ref', ReferenceProperty(valid_types=['report'], spec_version='2.0'))
     ]
 )
 class CustomNote():
