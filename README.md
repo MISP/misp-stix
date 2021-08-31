@@ -61,8 +61,10 @@ Given a MISP Event (with its metadata fields, attributes, objects, galaxies and 
 ```python
 from misp_stix_converter import MISPtoSTIX1EventsParser
 
-parser = MISPtoSTIX1EventsParser('1.1.1')
-# or MISPtoSTIX1EventParser('1.2') to get some STIX 1.2 results
+parser = MISPtoSTIX1EventsParser(
+    'MISP-Project', # Example of Org name
+    '1.1.1' # STIX1 version (1.1.1 or 1.2)
+)
 parser.parse_misp_event(event)
 
 stix_package = parser.stix_package
@@ -123,7 +125,7 @@ from misp_stix_converter import MISPtoSTIX1EventsParser, MISPtoSTIX20Parser, MIS
 
 filename = _PATH_TO_YOUR_FILE_CONTAINING_MISP_FORMAT_
 
-parser1 = MISPtoSTIX1EventsParser('1.1.1')
+parser1 = MISPtoSTIX1EventsParser('MISP', '1.1.1')
 parser1.parse_json_content(filename)
 stix_package = parser1.stix_package
 
