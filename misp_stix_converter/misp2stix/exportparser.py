@@ -99,7 +99,7 @@ class MISPtoSTIXParser():
                 for galaxy in attribute['Galaxy']:
                     galaxy_type = galaxy['type']
                     if galaxy_type not in globals()[mapping]:
-                        self.__warnings.add(f"{galaxy_type} galaxy in {misp_object['name']} object not mapped.")
+                        self.__warnings[self._identifier].add(f"{galaxy_type} galaxy in {misp_object['name']} object not mapped.")
                         continue
                     if galaxy_type in galaxies:
                         self._merge_galaxy_clusters(galaxies[galaxy_type], galaxy)
@@ -119,7 +119,7 @@ class MISPtoSTIXParser():
                     getattr(self, to_call.format('event'))(galaxy)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
-                    self.__warnings.add(f'{galaxy_type} galaxy in event not mapped.')
+                    self.__warnings[self._identifier].add(f'{galaxy_type} galaxy in event not mapped.')
             return tuple(tag['name'] for tag in self._misp_event.get('Tag', []) if tag['name'] not in tag_names)
         return tuple(tag['name'] for tag in self._misp_event.get('Tag', []))
 
