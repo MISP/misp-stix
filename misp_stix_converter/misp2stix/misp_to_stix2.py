@@ -1448,9 +1448,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         'url': reference
                     }
                 )
-        time_fields = self._handle_time_fields(misp_object['timestamp'])
-        for time_field, time_value in time_fields.items():
-            vulnerability_args[time_field] = self._datetime_from_str(self._select_single_feature(attributes, time_field)) if attributes.get(time_field) else time_value
+        vulnerability_args.update(
+            self._handle_vulnerability_time_fields(
+                attributes,
+                misp_object['timestamp']
+            )
+        )
         if attributes:
             vulnerability_args.update(self._handle_observable_multiple_properties(attributes))
         vulnerability_args.update(
@@ -2300,9 +2303,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             time_fields[stix_field] = self._datetime_from_str(attribute[misp_field]) if attribute.get(misp_field) else timestamp
         return time_fields
 
-    def _handle_time_fields(self, timestamp: str) -> dict:
-        datetime_timestamp = self._datetime_from_timestamp(timestamp)
-        return {'created': datetime_timestamp, 'modified': datetime_timestamp}
+    def _handle_vulnerability_time_fields(self, attributes: dict, object_timestamp: str) -> dict:
+        timestamp = self._datetime_from_timestamp(object_timestamp)
+        time_fields = {'created': 2, 'modified': 1}
+        use_case = 0
+        for time_field, index in time_fields.items():
+            if attributes.get(time_field):
+                use_case += index
+                value = self._select_single_feature(attributes, time_field)
+                time_fields[time_field] = self._datetime_from_str(value)
+                continue
+            time_fields[time_field] = timestamp
+        if time_fields['created'] > time_fields['modified']:
+            if use_case == 1:
+                time_fields['created'] = time_fields['modified']
+            else:
+                time_fields['modified'] = time_fields['created']
+        return time_fields
 
     @staticmethod
     def _handle_value_for_pattern(attribute_value: str) -> str:
