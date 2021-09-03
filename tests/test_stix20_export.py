@@ -1461,7 +1461,7 @@ class TestSTIX20Export(TestSTIX2Export):
         name_, pid_, image_, parent_pid_, child_pid_, port_ = pattern[1:-1].split(' AND ')
         self.assertEqual(name_, f"process:name = '{_name}'")
         self.assertEqual(pid_, f"process:pid = '{_pid}'")
-        self.assertEqual(image_, f"process:image_ref.name = '{_image}'")
+        self.assertEqual(image_, f"process:binary_ref.name = '{_image}'")
         self.assertEqual(parent_pid_, f"process:parent_ref.pid = '{_parent_pid}'")
         self.assertEqual(child_pid_, f"process:child_refs[0].pid = '{_child_pid}'")
         self.assertEqual(port_, f"process:x_misp_port = '{_port}'")
@@ -1477,7 +1477,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(process.x_misp_port, port)
         self.assertEqual(process.parent_ref, '1')
         self.assertEqual(process.child_refs, ['2'])
-        self.assertEqual(process.image_ref, '3')
+        self.assertEqual(process.binary_ref, '3')
         parent_process = observable_objects['1']
         self.assertEqual(parent_process.type, 'process')
         self.assertEqual(parent_process.pid, int(parent_pid))
