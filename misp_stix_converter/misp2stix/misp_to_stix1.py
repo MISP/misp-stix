@@ -3,7 +3,7 @@
 
 import json
 import socket
-from . import stix1_mapping
+from .stix1_mapping import Stix1Mapping
 from .exportparser import MISPtoSTIXParser
 from collections import defaultdict
 from cybox.core import Observable, ObservableComposition, RelatedObject
@@ -89,6 +89,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         super().__init__()
         self._orgname = orgname
         self._version = version
+        self._mapping = Stix1Mapping()
 
     @property
     def stix_package(self) -> STIXPackage:
@@ -101,8 +102,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _resolve_attribute(self, attribute: dict):
         attribute_type = attribute['type']
         try:
-            if attribute_type in stix1_mapping.attribute_types_mapping:
-                getattr(self, stix1_mapping.attribute_types_mapping[attribute_type])(attribute)
+            if attribute_type in self._mapping.attribute_types_mapping:
+                getattr(self, self._mapping.attribute_types_mapping[attribute_type])(attribute)
             else:
                 self._parse_custom_attribute(attribute)
                 self._attribute_not_mapped_warning(attribute_type)
@@ -123,8 +124,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             tag_names = []
             for galaxy in attribute['Galaxy']:
                 galaxy_type = galaxy['type']
-                if galaxy_type in stix1_mapping.galaxy_types_mapping:
-                    to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
+                if galaxy_type in self._mapping.galaxy_types_mapping:
+                    to_call = self._mapping.galaxy_types_mapping[galaxy_type]
                     getattr(self, to_call.format('attribute'))(galaxy, indicator)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
@@ -156,11 +157,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             tag_names = []
             for galaxy in attribute['Galaxy']:
                 galaxy_type = galaxy['type']
-                if galaxy_type not in stix1_mapping.ttp_names:
-                    if galaxy_type not in stix1_mapping.galaxy_types_mapping:
+                if galaxy_type not in self._mapping.ttp_names:
+                    if galaxy_type not in self._mapping.galaxy_types_mapping:
                         self._attribute_galaxy_not_mapped_warning(galaxy_type, attribute['type'])
                     continue
-                to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
+                to_call = self._mapping.galaxy_types_mapping[galaxy_type]
                 getattr(self, to_call.format('object'))(galaxy, ttp)
                 tag_names.extend(self._quick_fetch_tag_names(galaxy))
             return tuple(tag['name'] for tag in attribute.get('Tag', []) if tag['name'] not in tag_names)
@@ -241,7 +242,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _parse_email_attribute(self, attribute: dict):
         email_object = EmailMessage()
         email_header = EmailHeader()
-        feature = stix1_mapping.email_attribute_mapping[attribute['type']]
+        feature = self._mapping.email_attribute_mapping[attribute['type']]
         setattr(email_header, feature, attribute['value'])
         setattr(getattr(email_header, feature), 'condition', 'Equals')
         email_object.header = email_header
@@ -480,7 +481,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         registrants = WhoisRegistrants()
         registrant = WhoisRegistrant()
         object_relation = '-'.join(attribute['type'].split('-')[1:])
-        feature = stix1_mapping.whois_registrant_mapping[object_relation]
+        feature = self._mapping.whois_registrant_mapping[object_relation]
         setattr(registrant, feature, attribute['value'])
         setattr(getattr(registrant, feature), 'condition', 'Equals')
         registrants.append(registrant)
@@ -790,8 +791,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         indicator.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
         indicator.description = attribute['comment'] if attribute.get('comment') else indicator.title
         indicator.confidence = Confidence(
-            value=stix1_mapping.confidence_value,
-            description=stix1_mapping.confidence_description,
+            value=self._mapping.confidence_value,
+            description=self._mapping.confidence_description,
             timestamp=timestamp
         )
         indicator.add_indicator_type(self._set_indicator_type(attribute['type']))
@@ -929,11 +930,10 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _fetch_colors(tags: list) -> tuple:
         return (tag.split(':')[-1].upper() for tag in tags)
 
-    @staticmethod
-    def _set_color(colors: list) -> str:
+    def _set_color(self, colors: list) -> str:
         tlp_color = 0
         for color in colors:
-            color_num = stix1_mapping.TLP_order[color]
+            color_num = self._mapping.TLP_order[color]
             if color_num > tlp_color:
                 tlp_color = color_num
                 color_value = color
@@ -976,10 +976,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         handling.add_marking(marking_specification)
         return handling
 
-    @staticmethod
-    def _set_indicator_type(attribute_type: str) -> str:
-        if attribute_type in stix1_mapping.misp_indicator_type:
-            return stix1_mapping.misp_indicator_type[attribute_type]
+    def _set_indicator_type(self, attribute_type: str) -> str:
+        if attribute_type in self._mapping.misp_indicator_type:
+            return self._mapping.misp_indicator_type[attribute_type]
         return 'Malware Artifacts'
 
     @staticmethod
@@ -1053,6 +1052,7 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
 class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def __init__(self, orgname: str, version: str):
         super().__init__(orgname, version)
+        self._mapping.declare_objects_mapping()
 
     def parse_json_content(self, filename):
         with open(filename, 'rt', encoding='utf-8') as f:
@@ -1123,17 +1123,17 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _generate_stix_objects(self):
         if self._misp_event.get('threat_level_id'):
-            threat_level = stix1_mapping.threat_level_mapping[int(self._misp_event['threat_level_id'])]
+            threat_level = self._mapping.threat_level_mapping[int(self._misp_event['threat_level_id'])]
             self._add_journal_entry(f'Event Threat Level: {threat_level}')
         self._add_journal_entry('MISP Tag: misp:tool="MISP-STIX-Converter"')
-        tags = self._handle_event_tags_and_galaxies('stix1_galaxy_mapping')
+        tags = self._handle_event_tags_and_galaxies()
         if tags:
             self._incident.handling = self._set_handling(tags)
         if self._misp_event.get('id'):
             external_id = ExternalID(value=self._misp_event['id'], source='MISP Event')
             self._incident.add_external_id(external_id)
         if self._misp_event.get('analysis'):
-            status = stix1_mapping.status_mapping[int(self._misp_event['analysis'])]
+            status = self._mapping.status_mapping[int(self._misp_event['analysis'])]
             self._incident.status = IncidentStatus(status)
         source = self._set_information_source()
         self._incident.information_source = self._create_information_source(source)
@@ -1183,8 +1183,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             if self._check_object_name(misp_object):
                 continue
             try:
-                if object_name in stix1_mapping.non_indicator_names:
-                    getattr(self, stix1_mapping.non_indicator_names[object_name])(misp_object)
+                if object_name in self._mapping.non_indicator_names:
+                    getattr(self, self._mapping.non_indicator_names[object_name])(misp_object)
                 else:
                     to_ids = self._fetch_ids_flag(misp_object['Attribute'])
                     to_call = self._fetch_objects_mapping_function(object_name)
@@ -1258,10 +1258,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 attributes_dict[relation].append(value)
         return attributes_dict
 
-    @staticmethod
-    def _fetch_objects_mapping_function(object_name: str) -> str:
-        if object_name in stix1_mapping.objects_mapping:
-            return stix1_mapping.objects_mapping[object_name]
+    def _fetch_objects_mapping_function(self, object_name: str) -> str:
+        if object_name in self._mapping.objects_mapping:
+            return self._mapping.objects_mapping[object_name]
         return '_parse_custom_object'
 
     def _handle_custom_properties(self, attributes: dict, multiple: Optional[bool] = True) -> CustomProperties:
@@ -1297,29 +1296,23 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         self._incident.related_indicators.append(related_indicator)
 
     def _handle_non_indicator_object_tags_and_galaxies(self, misp_object: dict, stix_object: _NON_INDICATOR_OBJECT_TYPES, galaxy_name: str) -> tuple:
-        tags, galaxies = self._extract_object_attribute_tags_and_galaxies(
-            misp_object,
-            'stix1_galaxy_mapping'
-        )
+        tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
         tag_names = set()
         if galaxies:
             for galaxy_type, galaxy in galaxies.items():
-                if galaxy_type in getattr(stix1_mapping, galaxy_name):
-                    to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
+                if galaxy_type in getattr(self._mapping, galaxy_name):
+                    to_call = self._mapping.galaxy_types_mapping[galaxy_type]
                     getattr(self, to_call.format('object'))(galaxy, stix_object)
                     tag_names.update(self._quick_fetch_tag_names(galaxy))
             return tuple(tag for tag in tags if tag not in tag_names)
         return tuple(tags)
 
     def _handle_object_tags_and_galaxies(self, misp_object: dict, indicator: Indicator) -> tuple:
-        tags, galaxies = self._extract_object_attribute_tags_and_galaxies(
-            misp_object,
-            'stix1_galaxy_mapping'
-        )
+        tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
         if galaxies:
             tag_names = set()
             for galaxy_type, galaxy in galaxies.items():
-                to_call = stix1_mapping.galaxy_types_mapping[galaxy_type]
+                to_call = self._mapping.galaxy_types_mapping[galaxy_type]
                 getattr(self, to_call.format('attribute'))(galaxy, indicator)
                 tag_names.update(self._quick_fetch_tag_names(galaxy))
             return tuple(tag for tag in tags if tag not in tag_names)
@@ -1341,7 +1334,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _parse_asn_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=stix1_mapping.as_single_fields
+            force_single=self._mapping.as_single_fields
         )
         as_object = self._create_autonomous_system_object(attributes.pop('asn'))
         if attributes.get('description'):
@@ -1356,7 +1349,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         attack_pattern = AttackPattern()
         attack_pattern.id_ = f"{self._orgname}:AttackPattern-{misp_object['uuid']}"
         attributes = self._extract_object_attributes(misp_object['Attribute'])
-        for key, feature in stix1_mapping.attack_pattern_object_mapping.items():
+        for key, feature in self._mapping.attack_pattern_object_mapping.items():
             if attributes.get(key):
                 setattr(attack_pattern, feature, attributes.pop(key))
         if attack_pattern.capec_id and not attack_pattern.capec_id.startswith('CAPEC'):
@@ -1374,7 +1367,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         uuid = misp_object['uuid']
         course_of_action.id_ = f'{self._orgname}:CourseOfAction-{uuid}'
         attributes = self._extract_object_attributes(misp_object['Attribute'])
-        for key, feature in stix1_mapping.course_of_action_object_mapping.items():
+        for key, feature in self._mapping.course_of_action_object_mapping.items():
             if attributes.get(key):
                 setattr(course_of_action, feature, attributes.pop(key))
         tags = self._handle_non_indicator_object_tags_and_galaxies(
@@ -1412,10 +1405,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _parse_credential_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=tuple(stix1_mapping.credential_object_mapping.keys())
+            force_single=tuple(self._mapping.credential_object_mapping.keys())
         )
         account_object = UserAccount()
-        for feature, field in stix1_mapping.credential_object_mapping.items():
+        for feature, field in self._mapping.credential_object_mapping.items():
             if attributes.get(feature):
                 setattr(account_object, field, attributes.pop(feature))
         authentication_list = self._parse_credential_authentication(attributes)
@@ -1463,7 +1456,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _parse_email_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes_with_uuid(
             misp_object['Attribute'],
-            with_uuid=stix1_mapping.email_uuid_fields
+            with_uuid=self._mapping.email_uuid_fields
         )
         email_object = EmailMessage()
         email_header = EmailHeader()
@@ -1473,7 +1466,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 for value in attributes.pop(feature):
                     recipients.append(value)
                 setattr(email_header, feature, recipients)
-        for feature, key in stix1_mapping.email_object_mapping.items():
+        for feature, key in self._mapping.email_object_mapping.items():
             if attributes.get(feature):
                 setattr(email_header, key, attributes.pop(feature)[0])
                 setattr(getattr(email_header, key), 'condition', 'Equals')
@@ -1502,14 +1495,14 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             filename = self._select_single_feature(attributes, 'filename')
             file_object.file_name = filename
             file_object.file_name.condition = 'Equals'
-        for feature, key in stix1_mapping.file_object_mapping.items():
+        for feature, key in self._mapping.file_object_mapping.items():
             if attributes.get(feature):
                 value = attributes[feature].pop(0) if isinstance(attributes[feature], list) else attributes.pop(feature)
                 setattr(file_object, key, value)
                 setattr(getattr(file_object, key), 'condition', 'Equals')
         if attributes:
             for object_relation, value in attributes.items():
-                if object_relation in stix1_mapping.hash_type_attributes['single']:
+                if object_relation in self._mapping.hash_type_attributes['single']:
                     hash = self._parse_hash_value(object_relation, value)
                     file_object.add_hash(hash)
                 else:
@@ -1641,11 +1634,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _parse_network_socket_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=stix1_mapping.network_socket_single_fields
+            force_single=self._mapping.network_socket_single_fields
         )
         socket_object = NetworkSocket()
         self._parse_socket_addresses(socket_object, attributes, ('local', 'remote'))
-        for key, feature in stix1_mapping.network_socket_mapping.items():
+        for key, feature in self._mapping.network_socket_mapping.items():
             if attributes.get(key):
                 setattr(socket_object, feature, attributes.pop(key))
                 setattr(getattr(socket_object, feature), 'condition', 'Equals')
@@ -1662,11 +1655,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         ids_list = [self._fetch_ids_flag(misp_pe['Attribute'])]
         attributes = self._extract_multiple_object_attributes(
             misp_pe['Attribute'],
-            force_single=stix1_mapping.pe_single_fields
+            force_single=self._mapping.pe_single_fields
         )
-        if any(feature in attributes for feature in stix1_mapping.pe_resource_mapping):
+        if any(feature in attributes for feature in self._mapping.pe_resource_mapping):
             resource = PEVersionInfoResource()
-            for key, feature in stix1_mapping.pe_resource_mapping.items():
+            for key, feature in self._mapping.pe_resource_mapping.items():
                 if attributes.get(key):
                     setattr(resource, feature, attributes.pop(key))
                     setattr(getattr(resource, feature), 'condition', 'Equals')
@@ -1693,7 +1686,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if attributes:
             hashes = []
             for object_relation, value in attributes.items():
-                if object_relation in stix1_mapping.hash_type_attributes['single']:
+                if object_relation in self._mapping.hash_type_attributes['single']:
                     hashes.append(self._parse_hash_value(object_relation, value))
                 else:
                     for single_value in value:
@@ -1733,7 +1726,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 pe_section.section_header.size_of_raw_data.condition = 'Equals'
         hashlist = []
         for key, value in section_attributes.items():
-            if key in stix1_mapping.hash_type_attributes['single']:
+            if key in self._mapping.hash_type_attributes['single']:
                 hashlist.append(self._parse_hash_value(key, value))
         if hashlist:
             pe_section.data_hashes = HashList()
@@ -1743,10 +1736,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _parse_process_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=stix1_mapping.process_single_fields
+            force_single=self._mapping.process_single_fields
         )
         process_object = Process()
-        for key, feature in stix1_mapping.process_object_mapping.items():
+        for key, feature in self._mapping.process_object_mapping.items():
             if attributes.get(key):
                 setattr(process_object, feature, attributes.pop(key))
                 setattr(getattr(process_object, feature), 'condition', 'Equals')
@@ -1776,13 +1769,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         registry_object = self._create_registry_key_object(attributes.pop('key')) if attributes.get('key') else WinRegistryKey()
         if attributes.get('hive'):
             hive = attributes.pop('hive').lstrip('\\').upper()
-            if hive in stix1_mapping.misp_reghive:
-                hive = stix1_mapping.misp_reghive[hive]
+            if hive in self._mapping.misp_reghive:
+                hive = self._mapping.misp_reghive[hive]
             registry_object.hive = hive
             registry_object.hive.condition = 'Equals'
-        if any(key in attributes for key in stix1_mapping.regkey_object_mapping.keys()):
+        if any(key in attributes for key in self._mapping.regkey_object_mapping.keys()):
             value_object = RegistryValue()
-            for key, feature in stix1_mapping.regkey_object_mapping.items():
+            for key, feature in self._mapping.regkey_object_mapping.items():
                 if attributes.get(key):
                     setattr(value_object, feature, attributes.pop(key))
                     setattr(getattr(value_object, feature), 'condition', 'Equals')
@@ -1842,7 +1835,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _parse_user_account_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=stix1_mapping.user_account_single_fields
+            force_single=self._mapping.user_account_single_fields
         )
         account_object = self._create_user_account_object(attributes)
         if attributes.get('password'):
@@ -1850,7 +1843,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 auth_type='password',
                 password=attributes.pop('password')
             )
-        for key, feature in stix1_mapping.user_account_object_mapping.items():
+        for key, feature in self._mapping.user_account_object_mapping.items():
             if attributes.get(key):
                 setattr(account_object, feature, attributes.pop(key))
                 setattr(getattr(account_object, feature), 'condition', 'Equals')
@@ -1868,7 +1861,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         vulnerability = Vulnerability()
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=stix1_mapping.vulnerability_single_fields
+            force_single=self._mapping.vulnerability_single_fields
         )
         if attributes.get('id'):
             cve_id = self._select_single_feature(attributes, 'id')
@@ -1877,7 +1870,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             cvss = CVSSVector()
             cvss.overall_score = attributes.pop('cvss-score')
             vulnerability.cvss_score = cvss
-        for key, feature in stix1_mapping.vulnerability_object_mapping.items():
+        for key, feature in self._mapping.vulnerability_object_mapping.items():
             if attributes.get(key):
                 setattr(vulnerability, feature, attributes.pop(key))
                 setattr(getattr(vulnerability, feature), 'condition', 'Equals')
@@ -1897,7 +1890,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         ttp = self._create_ttp_from_object(misp_object)
         weakness = Weakness()
         attributes = self._extract_object_attributes(misp_object['Attribute'])
-        for key, feature in stix1_mapping.weakness_object_mapping.items():
+        for key, feature in self._mapping.weakness_object_mapping.items():
             if attributes.get(key):
                 setattr(weakness, feature, attributes.pop(key))
         if misp_object.get('ObjectReference'):
@@ -1912,7 +1905,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     def _parse_whois_object(self, misp_object: dict) -> Observable:
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=stix1_mapping.whois_single_fields
+            force_single=self._mapping.whois_single_fields
         )
         whois_object = WhoisEntry()
         if attributes.get('registrar'):
@@ -1922,13 +1915,13 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if any(key.startswith('registrant-') for key in attributes.keys()):
             registrants = WhoisRegistrants()
             registrant = WhoisRegistrant()
-            for key, feature in stix1_mapping.whois_registrant_mapping.items():
+            for key, feature in self._mapping.whois_registrant_mapping.items():
                 if attributes.get(key):
                     setattr(registrant, feature, attributes.pop(key))
                     setattr(getattr(registrant, feature), 'condition', 'Equals')
             registrants.append(registrant)
             whois_object.registrants = registrants
-        for key, feature in stix1_mapping.whois_object_mapping.items():
+        for key, feature in self._mapping.whois_object_mapping.items():
             if attributes.get(key):
                 setattr(whois_object, feature, attributes.pop(key))
                 setattr(getattr(whois_object, feature), 'condition', 'Equals')
@@ -1953,21 +1946,21 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return observable
 
     def _parse_x509_object(self, misp_object: dict) -> Observable:
-        single_attributes = tuple(stix1_mapping.x509_creation_mapping.keys())
+        single_attributes = tuple(self._mapping.x509_creation_mapping.keys())
         attributes = defaultdict(list)
         content = defaultdict(bool)
         for attribute in misp_object['Attribute']:
             relation = attribute['object_relation']
             if relation in single_attributes:
                 attributes[relation] = attribute['value']
-                content[stix1_mapping.x509_creation_mapping[relation]] = True
+                content[self._mapping.x509_creation_mapping[relation]] = True
             else:
                 attributes[relation].append(attribute['value'])
         x509_object = X509Certificate()
         if any(content[feature] for feature in ('certificate', 'validity', 'pubkey')):
             x509_cert = X509Cert()
             if content['certificate']:
-                for key, feature in stix1_mapping.x509_object_mapping.items():
+                for key, feature in self._mapping.x509_object_mapping.items():
                     if attributes.get(key):
                         setattr(x509_cert, feature, attributes.pop(key))
                         setattr(getattr(x509_cert, feature), 'condition', 'Equals')
@@ -2118,8 +2111,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if any(misp_object.get(feature) for feature in ('comment', 'description')):
             indicator.description = misp_object['comment'] if misp_object.get('comment') else misp_object['description']
         indicator.confidence = Confidence(
-            value=stix1_mapping.confidence_value,
-            description=stix1_mapping.confidence_description,
+            value=self._mapping.confidence_value,
+            description=self._mapping.confidence_description,
             timestamp=timestamp
         )
         return indicator

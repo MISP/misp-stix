@@ -2,8 +2,6 @@
 #!/usr/bin/env python3
 
 import json
-from .stix1_mapping import galaxy_types_mapping as stix1_galaxy_mapping
-from .stix2_mapping import galaxy_types_mapping as stix2_galaxy_mapping
 from collections import defaultdict
 from datetime import datetime
 from stix.indicator import Indicator
@@ -91,14 +89,14 @@ class MISPtoSTIXParser():
             return attributes_dict
         return {attribute['object_relation']: (attribute['value'], attribute['uuid']) for attribute in attributes}
 
-    def _extract_object_attribute_tags_and_galaxies(self, misp_object: dict, mapping: str) -> tuple:
+    def _extract_object_attribute_tags_and_galaxies(self, misp_object: dict) -> tuple:
         tags = set()
         galaxies = {}
         for attribute in misp_object['Attribute']:
             if attribute.get('Galaxy'):
                 for galaxy in attribute['Galaxy']:
                     galaxy_type = galaxy['type']
-                    if galaxy_type not in globals()[mapping]:
+                    if galaxy_type not in self._mapping.galaxy_types_mapping:
                         self.__warnings[self._identifier].add(f"{galaxy_type} galaxy in {misp_object['name']} object not mapped.")
                         continue
                     if galaxy_type in galaxies:
@@ -109,13 +107,13 @@ class MISPtoSTIXParser():
                 tags.update(tag['name'] for tag in attribute['Tag'])
         return tags, galaxies
 
-    def _handle_event_tags_and_galaxies(self, mapping: str) -> tuple:
+    def _handle_event_tags_and_galaxies(self) -> tuple:
         if self._misp_event.get('Galaxy'):
             tag_names = []
             for galaxy in self._misp_event['Galaxy']:
                 galaxy_type = galaxy['type']
-                if galaxy_type in globals()[mapping]:
-                    to_call = globals()[mapping][galaxy_type]
+                if galaxy_type in self._mapping.galaxy_types_mapping:
+                    to_call = self._mapping.galaxy_types_mapping[galaxy_type]
                     getattr(self, to_call.format('event'))(galaxy)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:

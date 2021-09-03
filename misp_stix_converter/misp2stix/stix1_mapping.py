@@ -107,596 +107,729 @@ SCHEMALOC_DICT = {
 }
 
 
-# mappings
-status_mapping = {0: 'New', 1: 'Open', 2: 'Closed'}
-threat_level_mapping = {1: 'High', 2: 'Medium', 3: 'Low', 4: 'Undefined'}
-TLP_order = {'RED': 4, 'AMBER': 3, 'AMBER NATO ALLIANCE': 3, 'GREEN': 2, 'WHITE': 1}
+class Stix1Mapping:
+    def __init__(self):
+        self.__confidence_description = "Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none"
+        self.__confidence_value = "High"
+        self.__hash_type_attributes = {
+            "single": (
+                "md5",
+                "sha1",
+                "sha224",
+                "sha256",
+                "sha384",
+                "sha512",
+                "sha512/224",
+                "sha512/256",
+                "ssdeep",
+                "imphash",
+                "authentihash",
+                "pehash",
+                "tlsh",
+                "cdhash",
+                "vhash",
+                "impfuzzy"
+            ),
+            "composite": (
+                "filename|md5",
+                "filename|sha1",
+                "filename|sha224",
+                "filename|sha256",
+                "filename|sha384",
+                "filename|sha512",
+                "filename|sha512/224",
+                "filename|sha512/256",
+                "filename|authentihash",
+                "filename|ssdeep",
+                "filename|tlsh",
+                "filename|imphash",
+                "filename|pehash",
+                "filename|vhash",
+                "filename|impfuzzy"
+            )
+        }
+        self.__misp_indicator_type = {
+            "malware-sample": "Malware Artifacts",
+            "mutex": "Host Characteristics",
+            "named pipe": "Host Characteristics",
+            "url": "URL Watchlist"
+        }
+        self.__misp_indicator_type.update(
+            dict.fromkeys(
+                list(self.__hash_type_attributes["single"]),
+                "File Hash Watchlist"
+            )
+        )
+        self.__misp_indicator_type.update(
+            dict.fromkeys(
+                list(self.__hash_type_attributes["composite"]),
+                "File Hash Watchlist"
+            )
+        )
+        self.__misp_indicator_type.update(
+            dict.fromkeys(
+                [
+                    "file",
+                    "filename"
+                ],
+                "File Hash Watchlist"
+            )
+        )
+        self.__misp_indicator_type.update(
+            dict.fromkeys(
+                [
+                    "email",
+                    "email-attachment",
+                    "email-src",
+                    "email-dst",
+                    "email-message-id",
+                    "email-mime-boundary",
+                    "email-subject",
+                    "email-reply-to",
+                    "email-x-mailer"
+                ],
+                "Malicious E-mail"
+            )
+        )
+        self.__misp_indicator_type.update(
+            dict.fromkeys(
+                [
+                    "AS",
+                    "asn",
+                    "ip-src",
+                    "ip-dst",
+                    "ip-src|port",
+                    "ip-dst|port"
+                ],
+                "IP Watchlist"
+            )
+        )
+        self.__misp_indicator_type.update(
+            dict.fromkeys(
+                [
+                    "domain",
+                    "domain|ip",
+                    "domain-ip",
+                    "hostname",
+                    "hostname|port"
+                ],
+                "Domain Watchlist"
+            )
+        )
+        self.__misp_indicator_type.update(
+            dict.fromkeys(
+                [
+                    "regkey",
+                    "regkey|value"
+                ],
+                "Host Characteristics"
+            )
+        )
+        self.__TLP_order = {'RED': 4, 'AMBER': 3, 'AMBER NATO ALLIANCE': 3, 'GREEN': 2, 'WHITE': 1}
+        # ATTRIBUTES MAPPING
+        self.__attribute_types_mapping = {
+            'AS': '_parse_autonomous_system_attribute',
+            'attachment': '_parse_attachment',
+            'campaign-name': '_parse_campaign_name_attribute',
+            'domain': '_parse_domain_attribute',
+            'domain|ip': '_parse_domain_ip_attribute',
+            'email-attachment': '_parse_email_attachment',
+            'email-body': '_parse_email_body_attribute',
+            'email-header': '_parse_email_header_attribute',
+            'filename': '_parse_file_attribute',
+            'hostname': '_parse_hostname_attribute',
+            'hostname|port': '_parse_hostname_port_attribute',
+            'http-method': '_parse_http_method_attribute',
+            'mac-address': '_parse_mac_address',
+            'malware-sample': '_parse_malware_sample',
+            'mutex': '_parse_mutex_attribute',
+            'named pipe': '_parse_named_pipe',
+            'pattern-in-file': '_parse_pattern_attribute',
+            'port': '_parse_port_attribute',
+            'regkey': '_parse_regkey_attribute',
+            'regkey|value': '_parse_regkey_value_attribute',
+            'size-in-bytes': '_parse_size_in_bytes_attribute',
+            'snort': '_parse_snort_attribute',
+            'target-email': '_parse_target_email',
+            'target-external': '_parse_target_external',
+            'target-location': '_parse_target_location',
+            'target-machine': '_parse_target_machine',
+            'target-org': '_parse_target_org',
+            'target-user': '_parse_target_user',
+            'user-agent': '_parse_user_agent_attribute',
+            'vulnerability': '_parse_vulnerability_attribute',
+            'weakness': '_parse_weakness_attribute',
+            'whois-registrar': '_parse_whois_registrar_attribute',
+            'yara': '_parse_yara_attribute'
+        }
+        self.__attribute_types_mapping.update(
+            dict.fromkeys(
+                list(self.__hash_type_attributes["single"]),
+                '_parse_hash_attribute'
+            )
+        )
+        self.__attribute_types_mapping.update(
+            dict.fromkeys(
+                list(self.__hash_type_attributes["composite"]),
+                '_parse_hash_composite_attribute'
+            )
+        )
+        self.__attribute_types_mapping.update(
+            dict.fromkeys(
+                [
+                    "ip-src",
+                    "ip-dst"
+                ],
+                '_parse_ip_attribute'
+            )
+        )
+        self.__attribute_types_mapping.update(
+            dict.fromkeys(
+                [
+                    "ip-src|port",
+                    "ip-dst|port"
+                ],
+                '_parse_ip_port_attribute'
+            )
+        )
+        self.__attribute_types_mapping.update(
+            dict.fromkeys(
+                [
+                    "windows-service-displayname",
+                    "windows-service-name"
+                ],
+                '_parse_windows_service_attribute'
+            )
+        )
+        self.__attribute_types_mapping.update(
+            dict.fromkeys(
+                [
+                    "uri",
+                    "url",
+                    "link"
+                ],
+                '_parse_url_attribute'
+            )
+        )
+        self.__attribute_types_mapping.update(
+            dict.fromkeys(
+                [
+                    "email-src",
+                    "email-dst",
+                    "email-message-id",
+                    "email-mime-boundary",
+                    "email-subject",
+                    "email-reply-to",
+                    'email-x-mailer'
+                ],
+                '_parse_email_attribute'
+            )
+        )
+        self.__attribute_types_mapping.update(
+            dict.fromkeys(
+                [
+                    'x509-fingerprint-md5',
+                    'x509-fingerprint-sha1',
+                    'x509-fingerprint-sha256'
+                ],
+                '_parse_x509_fingerprint_attribute'
+            )
+        )
+        self.__attribute_types_mapping.update(
+            dict.fromkeys(
+                [
+                    'comment',
+                    'other',
+                    'text'
+                ],
+                '_parse_undefined_attribute'
+            )
+        )
+        self.__attribute_types_mapping.update(
+            dict.fromkeys(
+                [
+                    'whois-registrant-email',
+                    'whois-registrant-name',
+                    'whois-registrant-org',
+                    'whois-registrant-phone'
+                ],
+                '_parse_whois_registrant_attribute'
+            )
+        )
+        self.__email_attribute_mapping = {
+            'email-src': 'from_',
+            'email-dst': 'to',
+            'email-message-id': 'message_id',
+            'email-mime-boundary': 'boundary',
+            'email-reply-to': 'reply_to',
+            'email-subject': 'subject',
+            'email-x-mailer': 'x_mailer'
+        }
+        self.__whois_registrant_mapping = {
+            'registrant-name': 'name',
+            'registrant-phone': 'phone_number',
+            'registrant-email': 'email_address',
+            'registrant-org': 'organization'
+        }
+        # GALAXIES MAPPING
+        _attack_pattern_names = (
+            'mitre-attack-pattern',
+            'mitre-enterprise-attack-attack-pattern',
+            'mitre-mobile-attack-attack-pattern',
+            'mitre-pre-attack-attack-pattern'
+        )
+        _malware_names = (
+            'android',
+            'banker',
+            'stealer',
+            'backdoor',
+            'ransomware',
+            'mitre-malware',
+            'malpedia',
+            'mitre-enterprise-attack-malware',
+            'mitre-mobile-attack-malware'
+        )
+        _tool_names = (
+            'botnet',
+            'rat',
+            'exploit-kit',
+            'tds',
+            'tool',
+            'mitre-tool',
+            'mitre-enterprise-attack-tool',
+            'mitre-mobile-attack-tool'
+        )
+        self.__course_of_action_names = (
+            'mitre-course-of-action',
+            'mitre-enterprise-attack-course-of-action',
+            'mitre-mobile-attack-course-of-action'
+        )
+        self.__galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
+        self.__galaxy_types_mapping.update(
+            dict.fromkeys(
+                _attack_pattern_names,
+                '_parse_attack_pattern_{}_galaxy'
+            )
+        )
+        self.__galaxy_types_mapping.update(
+            dict.fromkeys(
+                self.__course_of_action_names,
+                '_parse_course_of_action_{}_galaxy'
+            )
+        )
+        self.__galaxy_types_mapping.update(
+            dict.fromkeys(
+                _malware_names,
+                '_parse_malware_{}_galaxy'
+            )
+        )
+        self.__galaxy_types_mapping.update(
+            dict.fromkeys(
+                (
+                    'threat-actor',
+                    'microsoft-activity-group'
+                ),
+                '_parse_threat_actor_galaxy'
+            )
+        )
+        self.__galaxy_types_mapping.update(
+            dict.fromkeys(
+                _tool_names,
+                '_parse_tool_{}_galaxy'
+            )
+        )
+        self.__ttp_names = (
+            'branded-vulnerability',
+            *_attack_pattern_names,
+            *_malware_names,
+            *_tool_names
+        )
 
-hash_type_attributes = {
-    "single": (
-        "md5",
-        "sha1",
-        "sha224",
-        "sha256",
-        "sha384",
-        "sha512",
-        "sha512/224",
-        "sha512/256",
-        "ssdeep",
-        "imphash",
-        "authentihash",
-        "pehash",
-        "tlsh",
-        "cdhash",
-        "vhash",
-        "impfuzzy"
-    ),
-    "composite": (
-        "filename|md5",
-        "filename|sha1",
-        "filename|sha224",
-        "filename|sha256",
-        "filename|sha384",
-        "filename|sha512",
-        "filename|sha512/224",
-        "filename|sha512/256",
-        "filename|authentihash",
-        "filename|ssdeep",
-        "filename|tlsh",
-        "filename|imphash",
-        "filename|pehash",
-        "filename|vhash",
-        "filename|impfuzzy"
-    )
-}
-
-
-# mapping for the attributes that can go through the simpleobservable script
-misp_indicator_type = {
-    "malware-sample": "Malware Artifacts",
-    "mutex": "Host Characteristics",
-    "named pipe": "Host Characteristics",
-    "url": "URL Watchlist"
-}
-misp_indicator_type.update(dict.fromkeys(list(hash_type_attributes["single"]), "File Hash Watchlist"))
-misp_indicator_type.update(dict.fromkeys(list(hash_type_attributes["composite"]), "File Hash Watchlist"))
-misp_indicator_type.update(
-    dict.fromkeys(
-        [
-            "file",
-            "filename"
-        ],
-        "File Hash Watchlist"
-    )
-)
-misp_indicator_type.update(
-    dict.fromkeys(
-        [
-            "email",
-            "email-attachment",
-            "email-src",
-            "email-dst",
-            "email-message-id",
-            "email-mime-boundary",
-            "email-subject",
-            "email-reply-to",
-            "email-x-mailer"
-        ],
-        "Malicious E-mail"
-    )
-)
-misp_indicator_type.update(
-    dict.fromkeys(
-        [
-            "AS",
-            "asn",
-            "ip-src",
-            "ip-dst",
-            "ip-src|port",
-            "ip-dst|port"
-        ],
-        "IP Watchlist"
-    )
-)
-misp_indicator_type.update(
-    dict.fromkeys(
-        [
-            "domain",
-            "domain|ip",
-            "domain-ip",
-            "hostname",
-            "hostname|port"
-        ],
-        "Domain Watchlist"
-    )
-)
-misp_indicator_type.update(
-    dict.fromkeys(
-        [
-            "regkey",
-            "regkey|value"
-        ],
-        "Host Characteristics"
-    )
-)
-
-cybox_validation = {"AutonomousSystem": "isInt"}
-
-
-# ATTRIBUTES MAPPING
-email_attribute_mapping = {
-    'email-src': 'from_',
-    'email-dst': 'to',
-    'email-message-id': 'message_id',
-    'email-mime-boundary': 'boundary',
-    'email-reply-to': 'reply_to',
-    'email-subject': 'subject',
-    'email-x-mailer': 'x_mailer'
-}
-
-attribute_types_mapping = {
-    'AS': '_parse_autonomous_system_attribute',
-    'attachment': '_parse_attachment',
-    'campaign-name': '_parse_campaign_name_attribute',
-    'domain': '_parse_domain_attribute',
-    'domain|ip': '_parse_domain_ip_attribute',
-    'email-attachment': '_parse_email_attachment',
-    'email-body': '_parse_email_body_attribute',
-    'email-header': '_parse_email_header_attribute',
-    'filename': '_parse_file_attribute',
-    'hostname': '_parse_hostname_attribute',
-    'hostname|port': '_parse_hostname_port_attribute',
-    'http-method': '_parse_http_method_attribute',
-    'mac-address': '_parse_mac_address',
-    'malware-sample': '_parse_malware_sample',
-    'mutex': '_parse_mutex_attribute',
-    'named pipe': '_parse_named_pipe',
-    'pattern-in-file': '_parse_pattern_attribute',
-    'port': '_parse_port_attribute',
-    'regkey': '_parse_regkey_attribute',
-    'regkey|value': '_parse_regkey_value_attribute',
-    'size-in-bytes': '_parse_size_in_bytes_attribute',
-    'snort': '_parse_snort_attribute',
-    'target-email': '_parse_target_email',
-    'target-external': '_parse_target_external',
-    'target-location': '_parse_target_location',
-    'target-machine': '_parse_target_machine',
-    'target-org': '_parse_target_org',
-    'target-user': '_parse_target_user',
-    'user-agent': '_parse_user_agent_attribute',
-    'vulnerability': '_parse_vulnerability_attribute',
-    'weakness': '_parse_weakness_attribute',
-    'whois-registrar': '_parse_whois_registrar_attribute',
-    'yara': '_parse_yara_attribute'
-}
-attribute_types_mapping.update(
-    dict.fromkeys(
-        list(hash_type_attributes["single"]),
-        '_parse_hash_attribute'
-    )
-)
-attribute_types_mapping.update(
-    dict.fromkeys(
-        list(hash_type_attributes["composite"]),
-        '_parse_hash_composite_attribute'
-    )
-)
-attribute_types_mapping.update(
-    dict.fromkeys(
-        [
-            "ip-src",
-            "ip-dst"
-        ],
-        '_parse_ip_attribute'
-    )
-)
-attribute_types_mapping.update(
-    dict.fromkeys(
-        [
-            "ip-src|port",
-            "ip-dst|port"
-        ],
-        '_parse_ip_port_attribute'
-    )
-)
-attribute_types_mapping.update(
-    dict.fromkeys(
-        [
-            "windows-service-displayname",
-            "windows-service-name"
-        ],
-        '_parse_windows_service_attribute'
-    )
-)
-attribute_types_mapping.update(
-    dict.fromkeys(
-        [
-            "uri",
-            "url",
-            "link"
-        ],
-        '_parse_url_attribute'
-    )
-)
-attribute_types_mapping.update(
-    dict.fromkeys(
-        [
-            "email-src",
-            "email-dst",
-            "email-message-id",
-            "email-mime-boundary",
-            "email-subject",
-            "email-reply-to",
-            'email-x-mailer'
-        ],
-        '_parse_email_attribute'
-    )
-)
-attribute_types_mapping.update(
-    dict.fromkeys(
-        [
-            'x509-fingerprint-md5',
-            'x509-fingerprint-sha1',
-            'x509-fingerprint-sha256'
-        ],
-        '_parse_x509_fingerprint_attribute'
-    )
-)
-attribute_types_mapping.update(
-    dict.fromkeys(
-        [
+    def declare_objects_mapping(self):
+        self.__misp_reghive = {
+            "HKEY_CLASSES_ROOT": "HKEY_CLASSES_ROOT",
+            "HKCR": "HKEY_CLASSES_ROOT",
+            "HKEY_CURRENT_CONFIG": "HKEY_CURRENT_CONFIG",
+            "HKCC": "HKEY_CURRENT_CONFIG",
+            "HKEY_CURRENT_USER": "HKEY_CURRENT_USER",
+            "HKCU": "HKEY_CURRENT_USER",
+            "HKEY_LOCAL_MACHINE": "HKEY_LOCAL_MACHINE",
+            "HKLM": "HKEY_LOCAL_MACHINE",
+            "HKEY_USERS": "HKEY_USERS",
+            "HKU": "HKEY_USERS",
+            "HKEY_CURRENT_USER_LOCAL_SETTINGS": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
+            "HKCULS": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
+            "HKEY_PERFORMANCE_DATA": "HKEY_PERFORMANCE_DATA",
+            "HKPD": "HKEY_PERFORMANCE_DATA",
+            "HKEY_PERFORMANCE_NLSTEXT": "HKEY_PERFORMANCE_NLSTEXT",
+            "HKPN": "HKEY_PERFORMANCE_NLSTEXT",
+            "HKEY_PERFORMANCE_TEXT": "HKEY_PERFORMANCE_TEXT",
+            "HKPT": "HKEY_PERFORMANCE_TEXT",
+        }
+        self.__status_mapping = {0: 'New', 1: 'Open', 2: 'Closed'}
+        self.__threat_level_mapping = {1: 'High', 2: 'Medium', 3: 'Low', 4: 'Undefined'}
+        # OBJECTS MAPPING
+        self.__non_indicator_names = {
+            'attack-pattern': '_parse_attack_pattern_object',
+            'course-of-action': '_parse_course_of_action_object',
+            'vulnerability': '_parse_vulnerability_object',
+            'weakness': '_parse_weakness_object'
+        }
+        self.__objects_mapping = {
+            "asn": '_parse_asn_object',
+            "credential": '_parse_credential_object',
+            "domain-ip": '_parse_domain_ip_object',
+            "email": '_parse_email_object',
+            "file": '_parse_file_object',
+            "ip-port": '_parse_ip_port_object',
+            "mutex": "_parse_mutex_object",
+            "network-connection": '_parse_network_connection_object',
+            "network-socket": '_parse_network_socket_object',
+            "process": '_parse_process_object',
+            "registry-key": '_parse_registry_key_object',
+            "url": '_parse_url_object',
+            "user-account": '_parse_user_account_object',
+            "whois": '_parse_whois_object',
+            "x509": '_parse_x509_object'
+        }
+        self.__as_single_fields = (
+            'asn',
+            'description'
+        )
+        self.__attack_pattern_object_mapping = {
+            'id': 'capec_id',
+            'name': 'title',
+            'summary': 'description'
+        }
+        self.__course_of_action_object_mapping = {
+            'name': 'title',
+            'type': 'type_',
+            'description': 'description',
+            'objective': 'objective',
+            'stage': 'stage',
+            'cost': 'cost',
+            'impact': 'impact',
+            'efficacy': 'efficacy'
+        }
+        self.__credential_object_mapping = {
+            'username': 'username',
+            'text': 'description'
+        }
+        self.__email_object_mapping = {
+            'from': 'from_',
+            'reply-to': 'reply_to',
+            'subject': 'subject',
+            'x-mailer': 'x_mailer',
+            'mime-boundary': 'boundary',
+            'user-agent': 'user_agent'
+        }
+        self.__email_uuid_fields = (
+            'attachment',
+        )
+        self.__file_object_mapping = {
+            'entropy': 'peak_entropy',
+            'fullpath': 'full_path',
+            'path': 'file_path',
+            'size-in-bytes': 'size_in_bytes'
+        }
+        self.__network_socket_mapping = {
+            'address-family': 'address_family',
+            'domain-family': 'domain',
+            'protocol': 'protocol',
+            'socket-type': 'type_'
+        }
+        self.__network_socket_single_fields = (
+            'address-family',
+            'domain-family',
+            'dst-port',
+            'hostname-dst',
+            'hostname-src',
+            'ip-dst',
+            'ip-src',
+            'protocol',
+            'socket-type',
+            'src-port'
+        )
+        self.__pe_resource_mapping = {
+            'company-name': 'companyname',
+            'file-description': 'filedescription',
+            'file-version': 'fileversion',
+            'internal-filename': 'internalname',
+            'lang-id': 'langid',
+            'legal-copyright': 'legalcopyright',
+            'original-filename': 'originalfilename',
+            'product-name': 'productname',
+            'product-version': 'productversion'
+        }
+        self.__pe_single_fields = (
+            'company-name',
+            'entrypoint-address',
+            'file-description',
+            'file-version',
+            'impfuzzy',
+            'imphash',
+            'internal-filename',
+            'lang-id',
+            'legal-copyright',
+            'number-sections',
+            'original-filename',
+            'pehash',
+            'product-name',
+            'product-version',
+            'type'
+        )
+        self.__process_object_mapping = {
+            'creation-time': 'creation_time',
+            'start-time': 'start_time',
+            'name': 'name',
+            'pid': 'pid',
+            'parent-pid': 'parent_pid'
+        }
+        self.__process_single_fields = (
+            'command-line',
+            'creation-time',
+            'image',
+            'name',
+            'parent-pid',
+            'pid',
+            'start-time'
+        )
+        self.__regkey_object_mapping = {
+            'name': 'name',
+            'data': 'data',
+            'data-type': 'datatype'
+        }
+        self.__user_account_object_mapping = {
+            'username': 'username',
+            'display-name': 'full_name',
+            'disabled': 'disabled',
+            'created': 'creation_date',
+            'last_login': 'last_login',
+            'home_dir': 'home_directory',
+            'shell': 'script_path'
+        }
+        self.__user_account_single_fields = (
+            'account-type',
+            'created',
+            'disabled',
+            'display-name',
+            'home_dir',
+            'last_login',
+            'password',
+            'shell',
+            'text',
+            'username'
+        )
+        self.__vulnerability_object_mapping = {
+            'id': 'cve_id',
+            'created': 'discovered_datetime',
+            'summary': 'description',
+            'published': 'published_datetime'
+        }
+        self.__vulnerability_single_fields = (
+            'created',
+            'cvss-score',
+            'published',
+            'summary'
+        )
+        self.__weakness_object_mapping = {
+            'id': 'cwe_id',
+            'description': 'description'
+        }
+        self.__whois_object_mapping = {
+            'creation-date': 'creation_date',
+            'modification-date': 'updated_date',
+            'expiration-date': 'expiration_date'
+        }
+        self.__whois_single_fields = (
             'comment',
-            'other',
+            'creation-date',
+            'expiration-date',
+            'modification-date',
+            'registrant-email',
+            'registrant-name',
+            'registrant-org',
+            'registrant-phone',
+            'registrar',
             'text'
-        ],
-        '_parse_undefined_attribute'
-    )
-)
-attribute_types_mapping.update(
-    dict.fromkeys(
-        [
-            'whois-registrant-email',
-            'whois-registrant-name',
-            'whois-registrant-org',
-            'whois-registrant-phone'
-        ],
-        '_parse_whois_registrant_attribute'
-    )
-)
+        )
+        self.__x509_creation_mapping = {
+            'version': 'certificate',
+            'serial-number': 'certificate',
+            'issuer': 'certificate',
+            'subject': 'certificate',
+            'signature_algorithm': 'certificate',
+            'validity-not-before': 'validity',
+            'validity-not-after': 'validity',
+            'pubkey-info-algorithm': 'pubkey',
+            'pubkey-info-exponent': 'pubkey',
+            'pubkey-info-modulus': 'pubkey',
+            'raw-base64': 'raw_certificate',
+            'pem': 'raw_certificate',
+            'x509-fingerprint-md5': 'signature',
+            'x509-fingerprint-sha1': 'signature',
+            'x509-fingerprint-sha256': 'signature'
+        }
+        self.__x509_object_mapping = {
+            'version': 'version',
+            'serial-number': 'serial_number',
+            'issuer': 'issuer',
+            'signature_algorithm': 'signature_algorithm',
+            'subject': 'subject'
+        }
 
+    @property
+    def as_single_fields(self) -> tuple:
+        return self.__as_single_fields
 
-# OBJECTS MAPPING
-non_indicator_names = {
-    'attack-pattern': '_parse_attack_pattern_object',
-    'course-of-action': '_parse_course_of_action_object',
-    'vulnerability': '_parse_vulnerability_object',
-    'weakness': '_parse_weakness_object'
-}
-objects_mapping = {
-    "asn": '_parse_asn_object',
-    "credential": '_parse_credential_object',
-    "domain-ip": '_parse_domain_ip_object',
-    "email": '_parse_email_object',
-    "file": '_parse_file_object',
-    "ip-port": '_parse_ip_port_object',
-    "mutex": "_parse_mutex_object",
-    "network-connection": '_parse_network_connection_object',
-    "network-socket": '_parse_network_socket_object',
-    "process": '_parse_process_object',
-    "registry-key": '_parse_registry_key_object',
-    "url": '_parse_url_object',
-    "user-account": '_parse_user_account_object',
-    "whois": '_parse_whois_object',
-    "x509": '_parse_x509_object'
-}
+    @property
+    def attack_pattern_object_mapping(self) -> dict:
+        return self.__attack_pattern_object_mapping
 
-as_single_fields = (
-    'asn',
-    'description'
-)
+    @property
+    def attribute_types_mapping(self) -> dict:
+        return self.__attribute_types_mapping
 
-attack_pattern_object_mapping = {
-    'id': 'capec_id',
-    'name': 'title',
-    'summary': 'description'
-}
+    @property
+    def confidence_description(self) -> str:
+        return self.__confidence_description
 
-course_of_action_object_mapping = {
-    'name': 'title',
-    'type': 'type_',
-    'description': 'description',
-    'objective': 'objective',
-    'stage': 'stage',
-    'cost': 'cost',
-    'impact': 'impact',
-    'efficacy': 'efficacy'
-}
+    @property
+    def confidence_value(self) -> str:
+        return self.__confidence_value
 
-credential_object_mapping = {
-    'username': 'username',
-    'text': 'description'
-}
+    @property
+    def course_of_action_names(self) -> tuple:
+        return self.__course_of_action_names
 
-email_object_mapping = {
-    'from': 'from_',
-    'reply-to': 'reply_to',
-    'subject': 'subject',
-    'x-mailer': 'x_mailer',
-    'mime-boundary': 'boundary',
-    'user-agent': 'user_agent'
-}
-email_uuid_fields = (
-    'attachment',
-)
+    @property
+    def course_of_action_object_mapping(self) -> dict:
+        return self.__course_of_action_object_mapping
 
-file_object_mapping = {
-    'entropy': 'peak_entropy',
-    'fullpath': 'full_path',
-    'path': 'file_path',
-    'size-in-bytes': 'size_in_bytes'
-}
+    @property
+    def credential_object_mapping(self) -> dict:
+        return self.__credential_object_mapping
 
-network_socket_mapping = {
-    'address-family': 'address_family',
-    'domain-family': 'domain',
-    'protocol': 'protocol',
-    'socket-type': 'type_'
-}
-network_socket_single_fields = (
-    'address-family',
-    'domain-family',
-    'dst-port',
-    'hostname-dst',
-    'hostname-src',
-    'ip-dst',
-    'ip-src',
-    'protocol',
-    'socket-type',
-    'src-port'
-)
+    @property
+    def email_attribute_mapping(self) -> dict:
+        return self.__email_attribute_mapping
 
-pe_single_fields = (
-    'company-name',
-    'entrypoint-address',
-    'file-description',
-    'file-version',
-    'impfuzzy',
-    'imphash',
-    'internal-filename',
-    'lang-id',
-    'legal-copyright',
-    'number-sections',
-    'original-filename',
-    'pehash',
-    'product-name',
-    'product-version',
-    'type'
-)
-pe_resource_mapping = {
-    'company-name': 'companyname',
-    'file-description': 'filedescription',
-    'file-version': 'fileversion',
-    'internal-filename': 'internalname',
-    'lang-id': 'langid',
-    'legal-copyright': 'legalcopyright',
-    'original-filename': 'originalfilename',
-    'product-name': 'productname',
-    'product-version': 'productversion'
-}
+    @property
+    def email_object_mapping(self) -> dict:
+        return self.__email_object_mapping
 
-process_object_mapping = {
-    'creation-time': 'creation_time',
-    'start-time': 'start_time',
-    'name': 'name',
-    'pid': 'pid',
-    'parent-pid': 'parent_pid'
-}
-process_single_fields = (
-    'command-line',
-    'creation-time',
-    'image',
-    'name',
-    'parent-pid',
-    'pid',
-    'start-time'
-)
+    @property
+    def email_uuid_fields(self) -> tuple:
+        return self.__email_uuid_fields
 
-regkey_object_mapping = {
-    'name': 'name',
-    'data': 'data',
-    'data-type': 'datatype'
-}
+    @property
+    def file_object_mapping(self) -> dict:
+        return self.__file_object_mapping
 
-user_account_object_mapping = {
-    'username': 'username',
-    'display-name': 'full_name',
-    'disabled': 'disabled',
-    'created': 'creation_date',
-    'last_login': 'last_login',
-    'home_dir': 'home_directory',
-    'shell': 'script_path'
-}
-user_account_single_fields = (
-    'account-type',
-    'created',
-    'disabled',
-    'display-name',
-    'home_dir',
-    'last_login',
-    'password',
-    'shell',
-    'text',
-    'username'
-)
+    @property
+    def galaxy_types_mapping(self) -> dict:
+        return self.__galaxy_types_mapping
 
-vulnerability_object_mapping = {
-    'id': 'cve_id',
-    'created': 'discovered_datetime',
-    'summary': 'description',
-    'published': 'published_datetime'
-}
-vulnerability_single_fields = (
-    'created',
-    'cvss-score',
-    'published',
-    'summary'
-)
+    @property
+    def hash_type_attributes(self) -> dict:
+        return self.__hash_type_attributes
 
-weakness_object_mapping = {
-    'id': 'cwe_id',
-    'description': 'description'
-}
+    @property
+    def misp_indicator_type(self) -> dict:
+        return self.__misp_indicator_type
 
-whois_object_mapping = {
-    'creation-date': 'creation_date',
-    'modification-date': 'updated_date',
-    'expiration-date': 'expiration_date'
-}
-whois_registrant_mapping = {
-    'registrant-name': 'name',
-    'registrant-phone': 'phone_number',
-    'registrant-email': 'email_address',
-    'registrant-org': 'organization'
-}
-whois_single_fields = (
-    'comment',
-    'creation-date',
-    'expiration-date',
-    'modification-date',
-    'registrant-email',
-    'registrant-name',
-    'registrant-org',
-    'registrant-phone',
-    'registrar',
-    'text'
-)
+    @property
+    def misp_reghive(self) -> dict:
+        return self.__misp_reghive
 
-x509_creation_mapping = {
-    'version': 'certificate',
-    'serial-number': 'certificate',
-    'issuer': 'certificate',
-    'subject': 'certificate',
-    'signature_algorithm': 'certificate',
-    'validity-not-before': 'validity',
-    'validity-not-after': 'validity',
-    'pubkey-info-algorithm': 'pubkey',
-    'pubkey-info-exponent': 'pubkey',
-    'pubkey-info-modulus': 'pubkey',
-    'raw-base64': 'raw_certificate',
-    'pem': 'raw_certificate',
-    'x509-fingerprint-md5': 'signature',
-    'x509-fingerprint-sha1': 'signature',
-    'x509-fingerprint-sha256': 'signature'
-}
-x509_object_mapping = {
-    'version': 'version',
-    'serial-number': 'serial_number',
-    'issuer': 'issuer',
-    'signature_algorithm': 'signature_algorithm',
-    'subject': 'subject'
-}
+    @property
+    def network_socket_mapping(self) -> dict:
+        return self.__network_socket_mapping
 
-# GALAXIES MAPPING
-_attack_pattern_names = (
-    'mitre-attack-pattern',
-    'mitre-enterprise-attack-attack-pattern',
-    'mitre-mobile-attack-attack-pattern',
-    'mitre-pre-attack-attack-pattern'
-)
-course_of_action_names = (
-    'mitre-course-of-action',
-    'mitre-enterprise-attack-course-of-action',
-    'mitre-mobile-attack-course-of-action'
-)
-_malware_names = (
-    'android',
-    'banker',
-    'stealer',
-    'backdoor',
-    'ransomware',
-    'mitre-malware',
-    'malpedia',
-    'mitre-enterprise-attack-malware',
-    'mitre-mobile-attack-malware'
-)
-_tool_names = (
-    'botnet',
-    'rat',
-    'exploit-kit',
-    'tds',
-    'tool',
-    'mitre-tool',
-    'mitre-enterprise-attack-tool',
-    'mitre-mobile-attack-tool'
-)
-ttp_names = (
-    'branded-vulnerability',
-    *_attack_pattern_names,
-    *_malware_names,
-    *_tool_names
-)
-galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
-galaxy_types_mapping.update(
-    dict.fromkeys(
-        _attack_pattern_names,
-        '_parse_attack_pattern_{}_galaxy'
-    )
-)
-galaxy_types_mapping.update(
-    dict.fromkeys(
-        course_of_action_names,
-        '_parse_course_of_action_{}_galaxy'
-    )
-)
-galaxy_types_mapping.update(
-    dict.fromkeys(
-        _malware_names,
-        '_parse_malware_{}_galaxy'
-    )
-)
-galaxy_types_mapping.update(
-    dict.fromkeys(
-        (
-            'threat-actor',
-            'microsoft-activity-group'
-        ),
-        '_parse_threat_actor_galaxy'
-    )
-)
-galaxy_types_mapping.update(
-    dict.fromkeys(
-        _tool_names,
-        '_parse_tool_{}_galaxy'
-    )
-)
+    @property
+    def network_socket_single_fields(self) -> tuple:
+        return self.__network_socket_single_fields
 
+    @property
+    def non_indicator_names(self) -> dict:
+        return self.__non_indicator_names
 
-# mapping Windows Registry Hives and their abbreviations
-# see https://cybox.mitre.org/language/version2.1/xsddocs/objects/Win_Registry_Key_Object_xsd.html#RegistryHiveEnum
-# the dict keys must be UPPER CASE and end with \\
-misp_reghive = {
-    "HKEY_CLASSES_ROOT": "HKEY_CLASSES_ROOT",
-    "HKCR": "HKEY_CLASSES_ROOT",
-    "HKEY_CURRENT_CONFIG": "HKEY_CURRENT_CONFIG",
-    "HKCC": "HKEY_CURRENT_CONFIG",
-    "HKEY_CURRENT_USER": "HKEY_CURRENT_USER",
-    "HKCU": "HKEY_CURRENT_USER",
-    "HKEY_LOCAL_MACHINE": "HKEY_LOCAL_MACHINE",
-    "HKLM": "HKEY_LOCAL_MACHINE",
-    "HKEY_USERS": "HKEY_USERS",
-    "HKU": "HKEY_USERS",
-    "HKEY_CURRENT_USER_LOCAL_SETTINGS": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
-    "HKCULS": "HKEY_CURRENT_USER_LOCAL_SETTINGS",
-    "HKEY_PERFORMANCE_DATA": "HKEY_PERFORMANCE_DATA",
-    "HKPD": "HKEY_PERFORMANCE_DATA",
-    "HKEY_PERFORMANCE_NLSTEXT": "HKEY_PERFORMANCE_NLSTEXT",
-    "HKPN": "HKEY_PERFORMANCE_NLSTEXT",
-    "HKEY_PERFORMANCE_TEXT": "HKEY_PERFORMANCE_TEXT",
-    "HKPT": "HKEY_PERFORMANCE_TEXT",
-}
+    @property
+    def objects_mapping(self) -> dict:
+        return self.__objects_mapping
 
+    @property
+    def pe_resource_mapping(self) -> dict:
+        return self.__pe_resource_mapping
 
-# Descriptions
+    @property
+    def pe_single_fields(self) -> tuple:
+        return self.__pe_single_fields
 
-confidence_description = "Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none"
-confidence_value = "High"
+    @property
+    def process_object_mapping(self) -> dict:
+        return self.__process_object_mapping
+
+    @property
+    def process_single_fields(self) -> tuple:
+        return self.__process_single_fields
+
+    @property
+    def regkey_object_mapping(self) -> dict:
+        return self.__regkey_object_mapping
+
+    @property
+    def status_mapping(self) -> dict:
+        return self.__status_mapping
+
+    @property
+    def threat_level_mapping(self) -> dict:
+        return self.__threat_level_mapping
+
+    @property
+    def TLP_order(self) -> dict:
+        return self.__TLP_order
+
+    @property
+    def ttp_names(self) -> tuple:
+        return self.__ttp_names
+
+    @property
+    def user_account_object_mapping(self) -> dict:
+        return self.__user_account_object_mapping
+
+    @property
+    def user_account_single_fields(self) -> tuple:
+        return self.__user_account_single_fields
+
+    @property
+    def vulnerability_object_mapping(self) -> dict:
+        return self.__vulnerability_object_mapping
+
+    @property
+    def vulnerability_single_fields(self) -> tuple:
+        return self.__vulnerability_single_fields
+
+    @property
+    def weakness_object_mapping(self) -> dict:
+        return self.__weakness_object_mapping
+
+    @property
+    def whois_object_mapping(self) -> dict:
+        return self.__whois_object_mapping
+
+    @property
+    def whois_registrant_mapping(self) -> dict:
+        return self.__whois_registrant_mapping
+
+    @property
+    def whois_single_fields(self) -> tuple:
+        return self.__whois_single_fields
+
+    @property
+    def x509_creation_mapping(self) -> dict:
+        return self.__x509_creation_mapping
+
+    @property
+    def x509_object_mapping(self) -> dict:
+        return self.__x509_object_mapping

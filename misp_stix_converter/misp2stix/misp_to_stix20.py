@@ -2,31 +2,83 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
-from .stix2_mapping import (CustomAttribute_v20, CustomMispObject_v20, CustomNote,
-    email_data_fields, email_header_fields, email_object_mapping, file_data_fields,
-    file_single_fields, ip_port_single_fields, network_socket_v20_single_fields,
-    network_traffic_uuid_fields, process_v20_single_fields, tlp_markings_v20)
+from .stix20_mapping import Stix20Mapping
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
+from stix2.properties import (DictionaryProperty, ListProperty, ObjectReferenceProperty,
+                              ReferenceProperty, StringProperty, TimestampProperty)
 from stix2.v20.bundle import Bundle
 from stix2.v20.observables import (Artifact, AutonomousSystem, Directory, DomainName,
     EmailAddress, EmailMessage, EmailMIMEComponent, File, IPv4Address, IPv6Address,
     MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPEBinaryExt,
     WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
-from stix2.v20.sdo import (AttackPattern, Campaign, CourseOfAction, Identity,
-    Indicator, IntrusionSet, Malware, ObservedData, Report, ThreatActor, Tool,
-    Vulnerability)
+from stix2.v20.sdo import (AttackPattern, Campaign, CourseOfAction, CustomObject,
+    Identity, Indicator, IntrusionSet, Malware, ObservedData, Report, ThreatActor,
+    Tool, Vulnerability)
 from stix2.v20.sro import Relationship
 from stix2.v20.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
+
+
+@CustomObject(
+    'x-misp-attribute',
+    [
+        ('id', StringProperty(required=True)),
+        ('labels', ListProperty(StringProperty, required=True)),
+        ('created', TimestampProperty(required=True, precision='millisecond')),
+        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),
+        ('object_marking_refs', ListProperty(ObjectReferenceProperty(valid_types=['marking']))),
+        ('x_misp_type', StringProperty(required=True)),
+        ('x_misp_value', StringProperty(required=True)),
+        ('x_misp_comment', StringProperty()),
+        ('x_misp_category', StringProperty())
+    ]
+)
+class CustomAttribute():
+    pass
+
+
+@CustomObject(
+    'x-misp-object',
+    [
+        ('id', StringProperty(required=True)),
+        ('labels', ListProperty(StringProperty, required=True)),
+        ('created', TimestampProperty(required=True, precision='millisecond')),
+        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),
+        ('object_marking_refs', ListProperty(ObjectReferenceProperty(valid_types=['marking']))),
+        ('x_misp_name', StringProperty(required=True)),
+        ('x_misp_attributes', ListProperty(DictionaryProperty())),
+        ('x_misp_comment', StringProperty()),
+        ('x_misp_meta_category', StringProperty())
+    ]
+)
+class CustomMispObject():
+    pass
+
+
+@CustomObject(
+    'x-misp-event-note',
+    [
+        ('id', StringProperty(required=True)),
+        ('created', TimestampProperty(required=True, precision='millisecond')),
+        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),
+        ('x_misp_event_note', StringProperty(required=True)),
+        ('object_ref', ReferenceProperty(valid_types=['report'], spec_version='2.0'))
+    ]
+)
+class CustomNote():
+    pass
 
 
 class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def __init__(self, interoperability=False):
         super().__init__(interoperability)
         self._version = '2.0'
-        self._update_mapping_v20()
+        self._mapping = Stix20Mapping()
 
     def _parse_event_data(self):
         if self._misp_event.get('Attribute'):
@@ -408,7 +460,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_email_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes_with_data(
             misp_object['Attribute'],
-            with_data=email_data_fields
+            with_data=self._mapping.email_data_fields
         )
         observable_object = {}
         email_message_args = defaultdict(dict)
@@ -438,9 +490,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                     references.append(str_index)
                     index += 1
                 email_message_args[f'{feature}_refs'] = references
-        if any(key in attributes for key in email_data_fields):
+        if any(key in attributes for key in self._mapping.email_data_fields):
             body_multipart = []
-            for feature in email_data_fields:
+            for feature in self._mapping.email_data_fields:
                 if attributes.get(feature):
                     for value in attributes.pop(feature):
                         str_index = str(index)
@@ -482,8 +534,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_file_observable_object(self, attributes: list) -> tuple:
         attributes = self._extract_multiple_object_attributes_with_data(
             attributes,
-            force_single=file_single_fields,
-            with_data=file_data_fields
+            force_single=self._mapping.file_single_fields,
+            with_data=self._mapping.file_data_fields
         )
         observable_object = {}
         file_args = defaultdict(dict)
@@ -527,7 +579,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=ip_port_single_fields
+            force_single=self._mapping.ip_port_single_fields
         )
         protocols = {'tcp'}
         observable_object = {}
@@ -589,7 +641,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_network_socket_object(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=network_socket_v20_single_fields
+            force_single=self._mapping.network_socket_single_fields
         )
         if self._fetch_ids_flag(misp_object['Attribute']):
             pattern = self._parse_network_socket_object_pattern(attributes)
@@ -604,7 +656,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_process_object(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=process_v20_single_fields
+            force_single=self._mapping.process_single_fields
         )
         if self._fetch_ids_flag(misp_object['Attribute']):
             pattern = self._parse_process_object_pattern(attributes)
@@ -695,13 +747,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_course_of_action(course_of_action_args: dict) -> CourseOfAction:
         return CourseOfAction(**course_of_action_args)
 
-    def _create_custom_attribute(self, custom_args: dict) -> CustomAttribute_v20:
+    def _create_custom_attribute(self, custom_args: dict) -> CustomAttribute:
         self._clean_custom_properties(custom_args)
-        return CustomAttribute_v20(**custom_args)
+        return CustomAttribute(**custom_args)
 
-    def _create_custom_object(self, custom_args: dict) -> CustomMispObject_v20:
+    def _create_custom_object(self, custom_args: dict) -> CustomMispObject:
         self._clean_custom_properties(custom_args)
-        return CustomMispObject_v20(**custom_args)
+        return CustomMispObject(**custom_args)
 
     @staticmethod
     def _create_email_address(email_address: str) -> EmailAddress:
@@ -790,7 +842,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _get_marking(self, marking: str) -> Union[str, None]:
         try:
-            marking_definition = deepcopy(tlp_markings_v20[marking])
+            marking_definition = deepcopy(self._mapping.tlp_markings[marking])
             self._markings[marking] = marking_definition
             return marking_definition.id
         except KeyError:
