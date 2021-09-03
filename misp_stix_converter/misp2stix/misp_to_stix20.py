@@ -832,6 +832,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return WindowsPESection(**section_args)
 
     ################################################################################
+    #                         PATTERNS CREATION FUNCTIONS.                         #
+    ################################################################################
+
+    @staticmethod
+    def _create_process_image_pattern(image: str) -> str:
+        return f"process:binary_ref.name = '{image}'"
+
+    ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
 

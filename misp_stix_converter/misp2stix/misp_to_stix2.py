@@ -1302,7 +1302,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if attributes.get(key):
                 pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
         if attributes.get('image'):
-            pattern.append(f"{prefix}:image_ref.name = '{attributes.pop('image')}'")
+            pattern.append(self._create_process_image_pattern(attributes.pop('image')))
         for key, feature in self._mapping.process_object_mapping['parent'].items():
             if attributes.get(key):
                 pattern.append(f"{prefix}:parent_ref.{feature} = '{attributes.pop(key)}'")
