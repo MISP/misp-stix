@@ -712,7 +712,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(message.id, object_ref)
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
-        self.assertEqual(message.additional_header_fields['Reply-To'][0], attribute_value)
+        self.assertEqual(message.additional_header_fields['Reply-To'], attribute_value)
 
     def test_event_with_email_source_indicator_attribute(self):
         event = get_event_with_email_source_attribute()
@@ -981,7 +981,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(object_ref, grouping_refs[0])
         self.assertEqual(mac_address.id, object_ref)
         self.assertEqual(mac_address.type, 'mac-addr')
-        self.assertEqual(mac_address.value, attribute_value)
+        self.assertEqual(mac_address.value, attribute_value.lower())
 
     def test_event_with_malware_sample_indicator_attribute(self):
         event = get_event_with_malware_sample_attribute()

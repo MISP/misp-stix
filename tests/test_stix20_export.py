@@ -512,7 +512,7 @@ class TestSTIX20Export(TestSTIX2Export):
         message = observable_objects['0']
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
-        self.assertEqual(message.additional_header_fields['Reply-To'][0], attribute_value)
+        self.assertEqual(message.additional_header_fields['Reply-To'], attribute_value)
 
     def test_event_with_email_source_indicator_attribute(self):
         event = get_event_with_email_source_attribute()
@@ -731,7 +731,7 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute_value, observable_objects = self._run_observable_tests(event)
         observable = observable_objects['0']
         self.assertEqual(observable.type, 'mac-addr')
-        self.assertEqual(observable.value, attribute_value)
+        self.assertEqual(observable.value, attribute_value.lower())
 
     def test_event_with_malware_sample_indicator_attribute(self):
         event = get_event_with_malware_sample_attribute()
@@ -1094,11 +1094,10 @@ class TestSTIX20Export(TestSTIX2Export):
     def test_event_with_credential_indicator_object(self):
         event = get_event_with_credential_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        text, username, password, *attributes = ((attribute['object_relation'], attribute['value']) for attribute in attributes)
+        text, username, *attributes = ((attribute['object_relation'], attribute['value']) for attribute in attributes)
         attributes.insert(0, text)
-        username_pattern, password_pattern, *pattern = pattern[1:-1].split(' AND ')
+        username_pattern, *pattern = pattern[1:-1].split(' AND ')
         self.assertEqual(username_pattern, f"user-account:user_id = '{username[1]}'")
-        self.assertEqual(password_pattern, f"user-account:credential = '{password[1]}'")
         for pattern_part, attribute in zip(pattern, attributes):
             feature, value = attribute
             self.assertEqual(pattern_part, f"user-account:x_misp_{feature} = '{value}'")
@@ -1111,7 +1110,6 @@ class TestSTIX20Export(TestSTIX2Export):
         attributes.insert(0, text)
         self.assertEqual(user_account.type, 'user-account')
         self.assertEqual(user_account.user_id, username[1])
-        self.assertEqual(user_account.credential, password[1])
         for feature, value in attributes:
             self.assertEqual(getattr(user_account, f'x_misp_{feature}'), value)
 
