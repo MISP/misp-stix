@@ -267,9 +267,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             id=f"email-message--{attribute['uuid']}",
             is_multipart=False,
             additional_header_fields={
-                "Reply-To": [
-                    attribute['value']
-                ]
+                "Reply-To": attribute['value']
             }
         )
         self._handle_attribute_observable(attribute, [message_object])
@@ -399,7 +397,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_mac_address_attribute_observable(self, attribute: dict):
         mac_address_object = MACAddress(
             id=f"mac-addr--{attribute['uuid']}",
-            value=attribute['value']
+            value=attribute['value'].lower()
         )
         self._handle_attribute_observable(attribute, [mac_address_object])
 
@@ -972,6 +970,16 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #
     ################################################################################
+
+    @staticmethod
+    def _create_credential_pattern(attributes: dict) -> list:
+        pattern = []
+        if attributes.get('username'):
+            pattern.append(f"user-account:user_id = '{attributes.pop('username')}'")
+        if attributes.get('password'):
+            for password in attributes.pop('password'):
+                pattern.append(f"user-account:credential = '{password}'")
+        return pattern
 
     @staticmethod
     def _create_process_image_pattern(image: str) -> str:

@@ -19,6 +19,10 @@ class Stix21Mapping(Stix2Mapping):
             'geolocation': '_parse_geolocation_object'
         }
         self._declare_objects_mapping(updates=v21_specific_objects)
+        self.__credential_object_mapping = {
+            'password': 'credential',
+            'username': 'user_id'
+        }
         self.__domain_ip_uuid_fields = (
             'ip',
         )
@@ -145,6 +149,10 @@ class Stix21Mapping(Stix2Mapping):
                 'password_last_changed': 'credential_last_changed'
             }
         }
+
+    @property
+    def credential_object_mapping(self) -> dict:
+        return self.__credential_object_mapping
 
     @property
     def domain_ip_uuid_fields(self) -> tuple:

@@ -945,19 +945,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_credential_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
-            prefix = 'user-account'
             attributes = self._extract_multiple_object_attributes(
                 misp_object['Attribute'],
                 force_single=self._mapping.credential_single_fields
             )
-            pattern = []
-            if attributes.get('username'):
-                pattern.append(f"{prefix}:user_id = '{attributes.pop('username')}'")
-            if attributes.get('password'):
-                for password in attributes.pop('password'):
-                    pattern.append(f"{prefix}:credential = '{password}'")
+            pattern = self._create_credential_pattern(attributes)
             if attributes:
-                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+                pattern.extend(
+                    self._handle_pattern_multiple_properties(
+                        attributes,
+                        'user-account'
+                    )
+                )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_credential_object_observable(misp_object)

@@ -213,9 +213,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             '0': EmailMessage(
                 is_multipart=False,
                 additional_header_fields={
-                    "Reply-To": [
-                        attribute['value']
-                    ]
+                    "Reply-To": attribute['value']
                 }
             )
         }
@@ -337,7 +335,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_mac_address_attribute_observable(self, attribute: dict):
         observable_object = {
-            '0': MACAddress(value=attribute['value'])
+            '0': MACAddress(value=attribute['value'].lower())
         }
         self._handle_attribute_observable(attribute, observable_object)
 
@@ -836,6 +834,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #
     ################################################################################
+
+    @staticmethod
+    def _create_credential_pattern(attributes: dict) -> list:
+        pattern = []
+        if attributes.get('username'):
+            pattern.append(f"user-account:user_id = '{attributes.pop('username')}'")
+        return pattern
 
     @staticmethod
     def _create_process_image_pattern(image: str) -> str:

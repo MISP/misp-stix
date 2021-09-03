@@ -13,6 +13,9 @@ class Stix20Mapping(Stix2Mapping):
 
     def declare_objects_mapping(self):
         self._declare_objects_mapping()
+        self.__credential_object_mapping = {
+            'username': 'user_id'
+        }
         self.__email_object_mapping = {
             'cc': 'cc_refs.value',
             'email-body': 'body',
@@ -106,6 +109,10 @@ class Stix20Mapping(Stix2Mapping):
                 'password_last_changed': 'password_last_changed'
             }
         }
+
+    @property
+    def credential_object_mapping(self) -> dict:
+        return self.__credential_object_mapping
 
     @property
     def email_object_mapping(self) -> dict:

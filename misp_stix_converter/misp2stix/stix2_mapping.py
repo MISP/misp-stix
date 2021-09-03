@@ -337,10 +337,6 @@ class Stix2Mapping:
             'name',
             'description'
         )
-        self.__credential_object_mapping = {
-            'password': 'credential',
-            'username': 'user_id'
-        }
         self.__credential_single_fields = (
             'username',
         )
