@@ -692,7 +692,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             if attributes.get('image'):
                 str_index = str(index)
                 observable_object[str_index] = File(name=attributes.pop('image'))
-                process_args['image_ref'] = str_index
+                process_args['binary_ref'] = str_index
+                process_args['_valid_refs'][str_index] = 'file'
             process_args.update(self._parse_process_args(attributes, 'features'))
             observable_object['0'] = Process(**process_args)
             self._handle_object_observable(misp_object, observable_object)
