@@ -619,38 +619,34 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             file_args['parent_directory_ref'] = directory_id
         if attributes.get('malware-sample'):
             value = self._select_single_feature(attributes, 'malware-sample')
-            args = {'allow_custom': True}
             if len(value) == 3:
                 value, uuid, data = value
-                args['payload_bin'] = data
+                artifact_id = f'artifact--{uuid}'
+                args = self._create_malware_sample_args(value, data)
+                args['id'] = artifact_id
+                objects.append(Artifact(**args))
+                file_args['content_ref'] = artifact_id
             else:
-                value, uuid = value
-            filename, md5 = value.split('|')
-            artifact_id = f'artifact--{uuid}'
-            args.update(
-                {
-                    'id': artifact_id,
-                    'hashes': {'MD5': md5},
-                    'x_misp_filename': filename
-                }
-            )
-            objects.append(Artifact(**args))
-            file_args['content_ref'] = artifact_id
+                file_args.update(
+                    {
+                        'allow_custom': True,
+                        'x_misp_malware_sample': value[0]
+                    }
+                )
         if attributes.get('attachment'):
             value = self._select_single_feature(attributes, 'attachment')
-            args = {'allow_custom': True}
             if len(value) == 3:
                 filename, uuid, data = value
-                args['payload_bin'] = data
+                args = self._create_attachment_args(filename, data)
+                args['id'] = f'artifact--{uuid}'
+                objects.append(Artifact(**args))
             else:
-                filename, uuid = value
-            args.update(
-                {
-                    'id': f'artifact--{uuid}',
-                    'x_misp_filename': filename
-                }
-            )
-            objects.append(Artifact(**args))
+                file_args.update(
+                    {
+                        'allow_custom': True,
+                        'x_misp_attachment': value[0]
+                    }
+                )
         if attributes:
             file_args.update(self._parse_file_args(attributes))
         return file_args, objects

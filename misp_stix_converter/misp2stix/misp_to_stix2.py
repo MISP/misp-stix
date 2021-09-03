@@ -1837,6 +1837,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 
+    @staticmethod
+    def _create_attachment_args(value: str, data: str) -> dict:
+        return {
+            'allow_custom': True,
+            'payload_bin': data,
+            'x_misp_filename': value
+        }
+
     def _create_galaxy_args(self, cluster: dict, description: str, name: str, object_id: str, timestamp: datetime) -> dict:
         galaxy_args = {
             'id': object_id,
@@ -1870,6 +1878,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _create_labels(attribute: dict) -> list:
         return [f'misp:{feature}="{attribute[feature]}"' for feature in _label_fields if attribute.get(feature)]
+
+    @staticmethod
+    def _create_malware_sample_args(value: str, data: str) -> dict:
+        filename, md5 = value.split('|')
+        return {
+            'allow_custom': True,
+            'hashes': {
+                'MD5': md5
+            },
+            'payload_bin': data,
+            'x_misp_filename': filename
+        }
 
     @staticmethod
     def _create_object_labels(misp_object: dict, to_ids: Optional[bool] = None) -> list:

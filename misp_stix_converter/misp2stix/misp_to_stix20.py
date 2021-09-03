@@ -548,30 +548,32 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             index += 1
         if attributes.get('malware-sample'):
             value = attributes.pop('malware-sample')
-            args = {'allow_custom': True}
             if isinstance(value, tuple):
-                value, data = value
-                args['payload_bin'] = data
-            filename, md5 = value.split('|')
-            args.update(
-                {
-                    'hashes': {'MD5': md5},
-                    'x_misp_filename': filename
-                }
-            )
-            str_index = str(index)
-            observable_object[str_index] = Artifact(**args)
-            file_args['content_ref'] = str_index
-            file_args['_valid_refs'][str_index] = 'artifact'
-            index += 1
+                args = self._create_malware_sample_args(*value)
+                str_index = str(index)
+                observable_object[str_index] = Artifact(**args)
+                file_args['content_ref'] = str_index
+                file_args['_valid_refs'][str_index] = 'artifact'
+                index += 1
+            else:
+                file_args.update(
+                    {
+                        'allow_custom': True,
+                        'x_misp_malware_sample': value
+                    }
+                )
         if attributes.get('attachment'):
             value = attributes.pop('attachment')
-            args = {'allow_custom': True}
             if isinstance(value, tuple):
-                value, data = value
-                args['payload_bin'] = data
-            args['x_misp_filename'] = value
-            observable_object[str(index)] = Artifact(**args)
+                args = self._create_attachment_args(*value)
+                observable_object[str(index)] = Artifact(**args)
+            else:
+                file_args.update(
+                    {
+                        'allow_custom': True,
+                        'x_misp_attachment': value
+                    }
+                )
         if attributes:
             file_args.update(self._parse_file_args(attributes))
         return file_args, observable_object
