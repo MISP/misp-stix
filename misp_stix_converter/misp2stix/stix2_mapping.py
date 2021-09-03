@@ -344,6 +344,14 @@ class Stix2Mapping:
         self.__credential_single_fields = (
             'username',
         )
+        self.__domain_family_enum_list = (
+            "PF_INET",
+            "PF_IPX",
+            "PF_APPLETALK",
+            "PF_INET6",
+            "PF_AX25",
+            "PF_NETROM"
+        )
         self.__domain_ip_object_mapping = {
             'domain': 'value',
             'ip': 'resolves_to_refs[*].value'
@@ -462,6 +470,13 @@ class Stix2Mapping:
                 'name': 'name'
             }
         }
+        self.__socket_type_enum_list = (
+            "SOCK_STREAM",
+            "SOCK_DGRAM",
+            "SOCK_RAW",
+            "SOCK_RDM",
+            "SOCK_SEQPACKET"
+        )
         self.__twitter_account_object_mapping = {
             'displayed-name': 'display_name',
             'id': 'user_id',
@@ -582,6 +597,10 @@ class Stix2Mapping:
         return self.__credential_single_fields
 
     @property
+    def domain_family_enum_list(self) -> tuple:
+        return self.__domain_family_enum_list
+
+    @property
     def domain_ip_object_mapping(self) -> dict:
         return self.__domain_ip_object_mapping
 
@@ -678,6 +697,10 @@ class Stix2Mapping:
         return self.__registry_key_mapping
 
     @property
+    def socket_type_enum_list(self) -> tuple:
+        return self.__socket_type_enum_list
+
+    @property
     def source_names(self) -> tuple:
         return self.__source_names
 
@@ -704,23 +727,3 @@ class Stix2Mapping:
     @property
     def x509_single_fields(self) -> tuple:
         return self.__x509_single_fields
-
-
-# SOCKET OBJECTS ENUM LISTS ALREADY THERE IF USED AT SOME POINT
-
-domain_family_enum_list = (
-    "PF_INET",
-    "PF_IPX",
-    "PF_APPLETALK",
-    "PF_INET6",
-    "PF_AX25",
-    "PF_NETROM"
-    )
-
-socket_type_enum_list = (
-    "SOCK_STREAM",
-    "SOCK_DGRAM",
-    "SOCK_RAW",
-    "SOCK_RDM",
-    "SOCK_SEQPACKET"
-    )
