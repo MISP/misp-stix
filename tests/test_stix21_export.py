@@ -354,6 +354,33 @@ class TestSTIX21Export(TestSTIX2Export):
             self._datetime_from_timestamp(event['Event']['publish_timestamp'])
         )
 
+    def test_event_with_event_report(self):
+        event = get_event_with_event_report()
+        orgc = event['Event']['Orgc']
+        event_report = event['Event']['EventReport'][0]
+        self.parser.parse_misp_event(event)
+        stix_objects = self._check_bundle_features(8)
+        self._check_spec_versions(stix_objects)
+        identity, grouping, *_objects = stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        for stix_object, object_ref in zip(_objects, self._check_grouping_features(*args)):
+            self.assertEqual(stix_object.id, object_ref)
+        ip_src, observed_data, _, _, domain_ip, note = _objects
+        self.assertEqual(note.id, f"note--{event_report['uuid']}")
+        self.assertEqual(note.abstract, event_report['name'])
+        self.assertEqual(note.created, self._datetime_from_timestamp(event_report['timestamp']))
+        self.assertEqual(note.content, event_report['content'])
+        object_refs = note.object_refs
+        self.assertEqual(len(object_refs), 3)
+        object_ids = {ip_src.id, observed_data.id, domain_ip.id}
+        self.assertEqual(set(object_refs), object_ids)
+
     def test_event_with_tags(self):
         event = get_event_with_tags()
         orgc = event['Event']['Orgc']
