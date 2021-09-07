@@ -57,6 +57,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self.__ids = {}
         self._identifier = 'attributes collection'
         self.__objects = []
+        self.__relationships = []
         self.__identity_id = self._mapping.misp_identity_args['id']
         if self.__identity_id not in self.__ids:
             identity = self._create_identity(self._mapping.misp_identity_args)
@@ -64,6 +65,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self.__ids[self.__identity_id] = self.__identity_id
         for attribute in attributes:
             self._resolve_attribute(attribute)
+        if self.__relationships:
+            self._handle_relationships()
 
     def parse_misp_event(self, misp_event: dict):
         self._events_parsing_init()
@@ -144,13 +147,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if markings:
             self._handle_markings(report_args, markings)
         if self.__relationships:
-            for relationship in self.__relationships:
-                if relationship.get('undefined_target_ref'):
-                    target_ref = self._find_target_uuid(relationship.pop('undefined_target_ref'))
-                    if target_ref is None:
-                        continue
-                    relationship['target_ref'] = target_ref
-                self._append_SDO(self._create_relationship(relationship))
+            self._handle_relationships()
         if self._markings:
             for marking in self._markings.values():
                 self.__objects.append(marking)
@@ -217,6 +214,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             object_args['labels'].append(marking)
         if marking_ids:
             object_args['object_marking_refs'] = marking_ids
+
+    def _handle_relationships(self):
+        for relationship in self.__relationships:
+            if relationship.get('undefined_target_ref'):
+                target_ref = self._find_target_uuid(relationship.pop('undefined_target_ref'))
+                if target_ref is None:
+                    continue
+                relationship['target_ref'] = target_ref
+            self._append_SDO(self._create_relationship(relationship))
 
     ################################################################################
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
