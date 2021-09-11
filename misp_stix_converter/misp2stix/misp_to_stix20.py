@@ -16,7 +16,7 @@ from stix2.v20.observables import (Artifact, AutonomousSystem, Directory, Domain
 from stix2.v20.sdo import (AttackPattern, Campaign, CourseOfAction, CustomObject,
     Identity, Indicator, IntrusionSet, Malware, ObservedData, Report, ThreatActor,
     Tool, Vulnerability)
-from stix2.v20.sro import Relationship
+from stix2.v20.sro import Relationship, Sighting
 from stix2.v20.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
 
@@ -36,7 +36,7 @@ from typing import Optional, Union
         ('x_misp_category', StringProperty())
     ]
 )
-class CustomAttribute():
+class CustomAttribute:
     pass
 
 
@@ -55,7 +55,7 @@ class CustomAttribute():
         ('x_misp_meta_category', StringProperty())
     ]
 )
-class CustomMispObject():
+class CustomMispObject:
     pass
 
 
@@ -70,7 +70,23 @@ class CustomMispObject():
         ('object_ref', ReferenceProperty(valid_types=['report'], spec_version='2.0'))
     ]
 )
-class CustomNote():
+class CustomNote:
+    pass
+
+
+@CustomObject(
+    'x-misp-opinion',
+    [
+        ('x_misp_authors', ListProperty(StringProperty)),
+        ('x_misp_explanation', StringProperty()),
+        ('x_misp_opinion', StringProperty(required=True)),
+        ('object_ref', ReferenceProperty(
+            valid_types=['campaign', 'indicator', 'observed-data', 'vulnerability', 'x-misp-attribute'],
+            spec_version='2.0'
+        ))
+    ]
+)
+class CustomOpinion:
     pass
 
 
@@ -102,6 +118,15 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             'interoperability': True
         }
         self._append_SDO(CustomNote(**custom_args))
+
+    def _handle_opinion_object(self, authors: set, reference_id: str):
+        opinion_args = {
+            'object_ref': reference_id,
+            'x_misp_authors': list(authors),
+            'x_misp_explanation': 'False positive Sighting',
+            'x_misp_opinion': 'strongly-disagree'
+        }
+        getattr(self, self._results_handling_function)(CustomOpinion(**opinion_args))
 
     def _handle_unpublished_report(self, report_args: dict) -> Report:
         report_id = f"report--{self._misp_event['uuid']}"
@@ -813,6 +838,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_report(report_args: dict) -> Report:
         return Report(**report_args)
+
+    @staticmethod
+    def _create_sighting(sighting_args: dict) -> Sighting:
+        return Sighting(**sighting_args)
 
     @staticmethod
     def _create_threat_actor(threat_actor_args: dict) -> ThreatActor:

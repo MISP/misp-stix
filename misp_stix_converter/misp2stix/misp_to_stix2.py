@@ -224,6 +224,62 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 relationship['target_ref'] = target_ref
             self._append_SDO(self._create_relationship(relationship))
 
+    def _handle_sightings(self, sightings: list, reference_id: str):
+        sightings = self._parse_sightings(sightings)
+        if 'sighting' in sightings:
+            sighting_args = defaultdict(int)
+            sighters_refs = set()
+            for sighting in sightings['sighting']:
+                sighting_args['count'] += 1
+                date_sighting = int(sighting.get('date_sighting', 0))
+                if date_sighting < sighting_args.get('first_seen', float('inf')):
+                    sighting_args['first_seen'] = date_sighting
+                if date_sighting > sighting_args.get('last_seen', 0):
+                    sighting_args['last_seen'] = date_sighting
+                if sighting.get('Organisation'):
+                    sighters_refs.add((sighting['Organisation']['uuid'], sighting['Organisation']['name']))
+            sighting_args.update(
+                {
+                    'first_seen': self._datetime_from_timestamp(sighting_args.pop('first_seen')),
+                    'last_seen': self._datetime_from_timestamp(sighting_args.pop('last_seen')),
+                    'sighting_of_ref': reference_id,
+                    'type': 'sighting',
+                    'where_sighted_refs': [self._handle_sighting_identity(*sighter_ref) for sighter_ref in sighters_refs]
+                }
+            )
+            getattr(self, self._results_handling_function)(self._create_sighting(sighting_args))
+        if 'opinion' in sightings:
+            self._handle_opinion_object(sightings['opinion'], reference_id)
+
+    def _handle_sighting_identity(self, uuid: str, name: str) -> str:
+        identity_id = f'identity--{uuid}'
+        if identity_id not in self.__ids:
+            identity_args = {
+                'id': identity_id,
+                'name': name,
+                'identity_class': 'organization'
+            }
+            identity = self._create_identity(identity_args)
+            self.__objects.insert(self.__index, identity)
+            self.__index += 1
+            self.__ids[identity_id] = identity_id
+        return identity_id
+
+    @staticmethod
+    def _parse_sightings(sightings: list) -> dict:
+        parsed_sightings = defaultdict(list)
+        for sighting in sightings:
+            sighting_type = sighting.get('type')
+            if sighting_type == '0':
+                parsed_sightings['sighting'].append(sighting)
+                continue
+            if sighting_type == '1':
+                if sighting.get('Organisation'):
+                    parsed_sightings['opinion'].append(sighting['Organisation']['name'])
+        if 'opinion' in parsed_sightings:
+            parsed_sightings['opinion'] = set(parsed_sightings.pop('opinion'))
+        return parsed_sightings
+
     ################################################################################
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
     ################################################################################
@@ -261,6 +317,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if markings:
             self._handle_markings(indicator_args, markings)
         getattr(self, self._results_handling_function)(self._create_indicator(indicator_args))
+        if attribute.get('Sighting'):
+            self._handle_sightings(attribute['Sighting'], indicator_id)
 
     def _handle_attribute_observable(self, attribute: dict, observable: Union[dict, list]):
         observable_id = getattr(self, self._id_parsing_function['attribute'])('observed-data', attribute)
@@ -282,6 +340,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if markings:
             self._handle_markings(observable_args, markings)
         self._create_observed_data(observable_args, observable)
+        if attribute.get('Sighting'):
+            self._handle_sightings(attribute['Sighting'], observable_id)
 
     def _handle_attribute_tags_and_galaxies(self, attribute: dict, object_id: str, timestamp: datetime) -> tuple:
         if attribute.get('Galaxy'):
@@ -343,6 +403,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if markings:
             self._handle_markings(campaign_args, markings)
         getattr(self, self._results_handling_function)(self._create_campaign(campaign_args))
+        if attribute.get('Sighting'):
+            self._handle_sightings(attribute['Sighting'], campaign_id)
 
     def _parse_custom_attribute(self, attribute: dict):
         custom_id = getattr(self, self._id_parsing_function['attribute'])('x-misp-attribute', attribute)
@@ -368,6 +430,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if markings:
             self._handle_markings(custom_args, markings)
         getattr(self, self._results_handling_function)(self._create_custom_attribute(custom_args))
+        if attribute.get('SIghting'):
+            self._handle_sightings(attribute['sighting'], custom_id)
 
     def _parse_domain_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
@@ -601,6 +665,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if markings:
             self._handle_markings(vulnerability_args, markings)
         getattr(self, self._results_handling_function)(self._create_vulnerability(vulnerability_args))
+        if attribute.get('Sighting'):
+            self._handle_sightings(attribute['sighting'], vulnerability_id)
 
     def _parse_x509_fingerprint_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):

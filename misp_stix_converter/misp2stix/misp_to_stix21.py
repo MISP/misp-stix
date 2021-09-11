@@ -16,8 +16,8 @@ from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, Domain
     WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
 from stix2.v21.sdo import (AttackPattern, Campaign, CourseOfAction, CustomObject,
     Grouping, Identity, Indicator, IntrusionSet, Location, Malware, Note,
-    ObservedData, Report, ThreatActor, Tool, Vulnerability)
-from stix2.v21.sro import Relationship
+    ObservedData, Opinion, Report, ThreatActor, Tool, Vulnerability)
+from stix2.v21.sro import Relationship, Sighting
 from stix2.v21.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
 
@@ -129,6 +129,16 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'object_refs': [object_id]
         }
         self._append_SDO(Note(**note_args))
+
+    def _handle_opinion_object(self, authors: set, reference_id: str):
+        opinion_args = {
+            'authors': list(authors),
+            'explanation': 'False positive Sighting',
+            'opinion': 'strongly-disagree',
+            'type': 'opinion',
+            'object_refs': [reference_id]
+        }
+        getattr(self, self._results_handling_function)(Opinion(**opinion_args))
 
     def _handle_unpublished_report(self, report_args: dict) -> Grouping:
         grouping_id = f"grouping--{self._misp_event['uuid']}"
@@ -947,6 +957,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_report(report_args: dict) -> Report:
         return Report(**report_args)
+
+    @staticmethod
+    def _create_sighting(sighting_args: dict) -> Sighting:
+        return Sighting(**sighting_args)
 
     @staticmethod
     def _create_threat_actor(threat_actor_args: dict) -> ThreatActor:
