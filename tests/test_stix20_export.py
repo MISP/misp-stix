@@ -243,6 +243,70 @@ class TestSTIX20Export(TestSTIX2Export):
             self._datetime_from_timestamp(event['Event']['publish_timestamp'])
         )
 
+    def test_event_with_sightings(self):
+        event = get_event_with_sightings()
+        orgc = event['Event']['Orgc']
+        attribute1, attribute2 = event['Event']['Attribute']
+        sightings1 = attribute1['Sighting']
+        sightings2 = attribute2['Sighting']
+        self.parser.parse_misp_event(event)
+        identity, identity1, identity2, identity3, report, *stix_objects = self.parser.stix_objects
+        identities = (identity1, identity2, identity3)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
+        for stix_object, object_ref in zip(stix_objects, object_refs):
+            self.assertEqual(stix_object.id, object_ref)
+        self._check_identities_from_sighting(
+            identities,
+            tuple(f"identity--{sighting['Organisation']['uuid']}" for sighting in sightings1[:3]),
+            tuple(sighting['Organisation']['name'] for sighting in sightings2[:3])
+        )
+        identity_ids = tuple(identity.id for identity in identities)
+        observed_data, sighting1, opinion1, indicator, sighting2, opinion2 = stix_objects
+        self.assertEqual(sighting1.type, 'sighting')
+        self.assertEqual(
+            sighting1.first_seen,
+            self._datetime_from_timestamp(sightings1[0]['date_sighting'])
+        )
+        self.assertEqual(
+            sighting1.last_seen,
+            self._datetime_from_timestamp(sightings1[1]['date_sighting'])
+        )
+        self.assertEqual(sighting1.count, 2)
+        self.assertEqual(sighting1.sighting_of_ref, observed_data.id)
+        self.assertEqual(len(sighting1.where_sighted_refs), 2)
+        for where_sighted_ref in sighting1.where_sighted_refs:
+            self.assertIn(where_sighted_ref, identity_ids)
+        self.assertEqual(opinion1.type, 'x-misp-opinion')
+        self.assertEqual(opinion1.object_ref, observed_data.id)
+        self.assertEqual(len(opinion1.x_misp_authors), 2)
+        self.assertIn(sightings1[3]['Organisation']['name'], opinion1.x_misp_authors)
+        self.assertIn(sightings1[2]['Organisation']['name'], opinion1.x_misp_authors)
+        self.assertEqual(opinion1.x_misp_explanation, "False positive Sighting")
+        self.assertEqual(opinion1.x_misp_opinion, "strongly-disagree")
+        self.assertEqual(sighting2.type, 'sighting')
+        self.assertEqual(
+            sighting2.first_seen,
+            self._datetime_from_timestamp(sightings2[0]['date_sighting'])
+        )
+        self.assertEqual(
+            sighting2.last_seen,
+            self._datetime_from_timestamp(sightings2[2]['date_sighting'])
+        )
+        self.assertEqual(sighting2.count, 2)
+        self.assertEqual(sighting2.sighting_of_ref, indicator.id)
+        self.assertEqual(len(sighting2.where_sighted_refs), 2)
+        for where_sighted_ref in sighting2.where_sighted_refs:
+            self.assertIn(where_sighted_ref, identity_ids)
+        self.assertEqual(opinion2.type, 'x-misp-opinion')
+        self.assertEqual(opinion2.object_ref, indicator.id)
+        self.assertEqual(len(opinion2.x_misp_authors), 2)
+        self.assertIn(sightings2[1]['Organisation']['name'], opinion2.x_misp_authors)
+        self.assertIn(sightings2[3]['Organisation']['name'], opinion2.x_misp_authors)
+        self.assertEqual(opinion2.x_misp_explanation, "False positive Sighting")
+        self.assertEqual(opinion2.x_misp_opinion, "strongly-disagree")
+
     def test_event_with_tags(self):
         event = get_event_with_tags()
         orgc = event['Event']['Orgc']
@@ -1762,7 +1826,6 @@ class TestSTIX20ExportInteroperability(TestSTIX2Export):
     def _run_galaxy_tests(self, event, timestamp):
         orgc = event['Event']['Orgc']
         self.parser.parse_misp_event(event)
-        print(self.parser.bundle)
         mitre_identity, identity, report, stix_object = self.parser.stix_objects
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]

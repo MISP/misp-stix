@@ -126,6 +126,11 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(identity.modified, timestamp)
         return identity_id
 
+    def _check_identities_from_sighting(self, identities, uuids, names):
+        for identity in identities:
+            self.assertIn(identity.id, uuids)
+            self.assertIn(identity.name, names)
+
     def _check_indicator_features(self, indicator, identity_id, object_ref, object_uuid):
         uuid = f"indicator--{object_uuid}"
         self.assertEqual(uuid, object_ref)

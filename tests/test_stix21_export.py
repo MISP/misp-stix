@@ -361,7 +361,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self.parser.parse_misp_event(event)
         stix_objects = self._check_bundle_features(8)
         self._check_spec_versions(stix_objects)
-        identity, grouping, *_objects = stix_objects
+        identity, grouping, *stix_objects = stix_objects
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         args = (
@@ -369,9 +369,9 @@ class TestSTIX21Export(TestSTIX2Export):
             event['Event'],
             identity_id
         )
-        for stix_object, object_ref in zip(_objects, self._check_grouping_features(*args)):
+        for stix_object, object_ref in zip(stix_objects, self._check_grouping_features(*args)):
             self.assertEqual(stix_object.id, object_ref)
-        ip_src, observed_data, _, _, domain_ip, note = _objects
+        ip_src, observed_data, _, _, domain_ip, note = stix_objects
         self.assertEqual(note.id, f"note--{event_report['uuid']}")
         self.assertEqual(note.abstract, event_report['name'])
         self.assertEqual(note.created, self._datetime_from_timestamp(event_report['timestamp']))
@@ -380,6 +380,76 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(len(object_refs), 3)
         object_ids = {ip_src.id, observed_data.id, domain_ip.id}
         self.assertEqual(set(object_refs), object_ids)
+
+    def test_event_with_sightings(self):
+        event = get_event_with_sightings()
+        orgc = event['Event']['Orgc']
+        attribute1, attribute2 = event['Event']['Attribute']
+        sightings1 = attribute1['Sighting']
+        sightings2 = attribute2['Sighting']
+        self.parser.parse_misp_event(event)
+        stix_objects = self._check_bundle_features(12)
+        self._check_spec_versions(stix_objects)
+        identity, identity1, identity2, identity3, grouping, *stix_objects = stix_objects
+        identities = (identity1, identity2, identity3)
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (
+            grouping,
+            event['Event'],
+            identity_id
+        )
+        for stix_object, object_ref in zip(stix_objects, self._check_grouping_features(*args)):
+            self.assertEqual(stix_object.id, object_ref)
+        self._check_identities_from_sighting(
+            identities,
+            tuple(f"identity--{sighting['Organisation']['uuid']}" for sighting in sightings1[:3]),
+            tuple(sighting['Organisation']['name'] for sighting in sightings2[:3])
+        )
+        identity_ids = tuple(identity.id for identity in identities)
+        observed_data, _, sighting1, opinion1, indicator, sighting2, opinion2 = stix_objects
+        self.assertEqual(sighting1.type, 'sighting')
+        self.assertEqual(
+            sighting1.first_seen,
+            self._datetime_from_timestamp(sightings1[0]['date_sighting'])
+        )
+        self.assertEqual(
+            sighting1.last_seen,
+            self._datetime_from_timestamp(sightings1[1]['date_sighting'])
+        )
+        self.assertEqual(sighting1.count, 2)
+        self.assertEqual(sighting1.sighting_of_ref, observed_data.id)
+        self.assertEqual(len(sighting1.where_sighted_refs), 2)
+        for where_sighted_ref in sighting1.where_sighted_refs:
+            self.assertIn(where_sighted_ref, identity_ids)
+        self.assertEqual(opinion1.type, 'opinion')
+        self.assertEqual(opinion1.object_refs, [observed_data.id])
+        self.assertEqual(len(opinion1.authors), 2)
+        self.assertIn(sightings1[3]['Organisation']['name'], opinion1.authors)
+        self.assertIn(sightings1[2]['Organisation']['name'], opinion1.authors)
+        self.assertEqual(opinion1.explanation, "False positive Sighting")
+        self.assertEqual(opinion1.opinion, "strongly-disagree")
+        self.assertEqual(sighting2.type, 'sighting')
+        self.assertEqual(
+            sighting2.first_seen,
+            self._datetime_from_timestamp(sightings2[0]['date_sighting'])
+        )
+        self.assertEqual(
+            sighting2.last_seen,
+            self._datetime_from_timestamp(sightings2[2]['date_sighting'])
+        )
+        self.assertEqual(sighting2.count, 2)
+        self.assertEqual(sighting2.sighting_of_ref, indicator.id)
+        self.assertEqual(len(sighting2.where_sighted_refs), 2)
+        for where_sighted_ref in sighting2.where_sighted_refs:
+            self.assertIn(where_sighted_ref, identity_ids)
+        self.assertEqual(opinion2.type, 'opinion')
+        self.assertEqual(opinion2.object_refs, [indicator.id])
+        self.assertEqual(len(opinion2.authors), 2)
+        self.assertIn(sightings2[1]['Organisation']['name'], opinion2.authors)
+        self.assertIn(sightings2[3]['Organisation']['name'], opinion2.authors)
+        self.assertEqual(opinion2.explanation, "False positive Sighting")
+        self.assertEqual(opinion2.opinion, "strongly-disagree")
 
     def test_event_with_tags(self):
         event = get_event_with_tags()

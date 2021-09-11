@@ -1160,6 +1160,93 @@ _TEST_REGISTRY_KEY_OBJECT = {
     ]
 }
 
+_TEST_SIGHTINGS = [
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "AS",
+        "category": "Network activity",
+        "timestamp": "1603642920",
+        "value": "AS174",
+        "Sighting": [
+            {
+                "date_sighting": "1603642925",
+                "type": "0",
+                "Organisation": {
+                    "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+                    "name": "CIRCL"
+                }
+            },
+            {
+                "date_sighting": "1603642950",
+                "type": "0",
+                "Organisation": {
+                    "uuid": "7b9774b7-528b-4b03-bbb8-a0dd9e546183",
+                    "name": "E-Corp"
+                }
+            },
+            {
+                "date_sighting": "1603642930",
+                "type": "1",
+                "Organisation": {
+                    "uuid": "93d5d857-822c-4c53-ae81-a05ffcbd2a90",
+                    "name": "Oscorp Industries"
+                }
+            },
+            {
+                "date_sighting": "1603642940",
+                "type": "1",
+                "Organisation": {
+                    "uuid": "91050751-c1c9-4944-a522-db6390cec15b",
+                    "name": "Umbrella Corporation"
+                }
+            }
+        ]
+    },
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "domain",
+        "category": "Network activity",
+        "value": "circl.lu",
+        "timestamp": "1603642920",
+        "comment": "Domain test attribute",
+        "to_ids": True,
+        "Sighting": [
+            {
+                "date_sighting": "1603642925",
+                "type": "0",
+                "Organisation": {
+                    "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f",
+                    "name": "CIRCL"
+                }
+            },
+            {
+                "date_sighting": "1603642950",
+                "type": "1",
+                "Organisation": {
+                    "uuid": "7b9774b7-528b-4b03-bbb8-a0dd9e546183",
+                    "name": "E-Corp"
+                }
+            },
+            {
+                "date_sighting": "1603642940",
+                "type": "0",
+                "Organisation": {
+                    "uuid": "93d5d857-822c-4c53-ae81-a05ffcbd2a90",
+                    "name": "Oscorp Industries"
+                }
+            },
+            {
+                "date_sighting": "1603642930",
+                "type": "1",
+                "Organisation": {
+                    "uuid": "91050751-c1c9-4944-a522-db6390cec15b",
+                    "name": "Umbrella Corporation"
+                }
+            }
+        ]
+    }
+]
+
 _TEST_URL_OBJECT = {
     "name": "url",
     "meta-category": "network",
@@ -2196,6 +2283,12 @@ def get_event_with_regkey_value_attribute():
             "comment": "Regkey | value test attribute"
         }
     ]
+    return event
+
+
+def get_event_with_sightings():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = deepcopy(_TEST_SIGHTINGS)
     return event
 
 
