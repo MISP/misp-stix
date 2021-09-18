@@ -1988,7 +1988,7 @@ class TestSTIX21Export(TestSTIX2Export):
         key_, modified_, data_, data_type_, name_, hive_ = pattern[1:-1].split(' AND ')
         key = _key.replace('\\', '\\\\')
         self.assertEqual(key_, f"windows-registry-key:key = '{key}'")
-        self.assertEqual(modified_, f"windows-registry-key:modified = '{_modified}'")
+        self.assertEqual(modified_, f"windows-registry-key:modified_time = '{_modified}'")
         self.assertEqual(data_, f"windows-registry-key:values[0].data = '{self._sanitize_registry_key_value(_data)}'")
         self.assertEqual(data_type_, f"windows-registry-key:values[0].data_type = '{_data_type}'")
         self.assertEqual(name_, f"windows-registry-key:values[0].name = '{_name}'")
@@ -2003,7 +2003,10 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(registry_key.id, object_refs[0])
         self.assertEqual(registry_key.type, 'windows-registry-key')
         self.assertEqual(registry_key.key, key)
-        self.assertEqual(registry_key.modified, f'{modified}Z')
+        self.assertEqual(
+            datetime.strftime(registry_key.modified_time, '%Y-%m-%dT%H:%M:%S'),
+            modified
+        )
         self.assertEqual(registry_key.x_misp_hive, hive)
         registry_value = registry_key['values'][0]
         self.assertEqual(registry_value.data, data)

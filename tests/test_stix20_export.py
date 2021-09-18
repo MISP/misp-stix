@@ -1554,14 +1554,14 @@ class TestSTIX20Export(TestSTIX2Export):
         event = get_event_with_registry_key_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
         _key, _hive, _name, _data, _data_type, _modified = (attribute['value'] for attribute in attributes)
-        key_, modified_, data_, data_type_, name_, hive_ = pattern[1:-1].split(' AND ')
+        key_, data_, data_type_, name_, hive_, modified_ = pattern[1:-1].split(' AND ')
         key = _key.replace('\\', '\\\\')
         self.assertEqual(key_, f"windows-registry-key:key = '{key}'")
-        self.assertEqual(modified_, f"windows-registry-key:modified = '{_modified}'")
         self.assertEqual(data_, f"windows-registry-key:values[0].data = '{self._sanitize_registry_key_value(_data)}'")
         self.assertEqual(data_type_, f"windows-registry-key:values[0].data_type = '{_data_type}'")
         self.assertEqual(name_, f"windows-registry-key:values[0].name = '{_name}'")
         self.assertEqual(hive_, f"windows-registry-key:x_misp_hive = '{_hive}'")
+        self.assertEqual(modified_, f"windows-registry-key:x_misp_last_modified = '{_modified}'")
 
     def test_event_with_registry_key_observable_object(self):
         event = get_event_with_registry_key_object()
@@ -1570,7 +1570,7 @@ class TestSTIX20Export(TestSTIX2Export):
         registry_key = observable_objects['0']
         self.assertEqual(registry_key.type, 'windows-registry-key')
         self.assertEqual(registry_key.key, key)
-        self.assertEqual(datetime.strftime(registry_key.modified, '%Y-%m-%dT%H:%M:%S'), modified)
+        self.assertEqual(registry_key.x_misp_last_modified, f'{modified}Z')
         self.assertEqual(registry_key.x_misp_hive, hive)
         registry_value = registry_key['values'][0]
         self.assertEqual(registry_value.data, data)
