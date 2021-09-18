@@ -78,6 +78,16 @@ class Stix20Mapping(Stix2Mapping):
             'parent-process-name',
             'pid'
         )
+        self.__registry_key_mapping = {
+            'features': {
+                'key': 'key'
+            },
+            'values': {
+                'data': 'data',
+                'data-type': 'data_type',
+                'name': 'name'
+            }
+        }
         self.__tlp_markings = tlp_markings = {
             'tlp:white': TLP_WHITE,
             'tlp:green': TLP_GREEN,
@@ -133,6 +143,10 @@ class Stix20Mapping(Stix2Mapping):
     @property
     def process_single_fields(self) -> tuple:
         return self.__process_single_fields
+
+    @property
+    def registry_key_mapping(self) -> dict:
+        return self.__registry_key_mapping
 
     @property
     def tlp_markings(self) -> dict:

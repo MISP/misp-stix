@@ -117,6 +117,17 @@ class Stix21Mapping(Stix2Mapping):
             'parent-image',
             'parent-pid'
         )
+        self.__registry_key_mapping = {
+            'features': {
+                'key': 'key',
+                'last-modified': 'modified_time'
+            },
+            'values': {
+                'data': 'data',
+                'data-type': 'data_type',
+                'name': 'name'
+            }
+        }
         self.__tlp_markings = {
             'tlp:white': TLP_WHITE,
             'tlp:green': TLP_GREEN,
@@ -201,6 +212,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def process_uuid_fields(self) -> tuple:
         return self.__process_uuid_fields
+
+    @property
+    def registry_key_mapping(self) -> dict:
+        return self.__registry_key_mapping
 
     @property
     def tlp_markings(self) -> dict:
