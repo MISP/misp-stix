@@ -1582,12 +1582,13 @@ class TestSTIX21Export(TestSTIX2Export):
     def test_event_with_email_indicator_object(self):
         event = get_event_with_email_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary = (attribute['value'] for attribute in attributes)
-        cc1_, cc2_, from_, reply_to_, subject_, to_, x_mailer_, attachment1_, attachment2_, user_agent_, boundary_ = pattern[1:-1].split(' AND ')
+        _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary, _message_id = (attribute['value'] for attribute in attributes)
+        cc1_, cc2_, from_, message_id_, reply_to_, subject_, to_, x_mailer_, attachment1_, attachment2_, user_agent_, boundary_ = pattern[1:-1].split(' AND ')
         self.assertEqual(from_, f"email-message:from_ref.value = '{_from}'")
         self.assertEqual(to_, f"email-message:to_refs.value = '{_to}'")
         self.assertEqual(cc1_, f"email-message:cc_refs.value = '{_cc1}'")
         self.assertEqual(cc2_, f"email-message:cc_refs.value = '{_cc2}'")
+        self.assertEqual(message_id_, f"email-message:message_id = '{_message_id}'")
         self.assertEqual(
             reply_to_,
             f"email-message:additional_header_fields.reply_to = '{_reply_to}'"
@@ -1611,7 +1612,7 @@ class TestSTIX21Export(TestSTIX2Export):
     def test_event_with_email_observable_object(self):
         event = get_event_with_email_object()
         attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
-        _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary = (attribute['value'] for attribute in attributes)
+        _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary, _message_id = (attribute['value'] for attribute in attributes)
         message, address1, address2, address3, address4, file1, file2 = observables
         for grouping_ref, object_ref in zip(grouping_refs, object_refs):
             self.assertEqual(grouping_ref, object_ref)

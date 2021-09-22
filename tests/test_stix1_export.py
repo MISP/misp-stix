@@ -118,7 +118,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(ip_properties.address_value.value, ip['value'])
 
     def _check_email_properties(self, properties, related_objects, attributes):
-        from_, to_, cc1, cc2, reply_to, subject, attachment1, attachment2, x_mailer, user_agent, boundary = attributes
+        from_, to_, cc1, cc2, reply_to, subject, attachment1, attachment2, x_mailer, user_agent, boundary, message_id = attributes
         header = properties.header
         self.assertEqual(header.from_.address_value.value, from_['value'])
         self.assertEqual(len(header.to), 1)
@@ -131,6 +131,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(header.x_mailer.value, x_mailer['value'])
         self.assertEqual(header.user_agent.value, user_agent['value'])
         self.assertEqual(header.boundary.value, boundary['value'])
+        self.assertEqual(header.message_id.value, message_id['value'])
         attachments = properties.attachments
         self.assertEqual(len(attachments), 2)
         self.assertEqual(len(related_objects), 2)

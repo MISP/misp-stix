@@ -541,6 +541,12 @@ _TEST_EMAIL_OBJECT = {
             "type": "email-mime-boundary",
             "object_relation": "mime-boundary",
             "value": "Test mime boundary"
+        },
+        {
+            "uuid": "85d1fdf3-70d7-40b2-93a9-2ea2c8215fc6",
+            "type": "email-message-id",
+            "object_relation": "message-id",
+            "value": "25"
         }
     ]
 }
