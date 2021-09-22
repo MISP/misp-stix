@@ -521,7 +521,8 @@ class Stix1Mapping:
             'subject': 'subject',
             'x-mailer': 'x_mailer',
             'mime-boundary': 'boundary',
-            'user-agent': 'user_agent'
+            'user-agent': 'user_agent',
+            'message-id': 'message_id'
         }
         self.__email_uuid_fields = (
             'attachment',
