@@ -2367,6 +2367,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _handle_value_for_pattern(attribute_value: str) -> str:
         return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
 
+    def _parse_email_display_names(self, attributes: dict, feature: str) -> dict:
+        display_feature = f'{feature}-display-name'
+        display_names = {}
+        if attributes.get(display_feature):
+            if len(attributes[feature]) == len(attributes[display_feature]) == 1:
+                display_names[attributes[feature][0]] = attributes[display_feature][0]
+        # POTENTIALLY MORE MAGIC TO COME HERE TO MAP ADDRESSES WITH DISPLAY NAMES
+        return display_names
+
     def _parse_galaxy_relationship(self, source_id: str, target_id: str, relationship_type: str, timestamp: datetime):
         self.__relationships.append(
             {

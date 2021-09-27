@@ -557,19 +557,26 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         email_message_args = defaultdict(dict)
         email_message_args['is_multipart'] = True
         if attributes.get('from'):
+            display_names = self._parse_email_display_names(attributes, 'from')
             value, uuid = self._select_single_feature(attributes, 'from')
             address_id = f'email-addr--{uuid}'
-            email_address = self._create_email_address(address_id, value)
+            email_address = self._create_email_address(
+                address_id,
+                value,
+                display_name=display_names.get(value)
+            )
             objects.append(email_address)
             email_message_args['from_ref'] = address_id
         for feature in ('to', 'cc'):
             if attributes.get(feature):
+                display_names = self._parse_email_display_names(attributes, feature)
                 references = []
                 for value, uuid in attributes.pop(feature):
                     address_id = f'email-addr--{uuid}'
                     email_address = self._create_email_address(
                         address_id,
-                        value
+                        value,
+                        display_name=display_names.get(value)
                     )
                     objects.append(email_address)
                     references.append(address_id)
@@ -883,8 +890,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return CustomMispObject(**custom_args)
 
     @staticmethod
-    def _create_email_address(address_id: str, email_address: str) -> EmailAddress:
-        return EmailAddress(id=address_id, value=email_address)
+    def _create_email_address(address_id: str, email_address: str, display_name: Optional[str] = None) -> EmailAddress:
+        args = {
+            'id': address_id,
+            'value': email_address
+        }
+        if display_name is not None:
+            args['display_name'] = display_name
+        return EmailAddress(**args)
 
     @staticmethod
     def _create_file(file_id: str, filename: str) -> File:

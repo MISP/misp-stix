@@ -490,9 +490,11 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         email_message_args['is_multipart'] = False
         index = 1
         if attributes.get('from'):
+            display_names = self._parse_email_display_names(attributes, 'from')
             str_index = str(index)
             self._parse_email_object_reference(
                 self._select_single_feature(attributes, 'from'),
+                display_names,
                 email_message_args,
                 observable_object,
                 str_index
@@ -502,10 +504,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         for feature in ('to', 'cc'):
             if attributes.get(feature):
                 references = []
+                display_names = self._parse_email_display_names(attributes, feature)
                 for value in attributes.pop(feature):
                     str_index = str(index)
                     self._parse_email_object_reference(
                         value,
+                        display_names,
                         email_message_args,
                         observable_object,
                         str_index
@@ -544,8 +548,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object['0'] = EmailMessage(**email_message_args)
         self._handle_object_observable(misp_object, observable_object)
 
-    def _parse_email_object_reference(self, address: str, email_args: dict, observable: dict, index: str):
-        email_address = self._create_email_address(address)
+    def _parse_email_object_reference(self, address: str, display_names: dict, email_args: dict, observable: dict, index: str):
+        email_address = self._create_email_address(address, display_name=display_names.get(address))
         observable[index] = email_address
         email_args['_valid_refs'][index] = email_address._type
 
@@ -782,8 +786,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return CustomMispObject(**custom_args)
 
     @staticmethod
-    def _create_email_address(email_address: str) -> EmailAddress:
-        return EmailAddress(value=email_address)
+    def _create_email_address(email_address: str, display_name: Optional[str] = None) -> EmailAddress:
+        args = {
+            'value': email_address
+        }
+        if display_name is not None:
+            args['display_name'] = display_name
+        return EmailAddress(**args)
 
     @staticmethod
     def _create_file(name: str) -> File:
