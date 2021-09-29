@@ -2386,22 +2386,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _handle_value_for_pattern(attribute_value: str) -> str:
         return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
 
-    def _parse_email_display_names(self, attributes: dict, feature: str) -> dict:
-        display_feature = f'{feature}-display-name'
-        display_names = {}
-        if attributes.get(display_feature):
-            if len(attributes[feature]) == len(attributes[display_feature]) == 1:
-                display_names[attributes[feature][0]] = attributes.pop(display_feature)[0]
-                return display_names
-            for value in attributes[feature]:
-                if not attributes[display_feature]:
-                    del attributes[display_feature]
-                    break
-                index = self._get_matching_email_display_name(attributes[display_feature], value)
-                if index is not None:
-                    display_names[value] = attributes[display_feature].pop(index)
-        return display_names
-
     def _parse_galaxy_relationship(self, source_id: str, target_id: str, relationship_type: str, timestamp: datetime):
         self.__relationships.append(
             {
