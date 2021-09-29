@@ -3,6 +3,7 @@
 
 import json
 import os
+import re
 from .exportparser import MISPtoSTIXParser
 from collections import defaultdict
 from datetime import datetime
@@ -2320,6 +2321,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 return object_ref
 
     @staticmethod
+    def _get_matching_email_display_name(display_names: list, address: str) -> Optional[int]:
+        # Trying first to get a perfect match in case of a very standard first name last name case
+        for index in range(len(display_names)):
+            display_name = display_names[index].lower().split(' ')
+            if all(name in address for name in display_name):
+                return index
+        # Trying to get a potential match otherwise
+        values = re.sub('[_.@-]', ' ', address.lower()).split(' ')
+        for index in range(len(display_names)):
+            display_name = display_names[index].lower()
+            if any(value in display_name for value in values):
+                return index
+            initials = ''.join(name[0] for name in display_name.split(' '))
+            if len(initials) > 1 and initials in address:
+                return index
+        # If no match, then the remaining unmatched display names are just going to be exported as custom property
+
+    @staticmethod
     def _get_vulnerability_references(vulnerability: str) -> dict:
         return {
             'source_name': 'cve',
@@ -2372,8 +2391,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         display_names = {}
         if attributes.get(display_feature):
             if len(attributes[feature]) == len(attributes[display_feature]) == 1:
-                display_names[attributes[feature][0]] = attributes[display_feature][0]
-        # POTENTIALLY MORE MAGIC TO COME HERE TO MAP ADDRESSES WITH DISPLAY NAMES
+                display_names[attributes[feature][0]] = attributes.pop(display_feature)[0]
+                return display_names
+            for value in attributes[feature]:
+                if not attributes[display_feature]:
+                    del attributes[display_feature]
+                    break
+                index = self._get_matching_email_display_name(attributes[display_feature], value)
+                if index is not None:
+                    display_names[value] = attributes[display_feature].pop(index)
         return display_names
 
     def _parse_galaxy_relationship(self, source_id: str, target_id: str, relationship_type: str, timestamp: datetime):
