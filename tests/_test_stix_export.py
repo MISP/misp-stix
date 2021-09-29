@@ -100,6 +100,12 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(vulnerability.created, timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
 
+    def _check_email_address(self, address_object, address, display_name=None):
+        self.assertEqual(address_object.type, 'email-addr')
+        self.assertEqual(address_object.value, address)
+        if display_name is not None:
+            self.assertEqual(address_object.display_name, display_name)
+
     def _check_external_reference(self, reference, source_name, value):
         self.assertEqual(reference.source_name, source_name)
         self.assertEqual(reference.external_id, value)

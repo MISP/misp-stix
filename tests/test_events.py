@@ -551,6 +551,52 @@ _TEST_EMAIL_OBJECT = {
     ]
 }
 
+_TEST_EMAIL_OBJECT_WITH_DISPLAY_NAMES = {
+    "name": "email",
+    "meta-category": "network",
+    "description": "Email object describing an email with meta-information",
+    "uuid": "f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "uuid": "f5ec3603-e3d0-42d7-a372-14c1c137699b",
+            "type": "email-src",
+            "object_relation": "from",
+            "value": "donald.duck@disney.com"
+        },
+        {
+            "uuid": "3766d98d-d162-44d4-bc48-9518a2e48898",
+            "type": "email-src-display-name",
+            "object_relation": "from-display-name",
+            "value": "Donald Duck"
+        },
+        {
+            "uuid": "aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
+            "type": "email-dst",
+            "object_relation": "to",
+            "value": "jdoe@random.org"
+        },
+        {
+            "uuid": "3a93a3ef-fd04-4ce5-98f5-f53609b39b82",
+            "type": "email-dst-display-name",
+            "object_relation": "to-display-name",
+            "value": "Jonh Doe"
+        },
+        {
+            "uuid": "3b940996-f99b-4bda-b065-69b8957f688c",
+            "type": "email-dst",
+            "object_relation": "to",
+            "value": "jfk@gov.us"
+        },
+        {
+            "uuid": "b824e555-8609-4389-9790-71e7f2785e1b",
+            "type": "email-dst-display-name",
+            "object_relation": "to-display-name",
+            "value": "John Fitzgerald Kennedy"
+        }
+    ]
+}
+
 _TEST_FILE_OBJECT = {
     "name": "file",
     "meta-category": "file",
@@ -2726,6 +2772,14 @@ def get_event_with_email_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_EMAIL_OBJECT)
+    ]
+    return event
+
+
+def get_event_with_email_object_with_display_names():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_EMAIL_OBJECT_WITH_DISPLAY_NAMES)
     ]
     return event
 

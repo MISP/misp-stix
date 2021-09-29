@@ -1653,6 +1653,25 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(file2.type, 'file')
         self.assertEqual(file2.name, _attachment2)
 
+    def test_event_with_email_observable_object_with_display_names(self):
+        event = get_event_with_email_object_with_display_names()
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        _from, _from_name, _to1, _to1_name, _to2, _to2_name = (attribute['value'] for attribute in attributes)
+        message, from_, to1_, to2_ = observables
+        for grouping_ref, object_ref in zip(grouping_refs, object_refs):
+            self.assertEqual(grouping_ref, object_ref)
+        message_ref, from_ref, to1_ref, to2_ref = grouping_refs
+        self.assertEqual(message.id, message_ref)
+        self.assertEqual(message.type, 'email-message')
+        self.assertEqual(message.from_ref, from_ref)
+        self.assertEqual(message.to_refs, [to1_ref, to2_ref])
+        self.assertEqual(from_.id, from_ref)
+        self._check_email_address(from_, _from, display_name=_from_name)
+        self.assertEqual(to1_.id, to1_ref)
+        self._check_email_address(to1_, _to1, display_name=_to1_name)
+        self.assertEqual(to2_.id, to2_ref)
+        self._check_email_address(to2_, _to2, display_name=_to2_name)
+
     def test_event_with_file_and_pe_indicator_objects(self):
         event = get_event_with_file_and_pe_objects()
         misp_objects, pattern = self._run_indicator_from_objects_tests(event)
