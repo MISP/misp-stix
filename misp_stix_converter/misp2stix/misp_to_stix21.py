@@ -555,7 +555,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         objects = []
         email_message_args = defaultdict(dict)
-        email_message_args['is_multipart'] = True
+        email_message_args['is_multipart'] = False
         if attributes.get('from'):
             display_names = self._parse_email_display_names(attributes, 'from')
             value, uuid = self._select_single_feature(attributes, 'from')
