@@ -1675,6 +1675,7 @@ class TestSTIX21Export(TestSTIX2Export):
         message_ref, from_ref, to1_ref, to2_ref = grouping_refs
         self.assertEqual(message.id, message_ref)
         self.assertEqual(message.type, 'email-message')
+        self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.from_ref, from_ref)
         self.assertEqual(message.to_refs, [to1_ref, to2_ref])
         self.assertEqual(from_.id, from_ref)
