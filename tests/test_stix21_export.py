@@ -742,8 +742,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(message.to_refs, [address_id])
         self.assertEqual(address_ref, address_id)
         self.assertEqual(address.id, address_ref)
-        self.assertEqual(address.type, 'email-addr')
-        self.assertEqual(address.value, attribute_value)
+        self._check_email_address(address, attribute_value)
 
     def test_event_with_email_header_indicator_attribute(self):
         event = get_event_with_email_header_attribute()
@@ -789,8 +788,7 @@ class TestSTIX21Export(TestSTIX2Export):
         address = observable[0]
         self.assertEqual(object_ref, grouping_refs[0])
         self.assertEqual(address.id, object_ref)
-        self.assertEqual(address.type, 'email-addr')
-        self.assertEqual(address.value, attribute_value)
+        self._check_email_address(address, attribute_value)
 
     def test_event_with_email_reply_to_indicator_attribute(self):
         event = get_event_with_email_reply_to_attribute()
@@ -829,8 +827,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(message.from_ref, address_id)
         self.assertEqual(address_ref, address_id)
         self.assertEqual(address.id, address_ref)
-        self.assertEqual(address.type, 'email-addr')
-        self.assertEqual(address.value, attribute_value)
+        self._check_email_address(address, attribute_value)
 
     def test_event_with_email_subject_indicator_attribute(self):
         event = get_event_with_email_subject_attribute()
@@ -1635,17 +1632,13 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(body2['body_raw_ref'], file2_ref)
         self.assertEqual(body2['content_disposition'], f"attachment; filename='{_attachment2}'")
         self.assertEqual(address1.id, address1_ref)
-        self.assertEqual(address1.type, 'email-addr')
-        self.assertEqual(address1.value, _from)
+        self._check_email_address(address1, _from)
         self.assertEqual(address2.id, address2_ref)
-        self.assertEqual(address2.type, 'email-addr')
-        self.assertEqual(address2.value, _to)
+        self._check_email_address(address2, _to)
         self.assertEqual(address3.id, address3_ref)
-        self.assertEqual(address3.type, 'email-addr')
-        self.assertEqual(address3.value, _cc1)
+        self._check_email_address(address3, _cc1)
         self.assertEqual(address4.id, address4_ref)
-        self.assertEqual(address4.type, 'email-addr')
-        self.assertEqual(address4.value, _cc2)
+        self._check_email_address(address4, _cc2)
         self.assertEqual(file1.id, file1_ref)
         self.assertEqual(file1.type, 'file')
         self.assertEqual(file1.name, _attachment1)
