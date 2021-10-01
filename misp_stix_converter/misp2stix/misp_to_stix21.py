@@ -525,27 +525,62 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         user_object = UserAccount(**credential_args)
         self._handle_object_observable(misp_object, [user_object])
 
+    def _parse_domain_ip_object_custom(self, attributes: dict) -> list:
+        observable_objects, resolves_to_refs = self._parse_domainip_ip_attributes(attributes)
+        domain_args = {
+            'resolves_to_refs': resolves_to_refs
+        }
+        domain_args.update(self._parse_domain_args(attributes))
+        observable_objects.insert(0, DomainName(**domain_args))
+        return observable_objects
+
     def _parse_domain_ip_object_observable(self, misp_object: dict):
-        attributes = self._extract_multiple_object_attributes_with_uuid(
+        attributes = self._extract_object_attributes_with_multiple_and_uuid(
             misp_object['Attribute'],
+            force_single=self._mapping.domain_ip_single_fields,
             with_uuid=self._mapping.domain_ip_uuid_fields
         )
         if not any(feature in attributes for feature in ('domain', 'hostname')):
             self._parse_custom_object(misp_object)
             self._required_fields_missing_warning('DomainName', 'domain-ip')
             return
-        domain_args = {}
-        objects = []
+        function = '_parse_domain_ip_object_standard'
+        if any(attribute not in self._mapping.domain_ip_uuid_fields for attribute in attributes):
+            function = '_parse_domain_ip_object_custom'
+            if attributes.get('hostname'):
+                attributes['hostname'] = attributes.pop('hostname')[0]
+            if attributes.get('domain'):
+                attributes['domain'] = [domain[0] for domain in attributes.pop('domain')]
+        observable_objects = getattr(self, function)(attributes)
+        self._handle_object_observable(misp_object, observable_objects)
+
+    def _parse_domain_ip_object_standard(self, attributes: dict) -> list:
+        observable_objects, resolves_to_refs = self._parse_domainip_ip_attributes(attributes)
+        if attributes.get('hostname'):
+            domain_args = {
+                'value': attributes.pop('hostname'),
+                'resolves_to_refs': resolves_to_refs
+            }
+            observable_objects.append(DomainName(**domain_args))
+        if attributes.get('domain'):
+            for domain in attributes.get('domain'):
+                domain_args = {
+                    'value': domain,
+                    'resolves_to_refs': resolves_to_refs
+                }
+                observable_objects.append(DomainName(**domain_args))
+        return observable_objects
+
+    def _parse_domainip_ip_attributes(self, attributes: dict) -> tuple:
+        observable_objects = []
+        resolves_to_refs = []
         if attributes.get('ip'):
             for ip_value, uuid in attributes.pop('ip'):
                 address_type = self._get_address_type(ip_value)
                 address_id = f'{address_type._type}--{uuid}'
-                objects.append(address_type(id=address_id, value=ip_value))
-            domain_args['resolves_to_refs'] = [stix_object.id for stix_object in objects]
-        if attributes:
-            domain_args.update(self._parse_domain_args(attributes))
-        objects.insert(0, DomainName(**domain_args))
-        self._handle_object_observable(misp_object, objects)
+                observable_objects.append(address_type(id=address_id, value=ip_value))
+                resolves_to_refs.append(address_id)
+        return observable_objects, resolves_to_refs
 
     def _parse_email_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes_with_uuid_and_data(

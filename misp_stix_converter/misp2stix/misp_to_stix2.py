@@ -2035,7 +2035,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 )
                 break
         if attributes:
-            domain_args.update(self._handle_observable_multiple_properties(attributes))
+            domain_args.update(self._handle_observable_properties(attributes))
         return domain_args
 
     def _parse_email_args(self, attributes: dict) -> dict:

@@ -456,16 +456,50 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         }
         self._handle_object_observable(misp_object, observable_object)
 
+    def _parse_domain_ip_object_custom(self, attributes: dict) -> dict:
+        index = 1
+        domain_args, observable_object = self._parse_domainip_ip_attributes(attributes, index)
+        domain_args.update(self._parse_domain_args(attributes))
+        observable_object['0'] = DomainName(**domain_args)
+        return observable_object
+
     def _parse_domain_ip_object_observable(self, misp_object: dict):
-        attributes = self._extract_multiple_object_attributes(misp_object['Attribute'])
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=self._mapping.domain_ip_single_fields)
         if not any(feature in attributes for feature in ('domain', 'hostname')):
             self._parse_custom_object(misp_object)
             self._required_fields_missing_warning('DomainName', 'domain-ip')
             return
-        observable_object = {}
+        custom = any(attribute not in ('domain', 'hostname', 'ip') for attribute in attributes)
+        function = '_parse_domain_ip_object_custom' if custom else '_parse_domain_ip_object_standard'
+        observable_object = getattr(self, function)(attributes)
+        self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_domain_ip_object_standard(self, attributes: dict) -> dict:
+        index = 0
+        domain_args, observable_object = self._parse_domainip_ip_attributes(attributes, index)
+        if attributes.get('hostname'):
+            args = {
+                'value': attributes.pop('hostname')
+            }
+            args.update(domain_args)
+            observable_object[str(index)] = DomainName(**args)
+            index += 1
+        if attributes.get('domain'):
+            for domain in attributes.pop('domain'):
+                args = {
+                    'value': domain
+                }
+                args.update(domain_args)
+                observable_object[str(index)] = DomainName(**args)
+                index += 1
+        return observable_object
+
+    def _parse_domainip_ip_attributes(self, attributes: dict, index: int) -> tuple:
         domain_args = {}
+        observable_object = {}
         if attributes.get('ip'):
-            index = 1
             valid_refs = {}
             for ip_value in attributes.pop('ip'):
                 str_index = str(index)
@@ -475,10 +509,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 index += 1
             domain_args['_valid_refs'] = valid_refs
             domain_args['resolves_to_refs'] = list(valid_refs.keys())
-        if attributes:
-            domain_args.update(self._parse_domain_args(attributes))
-        observable_object['0'] = DomainName(**domain_args)
-        self._handle_object_observable(misp_object, observable_object)
+        return domain_args, observable_object
 
     def _parse_email_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes_with_data(
