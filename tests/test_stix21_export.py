@@ -37,6 +37,13 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(indicator.pattern_type, 'stix')
         self.assertEqual(indicator.pattern_version, '2.1')
 
+    def _check_SCO(self, observable_object, attribute, reference, feature):
+        value, uuid = attribute
+        self.assertEqual(observable_object.id, reference)
+        self.assertEqual(observable_object.type, feature)
+        self.assertEqual(observable_object.id, f'{feature}--{uuid}')
+        self.assertEqual(observable_object.value, value)
+
     def _check_spec_versions(self, stix_objects):
         for stix_object in stix_objects:
             self.assertEqual(stix_object.spec_version, '2.1')
@@ -1554,27 +1561,47 @@ class TestSTIX21Export(TestSTIX2Export):
             self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
 
     def test_event_with_domain_ip_indicator_object(self):
-        event = get_event_with_domain_ip_object()
+        event = get_event_with_domain_ip_object_custom()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        domain, ip = (attribute['value'] for attribute in attributes)
-        domain_pattern, ip_pattern = pattern[1:-1].split(' AND ')
-        self.assertEqual(domain_pattern, f"domain-name:value = '{domain}'")
-        self.assertEqual(ip_pattern, f"domain-name:resolves_to_refs[*].value = '{ip}'")
+        _domain, _hostname, _ip, _port = (attribute['value'] for attribute in attributes)
+        domain_, hostname_, ip_, port_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(domain_, f"domain-name:value = '{_domain}'")
+        self.assertEqual(hostname_, f"domain-name:value = '{_hostname}'")
+        self.assertEqual(ip_, f"domain-name:resolves_to_refs[*].value = '{_ip}'")
+        self.assertEqual(port_, f"domain-name:x_misp_port = '{_port}'")
 
-    def test_event_with_domain_ip_observable_object(self):
-        event = get_event_with_domain_ip_object()
+    def test_event_with_domain_ip_observable_object_custom(self):
+        event = get_event_with_domain_ip_object_custom()
         attributes, grouping_refs, object_refs, observable = self._run_observable_from_object_tests(event)
-        domain, ip = (attribute['value'] for attribute in attributes)
-        domain_ref, address_ref = object_refs
-        domain_object, address_object = observable
-        self.assertEqual(domain_ref, grouping_refs[0])
-        self.assertEqual(address_ref, grouping_refs[1])
-        self.assertEqual(domain_object.id, domain_ref)
-        self.assertEqual(domain_object.type, 'domain-name')
-        self.assertEqual(domain_object.value, domain)
-        self.assertEqual(domain_object.resolves_to_refs, [address_ref])
-        self.assertEqual(address_object.id, address_ref)
-        self.assertEqual(address_object.value, ip)
+        _domain, hostname, _ip, port = (attribute['value'] for attribute in attributes)
+        for grouping_ref, object_ref in zip(grouping_refs, object_refs):
+            self.assertEqual(grouping_ref, object_ref)
+        domain_ref, ip_ref = object_refs
+        domain_, ip_ = observable
+        self.assertEqual(domain_.id, domain_ref)
+        self.assertEqual(domain_.type, 'domain-name')
+        self.assertEqual(domain_.value, _domain)
+        self.assertEqual(domain_.x_misp_hostname, hostname)
+        self.assertEqual(domain_.x_misp_port, port)
+        self.assertEqual(domain_.resolves_to_refs, [ip_ref])
+        self.assertEqual(ip_.id, ip_ref)
+        self.assertEqual(ip_.type, 'ipv4-addr')
+        self.assertEqual(ip_.value, _ip)
+
+    def test_event_with_domain_ip_observable_object_standard(self):
+        event = get_event_with_domain_ip_object_standard()
+        attributes, grouping_refs, object_refs, observable = self._run_observable_from_object_tests(event)
+        _domain1, _domain2, _ip1, _ip2 = ((attribute['value'], attribute['uuid']) for attribute in attributes)
+        for grouping_ref, object_ref in zip(grouping_refs, object_refs):
+            self.assertEqual(grouping_ref, object_ref)
+        ip1_ref, ip2_ref, domain1_ref, domain2_ref = object_refs
+        ip1_, ip2_, domain1_, domain2_ = observable
+        self._check_SCO(domain1_, _domain1, domain1_ref, 'domain-name')
+        self.assertEqual(domain1_.resolves_to_refs, [ip1_ref, ip2_ref])
+        self._check_SCO(domain2_, _domain2, domain2_ref, 'domain-name')
+        self.assertEqual(domain2_.resolves_to_refs, [ip1_ref, ip2_ref])
+        self._check_SCO(ip1_, _ip1, ip1_ref, 'ipv4-addr')
+        self._check_SCO(ip2_, _ip2, ip2_ref, 'ipv4-addr')
 
     def test_event_with_email_indicator_object(self):
         event = get_event_with_email_object()

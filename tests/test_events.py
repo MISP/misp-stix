@@ -469,6 +469,74 @@ _TEST_DOMAIN_IP_OBJECT = {
     ]
 }
 
+_TEST_DOMAIN_IP_OBJECT_CUSTOM = {
+    "name": "domain-ip",
+    "meta-category": "network",
+    "description": "A domain and IP address seen as a tuple",
+    "uuid": "dc624447-684a-488f-9e16-f78f717d8efd",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "uuid": "63fa4060-98d3-4768-b18d-cfbc52f2d0ff",
+            "type": "domain",
+            "object_relation": "domain",
+            "value": "circl.lu"
+        },
+        {
+            "uuid": "30e94901-9247-4d28-9746-ca4c0086201c",
+            "type": "hostname",
+            "object_relation": "hostname",
+            "value": "circl.lu"
+        },
+        {
+            "uuid": "fcbaf339-615a-409c-915f-034420dc90ca",
+            "type": "ip-dst",
+            "object_relation": "ip",
+            "value": "149.13.33.14"
+        },
+        {
+            "uuid": "ff192fba-c594-4eb2-8432-cd335ad6647d",
+            "type": "port",
+            "object_relation": "port",
+            "value": "8443"
+        }
+    ]
+}
+
+_TEST_DOMAIN_IP_OBJECT_STANDARD = {
+    "name": "domain-ip",
+    "meta-category": "network",
+    "description": "A domain and IP address seen as a tuple",
+    "uuid": "5ac337df-e078-4e99-8b17-02550a00020f",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "uuid": "a2e44443-a974-47b6-bb35-69d17b1cd243",
+            "type": "domain",
+            "object_relation": "domain",
+            "value": "misp-project.org"
+        },
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "domain",
+            "object_relation": "domain",
+            "value": "circl.lu"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "ip-dst",
+            "object_relation": "ip",
+            "value": "149.13.33.14"
+        },
+        {
+            "uuid": "876133b5-b5fc-449c-ba9e-e467790da8eb",
+            "type": "ip-dst",
+            "object_relation": "ip",
+            "value": "185.194.93.14"
+        }
+    ]
+}
+
 _TEST_EMAIL_OBJECT = {
     "name": "email",
     "meta-category": "network",
@@ -2764,6 +2832,22 @@ def get_event_with_domain_ip_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_DOMAIN_IP_OBJECT)
+    ]
+    return event
+
+
+def get_event_with_domain_ip_object_custom():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_DOMAIN_IP_OBJECT_CUSTOM)
+    ]
+    return event
+
+
+def get_event_with_domain_ip_object_standard():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_DOMAIN_IP_OBJECT_STANDARD)
     ]
     return event
 

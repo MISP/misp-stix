@@ -1188,24 +1188,47 @@ class TestSTIX20Export(TestSTIX2Export):
             self._run_custom_object_tests(misp_object, custom_object, object_ref, identity_id)
 
     def test_event_with_domain_ip_indicator_object(self):
-        event = get_event_with_domain_ip_object()
+        event = get_event_with_domain_ip_object_custom()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        domain, ip = (attribute['value'] for attribute in attributes)
-        domain_pattern, ip_pattern = pattern[1:-1].split(' AND ')
-        self.assertEqual(domain_pattern, f"domain-name:value = '{domain}'")
-        self.assertEqual(ip_pattern, f"domain-name:resolves_to_refs[*].value = '{ip}'")
+        _domain, _hostname, _ip, _port = (attribute['value'] for attribute in attributes)
+        domain_, hostname_, ip_, port_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(domain_, f"domain-name:value = '{_domain}'")
+        self.assertEqual(hostname_, f"domain-name:value = '{_hostname}'")
+        self.assertEqual(ip_, f"domain-name:resolves_to_refs[*].value = '{_ip}'")
+        self.assertEqual(port_, f"domain-name:x_misp_port = '{_port}'")
 
-    def test_event_with_domain_ip_observable_object(self):
-        event = get_event_with_domain_ip_object()
+    def test_event_with_domain_ip_observable_object_custom(self):
+        event = get_event_with_domain_ip_object_custom()
         attributes, observable_objects = self._run_observable_from_object_tests(event)
-        domain, ip = (attribute['value'] for attribute in attributes)
-        domain_object = observable_objects['0']
-        address_object = observable_objects['1']
-        self.assertEqual(domain_object.type, 'domain-name')
-        self.assertEqual(domain_object.value, domain)
-        self.assertEqual(domain_object.resolves_to_refs, ['1'])
-        self.assertEqual(address_object.type, 'ipv4-addr')
-        self.assertEqual(address_object.value, ip)
+        _domain, hostname, _ip, port = (attribute['value'] for attribute in attributes)
+        domain_ = observable_objects['0']
+        ip_ = observable_objects['1']
+        self.assertEqual(domain_.type, 'domain-name')
+        self.assertEqual(domain_.value, _domain)
+        self.assertEqual(domain_.x_misp_hostname, hostname)
+        self.assertEqual(domain_.x_misp_port, port)
+        self.assertEqual(domain_.resolves_to_refs, ['1'])
+        self.assertEqual(ip_.type, 'ipv4-addr')
+        self.assertEqual(ip_.value, _ip)
+
+    def test_event_with_domain_ip_observable_object_standard(self):
+        event = get_event_with_domain_ip_object_standard()
+        attributes, observable_objects = self._run_observable_from_object_tests(event)
+        _domain1, _domain2, _ip1, _ip2 = (attribute['value'] for attribute in attributes)
+        ip1_ = observable_objects['0']
+        ip2_ = observable_objects['1']
+        domain1_ = observable_objects['2']
+        domain2_ = observable_objects['3']
+        self.assertEqual(ip1_.type, 'ipv4-addr')
+        self.assertEqual(ip1_.value, _ip1)
+        self.assertEqual(ip2_.type, 'ipv4-addr')
+        self.assertEqual(ip2_.value, _ip2)
+        self.assertEqual(domain1_.type, 'domain-name')
+        self.assertEqual(domain1_.value, _domain1)
+        self.assertEqual(domain1_.resolves_to_refs, ['0', '1'])
+        self.assertEqual(domain2_.type, 'domain-name')
+        self.assertEqual(domain2_.value, _domain2)
+        self.assertEqual(domain2_.resolves_to_refs, ['0', '1'])
 
     def test_event_with_email_indicator_object(self):
         event = get_event_with_email_object()
