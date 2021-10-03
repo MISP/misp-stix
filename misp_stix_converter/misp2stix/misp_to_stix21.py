@@ -557,15 +557,19 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_domain_ip_object_standard(self, attributes: dict) -> list:
         observable_objects, resolves_to_refs = self._parse_domainip_ip_attributes(attributes)
         if attributes.get('hostname'):
+            value, uuid = attributes.pop('hostname')
             domain_args = {
-                'value': attributes.pop('hostname'),
+                'id': f'domain-name--{uuid}',
+                'value': value,
                 'resolves_to_refs': resolves_to_refs
             }
             observable_objects.append(DomainName(**domain_args))
         if attributes.get('domain'):
             for domain in attributes.get('domain'):
+                value, uuid = domain
                 domain_args = {
-                    'value': domain,
+                    'id': f'domain-name--{uuid}',
+                    'value': value,
                     'resolves_to_refs': resolves_to_refs
                 }
                 observable_objects.append(DomainName(**domain_args))
