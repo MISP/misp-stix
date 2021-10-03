@@ -350,8 +350,17 @@ class Stix2Mapping:
         )
         self.__domain_ip_object_mapping = {
             'domain': 'value',
+            'hostname': 'value',
             'ip': 'resolves_to_refs[*].value'
         }
+        self.__domain_ip_single_fields = (
+            'first-seen',
+            'hostname',
+            'last-seen',
+            'port',
+            'registration-date',
+            'text'
+        )
         self.__email_header_fields = {
             'reply-to': 'Reply-To',
             'x-mailer': 'X-Mailer'
@@ -588,6 +597,10 @@ class Stix2Mapping:
     @property
     def domain_ip_object_mapping(self) -> dict:
         return self.__domain_ip_object_mapping
+
+    @property
+    def domain_ip_single_fields(self) -> tuple:
+        return self.__domain_ip_single_fields
 
     @property
     def email_header_fields(self) -> dict:

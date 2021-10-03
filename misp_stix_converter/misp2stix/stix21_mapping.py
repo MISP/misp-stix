@@ -24,7 +24,9 @@ class Stix21Mapping(Stix2Mapping):
             'username': 'user_id'
         }
         self.__domain_ip_uuid_fields = (
-            'ip',
+            'domain',
+            'hostname',
+            'ip'
         )
         self.__email_object_mapping = {
             'cc': 'cc_refs.value',
