@@ -458,7 +458,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_domain_ip_object_custom(self, attributes: dict) -> dict:
         index = 1
-        domain_args, observable_object = self._parse_domainip_ip_attributes(attributes, index)
+        domain_args, observable_object, index = self._parse_domainip_ip_attributes(attributes, index)
         domain_args.update(self._parse_domain_args(attributes))
         observable_object['0'] = DomainName(**domain_args)
         return observable_object
@@ -478,7 +478,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_domain_ip_object_standard(self, attributes: dict) -> dict:
         index = 0
-        domain_args, observable_object = self._parse_domainip_ip_attributes(attributes, index)
+        domain_args, observable_object, index = self._parse_domainip_ip_attributes(attributes, index)
         if attributes.get('hostname'):
             args = {
                 'value': attributes.pop('hostname')
@@ -509,7 +509,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 index += 1
             domain_args['_valid_refs'] = valid_refs
             domain_args['resolves_to_refs'] = list(valid_refs.keys())
-        return domain_args, observable_object
+        return domain_args, observable_object, index
 
     def _parse_email_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes_with_data(
