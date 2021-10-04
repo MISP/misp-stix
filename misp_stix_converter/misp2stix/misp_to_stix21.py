@@ -728,6 +728,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if markings:
             self._handle_markings(location_args, markings)
         attributes = self._extract_object_attributes(misp_object['Attribute'])
+        if attributes.get('accuracy-radius') and attributes.get('latitude') and attributes.get('longitude'):
+            precision = float(attributes.pop('accuracy-radius')) * 1000
+            location_args['precision'] = precision
         for key, feature in self._mapping.geolocation_object_mapping.items():
             if attributes.get(key):
                 location_args[feature] = attributes.pop(key)
