@@ -1235,7 +1235,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             index = 0
             for key in self._mapping.network_connection_mapping['protocols']:
                 if attributes.get(key):
-                    pattern.append(f"{prefix}:protocols[{index}] = '{attributes.pop(key)}'")
+                    pattern.append(f"{prefix}:protocols[{index}] = '{attributes.pop(key).lower()}'")
                     index += 1
             if attributes:
                 pattern.extend(self._handle_pattern_properties(attributes, prefix))
@@ -1263,7 +1263,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if attributes.get(key):
                 pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
         if attributes.get('protocol'):
-            pattern.append(f"{prefix}:protocols[0] = '{attributes.pop('protocol')}'")
+            pattern.append(f"{prefix}:protocols[0] = '{attributes.pop('protocol').lower()}'")
         prefix = f"{prefix}:extensions.'socket-ext'"
         for key, feature in self._mapping.network_socket_mapping['extension'].items():
             if attributes.get(key):
@@ -2104,9 +2104,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         protocols = []
         for key in self._mapping.network_connection_mapping['protocols']:
             if attributes.get(key):
-                protocols.append(attributes.pop(key))
+                protocols.append(attributes.pop(key).lower())
         if not protocols:
-            protocols.append('TCP')
+            protocols.append('tcp')
         network_traffic_args['protocols'] = protocols
         if attributes:
             network_traffic_args.update(self._handle_observable_properties(attributes))
@@ -2117,7 +2117,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for key, feature in self._mapping.network_socket_mapping['features'].items():
             if attributes.get(key):
                 network_traffic_args[feature] = attributes.pop(key)
-        network_traffic_args['protocols'] = [attributes.pop('protocol')] if attributes.get('protocol') else ['tcp']
+        network_traffic_args['protocols'] = [attributes.pop('protocol').lower()] if attributes.get('protocol') else ['tcp']
         if attributes.get('address-family') in self._mapping.address_family_enum_list:
             socket_ext = {}
             for key, field in self._mapping.network_socket_mapping['extension'].items():
