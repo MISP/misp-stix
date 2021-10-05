@@ -1223,13 +1223,13 @@ _TEST_PROCESS_OBJECT = {
             "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
             "type": "text",
             "object_relation": "name",
-            "value": "test_process.exe"
+            "value": "TestProcess"
         },
         {
             "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
             "type": "filename",
             "object_relation": "image",
-            "value": "TestProcess"
+            "value": "test_process.exe"
         },
         {
             "uuid": "e072dfbb-c6fd-4312-8201-d140575536c4",
