@@ -62,7 +62,9 @@ class Stix20Mapping(Stix2Mapping):
             },
             'parent': {
                 'parent-command-line': 'command_line',
-                'parent-pid': 'pid'
+                'parent-image': 'binary_ref.name',
+                'parent-pid': 'pid',
+                'parent-process-name': 'name'
             }
         }
         self.__process_single_fields = (

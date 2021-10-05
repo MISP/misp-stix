@@ -838,24 +838,24 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 with_uuid=self._mapping.process_uuid_fields
             )
             objects = []
-            parent_fields = tuple(key for key in attributes.keys() if key.startswith('parent-'))
-            parent_attributes = {key: attributes.pop(key) for key in parent_fields}
+            parent_attributes = self._extract_parent_process_attributes(attributes)
             process_args = defaultdict(list)
             if parent_attributes:
                 parent_args = {}
-                for key in self._mapping.process_uuid_fields:
-                    if parent_attributes.get(key):
-                        parent_args['id'] = f"process--{parent_attributes[key][1]}"
-                        for key in self._mapping.process_uuid_fields:
-                            if parent_attributes.get(key):
-                                parent_attributes[key] = parent_attributes.pop(key)[0]
-                        break
                 if parent_attributes.get('parent-image'):
-                    filename, uuid = attributes.pop('parent-image')
+                    filename, uuid = parent_attributes.pop('parent-image')
                     image_uuid = f'file--{uuid}'
                     objects.append(File(id=image_uuid, name=filename))
                     parent_args['image_ref'] = image_uuid
-                parent_args.update(self._parse_process_args(parent_attributes, 'parent'))
+                for feature in self._mapping.parent_process_fields:
+                    if parent_attributes.get(feature):
+                        parent_args['id'] = f"process--{parent_attributes[feature][1]}"
+                        break
+                for key, feature in self._mapping.process_object_mapping['parent'].items():
+                    if parent_attributes.get(key):
+                        parent_args[feature] = parent_attributes.pop(key)[0]
+                if parent_attributes:
+                    parent_args.update(self._handle_parent_process_properties(parent_attributes))
                 process = Process(**parent_args)
                 objects.append(process)
                 process_args['parent_ref'] = process.id

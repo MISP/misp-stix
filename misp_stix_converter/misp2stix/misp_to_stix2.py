@@ -857,6 +857,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             properties[f"x_misp_{key.replace('-', '_')}"] = value
         return properties
 
+    def _handle_parent_process_properties(self, attributes: dict) -> dict:
+        parent_attributes = {'_'.join(key.split('-')[1:]): values for key, values in attributes.items()}
+        return self._handle_observable_multiple_properties(parent_attributes)
+
     @staticmethod
     def _handle_pattern_multiple_properties(attributes: dict, prefix: str, separator: Optional[str]=':') -> list:
         pattern = []
@@ -1375,11 +1379,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
         if attributes.get('image'):
             pattern.append(self._create_process_image_pattern(attributes.pop('image')))
+        parent_attributes = self._extract_parent_process_attributes(attributes)
         for key, feature in self._mapping.process_object_mapping['parent'].items():
-            if attributes.get(key):
-                pattern.append(f"{prefix}:parent_ref.{feature} = '{attributes.pop(key)}'")
-        if attributes.get('parent-image'):
-            pattern.append(f"{prefix}:parent_ref.image_ref.name = '{attributes.pop('parent-image')}'")
+            if parent_attributes.get(key):
+                pattern.append(f"{prefix}:parent_ref.{feature} = '{parent_attributes.pop(key)}'")
+        if parent_attributes:
+            parent_attributes = {'_'.join(key.split('-')[1:]): values for key, values in parent_attributes.items()}
+            pattern.extend(self._handle_pattern_multiple_properties(parent_attributes, prefix, separator=':parent_ref.'))
         if attributes.get('child-pid'):
             index = 0
             for child_pid in attributes.pop('child-pid'):
@@ -2303,6 +2309,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if '/' in hash_type:
             return f"SHA{hash_type.split('/')[1]}"
         return hash_type.replace('-', '').upper()
+
+    @staticmethod
+    def _extract_parent_process_attributes(attributes: dict) -> dict:
+        parent_fields = tuple(key for key in attributes.keys() if key.startswith('parent-'))
+        return {key: attributes.pop(key) for key in parent_fields}
 
     def _fetch_included_reference_uuids(self, references: list, name: str) -> list:
         uuids = []

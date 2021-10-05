@@ -90,6 +90,10 @@ class Stix21Mapping(Stix2Mapping):
             'ip-dst',
             'ip-src'
         )
+        self.__parent_process_fields = (
+            'parent-command-line',
+            'parent-pid'
+        )
         self.__process_object_mapping = {
             'features': {
                 'command-line': 'command_line',
@@ -99,6 +103,7 @@ class Stix21Mapping(Stix2Mapping):
             },
             'parent': {
                 'parent-command-line': 'command_line',
+                'parent-image': 'image_ref.name',
                 'parent-pid': 'pid'
             }
         }
@@ -202,6 +207,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def network_traffic_uuid_fields(self) -> tuple:
         return self.__network_traffic_uuid_fields
+
+    @property
+    def parent_process_fields(self) -> tuple:
+        return self.__parent_process_fields
 
     @property
     def process_object_mapping(self) -> dict:

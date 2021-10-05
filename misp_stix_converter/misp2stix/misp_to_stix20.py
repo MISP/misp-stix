@@ -723,8 +723,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             self._handle_object_indicator(misp_object, pattern)
         else:
             observable_object = {}
-            parent_fields = tuple(key for key in attributes.keys() if key.startswith('parent-'))
-            parent_attributes = {key: attributes.pop(key) for key in parent_fields}
+            parent_attributes = self._extract_parent_process_attributes(attributes)
             process_args = defaultdict(dict)
             index = 1
             if parent_attributes:
@@ -734,8 +733,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                     index += 1
                     str_index2 = str(index)
                     observable_object[str_index2] = File(name=parent_attributes.pop('parent-image'))
-                    parent_args['image_ref'] = str_index2
-                parent_args.update(self._parse_process_args(parent_attributes, 'parent'))
+                    parent_args['binary_ref'] = str_index2
+                    parent_args['_valid_refs'] = {str_index2: 'file'}
+                for key, feature in self._mapping.process_object_mapping['parent'].items():
+                    if parent_attributes.get(key):
+                        parent_args[feature] = parent_attributes.pop(key)
+                if parent_attributes:
+                    parent_args.update(self._handle_parent_process_properties(parent_attributes))
                 observable_object[str_index] = Process(**parent_args)
                 process_args['parent_ref'] = str_index
                 process_args['_valid_refs'][str_index] = 'process'
