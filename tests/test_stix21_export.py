@@ -1996,25 +1996,28 @@ class TestSTIX21Export(TestSTIX2Export):
         )
 
     def test_event_with_process_indicator_object(self):
-        event = get_event_with_process_object()
+        event = get_event_with_process_object_v2()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _pid, _child_pid, _parent_pid, _name, _image, _port = (attribute['value'] for attribute in attributes)
-        pid_, image_, parent_pid_, child_pid_, name_, port_ = pattern[1:-1].split(' AND ')
+        _pid, _child_pid, _parent_pid, _name, _image, _parent_image, _port, _command_line, _parent_name = (attribute['value'] for attribute in attributes)
+        pid_, image_, command_line_, parent_image_, parent_pid_, parent_name_, child_pid_, name_, port_ = pattern[1:-1].split(' AND ')
         self.assertEqual(pid_, f"process:pid = '{_pid}'")
         self.assertEqual(image_, f"process:image_ref.name = '{_image}'")
+        self.assertEqual(command_line_, f"process:parent_ref.command_line = '{_command_line}'")
+        self.assertEqual(parent_image_, f"process:parent_ref.image_ref.name = '{_parent_image}'")
         self.assertEqual(parent_pid_, f"process:parent_ref.pid = '{_parent_pid}'")
+        self.assertEqual(parent_name_, f"process:parent_ref.x_misp_process_name = '{_parent_name}'")
         self.assertEqual(child_pid_, f"process:child_refs[0].pid = '{_child_pid}'")
         self.assertEqual(name_, f"process:x_misp_name = '{_name}'")
         self.assertEqual(port_, f"process:x_misp_port = '{_port}'")
 
     def test_event_with_process_observable_object(self):
-        event = get_event_with_process_object()
+        event = get_event_with_process_object_v2()
         attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
-        pid, child_pid, parent_pid, name, image, port = (attribute['value'] for attribute in attributes)
+        pid, child_pid, parent_pid, name, image, parent_image, port, command_line, parent_name = (attribute['value'] for attribute in attributes)
         for grouping_ref, object_ref in zip(grouping_refs, object_refs):
             self.assertEqual(grouping_ref, object_ref)
-        process, parent_process, child_process, image_object = observables
-        process_ref, parent_ref, child_ref, image_ref = grouping_refs
+        process, parent_image_object, parent_process, child_process, image_object = observables
+        process_ref, parent_image_ref, parent_ref, child_ref, image_ref = grouping_refs
         self.assertEqual(process.id, process_ref)
         self.assertEqual(process.type, 'process')
         self.assertEqual(process.pid, int(pid))
@@ -2023,9 +2026,15 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(process.parent_ref, parent_ref)
         self.assertEqual(process.child_refs, [child_ref])
         self.assertEqual(process.image_ref, image_ref)
+        self.assertEqual(parent_image_object.id, parent_image_ref)
+        self.assertEqual(parent_image_object.type, 'file')
+        self.assertEqual(parent_image_object.name, parent_image)
         self.assertEqual(parent_process.id, parent_ref)
         self.assertEqual(parent_process.type, 'process')
         self.assertEqual(parent_process.pid, int(parent_pid))
+        self.assertEqual(parent_process.command_line, command_line)
+        self.assertEqual(parent_process.x_misp_process_name, parent_name)
+        self.assertEqual(parent_process.image_ref, parent_image_ref)
         self.assertEqual(child_process.id, child_ref)
         self.assertEqual(child_process.type, 'process')
         self.assertEqual(child_process.pid, int(child_pid))

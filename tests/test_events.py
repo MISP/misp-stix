@@ -3033,6 +3033,31 @@ def get_event_with_process_object():
     return event
 
 
+def get_event_with_process_object_v2():
+    event = deepcopy(_BASE_EVENT)
+    process_object = deepcopy(_TEST_PROCESS_OBJECT)
+    process_object['Attribute'].extend(
+        [
+            {
+                "uuid": "d85eeb1a-f4a2-4b9f-a367-d84f9a7e6303",
+                "type": "text",
+                "object_relation": "parent-command-line",
+                "value": "grep -nrG iglocska /home/viktor/friends.txt"
+            },
+            {
+                "uuid": "0251692e-6bb8-4de5-9e94-4dfa2834b032",
+                "type": "text",
+                "object_relation": "parent-process-name",
+                "value": "Friends_From_H"
+            }
+        ]
+    )
+    event['Event']['Object'] = [
+        process_object
+    ]
+    return event
+
+
 def get_event_with_registry_key_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
