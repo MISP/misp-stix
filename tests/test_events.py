@@ -1232,6 +1232,12 @@ _TEST_PROCESS_OBJECT = {
             "value": "test_process.exe"
         },
         {
+            "uuid": "d01ef2c6-3154-4f8a-a3dc-9de1f34dd5d0",
+            "type": "filename",
+            "object_relation": "parent-image",
+            "value": "parent_process.exe"
+        },
+        {
             "uuid": "e072dfbb-c6fd-4312-8201-d140575536c4",
             "type": "port",
             "object_relation": "port",

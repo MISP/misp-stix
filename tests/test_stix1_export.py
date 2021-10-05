@@ -332,7 +332,7 @@ class TestStix1Export(unittest.TestCase):
         self._check_fuzzy_hash_property(ssdeep_hash, ssdeep['value'], ssdeep['type'].upper())
 
     def _check_process_properties(self, properties, attributes):
-        pid, child, parent, name, image, port = attributes
+        pid, child, parent, name, image, parent_image, port = attributes
         self.assertEqual(properties.pid.value, int(pid['value']))
         self.assertEqual(properties.parent_pid.value, int(parent['value']))
         self.assertEqual(properties.name.value, name['value'])
@@ -341,6 +341,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(properties.image_info.file_name.value, image['value'])
         self.assertEqual(len(properties.port_list), 1)
         self.assertEqual(properties.port_list[0].port_value.value, int(port['value']))
+        self._check_custom_properties([parent_image], properties.custom_properties)
 
     def _check_registry_key_properties(self, properties, attributes):
         regkey, hive, name, data, datatype, modified = attributes
