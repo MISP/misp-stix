@@ -1499,20 +1499,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         'url': reference
                     }
                 )
-        vulnerability_args.update(
-            self._handle_vulnerability_time_fields(
-                attributes,
-                misp_object['timestamp']
-            )
-        )
         if attributes:
             vulnerability_args.update(self._handle_observable_multiple_properties(attributes))
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         vulnerability_args.update(
             {
                 'id': vulnerability_id,
                 'type': 'vulnerability',
                 'labels': self._create_object_labels(misp_object),
                 'created_by_ref': self.__identity_id,
+                'created': timestamp,
+                'modified': timestamp,
                 'interoperability': True
             }
         )
@@ -2390,24 +2387,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         stix_fields = _stix_time_fields['observed-data']
         for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
             time_fields[stix_field] = self._datetime_from_str(attribute[misp_field]) if attribute.get(misp_field) else timestamp
-        return time_fields
-
-    def _handle_vulnerability_time_fields(self, attributes: dict, object_timestamp: str) -> dict:
-        timestamp = self._datetime_from_timestamp(object_timestamp)
-        time_fields = {'created': 2, 'modified': 1}
-        use_case = 0
-        for time_field, index in time_fields.items():
-            if attributes.get(time_field):
-                use_case += index
-                value = self._select_single_feature(attributes, time_field)
-                time_fields[time_field] = self._datetime_from_str(value)
-                continue
-            time_fields[time_field] = timestamp
-        if time_fields['created'] > time_fields['modified']:
-            if use_case == 1:
-                time_fields['created'] = time_fields['modified']
-            else:
-                time_fields['modified'] = time_fields['created']
         return time_fields
 
     @staticmethod
