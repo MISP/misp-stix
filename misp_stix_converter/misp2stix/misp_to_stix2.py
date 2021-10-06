@@ -1135,6 +1135,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_file_object_observable(misp_object)
 
+    def _parse_file_object_observable(self, misp_object: dict):
+        file_args, observable_objects = self._parse_file_observable_object(misp_object['Attribute'])
+        self._handle_file_observable_objects(file_args, observable_objects)
+        self._handle_object_observable(misp_object, observable_objects)
+
     def _parse_file_object_pattern(self, attributes: list) -> list:
         prefix = 'file'
         attributes = self._extract_multiple_object_attributes_with_data(

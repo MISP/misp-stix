@@ -584,11 +584,6 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable[index] = email_address
         email_args['_valid_refs'][index] = email_address._type
 
-    def _parse_file_object_observable(self, misp_object: dict):
-        file_args, observable_object = self._parse_file_observable_object(misp_object['Attribute'])
-        self._handle_file_observable_objects(file_args, observable_object)
-        self._handle_object_observable(misp_object, observable_object)
-
     def _parse_file_observable_object(self, attributes: list) -> tuple:
         attributes = self._extract_multiple_object_attributes_with_data(
             attributes,
