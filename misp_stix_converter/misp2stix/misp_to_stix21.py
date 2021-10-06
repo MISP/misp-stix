@@ -898,7 +898,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_artifact(self, artifact_id: str, content: str, filename: Optional[str] = None) -> Artifact:
         args = {'id': artifact_id, 'payload_bin': content}
         if filename is not None:
-            args['x_misp_filename'] = filename
+            args.update(
+                {
+                    'allow_custom': True,
+                    'x_misp_filename': filename
+                }
+            )
         return Artifact(**args)
 
     def _create_attack_pattern_from_galaxy(self, args: dict, cluster: dict) -> AttackPattern:

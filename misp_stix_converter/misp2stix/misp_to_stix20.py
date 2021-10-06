@@ -556,7 +556,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                         str_index = str(index)
                         if isinstance(value, tuple):
                             value, data = value
-                            observable_objects[str_index] = self._create_artifact(
+                            observable_object[str_index] = self._create_artifact(
                                 data,
                                 filename=value
                             )
@@ -787,7 +787,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_artifact(content: str, filename: Optional[str] = None) -> Artifact:
         args = {'payload_bin': content}
         if filename is not None:
-            args['x_misp_filename'] = filename
+            args.update(
+                {
+                    'allow_custom': True,
+                    'x_misp_filename': filename
+                }
+            )
         return Artifact(**args)
 
     def _create_attack_pattern_from_galaxy(self, args: dict, cluster: dict) -> AttackPattern:
