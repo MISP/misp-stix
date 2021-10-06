@@ -2335,6 +2335,12 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(vulnerability.type, 'vulnerability')
         self._check_galaxy_features(vulnerability, galaxy, timestamp, False, False)
 
+    def test_attribute_with_attack_pattern_galaxy(self):
+        attribute = get_indicator_attribute_with_galaxy()
+        misp_attribute = {"Attribute": [attribute]}
+        self.parser.parse_misp_attributes(misp_attribute)
+        self.assertIsNotNone(self.parser.bundle)
+
 
 class TestSTIX21ExportInteroperability(TestSTIX2Export):
     def setUp(self):
