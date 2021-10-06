@@ -1038,6 +1038,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_credential_object_observable(misp_object)
 
+    @staticmethod
+    def _parse_custom_attachment(attachment: Union[str, tuple]) -> dict:
+        if isinstance(attachment, tuple):
+            attachment = {
+                'value': attachment[0],
+                'data': attachment[1]
+            }
+        return {
+            'allow_custom': True,
+            'x_misp_attachment': attachment
+        }
+
     def _parse_custom_object(self, misp_object: dict):
         custom_id = getattr(self, self._id_parsing_function['object'])('x-misp-object', misp_object)
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])

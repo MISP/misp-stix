@@ -682,7 +682,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                         'x_misp_malware_sample': value[0]
                     }
                 )
-        if attributes.get('attachment'):
+            if attributes.get('attachment'):
+                file_args.update(self._parse_custom_attachment(attributes.pop('attachment')))
+        elif attributes.get('attachment'):
             value = self._select_single_feature(attributes, 'attachment')
             if len(value) == 3:
                 filename, uuid, data = value

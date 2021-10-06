@@ -615,7 +615,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                         'x_misp_malware_sample': value
                     }
                 )
-        if attributes.get('attachment'):
+            if attributes.get('attachment'):
+                file_args.update(self._parse_custom_attachment(attributes.pop('attachment')))
+        elif attributes.get('attachment'):
             value = attributes.pop('attachment')
             if isinstance(value, tuple):
                 args = self._create_attachment_args(*value)
