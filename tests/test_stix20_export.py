@@ -1393,6 +1393,13 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(hashes['MD5'], _md5)
         self.assertEqual(hashes['SHA-1'], _sha1)
         self.assertEqual(hashes['SHA-256'], _sha256)
+        self.assertEqual(
+            file.x_misp_attachment,
+            {
+                'value': _attachment,
+                'data': attributes[6]['data']
+            }
+        )
         self.assertEqual(file.parent_directory_ref, '1')
         self.assertEqual(file.content_ref, '2')
         directory = observable_objects['1']
@@ -1404,10 +1411,6 @@ class TestSTIX20Export(TestSTIX2Export):
         filename, md5 = _malware_sample.split('|')
         self.assertEqual(artifact1.hashes['MD5'], md5)
         self.assertEqual(artifact1.x_misp_filename, filename)
-        artifact2 = observable_objects['3']
-        self.assertEqual(artifact2.type, 'artifact')
-        self.assertEqual(artifact2.payload_bin, attributes[6]['data'])
-        self.assertEqual(artifact2.x_misp_filename, _attachment)
 
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'

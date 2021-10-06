@@ -1766,10 +1766,10 @@ class TestSTIX21Export(TestSTIX2Export):
         event = get_event_with_file_object_with_artifact()
         attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
         _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute['value'] for attribute in attributes)
-        file, directory, artifact1, artifact2 = observables
+        file, directory, artifact1 = observables
         for grouping_ref, object_ref in zip(grouping_refs, object_refs):
             self.assertEqual(grouping_ref, object_ref)
-        file_ref, directory_ref, artifact1_ref, artifact2_ref = grouping_refs
+        file_ref, directory_ref, artifact1_ref = grouping_refs
         self.assertEqual(file.id, file_ref)
         self.assertEqual(file.type, 'file')
         self.assertEqual(file.size, int(_size))
@@ -1779,6 +1779,13 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(hashes['MD5'], _md5)
         self.assertEqual(hashes['SHA-1'], _sha1)
         self.assertEqual(hashes['SHA-256'], _sha256)
+        self.assertEqual(
+            file.x_misp_attachment,
+            {
+                'value': _attachment,
+                'data': attributes[6]['data']
+            }
+        )
         self.assertEqual(file.parent_directory_ref, directory_ref)
         self.assertEqual(file.content_ref, artifact1_ref)
         self.assertEqual(directory.id, directory_ref)
@@ -1790,10 +1797,6 @@ class TestSTIX21Export(TestSTIX2Export):
         filename, md5 = _malware_sample.split('|')
         self.assertEqual(artifact1.hashes['MD5'], md5)
         self.assertEqual(artifact1.x_misp_filename, filename)
-        self.assertEqual(artifact2.id, artifact2_ref)
-        self.assertEqual(artifact2.type, 'artifact')
-        self.assertEqual(artifact2.payload_bin, attributes[6]['data'])
-        self.assertEqual(artifact2.x_misp_filename, _attachment)
 
     def test_event_with_geolocation_object(self):
         event = get_event_with_geolocation_object()
