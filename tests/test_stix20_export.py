@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX20Parser, misp_collection_to_stix2_0, misp_to_stix2_0
 from .test_events import *
