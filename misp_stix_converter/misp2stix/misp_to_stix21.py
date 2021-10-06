@@ -486,10 +486,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             if relation not in with_uuid and relation not in with_data:
                 attributes_dict[relation].append(attribute['value'])
                 continue
-            value = [attribute['value'], attribute['uuid']]
+            value = [attribute['value']]
             if relation in with_data and attribute.get('data'):
                 value.append(attribute['data'])
-            attributes_dict[relation].append(value)
+            value.append(attribute['uuid'])
+            attributes_dict[relation].append(tuple(value))
         return attributes_dict
 
     @staticmethod
@@ -626,7 +627,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 if attributes.get(feature):
                     for attribute in attributes.pop(feature):
                         if len(attribute) == 3:
-                            value, uuid, data = attribute
+                            value, data, uuid = attribute
                             object_id = f'artifact--{uuid}'
                             objects.append(
                                 self._create_artifact(object_id, data, filename=value)
@@ -669,7 +670,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if attributes.get('malware-sample'):
             value = self._select_single_feature(attributes, 'malware-sample')
             if len(value) == 3:
-                value, uuid, data = value
+                value, data, uuid = value
                 artifact_id = f'artifact--{uuid}'
                 args = self._create_malware_sample_args(value, data)
                 args['id'] = artifact_id
@@ -683,11 +684,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     }
                 )
             if attributes.get('attachment'):
-                file_args.update(self._parse_custom_attachment(attributes.pop('attachment')))
+                value = self._select_single_feature(attributes, 'attachment')
+                file_args.update(self._parse_custom_attachment(value))
         elif attributes.get('attachment'):
             value = self._select_single_feature(attributes, 'attachment')
             if len(value) == 3:
-                filename, uuid, data = value
+                filename, data, uuid = value
                 args = self._create_attachment_args(filename, data)
                 args['id'] = f'artifact--{uuid}'
                 objects.append(Artifact(**args))
