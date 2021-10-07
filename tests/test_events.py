@@ -1902,12 +1902,17 @@ _USER_AGENT_ATTRIBUTE = {
 }
 
 
-def get_embedded_indicator_attribute_galaxy():
+def get_indicator_attribute_with_galaxy():
     attribute = deepcopy(_INDICATOR_ATTRIBUTE)
     attribute['Galaxy'] = [
         deepcopy(_TEST_ATTACK_PATTERN_GALAXY),
         deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
     ]
+    return attribute
+
+
+def get_embedded_indicator_attribute_galaxy():
+    attribute = get_indicator_attribute_with_galaxy()
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [attribute]
     event['Event']['Galaxy'] = [
