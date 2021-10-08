@@ -525,7 +525,7 @@ def _get_xml_events(package: STIXPackage) -> str:
     if package.related_packages is not None:
         length = 96 + len(package.id_) + len(package.version)
         return package.to_xml(include_namespaces=False).decode()[length:-82]
-    content = '\n            '.join(package.to_xml(include_namesapces=False).decode().split('\n'))
+    content = '\n            '.join(package.to_xml(include_namespaces=False).decode().split('\n'))
     return f'            {content}\n'
 
 
