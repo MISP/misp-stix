@@ -59,6 +59,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._identifier = 'attributes collection'
         self.__objects = []
         self.__relationships = []
+        self.__object_refs = []
         self.__identity_id = self._mapping.misp_identity_args['id']
         if self.__identity_id not in self.__ids:
             identity = self._create_identity(self._mapping.misp_identity_args)
