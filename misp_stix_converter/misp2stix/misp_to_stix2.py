@@ -2373,13 +2373,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _handle_indicator_time_fields(self, attribute: dict) -> dict:
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
-        time_fields = {'created': timestamp, 'modified': timestamp}
-        if not any(attribute.get(feature) for feature in _misp_time_fields):
-            time_fields['valid_from'] = timestamp
-            return time_fields
+        time_fields = {'created': timestamp, 'modified': timestamp, 'valid_from': timestamp}
         stix_fields = _stix_time_fields['indicator']
         for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
-            time_fields[stix_field] = self._datetime_from_str(attribute[misp_field]) if attribute.get(misp_field) else timestamp
+            if attribute.get(misp_field):
+                time_fields[stix_field] = self._datetime_from_str(attribute[misp_field])
+        if time_fields.get('valid_until') and time_fields['valid_from'] >= time_fields['valid_until']:
+            del time_fields['valid_until']
         return time_fields
 
     def _handle_observable_time_fields(self, attribute: dict) -> dict:
@@ -2388,6 +2388,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         stix_fields = _stix_time_fields['observed-data']
         for misp_field, stix_field in zip(_misp_time_fields, stix_fields):
             time_fields[stix_field] = self._datetime_from_str(attribute[misp_field]) if attribute.get(misp_field) else timestamp
+        if time_fields['first_observed'] > time_fields['last_observed']:
+            if attribute.get('last_seen'):
+                time_fields['first_obsevred'] = time_fields['last_observed']
+            else:
+                time_fields['last_observed'] = time_fields['first_observed']
         return time_fields
 
     @staticmethod
