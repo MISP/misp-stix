@@ -107,8 +107,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             else:
                 self._parse_custom_attribute(attribute)
                 self._attribute_not_mapped_warning(attribute_type)
-        except Exception:
-            self._attribute_error(attribute)
+        except Exception as exception:
+            self._attribute_error(attribute, exception)
 
     def _handle_attribute_indicator(self, attribute: dict, observable: Observable) -> Indicator:
         indicator = self._create_indicator_from_attribute(attribute)
@@ -1193,8 +1193,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                         self._handle_misp_object_with_context(misp_object, observable)
                     else:
                         self._handle_misp_object(observable, misp_object.get('meta-category'))
-            except Exception:
-                self._object_error(misp_object)
+            except Exception as exception:
+                self._object_error(misp_object, exception)
         if self._objects_to_parse:
             if self._objects_to_parse.get('file'):
                 for misp_object in self._objects_to_parse.pop('file').values():

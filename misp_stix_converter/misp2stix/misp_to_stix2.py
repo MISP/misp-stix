@@ -294,8 +294,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             else:
                 self._parse_custom_attribute(attribute)
                 self._attribute_not_mapped_warning(attribute_type)
-        except Exception:
-            self._attribute_error(attribute)
+        except Exception as exception:
+            self._attribute_error(attribute, exception)
 
     def _handle_attribute_indicator(self, attribute: dict, pattern: str):
         indicator_id = getattr(self, self._id_parsing_function['attribute'])('indicator', attribute)
@@ -691,8 +691,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 else:
                     self._parse_custom_object(misp_object)
                     self._object_not_mapped_warning(object_name)
-            except Exception:
-                self._object_error(misp_object)
+            except Exception as exception:
+                self._object_error(misp_object, exception)
 
     def _resolve_objects_to_parse(self):
         if self._objects_to_parse.get('file'):

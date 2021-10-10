@@ -2,6 +2,7 @@
 #!/usr/bin/env python3
 
 import json
+import traceback
 from collections import defaultdict
 from datetime import datetime
 from stix.indicator import Indicator
@@ -170,8 +171,10 @@ class MISPtoSTIXParser():
     #                     ERRORS & WARNINGS HANDLING FUNCTIONS                     #
     ################################################################################
 
-    def _attribute_error(self, attribute: dict):
-        message = f"Error with the {attribute['type']} attribute: {attribute['value']} (uuid: {attribute['uuid']})."
+    def _attribute_error(self, attribute: dict, exception: Exception):
+        features = f"{attribute['type']} attribute: {attribute['value']} (uuid: {attribute['uuid']})"
+        tb = self._parse_traceback(exception)
+        message = f"Error with the {features}:\n{tb}."
         self.__errors[self._identifier].append(message)
 
     def _attribute_galaxy_not_mapped_warning(self, galaxy_type: str, attribute_type: str):
@@ -182,8 +185,10 @@ class MISPtoSTIXParser():
         message = f"MISP Attribute type {attribute_type} not mapped."
         self.__warnings[self._identifier].add(message)
 
-    def _object_error(self, misp_object: dict):
-        message = f"Error with the {misp_object['name']} object: {misp_object['uuid']}."
+    def _object_error(self, misp_object: dict, exception: Exception):
+        features = f"{misp_object['name']} object: {misp_object['uuid']}"
+        tb = self._parse_traceback(exception)
+        message = f"Error with the {features}:\n{tb}."
         self.__errors[self._identifier].append(message)
 
     def _object_galaxy_not_mapped_warning(self, galaxy_type: str, object_name: str):
@@ -193,6 +198,11 @@ class MISPtoSTIXParser():
     def _object_not_mapped_warning(self, object_name: str):
         message = f"MISP Object name {object_name} not mapped."
         self.__warnings[self._identifier].add(message)
+
+    @staticmethod
+    def _parse_traceback(exception: Exception) -> str:
+        tb = ''.join(traceback.format_tb(exception.__traceback__))
+        return f'{tb}{exception.__str__()}'
 
     def _pe_reference_warning(self, file_uuid: str):
         message = f"Unable to find the pe object related to the file object {file_uuid}."
