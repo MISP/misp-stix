@@ -2,12 +2,17 @@
 
 # MISP-STIX-Converter - Python library to handle the conversion between MISP and STIX
 
-MISP-STIX-Converter is a Python library to handle all the interactions between the MISP and STIX formats.
+MISP-STIX-Converter is a Python library to handle all the interactions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
 
-MISP-STIX-COnverter allows you to convert:
+MISP-STIX-Converter allows you to convert:
+
 - MISP -> STIX1 (1.1.1 & 1.2)
 - MISP -> STIX2 (2.0 & 2.1)
 - (WiP) STIX -> MISP
+
+This library is used by the MISP core software to perform STIX conversion and serving as a useful tool for anyone looking for a clean way of converting between the MISP standard format and various STIX versions (1.1.1, 1.2, 2.0, 2.1).
+
+A complete [documentation is available](/documentation/) including the mappings between the different formats.
 
 ## Install from pip
 
@@ -49,7 +54,7 @@ poetry run nosetests-3.4 --with-coverage --cover-package=tests --cover-tests tes
 
 ## Samples and examples
 
-Various examples are provided and used by the different tests scripts in the [tests](tests/) directory.  
+Various examples are provided and used by the different tests scripts in the [tests](tests/) directory.
 Those example files are showing the results of MISP format exported in the various supported STIX formats.
 
 ### Usage examples
@@ -168,5 +173,5 @@ Again, all the response variables should be `1` and the resulting STIX1 Package 
 
 ## MISP <--> STIX Mapping
 
-A specific documentation concerning the mapping between MISP and the various supported STIX versions is also provided in the [documentation](documentation/) directory.  
+A specific documentation concerning the mapping between MISP and the various supported STIX versions is also provided in the [documentation](documentation/) directory.
 You can find there all the different cases illustrated with examples.
