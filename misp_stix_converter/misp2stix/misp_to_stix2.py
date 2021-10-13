@@ -1127,7 +1127,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                             feature = f'body_multipart[{n}].body_raw_ref'
                             if isinstance(value, tuple):
                                 value, data = value
-                                pattern.append(f"{prefix}:{feature}.payload_bin = '{value}'")
+                                pattern.append(f"{prefix}:{feature}.payload_bin = '{data}'")
                             pattern.append(f"{prefix}:{feature}.name = '{value}'")
                             n += 1
                 pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
