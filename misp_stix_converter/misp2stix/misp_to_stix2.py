@@ -454,7 +454,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_email_attachment_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[email-message:body_multipart[*].body_raw_ref.name = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[email-message:body_multipart[*].body_raw_ref.name = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_email_attachment_attribute_observable(attribute)
@@ -468,7 +469,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_email_body_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[email-message:body = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[email-message:body = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_email_body_attribute_observable(attribute)
@@ -482,7 +484,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_email_header_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[email-message:received_lines = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[email-message:received_lines = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_email_header_attribute_observable(attribute)
@@ -503,7 +506,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_email_subject_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[email-message:subject = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[email-message:subject = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_email_subject_attribute_observable(attribute)
@@ -595,7 +599,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_mutex_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[mutex:name = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[mutex:name = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_mutex_attribute_observable(attribute)
@@ -640,7 +645,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_user_agent_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_custom_attribute(attribute)
@@ -862,22 +868,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         parent_attributes = {'_'.join(key.split('-')[1:]): values for key, values in attributes.items()}
         return self._handle_observable_multiple_properties(parent_attributes)
 
-    @staticmethod
-    def _handle_pattern_multiple_properties(attributes: dict, prefix: str, separator: Optional[str]=':') -> list:
+    def _handle_pattern_multiple_properties(self, attributes: dict, prefix: str, separator: Optional[str]=':') -> list:
         pattern = []
         for key, values in attributes.items():
             key = key.replace('-', '_')
             if not isinstance(values, list):
-                pattern.append(f"{prefix}{separator}x_misp_{key} = '{values}'")
+                value = self._handle_value_for_pattern(values)
+                pattern.append(f"{prefix}{separator}x_misp_{key} = '{value}'")
                 continue
             for value in values:
+                value = self._handle_value_for_pattern(value)
                 pattern.append(f"{prefix}{separator}x_misp_{key} = '{value}'")
         return pattern
 
-    @staticmethod
-    def _handle_pattern_properties(attributes: dict, prefix: str, separator: Optional[str]=':') -> list:
+    def _handle_pattern_properties(self, attributes: dict, prefix: str, separator: Optional[str]=':') -> list:
         pattern = []
         for key, value in attributes.items():
+            value = self._handle_value_for_pattern(value)
             pattern.append(f"{prefix}{separator}x_misp_{key.replace('-', '_')} = '{value}'")
         return pattern
 
@@ -905,7 +912,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             pattern = [f"{prefix}:account_type = '{account_type}'"]
             for key, feature in getattr(self._mapping, f"{account_type}_account_object_mapping").items():
                 if attributes.get(key):
-                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                    value = self._handle_value_for_pattern(attributes.pop(key))
+                    pattern.append(f"{prefix}:{feature} = '{value}'")
             if attributes:
                 pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
@@ -921,7 +929,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             pattern = [self._create_AS_pattern(attributes.pop('asn'))]
             if attributes.get('description'):
-                pattern.append(f"{prefix}:name = '{attributes.pop('description')}'")
+                value = self._handle_value_for_pattern(attributes.pop('description'))
+                pattern.append(f"{prefix}:name = '{value}'")
             if attributes:
                 pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
@@ -1118,16 +1127,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for key, feature in self._mapping.email_object_mapping.items():
                 if attributes.get(key):
                     for value in attributes.pop(key):
+                        value = self._handle_value_for_pattern(value)
                         pattern.append(f"{prefix}:{feature} = '{value}'")
             if attributes:
                 n = 0
                 for key in self._mapping.email_data_fields:
                     if attributes.get(key):
-                        for value in attributes.pop(key):
+                        for name in attributes.pop(key):
                             feature = f'body_multipart[{n}].body_raw_ref'
-                            if isinstance(value, tuple):
-                                value, data = value
+                            if isinstance(name, tuple):
+                                name, data = name
                                 pattern.append(f"{prefix}:{feature}.payload_bin = '{data}'")
+                            value = self._handle_value_for_pattern(name)
                             pattern.append(f"{prefix}:{feature}.name = '{value}'")
                             n += 1
                 pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
@@ -1172,6 +1183,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for key, feature in self._mapping.file_object_mapping.items():
             if attributes.get(key):
                 for value in attributes.pop(key):
+                    value = self._handle_value_for_pattern(value)
                     pattern.append(f"{prefix}:{feature} = '{value}'")
         if attributes.get('path'):
             value = attributes.pop('path')
@@ -1239,7 +1251,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             attributes = self._extract_object_attributes(misp_object['Attribute'])
             pattern = []
             if attributes.get('name'):
-                pattern.append(f"{prefix}:name = '{attributes.pop('name')}'")
+                value = self._handle_value_for_pattern(attributes.pop('name'))
+                pattern.append(f"{prefix}:name = '{value}'")
             if attributes:
                 pattern.extend(self._handle_pattern_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
@@ -1394,13 +1407,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         pattern = []
         for key, feature in self._mapping.process_object_mapping['features'].items():
             if attributes.get(key):
-                pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                value = self._handle_value_for_pattern(attributes.pop(key))
+                pattern.append(f"{prefix}:{feature} = '{value}'")
         if attributes.get('image'):
             pattern.append(self._create_process_image_pattern(attributes.pop('image')))
         parent_attributes = self._extract_parent_process_attributes(attributes)
         for key, feature in self._mapping.process_object_mapping['parent'].items():
             if parent_attributes.get(key):
-                pattern.append(f"{prefix}:parent_ref.{feature} = '{parent_attributes.pop(key)}'")
+                value = self._handle_value_for_pattern(parent_attributes.pop(key))
+                pattern.append(f"{prefix}:parent_ref.{feature} = '{value}'")
         if parent_attributes:
             parent_attributes = {'_'.join(key.split('-')[1:]): values for key, values in parent_attributes.items()}
             pattern.extend(self._handle_pattern_multiple_properties(parent_attributes, prefix, separator=':parent_ref.'))
@@ -1457,7 +1472,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for data_type in ('features', 'timeline'):
                 for key, feature in self._mapping.user_account_object_mapping[data_type].items():
                     if attributes.get(key):
-                        pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+                        value = self._handle_value_for_pattern(attributes.pop(key))
+                        pattern.append(f"{prefix}:{feature} = '{value}'")
             extension_prefix = f"{prefix}:extensions.'unix-account-ext'"
             for key, feature in self._mapping.user_account_object_mapping['extension'].items():
                 if attributes.get(key):
@@ -2255,8 +2271,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_AS_pattern(self, value: str) -> str:
         return f"autonomous-system:number = '{self._parse_AS_value(value)}'"
 
-    @staticmethod
-    def _create_content_ref_pattern(value: str, feature: str = 'payload_bin') -> str:
+    def _create_content_ref_pattern(self, name: str, feature: str = 'payload_bin') -> str:
+        value = self._handle_value_for_pattern(name)
         return f"file:content_ref.{feature} = '{value}'"
 
     @staticmethod
@@ -2273,9 +2289,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         hash_pattern = self._create_hash_pattern(hash_type, hash_value)
         return f"{filename_pattern} AND {hash_pattern}"
 
-    @staticmethod
-    def _create_filename_pattern(value: str) -> str:
-        return f"file:name = '{value}'"
+    def _create_filename_pattern(self, value: str) -> str:
+        return f"file:name = '{self._handle_value_for_pattern(value)}'"
 
     def _create_hash_pattern(self, hash_type: str, value: str, prefix: Optional[str]='file:hashes') -> str:
         return f"{prefix}.{self._define_hash_type(hash_type)} = '{value}'"
@@ -2397,7 +2412,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     @staticmethod
     def _handle_value_for_pattern(attribute_value: str) -> str:
-        return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
+        #return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
+        return attribute_value.replace("'", "\\'").replace('"', '\\\\"')
 
     def _parse_galaxy_relationship(self, source_id: str, target_id: str, relationship_type: str, timestamp: datetime):
         self.__relationships.append(

@@ -1044,19 +1044,20 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     #                         PATTERNS CREATION FUNCTIONS.                         #
     ################################################################################
 
-    @staticmethod
-    def _create_credential_pattern(attributes: dict) -> list:
+    def _create_credential_pattern(self, attributes: dict) -> list:
         pattern = []
         if attributes.get('username'):
-            pattern.append(f"user-account:user_id = '{attributes.pop('username')}'")
+            value = self._handle_value_for_pattern(attributes.pop('username'))
+            pattern.append(f"user-account:user_id = '{value}'")
         if attributes.get('password'):
             for password in attributes.pop('password'):
-                pattern.append(f"user-account:credential = '{password}'")
+                value = self._handle_value_for_pattern(password)
+                pattern.append(f"user-account:credential = '{value}'")
         return pattern
 
-    @staticmethod
-    def _create_process_image_pattern(image: str) -> str:
-        return f"process:image_ref.name = '{image}'"
+    def _create_process_image_pattern(self, image: str) -> str:
+        value = self._handle_value_for_pattern(image)
+        return f"process:image_ref.name = '{value}'"
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
