@@ -696,14 +696,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return network_traffic_args, observable_object
 
     def _parse_network_socket_object(self, misp_object: dict):
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.network_socket_single_fields
-        )
         if self._fetch_ids_flag(misp_object['Attribute']):
-            pattern = self._parse_network_socket_object_pattern(attributes)
+            pattern = self._parse_network_socket_object_pattern(misp_object['Attribute'])
             self._handle_object_indicator(misp_object, pattern)
         else:
+            attributes = self._extract_multiple_object_attributes(
+                misp_object['Attribute'],
+                force_single=self._mapping.network_socket_single_fields
+            )
             network_traffic_args, observable_object = self._parse_network_references(attributes)
             if attributes:
                 network_traffic_args.update(self._parse_network_socket_args(attributes))
@@ -711,14 +711,14 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             self._handle_object_observable(misp_object, observable_object)
 
     def _parse_process_object(self, misp_object: dict):
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.process_single_fields
-        )
         if self._fetch_ids_flag(misp_object['Attribute']):
-            pattern = self._parse_process_object_pattern(attributes)
+            pattern = self._parse_process_object_pattern(misp_object['Attribute'])
             self._handle_object_indicator(misp_object, pattern)
         else:
+            attributes = self._extract_multiple_object_attributes(
+                misp_object['Attribute'],
+                force_single=self._mapping.process_single_fields
+            )
             observable_object = {}
             parent_attributes = self._extract_parent_process_attributes(attributes)
             process_args = defaultdict(dict)
@@ -910,16 +910,16 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     #                         PATTERNS CREATION FUNCTIONS.                         #
     ################################################################################
 
-    def _create_credential_pattern(self, attributes: dict) -> list:
+    @staticmethod
+    def _create_credential_pattern(attributes: dict) -> list:
         pattern = []
         if attributes.get('username'):
-            value = self._handle_value_for_pattern(attributes.pop('username'))
-            pattern.append(f"user-account:user_id = '{value}'")
+            pattern.append(f"user-account:user_id = '{attributes.pop('username')}'")
         return pattern
 
-    def _create_process_image_pattern(self, image: str) -> str:
-        value = self._handle_value_for_pattern(image)
-        return f"process:binary_ref.name = '{value}'"
+    @staticmethod
+    def _create_process_image_pattern(image: str) -> str:
+        return f"process:binary_ref.name = '{image}'"
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #

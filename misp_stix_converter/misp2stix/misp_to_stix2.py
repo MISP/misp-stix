@@ -368,8 +368,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_attachment_attribute(self, attribute: dict):
         if attribute.get('data'):
             if attribute.get('to_ids', False):
-                file_pattern = self._create_filename_pattern(attribute['value'])
-                data_pattern = self._create_content_ref_pattern(attribute['data'])
+                value = self._handle_value_for_pattern(attribute['value'])
+                file_pattern = self._create_filename_pattern(value)
+                data = self._handle_value_for_pattern(attribute['data'])
+                data_pattern = self._create_content_ref_pattern(data)
                 pattern = f"[{file_pattern} AND {data_pattern}]"
                 self._handle_attribute_indicator(attribute, pattern)
             else:
@@ -379,7 +381,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_autonomous_system_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[{self._create_AS_pattern(attribute['value'])}]"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[{self._create_AS_pattern(value)}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_autonomous_system_attribute_observable(attribute)
@@ -437,14 +440,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_domain_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[{self._create_domain_pattern(attribute['value'])}]"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[{self._create_domain_pattern(value)}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_domain_attribute_observable(attribute)
 
     def _parse_domain_ip_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            domain, ip = attribute['value'].split('|')
+            domain, ip = self._handle_value_for_pattern(attribute['value']).split('|')
             domain_pattern = self._create_domain_pattern(domain)
             resolving_ref = self._create_domain_resolving_pattern(ip)
             pattern = f"[{domain_pattern} AND {resolving_ref}]"
@@ -462,7 +466,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_email_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[email-addr:value = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[email-addr:value = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_email_attribute_observable(attribute)
@@ -477,7 +482,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_email_destination_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[email-message:to_refs[*].value = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[email-message:to_refs[*].value = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_email_destination_attribute_observable(attribute)
@@ -492,14 +498,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_email_reply_to_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[email-message:additional_header_fields.reply_to = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[email-message:additional_header_fields.reply_to = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_email_reply_to_attribute_observable(attribute)
 
     def _parse_email_source_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[email-message:from_ref.value = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[email-message:from_ref.value = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_email_source_attribute_observable(attribute)
@@ -514,21 +522,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_email_x_mailer_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[email-message:additional_header_fields.x_mailer = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[email-message:additional_header_fields.x_mailer = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_email_x_mailer_attribute_observable(attribute)
 
     def _parse_filename_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[{self._create_filename_pattern(attribute['value'])}]"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[{self._create_filename_pattern(value)}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_filename_attribute_observable(attribute)
 
     def _parse_hash_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[{self._create_hash_pattern(attribute['type'], attribute['value'])}]"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[{self._create_hash_pattern(attribute['type'], value)}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_hash_attribute_observable(attribute)
@@ -537,14 +548,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attribute.get('to_ids', False):
             if hash_type is None:
                 hash_type = attribute['type'].split('|')[1]
-            pattern = self._create_filename_hash_pattern(hash_type, attribute['value'])
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = self._create_filename_hash_pattern(hash_type, value)
             self._handle_attribute_indicator(attribute, f"[{pattern}]")
         else:
             self._parse_hash_composite_attribute_observable(attribute, hash_type=hash_type)
 
     def _parse_hostname_port_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            hostname, port = attribute['value'].split('|')
+            hostname, port = self._handle_value_for_pattern(attribute['value']).split('|')
             hostname_pattern = self._create_domain_pattern(hostname)
             port_pattern = self._create_port_pattern(port)
             pattern = f"[{hostname_pattern} AND {port_pattern}]"
@@ -554,7 +566,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_http_method_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[network-traffic:extensions.'http-request-ext'.request_method = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[network-traffic:extensions.'http-request-ext'.request_method = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_custom_attribute(attribute)
@@ -562,7 +575,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_ip_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             ip_type = attribute['type'].split('-')[1]
-            pattern = f"[{self._create_ip_pattern(ip_type, attribute['value'])}]"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[{self._create_ip_pattern(ip_type, value)}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_ip_attribute_observable(attribute)
@@ -570,7 +584,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_ip_port_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             ip_type = attribute['type'].split('|')[0].split('-')[1]
-            ip_value, port_value = attribute['value'].split('|')
+            ip_value, port_value = self._handle_value_for_pattern(attribute['value']).split('|')
             ip_pattern = self._create_ip_pattern(ip_type, ip_value)
             port_pattern = self._create_port_pattern(port_value, ip_type=ip_type)
             pattern = f"[{ip_pattern} AND {port_pattern}]"
@@ -580,7 +594,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_mac_address_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[mac-addr:value = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[mac-addr:value = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_mac_address_attribute_observable(attribute)
@@ -588,8 +603,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_malware_sample_attribute(self, attribute: dict):
         if attribute.get('data'):
             if attribute.get('to_ids', False):
-                file_pattern = self._create_filename_hash_pattern('md5', attribute['value'])
-                data_pattern = self._create_content_ref_pattern(attribute['data'])
+                value = self._handle_value_for_pattern(attribute['value'])
+                file_pattern = self._create_filename_hash_pattern('md5', value)
+                data = self._handle_value_for_pattern(attribute['data'])
+                data_pattern = self._create_content_ref_pattern(data)
                 pattern = f"[{file_pattern} AND {data_pattern}]"
                 self._handle_attribute_indicator(attribute, pattern)
             else:
@@ -607,7 +624,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_port_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[network-traffic:dst_port = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[network-traffic:dst_port = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_custom_attribute(attribute)
@@ -615,30 +633,34 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_regkey_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             key = self._sanitize_registry_key_value(attribute['value'])
-            pattern = f"[{self._create_regkey_pattern(key)}]"
+            value = self._handle_value_for_pattern(key)
+            pattern = f"[{self._create_regkey_pattern(value)}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_regkey_attribute_observable(attribute)
 
     def _parse_regkey_value_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            key, value = self._sanitize_registry_key_value(attribute['value']).split('|')
+            value = self._sanitize_registry_key_value(attribute['value'])
+            key, data = self._handle_value_for_pattern(value).split('|')
             key_pattern = self._create_regkey_pattern(key)
-            pattern = f"[{key_pattern} AND windows-registry-key:values.data = '{value.strip()}']"
+            pattern = f"[{key_pattern} AND windows-registry-key:values.data = '{data.strip()}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_regkey_value_attribute_observable(attribute)
 
     def _parse_size_in_bytes_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[file:size = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[file:size = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_custom_attribute(attribute)
 
     def _parse_url_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[url:value = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[url:value = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_url_attribute_observable(attribute)
@@ -679,7 +701,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_x509_fingerprint_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             hash_type = attribute['type'].split('-')[-1].upper()
-            pattern = f"[x509-certificate:hashes.{hash_type} = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[x509-certificate:hashes.{hash_type} = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_x509_fingerprint_attribute_observable(attribute)
@@ -777,6 +800,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         file_args['name'] = ''
                     observable = self._handle_file_observable_object(file_args)
                     self._handle_object_observable(pe_object, observable)
+
+    def _extract_multiple_object_attributes_escaped(self, attributes: list, force_single: Optional[tuple] = None) -> dict:
+        attributes_dict = defaultdict(list)
+        if force_single is not None:
+            for attribute in attributes:
+                value = self._handle_value_for_pattern(attribute['value'])
+                relation = attribute['object_relation']
+                if relation in force_single:
+                    attributes_dict[relation] = value
+                else:
+                    attributes_dict[relation].append(value)
+            return attributes_dict
+        for attribute in attributes:
+            value = self._handle_value_for_pattern(attribute['value'])
+            attributes_dict[attribute['object_relation']].append(value)
+        return attributes_dict
+
+    def _extract_multiple_object_attributes_with_data_escaped(self, attributes: list, force_single: tuple = (), with_data: tuple = ()) -> dict:
+        attributes_dict = defaultdict(list)
+        for attribute in attributes:
+            relation = attribute['object_relation']
+            value = self._handle_value_for_pattern(attribute['value'])
+            if relation in with_data and attribute.get('data'):
+                data = self._handle_value_for_pattern(attribute['data'])
+                value = (value, data)
+            if relation in force_single:
+                attributes_dict[relation] = value
+            else:
+                attributes_dict[relation].append(value)
+        return attributes_dict
+
+    def _extract_object_attributes_escaped(self, attributes: list) -> dict:
+        return {attribute['object_relation']: self._handle_value_for_pattern(attribute['value']) for attribute in attributes}
 
     def _handle_object_indicator(self, misp_object: dict, pattern: list):
         indicator_id = getattr(self, self._id_parsing_function['object'])('indicator', misp_object)
@@ -905,9 +961,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         account_type = misp_object['name'].split('-')[0]
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'user-account'
-            attributes = self._extract_multiple_object_attributes(
+            attributes = self._extract_multiple_object_attributes_escaped(
                 misp_object['Attribute'],
-                force_single=getattr(self._mapping, f"{account_type}_account_single_fields")
+                force_single=getattr(
+                    self._mapping,
+                    f"{account_type}_account_single_fields"
+                )
             )
             pattern = [f"{prefix}:account_type = '{account_type}'"]
             for key, feature in getattr(self._mapping, f"{account_type}_account_object_mapping").items():
@@ -923,7 +982,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_asn_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'autonomous-system'
-            attributes = self._extract_multiple_object_attributes(
+            attributes = self._extract_multiple_object_attributes_escaped(
                 misp_object['Attribute'],
                 force_single=self._mapping.as_single_fields
             )
@@ -938,7 +997,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._parse_asn_object_observable(misp_object)
 
     def _parse_attack_pattern_object(self, misp_object: dict):
-        attributes = self._extract_multiple_object_attributes(
+        attributes = self._extract_multiple_object_attributes_escaped(
             misp_object['Attribute'],
             force_single=self._mapping.attack_pattern_single_fields
         )
@@ -997,7 +1056,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return {'source_name': source_name, key: value}
 
     def _parse_course_of_action_object(self, misp_object: dict):
-        attributes = self._extract_object_attributes(misp_object['Attribute'])
+        attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
         prefix = 'course-of-action'
         course_of_action_id = getattr(self, self._id_parsing_function['object'])(prefix, misp_object)
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
@@ -1032,7 +1091,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_credential_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
-            attributes = self._extract_multiple_object_attributes(
+            attributes = self._extract_multiple_object_attributes_escaped(
                 misp_object['Attribute'],
                 force_single=self._mapping.credential_single_fields
             )
@@ -1104,7 +1163,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_domain_ip_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'domain-name'
-            attributes = self._extract_multiple_object_attributes(misp_object['Attribute'])
+            attributes = self._extract_multiple_object_attributes_escaped(misp_object['Attribute'])
             pattern = []
             for key, feature in self._mapping.domain_ip_object_mapping.items():
                 if attributes.get(key):
@@ -1119,7 +1178,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_email_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'email-message'
-            attributes = self._extract_multiple_object_attributes_with_data(
+            attributes = self._extract_multiple_object_attributes_with_data_escaped(
                 misp_object['Attribute'],
                 with_data=self._mapping.email_data_fields
             )
@@ -1166,7 +1225,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_file_object_pattern(self, attributes: list) -> list:
         prefix = 'file'
-        attributes = self._extract_multiple_object_attributes_with_data(
+        attributes = self._extract_multiple_object_attributes_with_data_escaped(
             attributes,
             force_single=self._mapping.file_single_fields,
             with_data=self._mapping.file_data_fields
@@ -1224,7 +1283,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_ip_port_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'
-            attributes = self._extract_multiple_object_attributes(misp_object['Attribute'])
+            attributes = self._extract_multiple_object_attributes_escaped(misp_object['Attribute'])
             patterns = []
             for key, pattern in self._mapping.ip_port_object_mapping['ip_features'].items():
                 if attributes.get(key):
@@ -1248,7 +1307,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_mutex_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'mutex'
-            attributes = self._extract_object_attributes(misp_object['Attribute'])
+            attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
             pattern = []
             if attributes.get('name'):
                 value = self._handle_value_for_pattern(attributes.pop('name'))
@@ -1262,7 +1321,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_network_connection_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'
-            attributes = self._extract_object_attributes(misp_object['Attribute'])
+            attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
             pattern = self._parse_network_references_pattern(attributes)
             for key, feature in self._mapping.network_connection_mapping['features'].items():
                 if attributes.get(key):
@@ -1291,7 +1350,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 pattern.append(f"({feature}.type = 'domain-name' AND {feature}.value = '{value}')")
         return pattern
 
-    def _parse_network_socket_object_pattern(self, attributes: dict) -> list:
+    def _parse_network_socket_object_pattern(self, object_attributes: list) -> list:
+        attributes = self._extract_multiple_object_attributes_escaped(
+                object_attributes,
+                force_single=self._mapping.network_socket_single_fields
+            )
         prefix = 'network-traffic'
         pattern = self._parse_network_references_pattern(attributes)
         for key, feature in self._mapping.network_socket_mapping['features'].items():
@@ -1317,7 +1380,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_pe_extensions_observable(self, pe_uuid: str, uuids: Optional[list]=None) -> dict:
         custom = False
-        attributes = self._extract_multiple_object_attributes(
+        attributes = self._extract_multiple_object_attributes_escaped(
             self._select_pe_object(pe_uuid)['Attribute'],
             force_single=self._mapping.pe_object_single_fields
         )
@@ -1337,7 +1400,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if uuids is not None:
             for section_uuid in uuids:
                 section = defaultdict(dict)
-                attributes = self._extract_object_attributes(
+                attributes = self._extract_object_attributes_escaped(
                     self._objects_to_parse['pe-section'][section_uuid][1]['Attribute']
                 )
                 for key, feature in self._mapping.pe_section_mapping.items():
@@ -1355,7 +1418,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_pe_extensions_pattern(self, pe_uuid: str, uuids: Optional[list]=None) -> list:
         prefix = "file:extensions.'windows-pebinary-ext'"
-        attributes = self._extract_multiple_object_attributes(
+        attributes = self._extract_multiple_object_attributes_escaped(
             self._select_pe_object(pe_uuid)['Attribute'],
             force_single=self._mapping.pe_object_single_fields
         )
@@ -1377,7 +1440,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if uuids is not None:
             for section_uuid in uuids:
                 section_prefix = f"{prefix}.sections[{uuids.index(section_uuid)}]"
-                attributes = self._extract_object_attributes(
+                attributes = self._extract_object_attributes_escaped(
                     self._objects_to_parse['pe-section'][section_uuid][1]['Attribute']
                 )
                 for key, feature in self._mapping.pe_section_mapping.items():
@@ -1402,7 +1465,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     )
         return pattern
 
-    def _parse_process_object_pattern(self, attributes: dict) -> list:
+    def _parse_process_object_pattern(self, object_attributes: list) -> list:
+        attributes = self._extract_multiple_object_attributes_escaped(
+            object_attributes,
+            force_single=self._mapping.process_single_fields
+        )
         prefix = 'process'
         pattern = []
         for key, feature in self._mapping.process_object_mapping['features'].items():
@@ -1431,7 +1498,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_registry_key_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'windows-registry-key'
-            attributes = self._extract_object_attributes(misp_object['Attribute'])
+            attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
             pattern = []
             for key, feature in self._mapping.registry_key_mapping['features'].items():
                 if attributes.get(key):
@@ -1451,7 +1518,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_url_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'url'
-            attributes = self._extract_object_attributes(misp_object['Attribute'])
+            attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
             pattern = []
             if attributes.get('url'):
                 pattern.append(f"{prefix}:value = '{attributes.pop('url')}'")
@@ -1464,7 +1531,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_user_account_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'user-account'
-            attributes = self._extract_multiple_object_attributes(
+            attributes = self._extract_multiple_object_attributes_escaped(
                 misp_object['Attribute'],
                 force_single=self._mapping.user_account_single_fields
             )
@@ -1492,7 +1559,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_vulnerability_object(self, misp_object: dict):
         vulnerability_id = getattr(self, self._id_parsing_function['object'])('vulnerability', misp_object)
         vulnerability_args = defaultdict(list)
-        attributes = self._extract_multiple_object_attributes(misp_object['Attribute'])
+        attributes = self._extract_multiple_object_attributes_escaped(misp_object['Attribute'])
         if attributes.get('id'):
             vulnerability_args['name'] = attributes['id'][0]
             for vuln in attributes.pop('id'):
@@ -1548,7 +1615,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_x509_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'x509-certificate'
-            attributes = self._extract_multiple_object_attributes(
+            attributes = self._extract_multiple_object_attributes_escaped(
                 misp_object['Attribute'],
                 force_single=self._mapping.x509_single_fields
             )
@@ -2025,9 +2092,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     ################################################################################
 
     def _parse_account_args(self, attributes: list, account_type: str) -> dict:
-        attributes = self._extract_multiple_object_attributes(
+        attributes = self._extract_multiple_object_attributes_escaped(
             attributes,
-            force_single=getattr(self._mapping, f"{account_type}_account_single_fields")
+            force_single=getattr(
+                self._mapping,
+                f"{account_type}_account_single_fields"
+            )
         )
         account_args = {'account_type': account_type}
         for key, feature in getattr(self._mapping, f"{account_type}_account_object_mapping").items():
@@ -2038,7 +2108,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return account_args
 
     def _parse_AS_args(self, attributes: list) -> dict:
-        attributes = self._extract_multiple_object_attributes(
+        attributes = self._extract_multiple_object_attributes_escaped(
             attributes,
             force_single=self._mapping.as_single_fields
         )
@@ -2050,7 +2120,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return as_args
 
     def _parse_credential_args(self, attributes: list) -> dict:
-        attributes = self._extract_multiple_object_attributes(
+        attributes = self._extract_multiple_object_attributes_escaped(
             attributes,
             force_single=self._mapping.credential_single_fields
         )
@@ -2125,7 +2195,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return args
 
     def _parse_mutex_args(self, attributes: dict) -> dict:
-        attributes = self._extract_object_attributes(attributes)
+        attributes = self._extract_object_attributes_escaped(attributes)
         mutex_args = {}
         if attributes.get('name'):
             mutex_args['name'] = attributes.pop('name')
@@ -2186,7 +2256,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return process_args
 
     def _parse_registry_key_args(self, attributes: dict) -> dict:
-        attributes = self._extract_object_attributes(attributes)
+        attributes = self._extract_object_attributes_escaped(attributes)
         if attributes.get('last-modified') and not attributes['last-modified'].endswith('Z'):
             attributes['last-modified'] = f"{attributes.pop('last-modified')}Z"
         registry_key_args = {}
@@ -2204,7 +2274,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return registry_key_args
 
     def _parse_url_args(self, attributes: dict) -> dict:
-        attributes = self._extract_object_attributes(attributes)
+        attributes = self._extract_object_attributes_escaped(attributes)
         url_args = {}
         if attributes.get('url'):
             url_args['value'] = attributes.pop('url')
@@ -2213,7 +2283,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return url_args
 
     def _parse_user_account_args(self, attributes: dict) -> dict:
-        attributes = self._extract_multiple_object_attributes(
+        attributes = self._extract_multiple_object_attributes_escaped(
             attributes,
             force_single=self._mapping.user_account_single_fields
         )
@@ -2235,7 +2305,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return user_account_args
 
     def _parse_x509_args(self, attributes: dict) -> dict:
-        attributes = self._extract_multiple_object_attributes(
+        attributes = self._extract_multiple_object_attributes_escaped(
             attributes,
             force_single=self._mapping.x509_single_fields
         )
@@ -2268,16 +2338,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     #                         PATTERNS CREATION FUNCTIONS.                         #
     ################################################################################
 
-    def _create_AS_pattern(self, value: str) -> str:
-        return f"autonomous-system:number = '{self._parse_AS_value(value)}'"
+    def _create_AS_pattern(self, number: str) -> str:
+        return f"autonomous-system:number = '{self._parse_AS_value(number)}'"
 
-    def _create_content_ref_pattern(self, name: str, feature: str = 'payload_bin') -> str:
-        value = self._handle_value_for_pattern(name)
+    @staticmethod
+    def _create_content_ref_pattern(value: str, feature: str = 'payload_bin') -> str:
         return f"file:content_ref.{feature} = '{value}'"
 
     @staticmethod
-    def _create_domain_pattern(value: str) -> str:
-        return f"domain-name:value = '{value}'"
+    def _create_domain_pattern(domain: str) -> str:
+        return f"domain-name:value = '{domain}'"
 
     @staticmethod
     def _create_domain_resolving_pattern(value: str) -> str:
@@ -2289,8 +2359,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         hash_pattern = self._create_hash_pattern(hash_type, hash_value)
         return f"{filename_pattern} AND {hash_pattern}"
 
-    def _create_filename_pattern(self, value: str) -> str:
-        return f"file:name = '{self._handle_value_for_pattern(value)}'"
+    @staticmethod
+    def _create_filename_pattern(name: str) -> str:
+        return f"file:name = '{name}'"
 
     def _create_hash_pattern(self, hash_type: str, value: str, prefix: Optional[str]='file:hashes') -> str:
         return f"{prefix}.{self._define_hash_type(hash_type)} = '{value}'"
@@ -2302,12 +2373,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return f"{network_type} AND {network_value}"
 
     @staticmethod
-    def _create_port_pattern(value: str, ip_type: str = 'dst') -> str:
-        return f"network-traffic:{ip_type}_port = '{value}'"
+    def _create_port_pattern(port: str, ip_type: str = 'dst') -> str:
+        return f"network-traffic:{ip_type}_port = '{port}'"
 
     @staticmethod
-    def _create_regkey_pattern(value: str) -> str:
-        return f"windows-registry-key:key = '{value.strip()}'"
+    def _create_regkey_pattern(key: str) -> str:
+        return f"windows-registry-key:key = '{key}'"
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #

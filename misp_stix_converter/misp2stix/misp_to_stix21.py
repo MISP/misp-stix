@@ -262,7 +262,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_email_message_id_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            pattern = f"[email-message:message_id = '{attribute['value']}']"
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[email-message:message_id = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             message_object = EmailMessage(
@@ -804,11 +805,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_network_socket_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
-            attributes = self._extract_multiple_object_attributes(
-                misp_object['Attribute'],
-                force_single=self._mapping.network_socket_single_fields
-            )
-            pattern = self._parse_network_socket_object_pattern(attributes)
+            pattern = self._parse_network_socket_object_pattern(misp_object['Attribute'])
             self._handle_object_indicator(misp_object, pattern)
         else:
             attributes = self._extract_object_attributes_with_multiple_and_uuid(
@@ -824,11 +821,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_process_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
-            attributes = self._extract_multiple_object_attributes(
-                misp_object['Attribute'],
-                force_single=self._mapping.process_single_fields
-            )
-            pattern = self._parse_process_object_pattern(attributes)
+            pattern = self._parse_process_object_pattern(misp_object['Attribute'])
             self._handle_object_indicator(misp_object, pattern)
         else:
             attributes = self._extract_object_attributes_with_multiple_and_uuid(
@@ -1044,20 +1037,19 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     #                         PATTERNS CREATION FUNCTIONS.                         #
     ################################################################################
 
-    def _create_credential_pattern(self, attributes: dict) -> list:
+    @staticmethod
+    def _create_credential_pattern(attributes: dict) -> list:
         pattern = []
         if attributes.get('username'):
-            value = self._handle_value_for_pattern(attributes.pop('username'))
-            pattern.append(f"user-account:user_id = '{value}'")
+            pattern.append(f"user-account:user_id = '{attributes.pop('username')}'")
         if attributes.get('password'):
-            for password in attributes.pop('password'):
-                value = self._handle_value_for_pattern(password)
+            for value in attributes.pop('password'):
                 pattern.append(f"user-account:credential = '{value}'")
         return pattern
 
-    def _create_process_image_pattern(self, image: str) -> str:
-        value = self._handle_value_for_pattern(image)
-        return f"process:image_ref.name = '{value}'"
+    @staticmethod
+    def _create_process_image_pattern(image: str) -> str:
+        return f"process:image_ref.name = '{image}'"
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
