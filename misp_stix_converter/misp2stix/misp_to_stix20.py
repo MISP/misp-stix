@@ -6,8 +6,9 @@ from .stix20_mapping import Stix20Mapping
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from stix2.properties import (DictionaryProperty, ListProperty, ObjectReferenceProperty,
-                              ReferenceProperty, StringProperty, TimestampProperty)
+from stix2.properties import (DictionaryProperty, IDProperty, ListProperty,
+                              ObjectReferenceProperty,  ReferenceProperty,
+                              StringProperty, TimestampProperty)
 from stix2.v20.bundle import Bundle
 from stix2.v20.observables import (Artifact, AutonomousSystem, Directory, DomainName,
     EmailAddress, EmailMessage, EmailMIMEComponent, File, IPv4Address, IPv6Address,
@@ -24,7 +25,7 @@ from typing import Optional, Union
 @CustomObject(
     'x-misp-attribute',
     [
-        ('id', StringProperty(required=True)),
+        ('id', IDProperty(type='x-misp-attribute')),
         ('labels', ListProperty(StringProperty, required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
@@ -43,7 +44,7 @@ class CustomAttribute:
 @CustomObject(
     'x-misp-object',
     [
-        ('id', StringProperty(required=True)),
+        ('id', IDProperty(type='x-misp-object')),
         ('labels', ListProperty(StringProperty, required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
@@ -62,7 +63,7 @@ class CustomMispObject:
 @CustomObject(
     'x-misp-event-note',
     [
-        ('id', StringProperty(required=True)),
+        ('id', IDProperty(type='x-misp-event-note')),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
         ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),

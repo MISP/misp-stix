@@ -7,8 +7,9 @@ from .stix21_mapping import Stix21Mapping
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from stix2.properties import (DictionaryProperty, ListProperty, ObjectReferenceProperty,
-                              ReferenceProperty, StringProperty, TimestampProperty)
+from stix2.properties import (DictionaryProperty, IDProperty, ListProperty,
+                              ObjectReferenceProperty, ReferenceProperty,
+                              StringProperty, TimestampProperty)
 from stix2.v21.bundle import Bundle
 from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, DomainName,
     EmailAddress, EmailMessage, EmailMIMEComponent, File, IPv4Address, IPv6Address,
@@ -29,7 +30,7 @@ _OBSERVABLE_OBJECT_TYPES = Union[
 @CustomObject(
     'x-misp-attribute',
     [
-        ('id', StringProperty(required=True)),
+        ('id', IDProperty(type='x-misp-attribute', spec_version='2.1')),
         ('labels', ListProperty(StringProperty, required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
@@ -48,7 +49,7 @@ class CustomAttribute():
 @CustomObject(
     'x-misp-object',
     [
-        ('id', StringProperty(required=True)),
+        ('id', IDProperty(type='x-misp-object', spec_version='2.1')),
         ('labels', ListProperty(StringProperty, required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
