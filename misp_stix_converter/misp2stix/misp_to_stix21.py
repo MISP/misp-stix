@@ -30,12 +30,12 @@ _OBSERVABLE_OBJECT_TYPES = Union[
 @CustomObject(
     'x-misp-attribute',
     [
-        ('id', IDProperty(type='x-misp-attribute', spec_version='2.1')),
+        ('id', IDProperty('x-misp-attribute', spec_version='2.1')),
         ('labels', ListProperty(StringProperty, required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
         ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.1')),
-        ('object_marking_refs', ListProperty(ObjectReferenceProperty(valid_types=['marking']))),
+        ('object_marking_refs', ListProperty(ReferenceProperty(valid_types='marking-definition', spec_version='2.1'))),
         ('x_misp_type', StringProperty(required=True)),
         ('x_misp_value', StringProperty(required=True)),
         ('x_misp_comment', StringProperty()),
@@ -49,12 +49,12 @@ class CustomAttribute():
 @CustomObject(
     'x-misp-object',
     [
-        ('id', IDProperty(type='x-misp-object', spec_version='2.1')),
+        ('id', IDProperty('x-misp-object', spec_version='2.1')),
         ('labels', ListProperty(StringProperty, required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
         ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.1')),
-        ('object_marking_refs', ListProperty(ObjectReferenceProperty(valid_types=['marking']))),
+        ('object_marking_refs', ListProperty(ReferenceProperty(valid_types='marking-definition', spec_version='2.1'))),
         ('x_misp_name', StringProperty(required=True)),
         ('x_misp_attributes', ListProperty(DictionaryProperty())),
         ('x_misp_comment', StringProperty()),

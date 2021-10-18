@@ -25,12 +25,12 @@ from typing import Optional, Union
 @CustomObject(
     'x-misp-attribute',
     [
-        ('id', IDProperty(type='x-misp-attribute')),
+        ('id', IDProperty('x-misp-attribute')),
         ('labels', ListProperty(StringProperty, required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
         ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),
-        ('object_marking_refs', ListProperty(ObjectReferenceProperty(valid_types=['marking']))),
+        ('object_marking_refs', ListProperty(ReferenceProperty(valid_types='marking-definition', spec_version='2.0'))),
         ('x_misp_type', StringProperty(required=True)),
         ('x_misp_value', StringProperty(required=True)),
         ('x_misp_comment', StringProperty()),
@@ -44,12 +44,12 @@ class CustomAttribute:
 @CustomObject(
     'x-misp-object',
     [
-        ('id', IDProperty(type='x-misp-object')),
+        ('id', IDProperty('x-misp-object')),
         ('labels', ListProperty(StringProperty, required=True)),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
         ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),
-        ('object_marking_refs', ListProperty(ObjectReferenceProperty(valid_types=['marking']))),
+        ('object_marking_refs', ListProperty(ReferenceProperty(valid_types='marking-definition', spec_version='2.0'))),
         ('x_misp_name', StringProperty(required=True)),
         ('x_misp_attributes', ListProperty(DictionaryProperty())),
         ('x_misp_comment', StringProperty()),
@@ -63,7 +63,7 @@ class CustomMispObject:
 @CustomObject(
     'x-misp-event-note',
     [
-        ('id', IDProperty(type='x-misp-event-note')),
+        ('id', IDProperty('x-misp-event-note')),
         ('created', TimestampProperty(required=True, precision='millisecond')),
         ('modified', TimestampProperty(required=True, precision='millisecond')),
         ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),
