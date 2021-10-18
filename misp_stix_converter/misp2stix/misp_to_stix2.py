@@ -2476,7 +2476,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             time_fields[stix_field] = self._datetime_from_str(attribute[misp_field]) if attribute.get(misp_field) else timestamp
         if time_fields['first_observed'] > time_fields['last_observed']:
             if attribute.get('last_seen'):
-                time_fields['first_obsevred'] = time_fields['last_observed']
+                time_fields['first_observed'] = time_fields['last_observed']
             else:
                 time_fields['last_observed'] = time_fields['first_observed']
         return time_fields
