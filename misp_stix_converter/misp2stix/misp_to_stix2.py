@@ -2079,7 +2079,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     ################################################################################
 
     def _parse_account_args(self, attributes: list, account_type: str) -> dict:
-        attributes = self._extract_multiple_object_attributes_escaped(
+        attributes = self._extract_multiple_object_attributes(
             attributes,
             force_single=getattr(
                 self._mapping,
@@ -2095,7 +2095,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return account_args
 
     def _parse_AS_args(self, attributes: list) -> dict:
-        attributes = self._extract_multiple_object_attributes_escaped(
+        attributes = self._extract_multiple_object_attributes(
             attributes,
             force_single=self._mapping.as_single_fields
         )
@@ -2107,7 +2107,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return as_args
 
     def _parse_credential_args(self, attributes: list) -> dict:
-        attributes = self._extract_multiple_object_attributes_escaped(
+        attributes = self._extract_multiple_object_attributes(
             attributes,
             force_single=self._mapping.credential_single_fields
         )
@@ -2182,7 +2182,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return args
 
     def _parse_mutex_args(self, attributes: dict) -> dict:
-        attributes = self._extract_object_attributes_escaped(attributes)
+        attributes = self._extract_object_attributes(attributes)
         mutex_args = {}
         if attributes.get('name'):
             mutex_args['name'] = attributes.pop('name')
@@ -2243,7 +2243,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return process_args
 
     def _parse_registry_key_args(self, attributes: dict) -> dict:
-        attributes = self._extract_object_attributes_escaped(attributes)
+        attributes = self._extract_object_attributes(attributes)
         if attributes.get('last-modified') and not attributes['last-modified'].endswith('Z'):
             attributes['last-modified'] = f"{attributes.pop('last-modified')}Z"
         registry_key_args = {}
@@ -2261,7 +2261,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return registry_key_args
 
     def _parse_url_args(self, attributes: dict) -> dict:
-        attributes = self._extract_object_attributes_escaped(attributes)
+        attributes = self._extract_object_attributes(attributes)
         url_args = {}
         if attributes.get('url'):
             url_args['value'] = attributes.pop('url')
@@ -2270,7 +2270,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return url_args
 
     def _parse_user_account_args(self, attributes: dict) -> dict:
-        attributes = self._extract_multiple_object_attributes_escaped(
+        attributes = self._extract_multiple_object_attributes(
             attributes,
             force_single=self._mapping.user_account_single_fields
         )
@@ -2292,7 +2292,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return user_account_args
 
     def _parse_x509_args(self, attributes: dict) -> dict:
-        attributes = self._extract_multiple_object_attributes_escaped(
+        attributes = self._extract_multiple_object_attributes(
             attributes,
             force_single=self._mapping.x509_single_fields
         )
