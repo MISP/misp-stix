@@ -23,6 +23,7 @@ setup(
     description='Python scripts to convert MISP into STIX or STIX into MISP',
     long_description=long_description,
     long_description_content_type='text/markdown',
+    python_requires='>=3.6',
     packages=['misp_stix_converter'],
     classifiers=[
         'License :: OSI Approved :: BSD License',
