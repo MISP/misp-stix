@@ -361,8 +361,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     @staticmethod
     def _parse_AS_value(value: str) -> int:
-        if value.startswith('AS'):
-            return int(value[2:])
+        value = ''.join(digit for digit in value if digit.isnumeric() or digit == '.')
         return int(value)
 
     def _parse_attachment_attribute(self, attribute: dict):
