@@ -242,6 +242,14 @@ class TestSTIX20Export(TestSTIX2Export):
             self._datetime_from_timestamp(event['Event']['publish_timestamp'])
         )
 
+    def test_event_with_escaped_characters(self):
+        event = get_event_with_escaped_values_v20()
+        self.parser.parse_misp_event(event)
+        bundle = self._check_bundle_features(48)
+        _, _, *indicators = bundle.objects
+        for indicator in indicators:
+            self.assertEqual(indicator.type, 'indicator')
+
     def test_event_with_sightings(self):
         event = get_event_with_sightings()
         orgc = event['Event']['Orgc']
@@ -1627,7 +1635,7 @@ class TestSTIX20Export(TestSTIX2Export):
         registry_key = observable_objects['0']
         self.assertEqual(registry_key.type, 'windows-registry-key')
         self.assertEqual(registry_key.key, key)
-        self.assertEqual(registry_key.x_misp_last_modified, f'{modified}Z')
+        self.assertEqual(registry_key.x_misp_last_modified, modified)
         self.assertEqual(registry_key.x_misp_hive, hive)
         registry_value = registry_key['values'][0]
         self.assertEqual(registry_value.data, data)

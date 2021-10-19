@@ -28,6 +28,668 @@ _BASE_EVENT = {
     }
 }
 
+_EVENT_FOR_ESCAPING_TESTS = {
+    "Event": {
+        "uuid": "a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+        "info": "MISP-STIX-Converter test event",
+        "date": "2020-10-25",
+        "timestamp": "1603642920",
+        "Org": {
+            "name": "MISP-Project",
+            "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
+        },
+        "Orgc": {
+            "name": "MISP-Project",
+            "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
+        },
+        "Attribute": [
+            {
+                "uuid": "6879f5f7-f7c7-442d-a454-673b49af2685",
+                "type": "AS",
+                "category": "Network activity",
+                "timestamp": "1603642920",
+                "value": "AS174'",
+                "to_ids": True
+            },
+            {
+                "uuid": "38ade645-78f0-43c4-bc84-9ddebf27049a",
+                "type": "attachment",
+                "category": "Payload delivery",
+                "value": "attachment.test",
+                "data": "ZWNobyAiREFOR0VST1VTIE'1BTFdBUkUiIAoK",
+                "timestamp": "1603642920",
+                "to_ids": True
+            },
+            {
+                "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "type": "domain",
+                "category": "Network activity",
+                "value": "broken.circl's.domain",
+                "timestamp": "1603642920",
+                "comment": "Domain test attribute",
+                "to_ids": True
+            },
+            {
+                "uuid": "3a51a1a7-81b6-49cc-84c2-c364f1dbd8ec",
+                "type": "domain|ip",
+                "category": "Network activity",
+                "value": "circl's.wrong.domain|149.13.33.14",
+                "timestamp": "1603642920",
+                "comment": "Domain|ip test attribute",
+                "to_ids": True
+            },
+            {
+                "uuid": "304aa49b-ab4b-4578-ab0f-85a12fa008dc",
+                "type": "email",
+                "category": "Payload delivery",
+                "value": "address'@email.test",
+                "timestamp": "1603642920",
+                'to_ids': True
+            },
+            {
+                "uuid": "e8166fc1-4c84-4a4b-954b-269bcb2f0568",
+                "type": "email-attachment",
+                "category": "Payload delivery",
+                "value": "email's attachment.test",
+                "timestamp": "1603642920",
+                "comment": "Email attachment test attribute",
+                "to_ids": True
+            },
+            {
+                "uuid": "98c5c016-5823-4b2b-968d-eb5e6dfae12e",
+                "type": "email-body",
+                "category": "Payload delivery",
+                "value": "Email's test",
+                "timestamp": "1603642920",
+                "to_ids": True
+            },
+            {
+                "uuid": "6734bcd2-0c3f-4da3-9c56-b518339a1522",
+                "type": "email-dst",
+                "category": "Payload delivery",
+                "value": "dst'@email.test",
+                "timestamp": "1603642920",
+                "comment": "Destination email address test attribute",
+                "to_ids": True
+            },
+            {
+                "uuid": "978aa19d-c7ef-477a-8f26-a424e4fbbb54",
+                "type": "email-header",
+                "category": "Payload delivery",
+                "value": 'from mail.example.com ("198.51.100.3") by smtp.gmail.com',
+                "timestamp": "1603642920",
+                "to_ids": True
+            },
+            {
+                "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                "type": "email-reply-to",
+                "category": "Payload delivery",
+                "value": "reply-to'@email.test",
+                "timestamp": "1603642920",
+                "to_ids": True
+            },
+            {
+                "uuid": "8f121697-d112-4742-b5a2-2e1d711c4af5",
+                "type": "email-src",
+                "category": "Payload delivery",
+                "value": "src'@email.test",
+                "timestamp": "1603642920",
+                "comment": "Source email address test attribute",
+                "to_ids": True
+            },
+            {
+                "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+                "type": "email-subject",
+                "category": "Payload delivery",
+                "value": "Email's Subject",
+                "timestamp": "1603642920",
+                "to_ids": True
+            },
+            {
+                "uuid": "f09d8496-e2ba-4250-878a-bec9b85c7e96",
+                "type": "email-x-mailer",
+                "category": "Payload delivery",
+                "value": "Email's X-Mailer",
+                "timestamp": "1603642920",
+                "to_ids": True
+            },
+            {
+                "uuid": "f037ccb0-195b-4270-bc3d-9b55caf9d0bf",
+                "type": "filename",
+                "category": "Payload delivery",
+                "value": "File's name.test",
+                "timestamp": "1603642920",
+                "comment": "Filename test attribute",
+                "to_ids": True
+            },
+            {
+                "uuid": "0a8d5fe9-8265-41eb-8672-7119d87148a4",
+                "type": "md5",
+                "category": "Payload delivery",
+                "value": '"b2a5abfeef9e36964281a31e17b57c97"',
+                "timestamp": "1603642920",
+                "comment": "MD5 test attribute",
+                "to_ids": True
+            },
+            {
+                "uuid": "9701e31a-b461-49d2-a18c-05bd18ecac8c",
+                "type": "filename|md5",
+                "category": "Payload delivery",
+                "value": "File's name.test|b2a5abfeef9e36964281a31e17b57c97",
+                "timestamp": "1603642920",
+                "comment": "Filename | MD5 test attribute",
+                "to_ids": True
+            },
+            {
+                "uuid": "ee9da65d-1179-46a6-85ff-588f46f6b909",
+                "type": "hostname",
+                "category": "Network activity",
+                "value": "circl's.wrong.hostname",
+                "timestamp": "1603642920",
+                "comment": "Hostname test attribute",
+                "to_ids": True
+            },
+            {
+                "uuid": "7ad6e3c2-a687-4101-b427-ea2b3860c518",
+                "type": "hostname|port",
+                "category": "Network activity",
+                "value": "'circl.lu'|8443",
+                "timestamp": "1603642920",
+                "comment": "Hostname|port test attribute",
+                "to_ids": True
+            },
+            {
+                "uuid": "989e1c92-ba53-4071-9faa-4db909cb84bb",
+                "type": "http-method",
+                "category": "Network activity",
+                "value": '"POST"',
+                "timestamp": "1603642920",
+                "to_ids": True
+            },
+            {
+                "uuid": "d706e432-149e-4074-b62d-6f78cb69c335",
+                "type": "ip-src",
+                "category": "Network activity",
+                "value": '"1.2.3.4"',
+                "to_ids": True,
+                "timestamp": "1603642920",
+                "comment": "Source IP test attribute"
+            },
+            {
+                "uuid": "e80260cb-1db4-4f73-8a71-9f0032682fee",
+                "type": "ip-src|port",
+                "category": "Network activity",
+                "value": "'1.2.3.4'|1234",
+                "to_ids": True,
+                "timestamp": "1603642920",
+                "comment": "Source IP | Port test attribute"
+            },
+            {
+                "uuid": "99d23a7d-48d0-4f9a-b7b5-b90ebda9fd31",
+                "type": "mac-address",
+                "category": "Payload delivery",
+                "value": "'12:34:56:78:90:AB'",
+                "timestamp": "1603642920",
+                "to_ids": True
+            },
+            {
+                "uuid": "2ea3a395-6b9f-4927-bc85-b33310f0b1bf",
+                "type": "malware-sample",
+                "category": "Payload delivery",
+                "value": "oui|8764605c6f388c89096b534d33565802",
+                "data": "'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA=='",
+                "to_ids": True,
+                "timestamp": "1603642920",
+                "comment": "Malware Sample test attribute"
+            },
+            {
+                "uuid": "0c4fa6dc-7476-4712-b84a-5ecc5075f930",
+                "type": "mutex",
+                "category": "Artifacts dropped",
+                "value": "Mutex'Test",
+                "to_ids": True,
+                "timestamp": "1603642920",
+                "comment": "Mutex test attribute"
+            },
+            {
+                "uuid": "3d6a260e-9eb3-47c9-b631-c71a2911eb35",
+                "type": "port",
+                "category": "Network activity",
+                "value": "'8443'",
+                "timestamp": "1603642920",
+                "to_ids": True
+            },
+            {
+                "uuid": "2728a5a4-3a66-45fc-86b4-f57fd51b3f5a",
+                "type": "regkey",
+                "category": "Persistence mechanism",
+                "value": "'HKLM\Software\mthjk'",
+                "to_ids": True,
+                "timestamp": "1603642920",
+                "comment": "Regkey test attribute"
+            },
+            {
+                "uuid": "a0ee745a-cb8f-440f-a295-181109aafec4",
+                "type": "regkey|value",
+                "category": "Persistence mechanism",
+                "value": "'HKLM\Software\mthjk'|%DATA%\\1234567890",
+                "to_ids": True,
+                "timestamp": "1603642920",
+                "comment": "Regkey | value test attribute"
+            },
+            {
+                "uuid": "dd5aaa8b-60ca-411e-a5d2-aae772732705",
+                "type": "size-in-bytes",
+                "value": "'1234'",
+                "category": "Other",
+                "timestamp": "1603642920",
+                "to_ids": True
+            },
+            {
+                "uuid": "2ed3314c-1253-4841-ace9-188313fcefe2",
+                "type": "url",
+                "category": "Network activity",
+                "value": "'https://misp-project.org/download/'",
+                "to_ids": True,
+                "timestamp": "1603642920",
+                "comment": "URL test attribute"
+            },
+            {
+                "uuid": "09fa6628-1bef-40e1-8a63-fca80229b15c",
+                "type": "user-agent",
+                "category": "Network activity",
+                "value": '"Mozilla Firefox"',
+                "timestamp": "1603642920",
+                "comment": "User-agent test attribute",
+                "to_ids": True
+            },
+            {
+                "uuid": "4e47891d-8d57-4e7f-9d5e-e3bfada58228",
+                "type": "x509-fingerprint-md5",
+                "category": "Payload delivery",
+                "value": "'8764605c6f388c89096b534d33565802'",
+                "to_ids": True,
+                "timestamp": "1603642920",
+                "comment": "X509 MD5 fingerprint test attribute"
+            }
+        ],
+        "Object": [
+            {
+                "name": "asn",
+                "meta-category": "network",
+                "description": "Autonomous system object describing an autonomous system",
+                "uuid": "5b23c82b-6508-4bdc-b580-045b0a00020f",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "AS",
+                        "object_relation": "asn",
+                        "value": "AS66642",
+                        "to_ids": True
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "description",
+                        "value": "Test's AS"
+                    }
+                ]
+            },
+            {
+                "name": "credential",
+                "meta-category": "misc",
+                "description": "Credential describes one or more credential(s)",
+                "uuid": "5b1f9378-46d4-494b-a4c1-044e0a00020f",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "text",
+                        "value": "MISP's credentials"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "username",
+                        "value": "misp",
+                        "to_ids": True
+                    }
+                ]
+            },
+            {
+                "name": "domain-ip",
+                "meta-category": "network",
+                "description": "A domain and IP address seen as a tuple",
+                "uuid": "dc624447-684a-488f-9e16-f78f717d8efd",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "uuid": "63fa4060-98d3-4768-b18d-cfbc52f2d0ff",
+                        "type": "domain",
+                        "object_relation": "domain",
+                        "value": "wrong.circl's.domain",
+                        "to_ids": True
+                    },
+                    {
+                        "uuid": "fcbaf339-615a-409c-915f-034420dc90ca",
+                        "type": "ip-dst",
+                        "object_relation": "ip",
+                        "value": "149.33.33.44"
+                    },
+                ]
+            },
+            {
+                "name": "email",
+                "meta-category": "network",
+                "description": "Email object describing an email with meta-information",
+                "uuid": "5e396622-2a54-4c8d-b61d-159da964451a",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "type": "email-src",
+                        "object_relation": "from",
+                        "value": "donald.duck@disney.com",
+                        "to_ids": True
+                    },
+                    {
+                        "uuid": "3766d98d-d162-44d4-bc48-9518a2e48898",
+                        "type": "email-src-display-name",
+                        "object_relation": "from-display-name",
+                        "value": 'The "Duck"'
+                    },
+                    {
+                        "uuid": "aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
+                        "type": "email-dst",
+                        "object_relation": "to",
+                        "value": "jdoe@random.org"
+                    },
+                    {
+                        "uuid": "3a93a3ef-fd04-4ce5-98f5-f53609b39b82",
+                        "type": "email-dst-display-name",
+                        "object_relation": "to-display-name",
+                        "value": "John Doe'"
+                    }
+                ]
+            },
+            {
+                "name": "file",
+                "meta-category": "file",
+                "description": "File object describing a file with meta-information",
+                "uuid": "5e384ae7-672c-4250-9cda-3b4da964451a",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "filename",
+                        "object_relation": "filename",
+                        "value": 'My Little "Poney".jpg',
+                        "to_ids": True
+                    },
+                    {
+                        "type": "size-in-bytes",
+                        "object_relation": "size-in-bytes",
+                        "value": "12345"
+                    }
+                ]
+            },
+            {
+                "name": "ip-port",
+                "meta-category": "network",
+                "description": "An IP address (or domain) and a port",
+                "uuid": "5ac47edc-31e4-4402-a7b6-040d0a00020f",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "type": "ip-dst",
+                        "object_relation": "ip",
+                        "value": "149.33.33.44",
+                        "to_ids": True
+                    },
+                    {
+                        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+                        "type": "port",
+                        "object_relation": "dst-port",
+                        "value": "443"
+                    },
+                    {
+                        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+                        "type": "domain",
+                        "object_relation": "domain",
+                        "value": "wrong.circl's.domain"
+                    }
+                ]
+            },
+            {
+                "name": "mutex",
+                "meta-category": "misc",
+                "description": "Object to describe mutual exclusion locks (mutex) as seen in memory or computer program",
+                "uuid": "b0f55591-6a63-4fbd-a169-064e64738d95",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "name",
+                        "value": 'The "Mutex"',
+                        "to_ids": True
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "description",
+                        "value": "John Doe's mutex"
+                    }
+                ]
+            },
+            {
+                "name": "network-connection",
+                "meta-category": "network",
+                "description": "A local or remote network connection",
+                "uuid": "5afacc53-c0b0-4825-a6ee-03c80a00020f",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "type": "ip-src",
+                        "object_relation": "ip-src",
+                        "value": '"1.2.3.4"',
+                        "to_ids": True
+                    },
+                    {
+                        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+                        "type": "ip-dst",
+                        "object_relation": "ip-dst",
+                        "value": "'5.6.7.8'"
+                    }
+                ]
+            },
+            {
+                "name": "network-socket",
+                "meta-category": "network",
+                "description": "Network socket object describes a local or remote network connections based on the socket data structure",
+                "uuid": "5afb3223-0988-4ef1-a920-02070a00020f",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+                        "type": "ip-dst",
+                        "object_relation": "ip-dst",
+                        "value": "5.6.7.8",
+                        "to_ids": True
+                    },
+                    {
+                        "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+                        "type": "hostname",
+                        "object_relation": "hostname-dst",
+                        "value": "wrong.circl's.hostname"
+                    }
+                ]
+            },
+            {
+                "name": "pe",
+                "meta-category": "file",
+                "description": "Object describing a Portable Executable",
+                "uuid": "2183705f-e8d6-4c08-a820-5b56a1303bb1",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "type",
+                        "value": "exe"
+                    },
+                    {
+                        "type": "filename",
+                        "object_relation": "original-filename",
+                        "value": 'The "PuTTy"',
+                        "to_ids": True
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "file-description",
+                        "value": "John Doe's favorite SSH client"
+                    }
+                ],
+                "ObjectReference": [
+                    {
+                        "referenced_uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
+                        "relationship_type": "includes",
+                        "Object": {
+                            "uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
+                            "name": "pe-section",
+                            "meta-category": "file"
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "pe-section",
+                "meta-category": "file",
+                "description": "Object describing a section of a Portable Executable",
+                "uuid": "68bd413b-5392-4239-93a9-e574fb80af8c",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "name",
+                        "value": "PE's first section"
+                    }
+                ]
+            },
+            {
+                "name": "process",
+                "meta-category": "misc",
+                "description": "Object describing a system process.",
+                "uuid": "5e39776a-b284-40b3-8079-22fea964451a",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "type": "text",
+                        "object_relation": "pid",
+                        "value": "2510",
+                        "to_ids": True
+                    },
+                    {
+                        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                        "type": "text",
+                        "object_relation": "name",
+                        "value": "Jonh's Process"
+                    }
+                ]
+            },
+            {
+                "name": "registry-key",
+                "meta-category": "file",
+                "description": "Registry key object describing a Windows registry key",
+                "uuid": "5ac3379c-3e74-44ba-9160-04120a00020f",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "regkey",
+                        "object_relation": "key",
+                        "value": "hkey_local_machine\\system\\bar\\foo",
+                        "to_ids": True
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "name",
+                        "value": "Registry's Name"
+                    }
+                ]
+            },
+            {
+                "name": "url",
+                "meta-category": "network",
+                "description": "url object describes an url along with its normalized field",
+                "uuid": "5ac347ca-dac4-4562-9775-04120a00020f",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "type": "url",
+                        "object_relation": "url",
+                        "value": "https://www.wrong.circl's.url",
+                        "to_ids": True
+                    },
+                    {
+                        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+                        "type": "domain",
+                        "object_relation": "domain",
+                        "value": "circl.lu"
+                    }
+                ]
+            },
+            {
+                "name": "user-account",
+                "meta-category": "misc",
+                "description": "Object describing an user account",
+                "uuid": "5d234f25-539c-4d12-bf93-2c46a964451a",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "user-id",
+                        "value": "iglocska",
+                        "to_ids": True
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "display-name",
+                        "value": "Cod'Monkey"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "password",
+                        "value": "P4ssw0rd1234!"
+                    }
+                ]
+            },
+            {
+                "name": "x509",
+                "meta-category": "network",
+                "description": "x509 object describing a X.509 certificate",
+                "uuid": "5ac3444e-145c-4749-8467-02550a00020f",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "issuer",
+                        "value": "Issuer's Name"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "serial-number",
+                        "value": "1234567890",
+                        "to_ids": True
+                    },
+                    {
+                        "type": "x509-fingerprint-md5",
+                        "object_relation": "x509-fingerprint-md5",
+                        "value": "b2a5abfeef9e36964281a31e17b57c97"
+                    }
+                ]
+            }
+        ]
+    }
+}
+
 _TEST_EVENT_REPORT = {
     "Attribute": [
         {
@@ -648,7 +1310,7 @@ _TEST_EMAIL_OBJECT_WITH_DISPLAY_NAMES = {
             "uuid": "3a93a3ef-fd04-4ce5-98f5-f53609b39b82",
             "type": "email-dst-display-name",
             "object_relation": "to-display-name",
-            "value": "Jonh Doe"
+            "value": "John Doe"
         },
         {
             "uuid": "3b940996-f99b-4bda-b065-69b8957f688c",
@@ -1686,6 +2348,25 @@ def get_published_event():
     return base_event
 
 
+def get_event_with_escaped_values_v20():
+    return deepcopy(_EVENT_FOR_ESCAPING_TESTS)
+
+
+def get_event_with_escaped_values_v21():
+    event = deepcopy(_EVENT_FOR_ESCAPING_TESTS)
+    event['Event']['Attribute'].append(
+        {
+            "uuid": "f3745b11-2b82-4798-80ba-d32c506135ec",
+            "type": "email-message-id",
+            "category": "Payload delivery",
+            "value": "'1234'",
+            "timestamp": "1603642920",
+            "to_ids": True
+        }
+    )
+    return event
+
+
 def get_event_with_tags():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Tag'] = [
@@ -2309,7 +2990,7 @@ def get_event_with_mac_address_attribute():
             "type": "mac-address",
             "category": "Payload delivery",
             "value": "12:34:56:78:90:AB",
-            "timestamp": "1603642920",
+            "timestamp": "1603642920"
         }
     ]
     return event

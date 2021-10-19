@@ -360,6 +360,15 @@ class TestSTIX21Export(TestSTIX2Export):
             self._datetime_from_timestamp(event['Event']['publish_timestamp'])
         )
 
+    def test_event_with_escaped_characters(self):
+        event = get_event_with_escaped_values_v21()
+        self.parser.parse_misp_event(event)
+        stix_objects = self._check_bundle_features(49)
+        self._check_spec_versions(stix_objects)
+        _, _, *indicators = stix_objects
+        for indicator in indicators:
+            self.assertEqual(indicator.type, 'indicator')
+
     def test_event_with_event_report(self):
         event = get_event_with_event_report()
         orgc = event['Event']['Orgc']
