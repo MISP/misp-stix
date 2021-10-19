@@ -700,7 +700,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_x509_fingerprint_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             hash_type = attribute['type'].split('-')[-1].upper()
-            value = self._handle_value_for_pattern(attribute['value'])
+            value = ''.join(character for character in attribute['value'] if character.isalnum())
             pattern = f"[x509-certificate:hashes.{hash_type} = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
