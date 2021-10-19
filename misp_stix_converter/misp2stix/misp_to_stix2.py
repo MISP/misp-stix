@@ -537,8 +537,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_hash_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            value = self._handle_value_for_pattern(attribute['value'])
-            pattern = f"[{self._create_hash_pattern(attribute['type'], value)}]"
+            pattern = f"[{self._create_hash_pattern(attribute['type'], attribute['value'])}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_hash_attribute_observable(attribute)
@@ -547,8 +546,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attribute.get('to_ids', False):
             if hash_type is None:
                 hash_type = attribute['type'].split('|')[1]
-            value = self._handle_value_for_pattern(attribute['value'])
-            pattern = self._create_filename_hash_pattern(hash_type, value)
+            pattern = self._create_filename_hash_pattern(hash_type, attribute['value'])
             self._handle_attribute_indicator(attribute, f"[{pattern}]")
         else:
             self._parse_hash_composite_attribute_observable(attribute, hash_type=hash_type)
@@ -2351,6 +2349,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return f"file:name = '{name}'"
 
     def _create_hash_pattern(self, hash_type: str, value: str, prefix: Optional[str]='file:hashes') -> str:
+        value = value.strip('"').strip("'").strip('\\')
         return f"{prefix}.{self._define_hash_type(hash_type)} = '{value}'"
 
     def _create_ip_pattern(self, ip_type: str, value: str) -> str:
