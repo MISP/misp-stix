@@ -546,7 +546,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attribute.get('to_ids', False):
             if hash_type is None:
                 hash_type = attribute['type'].split('|')[1]
-            pattern = self._create_filename_hash_pattern(hash_type, attribute['value'])
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = self._create_filename_hash_pattern(hash_type, value)
             self._handle_attribute_indicator(attribute, f"[{pattern}]")
         else:
             self._parse_hash_composite_attribute_observable(attribute, hash_type=hash_type)
