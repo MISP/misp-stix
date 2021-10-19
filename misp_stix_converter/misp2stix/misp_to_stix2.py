@@ -928,18 +928,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for key, values in attributes.items():
             key = key.replace('-', '_')
             if not isinstance(values, list):
-                value = self._handle_value_for_pattern(values)
-                pattern.append(f"{prefix}{separator}x_misp_{key} = '{value}'")
+                pattern.append(f"{prefix}{separator}x_misp_{key} = '{values}'")
                 continue
             for value in values:
-                value = self._handle_value_for_pattern(value)
                 pattern.append(f"{prefix}{separator}x_misp_{key} = '{value}'")
         return pattern
 
     def _handle_pattern_properties(self, attributes: dict, prefix: str, separator: Optional[str]=':') -> list:
         pattern = []
         for key, value in attributes.items():
-            value = self._handle_value_for_pattern(value)
             pattern.append(f"{prefix}{separator}x_misp_{key.replace('-', '_')} = '{value}'")
         return pattern
 
@@ -970,8 +967,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             pattern = [f"{prefix}:account_type = '{account_type}'"]
             for key, feature in getattr(self._mapping, f"{account_type}_account_object_mapping").items():
                 if attributes.get(key):
-                    value = self._handle_value_for_pattern(attributes.pop(key))
-                    pattern.append(f"{prefix}:{feature} = '{value}'")
+                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
             if attributes:
                 pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
@@ -987,8 +983,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             pattern = [self._create_AS_pattern(attributes.pop('asn'))]
             if attributes.get('description'):
-                value = self._handle_value_for_pattern(attributes.pop('description'))
-                pattern.append(f"{prefix}:name = '{value}'")
+                pattern.append(f"{prefix}:name = '{attributes.pop('description')}'")
             if attributes:
                 pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
@@ -1185,7 +1180,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for key, feature in self._mapping.email_object_mapping.items():
                 if attributes.get(key):
                     for value in attributes.pop(key):
-                        value = self._handle_value_for_pattern(value)
                         pattern.append(f"{prefix}:{feature} = '{value}'")
             if attributes:
                 n = 0
@@ -1196,8 +1190,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                             if isinstance(name, tuple):
                                 name, data = name
                                 pattern.append(f"{prefix}:{feature}.payload_bin = '{data}'")
-                            value = self._handle_value_for_pattern(name)
-                            pattern.append(f"{prefix}:{feature}.name = '{value}'")
+                            pattern.append(f"{prefix}:{feature}.name = '{name}'")
                             n += 1
                 pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
@@ -1241,7 +1234,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for key, feature in self._mapping.file_object_mapping.items():
             if attributes.get(key):
                 for value in attributes.pop(key):
-                    value = self._handle_value_for_pattern(value)
                     pattern.append(f"{prefix}:{feature} = '{value}'")
         if attributes.get('path'):
             value = attributes.pop('path')
@@ -1309,8 +1301,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
             pattern = []
             if attributes.get('name'):
-                value = self._handle_value_for_pattern(attributes.pop('name'))
-                pattern.append(f"{prefix}:name = '{value}'")
+                pattern.append(f"{prefix}:name = '{attributes.pop('name')}'")
             if attributes:
                 pattern.extend(self._handle_pattern_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
@@ -1473,15 +1464,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         pattern = []
         for key, feature in self._mapping.process_object_mapping['features'].items():
             if attributes.get(key):
-                value = self._handle_value_for_pattern(attributes.pop(key))
-                pattern.append(f"{prefix}:{feature} = '{value}'")
+                pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
         if attributes.get('image'):
             pattern.append(self._create_process_image_pattern(attributes.pop('image')))
         parent_attributes = self._extract_parent_process_attributes(attributes)
         for key, feature in self._mapping.process_object_mapping['parent'].items():
             if parent_attributes.get(key):
-                value = self._handle_value_for_pattern(parent_attributes.pop(key))
-                pattern.append(f"{prefix}:parent_ref.{feature} = '{value}'")
+                pattern.append(f"{prefix}:parent_ref.{feature} = '{parent_attributes.pop(key)}'")
         if parent_attributes:
             parent_attributes = {'_'.join(key.split('-')[1:]): values for key, values in parent_attributes.items()}
             pattern.extend(self._handle_pattern_multiple_properties(parent_attributes, prefix, separator=':parent_ref.'))
@@ -1538,8 +1527,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for data_type in ('features', 'timeline'):
                 for key, feature in self._mapping.user_account_object_mapping[data_type].items():
                     if attributes.get(key):
-                        value = self._handle_value_for_pattern(attributes.pop(key))
-                        pattern.append(f"{prefix}:{feature} = '{value}'")
+                        pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
             extension_prefix = f"{prefix}:extensions.'unix-account-ext'"
             for key, feature in self._mapping.user_account_object_mapping['extension'].items():
                 if attributes.get(key):
