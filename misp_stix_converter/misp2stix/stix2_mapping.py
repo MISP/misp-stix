@@ -464,6 +464,10 @@ class Stix2Mapping:
             'name': 'name',
             'size-in-bytes': 'size'
         }
+        self.__registry_key_mapping = {
+            'data-type': 'data_type',
+            'name': 'name'
+        }
         self.__socket_type_enum_list = (
             "SOCK_STREAM",
             "SOCK_DGRAM",
@@ -685,6 +689,10 @@ class Stix2Mapping:
     @property
     def pe_section_mapping(self) -> dict:
         return self.__pe_section_mapping
+
+    @property
+    def registry_key_mapping(self) -> dict:
+        return self.__registry_key_mapping
 
     @property
     def relationship_specs(self) -> dict:
