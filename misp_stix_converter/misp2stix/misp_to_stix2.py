@@ -1484,17 +1484,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_registry_key_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'windows-registry-key'
-            attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
-            pattern = []
-            for key, feature in self._mapping.registry_key_mapping['features'].items():
-                if attributes.get(key):
-                    value = self._sanitize_registry_key_value(attributes.pop(key))
-                    pattern.append(f"{prefix}:{feature} = '{value}'")
+            attributes = self._extract_object_attributes(misp_object['Attribute'])
+            pattern = self._parse_regkey_key_values_pattern(attributes, prefix)
             values_prefix = f"{prefix}:values[0]"
-            for key, feature in self._mapping.registry_key_mapping['values'].items():
+            if attributes.get('data'):
+                data = self._sanitize_registry_key_value(attributes.pop('data').strip("'").strip('"'))
+                pattern.append(f"{values_prefix}.data = '{data}'")
+            attributes = {key: self._handle_value_for_pattern(value) for key, value in attributes.items()}
+            for key, feature in self._mapping.registry_key_mapping.items():
                 if attributes.get(key):
-                    value = self._sanitize_registry_key_value(attributes.pop(key))
-                    pattern.append(f"{values_prefix}.{feature} = '{value}'")
+                    pattern.append(f"{values_prefix}.{feature} = '{attributes.pop(key)}'")
             if attributes:
                 pattern.extend(self._handle_pattern_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
@@ -2242,14 +2241,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_registry_key_args(self, attributes: dict) -> dict:
         attributes = self._extract_object_attributes(attributes)
-        if attributes.get('last-modified') and not attributes['last-modified'].endswith('Z'):
-            attributes['last-modified'] = f"{attributes.pop('last-modified')}Z"
-        registry_key_args = {}
-        for key, feature in self._mapping.registry_key_mapping['features'].items():
-            if attributes.get(key):
-                registry_key_args[feature] = attributes.pop(key)
+        registry_key_args = self._parse_regkey_key_values_observable(attributes)
         values_args = {}
-        for key, feature in self._mapping.registry_key_mapping['values'].items():
+        if attributes.get('data'):
+            values_args['data'] = attributes.pop('data')
+        for key, feature in self._mapping.registry_key_mapping.items():
             if attributes.get(key):
                 values_args[feature] = attributes.pop(key)
         if values_args:

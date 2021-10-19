@@ -871,6 +871,28 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         registry_key = WindowsRegistryKey(**registry_key_args)
         self._handle_object_observable(misp_object, [registry_key])
 
+    @staticmethod
+    def _parse_regkey_key_values_observable(attributes: dict) -> dict:
+        registry_key_args = {}
+        if attributes.get('key'):
+            registry_key_args['key'] = attributes.pop('key')
+        if attributes.get('last-modified'):
+            modified = attributes.pop('last-modified')
+            if not modified.endswith('Z'):
+                modified = f"{modified}Z"
+            registry_key_args['modified_time'] = modified
+        return registry_key_args
+
+    def _parse_regkey_key_values_pattern(self, attributes: dict, prefix: str) -> list:
+        pattern = []
+        if attributes.get('key'):
+            value = self._sanitize_registry_key_value(attributes.pop('key').strip("'").strip('"'))
+            pattern.append(f"{prefix}:key = '{value}'")
+        if attributes.get('last-modified'):
+            modified = self._handle_value_for_pattern(attributes.pop('last-modified'))
+            pattern.append(f"{prefix}:modified_time = '{modified}'")
+        return pattern
+
     def _parse_url_object_observable(self, misp_object: dict):
         url_args = self._parse_url_args(misp_object['Attribute'])
         self._handle_object_observable(misp_object, [URL(**url_args)])

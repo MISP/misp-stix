@@ -765,6 +765,20 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {'0': WindowsRegistryKey(**registry_key_args)}
         self._handle_object_observable(misp_object, observable_object)
 
+    @staticmethod
+    def _parse_regkey_key_values_observable(attributes: dict) -> dict:
+        registry_key_args = {}
+        if attributes.get('key'):
+            registry_key_args['key'] = attributes.pop('key')
+        return registry_key_args
+
+    def _parse_regkey_key_values_pattern(self, attributes: dict, prefix: str) -> list:
+        pattern = []
+        if attributes.get('key'):
+            value = self._sanitize_registry_key_value(attributes.pop('key').strip("'").strip('"'))
+            pattern.append(f"{prefix}:key = '{value}'")
+        return pattern
+
     def _parse_url_object_observable(self, misp_object: dict):
         url_args = self._parse_url_args(misp_object['Attribute'])
         observable_object = {'0': URL(**url_args)}
