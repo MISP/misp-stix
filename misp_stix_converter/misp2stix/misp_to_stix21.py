@@ -652,6 +652,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     }
                 )
         if attributes:
+            if attributes.get('from'):
+                attributes['from'] = [value[0] for value in attributes.pop('from')]
             email_message_args.update(self._parse_email_args(attributes))
         objects.insert(0, EmailMessage(**email_message_args))
         self._handle_object_observable(misp_object, objects)
