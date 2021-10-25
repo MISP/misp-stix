@@ -1578,21 +1578,22 @@ class TestStix1Export(unittest.TestCase):
             'Custom'
         )
         self._check_custom_properties(btc['Attribute'], btc_properties.custom_properties)
-        observable = incident.related_observables.observable[0]
-        self.assertEqual(observable.relationship, person['meta-category'])
-        properties = self._check_observable_features(observable.item, person, 'Custom')
-        self._check_custom_properties(person['Attribute'], properties.custom_properties)
+        person_observable, report_observable = incident.related_observables.observable
+        self.assertEqual(person_observable.relationship, person['meta-category'])
+        person_properties = self._check_observable_features(person_observable.item, person, 'Custom')
+        self._check_custom_properties(person['Attribute'], person_properties.custom_properties)
+        self.assertEqual(report_observable.relationship, report['meta-category'])
+        report_properties = self._check_observable_features(report_observable.item, report, 'Custom')
+        self._check_custom_properties(report['Attribute'], report_properties.custom_properties)
 
     def _test_event_with_domain_ip_object_indicator(self):
         event = get_event_with_domain_ip_object()
-        args = self._run_composition_from_indicator_object_tests(event)
-        observables, misp_object = args
+        observables, misp_object = self._run_composition_from_indicator_object_tests(event)
         self._check_domain_ip_observables(observables, misp_object['Attribute'])
 
     def _test_event_with_domain_ip_object_observable(self):
         event = get_event_with_domain_ip_object()
-        args = self._run_composition_from_observable_object_tests(event)
-        observables, misp_object = args
+        observables, misp_object = self._run_composition_from_observable_object_tests(event)
         self._check_domain_ip_observables(observables, misp_object['Attribute'])
 
     def _test_event_with_email_object_indicator(self):
