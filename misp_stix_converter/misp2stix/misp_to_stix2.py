@@ -1148,6 +1148,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _parse_custom_object_attribute(attribute: dict) -> dict:
         custom_attribute = {key: attribute[key] for key in _object_attributes_fields}
+        if '(s)' in custom_attribute['object_relation']:
+            custom_attribute['object_relation'] = custom_attribute.pop('object_relation').replace('(s)', '')
         for field in _object_attributes_additional_fields:
             if attribute.get(field):
                 custom_attribute[field] = attribute[field]
