@@ -29,7 +29,10 @@ class Stix21Mapping(Stix2Mapping):
             'ip'
         )
         self.__email_object_mapping = {
+            'bcc': 'bcc_refs.value',
+            'bcc-display-name': 'bcc_refs.display_name',
             'cc': 'cc_refs.value',
+            'cc-display-name': 'cc_refs.display_name',
             'email-body': 'body',
             'from': 'from_ref.value',
             'from-display-name': 'from_ref.display_name',
@@ -43,6 +46,7 @@ class Stix21Mapping(Stix2Mapping):
         }
         self.__email_uuid_fields = (
             'attachment',
+            'bcc',
             'cc',
             'from',
             'screenshot',

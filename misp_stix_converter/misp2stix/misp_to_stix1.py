@@ -1460,7 +1460,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         )
         email_object = EmailMessage()
         email_header = EmailHeader()
-        for feature in ('to', 'cc'):
+        for feature in ('to', 'cc', 'bcc'):
             if attributes.get(feature):
                 recipients = EmailRecipients()
                 for value in attributes.pop(feature):

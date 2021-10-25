@@ -533,7 +533,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             )
             email_message_args['from_ref'] = str_index
             index += 1
-        for feature in ('to', 'cc'):
+        for feature in ('to', 'cc', 'bcc'):
             if attributes.get(feature):
                 references = []
                 display_names = self._parse_email_display_names(attributes, feature)

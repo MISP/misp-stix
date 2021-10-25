@@ -609,7 +609,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             )
             objects.append(email_address)
             email_message_args['from_ref'] = address_id
-        for feature in ('to', 'cc'):
+        for feature in ('to', 'cc', 'bcc'):
             if attributes.get(feature):
                 display_names = self._parse_email_display_names(attributes, feature)
                 references = []
