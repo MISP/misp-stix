@@ -16,7 +16,7 @@ from uuid import uuid4
 
 _label_fields = ('type', 'category', 'to_ids')
 _misp_time_fields = ('first_seen', 'last_seen')
-_object_attributes_additional_fields = ('category', 'comment', 'to_ids', 'uuid')
+_object_attributes_additional_fields = ('category', 'comment', 'data', 'to_ids', 'uuid')
 _object_attributes_fields = ('type', 'object_relation', 'value')
 _stix_time_fields = {
     'indicator': ('valid_from', 'valid_until'),
