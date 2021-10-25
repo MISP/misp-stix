@@ -1323,6 +1323,30 @@ _TEST_EMAIL_OBJECT_WITH_DISPLAY_NAMES = {
             "type": "email-dst-display-name",
             "object_relation": "to-display-name",
             "value": "John Fitzgerald Kennedy"
+        },
+        {
+            "uuid": "1a43d189-e5f6-4087-98df-b2cbddec2cd6",
+            "type": "email-dst",
+            "object_relation": "cc",
+            "value": "diana.prince@dc.us"
+        },
+        {
+            "uuid": "59fc0279-427c-45a2-b8a4-678e43c6f9ad",
+            "type": "email-dst-display-name",
+            "object_relation": "cc-display-name",
+            "value": "Diana Prince"
+        },
+        {
+            "uuid": "efde9a0a-a62a-42a8-b863-14a448e313c6",
+            "type": "email-dst",
+            "object_relation": "bcc",
+            "value": "marie.curie@nobel.fr"
+        },
+        {
+            "uuid": "bf64f806-1660-4790-8f07-b116eb41b9bc",
+            "type": "email-dst-display-name",
+            "object_relation": "bcc-display-name",
+            "value": "Marie Curie"
         }
     ]
 }

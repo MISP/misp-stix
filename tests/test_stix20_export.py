@@ -1307,8 +1307,12 @@ class TestSTIX20Export(TestSTIX2Export):
     def test_event_with_email_indicator_object_with_display_names(self):
         event = get_event_with_email_object_with_display_names()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _from, _from_name, _to1, _to1_name, _to2, _to2_name = (attribute['value'] for attribute in attributes)
-        from_, from_name_, to1_, to2_, to1_name_, to2_name_ = pattern[1:-1].split(' AND ')
+        _from, _from_name, _to1, _to1_name, _to2, _to2_name, _cc, _cc_name, _bcc, _bcc_name = (attribute['value'] for attribute in attributes)
+        bcc_, bcc_name_, cc_, cc_name_, from_, from_name_, to1_, to2_, to1_name_, to2_name_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(bcc_, f"email-message:bcc_refs.value = '{_bcc}'")
+        self.assertEqual(bcc_name_, f"email-message:bcc_refs.display_name = '{_bcc_name}'")
+        self.assertEqual(cc_, f"email-message:cc_refs.value = '{_cc}'")
+        self.assertEqual(cc_name_, f"email-message:cc_refs.display_name = '{_cc_name}'")
         self.assertEqual(from_, f"email-message:from_ref.value = '{_from}'")
         self.assertEqual(from_name_, f"email-message:from_ref.display_name = '{_from_name}'")
         self.assertEqual(to1_, f"email-message:to_refs.value = '{_to1}'")
@@ -1319,18 +1323,24 @@ class TestSTIX20Export(TestSTIX2Export):
     def test_event_with_email_observable_object_with_display_names(self):
         event = get_event_with_email_object_with_display_names()
         attributes, observable_objects = self._run_observable_from_object_tests(event)
-        _from, _from_name, _to1, _to1_name, _to2, _to2_name = (attribute['value'] for attribute in attributes)
+        _from, _from_name, _to1, _to1_name, _to2, _to2_name, _cc, _cc_name, _bcc, _bcc_name = (attribute['value'] for attribute in attributes)
         message = observable_objects['0']
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.from_ref, '1')
         self.assertEqual(message.to_refs, ['2', '3'])
+        self.assertEqual(message.cc_refs, ['4'])
+        self.assertEqual(message.bcc_refs, ['5'])
         from_ = observable_objects['1']
         self._check_email_address(from_, _from, display_name=_from_name)
         to1_ = observable_objects['2']
         self._check_email_address(to1_, _to1, display_name=_to1_name)
         to2_ = observable_objects['3']
         self._check_email_address(to2_, _to2, display_name=_to2_name)
+        cc_ = observable_objects['4']
+        self._check_email_address(cc_, _cc, display_name=_cc_name)
+        bcc_ = observable_objects['5']
+        self._check_email_address(bcc_, _bcc, display_name=_bcc_name)
 
     def test_event_with_file_and_pe_indicator_objects(self):
         event = get_event_with_file_and_pe_objects()
