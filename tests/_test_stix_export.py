@@ -368,8 +368,12 @@ class TestSTIX2Export(unittest.TestCase):
             self.assertEqual(custom_object.x_misp_comment, misp_object['comment'])
         for custom_attribute, attribute in zip(custom_object.x_misp_attributes, misp_object['Attribute']):
             for feature in ('type', 'object_relation', 'value'):
-                self.assertEqual(custom_attribute[feature], attribute[feature])
-            for feature in ('category', 'comment', 'to_ids', 'uuid'):
+                try:
+                    self.assertEqual(custom_attribute[feature], attribute[feature])
+                except AssertionError:
+                    if '(s)' in attribute[feature]:
+                        self.assertEqual(custom_attribute[feature], attribute[feature].replace('(s)', ''))
+            for feature in ('category', 'comment', 'data', 'to_ids', 'uuid'):
                 if attribute.get(feature):
                     self.assertEqual(custom_attribute[feature], attribute[feature])
 

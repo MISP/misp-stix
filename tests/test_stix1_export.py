@@ -1551,7 +1551,7 @@ class TestStix1Export(unittest.TestCase):
 
     def _test_event_with_custom_objects(self):
         event = get_event_with_custom_objects()
-        account, btc, person = deepcopy(event['Event']['Object'])
+        account, btc, person, report = deepcopy(event['Event']['Object'])
         orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]

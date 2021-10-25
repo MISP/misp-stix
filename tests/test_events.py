@@ -1972,6 +1972,32 @@ _TEST_REGISTRY_KEY_OBJECT = {
     ]
 }
 
+_TEST_REPORT_OBJECT = {
+    "uuid": "3e76898a-fcb1-485b-ac24-d450fe8c54bc",
+    "name": "report",
+    "meta-category": "misc",
+    "description": "Metadata used to generate an executive level report",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "summary",
+            "value": "It is compromised"
+        },
+        {
+            "type": "text",
+            "object_relation": "type",
+            "value": "Report"
+        },
+        {
+            "type": "attachment",
+            "object_relation": "report-file(s)",
+            "value": "report.md",
+            "data": "VGhyZWF0IFJlcG9ydAoKSXQgaXMgY29tcHJvbWlzZWQK"
+        }
+    ]
+}
+
 _TEST_SIGHTINGS = [
     {
         "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -3539,7 +3565,8 @@ def get_event_with_custom_objects():
     event['Event']['Object'] = [
         deepcopy(_TEST_BANK_ACCOUNT_OBJECT),
         deepcopy(_TEST_BTC_WALLET_OBJECT),
-        deepcopy(_TEST_PERSON_OBJECT)
+        deepcopy(_TEST_PERSON_OBJECT),
+        deepcopy(_TEST_REPORT_OBJECT)
     ]
     return event
 
