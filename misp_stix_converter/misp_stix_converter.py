@@ -19,7 +19,7 @@ from stix.core.ttps import TTPs
 from stix2.base import STIXJSONEncoder
 from stix2.v20 import Bundle as Bundle_v20
 from stix2.v21 import Bundle as Bundle_v21
-from typing import List, TypedDict, Union
+from typing import List, Union
 from uuid import uuid4
 
 _default_namespace = 'https://github.com/MISP/MISP'
