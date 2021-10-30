@@ -122,6 +122,15 @@ class MISPtoSTIXParser():
             return tuple(tag['name'] for tag in self._misp_event.get('Tag', []) if tag['name'] not in tag_names)
         return tuple(tag['name'] for tag in self._misp_event.get('Tag', []))
 
+    def _parse_event_galaxies(self, galaxies: list):
+        for galaxy in galaxies:
+            galaxy_type = galaxy['type']
+            if galaxy_type in self._mapping.galaxy_types_mapping:
+                to_call = self._mapping.galaxy_types_mapping[galaxy_type]
+                getattr(self, to_call.format('parent'))(galaxy)
+            else:
+                self.__warning[self._identifier].add(f'{galaxy_type} galaxy from event level not mapped.')
+
     ################################################################################
     #                           COMMON UTILITY FUNCTIONS                           #
     ################################################################################
