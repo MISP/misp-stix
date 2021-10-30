@@ -10,6 +10,12 @@ class Stix20Mapping(Stix2Mapping):
     def __init__(self):
         super().__init__()
         self._declare_attributes_mapping()
+        self.__tlp_markings = {
+            'tlp:white': TLP_WHITE,
+            'tlp:green': TLP_GREEN,
+            'tlp:amber': TLP_AMBER,
+            'tlp:red': TLP_RED
+        }
 
     def declare_objects_mapping(self):
         self._declare_objects_mapping()
@@ -83,12 +89,6 @@ class Stix20Mapping(Stix2Mapping):
             'parent-process-name',
             'pid'
         )
-        self.__tlp_markings = tlp_markings = {
-            'tlp:white': TLP_WHITE,
-            'tlp:green': TLP_GREEN,
-            'tlp:amber': TLP_AMBER,
-            'tlp:red': TLP_RED
-        }
         self.__user_account_object_mapping = {
             'features': {
                 'account-type': 'account_type',

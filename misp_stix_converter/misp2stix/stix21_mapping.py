@@ -13,6 +13,12 @@ class Stix21Mapping(Stix2Mapping):
             'email-message-id': '_parse_email_message_id_attribute'
         }
         self._declare_attributes_mapping(updates=v21_specific_attributes)
+        self.__tlp_markings = {
+            'tlp:white': TLP_WHITE,
+            'tlp:green': TLP_GREEN,
+            'tlp:amber': TLP_AMBER,
+            'tlp:red': TLP_RED
+        }
 
     def declare_objects_mapping(self):
         v21_specific_objects = {
@@ -128,12 +134,6 @@ class Stix21Mapping(Stix2Mapping):
             'parent-image',
             'parent-pid'
         )
-        self.__tlp_markings = {
-            'tlp:white': TLP_WHITE,
-            'tlp:green': TLP_GREEN,
-            'tlp:amber': TLP_AMBER,
-            'tlp:red': TLP_RED
-        }
         self.__user_account_object_mapping = {
             'features': {
                 'account-type': 'account_type',

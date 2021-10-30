@@ -51,12 +51,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self.parse_misp_event(json_content)
 
     def parse_misp_attributes(self, attributes: dict):
-        if 'Attribute' in attributes:
-            attributes = attributes['Attribute']
         self._results_handling_function = '_append_SDO_without_refs'
         if hasattr(self, '_identifier') and self._identifier != 'attributes collection':
             self.__ids = {}
         self._identifier = 'attributes collection'
+        self._markings = {}
         self.__objects = []
         self.__relationships = []
         self.__object_refs = []
@@ -65,6 +64,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             identity = self._create_identity(self._mapping.misp_identity_args)
             self.__objects.append(identity)
             self.__ids[self.__identity_id] = self.__identity_id
+        if 'Attribute' in attributes:
+            attributes = attributes['Attribute']
         for attribute in attributes:
             self._resolve_attribute(attribute)
         if self.__relationships:
