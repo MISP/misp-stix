@@ -1652,13 +1652,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _check_galaxy_matching(self, cluster: dict, *args: Tuple[str, str]) -> Union[str, None]:
         if self._check_galaxy_name(*args):
             return self._fetch_galaxy_matching_by_name(cluster, *args)
-        if cluster.get('meta'):
+        if cluster.get('meta') is not None:
             meta = cluster['meta']
-            feature = 'external_id'
-            if meta.get(feature) and self._check_galaxy_references(meta[feature], feature, *args):
-                return self._fetch_galaxy_matching_by_reference(meta[feature], feature, *args)
-            if meta.get('refs') and self._check_galaxy_references(meta['refs'], 'url', *args):
-                return self._fetch_galaxy_matching_by_reference(meta['refs'], 'url', *args)
+            key = 'external_id'
+            for key, feature in zip((key, 'refs'), (key, 'url')):
+                if meta.get(key) is None:
+                    continue
+                if self._check_galaxy_references(meta[key], feature, *args):
+                    return self._fetch_galaxy_matching_by_reference(
+                        meta[key],
+                        feature,
+                        *args
+                    )
 
     def _check_galaxy_name(self, name: str, object_type: str) -> bool:
         names = 0
@@ -1799,7 +1804,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 attack_pattern_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('external_id'):
+            if cluster.get('meta', {}).get('external_id') is not None:
                 references = self._handle_external_references(cluster['meta']['external_id'])
                 attack_pattern_args['external_references'] = references
             self.__objects.append(
@@ -1838,7 +1843,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 course_of_action_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('external_id'):
+            if cluster.get('meta', {}).get('external_id') is not None:
                 references = self._handle_external_references(cluster['meta']['external_id'])
                 course_of_action_args['external_references'] = references
             course_of_action = self._create_course_of_action(course_of_action_args)
@@ -1873,11 +1878,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 intrusion_set_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('external_id'):
-                references = self._handle_external_references(cluster['meta']['external_id'])
-                intrusion_set_args['external_references'] = references
-            if cluster.get('meta', {}).get('synonyms'):
-                intrusion_set_args['aliases'] = cluster['meta']['synonyms']
+            if cluster.get('meta') is not None:
+                meta = cluster['meta']
+                if meta.get('external_id') is not None:
+                    references = self._handle_external_references(meta['external_id'])
+                    intrusion_set_args['external_references'] = references
+                if meta.get('synonyms') is not None:
+                    intrusion_set_args['aliases'] = meta['synonyms']
             intrusion_set = self._create_intrusion_set(intrusion_set_args)
             self.__objects.append(intrusion_set)
             object_refs.append(intrusion_set_id)
@@ -1910,7 +1917,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 malware_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('external_id'):
+            if cluster.get('meta', {}).get('external_id') is not None:
                 references = self._handle_external_references(cluster['meta']['external_id'])
                 malware_args['external_references'] = references
             malware = self._create_malware(malware_args, cluster=cluster)
@@ -1945,7 +1952,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 threat_actor_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('synonyms'):
+            if cluster.get('meta', {}).get('synonyms') is not None:
                 threat_actor_args['aliases'] = cluster['meta']['synonyms']
             threat_actor = self._create_threat_actor(threat_actor_args)
             self.__objects.append(threat_actor)
@@ -1979,7 +1986,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 tool_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('external_id'):
+            if cluster.get('meta', {}).get('external_id') is not None:
                 references = self._handle_external_references(cluster['meta']['external_id'])
                 tool_args['external_references'] = references
             tool = self._create_tool(tool_args, cluster=cluster)
@@ -2014,7 +2021,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 vulnerability_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('aliases'):
+            if cluster.get('meta', {}).get('aliases') is not None:
                 references = self._handle_external_references(cluster['meta']['aliases'])
                 vulnerability_args['external_references'] = references
             vulnerability = self._create_vulnerability(vulnerability_args)
