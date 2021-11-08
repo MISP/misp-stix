@@ -543,7 +543,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         attack_pattern.id_ = f"{self._orgname}:AttackPattern-{cluster['uuid']}"
         attack_pattern.title = cluster['value']
         attack_pattern.description = cluster['description']
-        if cluster['meta'].get('external_id'):
+        if cluster.get('meta', {}).get('external_id') is not None:
             external_id = cluster['meta']['external_id'][0]
             if external_id.startswith('CAPEC'):
                 attack_pattern.capec_id = external_id
@@ -591,7 +591,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         malware.title = cluster['value']
         if cluster.get('description'):
             malware.description = cluster['description']
-        if cluster['meta'].get('synonyms'):
+        if cluster.get('meta', {}).get('synonyms') is not None:
             for synonym in cluster['meta']['synonyms']:
                 malware.add_name(synonym)
         behavior.add_malware_instance(malware)
@@ -661,11 +661,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         vulnerability.id_ = f"{self._orgname}:Vulnerability-{cluster['uuid']}"
         vulnerability.title = cluster['value']
         vulnerability.description = cluster['description']
-        if cluster['meta'].get('aliases'):
-            vulnerability.cve_id = cluster['meta']['aliases'][0]
-        if cluster['meta'].get('refs'):
-            for reference in cluster['meta']['refs']:
-                vulnerability.add_reference(reference)
+        if cluster.get('meta') is not None:
+            if cluster['meta'].get('aliases'):
+                vulnerability.cve_id = cluster['meta']['aliases'][0]
+            if cluster['meta'].get('refs'):
+                for reference in cluster['meta']['refs']:
+                    vulnerability.add_reference(reference)
         exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
 
@@ -890,9 +891,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         threat_actor.title = cluster['value']
         if cluster.get('description'):
             threat_actor.description = cluster['description']
-        meta = cluster['meta']
-        if meta.get('cfr-type-of-incident'):
-            intended_effect = meta['cfr-type-of-incident']
+        if cluster.get('meta', {}).get('cfr-type-of-incident') is not None:
+            intended_effect = cluster['meta']['cfr-type-of-incident']
             if isinstance(intended_effect, list):
                 for effect in intended_effect:
                     threat_actor.add_intended_effect(effect)
