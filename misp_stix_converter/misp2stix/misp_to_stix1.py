@@ -1004,6 +1004,7 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
         super().__init__(orgname, version)
         self._producer = self._create_information_source(orgname)
         self._identifier = 'attributes collection'
+        self._ids = set()
 
     def parse_json_content(self, filename):
         with open(filename, 'rt', encoding='utf-8') as f:
