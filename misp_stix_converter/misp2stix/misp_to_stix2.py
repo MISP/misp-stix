@@ -70,6 +70,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             attributes = attributes['Attribute']
         for attribute in attributes:
             self._resolve_attribute(attribute)
+        if self._markings:
+            for marking in self._markings.values():
+                self.__objects.append(marking)
         if self.__relationships:
             self._handle_relationships()
 
