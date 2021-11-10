@@ -60,7 +60,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self.__relationships = []
         self.__object_refs = []
         self.__identity_id = self._mapping.misp_identity_args['id']
-        if self.__identity_id not in self.__ids:
+        if self.__identity_id not in self.unique_ids:
             identity = self._create_identity(self._mapping.misp_identity_args)
             self.__objects.append(identity)
             self.__ids[self.__identity_id] = self.__identity_id
@@ -187,7 +187,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for stix_object in bundle['objects']:
                 if stix_object['type'] == 'identity':
                     object_id = stix_object['id']
-                    if object_id not in self.__ids or object_id not in self._identities:
+                    if object_id not in self.unique_ids or object_id not in self._identities:
                         self._identities[object_id] = stix_object
                     continue
                 if not stix_object.get('name'):
@@ -261,7 +261,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _handle_sighting_identity(self, uuid: str, name: str) -> str:
         identity_id = f'identity--{uuid}'
-        if identity_id not in self.__ids:
+        if identity_id not in self.unique_ids:
             identity_args = {
                 'id': identity_id,
                 'name': name,
@@ -1739,7 +1739,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _handle_galaxy_matching(self, object_type: str, stix_object: dict):
         identity_id = stix_object['created_by_ref']
-        if identity_id not in self.__ids:
+        if identity_id not in self.unique_ids:
             identity = self._create_identity(self._identities[identity_id])
             self.__objects.insert(0, identity)
             self.__index += 1
@@ -1754,8 +1754,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _is_galaxy_parsed(self, object_refs: list, cluster: dict) -> bool:
         object_id = cluster['uuid']
-        if object_id in self.__ids:
-            object_refs.append(self.__ids[object_id])
+        if object_id in self.unique_ids:
+            object_refs.append(self.unique_ids[object_id])
             return True
         if self.__interoperability:
             object_type = self._mapping.cluster_to_stix_object[cluster['type']]
@@ -2117,7 +2117,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         orgc = self._misp_event['Orgc']
         orgc_id = orgc['uuid']
         self.__identity_id = f"identity--{orgc_id}"
-        if orgc_id not in self.__ids:
+        if orgc_id not in self.unique_ids:
             self.__ids[orgc_id] = self.__identity_id
             identity = self._create_identity_object(orgc['name'])
             self.__objects.append(identity)
