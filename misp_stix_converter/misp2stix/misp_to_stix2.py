@@ -6,6 +6,7 @@ import os
 import re
 from .exportparser import MISPtoSTIXParser
 from collections import defaultdict
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from stix2.properties import ListProperty, StringProperty
@@ -215,10 +216,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 marking_ids.append(self._markings[marking]['id'])
                 continue
             if marking.startswith('tlp:'):
-                marking_id = self._get_marking(marking)
-                if marking_id is not None:
+                try:
+                    marking_definition = deepcopy(self._mapping.tlp_markings[marking])
+                    marking_id = marking_definition.id
+                    if marking_id not in self.unique_ids:
+                        self._markings[marking] = marking_definition
+                        self.__ids[marking_id] = marking_id
                     marking_ids.append(marking_id)
                     continue
+                except KeyError:
+                    self._warning.append(f"Unknwon TLP tag: {marking}")
             object_args['labels'].append(marking)
         if marking_ids:
             object_args['object_marking_refs'] = marking_ids

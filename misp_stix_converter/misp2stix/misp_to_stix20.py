@@ -4,7 +4,6 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix20_mapping import Stix20Mapping
 from collections import defaultdict
-from copy import deepcopy
 from datetime import datetime
 from stix2.properties import (DictionaryProperty, IDProperty, ListProperty,
                               ObjectReferenceProperty,  ReferenceProperty,
@@ -945,15 +944,6 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if ':' in address:
             return IPv6Address
         return IPv4Address
-
-    def _get_marking(self, marking: str) -> Union[str, None]:
-        try:
-            marking_definition = deepcopy(self._mapping.tlp_markings[marking])
-            self._markings[marking] = marking_definition
-            return marking_definition.id
-        except KeyError:
-            self._warning.append(f"Unknwon TLP tag: {marking}")
-        return
 
     def _parse_email_display_names(self, attributes: dict, feature: str) -> dict:
         display_feature = f'{feature}-display-name'
