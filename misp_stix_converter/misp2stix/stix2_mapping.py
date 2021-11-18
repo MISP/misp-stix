@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from .. import Mapping
 from typing import Optional
 
 
 class Stix2Mapping:
     def __init__(self):
-        self.__external_id_to_source_name = {
-            'CAPEC': 'capec',
-            'CVE': 'cve',
-            'CWE': 'cwe',
-            'MOB': 'mitre-mobile-attack',
-            'PRE': 'mitre-pre-attack',
-            'REF': 'reference_from_CAPEC'
-        }
+        self.__external_id_to_source_name = Mapping(
+            CAPEC = 'capec',
+            CVE = 'cve',
+            CWE = 'cwe',
+            MOB = 'mitre-mobile-attack',
+            PRE = 'mitre-pre-attack',
+            REF = 'reference_from_CAPEC'
+        )
         self.__hash_attribute_types = (
             'md5',
             'sha1',
@@ -45,44 +46,52 @@ class Stix2Mapping:
         )
 
     def _declare_attributes_mapping(self, updates: Optional[dict]=None):
-        self.__misp_identity_args = {
-            'id': 'identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f',
-            'type': 'identity',
-            'identity_class': 'organization',
-            'name': 'MISP',
-            'created': '2015-09-14T15:40:21Z',
-            'modified': '2015-09-14T15:40:21Z'
-        }
-        self.__relationship_specs = {
-            'attack-pattern': {
-                'malware': 'uses',
-                'tool': 'uses',
-                'vulnerability': 'targets'
-            },
-            'campaign': {
-                'attack-pattern': 'uses',
-                'intrusion-set': 'attributed-to',
-                'malware': 'uses',
-                'threat-actor': 'attributed-to',
-                'tool': 'uses',
-                'vulnerability': 'targets'
-            },
-            'course-of-action': {
-                'attack-pattern': 'mitigates',
-                'malware': 'mitigates',
-                'tool': 'mitigates',
-                'vulnerability': 'mitigates'
-            },
-            'indicator': {
-                'attack-pattern': 'indicates',
-                'intrusion-set': 'indicates',
-                'malware': 'indicates',
-                'threat-actor': 'indicates',
-                'tool': 'indicates'
+        self.__misp_identity_args = Mapping(
+            id = 'identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f',
+            type = 'identity',
+            identity_class = 'organization',
+            name = 'MISP',
+            created = '2015-09-14T15:40:21Z',
+            modified = '2015-09-14T15:40:21Z'
+        )
+        self.__relationship_specs = Mapping(
+            **{
+                'attack-pattern': Mapping(
+                    malware = 'uses',
+                    tool = 'uses',
+                    vulnerability = 'targets'
+                ),
+                'campaign': Mapping(
+                    **{
+                        'attack-pattern': 'uses',
+                        'intrusion-set': 'attributed-to',
+                        'malware': 'uses',
+                        'threat-actor': 'attributed-to',
+                        'tool': 'uses',
+                        'vulnerability': 'targets'
+                    }
+                ),
+                'course-of-action': Mapping(
+                    **{
+                        'attack-pattern': 'mitigates',
+                        'malware': 'mitigates',
+                        'tool': 'mitigates',
+                        'vulnerability': 'mitigates'
+                    }
+                ),
+                'indicator': Mapping(
+                    **{
+                        'attack-pattern': 'indicates',
+                        'intrusion-set': 'indicates',
+                        'malware': 'indicates',
+                        'threat-actor': 'indicates',
+                        'tool': 'indicates'
+                    }
+                )
             }
-        }
+        )
         # ATTRIBUTES MAPPING
-        self.__attribute_types_mapping = {
+        _attribute_types_mapping = {
             'AS': '_parse_autonomous_system_attribute',
             'attachment': '_parse_attachment_attribute',
             'campaign-name': '_parse_campaign_name_attribute',
@@ -111,19 +120,19 @@ class Stix2Mapping:
             'user-agent': '_parse_user_agent_attribute',
             'vulnerability': '_parse_vulnerability_attribute'
         }
-        self.__attribute_types_mapping.update(
+        _attribute_types_mapping.update(
             dict.fromkeys(
                 self.__hash_attribute_types,
                 '_parse_hash_attribute'
             )
         )
-        self.__attribute_types_mapping.update(
+        _attribute_types_mapping.update(
             dict.fromkeys(
                 (f"filename|{hash}" for hash in self.__hash_attribute_types),
                 '_parse_hash_composite_attribute'
             )
         )
-        self.__attribute_types_mapping.update(
+        _attribute_types_mapping.update(
             dict.fromkeys(
                 (
                     'ip-src',
@@ -132,7 +141,7 @@ class Stix2Mapping:
                 '_parse_ip_attribute'
             )
         )
-        self.__attribute_types_mapping.update(
+        _attribute_types_mapping.update(
             dict.fromkeys(
                 (
                     'ip-src|port',
@@ -141,7 +150,7 @@ class Stix2Mapping:
                 '_parse_ip_port_attribute'
             )
         )
-        self.__attribute_types_mapping.update(
+        _attribute_types_mapping.update(
             dict.fromkeys(
                 [
                     "uri",
@@ -151,7 +160,7 @@ class Stix2Mapping:
                 '_parse_url_attribute'
             )
         )
-        self.__attribute_types_mapping.update(
+        _attribute_types_mapping.update(
             dict.fromkeys(
                 [
                     'x509-fingerprint-md5',
@@ -162,7 +171,8 @@ class Stix2Mapping:
             )
         )
         if updates is not None:
-            self.__attribute_types_mapping.update(updates)
+            _attribute_types_mapping.update(updates)
+        self.__attribute_types_mapping = Mapping(**_attribute_types_mapping)
         # GALAXIES MAPPING
         _attack_pattern_types = (
             'mitre-attack-pattern',
@@ -206,83 +216,85 @@ class Stix2Mapping:
             'mitre-enterprise-attack-tool',
             'mitre-mobile-attack-tool'
         )
-        self.__cluster_to_stix_object = {'branded-vulnerability': 'vulnerability'}
-        self.__cluster_to_stix_object.update(
+        _cluster_to_stix_object = {'branded-vulnerability': 'vulnerability'}
+        _cluster_to_stix_object.update(
             dict.fromkeys(
                 _attack_pattern_types,
                 'attack-pattern'
             )
         )
-        self.__cluster_to_stix_object.update(
+        _cluster_to_stix_object.update(
             dict.fromkeys(
                 _course_of_action_types,
                 'course-of-action'
             )
         )
-        self.__cluster_to_stix_object.update(
+        _cluster_to_stix_object.update(
             dict.fromkeys(
                 _intrusion_set_types,
                 'intrusion-set'
             )
         )
-        self.__cluster_to_stix_object.update(
+        _cluster_to_stix_object.update(
             dict.fromkeys(
                 _malware_types,
                 'malware'
             )
         )
-        self.__cluster_to_stix_object.update(
+        _cluster_to_stix_object.update(
             dict.fromkeys(
                 _threat_actor_types,
                 'threat-actor'
             )
         )
-        self.__cluster_to_stix_object.update(
+        _cluster_to_stix_object.update(
             dict.fromkeys(
                 _tool_types,
                 'tool'
             )
         )
-        self.__galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
-        self.__galaxy_types_mapping.update(
+        self.__cluster_to_stix_object = Mapping(**_cluster_to_stix_object)
+        _galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
+        _galaxy_types_mapping.update(
             dict.fromkeys(
                 _attack_pattern_types,
                 '_parse_attack_pattern_{}_galaxy'
             )
         )
-        self.__galaxy_types_mapping.update(
+        _galaxy_types_mapping.update(
             dict.fromkeys(
                 _course_of_action_types,
                 '_parse_course_of_action_{}_galaxy'
             )
         )
-        self.__galaxy_types_mapping.update(
+        _galaxy_types_mapping.update(
             dict.fromkeys(
                 _intrusion_set_types,
                 '_parse_intrusion_set_{}_galaxy'
             )
         )
-        self.__galaxy_types_mapping.update(
+        _galaxy_types_mapping.update(
             dict.fromkeys(
                 _malware_types,
                 '_parse_malware_{}_galaxy'
             )
         )
-        self.__galaxy_types_mapping.update(
+        _galaxy_types_mapping.update(
             dict.fromkeys(
                 _threat_actor_types,
                 '_parse_threat_actor_{}_galaxy'
             )
         )
-        self.__galaxy_types_mapping.update(
+        _galaxy_types_mapping.update(
             dict.fromkeys(
                 _tool_types,
                 '_parse_tool_{}_galaxy'
             )
         )
+        self.__galaxy_types_mapping = Mapping(**_galaxy_types_mapping)
 
     def _declare_objects_mapping(self, updates: Optional[dict]=None):
-        self.__objects_mapping = {
+        _objects_mapping = {
             'asn': '_parse_asn_object',
             'attack-pattern': '_parse_attack_pattern_object',
             'course-of-action': '_parse_course_of_action_object',
@@ -306,7 +318,8 @@ class Stix2Mapping:
             'x509': '_parse_x509_object'
         }
         if updates is not None:
-            self.__objects_mapping.update(updates)
+            _objects_mapping.update(updates)
+        self.__objects_mapping = Mapping(**_objects_mapping)
         self.__address_family_enum_list = (
             "AF_UNSPEC",
             "AF_INET",
@@ -321,14 +334,14 @@ class Stix2Mapping:
             'asn',
             'description'
         )
-        self.__attack_pattern_object_mapping = {
-            'name': 'name',
-            'summary': 'description'
-        }
-        self.__attack_pattern_reference_mapping = {
-            'id': ('capec', 'external_id'),
-            'references': ('mitre-attack', 'url')
-        }
+        self.__attack_pattern_object_mapping = Mapping(
+            name = 'name',
+            summary = 'description'
+        )
+        self.__attack_pattern_reference_mapping = Mapping(
+            id = ('capec', 'external_id'),
+            references = ('mitre-attack', 'url')
+        )
         self.__attack_pattern_single_fields = (
             'name',
             'summary'
@@ -348,11 +361,11 @@ class Stix2Mapping:
             "PF_AX25",
             "PF_NETROM"
         )
-        self.__domain_ip_object_mapping = {
-            'domain': 'value',
-            'hostname': 'value',
-            'ip': 'resolves_to_refs[*].value'
-        }
+        self.__domain_ip_object_mapping = Mapping(
+            domain = 'value',
+            hostname = 'value',
+            ip = 'resolves_to_refs[*].value'
+        )
         self.__domain_ip_single_fields = (
             'first-seen',
             'hostname',
@@ -361,18 +374,22 @@ class Stix2Mapping:
             'registration-date',
             'text'
         )
-        self.__email_header_fields = {
-            'reply-to': 'Reply-To',
-            'x-mailer': 'X-Mailer'
-        }
+        self.__email_header_fields = Mapping(
+            **{
+                'reply-to': 'Reply-To',
+                'x-mailer': 'X-Mailer'
+            }
+        )
         self.__email_data_fields = (
             'attachment',
             'screenshot'
         )
-        self.__facebook_account_object_mapping = {
-            'account-id': 'user_id',
-            'account-name': 'account_login'
-        }
+        self.__facebook_account_object_mapping = Mapping(
+            **{
+                'account-id': 'user_id',
+                'account-name': 'account_login'
+            }
+        )
         self.__facebook_account_single_fields = (
             'account-id',
             'account-name'
@@ -399,75 +416,91 @@ class Stix2Mapping:
             'sha512/224',
             'sha512/256',
         )
-        self.__file_object_mapping = {
-            'filename': 'name',
-            'file-encoding': 'name_enc',
-            'mime-type': 'mime_type',
-            'size-in-bytes': 'size'
-        }
-        self.__file_single_fields = self.__file_data_fields + self.__hash_attribute_types + ('path',)
-        self.__ip_port_object_mapping = {
-            'ip_features': {
-                'ip': "dst_ref.type = '{}' AND network-traffic:dst_ref.value",
-                'ip-src': "src_ref.type = '{}' AND network-traffic:src_ref.value",
-                'ip-dst': "dst_ref.type = '{}' AND network-traffic:dst_ref.value",
-            },
-            'domain_features': {
-                'domain': "dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value",
-                'hostname': "dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value"
-            },
-            'features': {
-                'dst-port': "dst_port",
-                'first-seen': "start",
-                'last-seen': "end",
-                'src-port': "src_port"
+        self.__file_object_mapping = Mapping(
+            **{
+                'filename': 'name',
+                'file-encoding': 'name_enc',
+                'mime-type': 'mime_type',
+                'size-in-bytes': 'size'
             }
-        }
+        )
+        self.__file_single_fields = self.__file_data_fields + self.__hash_attribute_types + ('path',)
+        self.__ip_port_object_mapping = Mapping(
+            ip_features = Mapping(
+                **{
+                    'ip': "dst_ref.type = '{}' AND network-traffic:dst_ref.value",
+                    'ip-src': "src_ref.type = '{}' AND network-traffic:src_ref.value",
+                    'ip-dst': "dst_ref.type = '{}' AND network-traffic:dst_ref.value",
+                }
+            ),
+            domain_features = Mapping(
+                domain = "dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value",
+                hostname = "dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value"
+            ),
+            features = Mapping(
+                **{
+                    'dst-port': "dst_port",
+                    'first-seen': "start",
+                    'last-seen': "end",
+                    'src-port': "src_port"
+                }
+            )
+        )
         self.__ip_port_single_fields = (
             'first-seen',
             'last-seen'
         )
-        self.__network_connection_mapping = {
-            "features": {
-                'dst-port': 'dst_port',
-                'first-packet-seen': 'start',
-                'src-port': 'src_port'
-            },
-            'protocols': (
+        self.__network_connection_mapping = Mapping(
+            features = Mapping(
+                **{
+                    'dst-port': 'dst_port',
+                    'first-packet-seen': 'start',
+                    'src-port': 'src_port'
+                }
+            ),
+            protocols = (
                 'layer3-protocol',
                 'layer4-protocol',
                 'layer7-protocol'
             )
-        }
+        )
         self.__network_socket_state_fields = (
             'blocking',
             'listening'
         )
-        self.__pe_object_mapping = {
-            'features': {
-                'imphash': 'imphash',
-                'number-sections': 'number_of_sections',
-                'type': 'pe_type'
-            },
-            'header': {
-                'entrypoint-address': 'address_of_entry_point',
-            }
-        }
+        self.__pe_object_mapping = Mapping(
+            features = Mapping(
+                **{
+                    'imphash': 'imphash',
+                    'number-sections': 'number_of_sections',
+                    'type': 'pe_type'
+                }
+            ),
+            header = Mapping(
+                **{
+                    'entrypoint-address': 'address_of_entry_point',
+                }
+            )
+        )
         self.__pe_object_single_fields = (
             'entrypoint-address',
             'imphash',
             'number-sections',
             'type'
         )
-        self.__pe_section_mapping = {
-            'entropy': 'entropy',
-            'name': 'name',
-            'size-in-bytes': 'size'
-        }
-        self.__registry_key_mapping = {
-            'data-type': 'data_type',
-            'name': 'name'
-        }
+        self.__pe_section_mapping = Mapping(
+            **{
+                'entropy': 'entropy',
+                'name': 'name',
+                'size-in-bytes': 'size'
+            }
+        )
+        self.__registry_key_mapping = Mapping(
+            **{
+                'data-type': 'data_type',
+                'name': 'name'
+            }
+        )
         self.__socket_type_enum_list = (
             "SOCK_STREAM",
             "SOCK_DGRAM",
@@ -475,11 +508,13 @@ class Stix2Mapping:
             "SOCK_RDM",
             "SOCK_SEQPACKET"
         )
-        self.__twitter_account_object_mapping = {
-            'displayed-name': 'display_name',
-            'id': 'user_id',
-            'name': 'account_login'
-        }
+        self.__twitter_account_object_mapping = Mapping(
+            **{
+                'displayed-name': 'display_name',
+                'id': 'user_id',
+                'name': 'account_login'
+            }
+        )
         self.__twitter_account_single_fields = (
             'displayed-name',
             'id',
@@ -509,29 +544,33 @@ class Stix2Mapping:
             'x509-fingerprint-sha1',
             'x509-fingerprint-sha256'
         )
-        self.__x509_object_mapping = {
-            'extension': {
-                'dns_names': 'DNS name',
-                'email': 'email',
-                'ip': 'IP',
-                'rid': 'RID',
-                'uri': 'URI'
-            },
-            'features': {
-                'issuer': 'issuer',
-                'pubkey-info-algorithm': 'subject_public_key_algorithm',
-                'pubkey-info-exponent': 'subject_public_key_exponent',
-                'pubkey-info-modulus': 'subject_public_key_modulus',
-                'serial-number': 'serial_number',
-                'signature_algorithm': 'signature_algorithm',
-                'subject': 'subject',
-                'version': 'version'
-            },
-            'timeline': {
-                'validity-not-after': 'validity_not_after',
-                'validity-not-before': 'validity_not_before'
-            }
-        }
+        self.__x509_object_mapping = Mapping(
+            extension = Mapping(
+                dns_names = 'DNS name',
+                email = 'email',
+                ip = 'IP',
+                rid = 'RID',
+                uri = 'URI'
+            ),
+            features = Mapping(
+                **{
+                    'issuer': 'issuer',
+                    'pubkey-info-algorithm': 'subject_public_key_algorithm',
+                    'pubkey-info-exponent': 'subject_public_key_exponent',
+                    'pubkey-info-modulus': 'subject_public_key_modulus',
+                    'serial-number': 'serial_number',
+                    'signature_algorithm': 'signature_algorithm',
+                    'subject': 'subject',
+                    'version': 'version'
+                }
+            ),
+            timeline = Mapping(
+                **{
+                    'validity-not-after': 'validity_not_after',
+                    'validity-not-before': 'validity_not_before'
+                }
+            )
+        )
         self.__x509_single_fields = (
             'is_ca',
             'issuer',
