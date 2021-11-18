@@ -1124,7 +1124,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _generate_stix_objects(self):
         if self._misp_event.get('threat_level_id'):
-            threat_level = self._mapping.threat_level_mapping[int(self._misp_event['threat_level_id'])]
+            threat_level = self._mapping.threat_level_mapping[self._misp_event['threat_level_id']]
             self._add_journal_entry(f'Event Threat Level: {threat_level}')
         self._add_journal_entry('MISP Tag: misp:tool="MISP-STIX-Converter"')
         tags = self._handle_event_tags_and_galaxies()
@@ -1134,7 +1134,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             external_id = ExternalID(value=self._misp_event['id'], source='MISP Event')
             self._incident.add_external_id(external_id)
         if self._misp_event.get('analysis'):
-            status = self._mapping.status_mapping[int(self._misp_event['analysis'])]
+            status = self._mapping.status_mapping[self._misp_event['analysis']]
             self._incident.status = IncidentStatus(status)
         source = self._set_information_source()
         self._incident.information_source = self._create_information_source(source)
