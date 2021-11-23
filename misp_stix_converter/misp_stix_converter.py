@@ -14,7 +14,7 @@ from cybox.core.observable import Observables
 from mixbox import idgen
 from mixbox.namespaces import Namespace, register_namespace
 from pathlib import Path
-from stix.core import Campaigns, Indicators, STIXHeader, STIXPackage
+from stix.core import Campaigns, CoursesOfAction, Indicators, ThreatActors, STIXHeader, STIXPackage
 from stix.core.ttps import TTPs
 from stix2.base import STIXJSONEncoder
 from stix2.v20 import Bundle as Bundle_v20
@@ -494,8 +494,18 @@ def _update_namespaces():
 #                        STIX CONTENT WRITING FUNCTIONS                        #
 ################################################################################
 
+def _format_xml_objects(objects: str, header_length=0, footer_length=0, to_replace='\n', replacement='\n    ') -> str:
+    if footer_length == 0:
+        return f'    {objects[header_length:].replace(to_replace, replacement)}\n'
+    return f'    {objects[header_length:footer_length].replace(to_replace, replacement)}\n'
+
+
 def _get_json_campaigns(campaigns: Campaigns) -> str:
-    return f"{', '.join(campaign.to_json() for campaign in campaigns.campaign)}, "
+    return ', '.join(campaign.to_json() for campaign in campaigns.campaign)
+
+
+def _get_json_courses_of_action(courses_of_action: CoursesOfAction) -> str:
+    return ', '.join(course_of_action.to_json() for course_of_action in courses_of_action.item)
 
 
 def _get_json_events(package: STIXPackage) -> str:
@@ -512,13 +522,22 @@ def _get_json_observables(observables: Observables) -> str:
     return f"{', '.join(observable.to_json() for observable in observables.observables)}, "
 
 
+def _get_json_threat_actors(threat_actors: ThreatActors) -> str:
+    return ', '.join(threat_actor.to_json() for threat_actor in threat_actors.threat_actor)
+
+
 def _get_json_ttps(ttps: TTPs) -> str:
-    return f"{', '.join(ttp.to_json() for ttp in ttps.ttp)}, "
+    return ', '.join(ttp.to_json() for ttp in ttps.ttp)
 
 
 def _get_xml_campaigns(campaigns: Campaigns) -> str:
-    content = '\n        '.join(line for campaign in campaigns.campaign for line in campaign.to_xml(include_namespaces=False).decode().split('\n')[:-1])
-    return f'        {content}\n'
+    campaigns = campaigns.to_xml(include_namespaces=True).decode()
+    return _format_xml_objects(campaigns, header_length=21, footer_length=23)
+
+
+def _get_xml_courses_of_action(courses_of_action: CoursesOfAction) -> str:
+    courses_of_action = courses_of_action.to_xml(include_namespaces=False).decode()
+    return _format_xml_objects(courses_of_action, header_length=27, footer_length=29)
 
 
 def _get_xml_events(package: STIXPackage) -> str:
@@ -540,9 +559,14 @@ def _get_xml_observables(observables: Observables) -> str:
         return f"        {content.replace('ObservableType', 'Observable')}\n"
 
 
+def _get_xml_threat_actors(threat_actors: ThreatActors) -> str:
+    threat_actors = threat_actors.to_xml(include_namespaces=False).decode()
+    return _format_xml_objects(threat_actors, header_length=24, footer_length=26)
+
+
 def _get_xml_ttps(ttps: TTPs) -> str:
-    content = '\n        '.join(line for ttp in ttps.ttp for line in ttp.to_xml(include_namespaces=False).decode().split('\n')[:-1])
-    return f'        {content}\n'
+    ttps = ttps.to_xml(include_namespaces=False).decode()
+    return _format_xml_objects(ttps, header_length=16, footer_length=18)
 
 
 def _write_header(package: STIXPackage, filename: str, namespace: str, org: str, return_format: str) -> str:
