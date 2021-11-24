@@ -505,7 +505,7 @@ def _get_json_campaigns(campaigns: Campaigns) -> str:
 
 
 def _get_json_courses_of_action(courses_of_action: CoursesOfAction) -> str:
-    return ', '.join(course_of_action.to_json() for course_of_action in courses_of_action.item)
+    return ', '.join(course_of_action.to_json() for course_of_action in courses_of_action.course_of_action)
 
 
 def _get_json_events(package: STIXPackage) -> str:
