@@ -500,73 +500,130 @@ def _format_xml_objects(objects: str, header_length=0, footer_length=0, to_repla
     return f'    {objects[header_length:footer_length].replace(to_replace, replacement)}\n'
 
 
-def _get_json_campaigns(campaigns: Campaigns) -> str:
+def _get_campaigns(campaigns: Campaigns, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        campaigns = campaigns.to_xml(include_namespaces=True).decode()
+        return _format_xml_objects(campaigns, header_length=21, footer_length=23)
     return ', '.join(campaign.to_json() for campaign in campaigns.campaign)
 
 
-def _get_json_courses_of_action(courses_of_action: CoursesOfAction) -> str:
+def _get_campaigns_footer(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    </stix:Campaigns>\n'
+    return ']'
+
+
+def _get_campaigns_header(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    <stix:Campaigns>\n'
+    return '"campaigns": ['
+
+
+def _get_courses_of_action(courses_of_action: CoursesOfAction, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        courses_of_action = courses_of_action.to_xml(include_namespaces=False).decode()
+        return _format_xml_objects(courses_of_action, header_length=27, footer_length=29)
     return ', '.join(course_of_action.to_json() for course_of_action in courses_of_action.course_of_action)
 
 
-def _get_json_events(package: STIXPackage) -> str:
+def _get_courses_of_action_footer(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    </stix:Courses_Of_Action>\n'
+    return ']'
+
+
+def _get_courses_of_action_header(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    <stix:Courses_Of_Action>\n'
+    return '"courses_of_action": ['
+
+
+def _get_events(package: STIXPackage, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        if package.related_packages is not None:
+            length = 96 + len(package.id_) + len(package.version)
+            return package.to_xml(include_namespaces=False).decode()[length:-82]
+        content = '\n            '.join(package.to_xml(include_namespaces=False).decode().split('\n'))
+        return f'            {content}\n'
     if package.related_packages is not None:
         return ', '.join(related_package.to_json() for related_package in package.related_packages)
     return json.dumps({'package': package.to_dict()})
 
 
-def _get_json_indicators(indicators: Indicators) -> str:
+def _get_indicators(indicators: Indicators, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        indicators = indicators.to_xml(include_namespaces=False).decode()
+        return _format_xml_objects(indicators, header_length=18, footer_length=20)
     return f"{', '.join(indicator.to_json() for indicator in indicators.indicator)}, "
 
 
-def _get_json_observables(observables: Observables) -> str:
+def _get_indicators_footer(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    </stix:Indicators>\n'
+    return ']'
+
+
+def _get_indicators_header(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    <stix:Indicators>\n'
+    return '"indicators": ['
+
+
+def _get_observables(observables: Observables, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        observables = observables.to_xml(include_namespaces=False).decode()
+        return _format_xml_objects(observables, header_length=19, footer_length=21)
     return f"{', '.join(observable.to_json() for observable in observables.observables)}, "
 
 
-def _get_json_threat_actors(threat_actors: ThreatActors) -> str:
+def _get_observables_footer(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    </stix:Observables>\n'
+    return ']'
+
+
+def _get_observables_header(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    <stix:Observables>\n'
+    return '"observables": ['
+
+
+def _get_threat_actors(threat_actors: ThreatActors, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        threat_actors = threat_actors.to_xml(include_namespaces=False).decode()
+        return _format_xml_objects(threat_actors, header_length=24, footer_length=26)
     return ', '.join(threat_actor.to_json() for threat_actor in threat_actors.threat_actor)
 
 
-def _get_json_ttps(ttps: TTPs) -> str:
+def _get_threat_actors_footer(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    </stix:Threat_Actors>\n'
+    return ']'
+
+
+def _get_threat_actors_header(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    <stix:Threat_Actors>\n'
+    return '"threat_actors": ['
+
+
+def _get_ttps(ttps: TTPs, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        ttps = ttps.to_xml(include_namespaces=False).decode()
+        return _format_xml_objects(ttps, header_length=16, footer_length=18)
     return ', '.join(ttp.to_json() for ttp in ttps.ttp)
 
 
-def _get_xml_campaigns(campaigns: Campaigns) -> str:
-    campaigns = campaigns.to_xml(include_namespaces=True).decode()
-    return _format_xml_objects(campaigns, header_length=21, footer_length=23)
+def _get_ttps_footer(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    </stix:TTPs>\n'
+    return ']}'
 
 
-def _get_xml_courses_of_action(courses_of_action: CoursesOfAction) -> str:
-    courses_of_action = courses_of_action.to_xml(include_namespaces=False).decode()
-    return _format_xml_objects(courses_of_action, header_length=27, footer_length=29)
-
-
-def _get_xml_events(package: STIXPackage) -> str:
-    if package.related_packages is not None:
-        length = 96 + len(package.id_) + len(package.version)
-        return package.to_xml(include_namespaces=False).decode()[length:-82]
-    content = '\n            '.join(package.to_xml(include_namespaces=False).decode().split('\n'))
-    return f'            {content}\n'
-
-
-def _get_xml_indicators(indicators: Indicators) -> str:
-    content = '\n        '.join(line for indicator in indicators.indicator for line in indicator.to_xml(include_namespaces=False).decode().split('\n')[:-1])
-    return f'        {content}\n'
-
-
-def _get_xml_observables(observables: Observables) -> str:
-    if len(observables.observables) > 0:
-        content = '\n        '.join(line for observable in observables.observables for line in observable.to_xml(include_namespaces=False).decode().split('\n')[:-1])
-        return f"        {content.replace('ObservableType', 'Observable')}\n"
-
-
-def _get_xml_threat_actors(threat_actors: ThreatActors) -> str:
-    threat_actors = threat_actors.to_xml(include_namespaces=False).decode()
-    return _format_xml_objects(threat_actors, header_length=24, footer_length=26)
-
-
-def _get_xml_ttps(ttps: TTPs) -> str:
-    ttps = ttps.to_xml(include_namespaces=False).decode()
-    return _format_xml_objects(ttps, header_length=16, footer_length=18)
+def _get_ttps_header(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    <stix:TTPs>\n'
+    return '"ttps": {"ttps": ['
 
 
 def _write_header(package: STIXPackage, filename: str, namespace: str, org: str, return_format: str) -> str:
