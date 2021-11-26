@@ -571,20 +571,24 @@ def _get_indicators_header(return_format: str = 'xml') -> str:
 
 def _get_observables(observables: Observables, return_format: str = 'xml') -> str:
     if return_format == 'xml':
+        header_length = 20
+        for field in ('cybox_major_version', 'cybox_minor_version', 'cybox_update_version'):
+            if hasattr(observables, field) and getattr(observables, field) is not None:
+                header_length += len(field) + len(getattr(observables, field)) + 4
         observables = observables.to_xml(include_namespaces=False).decode()
-        return _format_xml_objects(observables, header_length=19, footer_length=21)
+        return _format_xml_objects(observables, header_length=header_length, footer_length=22)
     return f"{', '.join(observable.to_json() for observable in observables.observables)}, "
 
 
 def _get_observables_footer(return_format: str = 'xml') -> str:
     if return_format == 'xml':
-        return '    </stix:Observables>\n'
+        return '    </cybox:Observables>\n'
     return ']'
 
 
 def _get_observables_header(return_format: str = 'xml') -> str:
     if return_format == 'xml':
-        return '    <stix:Observables>\n'
+        return '    <cybox:Observables>\n'
     return '"observables": ['
 
 
