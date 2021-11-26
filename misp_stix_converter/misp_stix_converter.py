@@ -497,7 +497,7 @@ def _update_namespaces():
 def _format_xml_objects(objects: str, header_length=0, footer_length=0, to_replace='\n', replacement='\n    ') -> str:
     if footer_length == 0:
         return f'    {objects[header_length:].replace(to_replace, replacement)}\n'
-    return f'    {objects[header_length:footer_length].replace(to_replace, replacement)}\n'
+    return f'    {objects[header_length:-footer_length].replace(to_replace, replacement)}\n'
 
 
 def _get_campaigns(campaigns: Campaigns, return_format: str = 'xml') -> str:
