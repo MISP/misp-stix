@@ -553,7 +553,7 @@ def _get_events(package: STIXPackage, return_format: str = 'xml') -> str:
 def _get_indicators(indicators: Indicators, return_format: str = 'xml') -> str:
     if return_format == 'xml':
         indicators = indicators.to_xml(include_namespaces=False).decode()
-        return _format_xml_objects(indicators, header_length=18, footer_length=20)
+        return _format_xml_objects(indicators, header_length=22, footer_length=24)
     return f"{', '.join(indicator.to_json() for indicator in indicators.indicator)}, "
 
 
