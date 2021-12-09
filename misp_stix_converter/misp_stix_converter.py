@@ -554,7 +554,7 @@ def _get_indicators(indicators: Indicators, return_format: str = 'xml') -> str:
     if return_format == 'xml':
         indicators = indicators.to_xml(include_namespaces=False).decode()
         return _format_xml_objects(indicators, header_length=22, footer_length=24)
-    return f"{', '.join(indicator.to_json() for indicator in indicators.indicator)}, "
+    return f"{', '.join(indicator.to_json() for indicator in indicators.indicator)}"
 
 
 def _get_indicators_footer(return_format: str = 'xml') -> str:
@@ -577,7 +577,7 @@ def _get_observables(observables: Observables, return_format: str = 'xml') -> st
                 header_length += len(field) + len(getattr(observables, field)) + 4
         observables = observables.to_xml(include_namespaces=False).decode()
         return _format_xml_objects(observables, header_length=header_length, footer_length=22)
-    return f"{', '.join(observable.to_json() for observable in observables.observables)}, "
+    return f"{', '.join(observable.to_json() for observable in observables.observables)}"
 
 
 def _get_observables_footer(return_format: str = 'xml') -> str:
