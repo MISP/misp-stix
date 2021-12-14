@@ -260,14 +260,14 @@ def misp_attribute_collection_to_stix1(*args: List[_files_type], in_memory: bool
         return _write_raw_stix(package, output_filename, namespace, org, return_format)
     current_path = Path(output_filename).parent.resolve()
     handler = AttributeCollectionHandler(return_format)
-    header, footer = stix1_attributes_framing(namespace, org, return_format, version)
+    header, separator, footer = stix1_attributes_framing(namespace, org, return_format, version)
     for input_file in input_files:
         parser.parse_json_content(input_file)
         current = parser.stix_package
         for feature in handler.features:
             values = getattr(current, feature)
             if values is not None and values:
-                content = globals()[f'_get_{return_format}_{feature}'](values)
+                content = globals()[f'_get_{feature}'](values, return_format)
                 if not content:
                     continue
                 filename = getattr(handler, feature)
