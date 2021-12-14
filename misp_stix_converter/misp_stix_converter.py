@@ -314,12 +314,12 @@ def misp_event_collection_to_stix1(*args: List[_files_type], in_memory: bool=Fal
         return _write_raw_stix(package, output_filename, namespace, org, return_format)
     header, separator, footer = stix1_framing(namespace, org, return_format, version)
     parser.parse_json_content(input_files[0])
-    content = globals()[f'_get_{return_format}_events'](parser.stix_package)
+    content = _get_events(parser.stix_package, return_format)
     with open(output_filename, 'wt', encoding='utf-8') as f:
         f.write(f'{header}{content}')
     for filename in input_files[1:]:
         parser.parse_json_content(filename)
-        content = globals()[f'_get_{return_format}_events'](parser.stix_package)
+        content = _get_events(parser.stix_package, return_format)
         with open(output_filename, 'at', encoding='utf-8') as f:
             f.write(f'{separator}{content}')
     with open(output_filename, 'at', encoding='utf-8') as f:
