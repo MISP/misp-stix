@@ -308,8 +308,14 @@ def misp_attribute_collection_to_stix1(
     return 1
 
 
-def misp_event_collection_to_stix1(*args: List[_files_type], in_memory: bool=False, namespace: str=_default_namespace, org: str=_default_org):
-    output_filename, return_format, version, *input_files = args
+def misp_event_collection_to_stix1(output_filename: _files_type, *input_files: List[_files_type],
+return_format: str=_STIX1_default_format, version: str=_STIX1_default_version,
+in_memory: bool=False, namespace: str=_default_namespace, org: str=_default_org
+):
+    if return_format not in _STIX1_valid_formats:
+        return_format = _STIX1_default_format
+    if version not in _STIX1_valid_versions:
+        version = _STIX1_default_version
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
     parser = MISPtoSTIX1EventsParser(org, version)
