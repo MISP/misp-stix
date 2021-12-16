@@ -2597,9 +2597,26 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         reference_name = f'{name}_stix11.xml'
         output_file = self._current_path / to_test_name
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_attribute_collection_to_stix1(output_file, 'xml', '1.1.1', *input_files, in_memory=True), 1)
+        self.assertEqual(
+            misp_attribute_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.1.1',
+                in_memory=True
+            ),
+            1
+        )
         self._check_stix1_export_results(to_test_name, reference_name)
-        self.assertEqual(misp_attribute_collection_to_stix1(output_file, 'xml', '1.1.1', *input_files), 1)
+        self.assertEqual(
+            misp_attribute_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.1.1'
+            ),
+            1
+        )
         self._check_stix1_export_results(to_test_name, reference_name)
 
     def test_attribute_collection_export_12(self):
@@ -2608,9 +2625,26 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         reference_name = f'{name}_stix12.xml'
         output_file = self._current_path / to_test_name
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_attribute_collection_to_stix1(output_file, 'xml', '1.2', *input_files, in_memory=True), 1)
+        self.assertEqual(
+            misp_attribute_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.2',
+                in_memory=True
+            ),
+            1
+        )
         self._check_stix1_export_results(to_test_name, reference_name)
-        self.assertEqual(misp_attribute_collection_to_stix1(output_file, 'xml', '1.2', *input_files), 1)
+        self.assertEqual(
+            misp_attribute_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.2'
+            ),
+            1
+        )
         self._check_stix1_export_results(to_test_name, reference_name)
 
     def test_event_collection_export_11(self):
@@ -2619,9 +2653,26 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         reference_name = f'{name}_stix11.xml'
         output_file = self._current_path / to_test_name
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_event_collection_to_stix1(output_file, 'xml', '1.1.1', *input_files), 1)
+        self.assertEqual(
+            misp_event_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.1.1'
+            ),
+            1
+        )
         self._check_stix1_collection_export_results(to_test_name, reference_name)
-        self.assertEqual(misp_event_collection_to_stix1(output_file, 'xml', '1.1.1', *input_files, in_memory=True), 1)
+        self.assertEqual(
+            misp_event_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.1.1',
+                in_memory=True
+            ),
+            1
+        )
         self._check_stix1_collection_export_results(to_test_name, reference_name)
 
     def test_event_collection_export_12(self):
@@ -2630,9 +2681,26 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         reference_name = f'{name}_stix12.xml'
         output_file = self._current_path / to_test_name
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_event_collection_to_stix1(output_file, 'xml', '1.2', *input_files), 1)
+        self.assertEqual(
+            misp_event_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.2'
+            ),
+            1
+        )
         self._check_stix1_collection_export_results(to_test_name, reference_name)
-        self.assertEqual(misp_event_collection_to_stix1(output_file, 'xml', '1.2', *input_files, in_memory=True), 1)
+        self.assertEqual(
+            misp_event_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.2',
+                in_memory=True
+            ),
+            1
+        )
         self._check_stix1_collection_export_results(to_test_name, reference_name)
 
     def test_event_export_11(self):
