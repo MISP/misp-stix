@@ -22,9 +22,13 @@ from stix2.v21 import Bundle as Bundle_v21
 from typing import List, Union
 from uuid import uuid4
 
-_default_namespace = 'https://github.com/MISP/MISP'
+_default_namespace = 'https://misp-project.org'
 _default_org = 'MISP'
 _files_type = Union[Path, str]
+_STIX1_default_format = 'xml'
+_STIX1_default_version = '1.1.1'
+_STIX1_valid_formats = ('json', 'xml')
+_STIX1_valid_versions = ('1.1.1', '1.2')
 
 
 ################################################################################
@@ -229,8 +233,15 @@ class AttributeCollectionHandler():
         return self.__features['ttps']['header']
 
 
-def misp_attribute_collection_to_stix1(*args: List[_files_type], in_memory: bool=False, namespace: str=_default_namespace, org: str=_default_org):
-    output_filename, return_format, version, *input_files = args
+def misp_attribute_collection_to_stix1(
+    output_filename: _files_type, *input_files: List[_files_type],
+    return_format: str=_STIX1_default_format, version: str=_STIX1_default_version,
+    in_memory: bool=False, namespace: str=_default_namespace, org: str=_default_org
+):
+    if return_format not in _STIX1_valid_formats:
+        return_format = _STIX1_default_format
+    if version not in _STIX1_valid_versions:
+        version = _STIX1_default_version
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
     parser = MISPtoSTIX1AttributesParser(org, version)
