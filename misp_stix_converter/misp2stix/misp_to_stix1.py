@@ -856,7 +856,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         port_object.port_value.condition = "Equals"
         return port_object
 
-    def _create_port_observable(self, port: str, uuid: str, feature: str = None) -> Observable:
+    def _create_port_observable(self, port: str, uuid: str, feature: Optional[str] = None) -> Observable:
         object_type = 'Port'
         if feature is not None:
             object_type = f'{feature}{object_type}'
