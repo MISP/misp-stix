@@ -216,14 +216,13 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         domain, ip = attribute['value'].split('|')
         domain_observable = self._create_domain_observable(domain, attribute['uuid'])
         address_observable = self._create_address_observable(attribute['type'], ip, attribute['uuid'])
-        composite_object = ObservableComposition(
-            observables=[domain_observable, address_observable]
+        observable = self._create_observable_composition(
+            [
+                domain_observable,
+                address_observable
+            ],
+            attribute['uuid']
         )
-        composite_object.operator = "AND"
-        observable = Observable(
-            id_=f"{self._orgname}:ObservableComposition-{attribute['uuid']}"
-        )
-        observable.observable_composition = composite_object
         self._handle_attribute(attribute, observable)
 
     def _parse_email_attachment(self, attribute: dict):
@@ -828,6 +827,14 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         stix_object.parent.id_ = f"{self._orgname}:{feature}-{attribute_uuid}"
         observable = Observable(stix_object)
         observable.id_ = f"{self._orgname}:Observable-{attribute_uuid}"
+        return observable
+
+    def _create_observable_composition(self, observables: list, uuid: str, name: Optional[str] = None) -> Observable:
+        object_type = 'ObservableComposition' if name is None else f'{name}_ObservableComposition'
+        observable_composition = ObservableComposition(observables=observables)
+        observable_composition.operator = 'AND'
+        observable = Observable(id_=f'{self._orgname}:{object_type}-{uuid}')
+        observable.observable_composition = observable_composition
         return observable
 
     @staticmethod
@@ -1451,8 +1458,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 observables.append(self._create_port_observable(*attribute))
         observable_composition = self._create_observable_composition(
             observables,
-            misp_object['name'],
-            misp_object['uuid']
+            misp_object['uuid'],
+            name=misp_object['name']
         )
         return observable_composition
 
@@ -1522,8 +1529,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             observables.append(file_observable)
             observable_composition = self._create_observable_composition(
                 observables,
-                misp_object['name'],
-                misp_object['uuid']
+                misp_object['uuid'],
+                name=misp_object['name']
             )
             return observable_composition
         return file_observable
@@ -1562,8 +1569,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             observables.append(file_observable)
             observable_composition = self._create_observable_composition(
                 observables,
-                misp_object['name'],
-                misp_object['uuid']
+                misp_object['uuid'],
+                name=misp_object['name']
             )
             return ids_list, observable_composition
         return ids_list, file_observable
@@ -1593,8 +1600,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 observables.append(self._create_hostname_observable(*attribute))
         observable_composition = self._create_observable_composition(
             observables,
-            misp_object['name'],
-            misp_object['uuid']
+            misp_object['uuid'],
+            name=misp_object['name']
         )
         return observable_composition
 
@@ -1830,8 +1837,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             observables.append(self._create_port_observable(*attributes['port']))
         observable_composition = self._create_observable_composition(
             observables,
-            misp_object['name'],
-            misp_object['uuid']
+            misp_object['uuid'],
+            name=misp_object['name']
         )
         return observable_composition
 
@@ -2119,13 +2126,6 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             timestamp=timestamp
         )
         return indicator
-
-    def _create_observable_composition(self, observables: list, name: str, uuid: str) -> Observable:
-        observable_composition = ObservableComposition(observables=observables)
-        observable_composition.operator = 'AND'
-        observable = Observable(id_=f'{self._orgname}:{name}_ObservableComposition-{uuid}')
-        observable.observable_composition = observable_composition
-        return observable
 
     @staticmethod
     def _create_related_threat_actor(ta_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedThreatActor:
