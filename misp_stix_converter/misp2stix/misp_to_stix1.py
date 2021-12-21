@@ -70,6 +70,7 @@ from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
 from stix.ttp.victim_targeting import VictimTargeting
 from typing import Optional, Union
+from uuid import uuid4
 
 _FILE_SINGLE_ATTRIBUTES = (
     "attachment", "authentihash", "entropy", "imphash", "malware-sample", "md5",
@@ -214,8 +215,17 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
 
     def _parse_domain_ip_attribute(self, attribute: dict):
         domain, ip = attribute['value'].split('|')
-        domain_observable = self._create_domain_observable(domain, attribute['uuid'])
-        address_observable = self._create_address_observable(attribute['type'], ip, attribute['uuid'])
+        domain_observable = self._create_domain_observable(
+            domain,
+            attribute['uuid'],
+            alternative_uuid=uuid4()
+        )
+        address_observable = self._create_address_observable(
+            attribute['type'],
+            ip,
+            attribute['uuid'],
+            alternative_uuid=uuid4()
+        )
         observable = self._create_observable_composition(
             [
                 domain_observable,
@@ -712,9 +722,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         address_object.address_value.condition = condition
         return address_object
 
-    def _create_address_observable(self, feature: str, value: str, uuid: str) -> Observable:
+    def _create_address_observable(self, feature: str, value: str, uuid: str, alternative_uuid: Optional[str] = None) -> Observable:
         address_object = self._create_address_object(feature, value)
-        observable = self._create_observable(address_object, uuid, 'Address')
+        observable = self._create_observable(address_object, uuid, 'Address', alternative_uuid)
         return observable
 
     def _create_artifact_object(self, data: BytesIO) -> Artifact:
@@ -759,9 +769,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         domain_object.value.condition = "Equals"
         return domain_object
 
-    def _create_domain_observable(self, domain: str, uuid: str) -> Observable:
+    def _create_domain_observable(self, domain: str, uuid: str, alternative_uuid: Optional[str] = None) -> Observable:
         domain_object = self._create_domain_object(domain)
-        observable = self._create_observable(domain_object, uuid, 'DomainName')
+        observable = self._create_observable(domain_object, uuid, 'DomainName', alternative_uuid)
         return observable
 
     @staticmethod
@@ -823,10 +833,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         mutex_object.name.condition = "Equals"
         return mutex_object
 
-    def _create_observable(self, stix_object: _OBSERVABLE_OBJECT_TYPES, attribute_uuid: str, feature: str) -> Observable:
+    def _create_observable(self, stix_object: _OBSERVABLE_OBJECT_TYPES, attribute_uuid: str, feature: str, alternative_uuid: Optional[str] = None) -> Observable:
         stix_object.parent.id_ = f"{self._orgname}:{feature}-{attribute_uuid}"
         observable = Observable(stix_object)
-        observable.id_ = f"{self._orgname}:Observable-{attribute_uuid}"
+        if alternative_uuid is None:
+            alternative_uuid = attribute_uuid
+        observable.id_ = f"{self._orgname}:Observable-{alternative_uuid}"
         return observable
 
     def _create_observable_composition(self, observables: list, uuid: str, name: Optional[str] = None) -> Observable:
