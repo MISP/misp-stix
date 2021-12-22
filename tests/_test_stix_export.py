@@ -23,14 +23,27 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
     def _check_stix1_collection_export_results(self, to_test_name, reference_name):
         to_test = STIXPackage.from_xml(str(self._current_path / to_test_name)).to_dict()
         reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
-        for key in (key for key in reference.keys() if key not in ('id', 'timestamp')):
-            self.assertEqual(to_test[key], reference[key])
+        self.__recursive_feature_tests(reference, to_test, exclude=('id', 'timestamp'))
 
     def _check_stix1_export_results(self, to_test_name, reference_name):
         to_test = STIXPackage.from_xml(str(self._current_path / to_test_name)).to_dict()
         reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
-        for key in (key for key in reference.keys() if key != 'id'):
-            self.assertEqual(to_test[key], reference[key])
+        self.__recursive_feature_tests(reference, to_test, exclude=('id',))
+
+    def __recursive_feature_tests(self, reference, to_test, exclude=tuple()):
+        for key in (reference.keys() - exclude):
+            try:
+                self.assertEqual(reference[key], to_test[key])
+            except AssertionError:
+                if isinstance(reference[key], list):
+                    if key == 'observables':
+                        exclude = ('id',)
+                    for reference_value, value_to_test in zip(reference[key], to_test[key]):
+                        self.__recursive_feature_tests(reference_value, value_to_test, exclude=exclude)
+                elif key == 'observable':
+                    self.__recursive_feature_tests(reference[key], to_test[key], exclude=('id',))
+                else:
+                    self.__recursive_feature_tests(reference[key], to_test[key])
 
 
 class TestCollectionSTIX2Export(TestCollectionSTIXExport):
