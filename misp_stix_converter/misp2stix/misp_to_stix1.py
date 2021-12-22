@@ -70,7 +70,7 @@ from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
 from stix.ttp.victim_targeting import VictimTargeting
 from typing import Optional, Union
-from uuid import uuid5
+from uuid import uuid5, UUID
 
 _FILE_SINGLE_ATTRIBUTES = (
     "attachment", "authentihash", "entropy", "imphash", "malware-sample", "md5",
@@ -218,13 +218,13 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         domain_observable = self._create_domain_observable(
             domain,
             attribute['uuid'],
-            alternative_uuid=uuid5(attribute['uuid'], domain)
+            alternative_uuid=uuid5(UUID(attribute['uuid']), domain)
         )
         address_observable = self._create_address_observable(
             attribute['type'],
             ip,
             attribute['uuid'],
-            alternative_uuid=uuid5(attribute['uuid'], ip)
+            alternative_uuid=uuid5(UUID(attribute['uuid']), ip)
         )
         observable = self._create_observable_composition(
             [
