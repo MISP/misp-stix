@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from misp_stix_converter import (MISPtoSTIX1EventsParser, misp_attribute_collection_to_stix1,
                                  misp_event_collection_to_stix1, misp_to_stix1, stix1_framing)
 from pathlib import Path
+from uuid import uuid5, UUID
 from .test_events import *
 from ._test_stix_export import TestCollectionSTIX1Export
 
@@ -940,12 +941,19 @@ class TestStix1Export(unittest.TestCase):
         observable = indicator.observable
         self.assertEqual(observable.id_, f"{_DEFAULT_ORGNAME}:ObservableComposition-{attribute['uuid']}")
         domain_observable, address_observable = observable.observable_composition.observables
-        domain_properties = domain_observable.object_.properties
-        self.assertEqual(domain_properties._XSI_TYPE, 'DomainNameObjectType')
-        address_properties = address_observable.object_.properties
-        self.assertEqual(address_properties._XSI_TYPE, 'AddressObjectType')
+        attribute_uuid = attribute['uuid']
         domain, ip = attribute['value'].split('|')
+        self.assertEqual(domain_observable.id_, f'{_DEFAULT_ORGNAME}:Observable-{uuid5(UUID(attribute_uuid), domain)}')
+        domain_object = domain_observable.object_
+        self.assertEqual(domain_object.id_, f'{_DEFAULT_ORGNAME}:DomainName-{attribute_uuid}')
+        domain_properties = domain_object.properties
+        self.assertEqual(domain_properties._XSI_TYPE, 'DomainNameObjectType')
         self.assertEqual(domain_properties.value.value, domain)
+        self.assertEqual(address_observable.id_, f'{_DEFAULT_ORGNAME}:Observable-{uuid5(UUID(attribute_uuid), ip)}')
+        address_object = address_observable.object_
+        self.assertEqual(address_object.id_, f'{_DEFAULT_ORGNAME}:Address-{attribute_uuid}')
+        address_properties = address_object.properties
+        self.assertEqual(address_properties._XSI_TYPE, 'AddressObjectType')
         self.assertEqual(address_properties.address_value.value, ip)
         self._check_destination_address(address_properties)
 
