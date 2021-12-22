@@ -600,13 +600,16 @@ def _get_observables(observables: Observables, return_format: str = 'xml') -> st
 
 def _get_observables_footer(return_format: str = 'xml') -> str:
     if return_format == 'xml':
-        return '    </cybox:Observables>\n'
+        return '    </stix:Observables>\n'
     return ']'
 
 
 def _get_observables_header(return_format: str = 'xml') -> str:
     if return_format == 'xml':
-        return '    <cybox:Observables>\n'
+        observables = Observables()
+        features = ('cybox_major_version', 'cybox_minor_version', 'cybox_update_version')
+        versions = ' '.join(f'{feature}="{getattr(observables, feature)}"' for feature in features)
+        return f'    <stix:Observables {versions}>\n'
     return '"observables": ['
 
 
