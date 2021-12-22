@@ -939,11 +939,13 @@ class TestStix1Export(unittest.TestCase):
         indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         observable = indicator.observable
         self.assertEqual(observable.id_, f"{_DEFAULT_ORGNAME}:ObservableComposition-{attribute['uuid']}")
-        domain_name, address = observable.observable_composition.observables
+        domain_observable, address_observable = observable.observable_composition.observables
+        domain_properties = domain_observable.object_.properties
+        self.assertEqual(domain_properties._XSI_TYPE, 'DomainNameObjectType')
+        address_properties = address_observable.object_.properties
+        self.assertEqual(address_properties._XSI_TYPE, 'AddressObjectType')
         domain, ip = attribute['value'].split('|')
-        domain_properties = self._check_observable_features(domain_name, attribute, 'DomainName')
         self.assertEqual(domain_properties.value.value, domain)
-        address_properties = self._check_observable_features(address, attribute, 'Address')
         self.assertEqual(address_properties.address_value.value, ip)
         self._check_destination_address(address_properties)
 
