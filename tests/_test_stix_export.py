@@ -8,6 +8,9 @@ from datetime import datetime
 from misp_stix_converter import MISPtoSTIX20Parser, MISPtoSTIX21Parser
 from pathlib import Path
 from stix.core import STIXPackage
+from uuid import uuid5, UUID
+
+_DEFAULT_ORGNAME = 'MISP'
 
 
 class TestCollectionSTIXExport(unittest.TestCase):
@@ -30,6 +33,27 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
         reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
         self.__recursive_feature_tests(reference, to_test, exclude=('id',))
 
+    def __check_observables(self, reference_observables, observables_to_test):
+        for reference_observable, observable_to_test in zip(reference_observables, observables_to_test):
+            print(reference_observable)
+            print(observable_to_test)
+            uuid = '-'.join(part for part in reference_observable['object']['id'].split('-')[1:])
+            print(uuid)
+            for key, value in reference_observable['object']['properties'].items():
+                if 'value' in key:
+                    uuid = uuid5(UUID(uuid), value['value'])
+                    break
+            print(uuid)
+            self.assertEqual(
+                reference_observable['id'],
+                f'{_DEFAULT_ORGNAME}:Observable-{uuid}'
+            )
+            self.assertEqual(reference_observable['id'], observable_to_test['id'])
+            self.__recursive_feature_tests(
+                reference_observable['object'],
+                observable_to_test['object']
+            )
+
     def __recursive_feature_tests(self, reference, to_test, exclude=tuple()):
         for key in (reference.keys() - exclude):
             try:
@@ -37,11 +61,10 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
             except AssertionError:
                 if isinstance(reference[key], list):
                     if key == 'observables':
-                        exclude = ('id',)
+                        self.__check_observables(reference[key], to_test[key])
+                        continue
                     for reference_value, value_to_test in zip(reference[key], to_test[key]):
                         self.__recursive_feature_tests(reference_value, value_to_test, exclude=exclude)
-                elif key == 'observable':
-                    self.__recursive_feature_tests(reference[key], to_test[key], exclude=('id',))
                 else:
                     self.__recursive_feature_tests(reference[key], to_test[key])
 
