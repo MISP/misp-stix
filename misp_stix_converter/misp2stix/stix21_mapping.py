@@ -13,6 +13,16 @@ class Stix21Mapping(Stix2Mapping):
         v21_specific_attributes = {
             'email-message-id': '_parse_email_message_id_attribute'
         }
+        v21_specific_attributes.update(
+            dict.fromkeys(
+                [
+                    'sigma',
+                    'snort',
+                    'yara'
+                ],
+                '_parse_patterning_language_attribute'
+            )
+        )
         self._declare_attributes_mapping(updates=v21_specific_attributes)
         self.__tlp_markings = Mapping(
             **{

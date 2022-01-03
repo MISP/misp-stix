@@ -310,28 +310,30 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         except Exception as exception:
             self._attribute_error(attribute, exception)
 
-    def _handle_attribute_indicator(self, attribute: dict, pattern: str):
+    def _handle_attribute_indicator(self, attribute: dict, pattern: str, indicator_args: Optional[dict] = None):
         indicator_id = getattr(self, self._id_parsing_function['attribute'])('indicator', attribute)
-        indicator_args = {
+        indicator_arguments = {
             'id': indicator_id,
             'type': 'indicator',
             'labels': self._create_labels(attribute),
             'kill_chain_phases': self._create_killchain(attribute['category']),
             'created_by_ref': self.__identity_id,
-            'pattern': pattern,
             'interoperability': True
         }
-        indicator_args.update(self._handle_indicator_time_fields(attribute))
+        if indicator_args is not None:
+            indicator_arguments.update(indicator_args)
+        indicator_arguments['pattern'] = pattern
+        indicator_arguments.update(self._handle_indicator_time_fields(attribute))
         if attribute.get('comment'):
-            indicator_args['description'] = attribute['comment']
+            indicator_arguments['description'] = attribute['comment']
         markings = self._handle_attribute_tags_and_galaxies(
             attribute,
             indicator_id,
-            indicator_args['modified']
+            indicator_arguments['modified']
         )
         if markings:
-            self._handle_markings(indicator_args, markings)
-        getattr(self, self._results_handling_function)(self._create_indicator(indicator_args))
+            self._handle_markings(indicator_arguments, markings)
+        getattr(self, self._results_handling_function)(self._create_indicator(indicator_arguments))
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], indicator_id)
 

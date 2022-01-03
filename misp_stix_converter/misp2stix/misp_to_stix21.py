@@ -438,6 +438,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         self._handle_attribute_observable(attribute, [mutex_object])
 
+    def _parse_patterning_language_attribute(self, attribute: dict):
+        indicator_args = {
+            'pattern_type': attribute['type']
+        }
+        self._handle_attribute_indicator(attribute, f"[{attribute['value']}]", indicator_args=indicator_args)
+
     def _parse_regkey_attribute_observable(self, attribute: dict):
         regkey_object = WindowsRegistryKey(
             id=f"windows-registry-key--{attribute['uuid']}",
@@ -989,13 +995,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     @staticmethod
     def _create_indicator(indicator_args: dict) -> Indicator:
-        indicator_args.update(
-            {
-                "spec_version": "2.1",
-                "pattern_type": "stix",
-                "pattern_version": "2.1",
-            }
-        )
+        indicator_args['spec_version'] = '2.1'
+        if indicator_args.get('pattern_type') is None:
+            indicator_args.update(
+                {
+                    "pattern_type": "stix",
+                    "pattern_version": "2.1",
+                }
+            )
         return Indicator(**indicator_args)
 
     @staticmethod
