@@ -3108,6 +3108,37 @@ def get_event_with_pattern_attribute():
     return event
 
 
+def get_event_with_patterning_language_attributes():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "sigma",
+            "category": "Artifact dropped",
+            "value": "title: Ps.exe Renamed SysInternals Tool description: Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A report reference: https://www.us-cert.gov/ncas/alerts/TA17-293A author: Florian Roth date: 2017/10/22 logsource: product: windows service: sysmon detection: selection: EventID: 1 CommandLine: 'ps.exe -accepteula' condition: selection falsepositives: - Renamed SysInternals tool level: high",
+            "timestamp": "1603642920",
+            "comment": "Sigma test attribute"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "snort",
+            "category": "Network activity",
+            "value": "alert http any 443 -> 8.8.8.8 any",
+            "timestamp": "1603642920",
+            "comment": "Snort test attribute"
+        },
+        {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "type": "yara",
+            "category": "Payload installation",
+            "value": 'rule torcryptomining { meta: description = "Tor miner - broken UPX magic string" strings: $upx_erase = {(00 FF 99 41|DF DD 30 33)} condition: $upx_erase at 236 }',
+            "timestamp": "1603642920",
+            "comment": "Yara test attribute"
+        }
+    ]
+    return event
+
+
 def get_event_with_port_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [

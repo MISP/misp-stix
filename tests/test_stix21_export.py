@@ -1136,6 +1136,26 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(mutex.type, 'mutex')
         self.assertEqual(mutex.name, attribute_value)
 
+    def test_event_with_patterning_language_attributes(self):
+        event = get_event_with_patterning_language_attributes()
+        orgc = event['Event']['Orgc']
+        attributes = event['Event']['Attribute']
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, *indicators = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        object_refs = self._check_grouping_features(grouping, event['Event'], identity_id)
+        for attribute, indicator, object_ref in zip(attributes, indicators, object_refs):
+            self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
+            self.assertEqual(indicator.pattern_type, attribute['type'])
+            self.assertEqual(indicator.pattern, f"[{attribute['value']}]")
+
+
     def test_event_with_port_indicator_attribute(self):
         event = get_event_with_port_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
