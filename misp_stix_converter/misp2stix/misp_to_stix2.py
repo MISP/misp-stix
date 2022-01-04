@@ -968,25 +968,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return ids_list
 
     def _parse_account_object(self, misp_object: dict):
-        account_type = misp_object['name'].split('-')[0]
+        name = misp_object['name'].replace('-', '_')
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'user-account'
             attributes = self._extract_multiple_object_attributes_escaped(
                 misp_object['Attribute'],
-                force_single=getattr(
-                    self._mapping,
-                    f"{account_type}_account_single_fields"
-                )
+                force_single=getattr(self._mapping, f"{name}_single_fields")
             )
-            pattern = [f"{prefix}:account_type = '{account_type}'"]
-            for key, feature in getattr(self._mapping, f"{account_type}_account_object_mapping").items():
+            pattern = [f"{prefix}:account_type = '{name.split('_')[0]}'"]
+            for key, feature in getattr(self._mapping, f"{name}_object_mapping").items():
                 if attributes.get(key):
                     pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
             if attributes:
                 pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
         else:
-            self._parse_account_object_observable(misp_object, account_type)
+            self._parse_account_object_observable(misp_object, name)
 
     def _parse_asn_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
@@ -2136,16 +2133,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #
     ################################################################################
 
-    def _parse_account_args(self, attributes: list, account_type: str) -> dict:
+    def _parse_account_args(self, attributes: list, name: str) -> dict:
         attributes = self._extract_multiple_object_attributes(
             attributes,
-            force_single=getattr(
-                self._mapping,
-                f"{account_type}_account_single_fields"
-            )
+            force_single=getattr(self._mapping, f"{name}_single_fields")
         )
-        account_args = {'account_type': account_type}
-        for key, feature in getattr(self._mapping, f"{account_type}_account_object_mapping").items():
+        account_args = {'account_type': name.split('_')[0]}
+        for key, feature in getattr(self._mapping, f"{name}_object_mapping").items():
             if attributes.get(key):
                 account_args[feature] = attributes.pop(key)
         if attributes:
