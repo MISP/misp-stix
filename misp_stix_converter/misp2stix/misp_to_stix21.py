@@ -320,6 +320,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         file_object = self._create_file(f"file--{attribute['uuid']}", attribute['value'])
         self._handle_attribute_observable(attribute, [file_object])
 
+    def _parse_github_username_attribute_observable(self, attribute: dict):
+        account_object = UserAccount(
+            id=f"user-account--{attribute['uuid']}",
+            account_type='github',
+            account_login=attribute['value']
+        )
+        self._handle_attribute_observable(attribute, [account_object])
+
     def _parse_hash_attribute_observable(self, attribute: dict):
         hash_type = self._define_hash_type(attribute['type'])
         file_args = {

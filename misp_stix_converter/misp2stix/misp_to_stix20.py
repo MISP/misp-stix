@@ -281,6 +281,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         }
         self._handle_attribute_observable(attribute, observable_object)
 
+    def _parse_github_username_attribute_observable(self, attribute: dict):
+        self._parse_custom_attribute(attribute)
+
     def _parse_hash_attribute_observable(self, attribute: dict):
         hash_type = self._define_hash_type(attribute['type'])
         file_args = {

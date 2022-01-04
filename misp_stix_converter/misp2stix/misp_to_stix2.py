@@ -550,6 +550,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_filename_attribute_observable(attribute)
 
+    def _parse_github_username_attribute(self, attribute: dict):
+        if attribute.get('to_ids', False):
+            prefix = 'user-account'
+            value = self._handle_value_for_pattern(attribute['value'])
+            pattern = f"[{prefix}:account_type = 'github' AND {prefix}:account_login = '{value}']"
+            self._handle_attribute_indicator(attribute, pattern)
+        else:
+            self._parse_github_username_attribute_observable(attribute)
+
     def _parse_hash_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
             pattern = f"[{self._create_hash_pattern(attribute['type'], attribute['value'])}]"

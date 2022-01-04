@@ -107,6 +107,7 @@ class Stix2Mapping:
             'email-subject': '_parse_email_subject_attribute',
             'email-x-mailer': '_parse_email_x_mailer_attribute',
             'filename': '_parse_filename_attribute',
+            'github-username': '_parse_github_username_attribute',
             'hostname': '_parse_domain_attribute',
             'hostname|port': '_parse_hostname_port_attribute',
             'http-method': '_parse_http_method_attribute',
