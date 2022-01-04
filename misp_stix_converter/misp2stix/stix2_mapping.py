@@ -303,6 +303,7 @@ class Stix2Mapping:
             'email': '_parse_email_object',
             'facebook-account': '_parse_account_object',
             'file': '_parse_file_object',
+            'gitlab-user': '_parse_account_object',
             'ip-port': '_parse_ip_port_object',
             'mutex': '_parse_mutex_object',
             'network-connection': '_parse_network_connection_object',
@@ -425,6 +426,16 @@ class Stix2Mapping:
             }
         )
         self.__file_single_fields = self.__file_data_fields + self.__hash_attribute_types + ('path',)
+        self.__gitlab_user_object_mapping = Mapping(
+            id = 'user_id',
+            name = 'display_name',
+            username = 'account_login'
+        )
+        self.__gitlab_user_single_fields = (
+            'id',
+            'name',
+            'username'
+        )
         self.__ip_port_object_mapping = Mapping(
             ip_features = Mapping(
                 **{
@@ -688,6 +699,14 @@ class Stix2Mapping:
     @property
     def galaxy_types_mapping(self) -> dict:
         return self.__galaxy_types_mapping
+
+    @property
+    def gitlab_user_object_mapping(self) -> dict:
+        return self.__gitlab_user_object_mapping
+
+    @property
+    def gitlab_user_single_fields(self) -> tuple:
+        return self.__gitlab_user_single_fields
 
     @property
     def hash_attribute_types(self) -> tuple:
