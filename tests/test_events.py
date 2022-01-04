@@ -2925,6 +2925,21 @@ def get_event_with_filename_attribute():
     return event
 
 
+def get_event_with_github_username_attribute():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "github-username",
+            "category": "Social network",
+            "value": "chrisr3d",
+            "timestamp": "1603642920",
+            "comment": "Github username test attribute"
+        }
+    ]
+    return event
+
+
 def get_event_with_hash_attributes(to_ids=True):
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = list(

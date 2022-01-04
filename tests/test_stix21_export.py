@@ -894,6 +894,25 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(file.type, 'file')
         self.assertEqual(file.name, attribute_value)
 
+    def test_event_with_github_username_indicator_attribute(self):
+        event = get_event_with_github_username_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(
+            pattern,
+            f"[user-account:account_type = 'github' AND user-account:account_login = '{attribute_value}']"
+        )
+
+    def test_event_with_github_username_observable_attribute(self):
+        event = get_event_with_github_username_attribute()
+        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
+        object_ref = object_refs[0]
+        account = observable[0]
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(account.id, object_ref)
+        self.assertEqual(account.type, 'user-account')
+        self.assertEqual(account.account_type, 'github')
+        self.assertEqual(account.account_login, attribute_value)
+
     def test_event_with_hash_composite_indicator_attributes(self):
         event = get_event_with_hash_composite_attributes()
         attribute_values, patterns = self._run_indicators_tests(event)

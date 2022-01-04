@@ -22,6 +22,18 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(len(bundle.objects), length)
         return bundle
 
+    def _run_custom_attributes_tests(self, event):
+        orgc = event['Event']['Orgc']
+        attributes = event['Event']['Attribute']
+        self.parser.parse_misp_event(event)
+        identity, report, *custom_objects = self.parser.stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
+        self.assertEqual(report.published, timestamp)
+        for attribute, custom_object, object_ref in zip(attributes, custom_objects, object_refs):
+            self._run_custom_attribute_tests(attribute, custom_object, object_ref, identity_id)
+
     def _run_galaxy_tests(self, event, timestamp):
         orgc = event['Event']['Orgc']
         self.parser.parse_misp_event(event)
@@ -451,16 +463,7 @@ class TestSTIX20Export(TestSTIX2Export):
 
     def test_event_with_custom_attributes(self):
         event = get_event_with_stix2_custom_attributes()
-        orgc = event['Event']['Orgc']
-        attributes = event['Event']['Attribute']
-        self.parser.parse_misp_event(event)
-        identity, report, *custom_objects = self.parser.stix_objects
-        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        identity_id = self._check_identity_features(identity, orgc, timestamp)
-        object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
-        self.assertEqual(report.published, timestamp)
-        for attribute, custom_object, object_ref in zip(attributes, custom_objects, object_refs):
-            self._run_custom_attribute_tests(attribute, custom_object, object_ref, identity_id)
+        self._run_custom_attributes_tests(event)
 
     def test_event_with_domain_indicator_attribute(self):
         event = get_event_with_domain_attribute()
@@ -630,6 +633,18 @@ class TestSTIX20Export(TestSTIX2Export):
         event = get_event_with_filename_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[file:name = '{attribute_value}']")
+
+    def test_event_with_github_username_indicator_attribute(self):
+        event = get_event_with_github_username_attribute()
+        attribute_value, pattern = self._run_indicator_tests(event)
+        self.assertEqual(
+            pattern,
+            f"[user-account:account_type = 'github' AND user-account:account_login = '{attribute_value}']"
+        )
+
+    def test_event_with_github_username_observable_attribute(self):
+        event = get_event_with_github_username_attribute()
+        self._run_custom_attributes_tests(event)
 
     def test_event_with_filename_observable_attribute(self):
         event = get_event_with_filename_attribute()
