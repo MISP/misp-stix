@@ -3569,6 +3569,30 @@ def get_event_with_account_objects():
                     "value": "666"
                 }
             ]
+        },
+        {
+            "name": "gitlab-user",
+            "description": "GitLab user. Gitlab.com user or self-hosted GitLab instance",
+            "meta-category": "misc",
+            "uuid": "20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "id",
+                    "value": "1234567890"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "John Doe"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "username",
+                    "value": "j0hnd0e"
+                }
+            ]
         }
     ]
     return event

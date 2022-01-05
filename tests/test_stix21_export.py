@@ -1422,8 +1422,8 @@ class TestSTIX21Export(TestSTIX2Export):
     def test_event_with_account_indicator_objects(self):
         event = get_event_with_account_objects()
         misp_objects, patterns = self._run_indicators_from_objects_tests(event)
-        facebook_object, twitter_object = misp_objects
-        facebook_pattern, twitter_pattern = patterns
+        facebook_object, twitter_object, gitlab_object = misp_objects
+        facebook_pattern, twitter_pattern, gitlab_pattern = patterns
         account_id, account_name, link = (attribute['value'] for attribute in facebook_object['Attribute'])
         account_type, user_id, account_login, _link = facebook_pattern[1:-1].split(' AND ')
         self.assertEqual(account_type, f"user-account:account_type = 'facebook'")
@@ -1437,6 +1437,12 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(user_id, f"user-account:user_id = '{_id}'")
         self.assertEqual(account_login, f"user-account:account_login = '{name}'")
         self.assertEqual(_followers, f"user-account:x_misp_followers = '{followers}'")
+        gitlab_id, name, username = (attribute['value'] for attribute in gitlab_object['Attribute'])
+        account_type, user_id, display_name, account_login = gitlab_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'gitlab'")
+        self.assertEqual(user_id, f"user-account:user_id = '{gitlab_id}'")
+        self.assertEqual(display_name, f"user-account:display_name = '{name}'")
+        self.assertEqual(account_login, f"user-account:account_login = '{username}'")
 
     def test_event_with_account_observable_objects(self):
         event = get_event_with_account_objects()
@@ -1444,8 +1450,8 @@ class TestSTIX21Export(TestSTIX2Export):
         for grouping_ref, object_ref, observable in zip(grouping_refs, object_refs, observables):
             for grp_ref, obj_ref, obs in zip(grouping_ref, object_ref, observable):
                 self.assertTrue(grp_ref == obj_ref == obs.id)
-        facebook_object, twitter_object = misp_objects
-        facebook, twitter = observables
+        facebook_object, twitter_object, gitlab_object = misp_objects
+        facebook, twitter, gitlab = observables
         account_id, account_name, link = (attribute['value'] for attribute in facebook_object['Attribute'])
         facebook = facebook[0]
         self.assertEqual(facebook.type, 'user-account')
@@ -1461,6 +1467,13 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(twitter.account_login, name)
         self.assertEqual(twitter.display_name, displayed_name)
         self.assertEqual(twitter.x_misp_followers, followers)
+        gitlab_id, name, username = (attribute['value'] for attribute in gitlab_object['Attribute'])
+        gitlab = gitlab[0]
+        self.assertEqual(gitlab.type, 'user-account')
+        self.assertEqual(gitlab.account_type, 'gitlab')
+        self.assertEqual(gitlab.user_id, gitlab_id)
+        self.assertEqual(gitlab.display_name, name)
+        self.assertEqual(gitlab.account_login, username)
 
     def test_event_with_asn_indicator_object(self):
         event = get_event_with_asn_object()
