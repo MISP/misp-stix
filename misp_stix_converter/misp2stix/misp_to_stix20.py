@@ -636,6 +636,11 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             file_args.update(self._parse_file_args(attributes))
         return file_args, observable_object
 
+    def _parse_github_user_object_observable(self, misp_object: dict):
+        account_args = self._parse_github_user_args(misp_object['Attribute'])
+        observable_object = {'0': UserAccount(**account_args)}
+        self._handle_object_observable(misp_object, observable_object)
+
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],

@@ -754,6 +754,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             location_args.update(self._handle_observable_properties(attributes))
         self._append_SDO(Location(**location_args))
 
+    def _parse_github_user_object_observable(self, misp_object: dict):
+        account_args = self._parse_github_user_args(misp_object['Attribute'])
+        account_object = UserAccount(**account_args)
+        self._handle_object_observable(misp_object, [account_object])
+
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(
             misp_object['Attribute'],

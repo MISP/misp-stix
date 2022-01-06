@@ -304,6 +304,7 @@ class Stix2Mapping:
             'email': '_parse_email_object',
             'facebook-account': '_parse_account_object',
             'file': '_parse_file_object',
+            'github-user': '_parse_github_user_object',
             'gitlab-user': '_parse_account_object',
             'ip-port': '_parse_ip_port_object',
             'mutex': '_parse_mutex_object',
@@ -427,6 +428,21 @@ class Stix2Mapping:
             }
         )
         self.__file_single_fields = self.__file_data_fields + self.__hash_attribute_types + ('path',)
+        self.__github_user_data_fields = (
+            'profile-image',
+        )
+        self.__github_user_object_mapping = Mapping(
+            **{
+                'id': 'user_id',
+                'user-fullname': 'display_name',
+                'username': 'account_login'
+            }
+        )
+        self.__github_user_single_fields = (
+            'id',
+            'user-fullname',
+            'username'
+        )
         self.__gitlab_user_object_mapping = Mapping(
             id = 'user_id',
             name = 'display_name',
@@ -700,6 +716,18 @@ class Stix2Mapping:
     @property
     def galaxy_types_mapping(self) -> dict:
         return self.__galaxy_types_mapping
+
+    @property
+    def github_user_data_fields(self) -> tuple:
+        return self.__github_user_data_fields
+
+    @property
+    def github_user_object_mapping(self) -> dict:
+        return self.__github_user_object_mapping
+
+    @property
+    def github_user_single_fields(self) -> tuple:
+        return self.__github_user_single_fields
 
     @property
     def gitlab_user_object_mapping(self) -> dict:

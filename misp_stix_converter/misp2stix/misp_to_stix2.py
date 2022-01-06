@@ -1293,6 +1293,34 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
         return pattern
 
+    def _parse_github_user_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'user-account'
+            attributes = self._extract_multiple_object_attributes_with_data(
+                misp_object['Attribute'],
+                force_single=self._mapping.github_user_single_fields,
+                with_data=self._mapping.github_user_data_fields
+            )
+            pattern = [f"{prefix}:account_type = 'github'"]
+            for key, feature in self._mapping.github_user_object_mapping.items():
+                if attributes.get(key):
+                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            if attributes:
+                for key, values in attributes.items():
+                    key = key.replace('-', '_')
+                    for value in values:
+                        if isinstance(value, tuple):
+                            value, data = value
+                            if '\\' in data:
+                                data = data.replace('\\', '')
+                            pattern.append(f"{prefix}:x_misp_{key}.data = '{data}'")
+                            pattern.append(f"{prefix}:x_misp_{key}.value = '{value}'")
+                        else:
+                            pattern.append(f"{prefix}:x_misp_{key} = '{value}'")
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_github_user_object_observable(misp_object)
+
     def _parse_ip_port_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'
@@ -2233,6 +2261,29 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             file_args.update(self._handle_observable_multiple_properties(attributes))
         return file_args
 
+    def _parse_github_user_args(self, object_attributes: list) -> dict:
+        attributes = self._extract_multiple_object_attributes_with_data(
+            object_attributes,
+            force_single=self._mapping.github_user_single_fields,
+            with_data=self._mapping.github_user_data_fields
+        )
+        account_args = {'account_type': 'github'}
+        for key, feature in self._mapping.github_user_object_mapping.items():
+            if attributes.get(key):
+                account_args[feature] = attributes.pop(key)
+        if attributes:
+            account_args['allow_custom'] = True
+            for key, values in attributes.items():
+                feature = f"x_misp_{key.replace('-', '_')}"
+                if key in self._mapping.github_user_data_fields:
+                    if isinstance(values, list) and len(values) > 1:
+                        account_args[feature] = [self._parse_custom_data_value(value) for value in values]
+                        continue
+                    account_args[feature] = self._parse_custom_data_value(values[0])
+                    continue
+                account_args[feature] = values[0] if isinstance(values, list) and len(values) == 1 else values
+        return account_args
+
     def _parse_ip_port_args(self, attributes: dict) -> dict:
         args = {}
         for key, feature in self._mapping.ip_port_object_mapping['features'].items():
@@ -2531,6 +2582,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _handle_value_for_pattern(attribute_value: str) -> str:
         #return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
         return attribute_value.replace("'", "\\'").replace('"', '\\\\"')
+
+    @staticmethod
+    def _parse_custom_data_value(value_to_parse: Union[str, tuple]) -> Union[dict, str]:
+        if isinstance(value_to_parse, tuple):
+            value, data = value_to_parse
+            return {
+                'value': value,
+                'data': data.replace('\\', '')
+            }
+        return value_to_parse
 
     def _parse_galaxy_relationship(self, source_id: str, target_id: str, relationship_type: str, timestamp: datetime):
         self.__relationships.append(
