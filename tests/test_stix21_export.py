@@ -1900,6 +1900,36 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(location.longitude, float(longitude))
         self.assertEqual(location.x_misp_altitude, altitude)
 
+    def test_event_with_github_user_indicator_object(self):
+        event = get_event_with_github_user_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        github_id, username, fullname, organisation, image = (attribute['value'] for attribute in attributes)
+        account_type, user_id, display_name, login, organization, image_data, image_value = pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, "user-account:account_type = 'github'")
+        self.assertEqual(user_id, f"user-account:user_id = '{github_id}'")
+        self.assertEqual(display_name, f"user-account:display_name = '{fullname}'")
+        self.assertEqual(login, f"user-account:account_login = '{username}'")
+        self.assertEqual(organization, f"user-account:x_misp_organisation = '{organisation}'")
+        data = attributes[-1]['data'].replace('\\', '')
+        self.assertEqual(image_data, f"user-account:x_misp_profile_image.data = '{data}'")
+        self.assertEqual(image_value, f"user-account:x_misp_profile_image.value = '{image}'")
+
+    def test_event_with_github_user_observables_object(self):
+        event = get_event_with_github_user_object()
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        github_id, username, fullname, organisation, image = (attribute['value'] for attribute in attributes)
+        self.assertEqual(grouping_refs[0], object_refs[0])
+        account = observables[0]
+        self.assertEqual(account.id, grouping_refs[0])
+        self.assertEqual(account.type, 'user-account')
+        self.assertEqual(account.account_type, 'github')
+        self.assertEqual(account.user_id, github_id)
+        self.assertEqual(account.account_login, username)
+        self.assertEqual(account.display_name, fullname)
+        self.assertEqual(account.x_misp_organisation, organisation)
+        self.assertEqual(account.x_misp_profile_image['value'], image)
+        self.assertEqual(account.x_misp_profile_image['data'], attributes[-1]['data'].replace('\\', ''))
+
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
         event = get_event_with_ip_port_object()
