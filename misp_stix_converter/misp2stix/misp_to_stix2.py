@@ -1037,7 +1037,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'id': attack_pattern_id,
                 'type': prefix,
                 'created_by_ref': self.__identity_id,
-                'labels': self._create_object_labels(misp_object),
+                'labels': self._create_object_labels(
+                    misp_object,
+                    to_ids=self._fetch_ids_flag(misp_object['Attribute'])
+                ),
                 'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
                 'created': timestamp,
                 'modified': timestamp,
@@ -1078,7 +1081,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'id': course_of_action_id,
             'type': prefix,
             'created_by_ref': self.__identity_id,
-            'labels': self._create_object_labels(misp_object),
+            'labels': self._create_object_labels(
+                misp_object,
+                to_ids=self._fetch_ids_flag(misp_object['Attribute'])
+            ),
             'created': timestamp,
             'modified': timestamp,
             'interoperability': True
@@ -1626,7 +1632,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             {
                 'id': vulnerability_id,
                 'type': 'vulnerability',
-                'labels': self._create_object_labels(misp_object),
+                'labels': self._create_object_labels(
+                    misp_object,
+                    to_ids=self._fetch_ids_flag(misp_object['Attribute'])
+                ),
                 'created_by_ref': self.__identity_id,
                 'created': timestamp,
                 'modified': timestamp,
