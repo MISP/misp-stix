@@ -216,7 +216,7 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(vulnerability.id, uuid)
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
-        self._check_object_labels(misp_object, vulnerability.labels)
+        self._check_object_labels(misp_object, vulnerability.labels, to_ids=False)
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         self.assertEqual(vulnerability.modified, timestamp)
         cve, cvss, summary, created, published, references1, references2 = (attribute['value'] for attribute in misp_object['Attribute'])
