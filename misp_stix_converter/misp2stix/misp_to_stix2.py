@@ -2285,10 +2285,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for key, values in attributes.items():
                 feature = f"x_misp_{key.replace('-', '_')}"
                 if key in self._mapping.github_user_data_fields:
-                    if isinstance(values, list) and len(values) > 1:
-                        account_args[feature] = [self._parse_custom_data_value(value) for value in values]
-                        continue
-                    account_args[feature] = self._parse_custom_data_value(values[0])
+                    account_args[feature] = self._handle_custom_data_field(values)
                     continue
                 account_args[feature] = values[0] if isinstance(values, list) and len(values) == 1 else values
         return account_args
@@ -2562,6 +2559,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'source_name': 'cve',
             'external_id': vulnerability
         }
+
+    def _handle_custom_data_field(self, values: Union[list, str, tuple]) -> Union[dict, list, str]:
+        if isinstance(values, list):
+            if len(values) > 1:
+                return [self._parse_custom_data_value(value) for value in values]
+            return self._parse_custom_data_value(values[0])
+        return self._parse_custom_data_value(values)
 
     def _handle_indicator_time_fields(self, attribute: dict) -> dict:
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
