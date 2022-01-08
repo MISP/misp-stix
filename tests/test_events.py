@@ -3598,6 +3598,54 @@ def get_event_with_account_objects():
     return event
 
 
+def get_event_with_annotation_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        {
+            "name": "annotation",
+            "description": "An annotation object allowing analysts to add annotations, comments, executive summary to a MISP event, objects or attributes.",
+            "meta-category": "misc",
+            "uuid": "eb6592bb-675c-48f3-9272-157141196b93",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "text",
+                    "value": "Google public DNS"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "type",
+                    "value": "Executive Summary"
+                },
+                {
+                    "type": "attachment",
+                    "object_relation": "attachment",
+                    "value": "annotation.attachment",
+                    "data": "OC44LjguOCBpcyB0aGUgR29vZ2xlIFB1YmxpYyBETlMgSVAgYWRkcmVzc2VzIChJUHY0KS4K"
+                }
+            ],
+            "ObjectReference": [
+                {
+                    "referenced_uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                    "relationship_type": "annotates"
+                }
+            ]
+        }
+    ]
+    event['Event']['Attribute'] = [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "ip-dst",
+            "category": "Network activity",
+            "value": "8.8.8.8",
+            "to_ids": True,
+            "timestamp": "1603642920"
+        }
+    ]
+    return event
+
+
 def get_event_with_asn_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [

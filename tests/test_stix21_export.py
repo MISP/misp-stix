@@ -1475,6 +1475,43 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(gitlab.display_name, name)
         self.assertEqual(gitlab.account_login, username)
 
+    def test_object_with_annotation_object(self):
+        event = get_event_with_annotation_object()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        attribute = deepcopy(event['Event']['Attribute'][0])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, indicator, note = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        indicator_ref, note_ref = self._check_grouping_features(grouping, event['Event'], identity_id)
+        self._check_attribute_indicator_features(indicator, attribute, identity_id, indicator_ref)
+        self._check_pattern_features(indicator)
+        type_pattern = "network-traffic:dst_ref.type = 'ipv4-addr'"
+        value_pattern = f"network-traffic:dst_ref.value = '{attribute['value']}'"
+        self.assertEqual(indicator.pattern, f"[{type_pattern} AND {value_pattern}]")
+        text, annotation_type, attachment = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(note.type, 'note')
+        note_id = f"note--{misp_object['uuid']}"
+        self.assertEqual(note_ref, note_id)
+        self.assertEqual(note.id, note_id)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(note.created, timestamp)
+        self.assertEqual(note.modified, timestamp)
+        self.assertEqual(note.labels[0], f'misp:category="{misp_object["meta-category"]}"')
+        self.assertEqual(note.labels[1], f'misp:name="{misp_object["name"]}"')
+        self.assertEqual(note.labels[2], f'misp:to_ids="False"')
+        self.assertEqual(note.content, text)
+        self.assertEqual(note.object_refs, [indicator.id])
+        self.assertEqual(note.x_misp_type, annotation_type)
+        self.assertEqual(note.x_misp_attachment['value'], attachment)
+        self.assertEqual(note.x_misp_attachment['data'], misp_object['Attribute'][-1]['data'])
+
     def test_event_with_asn_indicator_object(self):
         event = get_event_with_asn_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
