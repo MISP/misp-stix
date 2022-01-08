@@ -1884,7 +1884,9 @@ class TestSTIX21Export(TestSTIX2Export):
         object_ref = self._check_grouping_features(*args)[0]
         address, zipcode, city, country, region, latitude, longitude, altitude = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(location.type, 'location')
-        self.assertEqual(location.id, f"location--{misp_object['uuid']}")
+        location_id = f"location--{misp_object['uuid']}"
+        self.assertEqual(object_ref, location_id)
+        self.assertEqual(location.id, location_id)
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         self.assertEqual(location.created, timestamp)
         self.assertEqual(location.modified, timestamp)
