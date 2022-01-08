@@ -118,6 +118,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._resolve_objects()
             if self._objects_to_parse:
                 self._resolve_objects_to_parse()
+                if self._objects_to_parse.get('annotation'):
+                    for misp_object in self._objects_to_parse['annotation'].values():
+                        to_ids, annotation_object = misp_object
+                        if annotation_object.get('ObjectReference') is None or not self._annotates(annotation_object['ObjectReference']):
+                            self._parse_custom_object(annotation_object[1])
+                        else:
+                            self._parse_annotation_object(to_ids, annotation_object)
 
     def _handle_empty_object_refs(self, object_id: str, timestamp: datetime):
         note_args = {
@@ -530,6 +537,49 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         account_args = self._parse_account_args(misp_object['Attribute'], account_type)
         account_object = UserAccount(**account_args)
         self._handle_object_observable(misp_object, [account_object])
+
+    def _parse_annotation_object(self, to_ids: bool, misp_object: dict):
+        object_refs = []
+        for reference in misp_object['ObjectReference']:
+            for object_ref in self.object_refs:
+                if reference['referenced_uuid'] in object_ref:
+                    object_refs.append(object_ref)
+                    break
+        if not object_refs:
+            return self._parse_custom_object(misp_object)
+        note_id = getattr(self, self._id_parsing_function['object'])('note', misp_object)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        note_args = {
+            'id': note_id,
+            'created': timestamp,
+            'modified': timestamp,
+            'labels': self._create_object_labels(misp_object, to_ids=to_ids),
+            'object_refs': object_refs,
+            'interoperability': True
+        }
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            note_id,
+            timestamp
+        )
+        if markings:
+            self._handle_markings(location_args, markings)
+        attributes = self._extract_multiple_object_attributes_with_data(
+            misp_object['Attribute'],
+            force_single=self._mapping.annotation_single_fields,
+            with_data=self._mapping.annotation_data_fields
+        )
+        if attributes.get('text'):
+            note_args['content'] = attributes.pop('text')
+        if attributes:
+            note_args['allow_custom'] = True
+            for key, values in attributes.items():
+                feature = f"x_misp_{key.replace('-', '_')}"
+                if key in self._mapping.annotation_data_fields:
+                    note_args[feature] = self._handle_custom_data_field(values)
+                    continue
+                note_args[feature] = values[0] if isinstance(values, list) and len(values) == 1 else values
+        self._append_SDO(Note(**note_args))
 
     def _parse_asn_object_observable(self, misp_object: dict):
         as_args = self._parse_AS_args(misp_object['Attribute'])
@@ -1098,6 +1148,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
+
+    @staticmethod
+    def _annotates(references: list) -> bool:
+        for reference in references:
+            if reference['relationship_type'] == 'annotates':
+                return True
+        return False
 
     @staticmethod
     def _get_address_type(address: str) -> Union[IPv4Address, IPv6Address]:

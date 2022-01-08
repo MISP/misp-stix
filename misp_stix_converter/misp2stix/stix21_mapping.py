@@ -35,9 +35,17 @@ class Stix21Mapping(Stix2Mapping):
 
     def declare_objects_mapping(self):
         v21_specific_objects = {
+            'annotation': '_populate_objects_to_parse',
             'geolocation': '_parse_geolocation_object'
         }
         self._declare_objects_mapping(updates=v21_specific_objects)
+        self.__annotation_data_fields = (
+            'attachment',
+        )
+        self.__annotation_single_fields = (
+            'attachment',
+            'text'
+        )
         self.__credential_object_mapping = Mapping(
             password = 'credential',
             username = 'user_id'
@@ -187,6 +195,14 @@ class Stix21Mapping(Stix2Mapping):
                 password_last_changed = 'credential_last_changed'
             )
         )
+
+    @property
+    def annotation_data_fields(self) -> tuple:
+        return self.__annotation_data_fields
+
+    @property
+    def annotation_single_fields(self) -> tuple:
+        return self.__annotation_single_fields
 
     @property
     def credential_object_mapping(self) -> dict:
