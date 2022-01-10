@@ -994,6 +994,35 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_account_object_observable(misp_object, name)
 
+    def _parse_account_object_with_attachment(self, misp_object: dict):
+        name = misp_object['name'].replace('-', '_')
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'user-account'
+            attributes = self._extract_multiple_object_attributes_with_data(
+                misp_object['Attribute'],
+                force_single=getattr(self._mapping, f"{name}_single_fields"),
+                with_data=getattr(self._mapping, f"{name}_data_fields")
+            )
+            pattern = [f"{prefix}:account_type = '{name.split('_')[0]}'"]
+            for key, feature in getattr(self._mapping, f"{name}_object_mapping").items():
+                if attributes.get(key):
+                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            if attributes:
+                for key, values in attributes.items():
+                    key = key.replace('-', '_')
+                    for value in values:
+                        if isinstance(value, tuple):
+                            value, data = value
+                            if '\\' in data:
+                                data = data.replace('\\', '')
+                            pattern.append(f"{prefix}:x_misp_{key}.data = '{data}'")
+                            pattern.append(f"{prefix}:x_misp_{key}.value = '{value}'")
+                        else:
+                            pattern.append(f"{prefix}:x_misp_{key} = '{value}'")
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_account_object_with_attachment_observable(misp_object, name)
+
     def _parse_asn_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'autonomous-system'
@@ -1312,34 +1341,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
         return pattern
-
-    def _parse_github_user_object(self, misp_object: dict):
-        if self._fetch_ids_flag(misp_object['Attribute']):
-            prefix = 'user-account'
-            attributes = self._extract_multiple_object_attributes_with_data(
-                misp_object['Attribute'],
-                force_single=self._mapping.github_user_single_fields,
-                with_data=self._mapping.github_user_data_fields
-            )
-            pattern = [f"{prefix}:account_type = 'github'"]
-            for key, feature in self._mapping.github_user_object_mapping.items():
-                if attributes.get(key):
-                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
-            if attributes:
-                for key, values in attributes.items():
-                    key = key.replace('-', '_')
-                    for value in values:
-                        if isinstance(value, tuple):
-                            value, data = value
-                            if '\\' in data:
-                                data = data.replace('\\', '')
-                            pattern.append(f"{prefix}:x_misp_{key}.data = '{data}'")
-                            pattern.append(f"{prefix}:x_misp_{key}.value = '{value}'")
-                        else:
-                            pattern.append(f"{prefix}:x_misp_{key} = '{value}'")
-            self._handle_object_indicator(misp_object, pattern)
-        else:
-            self._parse_github_user_object_observable(misp_object)
 
     def _parse_ip_port_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
@@ -2206,6 +2207,26 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             account_args.update(self._handle_observable_multiple_properties(attributes))
         return account_args
 
+    def _parse_account_with_attachment_args(self, object_attributes: list, name: str):
+        attributes = self._extract_multiple_object_attributes_with_data(
+            object_attributes,
+            force_single=getattr(self._mapping, f"{name}_single_fields"),
+            with_data=getattr(self._mapping, f"{name}_data_fields")
+        )
+        account_args = {'account_type': name.split('_')[0]}
+        for key, feature in getattr(self._mapping, f"{name}_object_mapping").items():
+            if attributes.get(key):
+                account_args[feature] = attributes.pop(key)
+        if attributes:
+            account_args['allow_custom'] = True
+            for key, values in attributes.items():
+                feature = f"x_misp_{key.replace('-', '_')}"
+                if key in getattr(self._mapping, f"{name}_data_fields"):
+                    account_args[feature] = self._handle_custom_data_field(values)
+                    continue
+                account_args[feature] = values[0] if isinstance(values, list) and len(values) == 1 else values
+        return account_args
+
     def _parse_AS_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
             attributes,
@@ -2298,26 +2319,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             file_args.update(self._handle_observable_multiple_properties(attributes))
         return file_args
-
-    def _parse_github_user_args(self, object_attributes: list) -> dict:
-        attributes = self._extract_multiple_object_attributes_with_data(
-            object_attributes,
-            force_single=self._mapping.github_user_single_fields,
-            with_data=self._mapping.github_user_data_fields
-        )
-        account_args = {'account_type': 'github'}
-        for key, feature in self._mapping.github_user_object_mapping.items():
-            if attributes.get(key):
-                account_args[feature] = attributes.pop(key)
-        if attributes:
-            account_args['allow_custom'] = True
-            for key, values in attributes.items():
-                feature = f"x_misp_{key.replace('-', '_')}"
-                if key in self._mapping.github_user_data_fields:
-                    account_args[feature] = self._handle_custom_data_field(values)
-                    continue
-                account_args[feature] = values[0] if isinstance(values, list) and len(values) == 1 else values
-        return account_args
 
     def _parse_ip_port_args(self, attributes: dict) -> dict:
         args = {}

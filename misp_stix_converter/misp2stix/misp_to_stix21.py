@@ -539,6 +539,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         account_object = UserAccount(**account_args)
         self._handle_object_observable(misp_object, [account_object])
 
+    def _parse_account_object_with_attachment_observable(self, misp_object: dict, account_type: str):
+        account_args = self._parse_account_with_attachment_args(misp_object['Attribute'], account_type)
+        account_object = UserAccount(**account_args)
+        self._handle_object_observable(misp_object, [account_object])
+
     def _parse_annotation_object(self, to_ids: bool, misp_object: dict):
         object_refs = []
         for reference in misp_object['ObjectReference']:
@@ -809,11 +814,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if attributes:
             location_args.update(self._handle_observable_properties(attributes))
         self._append_SDO(Location(**location_args))
-
-    def _parse_github_user_object_observable(self, misp_object: dict):
-        account_args = self._parse_github_user_args(misp_object['Attribute'])
-        account_object = UserAccount(**account_args)
-        self._handle_object_observable(misp_object, [account_object])
 
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(

@@ -305,7 +305,7 @@ class Stix2Mapping:
             'email': '_parse_email_object',
             'facebook-account': '_parse_account_object',
             'file': '_parse_file_object',
-            'github-user': '_parse_github_user_object',
+            'github-user': '_parse_account_object_with_attachment',
             'gitlab-user': '_parse_account_object',
             'ip-port': '_parse_ip_port_object',
             'mutex': '_parse_mutex_object',
