@@ -3670,6 +3670,52 @@ def get_event_with_course_of_action_object():
     return event
 
 
+def get_event_with_cpe_asset_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        {
+            "name": "cpe-asset",
+            "description": "",
+            "meta-category": "",
+            "uuid": "3f53a829-6307-4006-b7a2-ff53dace4159",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "cpe",
+                    "object_relation": "cpe",
+                    "value": "cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "language",
+                    "value": "ENG"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "product",
+                    "value": "Word"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "vendor",
+                    "value": "Microsoft"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "version",
+                    "value": "2002"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "description",
+                    "value": "Microsoft Word is a word processing software developed by Microsoft."
+                }
+            ]
+        }
+    ]
+    return event
+
+
 def get_event_with_credential_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [

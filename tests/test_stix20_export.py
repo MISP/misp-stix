@@ -1187,6 +1187,31 @@ class TestSTIX20Export(TestSTIX2Export):
                 attribute['value']
             )
 
+    def test_event_with_cpe_asset_indicator_object(self):
+        event = get_event_with_cpe_asset_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        cpe, language, product, vendor, version, description = (attribute['value'] for attribute in attributes)
+        cpe_pattern, language_pattern, name, vendor_pattern, version_pattern, description_pattern = pattern[1:-1].split(' AND ')
+        self.assertEqual(cpe_pattern, f"software:cpe = '{cpe}'")
+        self.assertEqual(language_pattern, f"software:languages = '{language}'")
+        self.assertEqual(name, f"software:name = '{product}'")
+        self.assertEqual(vendor_pattern, f"software:vendor = '{vendor}'")
+        self.assertEqual(version_pattern, f"software:version = '{version}'")
+        self.assertEqual(description_pattern, f"software:x_misp_description = '{description}'")
+
+    def test_event_with_cpe_asset_observable_object(self):
+        event = get_event_with_cpe_asset_object()
+        attributes, observable_objects = self._run_observable_from_object_tests(event)
+        software = observable_objects['0']
+        cpe, language, product, vendor, version, description = (attribute['value'] for attribute in attributes)
+        self.assertEqual(software.type, 'software')
+        self.assertEqual(software.cpe, cpe)
+        self.assertEqual(software.name, product)
+        self.assertEqual(software.languages, [language])
+        self.assertEqual(software.vendor, vendor)
+        self.assertEqual(software.version, version)
+        self.assertEqual(software.x_misp_description, description)
+
     def test_event_with_credential_indicator_object(self):
         event = get_event_with_credential_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
