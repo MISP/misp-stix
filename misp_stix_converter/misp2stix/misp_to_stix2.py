@@ -1109,6 +1109,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
         self._append_SDO(self._create_course_of_action(course_of_action_args))
 
+    def _parse_cpe_asset_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'software'
+            attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
+            pattern = []
+            for key, feature in self._mapping.cpe_asset_object_mapping.items():
+                if attributes.get(key):
+                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            if attributes:
+                pattern.extend(self._handle_pattern_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_cpe_asset_object_observable(misp_object)
+
     def _parse_credential_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             attributes = self._extract_multiple_object_attributes_escaped(
@@ -2203,6 +2217,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             as_args.update(self._handle_observable_multiple_properties(attributes))
         return as_args
+
+    def _parse_cpe_asset_args(self, attributes: list) -> dict:
+        attributes = self._extract_multiple_object_attributes(
+            attributes,
+            force_single=self._mapping.cpe_asset_single_fields
+        )
+        software_args = {}
+        if attributes.get('language'):
+            software_args['languages'] = attributes.pop('language')
+        for key, feature in self._mapping.cpe_asset_object_mapping.items():
+            if attributes.get(key):
+                software_args[feature] = attributes.pop(key)
+        if attributes:
+            software_args.update(self._handle_observable_multiple_properties(attributes))
+        return software_args
 
     def _parse_credential_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(

@@ -299,6 +299,7 @@ class Stix2Mapping:
             'asn': '_parse_asn_object',
             'attack-pattern': '_parse_attack_pattern_object',
             'course-of-action': '_parse_course_of_action_object',
+            'cpe-asset': '_parse_cpe_asset_object',
             'credential': '_parse_credential_object',
             'domain-ip': '_parse_domain_ip_object',
             'email': '_parse_email_object',
@@ -352,6 +353,19 @@ class Stix2Mapping:
         self.__course_of_action_object_mapping = (
             'name',
             'description'
+        )
+        self.__cpe_asset_object_mapping = Mapping(
+            cpe = 'cpe',
+            language = 'languages',
+            product = 'name',
+            vendor = 'vendor',
+            version = 'version'
+        )
+        self.__cpe_asset_single_fields = (
+            'cpe',
+            'product',
+            'vendor',
+            'version'
         )
         self.__credential_single_fields = (
             'username',
@@ -654,8 +668,12 @@ class Stix2Mapping:
         return self.__course_of_action_object_mapping
 
     @property
-    def credential_object_mapping(self) -> dict:
-        return self.__credential_object_mapping
+    def cpe_asset_object_mapping(self) -> dict:
+        return self.__cpe_asset_object_mapping
+
+    @property
+    def cpe_asset_single_fields(self) -> tuple:
+        return self.__cpe_asset_single_fields
 
     @property
     def credential_single_fields(self) -> tuple:

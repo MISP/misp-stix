@@ -11,8 +11,9 @@ from stix2.properties import (DictionaryProperty, IDProperty, ListProperty,
 from stix2.v20.bundle import Bundle
 from stix2.v20.observables import (Artifact, AutonomousSystem, Directory, DomainName,
     EmailAddress, EmailMessage, EmailMIMEComponent, File, IPv4Address, IPv6Address,
-    MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPEBinaryExt,
-    WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
+    MACAddress, Mutex, NetworkTraffic, Process, Software, URL, UserAccount,
+    WindowsPEBinaryExt, WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType,
+    X509Certificate)
 from stix2.v20.sdo import (AttackPattern, Campaign, CourseOfAction, CustomObject,
     Identity, Indicator, IntrusionSet, Malware, ObservedData, Report, ThreatActor,
     Tool, Vulnerability)
@@ -450,6 +451,11 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {
             '0': AutonomousSystem(**as_args)
         }
+        self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_cpe_asset_object_observable(self, misp_object: dict):
+        software_args = self._parse_cpe_asset_args(misp_object['Attribute'])
+        observable_object = {'0': Software(**software_args)}
         self._handle_object_observable(misp_object, observable_object)
 
     def _parse_credential_object_observable(self, misp_object: dict):
