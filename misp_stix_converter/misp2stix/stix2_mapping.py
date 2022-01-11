@@ -315,6 +315,7 @@ class Stix2Mapping:
             'pe-section': '_populate_objects_to_parse',
             'process': '_parse_process_object',
             'registry-key': '_parse_registry_key_object',
+            'telegram-account': '_parse_account_object',
             'twitter-account': '_parse_account_object',
             'url': '_parse_url_object',
             'user-account': '_parse_user_account_object',
@@ -549,6 +550,14 @@ class Stix2Mapping:
             "SOCK_RAW",
             "SOCK_RDM",
             "SOCK_SEQPACKET"
+        )
+        self.__telegram_account_object_mapping = Mapping(
+            id = 'user_id',
+            username = 'account_login'
+        )
+        self.__telegram_account_single_fields = (
+            'id',
+            'username'
         )
         self.__twitter_account_object_mapping = Mapping(
             **{
@@ -810,6 +819,14 @@ class Stix2Mapping:
     @property
     def source_names(self) -> tuple:
         return self.__source_names
+
+    @property
+    def telegram_account_object_mapping(self) -> dict:
+        return self.__telegram_account_object_mapping
+
+    @property
+    def telegram_account_single_fields(self) -> tuple:
+        return self.__telegram_account_single_fields
 
     @property
     def twitter_account_object_mapping(self) -> dict:
