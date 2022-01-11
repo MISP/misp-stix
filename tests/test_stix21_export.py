@@ -1489,6 +1489,86 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(twitter.display_name, displayed_name)
         self.assertEqual(twitter.x_misp_followers, followers)
 
+    def test_event_with_account_indicator_objects_with_attachment(self):
+        event = get_event_with_account_objects_with_attachment()
+        misp_objects, patterns = self._run_indicators_from_objects_tests(event)
+        github_user, parler_account, reddit_account = misp_objects
+        github_pattern, parler_pattern, reddit_pattern = patterns
+        github_id, username, fullname, organisation, image = (attribute['value'] for attribute in github_user['Attribute'])
+        account_type, user_id, display_name, login, organization, image_data, image_value = github_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, "user-account:account_type = 'github'")
+        self.assertEqual(user_id, f"user-account:user_id = '{github_id}'")
+        self.assertEqual(display_name, f"user-account:display_name = '{fullname}'")
+        self.assertEqual(login, f"user-account:account_login = '{username}'")
+        self.assertEqual(organization, f"user-account:x_misp_organisation = '{organisation}'")
+        data = github_user['Attribute'][-1]['data'].replace('\\', '')
+        self.assertEqual(image_data, f"user-account:x_misp_profile_image.data = '{data}'")
+        self.assertEqual(image_value, f"user-account:x_misp_profile_image.value = '{image}'")
+        parler_id, parler_name, human, profile_photo = (attribute['value'] for attribute in parler_account['Attribute'])
+        account_type, user_id, login, is_human, image_data, image_value = parler_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'parler'")
+        self.assertEqual(user_id, f"user-account:user_id = '{parler_id}'")
+        self.assertEqual(login, f"user-account:account_login = '{parler_name}'")
+        self.assertEqual(is_human, f"user-account:x_misp_human = 'False'")
+        data = parler_account['Attribute'][-1]['data'].replace('\\', '')
+        self.assertEqual(image_data, f"user-account:x_misp_profile_photo.data = '{data}'")
+        self.assertEqual(image_value, f"user-account:x_misp_profile_photo.value = '{profile_photo}'")
+        reddit_id, reddit_name, description, account_avatar = (attribute['value'] for attribute in reddit_account['Attribute'])
+        account_type, user_id, login, description_pattern, image_data, image_value = reddit_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'reddit'")
+        self.assertEqual(user_id, f"user-account:user_id = '{reddit_id}'")
+        self.assertEqual(login, f"user-account:account_login = '{reddit_name}'")
+        self.assertEqual(description_pattern, f"user-account:x_misp_description = '{description}'")
+        data = reddit_account['Attribute'][-1]['data'].replace('\\', '')
+        self.assertEqual(image_data, f"user-account:x_misp_account_avatar.data = '{data}'")
+        self.assertEqual(image_value, f"user-account:x_misp_account_avatar.value = '{account_avatar}'")
+
+    def test_event_with_account_observable_object_with_attachment(self):
+        event = get_event_with_account_objects_with_attachment()
+        misp_objects, grouping_refs, object_refs, observables = self._run_observables_from_objects_tests(event)
+        for grouping_ref, object_ref, observable in zip(grouping_refs, object_refs, observables):
+            for grp_ref, obj_ref, obs in zip(grouping_ref, object_ref, observable):
+                self.assertTrue(grp_ref == obj_ref == obs.id)
+        github_user, parler_account, reddit_account = misp_objects
+        github, parler, reddit = observables
+        github_id, username, fullname, organisation, image = (attribute['value'] for attribute in github_user['Attribute'])
+        github = github[0]
+        self.assertEqual(github.type, 'user-account')
+        self.assertEqual(github.account_type, 'github')
+        self.assertEqual(github.user_id, github_id)
+        self.assertEqual(github.account_login, username)
+        self.assertEqual(github.display_name, fullname)
+        self.assertEqual(github.x_misp_organisation, organisation)
+        self.assertEqual(github.x_misp_profile_image['value'], image)
+        self.assertEqual(
+            github.x_misp_profile_image['data'],
+            github_user['Attribute'][-1]['data'].replace('\\', '')
+        )
+        parler_id, parler_name, human, profile_photo = (attribute['value'] for attribute in parler_account['Attribute'])
+        parler = parler[0]
+        self.assertEqual(parler.type, 'user-account')
+        self.assertEqual(parler.account_type, 'parler')
+        self.assertEqual(parler.user_id, parler_id)
+        self.assertEqual(parler.account_login, parler_name)
+        self.assertEqual(parler.x_misp_human, human)
+        self.assertEqual(parler.x_misp_profile_photo['value'], profile_photo)
+        self.assertEqual(
+            parler.x_misp_profile_photo['data'],
+            parler_account['Attribute'][-1]['data'].replace('\\', '')
+        )
+        reddit_id, reddit_name, description, account_avatar = (attribute['value'] for attribute in reddit_account['Attribute'])
+        reddit = reddit[0]
+        self.assertEqual(reddit.type, 'user-account')
+        self.assertEqual(reddit.account_type, 'reddit')
+        self.assertEqual(reddit.user_id, reddit_id)
+        self.assertEqual(reddit.account_login, reddit_name)
+        self.assertEqual(reddit.x_misp_description, description)
+        self.assertEqual(reddit.x_misp_account_avatar['value'], account_avatar)
+        self.assertEqual(
+            reddit.x_misp_account_avatar['data'],
+            reddit_account['Attribute'][-1]['data'].replace('\\', '')
+        )
+
     def test_object_with_annotation_object(self):
         event = get_event_with_annotation_object()
         orgc = event['Event']['Orgc']
@@ -1980,36 +2060,6 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(location.latitude, float(latitude))
         self.assertEqual(location.longitude, float(longitude))
         self.assertEqual(location.x_misp_altitude, altitude)
-
-    def test_event_with_github_user_indicator_object(self):
-        event = get_event_with_github_user_object()
-        attributes, pattern = self._run_indicator_from_object_tests(event)
-        github_id, username, fullname, organisation, image = (attribute['value'] for attribute in attributes)
-        account_type, user_id, display_name, login, organization, image_data, image_value = pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, "user-account:account_type = 'github'")
-        self.assertEqual(user_id, f"user-account:user_id = '{github_id}'")
-        self.assertEqual(display_name, f"user-account:display_name = '{fullname}'")
-        self.assertEqual(login, f"user-account:account_login = '{username}'")
-        self.assertEqual(organization, f"user-account:x_misp_organisation = '{organisation}'")
-        data = attributes[-1]['data'].replace('\\', '')
-        self.assertEqual(image_data, f"user-account:x_misp_profile_image.data = '{data}'")
-        self.assertEqual(image_value, f"user-account:x_misp_profile_image.value = '{image}'")
-
-    def test_event_with_github_user_observables_object(self):
-        event = get_event_with_github_user_object()
-        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
-        github_id, username, fullname, organisation, image = (attribute['value'] for attribute in attributes)
-        self.assertEqual(grouping_refs[0], object_refs[0])
-        account = observables[0]
-        self.assertEqual(account.id, grouping_refs[0])
-        self.assertEqual(account.type, 'user-account')
-        self.assertEqual(account.account_type, 'github')
-        self.assertEqual(account.user_id, github_id)
-        self.assertEqual(account.account_login, username)
-        self.assertEqual(account.display_name, fullname)
-        self.assertEqual(account.x_misp_organisation, organisation)
-        self.assertEqual(account.x_misp_profile_image['value'], image)
-        self.assertEqual(account.x_misp_profile_image['data'], attributes[-1]['data'].replace('\\', ''))
 
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
