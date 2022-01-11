@@ -3675,8 +3675,8 @@ def get_event_with_cpe_asset_object():
     event['Event']['Object'] = [
         {
             "name": "cpe-asset",
-            "description": "",
-            "meta-category": "",
+            "description": "An asset which can be defined by a CPE.",
+            "meta-category": "misc",
             "uuid": "3f53a829-6307-4006-b7a2-ff53dace4159",
             "timestamp": "1603642920",
             "Attribute": [
