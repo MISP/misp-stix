@@ -311,9 +311,11 @@ class Stix2Mapping:
             'mutex': '_parse_mutex_object',
             'network-connection': '_parse_network_connection_object',
             'network-socket': '_parse_network_socket_object',
+            'parler-account': '_parse_account_object_with_attachment',
             'pe': '_populate_objects_to_parse',
             'pe-section': '_populate_objects_to_parse',
             'process': '_parse_process_object',
+            'reddit-account': '_parse_account_object_with_attachment',
             'registry-key': '_parse_registry_key_object',
             'telegram-account': '_parse_account_object',
             'twitter-account': '_parse_account_object',
@@ -511,6 +513,21 @@ class Stix2Mapping:
             'blocking',
             'listening'
         )
+        self.__parler_account_data_fields = (
+            'attachment',
+            'cover-photo',
+            'profile-photo'
+        )
+        self.__parler_account_object_mapping = Mapping(
+            **{
+                'account-id': 'user_id',
+                'account-name': 'account_login'
+            }
+        )
+        self.__parler_account_single_fields = (
+            'account-id',
+            'account-name'
+        )
         self.__pe_object_mapping = Mapping(
             features = Mapping(
                 **{
@@ -538,6 +555,23 @@ class Stix2Mapping:
                 'size-in-bytes': 'size'
             }
         )
+        self.__reddit_account_data_fields = (
+            'account-avatar',
+            'attachment'
+        )
+
+        self.__reddit_account_object_mapping = Mapping(
+            **{
+                'account-id': 'user_id',
+                'account-name': 'account_login'
+            }
+        )
+
+        self.__reddit_account_single_fields = (
+            'account-id',
+            'account-name'
+        )
+
         self.__registry_key_mapping = Mapping(
             **{
                 'data-type': 'data_type',
@@ -793,6 +827,18 @@ class Stix2Mapping:
         return self.__objects_mapping
 
     @property
+    def parler_account_data_fields(self) -> tuple:
+        return self.__parler_account_data_fields
+
+    @property
+    def parler_account_object_mapping(self) -> dict:
+        return self.__parler_account_object_mapping
+
+    @property
+    def parler_account_single_fields(self) -> tuple:
+        return self.__parler_account_single_fields
+
+    @property
     def pe_object_mapping(self) -> dict:
         return self.__pe_object_mapping
 
@@ -803,6 +849,18 @@ class Stix2Mapping:
     @property
     def pe_section_mapping(self) -> dict:
         return self.__pe_section_mapping
+
+    @property
+    def reddit_account_data_fields(self) -> tuple:
+        return self.__reddit_account_data_fields
+
+    @property
+    def reddit_account_object_mapping(self) -> dict:
+        return self.__reddit_account_object_mapping
+
+    @property
+    def reddit_account_single_fields(self) -> tuple:
+        return self.__reddit_account_single_fields
 
     @property
     def registry_key_mapping(self) -> dict:
