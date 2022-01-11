@@ -3542,6 +3542,59 @@ def get_event_with_account_objects():
             ]
         },
         {
+            "name": "gitlab-user",
+            "description": "GitLab user. Gitlab.com user or self-hosted GitLab instance",
+            "meta-category": "misc",
+            "uuid": "20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "id",
+                    "value": "1234567890"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "John Doe"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "username",
+                    "value": "j0hnd0e"
+                }
+            ]
+        },
+        {
+            "name": "telegram-account",
+            "description": "Information related to a telegram account",
+            "meta-category": "misc",
+            "uuid": "7ecc4537-89cd-4f17-8027-6e0f70710c53",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "id",
+                    "value": "1234567890"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "username",
+                    "value": "T3l3gr4mUs3r"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "phone",
+                    "value": "0112233445"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "phone",
+                    "value": "0556677889"
+                }
+            ]
+        },
+        {
             "name": "twitter-account",
             "description": "Twitter account.",
             "meta-category": "misc",
@@ -3567,30 +3620,6 @@ def get_event_with_account_objects():
                     "type": "text",
                     "object_relation": "followers",
                     "value": "666"
-                }
-            ]
-        },
-        {
-            "name": "gitlab-user",
-            "description": "GitLab user. Gitlab.com user or self-hosted GitLab instance",
-            "meta-category": "misc",
-            "uuid": "20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "id",
-                    "value": "1234567890"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "name",
-                    "value": "John Doe"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "username",
-                    "value": "j0hnd0e"
                 }
             ]
         }

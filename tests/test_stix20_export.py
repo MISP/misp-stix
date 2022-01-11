@@ -1053,14 +1053,27 @@ class TestSTIX20Export(TestSTIX2Export):
     def test_event_with_account_indicator_objects(self):
         event = get_event_with_account_objects()
         misp_objects, patterns = self._run_indicators_from_objects_tests(event)
-        facebook_object, twitter_object, gitlab_object = misp_objects
-        facebook_pattern, twitter_pattern, gitlab_pattern = patterns
+        facebook_object, gitlab_object, telegram_object, twitter_object = misp_objects
+        facebook_pattern, gitlab_pattern, telegram_pattern, twitter_pattern = patterns
         account_id, account_name, link = (attribute['value'] for attribute in facebook_object['Attribute'])
         account_type, user_id, account_login, _link = facebook_pattern[1:-1].split(' AND ')
         self.assertEqual(account_type, f"user-account:account_type = 'facebook'")
         self.assertEqual(user_id, f"user-account:user_id = '{account_id}'")
         self.assertEqual(account_login, f"user-account:account_login = '{account_name}'")
         self.assertEqual(_link, f"user-account:x_misp_link = '{link}'")
+        gitlab_id, name, username = (attribute['value'] for attribute in gitlab_object['Attribute'])
+        account_type, user_id, display_name, account_login = gitlab_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'gitlab'")
+        self.assertEqual(user_id, f"user-account:user_id = '{gitlab_id}'")
+        self.assertEqual(display_name, f"user-account:display_name = '{name}'")
+        self.assertEqual(account_login, f"user-account:account_login = '{username}'")
+        telegram_id, username, phone1, phone2 = (attribute['value'] for attribute in telegram_object['Attribute'])
+        account_type, user_id, login, phone_1, phone_2 = telegram_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, "user-account:account_type = 'telegram'")
+        self.assertEqual(user_id, f"user-account:user_id = '{telegram_id}'")
+        self.assertEqual(login, f"user-account:account_login = '{username}'")
+        self.assertEqual(phone_1, f"user-account:x_misp_phone = '{phone1}'")
+        self.assertEqual(phone_2, f"user-account:x_misp_phone = '{phone2}'")
         _id, name, displayed_name, followers = (attribute['value'] for attribute in twitter_object['Attribute'])
         account_type, display_name, user_id, account_login, _followers = twitter_pattern[1:-1].split(' AND ')
         self.assertEqual(account_type, f"user-account:account_type = 'twitter'")
@@ -1068,18 +1081,12 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(user_id, f"user-account:user_id = '{_id}'")
         self.assertEqual(account_login, f"user-account:account_login = '{name}'")
         self.assertEqual(_followers, f"user-account:x_misp_followers = '{followers}'")
-        gitlab_id, name, username = (attribute['value'] for attribute in gitlab_object['Attribute'])
-        account_type, user_id, display_name, account_login = gitlab_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'gitlab'")
-        self.assertEqual(user_id, f"user-account:user_id = '{gitlab_id}'")
-        self.assertEqual(display_name, f"user-account:display_name = '{name}'")
-        self.assertEqual(account_login, f"user-account:account_login = '{username}'")
 
     def test_event_with_account_observable_objects(self):
         event = get_event_with_account_objects()
         misp_objects, observable_objects = self._run_observables_from_objects_tests(event)
-        facebook_object, twitter_object, gitlab_object = misp_objects
-        facebook, twitter, gitlab = observable_objects
+        facebook_object, gitlab_object, telegram_object, twitter_object = misp_objects
+        facebook, gitlab, telegram, twitter = observable_objects
         account_id, account_name, link = (attribute['value'] for attribute in facebook_object['Attribute'])
         facebook = facebook['0']
         self.assertEqual(facebook.type, 'user-account')
@@ -1087,6 +1094,20 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(facebook.user_id, account_id)
         self.assertEqual(facebook.account_login, account_name)
         self.assertEqual(facebook.x_misp_link, link)
+        gitlab_id, name, username = (attribute['value'] for attribute in gitlab_object['Attribute'])
+        gitlab = gitlab['0']
+        self.assertEqual(gitlab.type, 'user-account')
+        self.assertEqual(gitlab.account_type, 'gitlab')
+        self.assertEqual(gitlab.user_id, gitlab_id)
+        self.assertEqual(gitlab.display_name, name)
+        self.assertEqual(gitlab.account_login, username)
+        telegram_id, username, phone1, phone2 = (attribute['value'] for attribute in telegram_object['Attribute'])
+        telegram = telegram['0']
+        self.assertEqual(telegram.type, 'user-account')
+        self.assertEqual(telegram.account_type, 'telegram')
+        self.assertEqual(telegram.user_id, telegram_id)
+        self.assertEqual(telegram.account_login, username)
+        self.assertEqual(telegram.x_misp_phone, [phone1, phone2])
         _id, name, displayed_name, followers = (attribute['value'] for attribute in twitter_object['Attribute'])
         twitter = twitter['0']
         self.assertEqual(twitter.type, 'user-account')
@@ -1095,13 +1116,6 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(twitter.account_login, name)
         self.assertEqual(twitter.display_name, displayed_name)
         self.assertEqual(twitter.x_misp_followers, followers)
-        gitlab_id, name, username = (attribute['value'] for attribute in gitlab_object['Attribute'])
-        gitlab = gitlab['0']
-        self.assertEqual(gitlab.type, 'user-account')
-        self.assertEqual(gitlab.account_type, 'gitlab')
-        self.assertEqual(gitlab.user_id, gitlab_id)
-        self.assertEqual(gitlab.display_name, name)
-        self.assertEqual(gitlab.account_login, username)
 
     def test_event_with_asn_indicator_object(self):
         event = get_event_with_asn_object()
