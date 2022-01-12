@@ -3906,6 +3906,47 @@ def get_event_with_email_object_with_display_names():
     return event
 
 
+def get_event_with_employee_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        {
+            "name": "employee",
+            "description": "An employee and related data points",
+            "meta-category": "misc",
+            "uuid": "685a38e1-3ca1-40ef-874d-3a04b9fb3af6",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "first-name",
+                    "object_relation": "first-name",
+                    "value": "John"
+                },
+                {
+                    "type": "last-name",
+                    "object_relation": "last-name",
+                    "value": "Doe"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "text",
+                    "value": "John Doe is known"
+                },
+                {
+                    "type": "target-email",
+                    "object_relation": "email-address",
+                    "value": "jdoe@email.com"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "employee-type",
+                    "value": "Supervisor"
+                }
+            ]
+        }
+    ]
+    return event
+
+
 def get_event_with_file_object_with_artifact():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [

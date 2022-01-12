@@ -1486,6 +1486,29 @@ class TestSTIX20Export(TestSTIX2Export):
         bcc_ = observable_objects['5']
         self._check_email_address(bcc_, _bcc, display_name=_bcc_name)
 
+    def test_event_with_employee_object(self):
+        event = get_event_with_employee_object()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        identity, report, employee = self.parser.stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        args = (report, event['Event'], identity_id, timestamp)
+        object_ref = self._check_report_features(*args)[0]
+        employee_id = f"identity--{misp_object['uuid']}"
+        first_name, last_name, description, email, employee_type = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(employee.type, 'identity')
+        self.assertEqual(object_ref, employee_id)
+        self.assertEqual(employee.id, employee_id)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(employee.created, timestamp)
+        self.assertEqual(employee.modified, timestamp)
+        self.assertEqual(employee.name, f"{first_name} {last_name}")
+        self.assertEqual(employee.description, description)
+        self.assertEqual(employee.contact_information, email)
+        self.assertEqual(employee.x_misp_employee_type, employee_type)
+
     def test_event_with_file_and_pe_indicator_objects(self):
         event = get_event_with_file_and_pe_objects()
         misp_objects, pattern = self._run_indicator_from_objects_tests(event)
