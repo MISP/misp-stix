@@ -569,7 +569,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             timestamp
         )
         if markings:
-            self._handle_markings(location_args, markings)
+            self._handle_markings(note_args, markings)
         attributes = self._extract_multiple_object_attributes_with_data(
             misp_object['Attribute'],
             force_single=self._mapping.annotation_single_fields,
