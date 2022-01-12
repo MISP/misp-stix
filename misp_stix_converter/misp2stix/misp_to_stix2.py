@@ -1268,6 +1268,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_email_object_observable(misp_object)
 
+    def _parse_employee_object(self, misp_object: dict):
+        identity_args = self._parse_identity_args(misp_object)
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=self._mapping.employee_single_fields
+        )
+        name = [attributes.pop(key) for key in ('first-name', 'last-name') if attributes.get(key)]
+        if name:
+            identity_args['name'] = ' '.join(name)
+        for key, feature in self._mapping.employee_object_mapping.items():
+            if attributes.get(key):
+                identity_args[feature] = attributes.pop(key)
+        if attributes:
+            identity_args.update(self._handle_observable_multiple_properties(attributes))
+        self._append_SDO(self._create_identity(identity_args))
+
     def _parse_file_object(self, misp_object: dict):
         to_ids = self._fetch_ids_flag(misp_object['Attribute'])
         if misp_object.get('ObjectReference'):
@@ -2179,6 +2195,30 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if to_ids is not None:
             labels.append(f'misp:to_ids="{to_ids}"')
         return labels
+
+    def _parse_identity_args(self, misp_object: dict) -> dict:
+        identity_id = getattr(self, self._id_parsing_function['object'])('identity', misp_object)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        identity_args = {
+            'id': identity_id,
+            'created': timestamp,
+            'modified': timestamp,
+            'labels': self._create_object_labels(
+                misp_object,
+                to_ids=self._fetch_ids_flag(misp_object['Attribute'])
+            ),
+            'created_by_ref': self.__identity_id,
+            'interoperability': True,
+            'identity_class': 'individual',
+        }
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            identity_id,
+            timestamp
+        )
+        if markings:
+            self._handle_markings(identity_args, markings)
+        return identity_args
 
     def _set_identity(self) -> int:
         orgc = self._misp_event['Orgc']

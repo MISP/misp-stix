@@ -303,6 +303,7 @@ class Stix2Mapping:
             'credential': '_parse_credential_object',
             'domain-ip': '_parse_domain_ip_object',
             'email': '_parse_email_object',
+            'employee': '_parse_employee_object',
             'facebook-account': '_parse_account_object',
             'file': '_parse_file_object',
             'github-user': '_parse_account_object_with_attachment',
@@ -403,6 +404,12 @@ class Stix2Mapping:
         self.__email_data_fields = (
             'attachment',
             'screenshot'
+        )
+        self.__employee_single_fields = (
+            'email-address',
+            'first-name',
+            'last-name',
+            'text'
         )
         self.__facebook_account_object_mapping = Mapping(
             **{
@@ -741,6 +748,10 @@ class Stix2Mapping:
     @property
     def email_data_fields(self) -> tuple:
         return self.__email_data_fields
+
+    @property
+    def employee_single_fields(self) -> tuple:
+        return self.__employee_single_fields
 
     @property
     def external_id_to_source_name(self) -> dict:

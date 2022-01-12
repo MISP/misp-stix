@@ -81,6 +81,13 @@ class Stix21Mapping(Stix2Mapping):
             'screenshot',
             'to'
         )
+        self.__employee_object_mapping = Mapping(
+            **{
+                'email-address': 'contact_information',
+                'employee-type': 'roles',
+                'text': 'description'
+            }
+        )
         self.__file_uuid_fields = self.file_data_fields + ('path',)
         self.__geolocation_object_mapping = Mapping(
             address = 'street_address',
@@ -219,6 +226,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def email_uuid_fields(self) -> tuple:
         return self.__email_uuid_fields
+
+    @property
+    def employee_object_mapping(self) -> dict:
+        return self.__employee_object_mapping
 
     @property
     def file_uuid_fields(self) -> tuple:
