@@ -561,6 +561,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'modified': timestamp,
             'labels': self._create_object_labels(misp_object, to_ids=to_ids),
             'object_refs': object_refs,
+            'created_by_ref': self.identity_id,
             'interoperability': True
         }
         markings = self._handle_object_tags_and_galaxies(
@@ -793,6 +794,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 misp_object,
                 to_ids=self._fetch_ids_flag(misp_object['Attribute'])
             ),
+            'created_by_ref': self.identity_id,
             'interoperability': True
         }
         if misp_object.get('comment'):
