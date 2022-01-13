@@ -24,6 +24,14 @@ class Stix21Mapping(Stix2Mapping):
             )
         )
         self._declare_attributes_mapping(updates=v21_specific_attributes)
+        artifact_values = {
+            "mime_type": "application/zip",
+            "encryption_algorithm": "mime-type-indicated",
+            "decryption_key": "infected"
+        }
+        pattern_values = (f"file:content_ref.{key} = '{value}'" for key, value in artifact_values.items())
+        self.__malware_sample_additional_observable_values = artifact_values
+        self.__malware_sample_additional_pattern_values = ' AND '.join(pattern_values)
         self.__tlp_markings = Mapping(
             **{
                 'tlp:white': TLP_WHITE,
@@ -247,6 +255,14 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def ip_port_uuid_fields(self) -> tuple:
         return self.__ip_port_uuid_fields
+
+    @property
+    def malware_sample_additional_observable_values(self) -> dict:
+        return self.__malware_sample_additional_observable_values
+
+    @property
+    def malware_sample_additional_pattern_values(self) -> str:
+        return self.__malware_sample_additional_pattern_values
 
     @property
     def network_socket_mapping(self) -> dict:

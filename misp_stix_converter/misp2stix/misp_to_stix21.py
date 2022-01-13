@@ -440,10 +440,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 },
                 content_ref=artifact_id
             ),
-            Artifact(
-                id=artifact_id,
-                payload_bin=attribute['data']
-            )
+            self._create_artifact(artifact_id, attribute['data'], malware_sample=True)
         ]
         self._handle_attribute_observable(attribute, objects)
 
@@ -989,7 +986,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 
-    def _create_artifact(self, artifact_id: str, content: str, filename: Optional[str] = None) -> Artifact:
+    def _create_artifact(self, artifact_id: str, content: str, filename: Optional[str] = None, malware_sample: Optional[bool] = False) -> Artifact:
         args = {'id': artifact_id, 'payload_bin': content}
         if filename is not None:
             args.update(
@@ -998,6 +995,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     'x_misp_filename': filename
                 }
             )
+        if malware_sample:
+            args.update(self._mapping.malware_sample_additional_observable_values)
         return Artifact(**args)
 
     def _create_attack_pattern_from_galaxy(self, args: dict, cluster: dict) -> AttackPattern:

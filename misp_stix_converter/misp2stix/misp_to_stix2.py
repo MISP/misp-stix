@@ -629,8 +629,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 file_pattern = self._create_filename_hash_pattern('md5', value)
                 data = self._handle_value_for_pattern(attribute['data'])
                 data_pattern = self._create_content_ref_pattern(data)
-                pattern = f"[{file_pattern} AND {data_pattern}]"
-                self._handle_attribute_indicator(attribute, pattern)
+                pattern = [
+                    file_pattern,
+                    data_pattern,
+                    self._mapping.malware_sample_additional_pattern_values
+                ]
+                self._handle_attribute_indicator(attribute, f"[{' AND '.join(pattern)}]")
             else:
                 self._parse_malware_sample_attribute_observable(attribute)
         else:
@@ -1342,18 +1346,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 value, data = value
                 malware_sample.append(self._create_content_ref_pattern(data))
             filename, md5 = value.split('|')
-            malware_sample.append(
-                self._create_content_ref_pattern(
-                    filename,
-                    'x_misp_filename'
-                )
-            )
-            malware_sample.append(
-                self._create_content_ref_pattern(
-                    md5,
-                    'hashes.MD5'
-                )
-            )
+            malware_sample.append(self._create_content_ref_pattern(filename, 'x_misp_filename'))
+            malware_sample.append(self._create_content_ref_pattern(md5, 'hashes.MD5'))
+            malware_sample.append(self._mapping.malware_sample_additional_pattern_values)
             pattern.append(f"({' AND '.join(malware_sample)})")
         if attributes.get('attachment'):
             value = attributes.pop('attachment')
@@ -2236,10 +2231,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_labels(attribute: dict) -> list:
         return [f'misp:{feature}="{attribute[feature]}"' for feature in _label_fields if attribute.get(feature)]
 
-    @staticmethod
-    def _create_malware_sample_args(value: str, data: str) -> dict:
+    def _create_malware_sample_args(self, value: str, data: str) -> dict:
         filename, md5 = value.split('|')
-        return {
+        args = {
             'allow_custom': True,
             'hashes': {
                 'MD5': md5
@@ -2247,6 +2241,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'payload_bin': data,
             'x_misp_filename': filename
         }
+        args.update(self._mapping.malware_sample_additional_observable_values)
+        return args
 
     @staticmethod
     def _create_object_labels(misp_object: dict, to_ids: Optional[bool] = None) -> list:

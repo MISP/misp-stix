@@ -11,6 +11,8 @@ class Stix20Mapping(Stix2Mapping):
     def __init__(self):
         super().__init__()
         self._declare_attributes_mapping()
+        self.__malware_sample_additional_observable_values = {"mime_type": "application/zip"}
+        self.__malware_sample_additional_pattern_values = "file:content_ref.mime_type = 'application/zip'"
         self.__tlp_markings = Mapping(
             **{
                 'tlp:white': TLP_WHITE,
@@ -153,6 +155,14 @@ class Stix20Mapping(Stix2Mapping):
     @property
     def employee_object_mapping(self) -> dict:
         return self.__employee_object_mapping
+
+    @property
+    def malware_sample_additional_observable_values(self) -> dict:
+        return self.__malware_sample_additional_observable_values
+
+    @property
+    def malware_sample_additional_pattern_values(self) -> str:
+        return self.__malware_sample_additional_pattern_values
 
     @property
     def network_socket_mapping(self) -> dict:
