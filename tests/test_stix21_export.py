@@ -2128,6 +2128,38 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(address_object.type, 'ipv4-addr')
         self.assertEqual(address_object.value, ip)
 
+    def test_event_with_legal_entity_object(self):
+        event = get_event_with_legal_entity_object()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, legal_entity = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        legal_entity_ref = self._check_grouping_features(grouping, event['Event'], identity_id)[0]
+        legal_entity_id = f"identity--{misp_object['uuid']}"
+        name, description, business, phone, logo = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(legal_entity.type, 'identity')
+        self.assertEqual(legal_entity_ref, legal_entity_id)
+        self.assertEqual(legal_entity.id, legal_entity_id)
+        self.assertEqual(legal_entity.identity_class, 'organization')
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(legal_entity.created, timestamp)
+        self.assertEqual(legal_entity.modified, timestamp)
+        self.assertEqual(legal_entity.name, name)
+        self.assertEqual(legal_entity.sectors, [business])
+        self.assertEqual(legal_entity.contact_information, f"phone-number: {phone}")
+        self.assertEqual(legal_entity.x_misp_logo['value'], logo)
+        self.assertEqual(
+            legal_entity.x_misp_logo['data'],
+            misp_object['Attribute'][-1]['data'].replace('\\', '')
+        )
+
     def test_event_with_mutex_indicator_object(self):
         event = get_event_with_mutex_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
