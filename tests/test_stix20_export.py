@@ -1501,6 +1501,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(employee.type, 'identity')
         self.assertEqual(object_ref, employee_id)
         self.assertEqual(employee.id, employee_id)
+        self.assertEqual(employee.identity_class, 'individual')
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         self.assertEqual(employee.created, timestamp)
         self.assertEqual(employee.modified, timestamp)
