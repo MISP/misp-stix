@@ -312,6 +312,8 @@ class Stix2Mapping:
             'mutex': '_parse_mutex_object',
             'network-connection': '_parse_network_connection_object',
             'network-socket': '_parse_network_socket_object',
+            'news-agency': '_parse_news_agency_object',
+            'organization': '_parse_organization_object',
             'parler-account': '_parse_account_object_with_attachment',
             'pe': '_populate_objects_to_parse',
             'pe-section': '_populate_objects_to_parse',
@@ -519,6 +521,31 @@ class Stix2Mapping:
         self.__network_socket_state_fields = (
             'blocking',
             'listening'
+        )
+        self.__news_agency_contact_info_fields = (
+            'address',
+            'e-mail',
+            'fax-number',
+            'phone-number'
+        )
+        self.__news_agency_data_fields = (
+            'attachment',
+        )
+        self.__news_agency_object_mapping = Mapping(
+            name = 'name'
+        )
+        self.__news_agency_single_fields = (
+            'name',
+        )
+        self.__organization_contact_info_fields = (
+            'address',
+            'e-mail',
+            'fax-number',
+            'phone-number'
+        )
+        self.__organization_single_fields = (
+            'description',
+            'name'
         )
         self.__parler_account_data_fields = (
             'attachment',
@@ -834,8 +861,32 @@ class Stix2Mapping:
         return self.__network_socket_state_fields
 
     @property
+    def news_agency_contact_info_fields(self) -> tuple:
+        return self.__news_agency_contact_info_fields
+
+    @property
+    def news_agency_data_fields(self) -> tuple:
+        return self.__news_agency_data_fields
+
+    @property
+    def news_agency_object_mapping(self) -> dict:
+        return self.__news_agency_object_mapping
+
+    @property
+    def news_agency_single_fields(self) -> tuple:
+        return self.__news_agency_single_fields
+
+    @property
     def objects_mapping(self) -> dict:
         return self.__objects_mapping
+
+    @property
+    def organization_contact_info_fields(self) -> tuple:
+        return self.__organization_contact_info_fields
+
+    @property
+    def organization_single_fields(self) -> tuple:
+        return self.__organization_single_fields
 
     @property
     def parler_account_data_fields(self) -> tuple:
