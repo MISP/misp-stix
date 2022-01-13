@@ -1116,10 +1116,13 @@ class TestSTIX21Export(TestSTIX2Export):
         data = event['Event']['Attribute'][0]['data']
         attribute_value, pattern = self._run_indicator_tests(event)
         filename, hash_value = attribute_value.split('|')
-        file_pattern = f"file:name = '{filename}'"
-        hash_pattern = f"file:hashes.MD5 = '{hash_value}'"
-        data_pattern = f"file:content_ref.payload_bin = '{data}'"
-        self.assertEqual(pattern, f"[{file_pattern} AND {hash_pattern} AND {data_pattern}]")
+        file_pattern, hash_pattern, data_pattern, mime_type, encryption, decryption = pattern[1:-1].split(' AND ')
+        self.assertEqual(file_pattern, f"file:name = '{filename}'")
+        self.assertEqual(hash_pattern, f"file:hashes.MD5 = '{hash_value}'")
+        self.assertEqual(data_pattern, f"file:content_ref.payload_bin = '{data}'")
+        self.assertEqual(mime_type, f"file:content_ref.mime_type = 'application/zip'")
+        self.assertEqual(encryption, f"file:content_ref.encryption_algorithm = 'mime-type-indicated'")
+        self.assertEqual(decryption, f"file:content_ref.decryption_key = 'infected'")
 
     def test_event_with_malware_sample_observable_attribute(self):
         event = get_event_with_malware_sample_attribute()
@@ -2009,11 +2012,14 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(encoding_, f"file:name_enc = '{_encoding}'")
         self.assertEqual(path_, f"file:parent_directory_ref.path = '{_path}'")
         self.assertEqual(size_, f"file:size = '{_size}'")
-        ms_data, ms_filename, ms_md5 = malware_sample_.split(' AND ')
+        ms_data, ms_filename, ms_md5, mime_type, encryption, decryption = malware_sample_.split(' AND ')
         self.assertEqual(ms_data, f"(file:content_ref.payload_bin = '{attributes[0]['data']}'")
         filename, md5 = _malware_sample.split('|')
         self.assertEqual(ms_filename, f"file:content_ref.x_misp_filename = '{filename}'")
-        self.assertEqual(ms_md5, f"file:content_ref.hashes.MD5 = '{md5}')")
+        self.assertEqual(ms_md5, f"file:content_ref.hashes.MD5 = '{md5}'")
+        self.assertEqual(mime_type, f"file:content_ref.mime_type = 'application/zip'")
+        self.assertEqual(encryption, f"file:content_ref.encryption_algorithm = 'mime-type-indicated'")
+        self.assertEqual(decryption, f"file:content_ref.decryption_key = 'infected')")
         a_data, a_filename = attachment_.split(' AND ')
         self.assertEqual(a_data, f"(file:content_ref.payload_bin = '{attributes[6]['data']}'")
         self.assertEqual(a_filename, f"file:content_ref.x_misp_filename = '{_attachment}')")
