@@ -1392,6 +1392,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_ip_port_object_observable(misp_object)
 
+    def _parse_legal_entity_object(self, misp_object: dict):
+        identity_args = self._parse_identity_args(misp_object, 'organization')
+        attributes = self._extract_multiple_object_attributes_with_data(
+            misp_object['Attribute'],
+            force_single=self._mapping.legal_entity_single_fields,
+            with_data=self._mapping.legal_entity_data_fields
+        )
+        for key, feature in self._mapping.legal_entity_object_mapping.items():
+            if attributes.get(key):
+                identity_args[feature] = attributes.pop(key)
+        name = misp_object['name'].replace('-', '_')
+        contact_info = self._parse_contact_information(attributes, name)
+        if contact_info:
+            identity_args['contact_information'] = ' / '.join(contact_info)
+        if attributes:
+            identity_args.update(self._handle_observable_multiple_properties_with_data(attributes, name))
+        self._append_SDO(self._create_identity(identity_args))
+
     def _parse_mutex_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'mutex'

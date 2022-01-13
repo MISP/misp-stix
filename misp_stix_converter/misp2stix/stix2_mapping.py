@@ -309,6 +309,7 @@ class Stix2Mapping:
             'github-user': '_parse_account_object_with_attachment',
             'gitlab-user': '_parse_account_object',
             'ip-port': '_parse_ip_port_object',
+            'legal-entity': '_parse_legal_entity_object',
             'mutex': '_parse_mutex_object',
             'network-connection': '_parse_network_connection_object',
             'network-socket': '_parse_network_socket_object',
@@ -503,6 +504,21 @@ class Stix2Mapping:
         self.__ip_port_single_fields = (
             'first-seen',
             'last-seen'
+        )
+        self.__legal_entity_contact_info_fields = (
+            'phone-number',
+        )
+        self.__legal_entity_data_fields = (
+            'logo',
+        )
+        self.__legal_entity_object_mapping = Mapping(
+            business = 'sectors',
+            name = 'name',
+            text = 'description'
+        )
+        self.__legal_entity_single_fields = (
+            'name',
+            'description'
         )
         self.__network_connection_mapping = Mapping(
             features = Mapping(
@@ -847,6 +863,22 @@ class Stix2Mapping:
     @property
     def ip_port_single_fields(self) -> tuple:
         return self.__ip_port_single_fields
+
+    @property
+    def legal_entity_contact_info_fields(self) -> tuple:
+        return self.__legal_entity_contact_info_fields
+
+    @property
+    def legal_entity_data_fields(self) -> tuple:
+        return self.__legal_entity_data_fields
+
+    @property
+    def legal_entity_object_mapping(self) -> dict:
+        return self.__legal_entity_object_mapping
+
+    @property
+    def legal_entity_single_fields(self) -> tuple:
+        return self.__legal_entity_single_fields
 
     @property
     def misp_identity_args(self) -> dict:
