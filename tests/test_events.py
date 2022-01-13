@@ -4015,6 +4015,68 @@ def get_event_with_network_socket_object():
     return event
 
 
+def get_event_with_news_agency_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        {
+            "name": "news-agency",
+            "description": "News agencies compile news and disseminate news in bulk.",
+            "meta-category": "misc",
+            "uuid": "d17e31ce-5a7a-4713-bdff-49d89548c259",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "Agence France-Presse"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "address",
+                    "value": "13 place de la Bourse, 75002 Paris"
+                },
+                {
+                    "type": "email-src",
+                    "object_relation": "e-mail",
+                    "value": "contact@afp.fr"
+                },
+                {
+                    "type": "phone-number",
+                    "object_relation": "phone-number",
+                    "value": "(33)0140414646"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "address",
+                    "value": "Southern Railway Building, 1500 K Street, NW, Suite 600"
+                },
+                {
+                    "type": "email-src",
+                    "object_relation": "e-mail",
+                    "value": "contact@afp.us"
+                },
+                {
+                    "type": "phone-number",
+                    "object_relation": "phone-number",
+                    "value": "(1)2024140600"
+                },
+                {
+                    "type": "link",
+                    "object_relation": "link",
+                    "value": "https://www.afp.com/"
+                },
+                {
+                    "type": "attachment",
+                    "object_relation": "attachment",
+                    "value": "AFP_logo.png",
+                    "data": "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"
+                }
+            ]
+        }
+    ]
+    return event
+
+
 def get_event_with_object_references():
     ap_object = deepcopy(_TEST_ATTACK_PATTERN_OBJECT)
     as_object = deepcopy(_TEST_ASN_OBJECT)
@@ -4085,6 +4147,57 @@ def get_event_with_object_references():
         coa_object,
         ip_object,
         vuln_object
+    ]
+    return event
+
+
+def get_event_with_organization_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        {
+            "name": "organization",
+            "description": "An object which describes an organization.",
+            "meta-category": "misc",
+            "uuid": "fe85995c-189d-4c20-9d0e-dfc03e72000b",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "Computer Incident Response Center of Luxembourg"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "description",
+                    "value": "The Computer Incident Response Center Luxembourg (CIRCL) is a government-driven initiative designed to gather, review, report and respond to computer security threats and incidents."
+                },
+                {
+                    "type": "text",
+                    "object_relation": "address",
+                    "value": "16, bd d'Avranches, L-1160 Luxembourg"
+                },
+                {
+                    "type": "email-src",
+                    "object_relation": "e-mail",
+                    "value": "info@circl.lu"
+                },
+                {
+                    "type": "phone-number",
+                    "object_relation": "phone-number",
+                    "value": "(+352) 247 88444"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "role",
+                    "value": "national CERT"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "alias",
+                    "value": "CIRCL"
+                }
+            ]
+        }
     ]
     return event
 

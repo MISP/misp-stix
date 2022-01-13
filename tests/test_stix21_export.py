@@ -2242,6 +2242,73 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(address2.type, 'ipv4-addr')
         self.assertEqual(address2.value, ip_dst)
 
+    def test_event_with_news_agency_object(self):
+        event = get_event_with_news_agency_object()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, news_agency = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        news_agency_ref = self._check_grouping_features(grouping, event['Event'], identity_id)[0]
+        news_agency_id = f"identity--{misp_object['uuid']}"
+        name, address1, email1, phone1, address2, email2, phone2, link, attachment = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(news_agency.type, 'identity')
+        self.assertEqual(news_agency_ref, news_agency_id)
+        self.assertEqual(news_agency.id, news_agency_id)
+        self.assertEqual(news_agency.identity_class, 'organization')
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(news_agency.created, timestamp)
+        self.assertEqual(news_agency.modified, timestamp)
+        self.assertEqual(news_agency.name, name)
+        self.assertEqual(
+            news_agency.contact_information,
+            f"address: {address1}; {address2} / e-mail: {email1}; {email2} / phone-number: {phone1}; {phone2}"
+        )
+        self.assertEqual(news_agency.x_misp_link, link)
+        self.assertEqual(news_agency.x_misp_attachment['value'], attachment)
+        self.assertEqual(
+            news_agency.x_misp_attachment['data'],
+            misp_object['Attribute'][-1]['data'].replace('\\', '')
+        )
+
+    def test_event_with_organization_object(self):
+        event = get_event_with_organization_object()
+        orgc = event['Event']['Orgc']
+        misp_object = deepcopy(event['Event']['Object'][0])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, organization = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        organization_ref = self._check_grouping_features(grouping, event['Event'], identity_id)[0]
+        organization_id = f"identity--{misp_object['uuid']}"
+        name, description, address, email, phone, role, alias = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(organization.type, 'identity')
+        self.assertEqual(organization_ref, organization_id)
+        self.assertEqual(organization.id, organization_id)
+        self.assertEqual(organization.identity_class, 'organization')
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(organization.created, timestamp)
+        self.assertEqual(organization.modified, timestamp)
+        self.assertEqual(organization.name, name)
+        self.assertEqual(organization.description, description)
+        self.assertEqual(
+            organization.contact_information,
+            f"address: {address} / e-mail: {email} / phone-number: {phone}"
+        )
+        self.assertEqual(organization.roles, [role])
+        self.assertEqual(organization.x_misp_alias, alias)
+
     def test_event_with_pe_and_section_indicator_objects(self):
         event = get_event_with_pe_objects()
         misp_objects, pattern = self._run_indicator_from_objects_tests(event)
