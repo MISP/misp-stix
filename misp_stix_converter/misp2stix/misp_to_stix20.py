@@ -647,6 +647,24 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             file_args.update(self._parse_file_args(attributes))
         return file_args, observable_object
 
+    def _parse_image_object_observable(self, misp_object: dict):
+        artifact_args, attributes = self._parse_image_args(misp_object['Attribute'])
+        file_args = {}
+        if attributes.get('filename'):
+            file_args['name'] = attributes.get('filename')
+        if attributes:
+            file_args.update(self._handle_observable_multiple_properties(attributes))
+        if artifact_args is not None:
+            file_args['content_ref'] = '1'
+            file_args['_valid_refs'] = {'1': 'artifact'}
+            observable_object = {
+                '0': File(**file_args),
+                '1': Artifact(**artifact_args)
+            }
+            self._handle_object_observable(misp_object, observable_object)
+        else:
+            self._handle_object_observable(misp_object, {'0': File(**file_args)})
+
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],

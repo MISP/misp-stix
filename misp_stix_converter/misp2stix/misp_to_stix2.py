@@ -1363,6 +1363,33 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
         return pattern
 
+    def _parse_image_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            attributes = self._extract_multiple_object_attributes_with_data_escaped(
+                misp_object['Attribute'],
+                force_single=self._mapping.image_single_fields,
+                with_data=self._mapping.image_data_fields
+            )
+            pattern = []
+            if attributes.get('filename'):
+                pattern.append(self._create_filename_pattern(attributes.pop('filename')))
+            if attributes.get('attachment'):
+                attachment = attributes.pop('attachment')
+                if isinstance(attachment, tuple):
+                    attachment, data = attachment
+                    pattern.append(self._create_content_ref_pattern(data))
+                if '.' in attachment:
+                    extension = attachment.split('.')[-1]
+                    pattern.append(self._create_content_ref_pattern(f'image/{extension}', 'mime_type'))
+                pattern.append(self._create_content_ref_pattern(attachment, 'x_misp_filename'))
+            if attributes.get('url'):
+                pattern.append(self._create_content_ref_pattern(attributes.pop('url'), 'url'))
+            if attributes:
+                pattern.extend(self._handle_pattern_multiple_properties(attributes, 'file'))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_image_object_observable(misp_object)
+
     def _parse_ip_port_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'
@@ -2418,6 +2445,29 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             file_args.update(self._handle_observable_multiple_properties(attributes))
         return file_args
+
+    def _parse_image_args(self, attributes: list) -> Tuple[Union[dict, None], dict]:
+        attributes = self._extract_multiple_object_attributes_with_data(
+            attributes,
+            force_single=self._mapping.image_single_fields,
+            with_data=self._mapping.image_data_fields
+        )
+        if not any(feature in attributes for feature in ('attachment', 'url')):
+            return None, attributes
+        if attributes.get('attachment'):
+            artifact_args = {'allow_custom': True}
+            attachment = attributes.pop('attachment')
+            if isinstance(attachment, tuple):
+                attachment, data = attachment
+                artifact_args['payload_bin'] = data
+            if '.' in attachment:
+                artifact_args['mime_type'] = f"image/{attachment.split('.')[-1]}"
+            artifact_args['x_misp_filename'] = attachment
+            if attributes.get('url'):
+                artifact_args['x_misp_url'] = attributes.pop('url')
+        elif attributes.get('url'):
+            artifact_args = {'url': attributes.pop('url')}
+        return artifact_args, attributes
 
     def _parse_ip_port_args(self, attributes: dict) -> dict:
         args = {}

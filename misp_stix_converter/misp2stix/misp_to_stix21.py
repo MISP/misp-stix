@@ -814,6 +814,26 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             location_args.update(self._handle_observable_properties(attributes))
         self._append_SDO(Location(**location_args))
 
+    def _parse_image_object_observable(self, misp_object: dict):
+        file_args = {'id': f"file--{misp_object['uuid']}"}
+        artifact_args, attributes = self._parse_image_args(misp_object['Attribute'])
+        if attributes.get('filename'):
+            file_args['name'] = attributes.pop('filename')
+        if attributes:
+            file_args.update(self._handle_observable_multiple_properties(attributes))
+        if artifact_args is not None:
+            artifact_id = f"artifact--{misp_object['uuid']}"
+            artifact_args['id'] = artifact_id
+            file_args['content_ref'] = artifact_id
+            objects = [
+                File(**file_args),
+                Artifact(**artifact_args)
+            ]
+            self._handle_object_observable(misp_object, objects)
+        else:
+            self._handle_object_observable(misp_object, [File(**file_args)])
+
+
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(
             misp_object['Attribute'],

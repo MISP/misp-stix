@@ -308,6 +308,7 @@ class Stix2Mapping:
             'file': '_parse_file_object',
             'github-user': '_parse_account_object_with_attachment',
             'gitlab-user': '_parse_account_object',
+            'image': '_parse_image_object',
             'ip-port': '_parse_ip_port_object',
             'legal-entity': '_parse_legal_entity_object',
             'mutex': '_parse_mutex_object',
@@ -479,6 +480,14 @@ class Stix2Mapping:
             'id',
             'name',
             'username'
+        )
+        self.__image_data_fields = (
+            'attachment',
+        )
+        self.__image_single_fields = (
+            'attachment',
+            'filename',
+            'url'
         )
         self.__ip_port_object_mapping = Mapping(
             ip_features = Mapping(
@@ -855,6 +864,14 @@ class Stix2Mapping:
     @property
     def hash_attribute_types(self) -> tuple:
         return self.__hash_attribute_types
+
+    @property
+    def image_data_fields(self) -> tuple:
+        return self.__image_data_fields
+
+    @property
+    def image_single_fields(self) -> tuple:
+        return self.__image_single_fields
 
     @property
     def ip_port_object_mapping(self) -> dict:
