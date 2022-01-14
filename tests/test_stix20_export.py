@@ -1600,6 +1600,35 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(artifact1.hashes['MD5'], md5)
         self.assertEqual(artifact1.x_misp_filename, filename)
 
+    def test_event_with_image_indicator_object(self):
+        event = get_event_with_image_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        attachment, filename, url, text = (attribute['value'] for attribute in attributes)
+        name, payload_bin, mime_type, name_ref, url_pattern, text_pattern = pattern[1:-1].split(' AND ')
+        self.assertEqual(name, f"file:name = '{filename}'")
+        data = attributes[0]['data'].replace('\\', '')
+        self.assertEqual(payload_bin, f"file:content_ref.payload_bin = '{data}'")
+        self.assertEqual(mime_type, f"file:content_ref.mime_type = 'image/png'")
+        self.assertEqual(name_ref, f"file:content_ref.x_misp_filename = '{attachment}'")
+        self.assertEqual(url_pattern, f"file:content_ref.url = '{url}'")
+        self.assertEqual(text_pattern, f"file:x_misp_image_text = '{text}'")
+
+    def test_event_with_image_observable_object(self):
+        event = get_event_with_image_object()
+        attributes, observable_objects = self._run_observable_from_object_tests(event)
+        attachment, filename, url, text = (attribute['value'] for attribute in attributes)
+        file = observable_objects['0']
+        self.assertEqual(file.type, 'file')
+        self.assertEqual(file.name, filename)
+        self.assertEqual(file.content_ref, '1')
+        self.assertEqual(file.x_misp_image_text, text)
+        artifact = observable_objects['1']
+        self.assertEqual(artifact.type, 'artifact')
+        self.assertEqual(artifact.payload_bin, attributes[0]['data'].replace('\\', ''))
+        self.assertEqual(artifact.mime_type, 'image/png')
+        self.assertEqual(artifact.x_misp_url, url)
+        self.assertEqual(artifact.x_misp_filename, attachment)
+
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
         event = get_event_with_ip_port_object()

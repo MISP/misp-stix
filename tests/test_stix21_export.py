@@ -2095,6 +2095,39 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(location.longitude, float(longitude))
         self.assertEqual(location.x_misp_altitude, altitude)
 
+    def test_event_with_image_indicator_object(self):
+        event = get_event_with_image_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        attachment, filename, url, text = (attribute['value'] for attribute in attributes)
+        name, payload_bin, mime_type, name_ref, url_pattern, text_pattern = pattern[1:-1].split(' AND ')
+        self.assertEqual(name, f"file:name = '{filename}'")
+        data = attributes[0]['data'].replace('\\', '')
+        self.assertEqual(payload_bin, f"file:content_ref.payload_bin = '{data}'")
+        self.assertEqual(mime_type, f"file:content_ref.mime_type = 'image/png'")
+        self.assertEqual(name_ref, f"file:content_ref.x_misp_filename = '{attachment}'")
+        self.assertEqual(url_pattern, f"file:content_ref.url = '{url}'")
+        self.assertEqual(text_pattern, f"file:x_misp_image_text = '{text}'")
+
+    def test_event_with_image_observable_object(self):
+        event = get_event_with_image_object()
+        misp_object = deepcopy(event['Event']['Object'][0])
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        attachment, filename, url, text = (attribute['value'] for attribute in attributes)
+        for grouping_ref, object_ref, observable in zip(grouping_refs, object_refs, observables):
+            self.assertTrue(grouping_ref == object_ref == observable.id)
+        file, artifact = observables
+        self.assertEqual(file.type, 'file')
+        self.assertEqual(file.id, f"file--{misp_object['uuid']}")
+        self.assertEqual(file.name, filename)
+        artifact_id = f"artifact--{misp_object['uuid']}"
+        self.assertEqual(file.content_ref, artifact_id)
+        self.assertEqual(artifact.type, 'artifact')
+        self.assertEqual(artifact.id, artifact_id)
+        self.assertEqual(artifact.payload_bin, attributes[0]['data'].replace('\\', ''))
+        self.assertEqual(artifact.mime_type, 'image/png')
+        self.assertEqual(artifact.x_misp_url, url)
+        self.assertEqual(artifact.x_misp_filename, attachment)
+
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
         event = get_event_with_ip_port_object()

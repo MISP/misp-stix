@@ -3983,6 +3983,43 @@ def get_event_with_geolocation_object():
     return event
 
 
+def get_event_with_image_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        {
+            "name": "image",
+            "description": "Object describing an image file.",
+            "meta-category": "file",
+            "uuid": "939b2f03-c487-4f62-a90e-cab7acfee294",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "attachment",
+                    "object_relation": "attachment",
+                    "value": "STIX.png",
+                    "data": "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"
+                },
+                {
+                    "type": "filename",
+                    "object_relation": "filename",
+                    "value": "STIX.png"
+                },
+                {
+                    "type": "url",
+                    "object_relation": "url",
+                    "value": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "image-text",
+                    "value": "STIX"
+                }
+            ]
+        }
+    ]
+    return event
+
+
 def get_event_with_ip_port_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
