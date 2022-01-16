@@ -1763,7 +1763,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             vulnerability_args['modified']
         )
         if markings:
-            self._handle_markings(indicator_args, markings)
+            self._handle_markings(vulnerability_args, markings)
         if misp_object.get('ObjectReference'):
             self._parse_object_relationships(
                 misp_object['ObjectReference'],

@@ -22,10 +22,6 @@ from stix2.v21.sro import Relationship, Sighting
 from stix2.v21.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
 
-_OBSERVABLE_OBJECT_TYPES = Union[
-    AutonomousSystem
-]
-
 
 @CustomObject(
     'x-misp-attribute',
@@ -832,7 +828,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._handle_object_observable(misp_object, objects)
         else:
             self._handle_object_observable(misp_object, [File(**file_args)])
-
 
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(

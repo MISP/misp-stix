@@ -723,7 +723,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 str_index = str(index)
                 observable_object[str_index] = DomainName(value=attributes.pop(f'hostname-{feature}'))
                 network_traffic_args['_valid_refs'][str_index] = 'domain-name'
-                network_traffic[f'{feature}_ref'] = str_index
+                network_traffic_args[f'{feature}_ref'] = str_index
                 index += 1
         return network_traffic_args, observable_object
 
