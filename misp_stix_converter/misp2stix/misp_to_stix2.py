@@ -1340,16 +1340,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             value = attributes.pop('path')
             pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")
         if attributes.get('malware-sample'):
-            value = attributes.pop('malware-sample')
-            malware_sample = []
-            if isinstance(value, tuple):
-                value, data = value
-                malware_sample.append(self._create_content_ref_pattern(data))
-            filename, md5 = value.split('|')
-            malware_sample.append(self._create_content_ref_pattern(filename, 'x_misp_filename'))
-            malware_sample.append(self._create_content_ref_pattern(md5, 'hashes.MD5'))
-            malware_sample.append(self._mapping.malware_sample_additional_pattern_values)
-            pattern.append(f"({' AND '.join(malware_sample)})")
+            pattern.append(
+                self._parse_malware_sample_object_attribute(
+                    attributes.pop('malware-sample')
+                )
+            )
         if attributes.get('attachment'):
             value = attributes.pop('attachment')
             if isinstance(value, tuple):
@@ -1431,6 +1426,48 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             identity_args.update(self._handle_observable_multiple_properties_with_data(attributes, name))
         self._append_SDO(self._create_identity(identity_args))
+
+    def _parse_lnk_object_pattern(self, attributes: dict) -> list:
+        prefix = 'file'
+        pattern = []
+        if attributes.get('filename'):
+            for filename in attributes.pop('filename'):
+                pattern.append(f"{prefix}:name = '{filename}'")
+        for feature in self._mapping.lnk_uuid_fields:
+            if attributes.get(feature):
+                for value in attributes.pop(feature):
+                    pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")
+        for hash_type in self._mapping.lnk_hash_types:
+            if attributes.get(hash_type):
+                pattern.append(
+                    self._create_hash_pattern(
+                        hash_type,
+                        attributes.pop(hash_type)
+                    )
+                )
+        if attributes.get('malware-sample'):
+            pattern.append(
+                self._parse_malware_sample_object_attribute(
+                    attributes.pop('malware-sample')
+                )
+            )
+        for key, feature in self._mapping.lnk_object_mapping.items():
+            if attributes.get(key):
+                pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+        if attributes:
+            pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+        return pattern
+
+    def _parse_malware_sample_object_attribute(self, malware_sample: Union[str, tuple]) -> str:
+        pattern = []
+        if isinstance(malware_sample, tuple):
+            malware_sample, data = malware_sample
+            pattern.append(self._create_content_ref_pattern(data))
+        filename, md5 = malware_sample.split('|')
+        pattern.append(self._create_content_ref_pattern(filename, 'x_misp_filename'))
+        pattern.append(self._create_content_ref_pattern(md5, 'hashes.MD5'))
+        pattern.append(self._mapping.malware_sample_additional_pattern_values)
+        return f"({' AND '.join(pattern)})"
 
     def _parse_mutex_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
@@ -2477,6 +2514,26 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             args.update(self._handle_observable_multiple_properties(attributes))
         return args
+
+    def _parse_lnk_args(self, attributes: dict) -> dict:
+        file_args = defaultdict(dict)
+        if attributes.get('filename'):
+            file_args['name'] = self._select_single_feature(
+                attributes, 'filename')
+        for hash_type in self._mapping.lnk_hash_types:
+            if attributes.get(hash_type):
+                feature = self._define_hash_type(hash_type)
+                value = self._select_single_feature(attributes, hash_type)
+                if feature not in file_args['hashes']:
+                    file_args['hashes'][feature] = value
+                else:
+                    attributes[hash_type] = [value]
+        for key, feature in self._mapping.lnk_object_mapping.items():
+            if attributes.get(key):
+                file_args[feature] = self._select_single_feature(attributes, key)
+        if attributes:
+            file_args.update(self._handle_observable_multiple_properties(attributes))
+        return file_args
 
     def _parse_mutex_args(self, attributes: dict) -> dict:
         attributes = self._extract_object_attributes(attributes)

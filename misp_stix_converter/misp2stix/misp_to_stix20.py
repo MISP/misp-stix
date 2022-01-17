@@ -613,36 +613,18 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             file_args['parent_directory_ref'] = str_index
             file_args['_valid_refs'][str_index] = 'directory'
             index += 1
-        if attributes.get('malware-sample'):
-            value = attributes.pop('malware-sample')
-            if isinstance(value, tuple):
-                args = self._create_malware_sample_args(*value)
-                str_index = str(index)
-                observable_object[str_index] = Artifact(**args)
-                file_args['content_ref'] = str_index
-                file_args['_valid_refs'][str_index] = 'artifact'
-                index += 1
-            else:
-                file_args.update(
-                    {
-                        'allow_custom': True,
-                        'x_misp_malware_sample': value
-                    }
-                )
+        if attributes.get('malware-sample') and isinstance(attributes['malware-sample'], tuple):
+            args = self._create_malware_sample_args(*attributes.pop('malware-sample'))
+            str_index = str(index)
+            observable_object[str_index] = Artifact(**args)
+            file_args['content_ref'] = str_index
+            file_args['_valid_refs'][str_index] = 'artifact'
+            index += 1
             if attributes.get('attachment'):
                 file_args.update(self._parse_custom_attachment(attributes.pop('attachment')))
-        elif attributes.get('attachment'):
-            value = attributes.pop('attachment')
-            if isinstance(value, tuple):
-                args = self._create_attachment_args(*value)
-                observable_object[str(index)] = Artifact(**args)
-            else:
-                file_args.update(
-                    {
-                        'allow_custom': True,
-                        'x_misp_attachment': value
-                    }
-                )
+        elif attributes.get('attachment') and isinstance(attributes['attachment'], tuple):
+            args = self._create_attachment_args(*attributes.pop('attachment'))
+            observable_object[str(index)] = Artifact(**args)
         if attributes:
             file_args.update(self._parse_file_args(attributes))
         return file_args, observable_object
@@ -692,6 +674,47 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             network_traffic_args.update(self._parse_ip_port_args(attributes))
         observable_object['0'] = NetworkTraffic(**network_traffic_args)
         self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_lnk_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            attributes = self._extract_multiple_object_attributes_with_data_escaped(
+                misp_object['Attribute'],
+                force_single=self._mapping.lnk_single_fields,
+                with_data=self._mapping.lnk_data_fields
+            )
+            pattern = self._parse_lnk_object_pattern(attributes)
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            attributes = self._extract_multiple_object_attributes_with_data(
+                misp_object['Attribute'],
+                force_single=self._mapping.lnk_single_fields,
+                with_data=self._mapping.lnk_data_fields
+            )
+            observable_object = {}
+            file_args = {}
+            index = 1
+            for feature in self._mapping.lnk_uuid_fields:
+                if attributes.get(feature):
+                    str_index = str(index)
+                    observable_object[str_index] = Directory(
+                        path=self._select_single_feature(
+                            attributes,
+                            feature
+                        )
+                    )
+                    file_args['parent_directory_ref'] = str_index
+                    file_args['_valid_refs'] = {str_index: 'directory'}
+                    index += 1
+                    break
+            if attributes.get('malware-sample') and isinstance(attributes['malware-sample'], tuple):
+                args = self._create_malware_sample_args(*attributes.pop('malware-sample'))
+                str_index = str(index)
+                observable_object[str_index] = Artifact(**args)
+                file_args['content_ref'] = str_index
+                file_args['_valid_refs'][str_index] = 'artifact'
+            file_args.update(self._parse_lnk_args(attributes))
+            observable_object['0'] = self._create_file_object(file_args)
+            self._handle_object_observable(misp_object, observable_object)
 
     def _parse_mutex_object_observable(self, misp_object: dict):
         mutex_args = self._parse_mutex_args(misp_object['Attribute'])

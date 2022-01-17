@@ -311,6 +311,7 @@ class Stix2Mapping:
             'image': '_parse_image_object',
             'ip-port': '_parse_ip_port_object',
             'legal-entity': '_parse_legal_entity_object',
+            'lnk': '_parse_lnk_object',
             'mutex': '_parse_mutex_object',
             'network-connection': '_parse_network_connection_object',
             'network-socket': '_parse_network_socket_object',
@@ -528,6 +529,41 @@ class Stix2Mapping:
         self.__legal_entity_single_fields = (
             'name',
             'description'
+        )
+        self.__lnk_data_fields = (
+            'malware-sample',
+        )
+        self.__lnk_hash_types = (
+            'md5',
+            'sha1',
+            'sha224',
+            'sha256',
+            'sha384',
+            'sha512',
+            'sha512/224',
+            'sha512/256',
+            'ssdeep',
+            'tlsh'
+        )
+        self.__lnk_object_mapping = Mapping(
+            **{
+                'lnk-access-time': 'atime',
+                'lnk-creation-time': 'ctime',
+                'lnk-modification-time': 'mtime',
+                'size-in-bytes': 'size'
+            }
+        )
+        lnk_single_fields = (
+            'lnk-access-time',
+            'lnk-creation-time',
+            'lnk-modification-time',
+            'malware-sample',
+            'size-in-bytes'
+        )
+        self.__lnk_single_fields = self.__lnk_hash_types + lnk_single_fields
+        self.__lnk_uuid_fields = (
+            'fullpath',
+            'path'
         )
         self.__network_connection_mapping = Mapping(
             features = Mapping(
@@ -896,6 +932,26 @@ class Stix2Mapping:
     @property
     def legal_entity_single_fields(self) -> tuple:
         return self.__legal_entity_single_fields
+
+    @property
+    def lnk_data_fields(self) -> tuple:
+        return self.__lnk_data_fields
+
+    @property
+    def lnk_hash_types(self) -> tuple:
+        return self.__lnk_hash_types
+
+    @property
+    def lnk_object_mapping(self) -> dict:
+        return self.__lnk_object_mapping
+
+    @property
+    def lnk_single_fields(self) -> tuple:
+        return self.__lnk_single_fields
+
+    @property
+    def lnk_uuid_fields(self) -> tuple:
+        return self.__lnk_uuid_fields
 
     @property
     def misp_identity_args(self) -> dict:
