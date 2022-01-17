@@ -48,6 +48,13 @@ class TestSTIX21Export(TestSTIX2Export):
             self.assertEqual(stix_object.spec_version, '2.1')
 
     @staticmethod
+    def _datetime_from_str(timestamp: str) -> datetime:
+        regex = '%Y-%m-%dT%H:%M:%S'
+        if '.' in timestamp:
+            regex = f'{regex}.%f'
+        return datetime.strptime(timestamp.split('+')[0], regex)
+
+    @staticmethod
     def _reorder_observable_objects(observables, ids):
         ordered_observables = []
         ordered_ids = []
@@ -2198,6 +2205,72 @@ class TestSTIX21Export(TestSTIX2Export):
             legal_entity.x_misp_logo['data'],
             misp_object['Attribute'][-1]['data'].replace('\\', '')
         )
+
+    def test_event_with_lnk_indicator_object(self):
+        event = get_event_with_lnk_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        filename, fullpath, md5, sha1, sha256, malware_sample, size_in_bytes, creation, modification, access = (attribute['value'] for attribute in attributes)
+        atime, ctime, mtime, name, directory, md5_pattern, sha1_pattern, sha256_pattern, artifact, size= self._reassemble_pattern(pattern[1:-1])
+        self.assertEqual(name, f"file:name = '{filename}'")
+        self.assertEqual(directory, f"file:parent_directory_ref.path = '{fullpath}'")
+        self.assertEqual(md5_pattern, f"file:hashes.MD5 = '{md5}'")
+        self.assertEqual(sha1_pattern, f"file:hashes.SHA1 = '{sha1}'")
+        self.assertEqual(sha256_pattern, f"file:hashes.SHA256 = '{sha256}'")
+        ms_data, ms_filename, ms_md5, mime_type, encryption, decryption = artifact.split(' AND ')
+        data = attributes[5]['data'].replace('\\', '')
+        self.assertEqual(ms_data, f"(file:content_ref.payload_bin = '{data}'")
+        filename, md5 = malware_sample.split('|')
+        self.assertEqual(ms_filename, f"file:content_ref.x_misp_filename = '{filename}'")
+        self.assertEqual(ms_md5, f"file:content_ref.hashes.MD5 = '{md5}'")
+        self.assertEqual(mime_type, f"file:content_ref.mime_type = 'application/zip'")
+        self.assertEqual(encryption, f"file:content_ref.encryption_algorithm = 'mime-type-indicated'")
+        self.assertEqual(decryption, f"file:content_ref.decryption_key = 'infected')")
+        self.assertEqual(size, f"file:size = '{size_in_bytes}'")
+        self.assertEqual(ctime, f"file:ctime = '{creation}'")
+        self.assertEqual(mtime, f"file:mtime = '{modification}'")
+        self.assertEqual(atime, f"file:atime = '{access}'")
+
+    def test_event_with_lnk_observable_object(self):
+        event = get_event_with_lnk_object()
+        misp_object = deepcopy(event['Event']['Object'][0])
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        filename, fullpath, md5, sha1, sha256, malware_sample, size_in_bytes, creation, modification, access = attributes
+        for grouping_ref, object_ref, observable in zip(grouping_refs, object_refs, observables):
+            self.assertTrue(grouping_ref == object_ref == observable.id)
+        file, directory, artifact = observables
+        self.assertEqual(file.type, 'file')
+        self.assertEqual(file.id, f"file--{misp_object['uuid']}")
+        self.assertEqual(file.name, filename['value'])
+        self.assertEqual(file.hashes['MD5'], md5['value'])
+        self.assertEqual(file.hashes['SHA-1'], sha1['value'])
+        self.assertEqual(file.hashes['SHA-256'], sha256['value'])
+        self.assertEqual(file.size, int(size_in_bytes['value']))
+        self.assertEqual(
+            file.ctime,
+            self._datetime_from_str(creation['value'])
+        )
+        self.assertEqual(
+            file.mtime,
+            self._datetime_from_str(modification['value'])
+        )
+        self.assertEqual(
+            file.atime,
+            self._datetime_from_str(access['value'])
+        )
+        self.assertEqual(directory.type, 'directory')
+        directory_id = f"directory--{fullpath['uuid']}"
+        self.assertEqual(directory.id, directory_id)
+        self.assertEqual(directory.path, fullpath['value'])
+        self.assertEqual(file.parent_directory_ref, directory_id)
+        artifact_id = f"artifact--{malware_sample['uuid']}"
+        self.assertEqual(artifact.type, 'artifact')
+        self.assertEqual(artifact.id, artifact_id)
+        self.assertEqual(artifact.payload_bin, malware_sample['data'])
+        self.assertEqual(artifact.mime_type, 'application/zip')
+        filename, md5 = malware_sample['value'].split('|')
+        self.assertEqual(artifact.x_misp_filename, filename)
+        self.assertEqual(artifact.hashes['MD5'], md5)
+        self.assertEqual(file.content_ref, artifact_id)
 
     def test_event_with_mutex_indicator_object(self):
         event = get_event_with_mutex_object()

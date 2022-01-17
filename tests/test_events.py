@@ -4070,6 +4070,75 @@ def get_event_with_legal_entity_object():
     return event
 
 
+def get_event_with_lnk_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        {
+            "name": "lnk",
+            "descrption": "LNK object describing a Windows LNK binary file (aka Windows shortcut)",
+            "meta-category": "file",
+            "uuid": "153ef8d5-9182-45ec-bf1c-5819932b9ab7",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "filename",
+                    "object_relation": "filename",
+                    "value": "oui"
+                },
+                {
+                    "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+                    "type": "text",
+                    "object_relation": "fullpath",
+                    "value": "/var/www/MISP/app/files/scripts/tmp"
+                },
+                {
+                    "type": "md5",
+                    "object_relation": "md5",
+                    "value": "8764605c6f388c89096b534d33565802"
+                },
+                {
+                    "type": "sha1",
+                    "object_relation": "sha1",
+                    "value": "46aba99aa7158e4609aaa72b50990842fd22ae86"
+                },
+                {
+                    "type": "sha256",
+                    "object_relation": "sha256",
+                    "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+                },
+                {
+                    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                    "type": "malware-sample",
+                    "object_relation": "malware-sample",
+                    "value": "oui|8764605c6f388c89096b534d33565802",
+                    "data": "UEsDBAoACQAAAPKLQ1AvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAA+dKOF7nSjhedXgLAAEEIQAAAAQhAAAA7ukeownnAQsmsimPVT3qvMUSCRqPjj3xfZpK3MTLpCrssX1AVtxZoMh3ucu5mCxQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAPKLQ1BAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAPnSjhe50o4XnV4CwABBCEAAAAEIQAAAFHTwHeSOtOjQMWS6+0aN1BLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAADyi0NQL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAA+dKOF51eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAADyi0NQQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAPnSjhedXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA=="
+                },
+                {
+                    "type": "size-in-bytes",
+                    "object_relation": "size-in-bytes",
+                    "value": "35"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "lnk-creation-time",
+                    "value": "2017-10-01T08:00:00"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "lnk-modification-time",
+                    "value": "2020-10-25T16:22:00"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "lnk-access-time",
+                    "value": "2021-01-01T00:00:00"
+                }
+            ]
+        }
+    ]
+    return event
+
+
 def get_event_with_mutex_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
