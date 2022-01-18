@@ -13,7 +13,6 @@ from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
 from typing import Generator, Optional, Tuple, Union
-from uuid import uuid4
 
 _label_fields = ('type', 'category', 'to_ids')
 _misp_time_fields = ('first_seen', 'last_seen')
