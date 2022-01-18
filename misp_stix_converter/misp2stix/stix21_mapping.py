@@ -110,11 +110,6 @@ class Stix21Mapping(Stix2Mapping):
             'ip-dst',
             'ip-src'
         )
-        self.__lnk_object_mapping = Mapping(
-            **{
-                'size-in-bytes': 'size'
-            }
-        )
         self.__lnk_time_fields = Mapping(
             **{
                 'lnk-access-time': 'atime',
@@ -266,10 +261,6 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def ip_port_uuid_fields(self) -> tuple:
         return self.__ip_port_uuid_fields
-
-    @property
-    def lnk_object_mapping(self) -> dict:
-        return self.__lnk_object_mapping
 
     @property
     def lnk_time_fields(self) -> dict:

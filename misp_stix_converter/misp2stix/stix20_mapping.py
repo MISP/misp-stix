@@ -50,11 +50,6 @@ class Stix20Mapping(Stix2Mapping):
                 'text': 'description'
             }
         )
-        self.__lnk_object_mapping = Mapping(
-            **{
-                'size-in-bytes': 'size'
-            }
-        )
         self.__network_socket_mapping = Mapping(
             features = Mapping(
                 **{
@@ -160,10 +155,6 @@ class Stix20Mapping(Stix2Mapping):
     @property
     def employee_object_mapping(self) -> dict:
         return self.__employee_object_mapping
-
-    @property
-    def lnk_object_mapping(self) -> dict:
-        return self.__lnk_object_mapping
 
     @property
     def malware_sample_additional_observable_values(self) -> dict:

@@ -554,9 +554,6 @@ class Stix2Mapping:
         )
         self.__lnk_object_mapping = Mapping(
             **{
-                'lnk-access-time': 'atime',
-                'lnk-creation-time': 'ctime',
-                'lnk-modification-time': 'mtime',
                 'size-in-bytes': 'size'
             }
         )
