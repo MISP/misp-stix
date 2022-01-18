@@ -1641,7 +1641,6 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(software.x_misp_certificate, certificate)
         self.assertEqual(software.x_misp_domain, domain)
 
-
     def test_event_with_asn_indicator_object(self):
         event = get_event_with_asn_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
