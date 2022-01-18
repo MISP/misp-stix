@@ -1616,6 +1616,32 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(note.x_misp_attachment['value'], attachment)
         self.assertEqual(note.x_misp_attachment['data'], misp_object['Attribute'][-1]['data'])
 
+    def test_event_with_android_app_indicator_object(self):
+        event = get_event_with_android_app_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        name, certificate, domain = (attribute['value'] for attribute in attributes)
+        name_pattern, cert_pattern, domain_pattern = pattern[1:-1].split(' AND ')
+        self.assertEqual(name_pattern, f"software:name = '{name}'")
+        self.assertEqual(cert_pattern, f"software:x_misp_certificate = '{certificate}'")
+        self.assertEqual(domain_pattern, f"software:x_misp_domain = '{domain}'")
+
+    def test_event_with_android_app_observable_object(self):
+        event = get_event_with_android_app_object()
+        misp_object = deepcopy(event['Event']['Object'][0])
+        attributes, grouping_refs, object_refs, observable = self._run_observable_from_object_tests(event)
+        software = observable[0]
+        object_ref = object_refs[0]
+        name, certificate, domain = (attribute['value'] for attribute in attributes)
+        self.assertEqual(object_ref, grouping_refs[0])
+        self.assertEqual(software.type, 'software')
+        software_id = f"software--{misp_object['uuid']}"
+        self.assertEqual(software_id, object_ref)
+        self.assertEqual(software.id, software_id)
+        self.assertEqual(software.name, name)
+        self.assertEqual(software.x_misp_certificate, certificate)
+        self.assertEqual(software.x_misp_domain, domain)
+
+
     def test_event_with_asn_indicator_object(self):
         event = get_event_with_asn_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)

@@ -3729,6 +3729,37 @@ def get_event_with_account_objects_with_attachment():
     return event
 
 
+def get_event_with_android_app_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        {
+            "name": "android-app",
+            "description": "Indicators related to an Android app",
+            "meta-category": "file",
+            "uuid": "02782ed5-b27f-4abc-8bae-efebe13a46dd",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "Facebook"
+                },
+                {
+                    "type": "sha1",
+                    "object_relation": "certificate",
+                    "value": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f"
+                },
+                {
+                    "type": "domain",
+                    "object_relation": "domain",
+                    "value": "facebook.com"
+                }
+            ]
+        }
+    ]
+    return event
+
+
 def get_event_with_annotation_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
