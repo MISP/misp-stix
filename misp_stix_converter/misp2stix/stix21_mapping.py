@@ -4,7 +4,6 @@
 from .. import Mapping
 from .stix2_mapping import Stix2Mapping
 from stix2.v21.common import TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED
-from stix2.v21.sdo import CustomObject
 
 
 class Stix21Mapping(Stix2Mapping):

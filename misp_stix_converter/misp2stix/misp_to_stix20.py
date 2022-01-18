@@ -6,8 +6,7 @@ from .stix20_mapping import Stix20Mapping
 from collections import defaultdict
 from datetime import datetime
 from stix2.properties import (DictionaryProperty, IDProperty, ListProperty,
-                              ObjectReferenceProperty,  ReferenceProperty,
-                              StringProperty, TimestampProperty)
+                              ReferenceProperty, StringProperty, TimestampProperty)
 from stix2.v20.bundle import Bundle
 from stix2.v20.observables import (Artifact, AutonomousSystem, Directory, DomainName,
     EmailAddress, EmailMessage, EmailMIMEComponent, File, IPv4Address, IPv6Address,
