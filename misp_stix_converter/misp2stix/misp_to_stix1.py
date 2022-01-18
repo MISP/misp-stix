@@ -70,6 +70,7 @@ from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
 from stix.ttp.victim_targeting import VictimTargeting
 from typing import Optional, Union
+from uuid import uuid5, UUID
 
 _FILE_SINGLE_ATTRIBUTES = (
     "attachment", "authentihash", "entropy", "imphash", "malware-sample", "md5",
@@ -214,16 +215,24 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
 
     def _parse_domain_ip_attribute(self, attribute: dict):
         domain, ip = attribute['value'].split('|')
-        domain_observable = self._create_domain_observable(domain, attribute['uuid'])
-        address_observable = self._create_address_observable(attribute['type'], ip, attribute['uuid'])
-        composite_object = ObservableComposition(
-            observables=[domain_observable, address_observable]
+        domain_observable = self._create_domain_observable(
+            domain,
+            attribute['uuid'],
+            alternative_uuid=uuid5(UUID(attribute['uuid']), domain)
         )
-        composite_object.operator = "AND"
-        observable = Observable(
-            id_=f"{self._orgname}:ObservableComposition-{attribute['uuid']}"
+        address_observable = self._create_address_observable(
+            attribute['type'],
+            ip,
+            attribute['uuid'],
+            alternative_uuid=uuid5(UUID(attribute['uuid']), ip)
         )
-        observable.observable_composition = composite_object
+        observable = self._create_observable_composition(
+            [
+                domain_observable,
+                address_observable
+            ],
+            attribute['uuid']
+        )
         self._handle_attribute(attribute, observable)
 
     def _parse_email_attachment(self, attribute: dict):
@@ -543,7 +552,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         attack_pattern.id_ = f"{self._orgname}:AttackPattern-{cluster['uuid']}"
         attack_pattern.title = cluster['value']
         attack_pattern.description = cluster['description']
-        if cluster['meta'].get('external_id'):
+        if cluster.get('meta', {}).get('external_id') is not None:
             external_id = cluster['meta']['external_id'][0]
             if external_id.startswith('CAPEC'):
                 attack_pattern.capec_id = external_id
@@ -591,7 +600,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         malware.title = cluster['value']
         if cluster.get('description'):
             malware.description = cluster['description']
-        if cluster['meta'].get('synonyms'):
+        if cluster.get('meta', {}).get('synonyms') is not None:
             for synonym in cluster['meta']['synonyms']:
                 malware.add_name(synonym)
         behavior.add_malware_instance(malware)
@@ -661,11 +670,12 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         vulnerability.id_ = f"{self._orgname}:Vulnerability-{cluster['uuid']}"
         vulnerability.title = cluster['value']
         vulnerability.description = cluster['description']
-        if cluster['meta'].get('aliases'):
-            vulnerability.cve_id = cluster['meta']['aliases'][0]
-        if cluster['meta'].get('refs'):
-            for reference in cluster['meta']['refs']:
-                vulnerability.add_reference(reference)
+        if cluster.get('meta') is not None:
+            if cluster['meta'].get('aliases'):
+                vulnerability.cve_id = cluster['meta']['aliases'][0]
+            if cluster['meta'].get('refs'):
+                for reference in cluster['meta']['refs']:
+                    vulnerability.add_reference(reference)
         exploit_target.add_vulnerability(vulnerability)
         ttp.add_exploit_target(exploit_target)
 
@@ -712,9 +722,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         address_object.address_value.condition = condition
         return address_object
 
-    def _create_address_observable(self, feature: str, value: str, uuid: str) -> Observable:
+    def _create_address_observable(self, feature: str, value: str, uuid: str, alternative_uuid: Optional[str] = None) -> Observable:
         address_object = self._create_address_object(feature, value)
-        observable = self._create_observable(address_object, uuid, 'Address')
+        observable = self._create_observable(address_object, uuid, 'Address', alternative_uuid)
         return observable
 
     def _create_artifact_object(self, data: BytesIO) -> Artifact:
@@ -759,9 +769,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         domain_object.value.condition = "Equals"
         return domain_object
 
-    def _create_domain_observable(self, domain: str, uuid: str) -> Observable:
+    def _create_domain_observable(self, domain: str, uuid: str, alternative_uuid: Optional[str] = None) -> Observable:
         domain_object = self._create_domain_object(domain)
-        observable = self._create_observable(domain_object, uuid, 'DomainName')
+        observable = self._create_observable(domain_object, uuid, 'DomainName', alternative_uuid)
         return observable
 
     @staticmethod
@@ -823,10 +833,20 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         mutex_object.name.condition = "Equals"
         return mutex_object
 
-    def _create_observable(self, stix_object: _OBSERVABLE_OBJECT_TYPES, attribute_uuid: str, feature: str) -> Observable:
+    def _create_observable(self, stix_object: _OBSERVABLE_OBJECT_TYPES, attribute_uuid: str, feature: str, alternative_uuid: Optional[str] = None) -> Observable:
         stix_object.parent.id_ = f"{self._orgname}:{feature}-{attribute_uuid}"
         observable = Observable(stix_object)
-        observable.id_ = f"{self._orgname}:Observable-{attribute_uuid}"
+        if alternative_uuid is None:
+            alternative_uuid = attribute_uuid
+        observable.id_ = f"{self._orgname}:Observable-{alternative_uuid}"
+        return observable
+
+    def _create_observable_composition(self, observables: list, uuid: str, name: Optional[str] = None) -> Observable:
+        object_type = 'ObservableComposition' if name is None else f'{name}_ObservableComposition'
+        observable_composition = ObservableComposition(observables=observables)
+        observable_composition.operator = 'AND'
+        observable = Observable(id_=f'{self._orgname}:{object_type}-{uuid}')
+        observable.observable_composition = observable_composition
         return observable
 
     @staticmethod
@@ -836,7 +856,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         port_object.port_value.condition = "Equals"
         return port_object
 
-    def _create_port_observable(self, port: str, uuid: str, feature: str = None) -> Observable:
+    def _create_port_observable(self, port: str, uuid: str, feature: Optional[str] = None) -> Observable:
         object_type = 'Port'
         if feature is not None:
             object_type = f'{feature}{object_type}'
@@ -890,9 +910,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         threat_actor.title = cluster['value']
         if cluster.get('description'):
             threat_actor.description = cluster['description']
-        meta = cluster['meta']
-        if meta.get('cfr-type-of-incident'):
-            intended_effect = meta['cfr-type-of-incident']
+        if cluster.get('meta', {}).get('cfr-type-of-incident') is not None:
+            intended_effect = cluster['meta']['cfr-type-of-incident']
             if isinstance(intended_effect, list):
                 for effect in intended_effect:
                     threat_actor.add_intended_effect(effect)
@@ -1004,10 +1023,13 @@ class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
         super().__init__(orgname, version)
         self._producer = self._create_information_source(orgname)
         self._identifier = 'attributes collection'
+        self._ids = set()
 
     def parse_json_content(self, filename):
         with open(filename, 'rt', encoding='utf-8') as f:
-            attributes = json.loads(f.read())['response']
+            attributes = json.loads(f.read())
+            if attributes.get('response') is not None:
+                attributes = attributes['response']
         self._stix_package = STIXPackage()
         if 'Attribute' in attributes:
             attributes = attributes['Attribute']
@@ -1123,7 +1145,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _generate_stix_objects(self):
         if self._misp_event.get('threat_level_id'):
-            threat_level = self._mapping.threat_level_mapping[int(self._misp_event['threat_level_id'])]
+            threat_level = self._mapping.threat_level_mapping[self._misp_event['threat_level_id']]
             self._add_journal_entry(f'Event Threat Level: {threat_level}')
         self._add_journal_entry('MISP Tag: misp:tool="MISP-STIX-Converter"')
         tags = self._handle_event_tags_and_galaxies()
@@ -1133,7 +1155,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             external_id = ExternalID(value=self._misp_event['id'], source='MISP Event')
             self._incident.add_external_id(external_id)
         if self._misp_event.get('analysis'):
-            status = self._mapping.status_mapping[int(self._misp_event['analysis'])]
+            status = self._mapping.status_mapping[self._misp_event['analysis']]
             self._incident.status = IncidentStatus(status)
         source = self._set_information_source()
         self._incident.information_source = self._create_information_source(source)
@@ -1448,8 +1470,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 observables.append(self._create_port_observable(*attribute))
         observable_composition = self._create_observable_composition(
             observables,
-            misp_object['name'],
-            misp_object['uuid']
+            misp_object['uuid'],
+            name=misp_object['name']
         )
         return observable_composition
 
@@ -1460,7 +1482,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         )
         email_object = EmailMessage()
         email_header = EmailHeader()
-        for feature in ('to', 'cc'):
+        for feature in ('to', 'cc', 'bcc'):
             if attributes.get(feature):
                 recipients = EmailRecipients()
                 for value in attributes.pop(feature):
@@ -1519,8 +1541,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             observables.append(file_observable)
             observable_composition = self._create_observable_composition(
                 observables,
-                misp_object['name'],
-                misp_object['uuid']
+                misp_object['uuid'],
+                name=misp_object['name']
             )
             return observable_composition
         return file_observable
@@ -1559,8 +1581,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             observables.append(file_observable)
             observable_composition = self._create_observable_composition(
                 observables,
-                misp_object['name'],
-                misp_object['uuid']
+                misp_object['uuid'],
+                name=misp_object['name']
             )
             return ids_list, observable_composition
         return ids_list, file_observable
@@ -1590,8 +1612,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 observables.append(self._create_hostname_observable(*attribute))
         observable_composition = self._create_observable_composition(
             observables,
-            misp_object['name'],
-            misp_object['uuid']
+            misp_object['uuid'],
+            name=misp_object['name']
         )
         return observable_composition
 
@@ -1827,8 +1849,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             observables.append(self._create_port_observable(*attributes['port']))
         observable_composition = self._create_observable_composition(
             observables,
-            misp_object['name'],
-            misp_object['uuid']
+            misp_object['uuid'],
+            name=misp_object['name']
         )
         return observable_composition
 
@@ -2116,13 +2138,6 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             timestamp=timestamp
         )
         return indicator
-
-    def _create_observable_composition(self, observables: list, name: str, uuid: str) -> Observable:
-        observable_composition = ObservableComposition(observables=observables)
-        observable_composition.operator = 'AND'
-        observable = Observable(id_=f'{self._orgname}:{name}_ObservableComposition-{uuid}')
-        observable.observable_composition = observable_composition
-        return observable
 
     @staticmethod
     def _create_related_threat_actor(ta_id: str, category: str, timestamp: Optional[datetime] = None) -> RelatedThreatActor:

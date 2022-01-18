@@ -62,7 +62,7 @@ def _handle_namespaces(namespace: str, orgname: str) -> tuple:
 
 def _stix_json_attributes_framing(stix_package: STIXPackage) -> tuple:
     header = {key: value for key, value in stix_package.to_dict().items() if key != 'observables'}
-    return f'{json.dumps(header)[:-1]}, ', '}'
+    return f'{json.dumps(header)[:-1]}, ', ', ', '}'
 
 
 def _stix_json_framing(stix_package: STIXPackage) -> tuple:
@@ -72,21 +72,25 @@ def _stix_json_framing(stix_package: STIXPackage) -> tuple:
     return header, ', ', ']}}'
 
 
-def _stix_package(orgname: str, version: str) -> tuple:
-    stix_package = STIXPackage()
+def _stix_package(orgname: str, version: str, uuid: Optional[str] = None) -> STIXPackage:
+    if uuid is None:
+        uuid = uuid4()
+    stix_package = STIXPackage(
+        id_=f'{orgname}:STIXPackage-{uuid}',
+        timestamp=datetime.datetime.now()
+    )
+    stix_package.version = version
     stix_header = STIXHeader()
     stix_header.title = f"Export from {orgname}'s MISP"
     stix_header.package_intents = 'Threat Report'
     stix_package.stix_header = stix_header
-    stix_package.version = version
-    stix_package.timestamp = datetime.datetime.now()
     return stix_package
 
 
 def _stix_xml_attributes_framing(stix_package: STIXPackage, namespaces: dict) -> tuple:
     s_stix = "</stix:STIX_Package>\n"
     header = stix_package.to_xml(auto_namespace=False, ns_dict=namespaces, schemaloc_dict=SCHEMALOC_DICT)
-    return f"{header.decode().replace(s_stix, '')}", s_stix
+    return f"{header.decode().replace(s_stix, '')}", '', s_stix
 
 
 def _stix_xml_framing(stix_package: STIXPackage, namespaces: dict) -> tuple:

@@ -4,16 +4,15 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix20_mapping import Stix20Mapping
 from collections import defaultdict
-from copy import deepcopy
 from datetime import datetime
 from stix2.properties import (DictionaryProperty, IDProperty, ListProperty,
-                              ObjectReferenceProperty,  ReferenceProperty,
-                              StringProperty, TimestampProperty)
+                              ReferenceProperty, StringProperty, TimestampProperty)
 from stix2.v20.bundle import Bundle
 from stix2.v20.observables import (Artifact, AutonomousSystem, Directory, DomainName,
     EmailAddress, EmailMessage, EmailMIMEComponent, File, IPv4Address, IPv6Address,
-    MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPEBinaryExt,
-    WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
+    MACAddress, Mutex, NetworkTraffic, Process, Software, URL, UserAccount,
+    WindowsPEBinaryExt, WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType,
+    X509Certificate)
 from stix2.v20.sdo import (AttackPattern, Campaign, CourseOfAction, CustomObject,
     Identity, Indicator, IntrusionSet, Malware, ObservedData, Report, ThreatActor,
     Tool, Vulnerability)
@@ -282,6 +281,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         }
         self._handle_attribute_observable(attribute, observable_object)
 
+    def _parse_github_username_attribute_observable(self, attribute: dict):
+        self._parse_custom_attribute(attribute)
+
     def _parse_hash_attribute_observable(self, attribute: dict):
         hash_type = self._define_hash_type(attribute['type'])
         file_args = {
@@ -376,7 +378,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 _valid_refs={'1': 'artifact'},
                 content_ref='1'
             ),
-            '1': self._create_artifact(attribute['data'])
+            '1': self._create_artifact(attribute['data'], malware_sample=True)
         }
         self._handle_attribute_observable(attribute, observable_object)
 
@@ -443,11 +445,21 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {'0': UserAccount(**account_args)}
         self._handle_object_observable(misp_object, observable_object)
 
+    def _parse_account_object_with_attachment_observable(self, misp_object: dict, account_type: str):
+        account_args = self._parse_account_with_attachment_args(misp_object['Attribute'], account_type)
+        observable_object = {'0': UserAccount(**account_args)}
+        self._handle_object_observable(misp_object, observable_object)
+
     def _parse_asn_object_observable(self, misp_object: dict):
         as_args = self._parse_AS_args(misp_object['Attribute'])
         observable_object = {
             '0': AutonomousSystem(**as_args)
         }
+        self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_cpe_asset_object_observable(self, misp_object: dict):
+        software_args = self._parse_cpe_asset_args(misp_object['Attribute'])
+        observable_object = {'0': Software(**software_args)}
         self._handle_object_observable(misp_object, observable_object)
 
     def _parse_credential_object_observable(self, misp_object: dict):
@@ -533,7 +545,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             )
             email_message_args['from_ref'] = str_index
             index += 1
-        for feature in ('to', 'cc'):
+        for feature in ('to', 'cc', 'bcc'):
             if attributes.get(feature):
                 references = []
                 display_names = self._parse_email_display_names(attributes, feature)
@@ -600,39 +612,39 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             file_args['parent_directory_ref'] = str_index
             file_args['_valid_refs'][str_index] = 'directory'
             index += 1
-        if attributes.get('malware-sample'):
-            value = attributes.pop('malware-sample')
-            if isinstance(value, tuple):
-                args = self._create_malware_sample_args(*value)
-                str_index = str(index)
-                observable_object[str_index] = Artifact(**args)
-                file_args['content_ref'] = str_index
-                file_args['_valid_refs'][str_index] = 'artifact'
-                index += 1
-            else:
-                file_args.update(
-                    {
-                        'allow_custom': True,
-                        'x_misp_malware_sample': value
-                    }
-                )
+        if attributes.get('malware-sample') and isinstance(attributes['malware-sample'], tuple):
+            args = self._create_malware_sample_args(*attributes.pop('malware-sample'))
+            str_index = str(index)
+            observable_object[str_index] = Artifact(**args)
+            file_args['content_ref'] = str_index
+            file_args['_valid_refs'][str_index] = 'artifact'
+            index += 1
             if attributes.get('attachment'):
                 file_args.update(self._parse_custom_attachment(attributes.pop('attachment')))
-        elif attributes.get('attachment'):
-            value = attributes.pop('attachment')
-            if isinstance(value, tuple):
-                args = self._create_attachment_args(*value)
-                observable_object[str(index)] = Artifact(**args)
-            else:
-                file_args.update(
-                    {
-                        'allow_custom': True,
-                        'x_misp_attachment': value
-                    }
-                )
+        elif attributes.get('attachment') and isinstance(attributes['attachment'], tuple):
+            args = self._create_attachment_args(*attributes.pop('attachment'))
+            observable_object[str(index)] = Artifact(**args)
         if attributes:
             file_args.update(self._parse_file_args(attributes))
         return file_args, observable_object
+
+    def _parse_image_object_observable(self, misp_object: dict):
+        artifact_args, attributes = self._parse_image_args(misp_object['Attribute'])
+        file_args = {}
+        if attributes.get('filename'):
+            file_args['name'] = attributes.get('filename')
+        if attributes:
+            file_args.update(self._handle_observable_multiple_properties(attributes))
+        if artifact_args is not None:
+            file_args['content_ref'] = '1'
+            file_args['_valid_refs'] = {'1': 'artifact'}
+            observable_object = {
+                '0': File(**file_args),
+                '1': Artifact(**artifact_args)
+            }
+            self._handle_object_observable(misp_object, observable_object)
+        else:
+            self._handle_object_observable(misp_object, {'0': File(**file_args)})
 
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes(
@@ -661,6 +673,47 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             network_traffic_args.update(self._parse_ip_port_args(attributes))
         observable_object['0'] = NetworkTraffic(**network_traffic_args)
         self._handle_object_observable(misp_object, observable_object)
+
+    def _parse_lnk_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            attributes = self._extract_multiple_object_attributes_with_data_escaped(
+                misp_object['Attribute'],
+                force_single=self._mapping.lnk_single_fields,
+                with_data=self._mapping.lnk_data_fields
+            )
+            pattern = self._parse_lnk_object_pattern(attributes)
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            attributes = self._extract_multiple_object_attributes_with_data(
+                misp_object['Attribute'],
+                force_single=self._mapping.lnk_single_fields,
+                with_data=self._mapping.lnk_data_fields
+            )
+            observable_object = {}
+            file_args = {}
+            index = 1
+            for feature in self._mapping.lnk_uuid_fields:
+                if attributes.get(feature):
+                    str_index = str(index)
+                    observable_object[str_index] = Directory(
+                        path=self._select_single_feature(
+                            attributes,
+                            feature
+                        )
+                    )
+                    file_args['parent_directory_ref'] = str_index
+                    file_args['_valid_refs'] = {str_index: 'directory'}
+                    index += 1
+                    break
+            if attributes.get('malware-sample') and isinstance(attributes['malware-sample'], tuple):
+                args = self._create_malware_sample_args(*attributes.pop('malware-sample'))
+                str_index = str(index)
+                observable_object[str_index] = Artifact(**args)
+                file_args['content_ref'] = str_index
+                file_args['_valid_refs'][str_index] = 'artifact'
+            file_args.update(self._parse_lnk_args(attributes))
+            observable_object['0'] = self._create_file_object(file_args)
+            self._handle_object_observable(misp_object, observable_object)
 
     def _parse_mutex_object_observable(self, misp_object: dict):
         mutex_args = self._parse_mutex_args(misp_object['Attribute'])
@@ -692,7 +745,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 str_index = str(index)
                 observable_object[str_index] = DomainName(value=attributes.pop(f'hostname-{feature}'))
                 network_traffic_args['_valid_refs'][str_index] = 'domain-name'
-                network_traffic[f'{feature}_ref'] = str_index
+                network_traffic_args[f'{feature}_ref'] = str_index
                 index += 1
         return network_traffic_args, observable_object
 
@@ -798,8 +851,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 
-    @staticmethod
-    def _create_artifact(content: str, filename: Optional[str] = None) -> Artifact:
+    def _create_artifact(self, content: str, filename: Optional[str] = None, malware_sample: Optional[bool] = False) -> Artifact:
         args = {'payload_bin': content}
         if filename is not None:
             args.update(
@@ -808,6 +860,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                     'x_misp_filename': filename
                 }
             )
+        if malware_sample:
+            args.update(self._mapping.malware_sample_additional_observable_values)
         return Artifact(**args)
 
     def _create_attack_pattern_from_galaxy(self, args: dict, cluster: dict) -> AttackPattern:
@@ -945,15 +999,6 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if ':' in address:
             return IPv6Address
         return IPv4Address
-
-    def _get_marking(self, marking: str) -> Union[str, None]:
-        try:
-            marking_definition = deepcopy(self._mapping.tlp_markings[marking])
-            self._markings[marking] = marking_definition
-            return marking_definition.id
-        except KeyError:
-            self._warning.append(f"Unknwon TLP tag: {marking}")
-        return
 
     def _parse_email_display_names(self, attributes: dict, feature: str) -> dict:
         display_feature = f'{feature}-display-name'

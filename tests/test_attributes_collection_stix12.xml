@@ -1,4 +1,4 @@
-<stix:STIX_Package 
+<stix:STIX_Package
 	xmlns:MISP="https://github.com/MISP/MISP"
 	xmlns:cyboxCommon="http://cybox.mitre.org/common-2"
 	xmlns:cybox="http://cybox.mitre.org/cybox-2"
@@ -96,14 +96,14 @@
             <indicator:Valid_Time_Position/>
             <indicator:Observable id="MISP:ObservableComposition-726f90e2-2ad6-44a2-b345-c05e55e850e5">
                 <cybox:Observable_Composition operator="AND">
-                    <cybox:Observable id="MISP:Observable-726f90e2-2ad6-44a2-b345-c05e55e850e5">
+                    <cybox:Observable id="MISP:Observable-452b469d-d113-5965-a755-b9ac0639301d">
                         <cybox:Object id="MISP:DomainName-726f90e2-2ad6-44a2-b345-c05e55e850e5">
                             <cybox:Properties xsi:type="DomainNameObj:DomainNameObjectType">
                                 <DomainNameObj:Value condition="Equals">circl.lu</DomainNameObj:Value>
                             </cybox:Properties>
                         </cybox:Object>
                     </cybox:Observable>
-                    <cybox:Observable id="MISP:Observable-726f90e2-2ad6-44a2-b345-c05e55e850e5">
+                    <cybox:Observable id="MISP:Observable-4ff5a10a-d54e-509f-9985-f3336c4f7fbb">
                         <cybox:Object id="MISP:Address-726f90e2-2ad6-44a2-b345-c05e55e850e5">
                             <cybox:Properties xsi:type="AddressObj:AddressObjectType" category="ipv4-addr" is_source="false" is_destination="true">
                                 <AddressObj:Address_Value condition="Equals">149.13.33.14</AddressObj:Address_Value>

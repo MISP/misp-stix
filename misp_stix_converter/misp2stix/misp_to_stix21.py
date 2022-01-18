@@ -5,26 +5,21 @@ import re
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix21_mapping import Stix21Mapping
 from collections import defaultdict
-from copy import deepcopy
 from datetime import datetime
 from stix2.properties import (DictionaryProperty, IDProperty, ListProperty,
-                              ObjectReferenceProperty, ReferenceProperty,
-                              StringProperty, TimestampProperty)
+                              ReferenceProperty, StringProperty, TimestampProperty)
 from stix2.v21.bundle import Bundle
 from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, DomainName,
     EmailAddress, EmailMessage, EmailMIMEComponent, File, IPv4Address, IPv6Address,
-    MACAddress, Mutex, NetworkTraffic, Process, URL, UserAccount, WindowsPEBinaryExt,
-    WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
+    MACAddress, Mutex, NetworkTraffic, Process, Software, URL, UserAccount,
+    WindowsPEBinaryExt, WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType,
+    X509Certificate)
 from stix2.v21.sdo import (AttackPattern, Campaign, CourseOfAction, CustomObject,
     Grouping, Identity, Indicator, IntrusionSet, Location, Malware, Note,
     ObservedData, Opinion, Report, ThreatActor, Tool, Vulnerability)
 from stix2.v21.sro import Relationship, Sighting
 from stix2.v21.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
-
-_OBSERVABLE_OBJECT_TYPES = Union[
-    AutonomousSystem
-]
 
 
 @CustomObject(
@@ -119,6 +114,13 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             self._resolve_objects()
             if self._objects_to_parse:
                 self._resolve_objects_to_parse()
+                if self._objects_to_parse.get('annotation'):
+                    for misp_object in self._objects_to_parse['annotation'].values():
+                        to_ids, annotation_object = misp_object
+                        if annotation_object.get('ObjectReference') is None or not self._annotates(annotation_object['ObjectReference']):
+                            self._parse_custom_object(annotation_object[1])
+                        else:
+                            self._parse_annotation_object(to_ids, annotation_object)
 
     def _handle_empty_object_refs(self, object_id: str, timestamp: datetime):
         note_args = {
@@ -321,6 +323,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         file_object = self._create_file(f"file--{attribute['uuid']}", attribute['value'])
         self._handle_attribute_observable(attribute, [file_object])
 
+    def _parse_github_username_attribute_observable(self, attribute: dict):
+        account_object = UserAccount(
+            id=f"user-account--{attribute['uuid']}",
+            account_type='github',
+            account_login=attribute['value']
+        )
+        self._handle_attribute_observable(attribute, [account_object])
+
     def _parse_hash_attribute_observable(self, attribute: dict):
         hash_type = self._define_hash_type(attribute['type'])
         file_args = {
@@ -425,10 +435,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 },
                 content_ref=artifact_id
             ),
-            Artifact(
-                id=artifact_id,
-                payload_bin=attribute['data']
-            )
+            self._create_artifact(artifact_id, attribute['data'], malware_sample=True)
         ]
         self._handle_attribute_observable(attribute, objects)
 
@@ -438,6 +445,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             name=attribute['value']
         )
         self._handle_attribute_observable(attribute, [mutex_object])
+
+    def _parse_patterning_language_attribute(self, attribute: dict):
+        indicator_args = {
+            'pattern_type': attribute['type']
+        }
+        self._handle_attribute_indicator(attribute, f"[{attribute['value']}]", indicator_args=indicator_args)
 
     def _parse_regkey_attribute_observable(self, attribute: dict):
         regkey_object = WindowsRegistryKey(
@@ -518,15 +531,76 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         account_object = UserAccount(**account_args)
         self._handle_object_observable(misp_object, [account_object])
 
+    def _parse_account_object_with_attachment_observable(self, misp_object: dict, account_type: str):
+        account_args = self._parse_account_with_attachment_args(misp_object['Attribute'], account_type)
+        account_object = UserAccount(**account_args)
+        self._handle_object_observable(misp_object, [account_object])
+
+    def _parse_annotation_object(self, to_ids: bool, misp_object: dict):
+        object_refs = []
+        for reference in misp_object['ObjectReference']:
+            for object_ref in self.object_refs:
+                if reference['referenced_uuid'] in object_ref:
+                    object_refs.append(object_ref)
+                    break
+        if not object_refs:
+            return self._parse_custom_object(misp_object)
+        note_id = getattr(self, self._id_parsing_function['object'])('note', misp_object)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        note_args = {
+            'id': note_id,
+            'created': timestamp,
+            'modified': timestamp,
+            'labels': self._create_object_labels(misp_object, to_ids=to_ids),
+            'object_refs': object_refs,
+            'created_by_ref': self.identity_id,
+            'interoperability': True
+        }
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            note_id,
+            timestamp
+        )
+        if markings:
+            self._handle_markings(note_args, markings)
+        attributes = self._extract_multiple_object_attributes_with_data(
+            misp_object['Attribute'],
+            force_single=self._mapping.annotation_single_fields,
+            with_data=self._mapping.annotation_data_fields
+        )
+        if attributes.get('text'):
+            note_args['content'] = attributes.pop('text')
+        if attributes:
+            note_args['allow_custom'] = True
+            for key, values in attributes.items():
+                feature = f"x_misp_{key.replace('-', '_')}"
+                if key in self._mapping.annotation_data_fields:
+                    note_args[feature] = self._handle_custom_data_field(values)
+                    continue
+                note_args[feature] = values[0] if isinstance(values, list) and len(values) == 1 else values
+        self._append_SDO(Note(**note_args))
+
     def _parse_asn_object_observable(self, misp_object: dict):
         as_args = self._parse_AS_args(misp_object['Attribute'])
         AS_object = AutonomousSystem(**as_args)
         self._handle_object_observable(misp_object, [AS_object])
 
+    def _parse_cpe_asset_object_observable(self, misp_object: dict):
+        software_args = self._parse_cpe_asset_args(misp_object['Attribute'])
+        software_object = Software(**software_args)
+        self._handle_object_observable(misp_object, [software_object])
+
     def _parse_credential_object_observable(self, misp_object: dict):
         credential_args = self._parse_credential_args(misp_object['Attribute'])
         user_object = UserAccount(**credential_args)
         self._handle_object_observable(misp_object, [user_object])
+
+    @staticmethod
+    def _parse_directory_ref(file_args: dict, objects: list, value: str, uuid: str):
+        directory_id = f'directory--{uuid}'
+        directory = Directory(id=directory_id, path=value)
+        objects.append(directory)
+        file_args['parent_directory_ref'] = directory_id
 
     def _parse_domain_ip_object_custom(self, attributes: dict) -> list:
         observable_objects, resolves_to_refs = self._parse_domainip_ip_attributes(attributes)
@@ -609,7 +683,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             )
             objects.append(email_address)
             email_message_args['from_ref'] = address_id
-        for feature in ('to', 'cc'):
+        for feature in ('to', 'cc', 'bcc'):
             if attributes.get(feature):
                 display_names = self._parse_email_display_names(attributes, feature)
                 references = []
@@ -667,10 +741,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         objects = []
         file_args = defaultdict(dict)
         if attributes.get('path'):
-            value, uuid = self._select_single_feature(attributes, 'path')
-            directory_id = f'directory--{uuid}'
-            objects.append(Directory(id=directory_id, path=value))
-            file_args['parent_directory_ref'] = directory_id
+            self._parse_directory_ref(
+                file_args,
+                objects,
+                *self._select_single_feature(
+                    attributes,
+                    'path'
+                )
+            )
         if attributes.get('malware-sample'):
             value = self._select_single_feature(attributes, 'malware-sample')
             if len(value) == 3:
@@ -719,6 +797,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 misp_object,
                 to_ids=self._fetch_ids_flag(misp_object['Attribute'])
             ),
+            'created_by_ref': self.identity_id,
             'interoperability': True
         }
         if misp_object.get('comment'):
@@ -740,6 +819,25 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if attributes:
             location_args.update(self._handle_observable_properties(attributes))
         self._append_SDO(Location(**location_args))
+
+    def _parse_image_object_observable(self, misp_object: dict):
+        file_args = {'id': f"file--{misp_object['uuid']}"}
+        artifact_args, attributes = self._parse_image_args(misp_object['Attribute'])
+        if attributes.get('filename'):
+            file_args['name'] = attributes.pop('filename')
+        if attributes:
+            file_args.update(self._handle_observable_multiple_properties(attributes))
+        if artifact_args is not None:
+            artifact_id = f"artifact--{misp_object['uuid']}"
+            artifact_args['id'] = artifact_id
+            file_args['content_ref'] = artifact_id
+            objects = [
+                File(**file_args),
+                Artifact(**artifact_args)
+            ]
+            self._handle_object_observable(misp_object, objects)
+        else:
+            self._handle_object_observable(misp_object, [File(**file_args)])
 
     def _parse_ip_port_object_observable(self, misp_object: dict):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(
@@ -769,6 +867,75 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             network_traffic_args.update(self._parse_ip_port_args(attributes))
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         self._handle_object_observable(misp_object, objects)
+
+    def _parse_lnk_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            attributes = self._extract_multiple_object_attributes_with_data_escaped(
+                misp_object['Attribute'],
+                force_single=self._mapping.lnk_single_fields,
+                with_data=self._mapping.lnk_data_fields
+            )
+            pattern = []
+            for key, feature in self._mapping.lnk_time_fields.items():
+                if attributes.get(key):
+                    pattern.append(f"file:{feature} = '{attributes.pop(key)}'")
+            pattern.extend(self._parse_lnk_object_pattern(attributes))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
+                misp_object['Attribute'],
+                with_uuid=self._mapping.lnk_uuid_fields,
+                with_data=self._mapping.lnk_data_fields
+            )
+            objects = []
+            file_args = {'id': f"file--{misp_object['uuid']}"}
+            if attributes.get('fullpath'):
+                self._parse_directory_ref(
+                    file_args,
+                    objects,
+                    *self._select_single_feature(
+                        attributes,
+                        'fullpath'
+                    )
+                )
+                if attributes.get('path'):
+                    attributes['path'] = attributes.pop('path')[0]
+            elif attributes.get('path'):
+                self._parse_directory_ref(
+                    file_args,
+                    objects,
+                    *self._select_single_feature(
+                        attributes,
+                        'path'
+                    )
+                )
+            if attributes.get('malware-sample'):
+                value = self._select_single_feature(attributes, 'malware-sample')
+                if len(value) == 3:
+                    value, data, uuid = value
+                    artifact_id = f'artifact--{uuid}'
+                    args = self._create_malware_sample_args(value, data)
+                    args['id'] = artifact_id
+                    objects.append(Artifact(**args))
+                    file_args['content_ref'] = artifact_id
+                else:
+                    file_args.update(
+                        {
+                            'allow_custom': True,
+                            'x_misp_malware_sample': value[0]
+                        }
+                    )
+            for key, feature in self._mapping.lnk_time_fields.items():
+                if attributes.get(key):
+                    file_args[feature] = self._datetime_from_str(
+                        self._select_single_feature(
+                            attributes,
+                            key
+                        )
+                    )
+            file_args.update(self._parse_lnk_args(attributes))
+            objects.insert(0, self._create_file_object(file_args))
+            self._handle_object_observable(misp_object, objects)
 
     def _parse_mutex_object_observable(self, misp_object: dict):
         mutex_args = self._parse_mutex_args(misp_object['Attribute'])
@@ -913,7 +1080,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 
-    def _create_artifact(self, artifact_id: str, content: str, filename: Optional[str] = None) -> Artifact:
+    def _create_artifact(self, artifact_id: str, content: str, filename: Optional[str] = None, malware_sample: Optional[bool] = False) -> Artifact:
         args = {'id': artifact_id, 'payload_bin': content}
         if filename is not None:
             args.update(
@@ -922,6 +1089,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     'x_misp_filename': filename
                 }
             )
+        if malware_sample:
+            args.update(self._mapping.malware_sample_additional_observable_values)
         return Artifact(**args)
 
     def _create_attack_pattern_from_galaxy(self, args: dict, cluster: dict) -> AttackPattern:
@@ -990,13 +1159,14 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     @staticmethod
     def _create_indicator(indicator_args: dict) -> Indicator:
-        indicator_args.update(
-            {
-                "spec_version": "2.1",
-                "pattern_type": "stix",
-                "pattern_version": "2.1",
-            }
-        )
+        indicator_args['spec_version'] = '2.1'
+        if indicator_args.get('pattern_type') is None:
+            indicator_args.update(
+                {
+                    "pattern_type": "stix",
+                    "pattern_version": "2.1",
+                }
+            )
         return Indicator(**indicator_args)
 
     @staticmethod
@@ -1081,19 +1251,17 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     ################################################################################
 
     @staticmethod
+    def _annotates(references: list) -> bool:
+        for reference in references:
+            if reference['relationship_type'] == 'annotates':
+                return True
+        return False
+
+    @staticmethod
     def _get_address_type(address: str) -> Union[IPv4Address, IPv6Address]:
         if ':' in address:
             return IPv6Address
         return IPv4Address
-
-    def _get_marking(self, marking: str) -> Union[str, None]:
-        try:
-            marking_definition = deepcopy(self._mapping.tlp_markings[marking])
-            self._markings[marking] = marking_definition
-            return marking_definition.id
-        except KeyError:
-            self._warning.append(f"Unknwon TLP tag: {marking}")
-        return
 
     def _parse_email_display_names(self, attributes: dict, feature: str) -> dict:
         display_feature = f'{feature}-display-name'

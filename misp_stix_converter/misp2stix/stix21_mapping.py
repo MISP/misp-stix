@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from .. import Mapping
 from .stix2_mapping import Stix2Mapping
 from stix2.v21.common import TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED
-from stix2.v21.sdo import CustomObject
 
 
 class Stix21Mapping(Stix2Mapping):
@@ -12,67 +12,130 @@ class Stix21Mapping(Stix2Mapping):
         v21_specific_attributes = {
             'email-message-id': '_parse_email_message_id_attribute'
         }
+        v21_specific_attributes.update(
+            dict.fromkeys(
+                [
+                    'sigma',
+                    'snort',
+                    'yara'
+                ],
+                '_parse_patterning_language_attribute'
+            )
+        )
         self._declare_attributes_mapping(updates=v21_specific_attributes)
+        artifact_values = {
+            "mime_type": "application/zip",
+            "encryption_algorithm": "mime-type-indicated",
+            "decryption_key": "infected"
+        }
+        pattern_values = (f"file:content_ref.{key} = '{value}'" for key, value in artifact_values.items())
+        self.__malware_sample_additional_observable_values = artifact_values
+        self.__malware_sample_additional_pattern_values = ' AND '.join(pattern_values)
+        self.__tlp_markings = Mapping(
+            **{
+                'tlp:white': TLP_WHITE,
+                'tlp:green': TLP_GREEN,
+                'tlp:amber': TLP_AMBER,
+                'tlp:red': TLP_RED
+            }
+        )
 
     def declare_objects_mapping(self):
         v21_specific_objects = {
+            'annotation': '_populate_objects_to_parse',
             'geolocation': '_parse_geolocation_object'
         }
         self._declare_objects_mapping(updates=v21_specific_objects)
-        self.__credential_object_mapping = {
-            'password': 'credential',
-            'username': 'user_id'
-        }
+        self.__annotation_data_fields = (
+            'attachment',
+        )
+        self.__annotation_single_fields = (
+            'attachment',
+            'text'
+        )
+        self.__credential_object_mapping = Mapping(
+            password = 'credential',
+            username = 'user_id'
+        )
         self.__domain_ip_uuid_fields = (
             'domain',
             'hostname',
             'ip'
         )
-        self.__email_object_mapping = {
-            'cc': 'cc_refs.value',
-            'email-body': 'body',
-            'from': 'from_ref.value',
-            'from-display-name': 'from_ref.display_name',
-            'message-id': 'message_id',
-            'reply-to': 'additional_header_fields.reply_to',
-            'send-date': 'date',
-            'subject': 'subject',
-            'to': 'to_refs.value',
-            'to-display-name': 'to_refs.display_name',
-            'x-mailer': 'additional_header_fields.x_mailer'
-        }
+        self.__email_object_mapping = Mapping(
+            **{
+                'bcc': 'bcc_refs.value',
+                'bcc-display-name': 'bcc_refs.display_name',
+                'cc': 'cc_refs.value',
+                'cc-display-name': 'cc_refs.display_name',
+                'email-body': 'body',
+                'from': 'from_ref.value',
+                'from-display-name': 'from_ref.display_name',
+                'message-id': 'message_id',
+                'reply-to': 'additional_header_fields.reply_to',
+                'send-date': 'date',
+                'subject': 'subject',
+                'to': 'to_refs.value',
+                'to-display-name': 'to_refs.display_name',
+                'x-mailer': 'additional_header_fields.x_mailer'
+            }
+        )
         self.__email_uuid_fields = (
             'attachment',
+            'bcc',
             'cc',
             'from',
             'screenshot',
             'to'
         )
+        self.__employee_object_mapping = Mapping(
+            **{
+                'email-address': 'contact_information',
+                'employee-type': 'roles',
+                'text': 'description'
+            }
+        )
         self.__file_uuid_fields = self.file_data_fields + ('path',)
-        self.__geolocation_object_mapping = {
-            'address': 'street_address',
-            'city': 'city',
-            'country': 'country',
-            'latitude': 'latitude',
-            'longitude': 'longitude',
-            'region': 'region',
-            'zipcode': 'postal_code'
-        }
+        self.__geolocation_object_mapping = Mapping(
+            address = 'street_address',
+            city = 'city',
+            country = 'country',
+            latitude = 'latitude',
+            longitude = 'longitude',
+            region = 'region',
+            zipcode = 'postal_code'
+        )
         self.__ip_port_uuid_fields = (
             'ip',
             'ip-dst',
             'ip-src'
         )
-        self.__network_socket_mapping = {
-            'features': {
-                'dst-port': 'dst_port',
-                'src-port': 'src_port'
-            },
-            'extension': {
-                'address-family': 'address_family',
-                'socket-type': 'socket_type'
+        self.__lnk_object_mapping = Mapping(
+            **{
+                'size-in-bytes': 'size'
             }
-        }
+        )
+        self.__lnk_time_fields = Mapping(
+            **{
+                'lnk-access-time': 'atime',
+                'lnk-creation-time': 'ctime',
+                'lnk-modification-time': 'mtime'
+            }
+        )
+        self.__network_socket_mapping = Mapping(
+            features = Mapping(
+                **{
+                    'dst-port': 'dst_port',
+                    'src-port': 'src_port'
+                }
+            ),
+            extension = Mapping(
+                **{
+                    'address-family': 'address_family',
+                    'socket-type': 'socket_type'
+                }
+            )
+        )
         self.__network_socket_single_fields = (
             'address-family',
             'dst-port',
@@ -90,23 +153,32 @@ class Stix21Mapping(Stix2Mapping):
             'ip-dst',
             'ip-src'
         )
+        self.__organization_object_mapping = Mapping(
+            description = 'description',
+            name = 'name',
+            role = 'roles'
+        )
         self.__parent_process_fields = (
             'parent-command-line',
             'parent-pid'
         )
-        self.__process_object_mapping = {
-            'features': {
-                'command-line': 'command_line',
-                'creation-time': 'created',
-                'current-directory': 'cwd',
-                'pid': 'pid'
-            },
-            'parent': {
-                'parent-command-line': 'command_line',
-                'parent-image': 'image_ref.name',
-                'parent-pid': 'pid'
-            }
-        }
+        self.__process_object_mapping = Mapping(
+            features = Mapping(
+                **{
+                    'command-line': 'command_line',
+                    'creation-time': 'created',
+                    'current-directory': 'cwd',
+                    'pid': 'pid'
+                }
+            ),
+            parent = Mapping(
+                **{
+                    'parent-command-line': 'command_line',
+                    'parent-image': 'image_ref.name',
+                    'parent-pid': 'pid'
+                }
+            )
+        )
         self.__process_single_fields = (
             'command-line',
             'creation-time',
@@ -124,38 +196,44 @@ class Stix21Mapping(Stix2Mapping):
             'parent-image',
             'parent-pid'
         )
-        self.__tlp_markings = {
-            'tlp:white': TLP_WHITE,
-            'tlp:green': TLP_GREEN,
-            'tlp:amber': TLP_AMBER,
-            'tlp:red': TLP_RED
-        }
-        self.__user_account_object_mapping = {
-            'features': {
-                'account-type': 'account_type',
-                'can_escalate_privs': 'can_escalate_privs',
-                'disabled': 'is_disabled',
-                'display-name': 'display_name',
-                'is_service_account': 'is_service_account',
-                'password': 'credential',
-                'privileged': 'is_privileged',
-                'user-id': 'user_id',
-                'username': 'account_login'
-            },
-            'extension': {
-                'group': 'groups',
-                'group-id': 'gid',
-                'home_dir': 'home_dir',
-                'shell': 'shell'
-            },
-            'timeline': {
-                'created': 'account_created',
-                'expires': 'account_expires',
-                'first_login': 'account_first_login',
-                'last_login': 'account_last_login',
-                'password_last_changed': 'credential_last_changed'
-            }
-        }
+        self.__user_account_object_mapping = Mapping(
+            features = Mapping(
+                **{
+                    'account-type': 'account_type',
+                    'can_escalate_privs': 'can_escalate_privs',
+                    'disabled': 'is_disabled',
+                    'display-name': 'display_name',
+                    'is_service_account': 'is_service_account',
+                    'password': 'credential',
+                    'privileged': 'is_privileged',
+                    'user-id': 'user_id',
+                    'username': 'account_login'
+                }
+            ),
+            extension = Mapping(
+                **{
+                    'group': 'groups',
+                    'group-id': 'gid',
+                    'home_dir': 'home_dir',
+                    'shell': 'shell'
+                }
+            ),
+            timeline = Mapping(
+                created = 'account_created',
+                expires = 'account_expires',
+                first_login = 'account_first_login',
+                last_login = 'account_last_login',
+                password_last_changed = 'credential_last_changed'
+            )
+        )
+
+    @property
+    def annotation_data_fields(self) -> tuple:
+        return self.__annotation_data_fields
+
+    @property
+    def annotation_single_fields(self) -> tuple:
+        return self.__annotation_single_fields
 
     @property
     def credential_object_mapping(self) -> dict:
@@ -174,6 +252,10 @@ class Stix21Mapping(Stix2Mapping):
         return self.__email_uuid_fields
 
     @property
+    def employee_object_mapping(self) -> dict:
+        return self.__employee_object_mapping
+
+    @property
     def file_uuid_fields(self) -> tuple:
         return self.__file_uuid_fields
 
@@ -186,6 +268,22 @@ class Stix21Mapping(Stix2Mapping):
         return self.__ip_port_uuid_fields
 
     @property
+    def lnk_object_mapping(self) -> dict:
+        return self.__lnk_object_mapping
+
+    @property
+    def lnk_time_fields(self) -> dict:
+        return self.__lnk_time_fields
+
+    @property
+    def malware_sample_additional_observable_values(self) -> dict:
+        return self.__malware_sample_additional_observable_values
+
+    @property
+    def malware_sample_additional_pattern_values(self) -> str:
+        return self.__malware_sample_additional_pattern_values
+
+    @property
     def network_socket_mapping(self) -> dict:
         return self.__network_socket_mapping
 
@@ -196,6 +294,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def network_traffic_uuid_fields(self) -> tuple:
         return self.__network_traffic_uuid_fields
+
+    @property
+    def organization_object_mapping(self) -> dict:
+        return self.__organization_object_mapping
 
     @property
     def parent_process_fields(self) -> tuple:

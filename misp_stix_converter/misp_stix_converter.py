@@ -14,17 +14,21 @@ from cybox.core.observable import Observables
 from mixbox import idgen
 from mixbox.namespaces import Namespace, register_namespace
 from pathlib import Path
-from stix.core import Campaigns, Indicators, STIXHeader, STIXPackage
+from stix.core import Campaigns, CoursesOfAction, Indicators, ThreatActors, STIXHeader, STIXPackage
 from stix.core.ttps import TTPs
 from stix2.base import STIXJSONEncoder
 from stix2.v20 import Bundle as Bundle_v20
 from stix2.v21 import Bundle as Bundle_v21
-from typing import List, TypedDict, Union
+from typing import List, Union
 from uuid import uuid4
 
-_default_namespace = 'https://github.com/MISP/MISP'
+_default_namespace = 'https://misp-project.org'
 _default_org = 'MISP'
 _files_type = Union[Path, str]
+_STIX1_default_format = 'xml'
+_STIX1_default_version = '1.1.1'
+_STIX1_valid_formats = ('json', 'xml')
+_STIX1_valid_versions = ('1.1.1', '1.2')
 
 
 ################################################################################
@@ -229,8 +233,15 @@ class AttributeCollectionHandler():
         return self.__features['ttps']['header']
 
 
-def misp_attribute_collection_to_stix1(*args: List[_files_type], in_memory: bool=False, namespace: str=_default_namespace, org: str=_default_org):
-    output_filename, return_format, version, *input_files = args
+def misp_attribute_collection_to_stix1(
+    output_filename: _files_type, *input_files: List[_files_type],
+    return_format: str=_STIX1_default_format, version: str=_STIX1_default_version,
+    in_memory: bool=False, namespace: str=_default_namespace, org: str=_default_org
+):
+    if return_format not in _STIX1_valid_formats:
+        return_format = _STIX1_default_format
+    if version not in _STIX1_valid_versions:
+        version = _STIX1_default_version
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
     parser = MISPtoSTIX1AttributesParser(org, version)
@@ -260,14 +271,14 @@ def misp_attribute_collection_to_stix1(*args: List[_files_type], in_memory: bool
         return _write_raw_stix(package, output_filename, namespace, org, return_format)
     current_path = Path(output_filename).parent.resolve()
     handler = AttributeCollectionHandler(return_format)
-    header, footer = stix1_attributes_framing(namespace, org, return_format, version)
+    header, separator, footer = stix1_attributes_framing(namespace, org, return_format, version)
     for input_file in input_files:
         parser.parse_json_content(input_file)
         current = parser.stix_package
         for feature in handler.features:
             values = getattr(current, feature)
             if values is not None and values:
-                content = globals()[f'_get_{return_format}_{feature}'](values)
+                content = globals()[f'_get_{feature}'](values, return_format)
                 if not content:
                     continue
                 filename = getattr(handler, feature)
@@ -297,8 +308,15 @@ def misp_attribute_collection_to_stix1(*args: List[_files_type], in_memory: bool
     return 1
 
 
-def misp_event_collection_to_stix1(*args: List[_files_type], in_memory: bool=False, namespace: str=_default_namespace, org: str=_default_org):
-    output_filename, return_format, version, *input_files = args
+def misp_event_collection_to_stix1(
+    output_filename: _files_type, *input_files: List[_files_type],
+    return_format: str=_STIX1_default_format, version: str=_STIX1_default_version,
+    in_memory: bool=False, namespace: str=_default_namespace, org: str=_default_org
+):
+    if return_format not in _STIX1_valid_formats:
+        return_format = _STIX1_default_format
+    if version not in _STIX1_valid_versions:
+        version = _STIX1_default_version
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
     parser = MISPtoSTIX1EventsParser(org, version)
@@ -314,12 +332,12 @@ def misp_event_collection_to_stix1(*args: List[_files_type], in_memory: bool=Fal
         return _write_raw_stix(package, output_filename, namespace, org, return_format)
     header, separator, footer = stix1_framing(namespace, org, return_format, version)
     parser.parse_json_content(input_files[0])
-    content = globals()[f'_get_{return_format}_events'](parser.stix_package)
+    content = _get_events(parser.stix_package, return_format)
     with open(output_filename, 'wt', encoding='utf-8') as f:
         f.write(f'{header}{content}')
     for filename in input_files[1:]:
         parser.parse_json_content(filename)
-        content = globals()[f'_get_{return_format}_events'](parser.stix_package)
+        content = _get_events(parser.stix_package, return_format)
         with open(output_filename, 'at', encoding='utf-8') as f:
             f.write(f'{separator}{content}')
     with open(output_filename, 'at', encoding='utf-8') as f:
@@ -494,55 +512,143 @@ def _update_namespaces():
 #                        STIX CONTENT WRITING FUNCTIONS                        #
 ################################################################################
 
-def _get_json_campaigns(campaigns: Campaigns) -> str:
-    return f"{', '.join(campaign.to_json() for campaign in campaigns.campaign)}, "
+def _format_xml_objects(objects: str, header_length=0, footer_length=0, to_replace='\n', replacement='\n    ') -> str:
+    if footer_length == 0:
+        return f'    {objects[header_length:].replace(to_replace, replacement)}\n'
+    return f'    {objects[header_length:-footer_length].replace(to_replace, replacement)}\n'
 
 
-def _get_json_events(package: STIXPackage) -> str:
+def _get_campaigns(campaigns: Campaigns, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        campaigns = campaigns.to_xml(include_namespaces=True).decode()
+        return _format_xml_objects(campaigns, header_length=21, footer_length=23)
+    return ', '.join(campaign.to_json() for campaign in campaigns.campaign)
+
+
+def _get_campaigns_footer(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    </stix:Campaigns>\n'
+    return ']'
+
+
+def _get_campaigns_header(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    <stix:Campaigns>\n'
+    return '"campaigns": ['
+
+
+def _get_courses_of_action(courses_of_action: CoursesOfAction, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        courses_of_action = courses_of_action.to_xml(include_namespaces=False).decode()
+        return _format_xml_objects(courses_of_action, header_length=27, footer_length=29)
+    return ', '.join(course_of_action.to_json() for course_of_action in courses_of_action.course_of_action)
+
+
+def _get_courses_of_action_footer(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    </stix:Courses_Of_Action>\n'
+    return ']'
+
+
+def _get_courses_of_action_header(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    <stix:Courses_Of_Action>\n'
+    return '"courses_of_action": ['
+
+
+def _get_events(package: STIXPackage, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        if package.related_packages is not None:
+            length = 96 + len(package.id_) + len(package.version)
+            return package.to_xml(include_namespaces=False).decode()[length:-82]
+        content = '\n            '.join(package.to_xml(include_namespaces=False).decode().split('\n'))
+        return f'            {content}\n'
     if package.related_packages is not None:
         return ', '.join(related_package.to_json() for related_package in package.related_packages)
     return json.dumps({'package': package.to_dict()})
 
 
-def _get_json_indicators(indicators: Indicators) -> str:
-    return f"{', '.join(indicator.to_json() for indicator in indicators.indicator)}, "
+def _get_indicators(indicators: Indicators, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        indicators = indicators.to_xml(include_namespaces=False).decode()
+        return _format_xml_objects(indicators, header_length=22, footer_length=24)
+    return f"{', '.join(indicator.to_json() for indicator in indicators.indicator)}"
 
 
-def _get_json_observables(observables: Observables) -> str:
-    return f"{', '.join(observable.to_json() for observable in observables.observables)}, "
+def _get_indicators_footer(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    </stix:Indicators>\n'
+    return ']'
 
 
-def _get_json_ttps(ttps: TTPs) -> str:
-    return f"{', '.join(ttp.to_json() for ttp in ttps.ttp)}, "
+def _get_indicators_header(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    <stix:Indicators>\n'
+    return '"indicators": ['
 
 
-def _get_xml_campaigns(campaigns: Campaigns) -> str:
-    content = '\n        '.join(line for campaign in campaigns.campaign for line in campaign.to_xml(include_namespaces=False).decode().split('\n')[:-1])
-    return f'        {content}\n'
+def _get_observables(observables: Observables, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        header_length = 20
+        for field in ('cybox_major_version', 'cybox_minor_version', 'cybox_update_version'):
+            if hasattr(observables, field) and getattr(observables, field) is not None:
+                header_length += len(field) + len(getattr(observables, field)) + 4
+        observables = observables.to_xml(include_namespaces=False).decode()
+        return _format_xml_objects(observables, header_length=header_length, footer_length=22)
+    return f"{', '.join(observable.to_json() for observable in observables.observables)}"
 
 
-def _get_xml_events(package: STIXPackage) -> str:
-    if package.related_packages is not None:
-        length = 96 + len(package.id_) + len(package.version)
-        return package.to_xml(include_namespaces=False).decode()[length:-82]
-    content = '\n            '.join(package.to_xml(include_namespaces=False).decode().split('\n'))
-    return f'            {content}\n'
+def _get_observables_footer(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    </stix:Observables>\n'
+    return ']'
 
 
-def _get_xml_indicators(indicators: Indicators) -> str:
-    content = '\n        '.join(line for indicator in indicators.indicator for line in indicator.to_xml(include_namespaces=False).decode().split('\n')[:-1])
-    return f'        {content}\n'
+def _get_observables_header(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        observables = Observables()
+        features = ('cybox_major_version', 'cybox_minor_version', 'cybox_update_version')
+        versions = ' '.join(f'{feature}="{getattr(observables, feature)}"' for feature in features)
+        return f'    <stix:Observables {versions}>\n'
+    return '"observables": ['
 
 
-def _get_xml_observables(observables: Observables) -> str:
-    if len(observables.observables) > 0:
-        content = '\n        '.join(line for observable in observables.observables for line in observable.to_xml(include_namespaces=False).decode().split('\n')[:-1])
-        return f"        {content.replace('ObservableType', 'Observable')}\n"
+def _get_threat_actors(threat_actors: ThreatActors, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        threat_actors = threat_actors.to_xml(include_namespaces=False).decode()
+        return _format_xml_objects(threat_actors, header_length=24, footer_length=26)
+    return ', '.join(threat_actor.to_json() for threat_actor in threat_actors.threat_actor)
 
 
-def _get_xml_ttps(ttps: TTPs) -> str:
-    content = '\n        '.join(line for ttp in ttps.ttp for line in ttp.to_xml(include_namespaces=False).decode().split('\n')[:-1])
-    return f'        {content}\n'
+def _get_threat_actors_footer(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    </stix:Threat_Actors>\n'
+    return ']'
+
+
+def _get_threat_actors_header(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    <stix:Threat_Actors>\n'
+    return '"threat_actors": ['
+
+
+def _get_ttps(ttps: TTPs, return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        ttps = ttps.to_xml(include_namespaces=False).decode()
+        return _format_xml_objects(ttps, header_length=16, footer_length=18)
+    return ', '.join(ttp.to_json() for ttp in ttps.ttp)
+
+
+def _get_ttps_footer(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    </stix:TTPs>\n'
+    return ']}'
+
+
+def _get_ttps_header(return_format: str = 'xml') -> str:
+    if return_format == 'xml':
+        return '    <stix:TTPs>\n'
+    return '"ttps": {"ttps": ['
 
 
 def _write_header(package: STIXPackage, filename: str, namespace: str, org: str, return_format: str) -> str:

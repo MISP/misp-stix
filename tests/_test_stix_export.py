@@ -8,6 +8,9 @@ from datetime import datetime
 from misp_stix_converter import MISPtoSTIX20Parser, MISPtoSTIX21Parser
 from pathlib import Path
 from stix.core import STIXPackage
+from uuid import uuid5, UUID
+
+_DEFAULT_ORGNAME = 'MISP'
 
 
 class TestCollectionSTIXExport(unittest.TestCase):
@@ -23,14 +26,47 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
     def _check_stix1_collection_export_results(self, to_test_name, reference_name):
         to_test = STIXPackage.from_xml(str(self._current_path / to_test_name)).to_dict()
         reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
-        for key in (key for key in reference.keys() if key not in ('id', 'timestamp')):
-            self.assertEqual(to_test[key], reference[key])
+        self.__recursive_feature_tests(reference, to_test, exclude=('id', 'timestamp'))
 
     def _check_stix1_export_results(self, to_test_name, reference_name):
         to_test = STIXPackage.from_xml(str(self._current_path / to_test_name)).to_dict()
         reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
-        for key in (key for key in reference.keys() if key != 'id'):
-            self.assertEqual(to_test[key], reference[key])
+        self.__recursive_feature_tests(reference, to_test, exclude=('id',))
+
+    def __check_observables(self, reference_observables, observables_to_test):
+        for reference_observable, observable_to_test in zip(reference_observables, observables_to_test):
+            print(reference_observable)
+            print(observable_to_test)
+            uuid = '-'.join(part for part in reference_observable['object']['id'].split('-')[1:])
+            print(uuid)
+            for key, value in reference_observable['object']['properties'].items():
+                if 'value' in key:
+                    uuid = uuid5(UUID(uuid), value['value'])
+                    break
+            print(uuid)
+            self.assertEqual(
+                reference_observable['id'],
+                f'{_DEFAULT_ORGNAME}:Observable-{uuid}'
+            )
+            self.assertEqual(reference_observable['id'], observable_to_test['id'])
+            self.__recursive_feature_tests(
+                reference_observable['object'],
+                observable_to_test['object']
+            )
+
+    def __recursive_feature_tests(self, reference, to_test, exclude=tuple()):
+        for key in (reference.keys() - exclude):
+            try:
+                self.assertEqual(reference[key], to_test[key])
+            except AssertionError:
+                if isinstance(reference[key], list):
+                    if key == 'observables':
+                        self.__check_observables(reference[key], to_test[key])
+                        continue
+                    for reference_value, value_to_test in zip(reference[key], to_test[key]):
+                        self.__recursive_feature_tests(reference_value, value_to_test, exclude=exclude)
+                else:
+                    self.__recursive_feature_tests(reference[key], to_test[key])
 
 
 class TestCollectionSTIX2Export(TestCollectionSTIXExport):
@@ -180,7 +216,7 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(vulnerability.id, uuid)
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
-        self._check_object_labels(misp_object, vulnerability.labels)
+        self._check_object_labels(misp_object, vulnerability.labels, to_ids=False)
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         self.assertEqual(vulnerability.modified, timestamp)
         cve, cvss, summary, created, published, references1, references2 = (attribute['value'] for attribute in misp_object['Attribute'])
@@ -368,8 +404,12 @@ class TestSTIX2Export(unittest.TestCase):
             self.assertEqual(custom_object.x_misp_comment, misp_object['comment'])
         for custom_attribute, attribute in zip(custom_object.x_misp_attributes, misp_object['Attribute']):
             for feature in ('type', 'object_relation', 'value'):
-                self.assertEqual(custom_attribute[feature], attribute[feature])
-            for feature in ('category', 'comment', 'to_ids', 'uuid'):
+                try:
+                    self.assertEqual(custom_attribute[feature], attribute[feature])
+                except AssertionError:
+                    if '(s)' in attribute[feature]:
+                        self.assertEqual(custom_attribute[feature], attribute[feature].replace('(s)', ''))
+            for feature in ('category', 'comment', 'data', 'to_ids', 'uuid'):
                 if attribute.get(feature):
                     self.assertEqual(custom_attribute[feature], attribute[feature])
 

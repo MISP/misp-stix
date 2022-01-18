@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from misp_stix_converter import (MISPtoSTIX1EventsParser, misp_attribute_collection_to_stix1,
                                  misp_event_collection_to_stix1, misp_to_stix1, stix1_framing)
 from pathlib import Path
+from uuid import uuid5, UUID
 from .test_events import *
 from ._test_stix_export import TestCollectionSTIX1Export
 
@@ -939,11 +940,20 @@ class TestStix1Export(unittest.TestCase):
         indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         observable = indicator.observable
         self.assertEqual(observable.id_, f"{_DEFAULT_ORGNAME}:ObservableComposition-{attribute['uuid']}")
-        domain_name, address = observable.observable_composition.observables
+        domain_observable, address_observable = observable.observable_composition.observables
+        attribute_uuid = attribute['uuid']
         domain, ip = attribute['value'].split('|')
-        domain_properties = self._check_observable_features(domain_name, attribute, 'DomainName')
+        self.assertEqual(domain_observable.id_, f'{_DEFAULT_ORGNAME}:Observable-{uuid5(UUID(attribute_uuid), domain)}')
+        domain_object = domain_observable.object_
+        self.assertEqual(domain_object.id_, f'{_DEFAULT_ORGNAME}:DomainName-{attribute_uuid}')
+        domain_properties = domain_object.properties
+        self.assertEqual(domain_properties._XSI_TYPE, 'DomainNameObjectType')
         self.assertEqual(domain_properties.value.value, domain)
-        address_properties = self._check_observable_features(address, attribute, 'Address')
+        self.assertEqual(address_observable.id_, f'{_DEFAULT_ORGNAME}:Observable-{uuid5(UUID(attribute_uuid), ip)}')
+        address_object = address_observable.object_
+        self.assertEqual(address_object.id_, f'{_DEFAULT_ORGNAME}:Address-{attribute_uuid}')
+        address_properties = address_object.properties
+        self.assertEqual(address_properties._XSI_TYPE, 'AddressObjectType')
         self.assertEqual(address_properties.address_value.value, ip)
         self._check_destination_address(address_properties)
 
@@ -1551,7 +1561,7 @@ class TestStix1Export(unittest.TestCase):
 
     def _test_event_with_custom_objects(self):
         event = get_event_with_custom_objects()
-        account, btc, person = deepcopy(event['Event']['Object'])
+        account, btc, person, report = deepcopy(event['Event']['Object'])
         orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
@@ -1578,21 +1588,22 @@ class TestStix1Export(unittest.TestCase):
             'Custom'
         )
         self._check_custom_properties(btc['Attribute'], btc_properties.custom_properties)
-        observable = incident.related_observables.observable[0]
-        self.assertEqual(observable.relationship, person['meta-category'])
-        properties = self._check_observable_features(observable.item, person, 'Custom')
-        self._check_custom_properties(person['Attribute'], properties.custom_properties)
+        person_observable, report_observable = incident.related_observables.observable
+        self.assertEqual(person_observable.relationship, person['meta-category'])
+        person_properties = self._check_observable_features(person_observable.item, person, 'Custom')
+        self._check_custom_properties(person['Attribute'], person_properties.custom_properties)
+        self.assertEqual(report_observable.relationship, report['meta-category'])
+        report_properties = self._check_observable_features(report_observable.item, report, 'Custom')
+        self._check_custom_properties(report['Attribute'], report_properties.custom_properties)
 
     def _test_event_with_domain_ip_object_indicator(self):
         event = get_event_with_domain_ip_object()
-        args = self._run_composition_from_indicator_object_tests(event)
-        observables, misp_object = args
+        observables, misp_object = self._run_composition_from_indicator_object_tests(event)
         self._check_domain_ip_observables(observables, misp_object['Attribute'])
 
     def _test_event_with_domain_ip_object_observable(self):
         event = get_event_with_domain_ip_object()
-        args = self._run_composition_from_observable_object_tests(event)
-        observables, misp_object = args
+        observables, misp_object = self._run_composition_from_observable_object_tests(event)
         self._check_domain_ip_observables(observables, misp_object['Attribute'])
 
     def _test_event_with_email_object_indicator(self):
@@ -2596,9 +2607,26 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         reference_name = f'{name}_stix11.xml'
         output_file = self._current_path / to_test_name
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_attribute_collection_to_stix1(output_file, 'xml', '1.1.1', *input_files, in_memory=True), 1)
+        self.assertEqual(
+            misp_attribute_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.1.1',
+                in_memory=True
+            ),
+            1
+        )
         self._check_stix1_export_results(to_test_name, reference_name)
-        self.assertEqual(misp_attribute_collection_to_stix1(output_file, 'xml', '1.1.1', *input_files), 1)
+        self.assertEqual(
+            misp_attribute_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.1.1'
+            ),
+            1
+        )
         self._check_stix1_export_results(to_test_name, reference_name)
 
     def test_attribute_collection_export_12(self):
@@ -2607,9 +2635,26 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         reference_name = f'{name}_stix12.xml'
         output_file = self._current_path / to_test_name
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_attribute_collection_to_stix1(output_file, 'xml', '1.2', *input_files, in_memory=True), 1)
+        self.assertEqual(
+            misp_attribute_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.2',
+                in_memory=True
+            ),
+            1
+        )
         self._check_stix1_export_results(to_test_name, reference_name)
-        self.assertEqual(misp_attribute_collection_to_stix1(output_file, 'xml', '1.2', *input_files), 1)
+        self.assertEqual(
+            misp_attribute_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.2'
+            ),
+            1
+        )
         self._check_stix1_export_results(to_test_name, reference_name)
 
     def test_event_collection_export_11(self):
@@ -2618,9 +2663,26 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         reference_name = f'{name}_stix11.xml'
         output_file = self._current_path / to_test_name
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_event_collection_to_stix1(output_file, 'xml', '1.1.1', *input_files), 1)
+        self.assertEqual(
+            misp_event_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.1.1'
+            ),
+            1
+        )
         self._check_stix1_collection_export_results(to_test_name, reference_name)
-        self.assertEqual(misp_event_collection_to_stix1(output_file, 'xml', '1.1.1', *input_files, in_memory=True), 1)
+        self.assertEqual(
+            misp_event_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.1.1',
+                in_memory=True
+            ),
+            1
+        )
         self._check_stix1_collection_export_results(to_test_name, reference_name)
 
     def test_event_collection_export_12(self):
@@ -2629,9 +2691,26 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
         reference_name = f'{name}_stix12.xml'
         output_file = self._current_path / to_test_name
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_event_collection_to_stix1(output_file, 'xml', '1.2', *input_files), 1)
+        self.assertEqual(
+            misp_event_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.2'
+            ),
+            1
+        )
         self._check_stix1_collection_export_results(to_test_name, reference_name)
-        self.assertEqual(misp_event_collection_to_stix1(output_file, 'xml', '1.2', *input_files, in_memory=True), 1)
+        self.assertEqual(
+            misp_event_collection_to_stix1(
+                output_file,
+                *input_files,
+                return_format='xml',
+                version='1.2',
+                in_memory=True
+            ),
+            1
+        )
         self._check_stix1_collection_export_results(to_test_name, reference_name)
 
     def test_event_export_11(self):
