@@ -296,6 +296,7 @@ class Stix2Mapping:
 
     def _declare_objects_mapping(self, updates: Optional[dict]=None):
         _objects_mapping = {
+            'android-app': '_parse_android_app_object',
             'asn': '_parse_asn_object',
             'attack-pattern': '_parse_attack_pattern_object',
             'course-of-action': '_parse_course_of_action_object',
@@ -342,6 +343,12 @@ class Stix2Mapping:
             "AF_INET6",
             "AF_IRDA",
             "AF_BTH"
+        )
+        self.__android_app_object_mapping = Mapping(
+            name = 'name'
+        )
+        self.__android_app_single_fields = (
+            'name',
         )
         self.__as_single_fields = (
             'asn',
@@ -547,9 +554,6 @@ class Stix2Mapping:
         )
         self.__lnk_object_mapping = Mapping(
             **{
-                'lnk-access-time': 'atime',
-                'lnk-creation-time': 'ctime',
-                'lnk-modification-time': 'mtime',
                 'size-in-bytes': 'size'
             }
         )
@@ -776,6 +780,14 @@ class Stix2Mapping:
     @property
     def address_family_enum_list(self) -> tuple:
         return self.__address_family_enum_list
+
+    @property
+    def android_app_object_mapping(self) -> dict:
+        return self.__android_app_object_mapping
+
+    @property
+    def android_app_single_fields(self) -> tuple:
+        return self.__android_app_single_fields
 
     @property
     def as_single_fields(self) -> tuple:
