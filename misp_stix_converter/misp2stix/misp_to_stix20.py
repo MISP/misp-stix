@@ -445,6 +445,11 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable_object = {'0': UserAccount(**account_args)}
         self._handle_object_observable(misp_object, observable_object)
 
+    def _parse_android_app_object_observable(self, misp_object: dict):
+        software_args = self._parse_android_app_args(misp_object['Attribute'])
+        observable_object = {'0': Software(**software_args)}
+        self._handle_object_observable(misp_object, observable_object)
+
     def _parse_account_object_with_attachment_observable(self, misp_object: dict, account_type: str):
         account_args = self._parse_account_with_attachment_args(misp_object['Attribute'], account_type)
         observable_object = {'0': UserAccount(**account_args)}

@@ -580,6 +580,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 note_args[feature] = values[0] if isinstance(values, list) and len(values) == 1 else values
         self._append_SDO(Note(**note_args))
 
+    def _parse_android_app_object_observable(self, misp_object: dict):
+        software_args = self._parse_android_app_args(misp_object['Attribute'])
+        software_args['id'] = f"software--{misp_object['uuid']}"
+        software_object = Software(**software_args)
+        self._handle_object_observable(misp_object, [software_object])
+
     def _parse_asn_object_observable(self, misp_object: dict):
         as_args = self._parse_AS_args(misp_object['Attribute'])
         AS_object = AutonomousSystem(**as_args)

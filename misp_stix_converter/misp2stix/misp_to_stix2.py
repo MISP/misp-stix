@@ -1036,6 +1036,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_account_object_with_attachment_observable(misp_object, name)
 
+    def _parse_android_app_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'software'
+            attributes = self._extract_multiple_object_attributes_escaped(
+                misp_object['Attribute'],
+                force_single=self._mapping.android_app_single_fields
+            )
+            pattern = []
+            for key, feature in self._mapping.android_app_object_mapping.items():
+                if attributes.get(key):
+                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            if attributes:
+                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_android_app_object_observable(misp_object)
+
     def _parse_asn_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'autonomous-system'
@@ -2388,6 +2405,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             account_args.update(self._handle_observable_multiple_properties_with_data(attributes, name))
         return account_args
+
+    def _parse_android_app_args(self, attributes: list) -> dict:
+        attributes = self._extract_multiple_object_attributes(
+            attributes,
+            force_single=self._mapping.android_app_single_fields
+        )
+        software_args = {}
+        for key, feature in self._mapping.android_app_object_mapping.items():
+            if attributes.get(key):
+                software_args[feature] = attributes.pop(key)
+        if attributes:
+            software_args.update(self._handle_observable_multiple_properties(attributes))
+        return software_args
 
     def _parse_AS_args(self, attributes: list) -> dict:
         attributes = self._extract_multiple_object_attributes(
