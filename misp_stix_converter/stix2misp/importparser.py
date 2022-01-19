@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
-from pymisp import MISPEvent
+from collections import defaultdict
 
 
-class ImportParser():
+class STIXtoMISPParser:
     def __init__(self):
-        self.misp_event = MISPEvent()
-        self.galaxies = {}
-        self.tags = set()
+        self.__errors = defaultdict(list)
+        self.__warnings = defaultdict(set)
 
-    def save_file(self):
-        event = self.misp_event.to_json()
-        with open(self.outputname, 'wt', encoding='utf-8') as f:
-            f.write(event)
+    @property
+    def errors(self) -> dict:
+        return self.__errors
+
+    @property
+    def warnings(self) -> set:
+        return self.__wargnings
