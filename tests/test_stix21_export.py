@@ -15,6 +15,10 @@ class TestSTIX21Export(TestSTIX2Export):
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
 
+    def _assert_multiple_equal(self, reference, *elements):
+        for element in elements:
+            self.assertEqual(reference, element)
+
     def _check_bundle_features(self, length):
         bundle = self.parser.bundle
         self.assertEqual(bundle.type, 'bundle')
@@ -319,7 +323,7 @@ class TestSTIX21Export(TestSTIX2Export):
                 observable_id
             )
         attribute_values = tuple(attribute['value'] for attribute in attributes)
-        object_refs = tuple(observed_data['object_refs'][0] for observed_data in observed_datas)
+        object_refs = tuple(object_ref for observed_data in observed_datas for object_ref in observed_data['object_refs'])
         return attribute_values, object_ids, object_refs, observables
 
     ################################################################################
@@ -490,7 +494,8 @@ class TestSTIX21Export(TestSTIX2Export):
     def test_embedded_indicator_attribute_galaxy(self):
         event = get_embedded_indicator_attribute_galaxy()
         orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
+        attribute = deepcopy(event['Event']['Attribute'][0])
+        event_galaxy = deepcopy(event['Event']['Galaxy'][0])
         self.parser.parse_misp_event(event)
         stix_objects = self._check_bundle_features(8)
         self._check_spec_versions(stix_objects)
@@ -505,10 +510,27 @@ class TestSTIX21Export(TestSTIX2Export):
         object_refs = self._check_grouping_features(*args)
         ap_ref, coa_ref, indicator_ref, malware_ref, apr_ref, coar_ref = object_refs
         ap_relationship, coa_relationship = relationships
-        self.assertEqual(attack_pattern.id, ap_ref)
-        self.assertEqual(course_of_action.id, coa_ref)
-        self.assertEqual(indicator.id, indicator_ref)
-        self.assertEqual(malware.id, malware_ref)
+        ap_galaxy, coa_galaxy = attribute['Galaxy']
+        self._assert_multiple_equal(
+            attack_pattern.id,
+            ap_ref,
+            f"attack-pattern--{ap_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
+        self._assert_multiple_equal(
+            course_of_action.id,
+            coa_ref,
+            f"course-of-action--{coa_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
+        self._assert_multiple_equal(
+            indicator.id,
+            indicator_ref,
+            f"indicator--{attribute['uuid']}"
+        )
+        self._assert_multiple_equal(
+            malware.id,
+            malware_ref,
+            f"malware--{event_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
         self.assertEqual(ap_relationship.id, apr_ref)
         self.assertEqual(coa_relationship.id, coar_ref)
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
@@ -518,7 +540,8 @@ class TestSTIX21Export(TestSTIX2Export):
     def test_embedded_non_indicator_attribute_galaxy(self):
         event = get_embedded_non_indicator_attribute_galaxy()
         orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
+        attribute = deepcopy(event['Event']['Attribute'][0])
+        event_coa_galaxy, malware_galaxy = deepcopy(event['Event']['Galaxy'])
         self.parser.parse_misp_event(event)
         stix_objects = self._check_bundle_features(8)
         self._check_spec_versions(stix_objects)
@@ -533,10 +556,28 @@ class TestSTIX21Export(TestSTIX2Export):
         object_refs = self._check_grouping_features(*args)
         ap_ref, coa_ref, vulnerability_ref, malware_ref, apr_ref, coar_ref = object_refs
         ap_relationship, coa_relationship = relationships
-        self.assertEqual(attack_pattern.id, ap_ref)
-        self.assertEqual(course_of_action.id, coa_ref)
-        self.assertEqual(vulnerability.id, vulnerability_ref)
-        self.assertEqual(malware.id, malware_ref)
+        ap_galaxy, coa_galaxy = attribute['Galaxy']
+        self._assert_multiple_equal(
+            attack_pattern.id,
+            ap_ref,
+            f"attack-pattern--{ap_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
+        self._assert_multiple_equal(
+            course_of_action.id,
+            coa_ref,
+            f"course-of-action--{event_coa_galaxy['GalaxyCluster'][0]['uuid']}",
+            f"course-of-action--{coa_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
+        self._assert_multiple_equal(
+            vulnerability.id,
+            vulnerability_ref,
+            f"vulnerability--{attribute['uuid']}"
+        )
+        self._assert_multiple_equal(
+            malware.id,
+            malware_ref,
+            f"malware--{malware_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
         self.assertEqual(ap_relationship.id, apr_ref)
         self.assertEqual(coa_relationship.id, coar_ref)
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
@@ -546,7 +587,8 @@ class TestSTIX21Export(TestSTIX2Export):
     def test_embedded_observable_attribute_galaxy(self):
         event = get_embedded_observable_attribute_galaxy()
         orgc = event['Event']['Orgc']
-        attribute = event['Event']['Attribute'][0]
+        attribute = deepcopy(event['Event']['Attribute'][0])
+        event_galaxy = deepcopy(event['Event']['Galaxy'][0])
         self.parser.parse_misp_event(event)
         stix_objects = self._check_bundle_features(7)
         self._check_spec_versions(stix_objects)
@@ -560,10 +602,26 @@ class TestSTIX21Export(TestSTIX2Export):
         )
         object_refs = self._check_grouping_features(*args)
         ap_ref, od_ref, as_ref, malware_ref, relationship_ref = object_refs
-        self.assertEqual(attack_pattern.id, ap_ref)
-        self.assertEqual(observed_data.id, od_ref)
-        self.assertEqual(autonomous_system.id, as_ref)
-        self.assertEqual(malware.id, malware_ref)
+        self._assert_multiple_equal(
+            attack_pattern.id,
+            ap_ref,
+            f"attack-pattern--{attribute['Galaxy'][0]['GalaxyCluster'][0]['uuid']}"
+        )
+        self._assert_multiple_equal(
+            observed_data.id,
+            od_ref,
+            f"observed-data--{attribute['uuid']}"
+        )
+        self._assert_multiple_equal(
+            autonomous_system.id,
+            as_ref,
+            f"autonomous-system--{attribute['uuid']}"
+        )
+        self._assert_multiple_equal(
+            malware.id,
+            malware_ref,
+            f"malware--{event_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
         self.assertEqual(relationship.id, relationship_ref)
         self._check_relationship_features(
             relationship,
@@ -581,11 +639,16 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_as_observable_attribute(self):
         event = get_event_with_as_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
         object_ref = object_refs[0]
         AS = observable[0]
         self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(AS.id, object_ref)
+        self._assert_multiple_equal(
+            AS.id,
+            object_ref,
+            f"autonomous-system--{attribute['uuid']}"
+        )
         self.assertEqual(AS.type, 'autonomous-system')
         number = self._parse_AS_value(attribute_value)
         self.assertEqual(AS.number, number)
@@ -600,20 +663,28 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_attachment_observable_attribute(self):
         event = get_event_with_attachment_attribute()
-        data = event['Event']['Attribute'][0]['data']
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
         file_id, artifact_id = grouping_refs
         file_ref, artifact_ref = object_refs
         file_object, artifact_object = observable
-        self.assertEqual(file_ref, file_id)
-        self.assertEqual(file_object.id, file_ref)
+        self._assert_multiple_equal(
+            file_object.id,
+            file_ref,
+            file_id,
+            f"file--{attribute['uuid']}"
+        )
         self.assertEqual(file_object.type, 'file')
         self.assertEqual(file_object.name, attribute_value)
-        self.assertEqual(file_object.content_ref, artifact_id)
-        self.assertEqual(artifact_ref, artifact_id)
-        self.assertEqual(artifact_object.id, artifact_ref)
+        self._assert_multiple_equal(
+            file_object.content_ref,
+            artifact_object.id,
+            artifact_id,
+            artifact_ref,
+            f"artifact--{attribute['uuid']}"
+        )
         self.assertEqual(artifact_object.type, 'artifact')
-        self.assertEqual(artifact_object.payload_bin, data)
+        self.assertEqual(artifact_object.payload_bin, attribute['data'])
 
     def test_event_with_campaign_name_attribute(self):
         event = get_event_with_campaign_name_attribute()
@@ -672,11 +743,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_domain_observable_attribute(self):
         event = get_event_with_domain_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         domain = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(domain.id, object_ref)
+        self._assert_multiple_equal(
+            domain.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"domain-name--{attribute['uuid']}"
+        )
         self.assertEqual(domain.type, 'domain-name')
         self.assertEqual(domain.value, attribute_value)
 
@@ -690,18 +765,27 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_domain_ip_observable_attribute(self):
         event = get_event_with_domain_ip_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
         domain_value, ip_value = attribute_value.split('|')
         domain_id, address_id = grouping_refs
         domain_ref, address_ref = object_refs
         domain, address = observable
-        self.assertEqual(domain_ref, domain_id)
-        self.assertEqual(domain.id, domain_ref)
+        self._assert_multiple_equal(
+            domain.id,
+            domain_id,
+            domain_ref,
+            f"domain-name--{attribute['uuid']}"
+        )
         self.assertEqual(domain.type, 'domain-name')
         self.assertEqual(domain.value, domain_value)
-        self.assertEqual(domain.resolves_to_refs, [address_id])
-        self.assertEqual(address_ref, address_id)
-        self.assertEqual(address.id, address_ref)
+        self._assert_multiple_equal(
+            domain.resolves_to_refs[0],
+            address.id,
+            address_id,
+            address_ref,
+            f"ipv4-addr--{attribute['uuid']}"
+        )
         self.assertEqual(address.type, 'ipv4-addr')
         self.assertEqual(address.value, ip_value)
 
@@ -712,19 +796,28 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_email_attachment_observable_attribute(self):
         event = get_event_with_email_attachment_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
         email_id, file_id = grouping_refs
         email_ref, file_ref = object_refs
         email, file = observable
-        self.assertEqual(email_ref, email_id)
-        self.assertEqual(email.id, email_ref)
+        self._assert_multiple_equal(
+            email.id,
+            email_id,
+            email_ref,
+            f"email-message--{attribute['uuid']}"
+        )
         self.assertEqual(email.type, 'email-message')
         self.assertEqual(email.is_multipart, True)
         body = email.body_multipart[0]
         self.assertEqual(body.content_disposition, f"attachment; filename='{attribute_value}'")
-        self.assertEqual(body.body_raw_ref, file_id)
-        self.assertEqual(file_ref, file_id)
-        self.assertEqual(file.id, file_ref)
+        self._assert_multiple_equal(
+            body.body_raw_ref,
+            file.id,
+            file_id,
+            file_ref,
+            f"file--{attribute['uuid']}"
+        )
         self.assertEqual(file.name, attribute_value)
 
     def test_event_with_email_body_indicator_attribute(self):
@@ -737,11 +830,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_email_body_observable_attribute(self):
         event = get_event_with_email_body_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         message = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(message.id, object_ref)
+        self._assert_multiple_equal(
+            message.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"email-message--{attribute['uuid']}"
+        )
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.body, attribute_value)
@@ -753,17 +850,26 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_email_destination_observable_attribute(self):
         event = get_event_with_email_destination_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
         message_id, address_id = grouping_refs
         message_ref, address_ref = object_refs
         message, address = observable
-        self.assertEqual(message_ref, message_id)
-        self.assertEqual(message.id, message_ref)
+        self._assert_multiple_equal(
+            message.id,
+            message_id,
+            message_ref,
+            f"email-message--{attribute['uuid']}"
+        )
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
-        self.assertEqual(message.to_refs, [address_id])
-        self.assertEqual(address_ref, address_id)
-        self.assertEqual(address.id, address_ref)
+        self._assert_multiple_equal(
+            message.to_refs[0],
+            address.id,
+            address_id,
+            address_ref,
+            f"email-addr--{attribute['uuid']}"
+        )
         self._check_email_address(address, attribute_value)
 
     def test_event_with_email_header_indicator_attribute(self):
@@ -773,11 +879,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_email_header_observable_attribute(self):
         event = get_event_with_email_header_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         message = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(message.id, object_ref)
+        self._assert_multiple_equal(
+            message.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"email-message--{attribute['uuid']}"
+        )
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.received_lines, [attribute_value])
@@ -794,22 +904,30 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_email_message_id_observable_attribute(self):
         event = get_event_with_email_message_id_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         message = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(message.id, object_ref)
+        self._assert_multiple_equal(
+            message.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"email-message--{attribute['uuid']}"
+        )
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.message_id, attribute_value)
 
     def test_event_with_email_observable_attribute(self):
         event = get_event_with_email_address_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         address = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(address.id, object_ref)
+        self._assert_multiple_equal(
+            address.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"email-addr--{attribute['uuid']}"
+        )
         self._check_email_address(address, attribute_value)
 
     def test_event_with_email_reply_to_indicator_attribute(self):
@@ -822,11 +940,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_email_reply_to_observable_attribute(self):
         event = get_event_with_email_reply_to_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         message = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(message.id, object_ref)
+        self._assert_multiple_equal(
+            message.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"email-message--{attribute['uuid']}"
+        )
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.additional_header_fields['Reply-To'], attribute_value)
@@ -838,17 +960,26 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_email_source_observable_attribute(self):
         event = get_event_with_email_source_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
         message_id, address_id = grouping_refs
         message_ref, address_ref = object_refs
         message, address = observable
-        self.assertEqual(message_ref, message_id)
-        self.assertEqual(message.id, message_ref)
+        self._assert_multiple_equal(
+            message.id,
+            message_id,
+            message_ref,
+            f"email-message--{attribute['uuid']}"
+        )
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
-        self.assertEqual(message.from_ref, address_id)
-        self.assertEqual(address_ref, address_id)
-        self.assertEqual(address.id, address_ref)
+        self._assert_multiple_equal(
+            message.from_ref,
+            address.id,
+            address_id,
+            address_ref,
+            f"email-addr--{attribute['uuid']}"
+        )
         self._check_email_address(address, attribute_value)
 
     def test_event_with_email_subject_indicator_attribute(self):
@@ -858,11 +989,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_email_subject_observable_attribute(self):
         event = get_event_with_email_subject_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         message = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(message.id, object_ref)
+        self._assert_multiple_equal(
+            message.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"email-message--{attribute['uuid']}"
+        )
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.subject, attribute_value)
@@ -877,11 +1012,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_email_x_mailer_observable_attribute(self):
         event = get_event_with_email_x_mailer_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         message = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(message.id, object_ref)
+        self._assert_multiple_equal(
+            message.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"email-message--{attribute['uuid']}"
+        )
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.additional_header_fields['X-Mailer'], attribute_value)
@@ -893,11 +1032,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_filename_observable_attribute(self):
         event = get_event_with_filename_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         file = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(file.id, object_ref)
+        self._assert_multiple_equal(
+            file.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"file--{attribute['uuid']}"
+        )
         self.assertEqual(file.type, 'file')
         self.assertEqual(file.name, attribute_value)
 
@@ -911,11 +1054,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_github_username_observable_attribute(self):
         event = get_event_with_github_username_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         account = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(account.id, object_ref)
+        self._assert_multiple_equal(
+            account.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"user-account--{attribute['uuid']}"
+        )
         self.assertEqual(account.type, 'user-account')
         self.assertEqual(account.account_type, 'github')
         self.assertEqual(account.account_login, attribute_value)
@@ -932,10 +1079,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_hash_composite_observable_attributes(self):
         event = get_event_with_hash_composite_attributes()
+        attributes = deepcopy(event['Event']['Attribute'])
         values, grouping_refs, object_refs, observables = self._run_observables_tests(event)
-        for grouping_ref, object_ref, observable in zip(grouping_refs, object_refs, observables):
-            self.assertEqual(grouping_ref, object_ref)
-            self.assertEqual(observable.id, object_ref)
+        for grouping_ref, object_ref, observable, attribute in zip(grouping_refs, object_refs, observables, attributes):
+            self._assert_multiple_equal(
+                observable.id,
+                grouping_ref,
+                object_ref,
+                f"file--{attribute['uuid']}"
+            )
             self.assertEqual(observable.type, 'file')
         hash_types = ('MD5', 'SHA-1', 'SHA224', 'SHA-256', 'SHA3-256', 'SHA384', 'SSDEEP', 'TLSH')
         for value, observable, hash_type in zip(values, observables, hash_types):
@@ -952,10 +1104,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_hash_observable_attributes(self):
         event = get_event_with_hash_attributes()
+        attributes = deepcopy(event['Event']['Attribute'])
         values, grouping_refs, object_refs, observables = self._run_observables_tests(event)
-        for grouping_ref, object_ref, observable in zip(grouping_refs, object_refs, observables):
-            self.assertEqual(grouping_ref, object_ref)
-            self.assertEqual(observable.id, object_ref)
+        for grouping_ref, object_ref, observable, attribute in zip(grouping_refs, object_refs, observables, attributes):
+            self._assert_multiple_equal(
+                observable.id,
+                grouping_ref,
+                object_ref,
+                f"file--{attribute['uuid']}"
+            )
             self.assertEqual(observable.type, 'file')
         hash_types = ('MD5', 'SHA-1', 'SHA224', 'SHA-256', 'SHA3-256', 'SHA384', 'SSDEEP', 'TLSH')
         for observable, hash_type, value in zip(observables, hash_types, values):
@@ -968,11 +1125,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_hostname_observable_attribute(self):
         event = get_event_with_hostname_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         domain = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(domain.id, object_ref)
+        self._assert_multiple_equal(
+            domain.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"domain-name--{attribute['uuid']}"
+        )
         self.assertEqual(domain.type, 'domain-name')
         self.assertEqual(domain.value, attribute_value)
 
@@ -986,19 +1147,29 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_hostname_port_observable_attribute(self):
         event = get_event_with_hostname_port_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
         hostname, port = attribute_value.split('|')
-        domain_id, network_traffic_id = grouping_refs
+        hostname_id, network_traffic_id = grouping_refs
         hostname_ref, network_traffic_ref = object_refs
         domain, network_traffic = observable
-        self.assertEqual(hostname_ref, domain_id)
-        self.assertEqual(domain.id, hostname_ref)
+        self._assert_multiple_equal(
+            domain.id,
+            hostname_id,
+            hostname_ref,
+            network_traffic.dst_ref,
+            f"domain-name--{attribute['uuid']}"
+        )
         self.assertEqual(domain.type, 'domain-name')
         self.assertEqual(domain.value, hostname)
-        self.assertEqual(network_traffic.id, network_traffic_id)
+        self._assert_multiple_equal(
+            network_traffic.id,
+            network_traffic_id,
+            network_traffic_ref,
+            f"network-traffic--{attribute['uuid']}"
+        )
         self.assertEqual(network_traffic.type, 'network-traffic')
         self.assertEqual(network_traffic.dst_port, int(port))
-        self.assertEqual(network_traffic.dst_ref, domain_id)
 
     def test_event_with_http_indicator_attributes(self):
         event = get_event_with_http_attributes()
@@ -1029,27 +1200,46 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_ip_observable_attributes(self):
         event = get_event_with_ip_attributes()
+        src_attribute, dst_attribute = deepcopy(event['Event']['Attribute'])
         values, grouping_refs, object_refs, observables = self._run_observables_tests(
             event,
             index=3
         )
-        for grouping_ref, observable in zip(grouping_refs, observables):
-            self.assertEqual(grouping_ref, observable.id)
         src, dst = values
         src_network_id, src_address_id, dst_network_id, dst_address_id = grouping_refs
-        src_observable_id, dst_observable_id = object_refs
+        src_network_ref, src_address_ref, dst_network_ref, dst_address_ref = object_refs
         src_network, src_address, dst_network, dst_address = observables
-        self.assertEqual(src_network_id, src_observable_id)
-        self.assertEqual(src_network.id, src_network_id)
+        self._assert_multiple_equal(
+            src_network.id,
+            src_network_id,
+            src_network_ref,
+            f"network-traffic--{src_attribute['uuid']}"
+        )
         self.assertEqual(src_network.type, 'network-traffic')
-        self.assertEqual(src_network.src_ref, src_address_id)
-        self.assertEqual(src_address.id, src_address_id)
+        self._assert_multiple_equal(
+            src_address.id,
+            src_address_id,
+            src_address_ref,
+            src_network.src_ref,
+            f"ipv4-addr--{src_attribute['uuid']}"
+        )
+        self.assertEqual(src_address.type, 'ipv4-addr')
         self.assertEqual(src_address.value, src)
-        self.assertEqual(dst_network_id, dst_observable_id)
-        self.assertEqual(dst_network.id, dst_network_id)
+        self._assert_multiple_equal(
+            dst_network.id,
+            dst_network_id,
+            dst_network_ref,
+            f"network-traffic--{dst_attribute['uuid']}"
+        )
         self.assertEqual(dst_network.type, 'network-traffic')
-        self.assertEqual(dst_network.dst_ref, dst_address_id)
-        self.assertEqual(dst_address.id, dst_address_id)
+        self._assert_multiple_equal(
+            dst_address.id,
+            dst_address_id,
+            dst_address_ref,
+            dst_network.dst_ref,
+            f"ipv4-addr--{dst_attribute['uuid']}"
+        )
+        self.assertEqual(dst_address.type, 'ipv4-addr')
         self.assertEqual(dst_address.value, dst)
 
     def test_event_with_ip_port_indicator_attributes(self):
@@ -1076,31 +1266,50 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_ip_port_observable_attributes(self):
         event = get_event_with_ip_port_attributes()
+        src_attribute, dst_attribute = deepcopy(event['Event']['Attribute'])
         values, grouping_refs, object_refs, observables = self._run_observables_tests(
             event,
             index=3
         )
-        for grouping_ref, observable in zip(grouping_refs, observables):
-            self.assertEqual(grouping_ref, observable.id)
         src, dst = values
         src_network_id, src_address_id, dst_network_id, dst_address_id = grouping_refs
-        src_observable_id, dst_observable_id = object_refs
+        src_network_ref, src_address_ref, dst_network_ref, dst_address_ref = object_refs
         src_network, src_address, dst_network, dst_address = observables
         src_ip_value, src_port_value = src.split('|')
-        self.assertEqual(src_network_id, src_observable_id)
-        self.assertEqual(src_network.id, src_network_id)
+        self._assert_multiple_equal(
+            src_network.id,
+            src_network_id,
+            src_network_ref,
+            f"network-traffic--{src_attribute['uuid']}"
+        )
         self.assertEqual(src_network.type, 'network-traffic')
         self.assertEqual(src_network.src_port, int(src_port_value))
-        self.assertEqual(src_network.src_ref, src_address_id)
-        self.assertEqual(src_address.id, src_address_id)
+        self._assert_multiple_equal(
+            src_address.id,
+            src_address_id,
+            src_address_ref,
+            src_network.src_ref,
+            f"ipv4-addr--{src_attribute['uuid']}"
+        )
+        self.assertEqual(src_address.type, 'ipv4-addr')
         self.assertEqual(src_address.value, src_ip_value)
         dst_ip_value, dst_port_value = dst.split('|')
-        self.assertEqual(dst_network_id, dst_observable_id)
-        self.assertEqual(dst_network.id, dst_network_id)
+        self._assert_multiple_equal(
+            dst_network.id,
+            dst_network_id,
+            dst_network_ref,
+            f"network-traffic--{dst_attribute['uuid']}"
+        )
         self.assertEqual(dst_network.type, 'network-traffic')
         self.assertEqual(dst_network.dst_port, int(dst_port_value))
-        self.assertEqual(dst_network.dst_ref, dst_address_id)
-        self.assertEqual(dst_address.id, dst_address_id)
+        self._assert_multiple_equal(
+            dst_address.id,
+            dst_address_id,
+            dst_address_ref,
+            dst_network.dst_ref,
+            f"ipv4-addr--{dst_attribute['uuid']}"
+        )
+        self.assertEqual(dst_address.type, 'ipv4-addr')
         self.assertEqual(dst_address.value, dst_ip_value)
 
     def test_event_with_mac_address_indicator_attribute(self):
@@ -1110,11 +1319,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_mac_address_observable_attribute(self):
         event = get_event_with_mac_address_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         mac_address = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(mac_address.id, object_ref)
+        self._assert_multiple_equal(
+            mac_address.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"mac-addr--{attribute['uuid']}"
+        )
         self.assertEqual(mac_address.type, 'mac-addr')
         self.assertEqual(mac_address.value, attribute_value.lower())
 
@@ -1133,22 +1346,30 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_malware_sample_observable_attribute(self):
         event = get_event_with_malware_sample_attribute()
-        data = event['Event']['Attribute'][0]['data']
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
         file_id, artifact_id = grouping_refs
         file_ref, artifact_ref = object_refs
         file_object, artifact_object = observable
         filename, hash_value = attribute_value.split('|')
-        self.assertEqual(file_ref, file_id)
-        self.assertEqual(file_object.id, file_ref)
+        self._assert_multiple_equal(
+            file_object.id,
+            file_id,
+            file_ref,
+            f"file--{attribute['uuid']}"
+        )
         self.assertEqual(file_object.type, 'file')
         self.assertEqual(file_object.name, filename)
         self.assertEqual(file_object.hashes['MD5'], hash_value)
-        self.assertEqual(file_object.content_ref, artifact_id)
-        self.assertEqual(artifact_ref, artifact_id)
-        self.assertEqual(artifact_object.id, artifact_ref)
+        self._assert_multiple_equal(
+            artifact_object.id,
+            artifact_id,
+            artifact_ref,
+            file_object.content_ref,
+            f"artifact--{attribute['uuid']}"
+        )
         self.assertEqual(artifact_object.type, 'artifact')
-        self.assertEqual(artifact_object.payload_bin, data)
+        self.assertEqual(artifact_object.payload_bin, attribute['data'])
 
     def test_event_with_mutex_indicator_attribute(self):
         event = get_event_with_mutex_attribute()
@@ -1157,11 +1378,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_mutex_observable_attribute(self):
         event = get_event_with_mutex_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         mutex = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(mutex.id, object_ref)
+        self._assert_multiple_equal(
+            mutex.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"mutex--{attribute['uuid']}"
+        )
         self.assertEqual(mutex.type, 'mutex')
         self.assertEqual(mutex.name, attribute_value)
 
@@ -1184,7 +1409,6 @@ class TestSTIX21Export(TestSTIX2Export):
             self.assertEqual(indicator.pattern_type, attribute['type'])
             self.assertEqual(indicator.pattern, f"[{attribute['value']}]")
 
-
     def test_event_with_port_indicator_attribute(self):
         event = get_event_with_port_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
@@ -1200,11 +1424,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_regkey_observable_attribute(self):
         event = get_event_with_regkey_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         registry_key = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(registry_key.id, object_ref)
+        self._assert_multiple_equal(
+            registry_key.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"windows-registry-key--{attribute['uuid']}"
+        )
         self.assertEqual(registry_key.type, 'windows-registry-key')
         self.assertEqual(registry_key.key, attribute_value.strip())
 
@@ -1218,12 +1446,16 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_regkey_value_observable_attribute(self):
         event = get_event_with_regkey_value_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
         key, value = attribute_value.split('|')
-        object_ref = object_refs[0]
         registry_key = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(registry_key.id, object_ref)
+        self._assert_multiple_equal(
+            registry_key.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"windows-registry-key--{attribute['uuid']}"
+        )
         self.assertEqual(registry_key.type, 'windows-registry-key')
         self.assertEqual(registry_key.key, key.strip())
         self.assertEqual(registry_key['values'][0].data, value.strip())
@@ -1240,11 +1472,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_url_observable_attribute(self):
         event = get_event_with_url_attribute()
+        attribute = deepcopy(event['Event']['Attribute'][0])
         attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        object_ref = object_refs[0]
         url = observable[0]
-        self.assertEqual(object_ref, grouping_refs[0])
-        self.assertEqual(url.id, object_ref)
+        self._assert_multiple_equal(
+            url.id,
+            grouping_refs[0],
+            object_refs[0],
+            f"url--{attribute['uuid']}"
+        )
         self.assertEqual(url.type, 'url')
         self.assertEqual(url.value, attribute_value)
 
@@ -1292,10 +1528,15 @@ class TestSTIX21Export(TestSTIX2Export):
 
     def test_event_with_x509_fingerprint_observable_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
+        attributes = deepcopy(event['Event']['Attribute'])
         values, grouping_refs, object_refs, observables = self._run_observables_tests(event)
-        for grouping_ref, object_ref, observable in zip(grouping_refs, object_refs, observables):
-            self.assertEqual(grouping_ref, object_ref)
-            self.assertEqual(observable.id, object_ref)
+        for grouping_ref, object_ref, observable, attribute in zip(grouping_refs, object_refs, observables, attributes):
+            self._assert_multiple_equal(
+                observable.id,
+                grouping_ref,
+                object_ref,
+                f"x509-certificate--{attribute['uuid']}"
+            )
             self.assertEqual(observable.type, 'x509-certificate')
         md5, sha1, sha256 = values
         md5_object, sha1_object, sha256_object = observables
