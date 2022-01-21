@@ -407,6 +407,11 @@ class Stix2Mapping:
             'registration-date',
             'text'
         )
+        self.__domain_ip_standard_fields = (
+            'domain',
+            'hostname',
+            'ip'
+        )
         self.__email_header_fields = Mapping(
             **{
                 'reply-to': 'Reply-To',
@@ -840,6 +845,10 @@ class Stix2Mapping:
     @property
     def domain_ip_single_fields(self) -> tuple:
         return self.__domain_ip_single_fields
+
+    @property
+    def domain_ip_standard_fields(self) -> tuple:
+        return self.__domain_ip_standard_fields
 
     @property
     def email_header_fields(self) -> dict:

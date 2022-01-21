@@ -57,11 +57,6 @@ class Stix21Mapping(Stix2Mapping):
             password = 'credential',
             username = 'user_id'
         )
-        self.__domain_ip_uuid_fields = (
-            'domain',
-            'hostname',
-            'ip'
-        )
         self.__email_object_mapping = Mapping(
             **{
                 'bcc': 'bcc_refs.value',
@@ -233,10 +228,6 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def credential_object_mapping(self) -> dict:
         return self.__credential_object_mapping
-
-    @property
-    def domain_ip_uuid_fields(self) -> tuple:
-        return self.__domain_ip_uuid_fields
 
     @property
     def email_object_mapping(self) -> dict:

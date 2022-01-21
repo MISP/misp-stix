@@ -1268,7 +1268,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
         else:
-            self._parse_domain_ip_object_observable(misp_object)
+            case = self._fetch_domain_ip_object_case(misp_object['Attribute'])
+            if case == 'exception':
+                self._parse_custom_object(misp_object)
+                self._required_fields_missing_warning('DomainName', 'domain-ip')
+            else:
+                getattr(self, f'_parse_domain_ip_object_{case}')(misp_object)
 
     def _parse_email_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
@@ -2783,6 +2788,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _extract_parent_process_attributes(attributes: dict) -> dict:
         parent_fields = tuple(key for key in attributes.keys() if key.startswith('parent-'))
         return {key: attributes.pop(key) for key in parent_fields}
+
+    def _fetch_domain_ip_object_case(self, attributes: list) -> str:
+        if not any(attribute['object_relation'] in ('domain', 'hostname') for attribute in attributes):
+            return 'exception'
+        for attribute in attributes:
+            if attribute['object_relation'] not in self._mapping.domain_ip_standard_fields:
+                return 'custom'
+        return 'standard'
 
     def _fetch_included_reference_uuids(self, references: list, name: str) -> list:
         uuids = []
