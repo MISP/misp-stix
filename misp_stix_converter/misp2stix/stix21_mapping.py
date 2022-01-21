@@ -75,6 +75,13 @@ class Stix21Mapping(Stix2Mapping):
                 'x-mailer': 'additional_header_fields.x_mailer'
             }
         )
+        self.__email_observable_mapping = Mapping(
+            **{
+                'message-id': 'message_id',
+                'send-date': 'date',
+                'subject': 'subject'
+            }
+        )
         self.__email_uuid_fields = (
             'attachment',
             'bcc',
@@ -232,6 +239,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def email_object_mapping(self) -> dict:
         return self.__email_object_mapping
+
+    @property
+    def email_observable_mapping(self) -> dict:
+        return self.__email_observable_mapping
 
     @property
     def email_uuid_fields(self) -> tuple:

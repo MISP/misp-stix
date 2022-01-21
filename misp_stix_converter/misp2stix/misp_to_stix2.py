@@ -2485,12 +2485,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 if attributes.get(key):
                     header_fields[feature] = self._select_single_feature(attributes, key)
             email_args['additional_header_fields'] = header_fields
-        for feature in ('message-id', 'send-date', 'subject'):
-            if attributes.get(feature):
-                email_args[self._mapping.email_object_mapping[feature]] = self._select_single_feature(
-                    attributes,
-                    feature
-                )
+        for key, feature in self._mapping.email_observable_mapping.items():
+            if attributes.get(key):
+                email_args[feature] = self._select_single_feature(attributes, key)
         if attributes:
             email_args.update(self._handle_observable_multiple_properties(attributes))
         return email_args
