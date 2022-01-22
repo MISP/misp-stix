@@ -72,7 +72,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 'attribute': '_define_stix_object_id_from_attribute',
                 'object': '_define_stix_object_id_from_object'
             }
-            self._event_report_matching = {}
+            self._event_report_matching = defaultdict(list)
             self._handle_attributes_and_objects()
             regex = r'@[!]?\[%s\]\([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\)'
             for event_report in self._misp_event['EventReport']:
@@ -86,7 +86,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     'abstract': event_report['name']
                 }
                 references = {reference.split('(')[1][:-1] for feature in ('attribute', 'object') for reference in re.findall(regex % feature, event_report['content'])}
-                note_args['object_refs'] = list({self._event_report_matching[reference] for reference in references if reference in self._event_report_matching})
+                object_refs = set()
+                for reference in references:
+                    if reference in self._event_report_matching:
+                        object_refs.update(self._event_report_matching[reference])
+                note_args['object_refs'] = list(object_refs)
                 self._append_SDO(Note(**note_args))
         else:
             self._handle_attributes_and_objects()
@@ -94,15 +98,15 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _define_stix_object_id_from_attribute(self, feature: str, attribute: dict) -> str:
         attribute_uuid = attribute['uuid']
         stix_id = f'{feature}--{attribute_uuid}'
-        self._event_report_matching[attribute_uuid] = stix_id
+        self._event_report_matching[attribute_uuid].append(stix_id)
         return stix_id
 
     def _define_stix_object_id_from_object(self, feature: str, misp_object: dict) -> str:
         object_uuid = misp_object['uuid']
         stix_id = f'{feature}--{object_uuid}'
-        self._event_report_matching[object_uuid] = stix_id
+        self._event_report_matching[object_uuid].append(stix_id)
         for attribute in misp_object['Attribute']:
-            self._event_report_matching[attribute['uuid']] = stix_id
+            self._event_report_matching[attribute['uuid']].append(stix_id)
         return stix_id
 
     def _handle_attributes_and_objects(self):
