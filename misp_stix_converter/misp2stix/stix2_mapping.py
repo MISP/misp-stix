@@ -544,7 +544,7 @@ class Stix2Mapping:
         )
         self.__legal_entity_single_fields = (
             'name',
-            'description'
+            'text'
         )
         self.__lnk_data_fields = (
             'malware-sample',
