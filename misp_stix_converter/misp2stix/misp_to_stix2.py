@@ -1454,7 +1454,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes.get('filename'):
             for filename in attributes.pop('filename'):
                 pattern.append(f"{prefix}:name = '{filename}'")
-        for feature in self._mapping.lnk_uuid_fields:
+        for feature in self._mapping.lnk_path_fields:
             if attributes.get(feature):
                 for value in attributes.pop(feature):
                     pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")

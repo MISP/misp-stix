@@ -119,6 +119,11 @@ class Stix21Mapping(Stix2Mapping):
                 'lnk-modification-time': 'mtime'
             }
         )
+        self.__lnk_uuid_fields = (
+            'fullpath',
+            'malware-sample',
+            'path'
+        )
         self.__network_socket_mapping = Mapping(
             features = Mapping(
                 **{
@@ -267,6 +272,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def lnk_time_fields(self) -> dict:
         return self.__lnk_time_fields
+
+    @property
+    def lnk_uuid_fields(self) -> tuple:
+        return self.__lnk_uuid_fields
 
     @property
     def malware_sample_additional_observable_values(self) -> dict:

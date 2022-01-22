@@ -566,6 +566,10 @@ class Stix2Mapping:
                 'size-in-bytes': 'size'
             }
         )
+        self.__lnk_path_fields = (
+            'fullpath',
+            'path'
+        )
         lnk_single_fields = (
             'lnk-access-time',
             'lnk-creation-time',
@@ -574,10 +578,6 @@ class Stix2Mapping:
             'size-in-bytes'
         )
         self.__lnk_single_fields = self.__lnk_hash_types + lnk_single_fields
-        self.__lnk_uuid_fields = (
-            'fullpath',
-            'path'
-        )
         self.__network_connection_mapping = Mapping(
             features = Mapping(
                 **{
@@ -975,12 +975,12 @@ class Stix2Mapping:
         return self.__lnk_object_mapping
 
     @property
-    def lnk_single_fields(self) -> tuple:
-        return self.__lnk_single_fields
+    def lnk_path_fields(self) -> tuple:
+        return self.__lnk_path_fields
 
     @property
-    def lnk_uuid_fields(self) -> tuple:
-        return self.__lnk_uuid_fields
+    def lnk_single_fields(self) -> tuple:
+        return self.__lnk_single_fields
 
     @property
     def misp_identity_args(self) -> dict:

@@ -697,7 +697,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             observable_object = {}
             file_args = {}
             index = 1
-            for feature in self._mapping.lnk_uuid_fields:
+            for feature in self._mapping.lnk_path_fields:
                 if attributes.get(feature):
                     str_index = str(index)
                     observable_object[str_index] = Directory(
