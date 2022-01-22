@@ -4025,6 +4025,7 @@ def get_event_with_image_object():
             "timestamp": "1603642920",
             "Attribute": [
                 {
+                    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
                     "type": "attachment",
                     "object_relation": "attachment",
                     "value": "STIX.png",
@@ -4036,6 +4037,7 @@ def get_event_with_image_object():
                     "value": "STIX.png"
                 },
                 {
+                    "uuid": "d85eeb1a-f4a2-4b9f-a367-d84f9a7e6303",
                     "type": "url",
                     "object_relation": "url",
                     "value": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
