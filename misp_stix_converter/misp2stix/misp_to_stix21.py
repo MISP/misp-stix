@@ -504,7 +504,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             value = [attribute['value']]
             if relation in with_data and attribute.get('data'):
                 value.append(attribute['data'])
-            value.append(attribute['uuid'])
+            if relation in with_uuid:
+                value.append(attribute['uuid'])
             attributes_dict[relation].append(tuple(value))
         return attributes_dict
 
