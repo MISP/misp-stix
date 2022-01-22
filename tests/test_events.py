@@ -4076,7 +4076,7 @@ def get_event_with_legal_entity_object():
                 },
                 {
                     "type": "text",
-                    "object_relation": "description",
+                    "object_relation": "text",
                     "value": "The Umbrella Corporation is an international pharmaceutical company."
                 },
                 {

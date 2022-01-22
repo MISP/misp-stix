@@ -1703,6 +1703,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(legal_entity.created, timestamp)
         self.assertEqual(legal_entity.modified, timestamp)
         self.assertEqual(legal_entity.name, name)
+        self.assertEqual(legal_entity.description, description)
         self.assertEqual(legal_entity.sectors, [business])
         self.assertEqual(legal_entity.contact_information, f"phone-number: {phone}")
         self.assertEqual(legal_entity.x_misp_logo['value'], logo)
