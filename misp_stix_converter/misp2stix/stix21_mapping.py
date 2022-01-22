@@ -156,8 +156,8 @@ class Stix21Mapping(Stix2Mapping):
             role = 'roles'
         )
         self.__parent_process_fields = (
-            'parent-command-line',
-            'parent-pid'
+            'parent-pid',
+            'parent-command-line'
         )
         self.__process_object_mapping = Mapping(
             features = Mapping(
