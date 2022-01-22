@@ -818,16 +818,19 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._append_SDO(Location(**location_args))
 
     def _parse_image_object_observable(self, misp_object: dict):
-        file_args = {'id': f"file--{misp_object['uuid']}"}
-        artifact_args, attributes = self._parse_image_args(misp_object['Attribute'])
+        attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
+            misp_object['Attribute'],
+            with_uuid=self._mapping.image_uuid_fields,
+            with_data=self._mapping.image_data_fields
+        )
+        artifact_args = self._parse_image_args(attributes)
+        file_args = {'id': getattr(self, self._id_parsing_function['object'])('file', misp_object)}
         if attributes.get('filename'):
-            file_args['name'] = attributes.pop('filename')
+            file_args['name'] = self._select_single_feature(attributes, 'filename')
         if attributes:
             file_args.update(self._handle_observable_multiple_properties(attributes))
         if artifact_args is not None:
-            artifact_id = f"artifact--{misp_object['uuid']}"
-            artifact_args['id'] = artifact_id
-            file_args['content_ref'] = artifact_id
+            file_args['content_ref'] = artifact_args['id']
             objects = [
                 File(**file_args),
                 Artifact(**artifact_args)
@@ -1226,6 +1229,31 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return WindowsPESection(**section_args)
 
     ################################################################################
+    #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #
+    ################################################################################
+
+    def _parse_image_args(self, attributes: dict) -> Union[dict, None]:
+        if not any(feature in attributes for feature in ('attachment', 'url')):
+            return None
+        if attributes.get('attachment'):
+            attachment = self._select_single_feature(attributes, 'attachment')
+            artifact_args = self._parse_image_attachment(attachment)
+            if artifact_args is not None:
+                if attributes.get('url'):
+                    artifact_args['x_misp_url'] = self._select_single_feature(attributes, 'url')[0]
+                return artifact_args
+            attributes['attachment'] = attachment[0]
+        if attributes.get('url'):
+            url, uuid = self._select_single_feature(attributes, 'url')
+            return {
+                'id': getattr(self, self._id_parsing_function['attribute'])(
+                    'artifact',
+                    {'uuid': uuid}
+                ),
+                'url': url
+            }
+
+    ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #
     ################################################################################
 
@@ -1276,3 +1304,17 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     del attributes[display_feature]
                     break
         return display_names
+
+    def _parse_image_attachment(self, attachment: tuple) -> Union[dict, None]:
+        if len(attachment) < 3:
+            return None
+        filename, data, uuid = attachment
+        artifact_args = {
+            'id': getattr(self, self._id_parsing_function['attribute'])('artifact', {'uuid': uuid}),
+            'payload_bin': data,
+            'allow_custom': True
+        }
+        if '.' in filename:
+            artifact_args['mime_type'] = f"image/{filename.split('.')[-1]}"
+        artifact_args['x_misp_filename'] = filename
+        return artifact_args

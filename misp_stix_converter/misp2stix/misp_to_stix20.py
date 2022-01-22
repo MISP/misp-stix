@@ -629,10 +629,15 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return file_args, observable_object
 
     def _parse_image_object_observable(self, misp_object: dict):
-        artifact_args, attributes = self._parse_image_args(misp_object['Attribute'])
+        attributes = self._extract_multiple_object_attributes_with_data(
+            misp_object['Attribute'],
+            force_single=self._mapping.image_single_fields,
+            with_data=self._mapping.image_data_fields
+        )
+        artifact_args = self._parse_image_args(attributes)
         file_args = {}
         if attributes.get('filename'):
-            file_args['name'] = attributes.get('filename')
+            file_args['name'] = attributes.pop('filename')
         if attributes:
             file_args.update(self._handle_observable_multiple_properties(attributes))
         if artifact_args is not None:
@@ -976,6 +981,24 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return WindowsPESection(**section_args)
 
     ################################################################################
+    #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #
+    ################################################################################
+
+    def _parse_image_args(self, attributes: dict) -> Union[dict, None]:
+        if not any(feature in attributes for feature in ('attachment', 'url')):
+            return None
+        if attributes.get('attachment'):
+            attachment = attributes.pop('attachment')
+            artifact_args = self._parse_image_attachment(attachment)
+            if artifact_args is not None:
+                if attributes.get('url'):
+                    artifact_args['x_misp_url'] = attributes.pop('url')
+                return artifact_args
+            attributes['attachment'] = attachment
+        if attributes.get('url'):
+            return {'url': attributes.pop('url')}
+
+    ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #
     ################################################################################
 
@@ -1015,3 +1038,17 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                     del attributes[display_feature]
                     break
         return display_names
+
+    @staticmethod
+    def _parse_image_attachment(attachment: Union[str, tuple]) -> Union[dict, None]:
+        if not isinstance(attachment, tuple):
+            return None
+        filename, data = attachment
+        artifact_args = {
+            'payload_bin': data,
+            'allow_custom': True
+        }
+        if '.' in filename:
+            artifact_args['mime_type'] = f"image/{filename.split('.')[-1]}"
+        artifact_args['x_misp_filename'] = filename
+        return artifact_args

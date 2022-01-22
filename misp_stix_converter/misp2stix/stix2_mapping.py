@@ -502,6 +502,10 @@ class Stix2Mapping:
             'filename',
             'url'
         )
+        self.__image_uuid_fields = (
+            'attachment',
+            'url'
+        )
         self.__ip_port_object_mapping = Mapping(
             ip_features = Mapping(
                 **{
@@ -929,6 +933,10 @@ class Stix2Mapping:
     @property
     def image_single_fields(self) -> tuple:
         return self.__image_single_fields
+
+    @property
+    def image_uuid_fields(self) -> tuple:
+        return self.__image_uuid_fields
 
     @property
     def ip_port_object_mapping(self) -> dict:

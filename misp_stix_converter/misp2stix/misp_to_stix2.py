@@ -2514,29 +2514,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             file_args.update(self._handle_observable_multiple_properties(attributes))
         return file_args
 
-    def _parse_image_args(self, attributes: list) -> Tuple[Union[dict, None], dict]:
-        attributes = self._extract_multiple_object_attributes_with_data(
-            attributes,
-            force_single=self._mapping.image_single_fields,
-            with_data=self._mapping.image_data_fields
-        )
-        if not any(feature in attributes for feature in ('attachment', 'url')):
-            return None, attributes
-        if attributes.get('attachment'):
-            artifact_args = {'allow_custom': True}
-            attachment = attributes.pop('attachment')
-            if isinstance(attachment, tuple):
-                attachment, data = attachment
-                artifact_args['payload_bin'] = data
-            if '.' in attachment:
-                artifact_args['mime_type'] = f"image/{attachment.split('.')[-1]}"
-            artifact_args['x_misp_filename'] = attachment
-            if attributes.get('url'):
-                artifact_args['x_misp_url'] = attributes.pop('url')
-        elif attributes.get('url'):
-            artifact_args = {'url': attributes.pop('url')}
-        return artifact_args, attributes
-
     def _parse_ip_port_args(self, attributes: dict) -> dict:
         args = {}
         for key, feature in self._mapping.ip_port_object_mapping['features'].items():
