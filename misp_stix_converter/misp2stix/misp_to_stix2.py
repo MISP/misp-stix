@@ -781,7 +781,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     pattern.extend(self._parse_pe_extensions_pattern(*args))
                     self._handle_object_indicator(file_object, pattern)
                 else:
-                    file_args, observable = self._parse_file_observable_object(file_object['Attribute'])
+                    file_args, observable = self._parse_file_observable_object(file_object)
                     extension_args, custom = self._parse_pe_extensions_observable(*args)
                     file_args['extensions'] = {
                         'windows-pebinary-ext': extension_args
@@ -1333,7 +1333,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._parse_file_object_observable(misp_object)
 
     def _parse_file_object_observable(self, misp_object: dict):
-        file_args, observable_objects = self._parse_file_observable_object(misp_object['Attribute'])
+        file_args, observable_objects = self._parse_file_observable_object(misp_object)
         self._handle_file_observable_objects(file_args, observable_objects)
         self._handle_object_observable(misp_object, observable_objects)
 

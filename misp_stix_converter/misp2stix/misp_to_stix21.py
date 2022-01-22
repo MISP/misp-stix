@@ -729,9 +729,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         objects.insert(0, EmailMessage(**email_message_args))
         self._handle_object_observable(misp_object, objects)
 
-    def _parse_file_observable_object(self, attributes: list) -> tuple:
+    def _parse_file_observable_object(self, misp_object: dict) -> tuple:
         attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
-            attributes,
+            misp_object['Attribute'],
             with_uuid=self._mapping.file_uuid_fields,
             with_data=self._mapping.file_data_fields
         )
