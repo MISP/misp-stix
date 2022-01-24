@@ -54,9 +54,9 @@ def _handle_namespaces(namespace: str, orgname: str) -> tuple:
     namespaces = {namespace: parsed_orgname}
     namespaces.update(NS_DICT)
     try:
-        idgen.set_id_namespace(Namespace(namespace, orgname))
+        idgen.set_id_namespace(Namespace(namespace, parsed_orgname))
     except TypeError:
-        idgen.set_id_namespace(Namespace(namespace, orgname, 'MISP'))
+        idgen.set_id_namespace(Namespace(namespace, parsed_orgname, 'MISP'))
     return namespaces
 
 
@@ -73,10 +73,11 @@ def _stix_json_framing(stix_package: STIXPackage) -> tuple:
 
 
 def _stix_package(orgname: str, version: str, uuid: Optional[str] = None) -> STIXPackage:
+    parsed_orgname = re.sub('[\W]+', '', orgname.replace(' ', '_'))
     if uuid is None:
         uuid = uuid4()
     stix_package = STIXPackage(
-        id_=f'{orgname}:STIXPackage-{uuid}',
+        id_=f'{parsed_orgname}:STIXPackage-{uuid}',
         timestamp=datetime.datetime.now()
     )
     stix_package.version = version
