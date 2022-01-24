@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import re
 import socket
 from .stix1_mapping import Stix1Mapping
 from .exportparser import MISPtoSTIXParser
@@ -2149,7 +2150,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         return related_ta
 
     def _create_stix_package(self) -> STIXPackage:
-        package_id = f"{self._orgname_id_id}:STIXPackage-{self._misp_event['uuid']}"
+        package_id = f"{self._orgname_id}:STIXPackage-{self._misp_event['uuid']}"
         timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
         stix_package = STIXPackage(id_=package_id, timestamp=timestamp)
         stix_package.version = self._version
