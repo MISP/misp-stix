@@ -474,27 +474,22 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         }
         self._handle_object_observable(misp_object, observable_object)
 
-    def _parse_domain_ip_object_custom(self, attributes: dict) -> dict:
+    def _parse_domain_ip_object_custom(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=self._mapping.domain_ip_single_fields
+        )
         index = 1
         domain_args, observable_object, index = self._parse_domainip_ip_attributes(attributes, index)
         domain_args.update(self._parse_domain_args(attributes))
         observable_object['0'] = DomainName(**domain_args)
-        return observable_object
-
-    def _parse_domain_ip_object_observable(self, misp_object: dict):
-        attributes = self._extract_multiple_object_attributes(
-            misp_object['Attribute'],
-            force_single=self._mapping.domain_ip_single_fields)
-        if not any(feature in attributes for feature in ('domain', 'hostname')):
-            self._parse_custom_object(misp_object)
-            self._required_fields_missing_warning('DomainName', 'domain-ip')
-            return
-        custom = any(attribute not in ('domain', 'hostname', 'ip') for attribute in attributes)
-        function = '_parse_domain_ip_object_custom' if custom else '_parse_domain_ip_object_standard'
-        observable_object = getattr(self, function)(attributes)
         self._handle_object_observable(misp_object, observable_object)
 
-    def _parse_domain_ip_object_standard(self, attributes: dict) -> dict:
+    def _parse_domain_ip_object_standard(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=self._mapping.domain_ip_single_fields
+        )
         index = 0
         domain_args, observable_object, index = self._parse_domainip_ip_attributes(attributes, index)
         if attributes.get('hostname'):
@@ -512,7 +507,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 args.update(domain_args)
                 observable_object[str(index)] = DomainName(**args)
                 index += 1
-        return observable_object
+        self._handle_object_observable(misp_object, observable_object)
 
     def _parse_domainip_ip_attributes(self, attributes: dict, index: int) -> tuple:
         domain_args = {}
@@ -602,9 +597,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         observable[index] = email_address
         email_args['_valid_refs'][index] = email_address._type
 
-    def _parse_file_observable_object(self, attributes: list) -> tuple:
+    def _parse_file_observable_object(self, misp_object: dict) -> tuple:
         attributes = self._extract_multiple_object_attributes_with_data(
-            attributes,
+            misp_object['Attribute'],
             force_single=self._mapping.file_single_fields,
             with_data=self._mapping.file_data_fields
         )
@@ -634,10 +629,15 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return file_args, observable_object
 
     def _parse_image_object_observable(self, misp_object: dict):
-        artifact_args, attributes = self._parse_image_args(misp_object['Attribute'])
+        attributes = self._extract_multiple_object_attributes_with_data(
+            misp_object['Attribute'],
+            force_single=self._mapping.image_single_fields,
+            with_data=self._mapping.image_data_fields
+        )
+        artifact_args = self._parse_image_args(attributes)
         file_args = {}
         if attributes.get('filename'):
-            file_args['name'] = attributes.get('filename')
+            file_args['name'] = attributes.pop('filename')
         if attributes:
             file_args.update(self._handle_observable_multiple_properties(attributes))
         if artifact_args is not None:
@@ -697,7 +697,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             observable_object = {}
             file_args = {}
             index = 1
-            for feature in self._mapping.lnk_uuid_fields:
+            for feature in self._mapping.lnk_path_fields:
                 if attributes.get(feature):
                     str_index = str(index)
                     observable_object[str_index] = Directory(
@@ -981,6 +981,24 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return WindowsPESection(**section_args)
 
     ################################################################################
+    #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #
+    ################################################################################
+
+    def _parse_image_args(self, attributes: dict) -> Union[dict, None]:
+        if not any(feature in attributes for feature in ('attachment', 'url')):
+            return None
+        if attributes.get('attachment'):
+            attachment = attributes.pop('attachment')
+            artifact_args = self._parse_image_attachment(attachment)
+            if artifact_args is not None:
+                if attributes.get('url'):
+                    artifact_args['x_misp_url'] = attributes.pop('url')
+                return artifact_args
+            attributes['attachment'] = attachment
+        if attributes.get('url'):
+            return {'url': attributes.pop('url')}
+
+    ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #
     ################################################################################
 
@@ -1020,3 +1038,17 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                     del attributes[display_feature]
                     break
         return display_names
+
+    @staticmethod
+    def _parse_image_attachment(attachment: Union[str, tuple]) -> Union[dict, None]:
+        if not isinstance(attachment, tuple):
+            return None
+        filename, data = attachment
+        artifact_args = {
+            'payload_bin': data,
+            'allow_custom': True
+        }
+        if '.' in filename:
+            artifact_args['mime_type'] = f"image/{filename.split('.')[-1]}"
+        artifact_args['x_misp_filename'] = filename
+        return artifact_args

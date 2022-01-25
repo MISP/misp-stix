@@ -57,11 +57,6 @@ class Stix21Mapping(Stix2Mapping):
             password = 'credential',
             username = 'user_id'
         )
-        self.__domain_ip_uuid_fields = (
-            'domain',
-            'hostname',
-            'ip'
-        )
         self.__email_object_mapping = Mapping(
             **{
                 'bcc': 'bcc_refs.value',
@@ -78,6 +73,13 @@ class Stix21Mapping(Stix2Mapping):
                 'to': 'to_refs.value',
                 'to-display-name': 'to_refs.display_name',
                 'x-mailer': 'additional_header_fields.x_mailer'
+            }
+        )
+        self.__email_observable_mapping = Mapping(
+            **{
+                'message-id': 'message_id',
+                'send-date': 'date',
+                'subject': 'subject'
             }
         )
         self.__email_uuid_fields = (
@@ -117,6 +119,11 @@ class Stix21Mapping(Stix2Mapping):
                 'lnk-modification-time': 'mtime'
             }
         )
+        self.__lnk_uuid_fields = (
+            'fullpath',
+            'malware-sample',
+            'path'
+        )
         self.__network_socket_mapping = Mapping(
             features = Mapping(
                 **{
@@ -154,8 +161,8 @@ class Stix21Mapping(Stix2Mapping):
             role = 'roles'
         )
         self.__parent_process_fields = (
-            'parent-command-line',
-            'parent-pid'
+            'parent-pid',
+            'parent-command-line'
         )
         self.__process_object_mapping = Mapping(
             features = Mapping(
@@ -235,12 +242,12 @@ class Stix21Mapping(Stix2Mapping):
         return self.__credential_object_mapping
 
     @property
-    def domain_ip_uuid_fields(self) -> tuple:
-        return self.__domain_ip_uuid_fields
-
-    @property
     def email_object_mapping(self) -> dict:
         return self.__email_object_mapping
+
+    @property
+    def email_observable_mapping(self) -> dict:
+        return self.__email_observable_mapping
 
     @property
     def email_uuid_fields(self) -> tuple:
@@ -265,6 +272,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def lnk_time_fields(self) -> dict:
         return self.__lnk_time_fields
+
+    @property
+    def lnk_uuid_fields(self) -> tuple:
+        return self.__lnk_uuid_fields
 
     @property
     def malware_sample_additional_observable_values(self) -> dict:

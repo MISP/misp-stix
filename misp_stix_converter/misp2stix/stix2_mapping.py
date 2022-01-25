@@ -407,6 +407,11 @@ class Stix2Mapping:
             'registration-date',
             'text'
         )
+        self.__domain_ip_standard_fields = (
+            'domain',
+            'hostname',
+            'ip'
+        )
         self.__email_header_fields = Mapping(
             **{
                 'reply-to': 'Reply-To',
@@ -497,6 +502,10 @@ class Stix2Mapping:
             'filename',
             'url'
         )
+        self.__image_uuid_fields = (
+            'attachment',
+            'url'
+        )
         self.__ip_port_object_mapping = Mapping(
             ip_features = Mapping(
                 **{
@@ -535,7 +544,7 @@ class Stix2Mapping:
         )
         self.__legal_entity_single_fields = (
             'name',
-            'description'
+            'text'
         )
         self.__lnk_data_fields = (
             'malware-sample',
@@ -557,6 +566,10 @@ class Stix2Mapping:
                 'size-in-bytes': 'size'
             }
         )
+        self.__lnk_path_fields = (
+            'fullpath',
+            'path'
+        )
         lnk_single_fields = (
             'lnk-access-time',
             'lnk-creation-time',
@@ -565,10 +578,6 @@ class Stix2Mapping:
             'size-in-bytes'
         )
         self.__lnk_single_fields = self.__lnk_hash_types + lnk_single_fields
-        self.__lnk_uuid_fields = (
-            'fullpath',
-            'path'
-        )
         self.__network_connection_mapping = Mapping(
             features = Mapping(
                 **{
@@ -842,6 +851,10 @@ class Stix2Mapping:
         return self.__domain_ip_single_fields
 
     @property
+    def domain_ip_standard_fields(self) -> tuple:
+        return self.__domain_ip_standard_fields
+
+    @property
     def email_header_fields(self) -> dict:
         return self.__email_header_fields
 
@@ -922,6 +935,10 @@ class Stix2Mapping:
         return self.__image_single_fields
 
     @property
+    def image_uuid_fields(self) -> tuple:
+        return self.__image_uuid_fields
+
+    @property
     def ip_port_object_mapping(self) -> dict:
         return self.__ip_port_object_mapping
 
@@ -958,12 +975,12 @@ class Stix2Mapping:
         return self.__lnk_object_mapping
 
     @property
-    def lnk_single_fields(self) -> tuple:
-        return self.__lnk_single_fields
+    def lnk_path_fields(self) -> tuple:
+        return self.__lnk_path_fields
 
     @property
-    def lnk_uuid_fields(self) -> tuple:
-        return self.__lnk_uuid_fields
+    def lnk_single_fields(self) -> tuple:
+        return self.__lnk_single_fields
 
     @property
     def misp_identity_args(self) -> dict:

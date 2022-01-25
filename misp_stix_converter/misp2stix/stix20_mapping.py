@@ -44,6 +44,12 @@ class Stix20Mapping(Stix2Mapping):
                 'x-mailer': 'additional_header_fields.x_mailer'
             }
         )
+        self.__email_observable_mapping = Mapping(
+            **{
+                'send-date': 'date',
+                'subject': 'subject'
+            }
+        )
         self.__employee_object_mapping = Mapping(
             **{
                 'email-address': 'contact_information',
@@ -151,6 +157,10 @@ class Stix20Mapping(Stix2Mapping):
     @property
     def email_object_mapping(self) -> dict:
         return self.__email_object_mapping
+
+    @property
+    def email_observable_mapping(self) -> dict:
+        return self.__email_observable_mapping
 
     @property
     def employee_object_mapping(self) -> dict:
