@@ -949,7 +949,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
 
     @staticmethod
     def _fetch_colors(tags: list) -> tuple:
-        return (tag.split(':')[-1].upper() for tag in tags)
+        return (':'.join(tag.split(':')[1:]).upper() for tag in tags)
 
     def _set_color(self, colors: list) -> str:
         tlp_color = 0
@@ -982,7 +982,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _set_handling(self, tags: list) -> Marking:
         sorted_tags = defaultdict(list)
         for tag in tags:
-            feature = 'tlp_tags' if tag.startswith('tlp:') else 'simple_tags'
+            feature = 'tlp_tags' if self._is_tlp_tag(tag) else 'simple_tags'
             sorted_tags[feature].append(tag)
         handling = Marking()
         marking_specification = MarkingSpecification()
@@ -2215,6 +2215,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
+
+    def _is_tlp_tag(self, tag: str) -> bool:
+        if not tag.startswith('tlp:'):
+            return False
+        return tag.startswith('tlp:') and ':'.join(tag.split(':')[1:]) in self._mapping.TLP_order
 
     def _quick_fetch_ttp_timestamp(self, object_id: str) -> datetime:
         for ttp in self._stix_package.ttps.ttp:
