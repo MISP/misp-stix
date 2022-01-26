@@ -237,7 +237,6 @@ class Stix1Mapping:
             **{
                 'RED': 4,
                 'AMBER': 3,
-                'AMBER NATO ALLIANCE': 3,
                 'GREEN': 2,
                 'WHITE': 1
             }
