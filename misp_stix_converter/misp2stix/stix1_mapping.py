@@ -235,10 +235,10 @@ class Stix1Mapping:
         self.__misp_indicator_type = Mapping(**_misp_indicator_type)
         self.__TLP_order = Mapping(
             **{
-                'RED': 4,
-                'AMBER': 3,
-                'GREEN': 2,
-                'WHITE': 1
+                'red': 4,
+                'amber': 3,
+                'green': 2,
+                'white': 1
             }
         )
         # ATTRIBUTES MAPPING

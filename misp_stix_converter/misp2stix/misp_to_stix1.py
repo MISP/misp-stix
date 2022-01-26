@@ -949,7 +949,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
 
     @staticmethod
     def _fetch_colors(tags: list) -> tuple:
-        return (':'.join(tag.split(':')[1:]).upper() for tag in tags)
+        return (':'.join(tag.split(':')[1:]) for tag in tags)
 
     def _set_color(self, colors: list) -> str:
         tlp_color = 0
@@ -957,7 +957,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             color_num = self._mapping.TLP_order[color]
             if color_num > tlp_color:
                 tlp_color = color_num
-                color_value = color
+                color_value = color.upper()
         return color_value
 
     @staticmethod
