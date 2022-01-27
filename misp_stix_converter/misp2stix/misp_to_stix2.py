@@ -214,17 +214,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if marking in self._markings:
                 marking_ids.append(self._markings[marking]['id'])
                 continue
-            if marking.startswith('tlp:'):
-                try:
-                    marking_definition = deepcopy(self._mapping.tlp_markings[marking])
-                    marking_id = marking_definition.id
-                    if marking_id not in self.unique_ids:
-                        self._markings[marking] = marking_definition
-                        self.__ids[marking_id] = marking_id
-                    marking_ids.append(marking_id)
-                    continue
-                except KeyError:
-                    self._warning.append(f"Unknwon TLP tag: {marking}")
+            if self._is_tlp_tag(marking):
+                marking_definition = deepcopy(self._mapping.tlp_markings[marking])
+                marking_id = marking_definition.id
+                if marking_id not in self.unique_ids:
+                    self._markings[marking] = marking_definition
+                    self.__ids[marking_id] = marking_id
+                marking_ids.append(marking_id)
+                continue
             object_args['labels'].append(marking)
         if marking_ids:
             object_args['object_marking_refs'] = marking_ids
@@ -2847,6 +2844,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _handle_value_for_pattern(attribute_value: str) -> str:
         #return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
         return attribute_value.replace("'", "\\'").replace('"', '\\\\"')
+
+    def _is_tlp_tag(self, tag: str) -> bool:
+        if not tag.startswith('tlp:'):
+            return False
+        return tag in self._mapping.tlp_markings
 
     @staticmethod
     def _parse_custom_data_value(value_to_parse: Union[str, tuple]) -> Union[dict, str]:
