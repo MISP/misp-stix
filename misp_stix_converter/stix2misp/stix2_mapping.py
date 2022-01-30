@@ -16,7 +16,7 @@ class STIX2Mapping:
             ' REPEATS '
         )
 
-    def _declare_mapping(self, updates=Optional[dict]=None):
+    def _declare_mapping(self, updates: Optional[dict]=None):
         self.__stix_to_misp_mapping = Mapping(
             **{
                 'attack-pattern': '_load_attack_pattern',
