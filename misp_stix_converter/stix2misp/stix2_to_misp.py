@@ -1,11 +1,25 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
-import stix2
 from .importparser import STIXtoMISPParser
+from collections import defaultdict
 from pymisp import MISPEvent, MISPObject, MISPAttribute
 from stix2.v20.bundle import Bundle as Bundle_v20
+from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
+from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
+    CourseOfAction as CourseOfAction_v20, Identity as Identity_v20,
+    IntrusionSet as IntrusionSet_v20, Malware as Malware_v20,
+    Report as Report_v20, ThreatActor as ThreatActor_v20, Tool as Tool_v20,
+    Vulnerability as Vulnerability_v20)
+from stix2.v20.sro import Relationship as Relationship_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
+from stix2.v21.common import MarkingDefinition as MarkingDefinition_v21
+from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
+    CourseOfAction as CourseOfAction_v21, Grouping, Identity as Identity_v21,
+    IntrusionSet as IntrusionSet_v21, Malware as Malware_v21,
+    Report as Report_v21, ThreatActor as ThreatActor_v21, Tool as Tool_v21,
+    Vulnerability as Vulnerability_v21)
+from stix2.v21.sro import Relationship as Relationship_v21
 from typing import Union
 
 
@@ -13,15 +27,17 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def __init__(self):
         super().__init__()
 
-    def parse_stix_content(self, filename: str):
-        with open(filename, 'rt', encoding='utf-8') as f:
-            self.__bundle = stix2.parse(f.read(), allow_custom=True, interoperability=True)
-        self.__stix_version = self.bundle.spec_version if hasattr(self.bundle, 'spec_version') else '2.1'
+    def parse_stix_content(self, bundle: Union[Bundle_v20, Bundle_v21]):
+        self._relationship = defaultdict(list)
+        self.__stix_version = bundle.spec_version if hasattr(bundle, 'spec_version') else '2.1'
         self.__misp_event = MISPEvent()
-
-    @property
-    def bundle(self) -> Union[Bundle_v20, Bundle_v21]:
-        return self.__bundle
+        self._identifier = bundle.id
+        for stix_object in bundle.objects:
+            object_type = stix_object['type']
+            if object_type in self._mapping.stix_to_misp_mapping:
+                getattr(self, self._mapping.stix_to_misp_mapping[object_type])(stix_object)
+            else:
+                self._unknown_stix_object_type(object_type)
 
     @property
     def misp_event(self) -> MISPEvent:
@@ -30,3 +46,81 @@ class STIX2toMISPParser(STIXtoMISPParser):
     @property
     def stix_version(self) -> str:
         return self.__stix_version
+
+    ################################################################################
+    ##                    MAIN STIX OBJECTS PARSING FUNCTIONS.                    ##
+    ################################################################################
+
+    def _load_attack_pattern(self, attack_pattern: Union[AttackPattern_v20, AttackPattern_v21]):
+        try:
+            self._attack_pattern[attack_pattern.id] = attack_pattern
+        except AttributeError:
+            self._attack_pattern = {attack_pattern.id: attack_pattern}
+
+    def _load_course_of_action(self, course_of_action: Union[CourseOfAction_v20, CourseOfAction_v21]):
+        try:
+            self._course_of_action[course_of_action.id] = course_of_action
+        except AttributeError:
+            self._course_of_action = {course_of_action.id: course_of_action}
+
+    def _load_grouping(self, grouping: Grouping):
+        try:
+            self._grouping[grouping.id] = grouping
+        except AttributeError:
+            self._grouping = {grouping.id: grouping}
+
+    def _load_identity(self, identity: Union[Identity_v20, Identity_v21]):
+        try:
+            self._identity[identity.id] = identity
+        except AttributeError:
+            self._identity = {identity.id: identity}
+
+    def _load_intrusion_set(self, intrusion_set: Union[IntrusionSet_v20, IntrusionSet_v21]):
+        try:
+            self._intrusion_set[intrusion_set.id] = intrusion_set
+        except AttributeError:
+            self._intrusion_set = {intrusion_set.id: intrusion_set}
+
+    def _load_malware(self, malware: Union[Malware_v20, Malware_v21]):
+        try:
+            self._malware[malware.id] = malware
+        except AttributeError:
+            self._malware = {malware.id: malware}
+
+    def _load_marking_definition(self, marking_definition: Union[MarkingDefinition_v20, MarkingDefinition_v21]):
+        try:
+            self._marking_definition[marking_definition.id] = marking_definition
+        except AttributeError:
+            self._marking_definition = {marking_definition.id: marking_definition}
+
+    def _load_relationship(self, relationship: Union[Relationship_v20, Relationship_v21]):
+        self._relationship[relationship.source_ref].append(
+            {
+                'referenced_uuid': relationship.target_ref,
+                'relationship_type': relationship.relationship_type
+            }
+        )
+
+    def _load_report(self, report: Union[Report_v20, Report_v21]):
+        try:
+            self._report[report.id] = report
+        except AttributeError:
+            self._report = {report.id: report}
+
+    def _load_threat_actor(self, threat_actor: Union[ThreatActor_v20, ThreatActor_v21]):
+        try:
+            self._threat_actor[threat_actor.id] = threat_actor
+        except AttributeError:
+            self._threat_actor = {threat_actor.id: threat_actor}
+
+    def _load_tool(self, tool: Union[Tool_v20, Tool_v21]):
+        try:
+            self._tool[tool.id] = tool
+        except AttributeError:
+            self._tool = {tool.id: tool}
+
+    def _load_vulnerability(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
+        try:
+            self._vulnerability[vulnerability.id] = vulnerability
+        except AttributeError:
+            self._vulnerability = {vulnerability.id: vulnerability}

@@ -8,3 +8,4 @@ from .stix2_mapping import STIX2Mapping
 class InternalSTIX2Mapping(STIX2Mapping):
     def __init__(self):
         super().__init__()
+        self._declare_mapping()

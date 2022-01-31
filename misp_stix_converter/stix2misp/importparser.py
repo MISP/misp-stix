@@ -16,3 +16,7 @@ class STIXtoMISPParser:
     @property
     def warnings(self) -> set:
         return self.__wargnings
+
+    def _unknown_stix_object_type(self, object_type: str):
+        message = f"Unknown STIX object type: {object_type}"
+        self.__warnings[self._identifier].add(message)
