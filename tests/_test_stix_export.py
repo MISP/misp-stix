@@ -198,12 +198,12 @@ class TestSTIX2Export(unittest.TestCase):
 
     def _check_object_labels(self, misp_object, labels, to_ids=None):
         if to_ids is not None:
-            category_label, name_label, ids_label = labels
+            name_label, category_label, ids_label = labels
             self.assertEqual(ids_label, f'misp:to_ids="{to_ids}"')
         else:
-            category_label, name_label = labels
-        self.assertEqual(category_label, f'misp:category="{misp_object["meta-category"]}"')
+            name_label, category_label = labels
         self.assertEqual(name_label, f'misp:name="{misp_object["name"]}"')
+        self.assertEqual(category_label, f'misp:category="{misp_object["meta-category"]}"')
 
     def _check_object_observable_features(self, observed_data, misp_object, identity_id, object_ref):
         self._check_observable_features(observed_data, identity_id, object_ref, misp_object['uuid'])
@@ -396,8 +396,8 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(object_ref, f"{custom_type}--{misp_object['uuid']}")
         self.assertEqual(custom_object.id, object_ref)
         self.assertEqual(custom_object.created_by_ref, identity_id)
-        self.assertEqual(custom_object.labels[0], f'misp:category="{category}"')
-        self.assertEqual(custom_object.labels[1], f'misp:name="{name}"')
+        self.assertEqual(custom_object.labels[0], f'misp:name="{name}"')
+        self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
         self.assertEqual(custom_object.x_misp_name, name)
         self.assertEqual(custom_object.x_misp_meta_category, category)
         if misp_object.get('comment'):
