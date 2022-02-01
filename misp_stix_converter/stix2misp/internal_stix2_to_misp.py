@@ -48,14 +48,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._add_attribute(attribute)
 
     def _parse_custom_object(self, custom_object: Union[CustomObject_v20, CustomObject_v21]):
-        name = stix_object.x_misp_name
+        name = custom_object.x_misp_name
         misp_object = MISPObject(name)
-        misp_object = stix_object.x_misp_meta_category
+        misp_object.category = custom_object.x_misp_meta_category
         misp_object.uuid = custom_object.id.split('--')[1]
         misp_object.timestamp = self._get_timestamp_from_date(custom_object.modified)
         if hasattr(custom_object, 'x_misp_comment'):
             misp_object.comment = custom_object.x_misp_comment
-        for attribute in misp_object.x_misp_attributes:
+        for attribute in custom_object.x_misp_attributes:
             misp_object.add_attribute(**attribute)
         self._add_object(misp_object)
 
