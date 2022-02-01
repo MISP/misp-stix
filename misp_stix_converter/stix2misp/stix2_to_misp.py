@@ -1,26 +1,40 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
+import time
 from .importparser import STIXtoMISPParser
 from collections import defaultdict
-from pymisp import MISPEvent, MISPObject, MISPAttribute
+from datetime import datetime
+from pymisp import MISPEvent, MISPAttribute, MISPObject
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
 from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
     CourseOfAction as CourseOfAction_v20, Identity as Identity_v20,
     IntrusionSet as IntrusionSet_v20, Malware as Malware_v20,
-    Report as Report_v20, ThreatActor as ThreatActor_v20, Tool as Tool_v20,
+    ObservedData as ObservedData_v20, Report as Report_v20,
+    ThreatActor as ThreatActor_v20, Tool as Tool_v20,
     Vulnerability as Vulnerability_v20)
 from stix2.v20.sro import Relationship as Relationship_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v21.common import MarkingDefinition as MarkingDefinition_v21
+from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, DomainName,
+    EmailAddress, EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
+    NetworkTraffic, Process, Software, URL, UserAccount, WindowsRegistryKey,
+    X509Certificate)
 from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
     CourseOfAction as CourseOfAction_v21, Grouping, Identity as Identity_v21,
     IntrusionSet as IntrusionSet_v21, Malware as Malware_v21,
-    Report as Report_v21, ThreatActor as ThreatActor_v21, Tool as Tool_v21,
+    ObservedData as ObservedData_v21, Report as Report_v21,
+    ThreatActor as ThreatActor_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
 from stix2.v21.sro import Relationship as Relationship_v21
 from typing import Union
+
+_OBSERVABLE_TYPES = Union[
+    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress, EmailMessage,
+    File, IPv4Address, IPv6Address, MACAddress, Mutex, NetworkTraffic, Process,
+    Software, URL, UserAccount, WindowsRegistryKey, X509Certificate
+]
 
 
 class STIX2toMISPParser(STIXtoMISPParser):
@@ -93,6 +107,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             self._marking_definition = {marking_definition.id: marking_definition}
 
+    def _load_observable_object(self, observable: _OBSERVABLE_TYPES):
+        try:
+            self._observable[observable.id] = observable
+        except AttributeError:
+            self._observable = {observable.id: observable}
+
     def _load_relationship(self, relationship: Union[Relationship_v20, Relationship_v21]):
         self._relationship[relationship.source_ref].append(
             {
@@ -124,3 +144,49 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._vulnerability[vulnerability.id] = vulnerability
         except AttributeError:
             self._vulnerability = {vulnerability.id: vulnerability}
+
+    def _parse_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
+        if hasattr(observed_data, 'spec_version') and observed_data.spec_version == '2.1':
+            if self._all_refs_parsed(observed_data.object_refs):
+                self._parse_observed_data_v21(observed_data)
+            else:
+                try:
+                    self._observed_data[observed_data.id] = observed_data
+                except AttributeError:
+                    self._observed_data = {observed_data.id: observed_data}
+        else:
+            self._parse_observed_data_v20(observed_data)
+
+    ################################################################################
+    ##                      MISP FEATURES CREATION FUNCTIONS                      ##
+    ################################################################################
+
+    def _add_attribute(self, attribute: dict):
+        misp_attribute = MISPAttribute()
+        misp_attribute.from_dict(**attribute)
+        self.misp_event.add_attribute(**misp_attribute)
+
+    def _add_object(self, misp_object: MISPObject):
+        self.misp_event.add_object(misp_object)
+
+    ################################################################################
+    ##                             UTILITY FUNCTIONS.                             ##
+    ################################################################################
+
+    def _all_refs_parsed(self, object_refs: list) -> bool:
+        try:
+            return all(object_ref in self._observable for object_ref in object_refs)
+        except AttributeError:
+            return False
+
+    @staticmethod
+    def _get_timestamp_from_date(date: datetime) -> int:
+        return int(date.timestamp())
+        try:
+            return int(date.timestamp())
+        except AttributeError:
+            return int(time.mktime(time.strptime(date.split('+')[0], "%Y-%m-%dT%H:%M:%S.%fZ")))
+
+    @staticmethod
+    def _sanitize_value(value: str) -> str:
+        return value.replace('\\\\', '\\')
