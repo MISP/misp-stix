@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
+import re
 import unittest
 from datetime import datetime, timezone
 from misp_stix_converter import (MISPtoSTIX1EventsParser, misp_attribute_collection_to_stix1,
                                  misp_event_collection_to_stix1, misp_to_stix1, stix1_framing)
 from pathlib import Path
+from uuid import uuid5, UUID
 from .test_events import *
 from ._test_stix_export import TestCollectionSTIX1Export
 
 _DEFAULT_NAMESPACE = 'https://github.com/MISP/MISP'
 _DEFAULT_ORGNAME = 'MISP-Project'
+_ORGNAME_ID = re.sub('[\W]+', '', _DEFAULT_ORGNAME.replace(' ', '_'))
 
 misp_reghive = {
     "HKEY_CLASSES_ROOT": "HKEY_CLASSES_ROOT",
@@ -75,7 +77,7 @@ class TestStix1Export(unittest.TestCase):
         self._check_custom_properties((origin, notification), custom_properties)
 
     def _check_coa_taken(self, coa_taken, uuid, timestamp=None):
-        self.assertEqual(coa_taken.course_of_action.idref, f'{_DEFAULT_ORGNAME}:CourseOfAction-{uuid}')
+        self.assertEqual(coa_taken.course_of_action.idref, f'{_ORGNAME_ID}:CourseOfAction-{uuid}')
         if timestamp is not None:
             self.assertEqual(
                 coa_taken.course_of_action.timestamp,
@@ -83,7 +85,7 @@ class TestStix1Export(unittest.TestCase):
             )
 
     def _check_course_of_action_fields(self, course_of_action, misp_object):
-        self.assertEqual(course_of_action.id_, f"{_DEFAULT_ORGNAME}:CourseOfAction-{misp_object['uuid']}")
+        self.assertEqual(course_of_action.id_, f"{_ORGNAME_ID}:CourseOfAction-{misp_object['uuid']}")
         name, type_, objective, stage, cost, impact, efficacy = misp_object['Attribute']
         self.assertEqual(course_of_action.title, name['value'])
         self.assertEqual(course_of_action.type_.value, type_['value'])
@@ -141,7 +143,7 @@ class TestStix1Export(unittest.TestCase):
             self.assertEqual(related_object.properties.file_name.value, attribute['value'])
 
     def _check_embedded_features(self, embedded_object, cluster, name, feature='title'):
-        self.assertEqual(embedded_object.id_, f"{_DEFAULT_ORGNAME}:{name}-{cluster['uuid']}")
+        self.assertEqual(embedded_object.id_, f"{_ORGNAME_ID}:{name}-{cluster['uuid']}")
         self.assertEqual(getattr(embedded_object, feature), cluster['value'])
         self.assertEqual(embedded_object.description.value, cluster['description'])
 
@@ -187,13 +189,13 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(hash_property.fuzzy_hash_value.value, value)
 
     def _check_identity_features(self, identity, attribute):
-        self.assertEqual(identity.id_, f"{_DEFAULT_ORGNAME}:Identity-{attribute['uuid']}")
+        self.assertEqual(identity.id_, f"{_ORGNAME_ID}:Identity-{attribute['uuid']}")
         self.assertEqual(identity.name, f"{attribute['category']}: {attribute['value']} (MISP Attribute)")
 
     def _check_indicator_attribute_features(self, related_indicator, attribute, orgc):
         self.assertEqual(related_indicator.relationship, attribute['category'])
         indicator = related_indicator.item
-        self.assertEqual(indicator.id_, f"{_DEFAULT_ORGNAME}:Indicator-{attribute['uuid']}")
+        self.assertEqual(indicator.id_, f"{_ORGNAME_ID}:Indicator-{attribute['uuid']}")
         self.assertEqual(indicator.title, f"{attribute['category']}: {attribute['value']} (MISP Attribute)")
         self.assertEqual(indicator.description.value, attribute['comment'])
         self.assertEqual(
@@ -206,7 +208,7 @@ class TestStix1Export(unittest.TestCase):
     def _check_indicator_object_features(self, related_indicator, misp_object, orgc):
         self.assertEqual(related_indicator.relationship, misp_object['meta-category'])
         indicator = related_indicator.item
-        self.assertEqual(indicator.id_, f"{_DEFAULT_ORGNAME}:Indicator-{misp_object['uuid']}")
+        self.assertEqual(indicator.id_, f"{_ORGNAME_ID}:Indicator-{misp_object['uuid']}")
         self.assertEqual(indicator.title, f"{misp_object['meta-category']}: {misp_object['name']} (MISP Object)")
         self.assertEqual(indicator.description.value, misp_object['description'])
         self.assertEqual(
@@ -223,9 +225,9 @@ class TestStix1Export(unittest.TestCase):
         ip_observable, port_observable, domain_observable = observables
         ip_properties = self._check_observable_features(ip_observable, ip, 'Address')
         self.assertEqual(ip_properties.address_value.value, ip['value'])
-        self.assertEqual(port_observable.id_, f"{_DEFAULT_ORGNAME}:Observable-{port['uuid']}")
+        self.assertEqual(port_observable.id_, f"{_ORGNAME_ID}:Observable-{port['uuid']}")
         port_object = port_observable.object_
-        self.assertEqual(port_object.id_, f"{_DEFAULT_ORGNAME}:dstPort-{port['uuid']}")
+        self.assertEqual(port_object.id_, f"{_ORGNAME_ID}:dstPort-{port['uuid']}")
         port_properties = port_object.properties
         self.assertEqual(port_properties._XSI_TYPE, 'PortObjectType')
         self.assertEqual(port_properties.port_value.value, int(port['value']))
@@ -273,12 +275,12 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(getattr(properties, f"is_{state['value']}"), True)
 
     def _check_observable_features(self, observable, attribute, name):
-        self.assertEqual(observable.id_, f"{_DEFAULT_ORGNAME}:Observable-{attribute['uuid']}")
+        self.assertEqual(observable.id_, f"{_ORGNAME_ID}:Observable-{attribute['uuid']}")
         observable_object = observable.object_
         try:
             self.assertEqual(
                 observable_object.id_,
-                f"{_DEFAULT_ORGNAME}:{name}-{attribute['uuid']}"
+                f"{_ORGNAME_ID}:{name}-{attribute['uuid']}"
             )
             self.assertEqual(
                 observable_object.properties._XSI_TYPE,
@@ -287,7 +289,7 @@ class TestStix1Export(unittest.TestCase):
         except AssertionError:
             self.assertEqual(
                 observable_object.id_,
-                f"{_DEFAULT_ORGNAME}:Custom-{attribute['uuid']}"
+                f"{_ORGNAME_ID}:Custom-{attribute['uuid']}"
             )
             self.assertEqual(
                 observable_object.properties._XSI_TYPE,
@@ -357,7 +359,7 @@ class TestStix1Export(unittest.TestCase):
 
     def _check_related_object(self, related_ttp, galaxy_name, cluster_uuid, timestamp=None, object_type='TTP'):
         self.assertEqual(related_ttp.relationship.value, galaxy_name)
-        self.assertEqual(related_ttp.item.idref, f"{_DEFAULT_ORGNAME}:{object_type}-{cluster_uuid}")
+        self.assertEqual(related_ttp.item.idref, f"{_ORGNAME_ID}:{object_type}-{cluster_uuid}")
         if timestamp is not None:
             self.assertEqual(
                 related_ttp.item.timestamp,
@@ -374,7 +376,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertFalse(properties.is_destination)
 
     def _check_ttp_fields(self, ttp, uuid, identifier, object_type, timestamp=None):
-        self.assertEqual(ttp.id_, f"{_DEFAULT_ORGNAME}:TTP-{uuid}")
+        self.assertEqual(ttp.id_, f"{_ORGNAME_ID}:TTP-{uuid}")
         self.assertEqual(ttp.title, f"{identifier} (MISP {object_type})")
         if timestamp is not None:
             self.assertEqual(
@@ -553,7 +555,7 @@ class TestStix1Export(unittest.TestCase):
         self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
-        prefix = f"{_DEFAULT_ORGNAME}:{misp_object['name']}"
+        prefix = f"{_ORGNAME_ID}:{misp_object['name']}"
         self.assertEqual(
             observable.item.id_,
             f"{prefix}_ObservableComposition-{misp_object['uuid']}"
@@ -705,7 +707,7 @@ class TestStix1Export(unittest.TestCase):
         info = event['Event']['info']
         self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
-        self.assertEqual(stix_package.id_, f"{_DEFAULT_ORGNAME}:STIXPackage-{uuid}")
+        self.assertEqual(stix_package.id_, f"{_ORGNAME_ID}:STIXPackage-{uuid}")
         self.assertEqual(
             self._get_utc_timestamp(stix_package.timestamp),
             int(event['Event']['timestamp'])
@@ -713,7 +715,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(stix_package.version, version)
         self.assertEqual(stix_package.stix_header.title, f"Export from {_DEFAULT_ORGNAME}'s MISP")
         incident = stix_package.incidents[0]
-        self.assertEqual(incident.id_, f"{_DEFAULT_ORGNAME}:Incident-{uuid}")
+        self.assertEqual(incident.id_, f"{_ORGNAME_ID}:Incident-{uuid}")
         self.assertEqual(incident.title, info)
         self.assertEqual(incident.information_source.identity.name, _DEFAULT_ORGNAME)
         self.assertEqual(incident.reporter.identity.name, _DEFAULT_ORGNAME)
@@ -823,7 +825,7 @@ class TestStix1Export(unittest.TestCase):
         malware = malware_ttp.behavior.malware_instances[0]
         self._check_embedded_features(malware, malware_cluster, 'MalwareInstance')
         exploit_target = vulnerability_ttp.exploit_targets.exploit_target[0].item
-        self.assertEqual(exploit_target.id_, f"{_DEFAULT_ORGNAME}:ExploitTarget-{attribute['uuid']}")
+        self.assertEqual(exploit_target.id_, f"{_ORGNAME_ID}:ExploitTarget-{attribute['uuid']}")
         course_of_action = stix_package.courses_of_action[0]
         self._check_embedded_features(course_of_action, coa_cluster, 'CourseOfAction')
         incident = stix_package.incidents[0]
@@ -888,7 +890,7 @@ class TestStix1Export(unittest.TestCase):
         attribute = event['Event']['Attribute'][0]
         self.parser.parse_misp_event(event)
         campaign = self.parser.stix_package.campaigns[0]
-        self.assertEqual(campaign.id_, f"{_DEFAULT_ORGNAME}:Campaign-{attribute['uuid']}")
+        self.assertEqual(campaign.id_, f"{_ORGNAME_ID}:Campaign-{attribute['uuid']}")
         self.assertEqual(
             campaign.title,
             f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
@@ -938,14 +940,21 @@ class TestStix1Export(unittest.TestCase):
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         observable = indicator.observable
-        self.assertEqual(observable.id_, f"{_DEFAULT_ORGNAME}:ObservableComposition-{attribute['uuid']}")
+        self.assertEqual(observable.id_, f"{_ORGNAME_ID}:ObservableComposition-{attribute['uuid']}")
         domain_observable, address_observable = observable.observable_composition.observables
-        domain_properties = domain_observable.object_.properties
-        self.assertEqual(domain_properties._XSI_TYPE, 'DomainNameObjectType')
-        address_properties = address_observable.object_.properties
-        self.assertEqual(address_properties._XSI_TYPE, 'AddressObjectType')
+        attribute_uuid = attribute['uuid']
         domain, ip = attribute['value'].split('|')
+        self.assertEqual(domain_observable.id_, f'{_ORGNAME_ID}:Observable-{uuid5(UUID(attribute_uuid), domain)}')
+        domain_object = domain_observable.object_
+        self.assertEqual(domain_object.id_, f'{_ORGNAME_ID}:DomainName-{attribute_uuid}')
+        domain_properties = domain_object.properties
+        self.assertEqual(domain_properties._XSI_TYPE, 'DomainNameObjectType')
         self.assertEqual(domain_properties.value.value, domain)
+        self.assertEqual(address_observable.id_, f'{_ORGNAME_ID}:Observable-{uuid5(UUID(attribute_uuid), ip)}')
+        address_object = address_observable.object_
+        self.assertEqual(address_object.id_, f'{_ORGNAME_ID}:Address-{attribute_uuid}')
+        address_properties = address_object.properties
+        self.assertEqual(address_properties._XSI_TYPE, 'AddressObjectType')
         self.assertEqual(address_properties.address_value.value, ip)
         self._check_destination_address(address_properties)
 
@@ -958,7 +967,7 @@ class TestStix1Export(unittest.TestCase):
         related_indicator = incident.related_indicators.indicator[0]
         indicator = self._check_indicator_attribute_features(related_indicator, attribute, orgc)
         properties = self._check_observable_features(indicator.observable, attribute, 'EmailMessage')
-        referenced_uuid = f"{_DEFAULT_ORGNAME}:File-{attribute['uuid']}"
+        referenced_uuid = f"{_ORGNAME_ID}:File-{attribute['uuid']}"
         self.assertEqual(properties.attachments[0].object_reference, referenced_uuid)
         related_object = indicator.observable.object_.related_objects[0]
         self.assertEqual(related_object.id_, referenced_uuid)
@@ -1265,7 +1274,7 @@ class TestStix1Export(unittest.TestCase):
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_attribute(stix_package, attribute)
         exploit_target = ttp.exploit_targets.exploit_target[0].item
-        self.assertEqual(exploit_target.id_, f"{_DEFAULT_ORGNAME}:ExploitTarget-{attribute['uuid']}")
+        self.assertEqual(exploit_target.id_, f"{_ORGNAME_ID}:ExploitTarget-{attribute['uuid']}")
         vulnerability = exploit_target.vulnerabilities[0]
         self.assertEqual(vulnerability.cve_id, attribute['value'])
         incident = stix_package.incidents[0]
@@ -1282,7 +1291,7 @@ class TestStix1Export(unittest.TestCase):
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_attribute(stix_package, attribute)
         exploit_target = ttp.exploit_targets.exploit_target[0].item
-        self.assertEqual(exploit_target.id_, f"{_DEFAULT_ORGNAME}:ExploitTarget-{attribute['uuid']}")
+        self.assertEqual(exploit_target.id_, f"{_ORGNAME_ID}:ExploitTarget-{attribute['uuid']}")
         weakness = exploit_target.weaknesses[0]
         incident = stix_package.incidents[0]
         self._check_related_object(
@@ -1427,7 +1436,7 @@ class TestStix1Export(unittest.TestCase):
         tool = tool_ttp.resources.tools[0]
         self._check_embedded_features(tool, tool_cluster, 'ToolInformation', feature='name')
         exploit_target = vulnerability_ttp.exploit_targets.exploit_target[0].item
-        self.assertEqual(exploit_target.id_, f"{_DEFAULT_ORGNAME}:ExploitTarget-{ttp_object['uuid']}")
+        self.assertEqual(exploit_target.id_, f"{_ORGNAME_ID}:ExploitTarget-{ttp_object['uuid']}")
         coa_from_galaxy, coa_from_object = stix_package.courses_of_action
         self._check_embedded_features(coa_from_galaxy, coa_cluster, 'CourseOfAction')
         self._check_course_of_action_fields(coa_from_object, coa_object)
@@ -1509,7 +1518,7 @@ class TestStix1Export(unittest.TestCase):
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_object(stix_package, misp_object)
         attack_pattern = ttp.behavior.attack_patterns[0]
-        self.assertEqual(attack_pattern.id_, f"{_DEFAULT_ORGNAME}:AttackPattern-{misp_object['uuid']}")
+        self.assertEqual(attack_pattern.id_, f"{_ORGNAME_ID}:AttackPattern-{misp_object['uuid']}")
         id_, name, summary = misp_object['Attribute']
         self.assertEqual(attack_pattern.capec_id, f"CAPEC-{id_['value']}")
         self.assertEqual(attack_pattern.title, name['value'])
@@ -1830,7 +1839,7 @@ class TestStix1Export(unittest.TestCase):
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_object(stix_package, misp_object)
         exploit_target = ttp.exploit_targets.exploit_target[0].item
-        self.assertEqual(exploit_target.id_, f"{_DEFAULT_ORGNAME}:ExploitTarget-{misp_object['uuid']}")
+        self.assertEqual(exploit_target.id_, f"{_ORGNAME_ID}:ExploitTarget-{misp_object['uuid']}")
         vulnerability = exploit_target.vulnerabilities[0]
         id_, cvss, summary, created, published, reference1, reference2 = misp_object['Attribute']
         self.assertEqual(vulnerability.cve_id, id_['value'])
@@ -1856,7 +1865,7 @@ class TestStix1Export(unittest.TestCase):
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_object(stix_package, misp_object)
         exploit_target = ttp.exploit_targets.exploit_target[0].item
-        self.assertEqual(exploit_target.id_, f"{_DEFAULT_ORGNAME}:ExploitTarget-{misp_object['uuid']}")
+        self.assertEqual(exploit_target.id_, f"{_ORGNAME_ID}:ExploitTarget-{misp_object['uuid']}")
         weakness = exploit_target.weaknesses[0]
         id_, description = misp_object['Attribute']
         self.assertEqual(weakness.cwe_id, id_['value'])
@@ -1944,7 +1953,7 @@ class TestStix1Export(unittest.TestCase):
         stix_package = self.parser.stix_package
         self.assertEqual(len(stix_package.threat_actors), 1)
         threat_actor = stix_package.threat_actors[0]
-        threat_actor_id = f"{_DEFAULT_ORGNAME}:ThreatActor-{cluster['uuid']}"
+        threat_actor_id = f"{_ORGNAME_ID}:ThreatActor-{cluster['uuid']}"
         self.assertEqual(threat_actor.id_, threat_actor_id)
         self.assertEqual(threat_actor.title, cluster['value'])
         self.assertEqual(threat_actor.description.value, cluster['description'])
@@ -1973,7 +1982,7 @@ class TestStix1Export(unittest.TestCase):
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_galaxy(stix_package, cluster['uuid'], galaxy['name'])
         exploit_target = ttp.exploit_targets.exploit_target[0].item
-        self.assertEqual(exploit_target.id_, f"{_DEFAULT_ORGNAME}:ExploitTarget-{cluster['uuid']}")
+        self.assertEqual(exploit_target.id_, f"{_ORGNAME_ID}:ExploitTarget-{cluster['uuid']}")
         vulnerability = exploit_target.vulnerabilities[0]
         self._check_embedded_features(vulnerability, cluster, 'Vulnerability')
         self.assertEqual(vulnerability.cve_id, cluster['meta']['aliases'][0])
@@ -1982,7 +1991,7 @@ class TestStix1Export(unittest.TestCase):
 
 class TestStix11Export(TestStix1Export):
     def setUp(self):
-        self.parser = MISPtoSTIX1EventsParser(_DEFAULT_ORGNAME, '1.1.1')
+        self.parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.1.1')
 
     ################################################################################
     #                              EVENT FIELDS TESTS                              #
@@ -2288,7 +2297,7 @@ class TestStix11Export(TestStix1Export):
 
 class TestStix12Export(TestStix1Export):
     def setUp(self):
-        self.parser = MISPtoSTIX1EventsParser(_DEFAULT_ORGNAME, '1.2')
+        self.parser = MISPtoSTIX1EventsParser(_ORGNAME_ID, '1.2')
 
     ################################################################################
     #                              EVENT FIELDS TESTS                              #

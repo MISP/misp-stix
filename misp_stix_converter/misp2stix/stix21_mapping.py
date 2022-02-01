@@ -4,7 +4,6 @@
 from .. import Mapping
 from .stix2_mapping import Stix2Mapping
 from stix2.v21.common import TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED
-from stix2.v21.sdo import CustomObject
 
 
 class Stix21Mapping(Stix2Mapping):
@@ -13,7 +12,25 @@ class Stix21Mapping(Stix2Mapping):
         v21_specific_attributes = {
             'email-message-id': '_parse_email_message_id_attribute'
         }
+        v21_specific_attributes.update(
+            dict.fromkeys(
+                [
+                    'sigma',
+                    'snort',
+                    'yara'
+                ],
+                '_parse_patterning_language_attribute'
+            )
+        )
         self._declare_attributes_mapping(updates=v21_specific_attributes)
+        artifact_values = {
+            "mime_type": "application/zip",
+            "encryption_algorithm": "mime-type-indicated",
+            "decryption_key": "infected"
+        }
+        pattern_values = (f"file:content_ref.{key} = '{value}'" for key, value in artifact_values.items())
+        self.__malware_sample_additional_observable_values = artifact_values
+        self.__malware_sample_additional_pattern_values = ' AND '.join(pattern_values)
         self.__tlp_markings = Mapping(
             **{
                 'tlp:white': TLP_WHITE,
@@ -25,17 +42,20 @@ class Stix21Mapping(Stix2Mapping):
 
     def declare_objects_mapping(self):
         v21_specific_objects = {
+            'annotation': '_populate_objects_to_parse',
             'geolocation': '_parse_geolocation_object'
         }
         self._declare_objects_mapping(updates=v21_specific_objects)
+        self.__annotation_data_fields = (
+            'attachment',
+        )
+        self.__annotation_single_fields = (
+            'attachment',
+            'text'
+        )
         self.__credential_object_mapping = Mapping(
             password = 'credential',
             username = 'user_id'
-        )
-        self.__domain_ip_uuid_fields = (
-            'domain',
-            'hostname',
-            'ip'
         )
         self.__email_object_mapping = Mapping(
             **{
@@ -55,6 +75,13 @@ class Stix21Mapping(Stix2Mapping):
                 'x-mailer': 'additional_header_fields.x_mailer'
             }
         )
+        self.__email_observable_mapping = Mapping(
+            **{
+                'message-id': 'message_id',
+                'send-date': 'date',
+                'subject': 'subject'
+            }
+        )
         self.__email_uuid_fields = (
             'attachment',
             'bcc',
@@ -62,6 +89,13 @@ class Stix21Mapping(Stix2Mapping):
             'from',
             'screenshot',
             'to'
+        )
+        self.__employee_object_mapping = Mapping(
+            **{
+                'email-address': 'contact_information',
+                'employee-type': 'roles',
+                'text': 'description'
+            }
         )
         self.__file_uuid_fields = self.file_data_fields + ('path',)
         self.__geolocation_object_mapping = Mapping(
@@ -77,6 +111,18 @@ class Stix21Mapping(Stix2Mapping):
             'ip',
             'ip-dst',
             'ip-src'
+        )
+        self.__lnk_time_fields = Mapping(
+            **{
+                'lnk-access-time': 'atime',
+                'lnk-creation-time': 'ctime',
+                'lnk-modification-time': 'mtime'
+            }
+        )
+        self.__lnk_uuid_fields = (
+            'fullpath',
+            'malware-sample',
+            'path'
         )
         self.__network_socket_mapping = Mapping(
             features = Mapping(
@@ -109,9 +155,14 @@ class Stix21Mapping(Stix2Mapping):
             'ip-dst',
             'ip-src'
         )
+        self.__organization_object_mapping = Mapping(
+            description = 'description',
+            name = 'name',
+            role = 'roles'
+        )
         self.__parent_process_fields = (
-            'parent-command-line',
-            'parent-pid'
+            'parent-pid',
+            'parent-command-line'
         )
         self.__process_object_mapping = Mapping(
             features = Mapping(
@@ -179,20 +230,32 @@ class Stix21Mapping(Stix2Mapping):
         )
 
     @property
-    def credential_object_mapping(self) -> dict:
-        return self.__credential_object_mapping
+    def annotation_data_fields(self) -> tuple:
+        return self.__annotation_data_fields
 
     @property
-    def domain_ip_uuid_fields(self) -> tuple:
-        return self.__domain_ip_uuid_fields
+    def annotation_single_fields(self) -> tuple:
+        return self.__annotation_single_fields
+
+    @property
+    def credential_object_mapping(self) -> dict:
+        return self.__credential_object_mapping
 
     @property
     def email_object_mapping(self) -> dict:
         return self.__email_object_mapping
 
     @property
+    def email_observable_mapping(self) -> dict:
+        return self.__email_observable_mapping
+
+    @property
     def email_uuid_fields(self) -> tuple:
         return self.__email_uuid_fields
+
+    @property
+    def employee_object_mapping(self) -> dict:
+        return self.__employee_object_mapping
 
     @property
     def file_uuid_fields(self) -> tuple:
@@ -207,6 +270,22 @@ class Stix21Mapping(Stix2Mapping):
         return self.__ip_port_uuid_fields
 
     @property
+    def lnk_time_fields(self) -> dict:
+        return self.__lnk_time_fields
+
+    @property
+    def lnk_uuid_fields(self) -> tuple:
+        return self.__lnk_uuid_fields
+
+    @property
+    def malware_sample_additional_observable_values(self) -> dict:
+        return self.__malware_sample_additional_observable_values
+
+    @property
+    def malware_sample_additional_pattern_values(self) -> str:
+        return self.__malware_sample_additional_pattern_values
+
+    @property
     def network_socket_mapping(self) -> dict:
         return self.__network_socket_mapping
 
@@ -217,6 +296,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def network_traffic_uuid_fields(self) -> tuple:
         return self.__network_traffic_uuid_fields
+
+    @property
+    def organization_object_mapping(self) -> dict:
+        return self.__organization_object_mapping
 
     @property
     def parent_process_fields(self) -> tuple:

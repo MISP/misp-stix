@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
-import json
 import traceback
 from collections import defaultdict
 from datetime import datetime
-from stix.indicator import Indicator
 from typing import Optional
 
 

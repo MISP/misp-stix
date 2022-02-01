@@ -107,6 +107,7 @@ class Stix2Mapping:
             'email-subject': '_parse_email_subject_attribute',
             'email-x-mailer': '_parse_email_x_mailer_attribute',
             'filename': '_parse_filename_attribute',
+            'github-username': '_parse_github_username_attribute',
             'hostname': '_parse_domain_attribute',
             'hostname|port': '_parse_hostname_port_attribute',
             'http-method': '_parse_http_method_attribute',
@@ -295,22 +296,35 @@ class Stix2Mapping:
 
     def _declare_objects_mapping(self, updates: Optional[dict]=None):
         _objects_mapping = {
+            'android-app': '_parse_android_app_object',
             'asn': '_parse_asn_object',
             'attack-pattern': '_parse_attack_pattern_object',
             'course-of-action': '_parse_course_of_action_object',
+            'cpe-asset': '_parse_cpe_asset_object',
             'credential': '_parse_credential_object',
             'domain-ip': '_parse_domain_ip_object',
             'email': '_parse_email_object',
+            'employee': '_parse_employee_object',
             'facebook-account': '_parse_account_object',
             'file': '_parse_file_object',
+            'github-user': '_parse_account_object_with_attachment',
+            'gitlab-user': '_parse_account_object',
+            'image': '_parse_image_object',
             'ip-port': '_parse_ip_port_object',
+            'legal-entity': '_parse_legal_entity_object',
+            'lnk': '_parse_lnk_object',
             'mutex': '_parse_mutex_object',
             'network-connection': '_parse_network_connection_object',
             'network-socket': '_parse_network_socket_object',
+            'news-agency': '_parse_news_agency_object',
+            'organization': '_parse_organization_object',
+            'parler-account': '_parse_account_object_with_attachment',
             'pe': '_populate_objects_to_parse',
             'pe-section': '_populate_objects_to_parse',
             'process': '_parse_process_object',
+            'reddit-account': '_parse_account_object_with_attachment',
             'registry-key': '_parse_registry_key_object',
+            'telegram-account': '_parse_account_object',
             'twitter-account': '_parse_account_object',
             'url': '_parse_url_object',
             'user-account': '_parse_user_account_object',
@@ -329,6 +343,12 @@ class Stix2Mapping:
             "AF_INET6",
             "AF_IRDA",
             "AF_BTH"
+        )
+        self.__android_app_object_mapping = Mapping(
+            name = 'name'
+        )
+        self.__android_app_single_fields = (
+            'name',
         )
         self.__as_single_fields = (
             'asn',
@@ -349,6 +369,19 @@ class Stix2Mapping:
         self.__course_of_action_object_mapping = (
             'name',
             'description'
+        )
+        self.__cpe_asset_object_mapping = Mapping(
+            cpe = 'cpe',
+            language = 'languages',
+            product = 'name',
+            vendor = 'vendor',
+            version = 'version'
+        )
+        self.__cpe_asset_single_fields = (
+            'cpe',
+            'product',
+            'vendor',
+            'version'
         )
         self.__credential_single_fields = (
             'username',
@@ -374,6 +407,11 @@ class Stix2Mapping:
             'registration-date',
             'text'
         )
+        self.__domain_ip_standard_fields = (
+            'domain',
+            'hostname',
+            'ip'
+        )
         self.__email_header_fields = Mapping(
             **{
                 'reply-to': 'Reply-To',
@@ -383,6 +421,12 @@ class Stix2Mapping:
         self.__email_data_fields = (
             'attachment',
             'screenshot'
+        )
+        self.__employee_single_fields = (
+            'email-address',
+            'first-name',
+            'last-name',
+            'text'
         )
         self.__facebook_account_object_mapping = Mapping(
             **{
@@ -425,6 +469,43 @@ class Stix2Mapping:
             }
         )
         self.__file_single_fields = self.__file_data_fields + self.__hash_attribute_types + ('path',)
+        self.__github_user_data_fields = (
+            'profile-image',
+        )
+        self.__github_user_object_mapping = Mapping(
+            **{
+                'id': 'user_id',
+                'user-fullname': 'display_name',
+                'username': 'account_login'
+            }
+        )
+        self.__github_user_single_fields = (
+            'id',
+            'user-fullname',
+            'username'
+        )
+        self.__gitlab_user_object_mapping = Mapping(
+            id = 'user_id',
+            name = 'display_name',
+            username = 'account_login'
+        )
+        self.__gitlab_user_single_fields = (
+            'id',
+            'name',
+            'username'
+        )
+        self.__image_data_fields = (
+            'attachment',
+        )
+        self.__image_single_fields = (
+            'attachment',
+            'filename',
+            'url'
+        )
+        self.__image_uuid_fields = (
+            'attachment',
+            'url'
+        )
         self.__ip_port_object_mapping = Mapping(
             ip_features = Mapping(
                 **{
@@ -450,6 +531,53 @@ class Stix2Mapping:
             'first-seen',
             'last-seen'
         )
+        self.__legal_entity_contact_info_fields = (
+            'phone-number',
+        )
+        self.__legal_entity_data_fields = (
+            'logo',
+        )
+        self.__legal_entity_object_mapping = Mapping(
+            business = 'sectors',
+            name = 'name',
+            text = 'description'
+        )
+        self.__legal_entity_single_fields = (
+            'name',
+            'text'
+        )
+        self.__lnk_data_fields = (
+            'malware-sample',
+        )
+        self.__lnk_hash_types = (
+            'md5',
+            'sha1',
+            'sha224',
+            'sha256',
+            'sha384',
+            'sha512',
+            'sha512/224',
+            'sha512/256',
+            'ssdeep',
+            'tlsh'
+        )
+        self.__lnk_object_mapping = Mapping(
+            **{
+                'size-in-bytes': 'size'
+            }
+        )
+        self.__lnk_path_fields = (
+            'fullpath',
+            'path'
+        )
+        lnk_single_fields = (
+            'lnk-access-time',
+            'lnk-creation-time',
+            'lnk-modification-time',
+            'malware-sample',
+            'size-in-bytes'
+        )
+        self.__lnk_single_fields = self.__lnk_hash_types + lnk_single_fields
         self.__network_connection_mapping = Mapping(
             features = Mapping(
                 **{
@@ -467,6 +595,46 @@ class Stix2Mapping:
         self.__network_socket_state_fields = (
             'blocking',
             'listening'
+        )
+        self.__news_agency_contact_info_fields = (
+            'address',
+            'e-mail',
+            'fax-number',
+            'phone-number'
+        )
+        self.__news_agency_data_fields = (
+            'attachment',
+        )
+        self.__news_agency_object_mapping = Mapping(
+            name = 'name'
+        )
+        self.__news_agency_single_fields = (
+            'name',
+        )
+        self.__organization_contact_info_fields = (
+            'address',
+            'e-mail',
+            'fax-number',
+            'phone-number'
+        )
+        self.__organization_single_fields = (
+            'description',
+            'name'
+        )
+        self.__parler_account_data_fields = (
+            'attachment',
+            'cover-photo',
+            'profile-photo'
+        )
+        self.__parler_account_object_mapping = Mapping(
+            **{
+                'account-id': 'user_id',
+                'account-name': 'account_login'
+            }
+        )
+        self.__parler_account_single_fields = (
+            'account-id',
+            'account-name'
         )
         self.__pe_object_mapping = Mapping(
             features = Mapping(
@@ -495,6 +663,23 @@ class Stix2Mapping:
                 'size-in-bytes': 'size'
             }
         )
+        self.__reddit_account_data_fields = (
+            'account-avatar',
+            'attachment'
+        )
+
+        self.__reddit_account_object_mapping = Mapping(
+            **{
+                'account-id': 'user_id',
+                'account-name': 'account_login'
+            }
+        )
+
+        self.__reddit_account_single_fields = (
+            'account-id',
+            'account-name'
+        )
+
         self.__registry_key_mapping = Mapping(
             **{
                 'data-type': 'data_type',
@@ -507,6 +692,14 @@ class Stix2Mapping:
             "SOCK_RAW",
             "SOCK_RDM",
             "SOCK_SEQPACKET"
+        )
+        self.__telegram_account_object_mapping = Mapping(
+            id = 'user_id',
+            username = 'account_login'
+        )
+        self.__telegram_account_single_fields = (
+            'id',
+            'username'
         )
         self.__twitter_account_object_mapping = Mapping(
             **{
@@ -598,6 +791,14 @@ class Stix2Mapping:
         return self.__address_family_enum_list
 
     @property
+    def android_app_object_mapping(self) -> dict:
+        return self.__android_app_object_mapping
+
+    @property
+    def android_app_single_fields(self) -> tuple:
+        return self.__android_app_single_fields
+
+    @property
     def as_single_fields(self) -> tuple:
         return self.__as_single_fields
 
@@ -626,8 +827,12 @@ class Stix2Mapping:
         return self.__course_of_action_object_mapping
 
     @property
-    def credential_object_mapping(self) -> dict:
-        return self.__credential_object_mapping
+    def cpe_asset_object_mapping(self) -> dict:
+        return self.__cpe_asset_object_mapping
+
+    @property
+    def cpe_asset_single_fields(self) -> tuple:
+        return self.__cpe_asset_single_fields
 
     @property
     def credential_single_fields(self) -> tuple:
@@ -646,12 +851,20 @@ class Stix2Mapping:
         return self.__domain_ip_single_fields
 
     @property
+    def domain_ip_standard_fields(self) -> tuple:
+        return self.__domain_ip_standard_fields
+
+    @property
     def email_header_fields(self) -> dict:
         return self.__email_header_fields
 
     @property
     def email_data_fields(self) -> tuple:
         return self.__email_data_fields
+
+    @property
+    def employee_single_fields(self) -> tuple:
+        return self.__employee_single_fields
 
     @property
     def external_id_to_source_name(self) -> dict:
@@ -690,8 +903,40 @@ class Stix2Mapping:
         return self.__galaxy_types_mapping
 
     @property
+    def github_user_data_fields(self) -> tuple:
+        return self.__github_user_data_fields
+
+    @property
+    def github_user_object_mapping(self) -> dict:
+        return self.__github_user_object_mapping
+
+    @property
+    def github_user_single_fields(self) -> tuple:
+        return self.__github_user_single_fields
+
+    @property
+    def gitlab_user_object_mapping(self) -> dict:
+        return self.__gitlab_user_object_mapping
+
+    @property
+    def gitlab_user_single_fields(self) -> tuple:
+        return self.__gitlab_user_single_fields
+
+    @property
     def hash_attribute_types(self) -> tuple:
         return self.__hash_attribute_types
+
+    @property
+    def image_data_fields(self) -> tuple:
+        return self.__image_data_fields
+
+    @property
+    def image_single_fields(self) -> tuple:
+        return self.__image_single_fields
+
+    @property
+    def image_uuid_fields(self) -> tuple:
+        return self.__image_uuid_fields
 
     @property
     def ip_port_object_mapping(self) -> dict:
@@ -700,6 +945,42 @@ class Stix2Mapping:
     @property
     def ip_port_single_fields(self) -> tuple:
         return self.__ip_port_single_fields
+
+    @property
+    def legal_entity_contact_info_fields(self) -> tuple:
+        return self.__legal_entity_contact_info_fields
+
+    @property
+    def legal_entity_data_fields(self) -> tuple:
+        return self.__legal_entity_data_fields
+
+    @property
+    def legal_entity_object_mapping(self) -> dict:
+        return self.__legal_entity_object_mapping
+
+    @property
+    def legal_entity_single_fields(self) -> tuple:
+        return self.__legal_entity_single_fields
+
+    @property
+    def lnk_data_fields(self) -> tuple:
+        return self.__lnk_data_fields
+
+    @property
+    def lnk_hash_types(self) -> tuple:
+        return self.__lnk_hash_types
+
+    @property
+    def lnk_object_mapping(self) -> dict:
+        return self.__lnk_object_mapping
+
+    @property
+    def lnk_path_fields(self) -> tuple:
+        return self.__lnk_path_fields
+
+    @property
+    def lnk_single_fields(self) -> tuple:
+        return self.__lnk_single_fields
 
     @property
     def misp_identity_args(self) -> dict:
@@ -714,8 +995,44 @@ class Stix2Mapping:
         return self.__network_socket_state_fields
 
     @property
+    def news_agency_contact_info_fields(self) -> tuple:
+        return self.__news_agency_contact_info_fields
+
+    @property
+    def news_agency_data_fields(self) -> tuple:
+        return self.__news_agency_data_fields
+
+    @property
+    def news_agency_object_mapping(self) -> dict:
+        return self.__news_agency_object_mapping
+
+    @property
+    def news_agency_single_fields(self) -> tuple:
+        return self.__news_agency_single_fields
+
+    @property
     def objects_mapping(self) -> dict:
         return self.__objects_mapping
+
+    @property
+    def organization_contact_info_fields(self) -> tuple:
+        return self.__organization_contact_info_fields
+
+    @property
+    def organization_single_fields(self) -> tuple:
+        return self.__organization_single_fields
+
+    @property
+    def parler_account_data_fields(self) -> tuple:
+        return self.__parler_account_data_fields
+
+    @property
+    def parler_account_object_mapping(self) -> dict:
+        return self.__parler_account_object_mapping
+
+    @property
+    def parler_account_single_fields(self) -> tuple:
+        return self.__parler_account_single_fields
 
     @property
     def pe_object_mapping(self) -> dict:
@@ -728,6 +1045,18 @@ class Stix2Mapping:
     @property
     def pe_section_mapping(self) -> dict:
         return self.__pe_section_mapping
+
+    @property
+    def reddit_account_data_fields(self) -> tuple:
+        return self.__reddit_account_data_fields
+
+    @property
+    def reddit_account_object_mapping(self) -> dict:
+        return self.__reddit_account_object_mapping
+
+    @property
+    def reddit_account_single_fields(self) -> tuple:
+        return self.__reddit_account_single_fields
 
     @property
     def registry_key_mapping(self) -> dict:
@@ -744,6 +1073,14 @@ class Stix2Mapping:
     @property
     def source_names(self) -> tuple:
         return self.__source_names
+
+    @property
+    def telegram_account_object_mapping(self) -> dict:
+        return self.__telegram_account_object_mapping
+
+    @property
+    def telegram_account_single_fields(self) -> tuple:
+        return self.__telegram_account_single_fields
 
     @property
     def twitter_account_object_mapping(self) -> dict:

@@ -11,6 +11,8 @@ class Stix20Mapping(Stix2Mapping):
     def __init__(self):
         super().__init__()
         self._declare_attributes_mapping()
+        self.__malware_sample_additional_observable_values = {"mime_type": "application/zip"}
+        self.__malware_sample_additional_pattern_values = "file:content_ref.mime_type = 'application/zip'"
         self.__tlp_markings = Mapping(
             **{
                 'tlp:white': TLP_WHITE,
@@ -42,6 +44,18 @@ class Stix20Mapping(Stix2Mapping):
                 'x-mailer': 'additional_header_fields.x_mailer'
             }
         )
+        self.__email_observable_mapping = Mapping(
+            **{
+                'send-date': 'date',
+                'subject': 'subject'
+            }
+        )
+        self.__employee_object_mapping = Mapping(
+            **{
+                'email-address': 'contact_information',
+                'text': 'description'
+            }
+        )
         self.__network_socket_mapping = Mapping(
             features = Mapping(
                 **{
@@ -68,6 +82,10 @@ class Stix20Mapping(Stix2Mapping):
             'protocol',
             'socket-type',
             'src-port'
+        )
+        self.__organization_object_mapping = Mapping(
+            description = 'description',
+            name = 'name'
         )
         self.__process_object_mapping = Mapping(
             features = Mapping(
@@ -141,12 +159,32 @@ class Stix20Mapping(Stix2Mapping):
         return self.__email_object_mapping
 
     @property
+    def email_observable_mapping(self) -> dict:
+        return self.__email_observable_mapping
+
+    @property
+    def employee_object_mapping(self) -> dict:
+        return self.__employee_object_mapping
+
+    @property
+    def malware_sample_additional_observable_values(self) -> dict:
+        return self.__malware_sample_additional_observable_values
+
+    @property
+    def malware_sample_additional_pattern_values(self) -> str:
+        return self.__malware_sample_additional_pattern_values
+
+    @property
     def network_socket_mapping(self) -> dict:
         return self.__network_socket_mapping
 
     @property
     def network_socket_single_fields(self) -> tuple:
         return self.__network_socket_single_fields
+
+    @property
+    def organization_object_mapping(self) -> dict:
+        return self.__organization_object_mapping
 
     @property
     def process_object_mapping(self) -> dict:

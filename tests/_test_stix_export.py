@@ -8,6 +8,9 @@ from datetime import datetime
 from misp_stix_converter import MISPtoSTIX20Parser, MISPtoSTIX21Parser
 from pathlib import Path
 from stix.core import STIXPackage
+from uuid import uuid5, UUID
+
+_DEFAULT_ORGNAME = 'MISP'
 
 
 class TestCollectionSTIXExport(unittest.TestCase):
@@ -30,6 +33,27 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
         reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
         self.__recursive_feature_tests(reference, to_test, exclude=('id',))
 
+    def __check_observables(self, reference_observables, observables_to_test):
+        for reference_observable, observable_to_test in zip(reference_observables, observables_to_test):
+            print(reference_observable)
+            print(observable_to_test)
+            uuid = '-'.join(part for part in reference_observable['object']['id'].split('-')[1:])
+            print(uuid)
+            for key, value in reference_observable['object']['properties'].items():
+                if 'value' in key:
+                    uuid = uuid5(UUID(uuid), value['value'])
+                    break
+            print(uuid)
+            self.assertEqual(
+                reference_observable['id'],
+                f'{_DEFAULT_ORGNAME}:Observable-{uuid}'
+            )
+            self.assertEqual(reference_observable['id'], observable_to_test['id'])
+            self.__recursive_feature_tests(
+                reference_observable['object'],
+                observable_to_test['object']
+            )
+
     def __recursive_feature_tests(self, reference, to_test, exclude=tuple()):
         for key in (reference.keys() - exclude):
             try:
@@ -37,11 +61,10 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
             except AssertionError:
                 if isinstance(reference[key], list):
                     if key == 'observables':
-                        exclude = ('id',)
+                        self.__check_observables(reference[key], to_test[key])
+                        continue
                     for reference_value, value_to_test in zip(reference[key], to_test[key]):
                         self.__recursive_feature_tests(reference_value, value_to_test, exclude=exclude)
-                elif key == 'observable':
-                    self.__recursive_feature_tests(reference[key], to_test[key], exclude=('id',))
                 else:
                     self.__recursive_feature_tests(reference[key], to_test[key])
 
@@ -175,12 +198,12 @@ class TestSTIX2Export(unittest.TestCase):
 
     def _check_object_labels(self, misp_object, labels, to_ids=None):
         if to_ids is not None:
-            category_label, name_label, ids_label = labels
+            name_label, category_label, ids_label = labels
             self.assertEqual(ids_label, f'misp:to_ids="{to_ids}"')
         else:
-            category_label, name_label = labels
-        self.assertEqual(category_label, f'misp:category="{misp_object["meta-category"]}"')
+            name_label, category_label = labels
         self.assertEqual(name_label, f'misp:name="{misp_object["name"]}"')
+        self.assertEqual(category_label, f'misp:meta-category="{misp_object["meta-category"]}"')
 
     def _check_object_observable_features(self, observed_data, misp_object, identity_id, object_ref):
         self._check_observable_features(observed_data, identity_id, object_ref, misp_object['uuid'])
@@ -193,7 +216,7 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(vulnerability.id, uuid)
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
-        self._check_object_labels(misp_object, vulnerability.labels)
+        self._check_object_labels(misp_object, vulnerability.labels, to_ids=False)
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         self.assertEqual(vulnerability.modified, timestamp)
         cve, cvss, summary, created, published, references1, references2 = (attribute['value'] for attribute in misp_object['Attribute'])
@@ -373,8 +396,8 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(object_ref, f"{custom_type}--{misp_object['uuid']}")
         self.assertEqual(custom_object.id, object_ref)
         self.assertEqual(custom_object.created_by_ref, identity_id)
-        self.assertEqual(custom_object.labels[0], f'misp:category="{category}"')
-        self.assertEqual(custom_object.labels[1], f'misp:name="{name}"')
+        self.assertEqual(custom_object.labels[0], f'misp:name="{name}"')
+        self.assertEqual(custom_object.labels[1], f'misp:meta-category="{category}"')
         self.assertEqual(custom_object.x_misp_name, name)
         self.assertEqual(custom_object.x_misp_meta_category, category)
         if misp_object.get('comment'):
