@@ -2330,7 +2330,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_object_labels(misp_object: dict, to_ids: Optional[bool] = None) -> list:
         labels = [
             f'misp:name="{misp_object["name"]}"',
-            f'misp:category="{misp_object["meta-category"]}"'
+            f'misp:meta-category="{misp_object["meta-category"]}"'
         ]
         if to_ids is not None:
             labels.append(f'misp:to_ids="{to_ids}"')
