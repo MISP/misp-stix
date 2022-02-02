@@ -183,6 +183,7 @@ class MISPtoSTIXParser():
         tb = self._parse_traceback(exception)
         message = f"Error with the {features}:\n{tb}."
         self.__errors[self._identifier].append(message)
+        self._parse_custom_attribute(attribute)
 
     def _attribute_galaxy_not_mapped_warning(self, galaxy_type: str, attribute_type: str):
         message = f"{galaxy_type} galaxy in {attribute_type} attribute not mapped."
@@ -197,6 +198,7 @@ class MISPtoSTIXParser():
         tb = self._parse_traceback(exception)
         message = f"Error with the {features}:\n{tb}."
         self.__errors[self._identifier].append(message)
+        self._parse_custom_object(misp_object)
 
     def _object_galaxy_not_mapped_warning(self, galaxy_type: str, object_name: str):
         message = f"{galaxy_type} galaxy in {object_name} object not mapped."

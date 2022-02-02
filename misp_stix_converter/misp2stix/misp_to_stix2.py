@@ -1535,7 +1535,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for section_uuid in uuids:
                 section = defaultdict(dict)
                 attributes = self._extract_object_attributes_escaped(
-                    self._objects_to_parse['pe-section'][section_uuid][1]['Attribute']
+                    self._objects_to_parse['pe-section'].pop(section_uuid)[1]['Attribute']
                 )
                 for key, feature in self._mapping.pe_section_mapping.items():
                     if attributes.get(key):
@@ -1575,7 +1575,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for section_uuid in uuids:
                 section_prefix = f"{prefix}.sections[{uuids.index(section_uuid)}]"
                 attributes = self._extract_object_attributes_escaped(
-                    self._objects_to_parse['pe-section'][section_uuid][1]['Attribute']
+                    self._objects_to_parse['pe-section'].pop(section_uuid)[1]['Attribute']
                 )
                 for key, feature in self._mapping.pe_section_mapping.items():
                     if attributes.get(key):
@@ -1825,14 +1825,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _resolve_objects_to_parse(self):
         if self._objects_to_parse.get('file'):
-            for file_uuid, misp_object in self._objects_to_parse['file'].items():
+            for file_uuid, misp_object in self._objects_to_parse.pop('file').items():
                 to_ids, file_object = misp_object
                 try:
                     self._resolve_file_to_parse(file_object, file_uuid, to_ids)
                 except Exception as exception:
                     self._object_error(file_object, exception)
         if self._objects_to_parse.get('pe'):
-            for misp_object in self._objects_to_parse['pe'].values():
+            for misp_object in self._objects_to_parse.pop('pe').values():
                 try:
                     to_ids, pe_object = misp_object
                 except TypeError:
@@ -1841,6 +1841,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     self._resolve_pe_to_parse(pe_object, to_ids)
                 except Exception as exception:
                     self._object_error(pe_object, exception)
+        if self._objects_to_parse.get('pe-section'):
+            for misp_object in self._objects_to_parse.pop('pe-section').values():
+                self._parse_custom_object(misp_object)
 
     def _resolve_pe_to_parse(self, pe_object: dict, pe_ids: bool):
         to_ids, section_uuids = self._handle_pe_object_references(
