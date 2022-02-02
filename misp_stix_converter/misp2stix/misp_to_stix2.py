@@ -654,8 +654,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_regkey_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            key = self._sanitize_registry_key_value(attribute['value'])
-            value = self._handle_value_for_pattern(key)
+            value = self._handle_value_for_pattern(attribute['value'])
             pattern = f"[{self._create_regkey_pattern(value)}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
@@ -663,8 +662,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_regkey_value_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            value = self._sanitize_registry_key_value(attribute['value'])
-            key, data = self._handle_value_for_pattern(value).split('|')
+            key, data = self._handle_value_for_pattern(attribute['value']).split('|')
             key_pattern = self._create_regkey_pattern(key)
             pattern = f"[{key_pattern} AND windows-registry-key:values.data = '{data.strip()}']"
             self._handle_attribute_indicator(attribute, pattern)
@@ -2852,10 +2850,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 time_fields['last_observed'] = time_fields['first_observed']
         return time_fields
 
-    @staticmethod
-    def _handle_value_for_pattern(attribute_value: str) -> str:
+    def _handle_value_for_pattern(self, attribute_value: str) -> str:
         #return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
-        return attribute_value.replace("'", "\\'").replace('"', '\\\\"')
+        sanitized = self._sanitize_registry_key_value(attribute_value)
+        return sanitized.replace("'", "\\'").replace('"', '\\\\"')
 
     def _is_tlp_tag(self, tag: str) -> bool:
         if not tag.startswith('tlp:'):
