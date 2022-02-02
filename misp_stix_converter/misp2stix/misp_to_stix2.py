@@ -654,8 +654,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_regkey_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            key = self._sanitize_registry_key_value(attribute['value'])
-            value = self._handle_value_for_pattern(key)
+            value = self._handle_value_for_pattern(attribute['value'])
             pattern = f"[{self._create_regkey_pattern(value)}]"
             self._handle_attribute_indicator(attribute, pattern)
         else:
@@ -663,8 +662,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_regkey_value_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
-            value = self._sanitize_registry_key_value(attribute['value'])
-            key, data = self._handle_value_for_pattern(value).split('|')
+            key, data = self._handle_value_for_pattern(attribute['value']).split('|')
             key_pattern = self._create_regkey_pattern(key)
             pattern = f"[{key_pattern} AND windows-registry-key:values.data = '{data.strip()}']"
             self._handle_attribute_indicator(attribute, pattern)
@@ -1537,7 +1535,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for section_uuid in uuids:
                 section = defaultdict(dict)
                 attributes = self._extract_object_attributes_escaped(
-                    self._objects_to_parse['pe-section'][section_uuid][1]['Attribute']
+                    self._objects_to_parse['pe-section'].pop(section_uuid)[1]['Attribute']
                 )
                 for key, feature in self._mapping.pe_section_mapping.items():
                     if attributes.get(key):
@@ -1577,7 +1575,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for section_uuid in uuids:
                 section_prefix = f"{prefix}.sections[{uuids.index(section_uuid)}]"
                 attributes = self._extract_object_attributes_escaped(
-                    self._objects_to_parse['pe-section'][section_uuid][1]['Attribute']
+                    self._objects_to_parse['pe-section'].pop(section_uuid)[1]['Attribute']
                 )
                 for key, feature in self._mapping.pe_section_mapping.items():
                     if attributes.get(key):
@@ -1827,14 +1825,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _resolve_objects_to_parse(self):
         if self._objects_to_parse.get('file'):
-            for file_uuid, misp_object in self._objects_to_parse['file'].items():
+            for file_uuid, misp_object in self._objects_to_parse.pop('file').items():
                 to_ids, file_object = misp_object
                 try:
                     self._resolve_file_to_parse(file_object, file_uuid, to_ids)
                 except Exception as exception:
                     self._object_error(file_object, exception)
         if self._objects_to_parse.get('pe'):
-            for misp_object in self._objects_to_parse['pe'].values():
+            for misp_object in self._objects_to_parse.pop('pe').values():
                 try:
                     to_ids, pe_object = misp_object
                 except TypeError:
@@ -1843,6 +1841,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     self._resolve_pe_to_parse(pe_object, to_ids)
                 except Exception as exception:
                     self._object_error(pe_object, exception)
+        if self._objects_to_parse.get('pe-section'):
+            for misp_object in self._objects_to_parse.pop('pe-section').values():
+                self._parse_custom_object(misp_object)
 
     def _resolve_pe_to_parse(self, pe_object: dict, pe_ids: bool):
         to_ids, section_uuids = self._handle_pe_object_references(
@@ -2852,10 +2853,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 time_fields['last_observed'] = time_fields['first_observed']
         return time_fields
 
-    @staticmethod
-    def _handle_value_for_pattern(attribute_value: str) -> str:
+    def _handle_value_for_pattern(self, attribute_value: str) -> str:
         #return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
-        return attribute_value.replace("'", "\\'").replace('"', '\\\\"')
+        sanitized = self._sanitize_registry_key_value(attribute_value)
+        return sanitized.replace("'", "\\'").replace('"', '\\\\"')
 
     def _is_tlp_tag(self, tag: str) -> bool:
         if not tag.startswith('tlp:'):

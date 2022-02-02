@@ -1237,6 +1237,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                         self._handle_misp_object_with_context(misp_object, observable)
                     else:
                         self._handle_misp_object(observable, misp_object.get('meta-category'))
+            if self._objects_to_parse.get('pe-section'):
+                for misp_object in self._objects_to_parse.pop('pe-section').values():
+                    self._parse_custom_object(misp_object)
 
     def _add_custom_property(self, stix_object: File, name: str, value: str):
         prop = self._create_property(name, value)
@@ -1722,7 +1725,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if misp_pe.get('ObjectReference'):
             for reference in misp_pe['ObjectReference']:
                 if self._check_reference(reference, 'pe-section'):
-                    misp_pe_section = self._objects_to_parse['pe-section'][reference['referenced_uuid']]
+                    misp_pe_section = self._objects_to_parse['pe-section'].pop(reference['referenced_uuid'])
                     ids_list.append(
                         self._fetch_ids_flag(misp_pe_section['Attribute'])
                     )
