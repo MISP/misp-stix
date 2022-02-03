@@ -2,6 +2,8 @@
 #!/usr/bin/env python3
 
 import time
+from .exceptions import (UndefinedSTIXObjectError, UnknownAttributeTypeError,
+    UnknownObjectNameError)
 from .importparser import STIXtoMISPParser
 from collections import defaultdict
 from datetime import datetime
@@ -48,10 +50,17 @@ class STIX2toMISPParser(STIXtoMISPParser):
         self._identifier = bundle.id
         for stix_object in bundle.objects:
             object_type = stix_object['type']
-            if object_type in self._mapping.stix_to_misp_mapping:
-                getattr(self, self._mapping.stix_to_misp_mapping[object_type])(stix_object)
-            else:
-                self._unknown_stix_object_type(object_type)
+            try:
+                if object_type in self._mapping.stix_to_misp_mapping:
+                    getattr(self, self._mapping.stix_to_misp_mapping[object_type])(stix_object)
+                else:
+                    self._unknown_stix_object_type_warning(object_type)
+            except UndefinedSTIXObjectError as error:
+                self._undefined_object_error(error)
+            except UnknownAttributeTypeError as error:
+                self._unknown_attribute_type_warning(error)
+            except UnknownObjectNameError as error:
+                self._unknown_object_name_warning(error)
 
     @property
     def misp_event(self) -> MISPEvent:

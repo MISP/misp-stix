@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import json
+from .exceptions import (UndefinedSTIXObjectError, UnknownAttributeTypeError,
+    UnknownObjectNameError)
 from .internal_stix2_mapping import InternalSTIX2Mapping
 from .stix2_to_misp import STIX2toMISPParser
 from pymisp import MISPAttribute, MISPObject
@@ -35,6 +37,23 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     ##                    MAIN STIX OBJECTS PARSING FUNCTIONS.                    ##
     ################################################################################
 
+    def _handle_observed_data(self, labels: list, observed_data_id: str) -> Tuple[str, str]:
+        try:
+            is_object, name = self._parse_labels(labels)
+        except TypeError:
+            raise UndefinedSTIXObjectError(observed_data_id)
+        if is_object:
+            try:
+                parser = self._mapping.observable_objects_mapping[name]
+            except KeyError:
+                raise UnknownObjectNameError(name)
+            return name, parser
+        try:
+            parser = self._mapping.observable_attributes_mapping[name]
+        except KeyError:
+            raise UnknownAttributeTypeError(name)
+        return name, parser
+
     def _parse_custom_attribute(self, custom_attribute: Union[CustomObject_v20, CustomObject_v21]):
         attribute = {
             "type": custom_attribute.x_misp_type,
@@ -63,13 +82,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     ##                             UTILITY FUNCTIONS.                             ##
     ################################################################################
 
-    def _create_misp_object(self, stix_object: _MISP_OBJECT_TYPING) -> MISPObject:
-        name = stix_object.labels[0].split('=')[-1].strip('"')
+    def _create_misp_object(self, name: str, stix_object: _MISP_OBJECT_TYPING) -> MISPObject:
         misp_object = MISPObject(name)
         misp_object.uuid = stix_object.id.split('--')[-1]
         misp_object.update(self._parse_timeline(stix_object))
         return misp_object
 
     @staticmethod
-    def _is_object(labels: list) -> bool:
-        return any('misp:name="' in label for label in labels[:2])
+    def _parse_labels(labels: list) -> Tuple[bool, str]:
+        for label in labels:
+            if 'misp:name="' in label or 'misp:type="' in label:
+                feature, value = label.split('=')
+                return feature == 'misp:name', value.strip('"')
