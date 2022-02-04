@@ -34,25 +34,25 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._mapping = InternalSTIX2Mapping()
 
     ################################################################################
-    ##                    MAIN STIX OBJECTS PARSING FUNCTIONS.                    ##
+    #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 
-    def _handle_observed_data(self, labels: list, observed_data_id: str) -> Tuple[str, str]:
+    def _handle_observed_data(self, labels: list, observed_data_id: str) -> str:
         try:
             is_object, name = self._parse_labels(labels)
         except TypeError:
             raise UndefinedSTIXObjectError(observed_data_id)
         if is_object:
             try:
-                parser = self._mapping.observable_objects_mapping[name]
+                feature = self._mapping.observable_objects_mapping[name]
             except KeyError:
                 raise UnknownObjectNameError(name)
-            return name, parser
+            return feature, name
         try:
-            parser = self._mapping.observable_attributes_mapping[name]
+            feature = self._mapping.observable_attributes_mapping[name]
         except KeyError:
             raise UnknownAttributeTypeError(name)
-        return name, parser
+        return feature
 
     def _parse_custom_attribute(self, custom_attribute: Union[CustomObject_v20, CustomObject_v21]):
         attribute = {
@@ -78,9 +78,74 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_object(misp_object)
 
+    def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
+        feature = self._handle_observed_data(observed_data.labels, observed_data.id)
+        try:
+            getattr(self, f"{feature}_v20")(observed_data)
+        except Exception as exception:
+            self._observed_data_error(observed_data.id, exception)
+
+    def _parse_observed_data_v21(self, observed_data: ObservedData_v21):
+        feature = self._handle_observed_data(observed_data.labels, observed_data.id)
+        try:
+            getattr(self, f"{feature}_v21")(observed_data)
+        except Exception as exception:
+            self._observed_data_error(observed_data.id, exception)
+
     ################################################################################
-    ##                             UTILITY FUNCTIONS.                             ##
+    #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #
     ################################################################################
+
+    def _parse_filename_hash_observable_attribute_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = observed_data.objects['0']
+        hash_value = list(observable.hashes.values())[0]
+        attribute['value'] = f'{observable.name}|{hash_value}'
+        self._add_attribute(attribute)
+
+    def _parse_filename_hash_observable_attribute_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._observable[observed_data.object_refs[0]]
+        hash_value = list(observable.hashes.values())[0]
+        attribute['value'] = f'{observable.name}|{hash_value}'
+        self._add_attribute(attribute)
+
+    def _parse_hash_observable_attribute_v20(self, observed_data: ObservedData_v20):
+        attribute = self._attribute_from_labels(observed_data.labels)
+        attribute['value'] = list(observed_data.objects['0'].hashes.values())[0]
+        self._add_attribute(attribute)
+
+    def _parse_hash_observable_attribute_v21(self, observed_data: ObservedData_v21):
+        attribute = self._attribute_from_labels(observed_data.labels)
+        observable = self._observable[observed_data.object_refs[0]]
+        attribute['value'] = list(observable.hashes.values())[0]
+        self._add_attribute(attribute)
+
+    ################################################################################
+    #                              UTILITY FUNCTIONS.                              #
+    ################################################################################
+
+    @staticmethod
+    def _attribute_from_labels(labels: list) -> dict:
+        attribute = {}
+        tags = []
+        for label in labels:
+            if labels.startswith('misp:'):
+                feature, value = label.split('=')
+                attribute[feature.split(':')[-1]] = value.strip('"')
+            else:
+                tags.append({'name': label})
+        if tags:
+            attribute['Tag'] = tags
+        return attribute
+
+    def _create_attribute_dict(self, stix_object: _MISP_OBJECT_TYPING) -> dict:
+        attribute = self._attribute_from_labels(sitx_object.labels)
+        attribute['uuid'] = stix_object.id.split('--')[-1]
+        attribute.update(self._parse_timeline(stix_object))
+        if hasattr(stix_object, 'object_marking_refs'):
+            self._update_marking_refs(attribute['uuid'])
+        return attribute
 
     def _create_misp_object(self, name: str, stix_object: _MISP_OBJECT_TYPING) -> MISPObject:
         misp_object = MISPObject(name)

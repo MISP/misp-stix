@@ -71,7 +71,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         return self.__stix_version
 
     ################################################################################
-    ##                    MAIN STIX OBJECTS PARSING FUNCTIONS.                    ##
+    #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 
     def _load_attack_pattern(self, attack_pattern: Union[AttackPattern_v20, AttackPattern_v21]):
@@ -167,7 +167,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._parse_observed_data_v20(observed_data)
 
     ################################################################################
-    ##                      MISP FEATURES CREATION FUNCTIONS                      ##
+    #                       MISP FEATURES CREATION FUNCTIONS                       #
     ################################################################################
 
     def _add_attribute(self, attribute: dict):
@@ -179,7 +179,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         self.misp_event.add_object(misp_object)
 
     ################################################################################
-    ##                             UTILITY FUNCTIONS.                             ##
+    #                              UTILITY FUNCTIONS.                              #
     ################################################################################
 
     def _all_refs_parsed(self, object_refs: list) -> bool:

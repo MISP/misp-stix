@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
+import traceback
 from collections import defaultdict
 
 
@@ -16,6 +17,16 @@ class STIXtoMISPParser:
     @property
     def warnings(self) -> set:
         return self.__warnings
+
+    def _observed_data_error(self, observed_data_id: str, exception: Exception):
+        traceback = self._parse_traceback(exception)
+        message = f"Error with the observed data object with id {observed_data_id}: {traceback}"
+        self.__errors[self._identifier].append(message)
+
+    @staticmethod
+    def _parse_traceback(exception: Exception) -> str:
+        tb = ''.join(traceback.format_tb(exception.__traceback__))
+        return f'{tb}{exception.__str__()}'
 
     def _undefined_object_error(self, object_id: str):
         message = f"Unable to define the object identified with the id: {object_id}"
