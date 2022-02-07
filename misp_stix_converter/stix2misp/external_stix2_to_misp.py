@@ -6,6 +6,6 @@ from .stix2_to_misp import STIX2toMISPParser
 
 
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, single_event: bool):
+        super().__init__(single_event)
         self._mapping = ExternalSTIX2Mapping()

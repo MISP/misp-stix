@@ -6,7 +6,7 @@ from .exceptions import (UndefinedSTIXObjectError, UnknownAttributeTypeError,
     UnknownObjectNameError)
 from .internal_stix2_mapping import InternalSTIX2Mapping
 from .stix2_to_misp import STIX2toMISPParser
-from pymisp import MISPAttribute, MISPObject
+from pymisp import MISPObject
 from stix2.v20.sdo import (CustomObject as CustomObject_v20, Indicator as Indicator_v20,
     ObservedData as ObservedData_v20)
 from stix2.v21.sdo import (CustomObject as CustomObject_v21, Indicator as Indicator_v21,
@@ -29,8 +29,8 @@ _MISP_OBJECT_TYPING = Union[
 
 
 class InternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, single_event: bool):
+        super().__init__(single_event)
         self._mapping = InternalSTIX2Mapping()
 
     ################################################################################
