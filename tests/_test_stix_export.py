@@ -203,7 +203,7 @@ class TestSTIX2Export(unittest.TestCase):
         else:
             name_label, category_label = labels
         self.assertEqual(name_label, f'misp:name="{misp_object["name"]}"')
-        self.assertEqual(category_label, f'misp:category="{misp_object["meta-category"]}"')
+        self.assertEqual(category_label, f'misp:meta-category="{misp_object["meta-category"]}"')
 
     def _check_object_observable_features(self, observed_data, misp_object, identity_id, object_ref):
         self._check_observable_features(observed_data, identity_id, object_ref, misp_object['uuid'])
@@ -397,7 +397,7 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(custom_object.id, object_ref)
         self.assertEqual(custom_object.created_by_ref, identity_id)
         self.assertEqual(custom_object.labels[0], f'misp:name="{name}"')
-        self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
+        self.assertEqual(custom_object.labels[1], f'misp:meta-category="{category}"')
         self.assertEqual(custom_object.x_misp_name, name)
         self.assertEqual(custom_object.x_misp_meta_category, category)
         if misp_object.get('comment'):

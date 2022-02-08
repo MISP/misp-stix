@@ -444,9 +444,9 @@ def stix_to_misp(filename):
 
 def stix2_to_misp(filename):
     with open(filename, 'rt', encoding='utf-8') as f:
-        event = stix2_parser(f.read(), allow_custom=True, interoperability=True)
-    stix_parser = InternalSTIX2toMISPParser() if _from_misp(event.objects) else ExternalSTIX2toMISPParser()
-    stix_parser.handler(event, filename)
+        bundle = stix2_parser(f.read(), allow_custom=True, interoperability=True)
+    stix_parser = InternalSTIX2toMISPParser() if _from_misp(bundle.objects) else ExternalSTIX2toMISPParser()
+    stix_parser.parse_stix_content(bundle)
     stix_parser.save_file()
     return
 
