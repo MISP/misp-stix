@@ -71,7 +71,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         misp_object = MISPObject(name)
         misp_object.category = custom_object.x_misp_meta_category
         misp_object.uuid = custom_object.id.split('--')[1]
-        misp_object.timestamp = self._get_timestamp_from_date(custom_object.modified)
+        misp_object.timestamp = self._timestamp_from_date(custom_object.modified)
         if hasattr(custom_object, 'x_misp_comment'):
             misp_object.comment = custom_object.x_misp_comment
         for attribute in custom_object.x_misp_attributes:
