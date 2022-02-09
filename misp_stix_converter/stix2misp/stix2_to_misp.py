@@ -59,7 +59,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
             if object_type in ('grouping', 'report'):
                 n_report += 1
             try:
-                getattr(self, f"_load_{object_type.replace('-', '_')}")(stix_object)
+                feature = self._mapping.stix_object_loading_mapping[object_type]
+            except KeyError:
+                self._unknown_stix_object_type_warning(object_type)
+                continue
+            try:
+                getattr(self, feature)(stix_object)
             except AttributeError as exception:
                 sys.exit(exception)
         self.__n_report = 2 if n_report >= 2 else n_report
@@ -171,6 +176,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             self._marking_definition = {marking_definition.id: tag_name}
 
+    def _load_note(self, note: Note):
+        try:
+            self._note[note.id] = note
+        except AttributeError:
+            self._note = {note.id: note}
+
     def _load_observable_object(self, observable: _OBSERVABLE_TYPES):
         try:
             self._observable[observable.id] = observable
@@ -196,6 +207,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._report[report.id] = report
         except AttributeError:
             self._report = {report.id: report}
+
+    def _load_sighting(self, sighting):
+        try:
+            self._sighting[sighting.id] = sighting
+        except AttributeError:
+            self._sighting = {sighting.id: sighting}
 
     def _load_threat_actor(self, threat_actor: Union[ThreatActor_v20, ThreatActor_v21]):
         try:

@@ -24,7 +24,7 @@ class STIX2Mapping:
         )
 
     def _declare_mapping(self, updates: Optional[dict]=None):
-        stix_to_misp_mapping = {
+        stix_object_loading_mapping = {
             'attack-pattern': '_load_attack_pattern',
             'course-of-action': '_load_course_of_action',
             'grouping': '_load_grouping',
@@ -38,13 +38,14 @@ class STIX2Mapping:
             'observed-data': '_load_observed_data',
             'relationship': '_load_relationship',
             'report': '_load_report',
+            'sighting': '_load_sighting',
             'threat-actor': '_load_threat_actor',
             'tool': '_load_tool',
             'vulnerability': '_load_vulnerability',
             'x-misp-attribute': '_load_custom_attribute',
             'x-misp-object': '_load_custom_object'
         }
-        stix_to_misp_mapping.update(
+        stix_object_loading_mapping.update(
             dict.fromkeys(
                 (
                     'artifact',
@@ -69,7 +70,30 @@ class STIX2Mapping:
                 '_load_observable_object'
             )
         )
-        self.__stix_to_misp_mapping = Mapping(**stix_to_misp_mapping)
+        self.__stix_object_loading_mapping = Mapping(**stix_object_loading_mapping)
+        self.__stix_to_misp_mapping = Mapping(
+            **{
+                'attack-pattern': '_parse_attack_pattern',
+                'course-of-action': '_parse_course_of_action',
+                'grouping': '_parse_grouping',
+                'identity': '_parse_identity',
+                'indicator': '_parse_indicator',
+                'intrusion-set': '_parse_intrusion_set',
+                'location': '_parse_location',
+                'malware': '_parse_malware',
+                'marking-definition': '_parse_marking_definition',
+                'note': '_parse_note',
+                'observed-data': '_parse_observed_data',
+                'relationship': '_parse_relationship',
+                'report': '_parse_report',
+                'sighting': '_parse_sighting',
+                'threat-actor': '_parse_threat_actor',
+                'tool': '_parse_tool',
+                'vulnerability': '_parse_vulnerability',
+                'x-misp-attribute': '_parse_custom_attribute',
+                'x-misp-object': '_parse_custom_object'
+            }
+        )
 
     @property
     def bundle_to_misp_mapping(self) -> dict:
@@ -78,6 +102,10 @@ class STIX2Mapping:
     @property
     def pattern_forbidden_relations(self) -> tuple:
         return self.__pattern_forbidden_relations
+
+    @property
+    def stix_object_loading_mapping(self) -> dict:
+        return self.__stix_object_loading_mapping
 
     @property
     def stix_to_misp_mapping(self) -> dict:
