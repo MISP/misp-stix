@@ -58,7 +58,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute = {
             "type": custom_attribute.x_misp_type,
             "value": self._sanitize_value(custom_attribute.x_misp_value),
-            "timestamp": self._get_timestamp_from_date(custom_attribute.modified),
+            "timestamp": self._timestamp_from_date(custom_attribute.modified),
             "uuid": custom_attribute.id.split('--')[1]
         }
         for field in _attribute_additional_fields:
@@ -71,7 +71,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         misp_object = MISPObject(name)
         misp_object.category = custom_object.x_misp_meta_category
         misp_object.uuid = custom_object.id.split('--')[1]
-        misp_object.timestamp = self._get_timestamp_from_date(custom_object.modified)
+        misp_object.timestamp = self._timestamp_from_date(custom_object.modified)
         if hasattr(custom_object, 'x_misp_comment'):
             misp_object.comment = custom_object.x_misp_comment
         for attribute in custom_object.x_misp_attributes:
@@ -140,7 +140,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         return attribute
 
     def _create_attribute_dict(self, stix_object: _MISP_OBJECT_TYPING) -> dict:
-        attribute = self._attribute_from_labels(sitx_object.labels)
+        attribute = self._attribute_from_labels(stix_object.labels)
         attribute['uuid'] = stix_object.id.split('--')[-1]
         attribute.update(self._parse_timeline(stix_object))
         if hasattr(stix_object, 'object_marking_refs'):

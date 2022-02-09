@@ -3,8 +3,8 @@
 
 import sys
 import time
-from .exceptions import (UndefinedSTIXObjectError, UnknownAttributeTypeError,
-    UnknownObjectNameError)
+from .exceptions import (ObjectRefLoadingError, ObjectTypeLoadingError,
+    UndefinedSTIXObjectError, UnknownAttributeTypeError, UnknownObjectNameError)
 from .importparser import STIXtoMISPParser
 from collections import defaultdict
 from datetime import datetime
@@ -30,7 +30,7 @@ from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
     CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21, Grouping,
     Identity as Identity_v21, Indicator as Indicator_v21,
     IntrusionSet as IntrusionSet_v21, Malware as Malware_v21,
-    ObservedData as ObservedData_v21, Report as Report_v21,
+    ObservedData as ObservedData_v21, Note, Report as Report_v21,
     ThreatActor as ThreatActor_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
 from stix2.v21.sro import Relationship as Relationship_v21
@@ -56,19 +56,17 @@ class STIX2toMISPParser(STIXtoMISPParser):
         n_report = self.__n_report
         for stix_object in bundle.objects:
             object_type = stix_object.type
-            if object_type == 'report':
+            if object_type in ('grouping', 'report'):
                 n_report += 1
             try:
-                if object_type in self._mapping.stix_to_misp_mapping:
-                    getattr(self, self._mapping.stix_to_misp_mapping[object_type])(stix_object)
-                else:
-                    self._unknown_stix_object_type_warning(object_type)
-            except UndefinedSTIXObjectError as error:
-                self._undefined_object_error(error)
-            except UnknownAttributeTypeError as error:
-                self._unknown_attribute_type_warning(error)
-            except UnknownObjectNameError as error:
-                self._unknown_object_name_warning(error)
+                feature = self._mapping.stix_object_loading_mapping[object_type]
+            except KeyError:
+                self._unknown_stix_object_type_warning(object_type)
+                continue
+            try:
+                getattr(self, feature)(stix_object)
+            except AttributeError as exception:
+                sys.exit(exception)
         self.__n_report = 2 if n_report >= 2 else n_report
 
     def parse_stix_bundle(self):
@@ -87,6 +85,18 @@ class STIX2toMISPParser(STIXtoMISPParser):
         self.load_stix_bundle(bundle)
         del bundle
         self.parse_stix_bundle()
+
+    def _parse_bundle_with_single_report(self):
+        if hasattr(self, '_report') and self._report is not None:
+            for report in self._report.values():
+                self._misp_event = self._misp_event_from_report(report)
+                self._handle_object_refs(report.object_refs)
+        elif hasattr(self, '_grouping') and self._grouping is not None:
+            for grouping in self._grouping.values():
+                self.__misp_event = self._misp_event_from_grouping(grouping)
+                self._handle_object_refs(grouping.object_refs)
+        else:
+            self._parse_bundle_with_no_report()
 
     @property
     def misp_event(self) -> Union[MISPEvent, dict]:
@@ -166,6 +176,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             self._marking_definition = {marking_definition.id: tag_name}
 
+    def _load_note(self, note: Note):
+        try:
+            self._note[note.id] = note
+        except AttributeError:
+            self._note = {note.id: note}
+
     def _load_observable_object(self, observable: _OBSERVABLE_TYPES):
         try:
             self._observable[observable.id] = observable
@@ -192,6 +208,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             self._report = {report.id: report}
 
+    def _load_sighting(self, sighting):
+        try:
+            self._sighting[sighting.id] = sighting
+        except AttributeError:
+            self._sighting = {sighting.id: sighting}
+
     def _load_threat_actor(self, threat_actor: Union[ThreatActor_v20, ThreatActor_v21]):
         try:
             self._threat_actor[threat_actor.id] = threat_actor
@@ -210,15 +232,60 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             self._vulnerability = {vulnerability.id: vulnerability}
 
-    def _parse_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
+    ################################################################################
+    #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
+    ################################################################################
+
+    def _get_stix_object(self, object_ref: str):
+        object_type = object_ref.split('--')[0]
+        if object_type.startswith('x-misp-'):
+            object_type = object_type.replace('x-misp', 'custom')
+        feature = f"_{object_type.replace('-', '_')}"
+        try:
+            return getattr(self, feature)[object_type]
+        except AttributeError:
+            raise ObjectTypeLoadingError(object_type)
+        except KeyError:
+            raise ObjectRefLoadingError(object_ref)
+
+    def _handle_object_refs(self, object_refs: list):
+        for object_ref in object_refs:
+            object_type = object_ref.split('--')[0]
+            try:
+                if object_type in self._mapping.stix_to_misp_mapping:
+                    getattr(self, self._mapping.stix_to_misp_mapping[object_type])(object_ref)
+                else:
+                    self._unknown_stix_object_type_warning(object_type)
+            except ObjectRefLoadingError as error:
+                self._object_ref_loading_error(error)
+            except ObjectTypeLoadingError as error:
+                self._object_type_loading_error(error)
+            except UndefinedSTIXObjectError as error:
+                self._undefined_object_error(error)
+            except UnknownAttributeTypeError as error:
+                self._unknown_attribute_type_warning(error)
+            except UnknownObjectNameError as error:
+                self._unknown_object_name_warning(error)
+
+    def _misp_event_from_report(self, report: Union[Report_v20, Report_v21]) -> MISPEvent:
+        misp_event = MISPEvent()
+        misp_event.uuid = report.id.split('--')[-1]
+        misp_event.info = report.name
+        if report.published != report.modified:
+            misp_event.published = True
+            misp_event.publish_timestamp = self._timestamp_from_date(report.published)
+        else:
+            misp_event.published = False
+        misp_event.timestamp = self._timestamp_from_date(report.modified)
+        if hasattr(report, 'object_marking_refs'):
+            for marking_ref in report.object_marking_refs:
+                misp_event.add_tag(self._marking_definition[marking_ref])
+        return misp_event
+
+    def _parse_observed_data(self, observed_data_ref: str):
+        observed_data = self._get_stix_object(observed_data_ref)
         if hasattr(observed_data, 'spec_version') and observed_data.spec_version == '2.1':
-            if self._all_refs_parsed(observed_data.object_refs):
-                self._parse_observed_data_v21(observed_data)
-            else:
-                try:
-                    self._observed_data[observed_data.id] = observed_data
-                except AttributeError:
-                    self._observed_data = {observed_data.id: observed_data}
+            self._parse_observed_data_v21(observed_data)
         else:
             self._parse_observed_data_v20(observed_data)
 
@@ -245,13 +312,13 @@ class STIX2toMISPParser(STIXtoMISPParser):
             return False
 
     @staticmethod
-    def _get_timestamp_from_date(date: datetime) -> int:
+    def _sanitize_value(value: str) -> str:
+        return value.replace('\\\\', '\\')
+
+    @staticmethod
+    def _timestamp_from_date(date: datetime) -> int:
         return int(date.timestamp())
         try:
             return int(date.timestamp())
         except AttributeError:
             return int(time.mktime(time.strptime(date.split('+')[0], "%Y-%m-%dT%H:%M:%S.%fZ")))
-
-    @staticmethod
-    def _sanitize_value(value: str) -> str:
-        return value.replace('\\\\', '\\')
