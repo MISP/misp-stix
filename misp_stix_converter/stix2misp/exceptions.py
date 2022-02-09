@@ -8,6 +8,14 @@ class STIXtoMISPError(Exception):
         self.message = message
 
 
+class ObjectRefLoadingError(STIXtoMISPError):
+    pass
+
+
+class ObjectTypeLoadingError(STIXtoMISPError):
+    pass
+
+
 class UndefinedSTIXObjectError(STIXtoMISPError):
     pass
 

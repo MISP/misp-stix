@@ -3,8 +3,8 @@
 
 import sys
 import time
-from .exceptions import (UndefinedSTIXObjectError, UnknownAttributeTypeError,
-    UnknownObjectNameError)
+from .exceptions import (ObjectRefLoadingError, ObjectTypeLoadingError,
+    UndefinedSTIXObjectError, UnknownAttributeTypeError, UnknownObjectNameError)
 from .importparser import STIXtoMISPParser
 from collections import defaultdict
 from datetime import datetime
@@ -236,16 +236,30 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 
+    def _get_stix_object(self, object_ref: str):
+        object_type = object_ref.split('--')[0]
+        if object_type.startswith('x-misp-'):
+            object_type = object_type.replace('x-misp', 'custom')
+        feature = f"_{object_type.replace('-', '_')}"
+        try:
+            return getattr(self, feature)[object_type]
+        except AttributeError:
+            raise ObjectTypeLoadingError(object_type)
+        except KeyError:
+            raise ObjectRefLoadingError(object_ref)
+
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
             object_type = object_ref.split('--')[0]
             try:
                 if object_type in self._mapping.stix_to_misp_mapping:
-                    getattr(self, self._mapping.stix_to_misp_mapping[object_type])(
-                        getattr(self, f"_{object_type.replace('-', '_')}")[object_ref]
-                    )
+                    getattr(self, self._mapping.stix_to_misp_mapping[object_type])(object_ref)
                 else:
                     self._unknown_stix_object_type_warning(object_type)
+            except ObjectRefLoadingError as error:
+                self._object_ref_loading_error(error)
+            except ObjectTypeLoadingError as error:
+                self._object_type_loading_error(error)
             except UndefinedSTIXObjectError as error:
                 self._undefined_object_error(error)
             except UnknownAttributeTypeError as error:
@@ -268,7 +282,8 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 misp_event.add_tag(self._marking_definition[marking_ref])
         return misp_event
 
-    def _parse_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
+    def _parse_observed_data(self, observed_data_ref: str):
+        observed_data = self._get_stix_object(observed_data_ref)
         if hasattr(observed_data, 'spec_version') and observed_data.spec_version == '2.1':
             self._parse_observed_data_v21(observed_data)
         else:
