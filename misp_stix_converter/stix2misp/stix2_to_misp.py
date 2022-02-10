@@ -271,6 +271,25 @@ class STIX2toMISPParser(STIXtoMISPParser):
             except UnknownObjectNameError as error:
                 self._unknown_object_name_warning(error)
 
+    def _handle_misp_event_tags(self, misp_event: MISPEvent, stix_object: Union[Report_v20, Report_v21, Grouping]):
+        if hasattr(stix_object, 'object_marking_refs'):
+            for marking_ref in stix_object.object_marking_refs:
+                try:
+                    misp_event.add_tag(self._marking_definition[marking_ref])
+                except KeyError:
+                    self._unknown_marking_ref_warning(marking_ref)
+        if hasattr(stix_object, 'labels'):
+            self._fetch_tags_from_labels(misp_event, stix_object.labels)
+
+    def _misp_event_from_grouping(self, grouping: Grouping) -> MISPEvent:
+        misp_event = MISPEvent()
+        misp_event.uuid = grouping.id.split('--')[-1]
+        misp_event.info = grouping.name
+        misp_event.published = False
+        misp_event.timestamp = self._timestamp_from_date(grouping.modified)
+        self._handle_misp_event_tags(misp_event, grouping)
+        return misp_event
+
     def _misp_event_from_report(self, report: Union[Report_v20, Report_v21]) -> MISPEvent:
         misp_event = MISPEvent()
         misp_event.uuid = report.id.split('--')[-1]
@@ -281,9 +300,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         else:
             misp_event.published = False
         misp_event.timestamp = self._timestamp_from_date(report.modified)
-        if hasattr(report, 'object_marking_refs'):
-            for marking_ref in report.object_marking_refs:
-                misp_event.add_tag(self._marking_definition[marking_ref])
+        self._handle_misp_event_tags(misp_event, report)
         return misp_event
 
     def _parse_observed_data(self, observed_data_ref: str):

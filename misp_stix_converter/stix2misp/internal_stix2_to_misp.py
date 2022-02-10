@@ -6,7 +6,7 @@ from .exceptions import (UndefinedSTIXObjectError, UnknownAttributeTypeError,
     UnknownObjectNameError)
 from .internal_stix2_mapping import InternalSTIX2Mapping
 from .stix2_to_misp import STIX2toMISPParser
-from pymisp import MISPObject
+from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.v20.sdo import (CustomObject as CustomObject_v20, Indicator as Indicator_v20,
     ObservedData as ObservedData_v20)
 from stix2.v21.sdo import (CustomObject as CustomObject_v21, Indicator as Indicator_v21,
@@ -20,6 +20,11 @@ _attribute_additional_fields = (
     'to_ids',
     'uuid'
 )
+_MISP_FEATURES_TYPING = Union[
+    MISPAttribute,
+    MISPEvent,
+    MISPObject
+]
 _MISP_OBJECT_TYPING = Union[
     Indicator_v20,
     Indicator_v21,
@@ -152,6 +157,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         misp_object.uuid = stix_object.id.split('--')[-1]
         misp_object.update(self._parse_timeline(stix_object))
         return misp_object
+
+    def _fetch_tags_from_labels(self, misp_feature: _MISP_FEATURES_TYPING, labels: list):
+        for label in (label for label in labels if label != 'Threat-Report'):
+            misp_feature.add_tag(label)
 
     @staticmethod
     def _parse_labels(labels: list) -> Tuple[bool, str]:
