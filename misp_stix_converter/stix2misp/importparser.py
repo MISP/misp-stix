@@ -48,6 +48,10 @@ class STIXtoMISPParser:
         message = f"MISP object name not mapped: {name}"
         self.__warnings[self._identifier].add(message)
 
+    def _unknown_parsing_function_error(self, feature: str):
+        message = f"Unknown STIX parsing function name: {feature}"
+        self.__errors[self._identifier].add(message)
+
     def _unknown_stix_object_type_warning(self, object_type: str):
         message = f"Unknown STIX object type: {object_type}"
         self.__warnings[self._identifier].add(message)

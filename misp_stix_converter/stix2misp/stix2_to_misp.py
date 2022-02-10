@@ -252,10 +252,14 @@ class STIX2toMISPParser(STIXtoMISPParser):
         for object_ref in object_refs:
             object_type = object_ref.split('--')[0]
             try:
-                if object_type in self._mapping.stix_to_misp_mapping:
-                    getattr(self, self._mapping.stix_to_misp_mapping[object_type])(object_ref)
-                else:
-                    self._unknown_stix_object_type_warning(object_type)
+                feature = self._mapping.stix_to_misp_mapping[object_type]
+            except KeyError:
+                self._unknown_stix_object_type_warning(object_type)
+                continue
+            try:
+                getattr(self, feature)(object_ref)
+            except AttributeError:
+                self._unknown_parsing_function_error(feature)
             except ObjectRefLoadingError as error:
                 self._object_ref_loading_error(error)
             except ObjectTypeLoadingError as error:
