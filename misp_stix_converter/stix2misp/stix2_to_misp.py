@@ -89,7 +89,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def _parse_bundle_with_single_report(self):
         if hasattr(self, '_report') and self._report is not None:
             for report in self._report.values():
-                self._misp_event = self._misp_event_from_report(report)
+                self.__misp_event = self._misp_event_from_report(report)
                 self._handle_object_refs(report.object_refs)
         elif hasattr(self, '_grouping') and self._grouping is not None:
             for grouping in self._grouping.values():
@@ -242,7 +242,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             object_type = object_type.replace('x-misp', 'custom')
         feature = f"_{object_type.replace('-', '_')}"
         try:
-            return getattr(self, feature)[object_type]
+            return getattr(self, feature)[object_ref]
         except AttributeError:
             raise ObjectTypeLoadingError(object_type)
         except KeyError:

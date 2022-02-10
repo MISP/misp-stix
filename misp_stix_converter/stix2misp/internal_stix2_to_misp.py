@@ -130,7 +130,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute = {}
         tags = []
         for label in labels:
-            if labels.startswith('misp:'):
+            if label.startswith('misp:'):
                 feature, value = label.split('=')
                 attribute[feature.split(':')[-1]] = value.strip('"')
             else:
