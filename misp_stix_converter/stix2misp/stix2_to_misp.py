@@ -332,6 +332,15 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             return False
 
+    def _parse_timeline(self, stix_object: _MISP_OBJECT_TYPING) -> dict:
+        misp_object = {'timestamp': self._timestamp_from_date(stix_object.modified)}
+        first, last = self._mapping.timeline_mapping[stix_object.type]
+        if hasattr(stix_object, first) and getattr(stix_object, first):
+            misp_object['first_seen'] = getattr(stix_object, first)
+        if hasattr(stix_object, last) and getattr(stix_object, last):
+            misp_object['last_seen'] = getattr(stix_object, last)
+        return misp_object
+
     @staticmethod
     def _sanitize_value(value: str) -> str:
         return value.replace('\\\\', '\\')

@@ -22,6 +22,12 @@ class STIX2Mapping:
                 '2': '_parse_bundle_with_multiple_reports'
             }
         )
+        self.__timeline_mapping = Mapping(
+            **{
+                'indicator': ('valid_from', 'valid_until'),
+                'observed-data': ('first_observed', 'last_observed')
+            }
+        )
 
     def _declare_mapping(self, updates: Optional[dict]=None):
         stix_object_loading_mapping = {
@@ -110,3 +116,7 @@ class STIX2Mapping:
     @property
     def stix_to_misp_mapping(self) -> dict:
         return self.__stix_to_misp_mapping
+
+    @property
+    def timeline_mapping(self) -> dict:
+        return self.__timeline_mapping
