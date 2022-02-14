@@ -36,24 +36,25 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 
-    def _handle_observed_data(self, labels: list, observed_data_id: str) -> str:
+    def _handle_observable_mapping(self, labels: list, object_id: str) -> str:
         try:
             is_object, name = self._parse_labels(labels)
         except TypeError:
-            raise UndefinedSTIXObjectError(observed_data_id)
+            raise UndefinedSTIXObjectError(object_id)
         if is_object:
             try:
-                feature = self._mapping.observable_objects_mapping[name]
+                feature = self._mapping.objects_mapping[name]
             except KeyError:
                 raise UnknownObjectNameError(name)
-            return feature, name
+            return feature
         try:
-            feature = self._mapping.observable_attributes_mapping[name]
+            feature = self._mapping.attributes_mapping[name]
         except KeyError:
             raise UnknownAttributeTypeError(name)
         return feature
 
-    def _parse_custom_attribute(self, custom_attribute: Union[CustomObject_v20, CustomObject_v21]):
+    def _parse_custom_attribute(self, custom_ref: str):
+        custom_attribute = self._get_stix_object(custom_ref)
         attribute = {
             "type": custom_attribute.x_misp_type,
             "value": self._sanitize_value(custom_attribute.x_misp_value),
@@ -65,7 +66,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute[field] = getattr(custom_attribute, f'x_misp_{field}')
         self._add_attribute(attribute)
 
-    def _parse_custom_object(self, custom_object: Union[CustomObject_v20, CustomObject_v21]):
+    def _parse_custom_object(self, custom_ref: str):
+        custom_object = self._get_stix_object(custom_ref)
         name = custom_object.x_misp_name
         misp_object = MISPObject(name)
         misp_object.category = custom_object.x_misp_meta_category
@@ -92,7 +94,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             print(exception)
 
     def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
-        feature = self._handle_observed_data(observed_data.labels, observed_data.id)
+        feature = self._handle_observable_mapping(observed_data.labels, observed_data.id)
         try:
             parser = getattr(self, f"{feature}_observable_v20")
         except AttributeError:
@@ -103,7 +105,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._observed_data_error(observed_data.id, exception)
 
     def _parse_observed_data_v21(self, observed_data: ObservedData_v21):
-        feature = self._handle_observed_data(observed_data.labels, observed_data.id)
+        feature = self._handle_observable_mapping(observed_data.labels, observed_data.id)
         try:
             parser = getattr(self, f"{feature}_observable_v21")
         except AttributeError as error:
@@ -117,27 +119,27 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #
     ################################################################################
 
-    def _parse_filename_hash_observable_attribute_v20(self, observed_data: ObservedData_v20):
+    def _attribute_from_filename_hash_observable_v20(self, observed_data: ObservedData_v20):
         attribute = self._create_attribute_dict(observed_data)
         observable = observed_data.objects['0']
         hash_value = list(observable.hashes.values())[0]
         attribute['value'] = f'{observable.name}|{hash_value}'
         self._add_attribute(attribute)
 
-    def _parse_filename_hash_observable_attribute_v21(self, observed_data: ObservedData_v21):
+    def _attribute_from_filename_hash_observable_v21(self, observed_data: ObservedData_v21):
         attribute = self._create_attribute_dict(observed_data)
         observable = self._observable[observed_data.object_refs[0]]
         hash_value = list(observable.hashes.values())[0]
         attribute['value'] = f'{observable.name}|{hash_value}'
         self._add_attribute(attribute)
 
-    def _parse_hash_observable_attribute_v20(self, observed_data: ObservedData_v20):
-        attribute = self._attribute_from_labels(observed_data.labels)
+    def _attribute_from_hash_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
         attribute['value'] = list(observed_data.objects['0'].hashes.values())[0]
         self._add_attribute(attribute)
 
-    def _parse_hash_observable_attribute_v21(self, observed_data: ObservedData_v21):
-        attribute = self._attribute_from_labels(observed_data.labels)
+    def _attribute_from_hash_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
         observable = self._observable[observed_data.object_refs[0]]
         attribute['value'] = list(observable.hashes.values())[0]
         self._add_attribute(attribute)
