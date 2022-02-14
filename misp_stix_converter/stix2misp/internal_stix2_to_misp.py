@@ -20,6 +20,10 @@ _attribute_additional_fields = (
     'to_ids',
     'uuid'
 )
+_INDICATOR_TYPING = Union[
+    Indicator_v20,
+    Indicator_v21
+]
 _MISP_FEATURES_TYPING = Union[
     MISPAttribute,
     MISPEvent,
@@ -145,6 +149,48 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._add_attribute(attribute)
 
     ################################################################################
+    #                          PATTERNS PARSING FUNCTIONS                          #
+    ################################################################################
+
+    def _attribute_from_filename_hash_pattern(self, indicator: _INDICATOR_TYPING):
+        attribute = self._create_attribute_dict(indicator)
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            if 'file:name = ' in pattern:
+                filename = self._extract_attribute_value_from_pattern(pattern)
+            elif 'file:hashes.' in pattern:
+                hash_value = self._extract_attribute_value_from_pattern(pattern)
+        try:
+            attribute['value'] = f"{filename}|{hash_value}"
+        except NameError:
+            raise AttributeFromPatternParsingError(indicator.id)
+        self._add_attribute(attribute)
+
+    def _attribute_from_hash_pattern(self, indicator: _INDICATOR_TYPING):
+        attribute = self._create_attribute_dict(indicator)
+        attribute['value'] = self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
+        self._add_attribute(attribute)
+
+    ################################################################################
+    #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #
+    ################################################################################
+
+    def _create_attribute_dict(self, stix_object: _MISP_OBJECT_TYPING) -> dict:
+        attribute = self._attribute_from_labels(stix_object.labels)
+        attribute['uuid'] = stix_object.id.split('--')[-1]
+        attribute.update(self._parse_timeline(stix_object))
+        if hasattr(stix_object, 'description') and stix_object.description:
+            attribute['comment'] = stix_object.description
+        if hasattr(stix_object, 'object_marking_refs'):
+            self._update_marking_refs(attribute['uuid'])
+        return attribute
+
+    def _create_misp_object(self, name: str, stix_object: _MISP_OBJECT_TYPING) -> MISPObject:
+        misp_object = MISPObject(name)
+        misp_object.uuid = stix_object.id.split('--')[-1]
+        misp_object.update(self._parse_timeline(stix_object))
+        return misp_object
+
+    ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
 
@@ -162,19 +208,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             attribute['Tag'] = tags
         return attribute
 
-    def _create_attribute_dict(self, stix_object: _MISP_OBJECT_TYPING) -> dict:
-        attribute = self._attribute_from_labels(stix_object.labels)
-        attribute['uuid'] = stix_object.id.split('--')[-1]
-        attribute.update(self._parse_timeline(stix_object))
-        if hasattr(stix_object, 'object_marking_refs'):
-            self._update_marking_refs(attribute['uuid'])
-        return attribute
-
-    def _create_misp_object(self, name: str, stix_object: _MISP_OBJECT_TYPING) -> MISPObject:
-        misp_object = MISPObject(name)
-        misp_object.uuid = stix_object.id.split('--')[-1]
-        misp_object.update(self._parse_timeline(stix_object))
-        return misp_object
+    @staticmethod
+    def _extract_attribute_value_from_pattern(pattern: str) -> str:
+        return pattern.split(' = ')[1][1:-1]
 
     def _fetch_tags_from_labels(self, misp_feature: _MISP_FEATURES_TYPING, labels: list):
         for label in (label for label in labels if label != 'Threat-Report'):
