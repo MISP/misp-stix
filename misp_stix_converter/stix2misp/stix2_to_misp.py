@@ -4,7 +4,7 @@
 import sys
 import time
 from .exceptions import (ObjectRefLoadingError, ObjectTypeLoadingError,
-    UndefinedSTIXObjectError, UnknownAttributeTypeError, UnknownObjectNameError)
+    UndefinedSTIXObjectError, UnknownAttributeTypeError, UnknownObjectNameError, UnknownParsingFunctionError)
 from .importparser import STIXtoMISPParser
 from collections import defaultdict
 from datetime import datetime
@@ -257,9 +257,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 self._unknown_stix_object_type_warning(object_type)
                 continue
             try:
-                getattr(self, feature)(object_ref)
+                parser = getattr(self, feature)
             except AttributeError:
                 self._unknown_parsing_function_error(feature)
+                continue
+            try:
+                parser(object_ref)
             except ObjectRefLoadingError as error:
                 self._object_ref_loading_error(error)
             except ObjectTypeLoadingError as error:
@@ -270,6 +273,8 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 self._unknown_attribute_type_warning(error)
             except UnknownObjectNameError as error:
                 self._unknown_object_name_warning(error)
+            except UnknownParsingFunctionError as error:
+                self._unknown_parsing_function_error(error)
 
     def _handle_misp_event_tags(self, misp_event: MISPEvent, stix_object: Union[Report_v20, Report_v21, Grouping]):
         if hasattr(stix_object, 'object_marking_refs'):

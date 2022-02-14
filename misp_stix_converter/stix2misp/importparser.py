@@ -18,6 +18,10 @@ class STIXtoMISPParser:
     def warnings(self) -> set:
         return self.__warnings
 
+    def _attribute_from_pattern_parsing_error(self, indicator_id: str):
+        message = f"Error while parsing pattern from indicator with id {indicator_id}"
+        self.__errors[self._identifier].add(message)
+
     def _object_ref_loading_error(self, object_ref: str):
         message = f"Error loading the STIX object with id {object_ref}"
         self.__errors[self._identifier].add(message)

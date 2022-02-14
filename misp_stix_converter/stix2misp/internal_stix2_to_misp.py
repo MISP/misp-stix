@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import json
-from .exceptions import (UndefinedSTIXObjectError, UnknownAttributeTypeError,
-    UnknownObjectNameError)
+from .exceptions import (AttributeFromPatternParsingError, UndefinedSTIXObjectError,
+    UnknownAttributeTypeError, UnknownObjectNameError, UnknownParsingFunctionError)
 from .internal_stix2_mapping import InternalSTIX2Mapping
 from .stix2_to_misp import STIX2toMISPParser
 from pymisp import MISPAttribute, MISPEvent, MISPObject
@@ -83,17 +83,39 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_object(misp_object)
 
+    def _parse_indicator(self, indicator_ref: str):
+        indicator = self._get_stix_object(indicator_ref)
+        feature = self._handle_observable_mapping(indicator.labels, indicator.id)
+        try:
+            parser = getattr(self, f"{feature}_pattern")
+        except AttributeError as error:
+            raise UnknownParsingFunctionError(f"{feature}_pattern")
+        try:
+            parser(indicator)
+        except AttributeFromPatternParsingError as error:
+            self._attribute_from_pattern_parsing_error(error)
+        except Exception as exception:
+            print(exception)
+
     def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
         feature = self._handle_observed_data(observed_data.labels, observed_data.id)
         try:
-            getattr(self, f"{feature}_v20")(observed_data)
+            parser = getattr(self, f"{feature}_observable_v20")
+        except AttributeError:
+            raise UnknownParsingFunctionError(f"{feature}_observable_v20")
+        try:
+            parser(observed_data)
         except Exception as exception:
             self._observed_data_error(observed_data.id, exception)
 
     def _parse_observed_data_v21(self, observed_data: ObservedData_v21):
         feature = self._handle_observed_data(observed_data.labels, observed_data.id)
         try:
-            getattr(self, f"{feature}_v21")(observed_data)
+            parser = getattr(self, f"{feature}_observable_v21")
+        except AttributeError as error:
+            raise UnknownParsingFunctionError(f"{feature}_observable_v21")
+        try:
+            parser(observed_data)
         except Exception as exception:
             self._observed_data_error(observed_data.id, exception)
 
