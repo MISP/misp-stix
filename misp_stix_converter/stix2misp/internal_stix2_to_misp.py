@@ -5,7 +5,7 @@ import json
 from .exceptions import (AttributeFromPatternParsingError, UndefinedSTIXObjectError,
     UnknownAttributeTypeError, UnknownObjectNameError, UnknownParsingFunctionError)
 from .internal_stix2_mapping import InternalSTIX2Mapping
-from .stix2_to_misp import STIX2toMISPParser
+from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.v20.sdo import (CustomObject as CustomObject_v20, Indicator as Indicator_v20,
     ObservedData as ObservedData_v20)
@@ -24,12 +24,6 @@ _MISP_FEATURES_TYPING = Union[
     MISPAttribute,
     MISPEvent,
     MISPObject
-]
-_MISP_OBJECT_TYPING = Union[
-    Indicator_v20,
-    Indicator_v21,
-    ObservedData_v20,
-    ObservedData_v21
 ]
 
 

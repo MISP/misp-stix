@@ -36,6 +36,12 @@ from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
 from stix2.v21.sro import Relationship as Relationship_v21
 from typing import Union
 
+_MISP_OBJECT_TYPING = Union[
+    Indicator_v20,
+    Indicator_v21,
+    ObservedData_v20,
+    ObservedData_v21
+]
 _OBSERVABLE_TYPES = Union[
     Artifact, AutonomousSystem, Directory, DomainName, EmailAddress, EmailMessage,
     File, IPv4Address, IPv6Address, MACAddress, Mutex, NetworkTraffic, Process,
