@@ -89,6 +89,22 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         except Exception as exception:
             self._observed_data_error(observed_data.id, exception)
 
+    def _parse_observed_data_v21(self, observed_data: ObservedData_v21):
+        """
+        """
+        if hasattr(observed_data, 'object_refs'):
+            observable_types = self._extract_types_from_observable_refs(observed_data.object_refs)
+            try:
+                feature = self._mapping.observable_mapping[observable_types]
+            except KeyError:
+                self._unknown_observable_mapping_error(observed_data.id)
+
+        observable_types = self._extract_types_from_observable(observed_data)
+        try:
+            feature = self._mapping.observable_mapping[observable_types]
+        except KeyError:
+            self.
+
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
