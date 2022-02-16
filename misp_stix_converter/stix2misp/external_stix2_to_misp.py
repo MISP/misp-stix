@@ -19,6 +19,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 
+    def _handle_observable_mapping(self, observed_data: ObservedData_v21) -> str:
+        if hasattr(observed_data, 'object_refs'):
+            return self._handle_observable_refs_mapping(observed_data.object_refs)
+        return self._handle_observable_objects_mapping(observed_data.objects)
+
     def _handle_observable_objects_mapping(self, observable_objects: dict) -> str:
         observable_types = self._extract_types_from_observable_objects(observable_objects)
         try:
@@ -92,18 +97,23 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_observed_data_v21(self, observed_data: ObservedData_v21):
         """
         """
-        if hasattr(observed_data, 'object_refs'):
-            observable_types = self._extract_types_from_observable_refs(observed_data.object_refs)
-            try:
-                feature = self._mapping.observable_mapping[observable_types]
-            except KeyError:
-                self._unknown_observable_mapping_error(observed_data.id)
 
-        observable_types = self._extract_types_from_observable(observed_data)
         try:
-            feature = self._mapping.observable_mapping[observable_types]
-        except KeyError:
-            self.
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        try:
+            parser(observed_data)
+        except Exception as exception:
+            self._observed_data_error(observed_data.id, exception)
+
+    ################################################################################
+    #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #
+    ################################################################################
+
+    ################################################################################
+    #                          PATTERNS PARSING FUNCTIONS                          #
+    ################################################################################
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
