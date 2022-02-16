@@ -32,5 +32,17 @@ class UnknownObjectNameError(STIXtoMISPError):
     pass
 
 
+class UnknownObservableMappingError(STIXtoMISPError):
+    pass
+
+
 class UnknownParsingFunctionError(STIXtoMISPError):
+    pass
+
+
+class UnknownPatternMappingError(STIXtoMISPError):
+    pass
+
+
+class UnknownPatternTypeError(STIXtoMISPError):
     pass
