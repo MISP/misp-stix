@@ -80,11 +80,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         :return: The parsing function name to convert the indicator into a MISP
             attribute or object, using its pattern
         """
-        if isinstance(indicator, Indicator_v21):
+        if isinstance(indicator, Indicator_v21) and indicator.pattern_type != 'stix':
             try:
                 return self._mapping.pattern_type_mapping[indicator.pattern_type]
             except KeyError:
                 raise UnknownPatternTypeError(indicator.pattern_type)
+        if any(keyword in indicator.pattern for keyword in self._mapping.pattern_forbiden_relations):
+            return '_create_stix_pattern_object'
         observable_types = self._extract_types_from_pattern(indicator.pattern)
         try:
             return self.mapping.pattern_mapping[observable_types]
@@ -105,11 +107,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         try:
             feature = self._handle_pattern_mapping(indicator)
         except UnknownPatternMappingError as error:
-            self._unknown_pattern_mapping_error(indicator.id, error)
-            return
+            self._unknown_pattern_mapping_warning(indicator.id, error)
+            feature = '_create_stix_pattern_object'
         except UnknownPatternTypeError as error:
-            self._unknown_pattern_type_error(indicator.id, error)
-            return
+            self._unknown_pattern_type_warning(indicator.id, error)
+            feature = '_create_stix_pattern_object'
         try:
             parser = getattr(self, feature)
         except AttributeError:
@@ -168,6 +170,28 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
     ################################################################################
+
+    def _create_stix_pattern_object(self, indicator):
+        misp_object = MISPObject('stix2-pattern')
+        misp_object.uuid = indicator.id.split('--')[-1]
+        misp_object.update(self._parse_timeline(stix_object))
+        if hasattr(indicator, 'description'):
+            misp_object.comment = indicator.description
+        misp_object.add_attribute(
+            **{
+                'type': 'text',
+                'object_relation': 'version',
+                'value': f"stix {indicator.spec_version if hasattr(indicator, 'spec_version') else '2.0'}"
+            }
+        )
+        misp_object.add_attribute(
+            **{
+                'type': 'stix2-pattern',
+                'object_relation': 'stix2-pattern',
+                'value': indicator.pattern
+            }
+        )
+        self._add_object(misp_object)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
