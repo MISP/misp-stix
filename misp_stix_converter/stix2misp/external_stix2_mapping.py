@@ -9,6 +9,14 @@ class ExternalSTIX2Mapping(STIX2Mapping):
     def __init__(self):
         super().__init__()
         self._declare_mapping()
+        self.__pattern_forbidden_relations = (
+            ' LIKE ',
+            ' FOLLOWEDBY ',
+            ' MATCHES ',
+            ' ISSUBSET ',
+            ' ISSUPERSET',
+            ' REPEATS '
+        )
         observable_mapping = {
             ('domain-name', 'network-traffic'): '_parse_domain_network_traffic_observable',
             ('email-addr',): '_parse_email_address_observable',
@@ -182,6 +190,10 @@ class ExternalSTIX2Mapping(STIX2Mapping):
     @property
     def observable_mapping(self) -> dict:
         return self.__observable_mapping
+
+    @property
+    def pattern_forbidden_relations(self) -> tuple:
+        return self.__pattern_forbidden_relations
 
     @property
     def pattern_mapping(self) -> dict:
