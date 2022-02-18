@@ -5,6 +5,7 @@ from misp_stix_converter.stix2misp.exceptions import (UnknownParsingFunctionErro
     UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
 from .external_stix2_mapping import ExternalSTIX2Mapping
 from .stix2_to_misp import STIX2toMISPParser
+from pymisp import MISPObject
 from stix2.v20.sdo import Indicator as Indicator_v20, ObservedData as ObservedData_v20
 from stix2.v21.sdo import Indicator as Indicator_v21, ObservedData as ObservedData_v21
 from typing import Union
@@ -174,7 +175,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _create_stix_pattern_object(self, indicator):
         misp_object = MISPObject('stix2-pattern')
         misp_object.uuid = indicator.id.split('--')[-1]
-        misp_object.update(self._parse_timeline(stix_object))
+        misp_object.update(self._parse_timeline(indicator))
         if hasattr(indicator, 'description'):
             misp_object.comment = indicator.description
         misp_object.add_attribute(

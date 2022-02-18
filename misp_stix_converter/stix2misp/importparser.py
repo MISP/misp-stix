@@ -56,6 +56,15 @@ class STIXtoMISPParser:
         message = f"Unknown STIX parsing function name: {feature}"
         self.__errors[self._identifier].add(message)
 
+    def _unknown_pattern_mapping_warning(self, indicator_id: str, observable_types: tuple):
+        types = f"containing the following types: {', '.join(observable_types)}"
+        message = f"Unable to map pattern from the indicator with id {indicator_id}, {types}"
+        self.__warnings[self._identifier].add(message)
+
+    def _unknown_pattern_type_warning(self, indicator_id: str, pattern_type: str):
+        message = f"Unknown pattern type in indicator with id {indicator_id}: {pattern_type}"
+        self.__warnings[self._identifier].add(message)
+
     def _unknown_stix_object_type_warning(self, object_type: str):
         message = f"Unknown STIX object type: {object_type}"
         self.__warnings[self._identifier].add(message)

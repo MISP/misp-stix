@@ -88,7 +88,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         feature = self._handle_observable_mapping(indicator.labels, indicator.id)
         try:
             parser = getattr(self, f"{feature}_pattern")
-        except AttributeError as error:
+        except AttributeError:
             raise UnknownParsingFunctionError(f"{feature}_pattern")
         try:
             parser(indicator)
