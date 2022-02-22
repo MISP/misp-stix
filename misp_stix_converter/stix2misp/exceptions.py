@@ -8,6 +8,10 @@ class STIXtoMISPError(Exception):
         self.message = message
 
 
+class AttributeFromPatternParsingError(STIXtoMISPError):
+    pass
+
+
 class ObjectRefLoadingError(STIXtoMISPError):
     pass
 
@@ -25,4 +29,20 @@ class UnknownAttributeTypeError(STIXtoMISPError):
 
 
 class UnknownObjectNameError(STIXtoMISPError):
+    pass
+
+
+class UnknownObservableMappingError(STIXtoMISPError):
+    pass
+
+
+class UnknownParsingFunctionError(STIXtoMISPError):
+    pass
+
+
+class UnknownPatternMappingError(STIXtoMISPError):
+    pass
+
+
+class UnknownPatternTypeError(STIXtoMISPError):
     pass

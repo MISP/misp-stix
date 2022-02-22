@@ -7,19 +7,17 @@ from typing import Optional
 
 class STIX2Mapping:
     def __init__(self):
-        self.__pattern_forbidden_relations = (
-            ' LIKE ',
-            ' FOLLOWEDBY ',
-            ' MATCHES ',
-            ' ISSUBSET ',
-            ' ISSUPERSET ',
-            ' REPEATS '
-        )
         self.__bundle_to_misp_mapping = Mapping(
             **{
                 '0': '_parse_bundle_with_no_report',
                 '1': '_parse_bundle_with_single_report',
                 '2': '_parse_bundle_with_multiple_reports'
+            }
+        )
+        self.__timeline_mapping = Mapping(
+            **{
+                'indicator': ('valid_from', 'valid_until'),
+                'observed-data': ('first_observed', 'last_observed')
             }
         )
 
@@ -100,13 +98,13 @@ class STIX2Mapping:
         return self.__bundle_to_misp_mapping
 
     @property
-    def pattern_forbidden_relations(self) -> tuple:
-        return self.__pattern_forbidden_relations
-
-    @property
     def stix_object_loading_mapping(self) -> dict:
         return self.__stix_object_loading_mapping
 
     @property
     def stix_to_misp_mapping(self) -> dict:
         return self.__stix_to_misp_mapping
+
+    @property
+    def timeline_mapping(self) -> dict:
+        return self.__timeline_mapping

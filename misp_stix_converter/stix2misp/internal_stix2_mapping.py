@@ -9,34 +9,34 @@ class InternalSTIX2Mapping(STIX2Mapping):
     def __init__(self):
         super().__init__()
         self._declare_mapping()
-        observable_attributes_mapping = {
-            'AS': '_parse_AS_observable_attribute',
-            'attachment': '_parse_attachment_observable_attribute',
-            'domain': '_parse_domain_obsevrable_attribute',
-            'domain|ip': '_parse_domain_ip_observable_attribute',
-            'email': '_parse_email_observable_attribute',
-            'email-attachment': '_parse_email_attachment_observable_attribute',
-            'email-body': '_parse_email_body_observable_attribute',
-            'email-dst': '_parse_email_destination_observable_attribute',
-            'email-header': '_parse_email_header_observable_attribute',
-            'email-reply-to': '_parse_email_reply_to_observable_attribute',
-            'email-src': '_parse_email_source_observable_attribute',
-            'email-subject': '_parse_email_subject_observable_attribute',
-            'email-x-mailer': '_parse_email_x_mailer_observable_attribute',
-            'filename': '_parse_filename_observable_attribute',
-            'hostname': '_parse_domain_observable_attribute',
-            'hostname|port': '_parse_hostname_port_observable_attribute',
-            'http-method': '_parse_http_method_observable_attribute',
-            'mac-address': '_parse_mac_address_observable_attribute',
-            'malware-sample': '_parse_malware_sample_observable_attribute',
-            'mutex': '_parse_mutex_observable_attribute',
-            'port': '_parse_port_observable_attribute',
-            'regkey': '_parse_regkey_observable_attribute',
-            'regkey|value': '_parse_regkey_value_observable_attribute',
-            'size-in-bytes': '_parse_size_in_bytes_observable_attribute',
-            'user-agent': '_parse_user_agent_observable_attribute',
+        attributes_mapping = {
+            'AS': '_attribute_from_AS',
+            'attachment': '_attribute_from_attachment',
+            'domain': '_attribute_from_domain',
+            'domain|ip': '_attribute_from_domain_ip',
+            'email': '_attribute_from_email',
+            'email-attachment': '_attribute_from_email_attachment',
+            'email-body': '_attribute_from_email_body',
+            'email-dst': '_attribute_from_email_destination',
+            'email-header': '_attribute_from_email_header',
+            'email-reply-to': '_attribute_from_email_reply_to',
+            'email-src': '_attribute_from_email_source',
+            'email-subject': '_attribute_from_email_subject',
+            'email-x-mailer': '_attribute_from_email_x_mailer',
+            'filename': '_attribute_from_filename',
+            'hostname': '_attribute_from_domain',
+            'hostname|port': '_attribute_from_hostname_port',
+            'http-method': '_attribute_from_http_method',
+            'mac-address': '_attribute_from_mac_address',
+            'malware-sample': '_attribute_from_malware_sample',
+            'mutex': '_attribute_from_mutex',
+            'port': '_attribute_from_port',
+            'regkey': '_attribute_from_regkey',
+            'regkey|value': '_attribute_from_regkey_value',
+            'size-in-bytes': '_attribute_from_size_in_bytes',
+            'user-agent': '_attribute_from_user_agent'
         }
-        observable_attributes_mapping.update(
+        attributes_mapping.update(
             dict.fromkeys(
                 (
                     'md5',
@@ -54,10 +54,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'ssdeep',
                     'tlsh'
                 ),
-                '_parse_hash_observable_attribute'
+                '_attribute_from_hash'
             )
         )
-        observable_attributes_mapping.update(
+        attributes_mapping.update(
             dict.fromkeys(
                 (
                     'filename|md5',
@@ -75,70 +75,69 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'filename|ssdeep',
                     'filename|tlsh'
                 ),
-                '_parse_filename_hash_observable_attribute'
+                '_attribute_from_filename_hash'
             )
         )
-        observable_attributes_mapping.update(
+        attributes_mapping.update(
             dict.fromkeys(
                 (
                     'ip-src',
                     'ip-dst'
                 ),
-                '_parse_ip_observable_attribute'
-
+                '_attribute_from_ip'
             )
         )
-        observable_attributes_mapping.update(
+        attributes_mapping.update(
             dict.fromkeys(
                 (
                     'ip-src|port',
                     'ip-dst|port'
                 ),
-                '_parse_ip_port_observable_attribute'
+                '_attribute_from_ip_port'
             )
         )
-        observable_attributes_mapping.update(
+        attributes_mapping.update(
             dict.fromkeys(
                 (
                     'uri',
                     'url',
                     'link'
                 ),
-                '_parse_url_observable_attribute'
+                '_attribute_from_url'
             )
         )
-        observable_attributes_mapping.update(
+        attributes_mapping.update(
             dict.fromkeys(
                 (
                     'x509-fingerprint-md5',
                     'x509-fingerprint-sha1',
                     'x509-fingerprint-sha256'
                 ),
-                '_parse_x509_fingerprint_observable_attribute'
+                '_attribute_from_x509_fingerprint'
             )
         )
-        self.__observable_attributes_mapping = Mapping(**observable_attributes_mapping)
-        observable_objects_mapping = {
-            'android-app': '_parse_android_app_observable_object',
-            'asn': '_parse_asn_observable_object',
-            'cpe-asset': '_parse_cpe_asset_observable_object',
-            'credential': '_parse_credential_observable_object',
-            'domain-ip': '_parse_domain_ip_observable_object',
-            'email': '_parse_email_observable_object',
-            'facebook-account': '_parse_account_observable_object',
-            'file': '_parse_file_observable_object',
-            'image': '_parse_image_observable_object',
-            'ip-port': '_parse_ip_port_observable_object',
-            'lnk': '_parse_lnk_observable_object',
-            'mutex': '_parse_mutex_observable_object',
-            'network-connection': '_parse_network_connection_observable_object',
-            'network-socket': '_parse_network_socket_observable_object',
-            'process': '_parse_process_observable_object',
-            'registry-key': '_parse_registry_key_observable_object',
-            'url': '_parse_url_observable_object',
-            'x509': '_parse_x509observable__object'
+        self.__attributes_mapping = Mapping(**attributes_mapping)
+        objects_mapping = {
+            'android-app': '_object_from_android_app',
+            'asn': '_object_from_asn',
+            'cpe-asset': '_object_from_cpe_asset',
+            'credential': '_object_from_credential',
+            'domain-ip': '_object_from_domain_ip',
+            'email': '_object_from_email',
+            'facebook-account': '_object_from_account',
+            'file': '_object_from_file',
+            'image': '_object_from_image',
+            'ip-port': '_object_from_ip_port',
+            'lnk': '_object_from_lnk',
+            'mutex': '_object_from_mutex',
+            'network-connection': '_object_from_network_connection',
+            'network-socket': '_object_from_network_socket',
+            'process': '_object_from_process',
+            'registry-key': '_object_from_registry_key',
+            'url': '_object_from_url',
+            'x509': '_object_from_x509'
         }
-        observable_objects_mapping.update(
+        objects_mapping.update(
             dict.fromkeys(
                 (
                     'github-user',
@@ -149,15 +148,15 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'twitter-account',
                     'user-account'
                 ),
-                '_parse_account_observable_object'
+                '_object_from_account'
             )
         )
-        self.__observable_objects_mapping = Mapping(**observable_objects_mapping)
+        self.__objects_mapping = Mapping(**objects_mapping)
 
     @property
-    def observable_attributes_mapping(self) -> dict:
-        return self.__observable_attributes_mapping
+    def attributes_mapping(self) -> dict:
+        return self.__attributes_mapping
 
     @property
-    def observable_objects_mapping(self) -> dict:
-        return self.__observable_objects_mapping
+    def objects_mapping(self) -> dict:
+        return self.__objects_mapping
