@@ -8,12 +8,12 @@ from .stix2_to_misp import STIX2toMISPParser
 from pymisp import MISPObject
 from stix2.v20.sdo import Indicator as Indicator_v20, ObservedData as ObservedData_v20
 from stix2.v21.sdo import Indicator as Indicator_v21, ObservedData as ObservedData_v21
-from typing import Union
+from typing import Optional, Union
 
 
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, single_event: bool):
-        super().__init__(single_event)
+    def __init__(self, single_event: bool, synonyms_path: Optional[str]=None):
+        super().__init__(single_event, synonyms_path)
         self._mapping = ExternalSTIX2Mapping()
 
     ################################################################################

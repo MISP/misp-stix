@@ -11,7 +11,7 @@ from stix2.v20.sdo import (CustomObject as CustomObject_v20, Indicator as Indica
     ObservedData as ObservedData_v20)
 from stix2.v21.sdo import (CustomObject as CustomObject_v21, Indicator as Indicator_v21,
     Location, Note, ObservedData as ObservedData_v21)
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 _attribute_additional_fields = (
     'category',
@@ -32,8 +32,8 @@ _MISP_FEATURES_TYPING = Union[
 
 
 class InternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, single_event: bool):
-        super().__init__(single_event)
+    def __init__(self, single_event: bool, synonyms_path: Optional[str]=None):
+        super().__init__(single_event, synonyms_path)
         self._mapping = InternalSTIX2Mapping()
 
     ################################################################################

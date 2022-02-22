@@ -1,12 +1,22 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
+import json
+import subprocess
 import traceback
+from .exceptions import (SynonymsResourceJSONError, UnavailableGalaxyResourcesError,
+    UnavailableSynonymsResourceError)
 from collections import defaultdict
+from pathlib import Path
+from typing import Union
+
+_ROOT_PATH = Path(__file__).parents[2]
 
 
 class STIXtoMISPParser:
-    def __init__(self):
+    def __init__(self, synonyms_path: Union[None, str]):
+        if synonyms_path is not None:
+            self.__synonyms_path = Path(synonyms_path)
         self.__errors = defaultdict(set)
         self.__warnings = defaultdict(set)
 
@@ -15,8 +25,20 @@ class STIXtoMISPParser:
         return self.__errors
 
     @property
+    def synonyms_mapping(self) -> dict:
+        try:
+            return self.__synonyms_mapping
+        except AttributeError:
+            self.__get_synonyms_mapping()
+            return self.__synonyms_mapping
+
+    @property
     def warnings(self) -> set:
         return self.__warnings
+
+    ################################################################################
+    #                    ERRORS AND WARNINGS HANDLING FUNCTIONS                    #
+    ################################################################################
 
     def _attribute_from_pattern_parsing_error(self, indicator_id: str):
         message = f"Error while parsing pattern from indicator with id {indicator_id}"
@@ -68,3 +90,74 @@ class STIXtoMISPParser:
     def _unknown_stix_object_type_warning(self, object_type: str):
         message = f"Unknown STIX object type: {object_type}"
         self.__warnings[self._identifier].add(message)
+
+    ################################################################################
+    #           SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING FUNCTIONS.           #
+    ################################################################################
+
+    def __galaxies_up_to_date(self) -> bool:
+        fingerprint_path = _ROOT_PATH / 'tmp' / 'synonymsToTagNames.fingerprint'
+        if not fingerprint_path.exists():
+            return False
+        with open(fingerprint_path, 'rt', encoding='utf-8') as f:
+            fingerprint = f.read()
+        return fingerprint == self.__get_misp_galaxy_fingerprint()
+
+    def __generate_synonyms_mapping(self):
+        data_path = _ROOT_PATH / 'data' / 'misp-galaxy' / 'clusters'
+        if not data_path.exists():
+
+            raise UnavailableGalaxyResourcesError(data_path)
+        synonyms_mapping = defaultdict(list)
+        for filename in data_path.glob('*.json'):
+            with open(filename, 'rt', encoding='utf-8') as f:
+                cluster_definition = json.loads(f.read())
+            cluster_type = f"misp-galaxy:{cluster_definition['type']}"
+            for cluster in cluster_definition['values']:
+                value = cluster['value']
+                tag_name = f'{cluster_type}="{value}"'
+                synonyms_mapping[value].append(tag_name)
+                if cluster.get('meta') is not None and cluster['meta'].get('synonyms') is not None:
+                    for synonym in cluster['meta']['synonyms']:
+                        synonyms_mapping[synonym].append(tag_name)
+        with open(self.__synonyms_path, 'wt', encoding='utf-8') as f:
+            f.write(json.dumps(synonyms_mapping))
+        fingerprint_path = _ROOT_PATH / 'tmp' / 'synonymsToTagNames.fingerprint'
+        with open(fingerprint_path, 'rt', encoding='utf-8') as f:
+            f.write(self.__get_misp_galaxy_fingerprint())
+
+    @staticmethod
+    def __get_misp_galaxy_fingerprint():
+        galaxy_path = _ROOT_PATH / 'data' / 'misp-galaxy'
+        status = subprocess.Popen(
+            [
+                'git',
+                'submodule',
+                'status',
+                galaxy_path
+            ],
+            stdout=subprocess.PIPE
+        )
+        stdout = status.communicate()[0]
+        return stdout.decode().split(' ')[1]
+
+    def __get_synonyms_mapping(self):
+        if not hasattr(self, '__synonyms_path'):
+            self.__synonyms_path = _ROOT_PATH / 'tmp' / 'synonymsToTagNames.json'
+            if not self.__synonyms_path.exists() or not self.__galaxies_up_to_date():
+                self.__generate_synonyms_mapping()
+        else:
+            if not self.__synonyms_path.exists():
+                self.__generate_synonyms_mapping()
+        self.__load_synonyms_mapping()
+
+    def __load_synonyms_mapping(self):
+        try:
+            with open(self.__synonyms_path, 'rt', encoding='utf-8') as f:
+                self.__synonyms_mapping = json.loads(f.read())
+        except FileNotFoundError:
+            message = f""
+            raise UnavailableSynonymsResourceError(message)
+        except json.JSONDecodeError:
+            message = f""
+            raise SynonymsResourceJSONError(message)

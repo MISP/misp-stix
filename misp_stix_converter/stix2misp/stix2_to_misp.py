@@ -4,7 +4,9 @@
 import sys
 import time
 from .exceptions import (ObjectRefLoadingError, ObjectTypeLoadingError,
-    UndefinedSTIXObjectError, UnknownAttributeTypeError, UnknownObjectNameError, UnknownParsingFunctionError)
+    SynonymsResourceJSONError, UnavailableGalaxyResourcesError,
+    UnavailableSynonymsResourceError, UndefinedSTIXObjectError, UnknownAttributeTypeError,
+    UnknownObjectNameError, UnknownParsingFunctionError)
 from .importparser import STIXtoMISPParser
 from collections import defaultdict
 from datetime import datetime
@@ -50,8 +52,8 @@ _OBSERVABLE_TYPES = Union[
 
 
 class STIX2toMISPParser(STIXtoMISPParser):
-    def __init__(self, single_event: bool):
-        super().__init__()
+    def __init__(self, single_event: bool, synonyms_path: Union[None, str]):
+        super().__init__(synonyms_path)
         self.__single_event = single_event
         self.__n_report = 0
 
@@ -80,7 +82,14 @@ class STIX2toMISPParser(STIXtoMISPParser):
             feature = self._mapping.bundle_to_misp_mapping[str(self.__n_report)]
         except AttributeError:
             sys.exit('No STIX content loaded, please run `load_stix_content` first.')
-        getattr(self, feature)()
+        try:
+            getattr(self, feature)()
+        except (
+            SynonymsResourceJSONError,
+            UnavailableGalaxyResourcesError,
+            UnavailableSynonymsResourceError
+        ) as error:
+            sys.exit(error)
 
     def parse_stix_content(self, filename: str):
         try:
