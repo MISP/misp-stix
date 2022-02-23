@@ -5,7 +5,7 @@ import json
 from .exceptions import (AttributeFromPatternParsingError, UndefinedSTIXObjectError,
     UnknownAttributeTypeError, UnknownObjectNameError, UnknownParsingFunctionError)
 from .internal_stix2_mapping import InternalSTIX2Mapping
-from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING, _MISP_OBJECTS_PATH
+from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.v20.sdo import (CustomObject as CustomObject_v20, Indicator as Indicator_v20,
     ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
@@ -225,12 +225,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if hasattr(stix_object, 'object_marking_refs'):
             self._update_marking_refs(attribute['uuid'])
         return attribute
-
-    def _create_misp_object(self, name: str, stix_object: _MISP_OBJECT_TYPING) -> MISPObject:
-        misp_object = MISPObject(name, misp_objects_path_custom=_MISP_OBJECTS_PATH)
-        misp_object.uuid = stix_object.id.split('--')[-1]
-        misp_object.update(self._parse_timeline(stix_object))
-        return misp_object
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #

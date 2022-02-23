@@ -345,6 +345,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def _add_object(self, misp_object: MISPObject):
         self.misp_event.add_object(misp_object)
 
+    def _create_misp_object(self, name: str, stix_object: _MISP_OBJECT_TYPING) -> MISPObject:
+        misp_object = MISPObject(name, misp_objects_path_custom=_MISP_OBJECTS_PATH)
+        misp_object.uuid = stix_object.id.split('--')[-1]
+        misp_object.update(self._parse_timeline(stix_object))
+        return misp_object
+
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
