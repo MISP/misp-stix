@@ -4,11 +4,18 @@
 from misp_stix_converter.stix2misp.exceptions import (UnknownParsingFunctionError,
     UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
 from .external_stix2_mapping import ExternalSTIX2Mapping
-from .stix2_to_misp import STIX2toMISPParser
+from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECTS_PATH
 from pymisp import MISPObject
-from stix2.v20.sdo import Indicator as Indicator_v20, ObservedData as ObservedData_v20
-from stix2.v21.sdo import Indicator as Indicator_v21, ObservedData as ObservedData_v21
+from stix2.v20.sdo import (Indicator as Indicator_v20, ObservedData as ObservedData_v20,
+    Vulnerability as Vulnerability_v20)
+from stix2.v21.sdo import (Indicator as Indicator_v21, ObservedData as ObservedData_v21,
+    Vulnerability as Vulnerability_v21)
 from typing import Optional, Union
+
+_OBSERVABLE_OBJECTS_TYPING = Union[
+    Vulnerability_v20, # Vulnerability object are obviously not Observable objects but
+    Vulnerability_v21  # they're parsed at some point the same way Observable objects are
+]
 
 
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
@@ -164,9 +171,58 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         except Exception as exception:
             self._observed_data_error(observed_data.id, exception)
 
+    def _parse_vulnerability(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
+        """
+        Vulnerabilty parsing function.
+        If the vulnerability name is a knwown Galaxy Cluster name, we store the
+        associated tag names that will be used afterwards to populate the Galaxies
+        list within the appropriate MISP data structure.
+        Otherwise, the vulnerability is parsed and depending on the converted
+        attributes, the result is either a MISP attribute or a MISP object.
+
+        :param vulnerability: A STIX 2.0 or 2.1 Vulnerability object to parse
+        """
+        name = vulnerability.name
+        if name in self.synonyms_mapping:
+            self._galaxy[vulnerability.id.split('--')[1]] = {
+                'tag_names': self.synonyms_mapping[name],
+                'used': False
+            }
+        else:
+            attributes = self._get_attributes_from_observable(vulnerability, 'vulnerability_mapping')
+            if hasattr(vulnerability, 'external_references'):
+                external_ids = set()
+                for reference in vulnerability.external_references:
+                    if reference['source_name'] in ('cve', 'vulnerability') and reference.get('external_id') is not None:
+                        external_ids.add(reference['external_id'])
+                    elif reference['source_name'] == 'url' and reference.get('url') is not None:
+                        attribute = {'value': reference['url']}
+                        attribute.update(self._mapping.references_attribute)
+                        attributes.append(attribute)
+                if len(external_ids) == 1:
+                    attribute = {'value': list(external_ids)[0]}
+                    attribute.update(self._mapping.vulnerability_attribute)
+                    attributes.append(attribute)
+                else:
+                    for external_id in external_ids:
+                        attribute = {'value': external_id}
+                        feature = 'vulnerability_attribute' if external_id == name else 'references_attribute'
+                        attribute.update(getattr(self._mapping, feature))
+                        attributes.append(attribute)
+            self._handle_import_case(vulnerability, attributes, 'vulnerability')
+
     ################################################################################
     #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #
     ################################################################################
+
+    def _get_attributes_from_observable(self, stix_object: _OBSERVABLE_OBJECTS_TYPING, mapping: str) -> list:
+        attributes = []
+        for feature, attribute in getattr(self._mapping, mapping).items():
+            if hasattr(stix_object, feature):
+                misp_attribute = {'value': getattr(stix_object, feature)}
+                misp_attribute.update(attribute)
+                attributes.append(misp_attribute)
+        return attributes
 
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
