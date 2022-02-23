@@ -5,12 +5,12 @@ import json
 from .exceptions import (AttributeFromPatternParsingError, UndefinedSTIXObjectError,
     UnknownAttributeTypeError, UnknownObjectNameError, UnknownParsingFunctionError)
 from .internal_stix2_mapping import InternalSTIX2Mapping
-from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
+from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING, _MISP_OBJECTS_PATH
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.v20.sdo import (CustomObject as CustomObject_v20, Indicator as Indicator_v20,
-    ObservedData as ObservedData_v20)
+    ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
 from stix2.v21.sdo import (CustomObject as CustomObject_v21, Indicator as Indicator_v21,
-    Location, Note, ObservedData as ObservedData_v21)
+    Location, Note, ObservedData as ObservedData_v21, Vulnerability as Vulnerability_v21)
 from typing import Optional, Tuple, Union
 
 _attribute_additional_fields = (
@@ -119,6 +119,48 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except Exception as exception:
             self._observed_data_error(observed_data.id, exception)
 
+    def _parse_vulnerability(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
+        feature = self._handle_observable_mapping(vulnerability.labels, vulnerability.id)
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        try:
+            parser(vulnerability)
+        except Exception as exception:
+            self._vulnerability_error(vulnerability.id, exception)
+
+    ################################################################################
+    #                 STIX Domain Objects (SDOs) PARSING FUNCTIONS                 #
+    ################################################################################
+
+    def _parse_vulnerability_attribute(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
+        attribute = self._create_attribute_dict(vulnerability)
+        attribute['value'] = vulnerability.name
+        self._add_attribute(attribute)
+
+    def _parse_vulnerability_object(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
+        misp_object = self._create_misp_object('vulnerability', vulnerability)
+        for reference in vulnerability.external_references:
+            if reference['source_name'] in ('cve', 'vulnerability'):
+                external_id = reference['external_id']
+                attribute = {'value': external_id}
+                attribute.update(self._mapping.vulnerability_attribute)
+                misp_object.add_attribute(**attribute)
+                if external_id != vulnerability.name:
+                    attribute = {'value': vulnerability.name}
+                    attribute.update(self._mapping.summary_attribute)
+                    misp_object.add_attribute(**attribute)
+            elif reference['source_name'] == 'url':
+                attribute = {'value': reference['url']}
+                attribute.update(self._mapping.references_attribute)
+                misp_object.add_attribute(**attribute)
+        if hasattr(vulnerability, 'description'):
+            attribute = {'value': vulnerability.description}
+            attribute.update(self._mapping.description_attribute)
+            misp_object.add_attribute(**attribute)
+        self._add_object(misp_object)
+
     ################################################################################
     #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #
     ################################################################################
@@ -185,7 +227,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         return attribute
 
     def _create_misp_object(self, name: str, stix_object: _MISP_OBJECT_TYPING) -> MISPObject:
-        misp_object = MISPObject(name)
+        misp_object = MISPObject(name, misp_objects_path_custom=_MISP_OBJECTS_PATH)
         misp_object.uuid = stix_object.id.split('--')[-1]
         misp_object.update(self._parse_timeline(stix_object))
         return misp_object

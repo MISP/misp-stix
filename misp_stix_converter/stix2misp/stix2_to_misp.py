@@ -10,7 +10,7 @@ from .exceptions import (ObjectRefLoadingError, ObjectTypeLoadingError,
 from .importparser import STIXtoMISPParser
 from collections import defaultdict
 from datetime import datetime
-from pymisp import MISPEvent, MISPAttribute, MISPObject
+from pymisp import AbstractMISP, MISPEvent, MISPAttribute, MISPObject
 from stix2.parsing import parse as stix2_parser
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
@@ -42,8 +42,11 @@ _MISP_OBJECT_TYPING = Union[
     Indicator_v20,
     Indicator_v21,
     ObservedData_v20,
-    ObservedData_v21
+    ObservedData_v21,
+    Vulnerability_v20,
+    Vulnerability_v21
 ]
+_MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
 _OBSERVABLE_TYPES = Union[
     Artifact, AutonomousSystem, Directory, DomainName, EmailAddress, EmailMessage,
     File, IPv4Address, IPv6Address, MACAddress, Mutex, NetworkTraffic, Process,

@@ -93,9 +93,19 @@ class STIX2Mapping:
             }
         )
 
+        # SINGLE ATTRIBUTES MAPPING
+        self.__description_attribute = Mapping(type='text', object_relation='description')
+        self.__references_attribute = Mapping(type='link', object_relation='references')
+        self.__summary_attribute = Mapping(type='text', object_relation='summary')
+        self.__vulnerability_attribute = Mapping(type='vulnerability', object_relation='id')
+
     @property
     def bundle_to_misp_mapping(self) -> dict:
         return self.__bundle_to_misp_mapping
+
+    @property
+    def description_attribute(self) -> dict:
+        return self.__description_attribute
 
     @property
     def stix_object_loading_mapping(self) -> dict:
@@ -106,5 +116,17 @@ class STIX2Mapping:
         return self.__stix_to_misp_mapping
 
     @property
+    def summary_attribute(self) -> dict:
+        return self.__summary_attribute
+
+    @property
     def timeline_mapping(self) -> dict:
         return self.__timeline_mapping
+
+    @property
+    def references_attribute(self) -> dict:
+        return self.__references_attribute
+
+    @property
+    def vulnerability_attribute(self) -> dict:
+        return self.__vulnerability_attribute
