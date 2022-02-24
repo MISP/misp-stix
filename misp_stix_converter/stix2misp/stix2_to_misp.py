@@ -305,25 +305,17 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._fetch_tags_from_labels(misp_event, stix_object.labels)
 
     def _misp_event_from_grouping(self, grouping: Grouping) -> MISPEvent:
-        misp_event = MISPEvent()
-        misp_event.uuid = grouping.id.split('--')[-1]
-        misp_event.info = grouping.name
+        misp_event = self._create_misp_event(grouping)
         misp_event.published = False
-        misp_event.timestamp = self._timestamp_from_date(grouping.modified)
-        self._handle_misp_event_tags(misp_event, grouping)
         return misp_event
 
     def _misp_event_from_report(self, report: Union[Report_v20, Report_v21]) -> MISPEvent:
-        misp_event = MISPEvent()
-        misp_event.uuid = report.id.split('--')[-1]
-        misp_event.info = report.name
+        misp_event = self._create_misp_event(report)
         if report.published != report.modified:
             misp_event.published = True
             misp_event.publish_timestamp = self._timestamp_from_date(report.published)
         else:
             misp_event.published = False
-        misp_event.timestamp = self._timestamp_from_date(report.modified)
-        self._handle_misp_event_tags(misp_event, report)
         return misp_event
 
     def _parse_observed_data(self, observed_data_ref: str):
@@ -344,6 +336,14 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _add_object(self, misp_object: MISPObject):
         self.misp_event.add_object(misp_object)
+
+    def _create_misp_event(self, stix_object: Union[Grouping, Report_v20, Report_v21]): -> MISPEvent:
+        misp_event = MISPEvent()
+        misp_event.uuid = stix_object.id.split('--')[-1]
+        misp_event.info = stix_object.name
+        misp_event.timestamp = self._timestamp_from_date(stix_object.modified)
+        self._handle_misp_event_tags(misp_event, stix_object)
+        return misp_event
 
     def _create_misp_object(self, name: str, stix_object: _MISP_OBJECT_TYPING) -> MISPObject:
         misp_object = MISPObject(name, misp_objects_path_custom=_MISP_OBJECTS_PATH)
