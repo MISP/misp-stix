@@ -129,6 +129,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         except Exception as exception:
             self._indicator_error(indicator.id, exception)
 
+    def _parse_location(self, location_ref: str):
+        location = self._get_stix2_object(location_ref)
+        misp_object = self._parse_location_object(location)
+        self._add_object(misp_object)
+
     def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
         """
         STIX 2.0 Observed Data parsing function. Gets the parsing function depending

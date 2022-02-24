@@ -94,10 +94,26 @@ class STIX2Mapping:
         )
 
         # SINGLE ATTRIBUTES MAPPING
+        self.__accuracy_radius_attribute = Mapping(type='float', object_relation='accuracy_radius')
         self.__description_attribute = Mapping(type='text', object_relation='description')
         self.__references_attribute = Mapping(type='link', object_relation='references')
         self.__summary_attribute = Mapping(type='text', object_relation='summary')
         self.__vulnerability_attribute = Mapping(type='vulnerability', object_relation='id')
+
+        # MISP OBJECTS MAPPING
+        self.__location_mapping = Mapping(
+            city = 'city',
+            country = 'country',
+            latitude = 'latitude',
+            longitude = 'longitude',
+            postal_code = 'zipcode',
+            region = 'region',
+            street_address = 'address'
+        )
+
+    @property
+    def accuracy_radius_attribute(self) -> dict:
+        return self.__accuracy_radius_attribute
 
     @property
     def bundle_to_misp_mapping(self) -> dict:
@@ -106,6 +122,10 @@ class STIX2Mapping:
     @property
     def description_attribute(self) -> dict:
         return self.__description_attribute
+
+    @property
+    def location_mapping(self) -> dict:
+        return self.__location_mapping
 
     @property
     def stix_object_loading_mapping(self) -> dict:

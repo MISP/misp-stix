@@ -318,6 +318,23 @@ class STIX2toMISPParser(STIXtoMISPParser):
             misp_event.published = False
         return misp_event
 
+    def _parse_location_object(self, location: Location) -> MISPObject:
+        misp_object = self._create_misp_object('geolocation', location)
+        if hasattr(location, 'description'):
+            misp_object.comment = location.description
+        for feature, attribute in self._mapping.location_mapping.items():
+            if hasattr(location, feature):
+                misp_attribute = {'value': getattr(location, feature)}
+                misp_attribute.update(attribute)
+                misp_object.add_attribute(**misp_attribute)
+        if hasattr(location, 'precision'):
+            attribute = {'value': float(location.precision) / 1000}
+            attribute.update(self._mapping.accuracy_radius_attribute)
+            misp_object.add_attribute(**attribute)
+        if hasattr(location, 'object_marking_refs'):
+            self._parse_markings(misp_object, location.object_marking_refs)
+        return misp_object
+
     def _parse_observed_data(self, observed_data_ref: str):
         observed_data = self._get_stix_object(observed_data_ref)
         if hasattr(observed_data, 'spec_version') and observed_data.spec_version == '2.1':
@@ -360,6 +377,18 @@ class STIX2toMISPParser(STIXtoMISPParser):
             return all(object_ref in self._observable for object_ref in object_refs)
         except AttributeError:
             return False
+
+    def _parse_markings(self, misp_feature: Union[MISPAttribute, MISPObject], marking_refs: list):
+        for marking_ref in marking_refs:
+            try:
+                marking_definition = self._get_stix_object(marking_ref)
+            except ObjectTypeLoadingError as error:
+                self._object_type_loading_error(error)
+                continue
+            except ObjectRefLoadingError as error:
+                self._object_ref_loading_error(error)
+                continue
+            misp_feature.add_tag(marking_definition.name)
 
     def _parse_timeline(self, stix_object: _MISP_OBJECT_TYPING) -> dict:
         misp_object = {'timestamp': self._timestamp_from_date(stix_object.modified)}
