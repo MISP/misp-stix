@@ -116,6 +116,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 '_attribute_from_x509_fingerprint'
             )
         )
+        attributes_mapping.update(
+            dict.fromkeys(
+                (
+                    'sigma',
+                    'snort',
+                    'yara'
+                ),
+                '_attribute_from_patterning_language'
+            )
+        )
         self.__attributes_mapping = Mapping(**attributes_mapping)
         objects_mapping = {
             'android-app': '_object_from_android_app',

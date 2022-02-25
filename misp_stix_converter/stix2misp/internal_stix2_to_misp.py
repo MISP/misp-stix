@@ -222,6 +222,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
         self._add_attribute(attribute)
 
+    def _attribute_from_patterning_language(self, indicator: Indicator_v21):
+        attribute = self._create_attribute_dict(indicator)
+        attribute['value'] = indicator.pattern
+        self._add_attribute(attribute)
+
     ################################################################################
     #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #
     ################################################################################
