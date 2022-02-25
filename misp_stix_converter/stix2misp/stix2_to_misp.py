@@ -31,7 +31,7 @@ from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, Domain
 from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
     CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21, Grouping,
     Identity as Identity_v21, Indicator as Indicator_v21,
-    IntrusionSet as IntrusionSet_v21, Malware as Malware_v21,
+    IntrusionSet as IntrusionSet_v21, Location, Malware as Malware_v21,
     ObservedData as ObservedData_v21, Note, Report as Report_v21,
     ThreatActor as ThreatActor_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
