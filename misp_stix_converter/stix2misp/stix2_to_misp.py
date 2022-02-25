@@ -354,7 +354,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def _add_object(self, misp_object: MISPObject):
         self.misp_event.add_object(misp_object)
 
-    def _create_misp_event(self, stix_object: Union[Grouping, Report_v20, Report_v21]): -> MISPEvent:
+    def _create_misp_event(self, stix_object: Union[Grouping, Report_v20, Report_v21]) -> MISPEvent:
         misp_event = MISPEvent()
         misp_event.uuid = stix_object.id.split('--')[-1]
         misp_event.info = stix_object.name
