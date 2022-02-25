@@ -118,8 +118,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._unknown_pattern_mapping_warning(indicator.id, error)
             feature = '_create_stix_pattern_object'
         except UnknownPatternTypeError as error:
-            self._unknown_pattern_type_warning(indicator.id, error)
-            feature = '_create_stix_pattern_object'
+            self._unknown_pattern_type_error(indicator.id, error)
+            return
         try:
             parser = getattr(self, feature)
         except AttributeError:
