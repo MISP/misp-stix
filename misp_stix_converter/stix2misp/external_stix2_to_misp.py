@@ -130,9 +130,17 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._indicator_error(indicator.id, exception)
 
     def _parse_location(self, location_ref: str):
+        """
+        STIX 2.1 Location object parsing function. A geolocation MISP object is
+        created and the different STIX fields are converted into the appropriate
+        object attributes (Common with the parent parsing class).
+
+        :param location_ref: The Location object id used to find the corresponding
+            STIX object
+        """
         location = self._get_stix2_object(location_ref)
         misp_object = self._parse_location_object(location)
-        self._add_object(misp_object)
+        self._add_misp_object(misp_object)
 
     def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
         """
@@ -251,7 +259,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 'value': indicator.pattern
             }
         )
-        self._add_object(misp_object)
+        self._add_misp_object(misp_object)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #

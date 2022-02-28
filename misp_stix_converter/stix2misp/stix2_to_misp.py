@@ -322,7 +322,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         misp_object = self._create_misp_object('geolocation', location)
         if hasattr(location, 'description'):
             misp_object.comment = location.description
-        for feature, attribute in self._mapping.location_mapping.items():
+        for feature, attribute in self._mapping.location_object_mapping.items():
             if hasattr(location, feature):
                 misp_attribute = {'value': getattr(location, feature)}
                 misp_attribute.update(attribute)
@@ -346,12 +346,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                       MISP FEATURES CREATION FUNCTIONS                       #
     ################################################################################
 
-    def _add_attribute(self, attribute: dict):
+    def _add_misp_attribute(self, attribute: dict):
         misp_attribute = MISPAttribute()
         misp_attribute.from_dict(**attribute)
         self.misp_event.add_attribute(**misp_attribute)
 
-    def _add_object(self, misp_object: MISPObject):
+    def _add_misp_object(self, misp_object: MISPObject):
         self.misp_event.add_object(misp_object)
 
     def _create_misp_event(self, stix_object: Union[Grouping, Report_v20, Report_v21]) -> MISPEvent:

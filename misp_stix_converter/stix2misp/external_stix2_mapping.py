@@ -190,7 +190,7 @@ class ExternalSTIX2Mapping(STIX2Mapping):
         self.__pattern_mapping = Mapping(**pattern_mapping)
 
         # MISP OBJECTS MAPPING
-        self.__vulnerability_mapping = Mapping(
+        self.__vulnerability_object_mapping = Mapping(
             name = self.summary_attribute,
             description = self.description_attribute
         )
@@ -208,5 +208,5 @@ class ExternalSTIX2Mapping(STIX2Mapping):
         return self.__pattern_mapping
 
     @property
-    def vulnerability_mapping(self) -> dict:
-        return self.__vulnerability_mapping
+    def vulnerability_object_mapping(self) -> dict:
+        return self.__vulnerability_object_mapping

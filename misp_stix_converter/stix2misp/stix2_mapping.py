@@ -101,14 +101,14 @@ class STIX2Mapping:
         self.__vulnerability_attribute = Mapping(type='vulnerability', object_relation='id')
 
         # MISP OBJECTS MAPPING
-        self.__location_mapping = Mapping(
-            city = 'city',
-            country = 'country',
-            latitude = 'latitude',
-            longitude = 'longitude',
-            postal_code = 'zipcode',
-            region = 'region',
-            street_address = 'address'
+        self.__location_object_mapping = Mapping(
+            city = Mapping(type='text', object_relation='city'),
+            country = Mapping(type='text', object_relation='country'),
+            latitude = Mapping(type='float', object_relation='latitude'),
+            longitude = Mapping(type='float', object_relation='longitude'),
+            postal_code = Mapping(type='text', object_relation='zipcode'),
+            region = Mapping(type='text', object_relation='region'),
+            street_address = Mapping(type='text', object_relation='address')
         )
 
     @property
@@ -124,8 +124,8 @@ class STIX2Mapping:
         return self.__description_attribute
 
     @property
-    def location_mapping(self) -> dict:
-        return self.__location_mapping
+    def location_object_mapping(self) -> dict:
+        return self.__location_object_mapping
 
     @property
     def stix_object_loading_mapping(self) -> dict:
