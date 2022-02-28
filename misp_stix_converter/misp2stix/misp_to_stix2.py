@@ -445,8 +445,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if markings:
             self._handle_markings(custom_args, markings)
         getattr(self, self._results_handling_function)(self._create_custom_attribute(custom_args))
-        if attribute.get('SIghting'):
-            self._handle_sightings(attribute['sighting'], custom_id)
+        if attribute.get('Sighting'):
+            self._handle_sightings(attribute['Sighting'], custom_id)
 
     def _parse_domain_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
@@ -716,7 +716,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_markings(vulnerability_args, markings)
         getattr(self, self._results_handling_function)(self._create_vulnerability(vulnerability_args))
         if attribute.get('Sighting'):
-            self._handle_sightings(attribute['sighting'], vulnerability_id)
+            self._handle_sightings(attribute['Sighting'], vulnerability_id)
 
     def _parse_x509_fingerprint_attribute(self, attribute: dict):
         if attribute.get('to_ids', False):
