@@ -27,6 +27,31 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 
+    def _handle_import_case(self, stix_object: _MISP_OBJECT_TYPING, attributes: list, name: str, force_object: Optional[tuple]=None):
+        """
+        After we extracted attributes from a STIX object (Indicator pattern,
+        Observable object, Vulnerability fields, etc.), we want to know if it is
+        appropriate to import one single attribute or to create a MISP object with
+        an association of attributes included in a given object template.
+
+        :param stix_object: The STIX object we convert into a MISP data structure
+        :param attributes: The attribute(s) extracted from the STIX object
+        :param name: The MISP object name or MISP attribute type to be used for the
+            converted MISP feature
+        :param force_object: List of object_relation values that force the MISP
+            object creation over a MISP attribute, if at least one of the attribute
+            has a matching object_relation field
+        """
+        if len(attributes) > 1 or (force_object is not None and self._handle_object_forcing(attributes, force_object)):
+            misp_object = self._create_misp_object(name, stix_object)
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
+            self._add_misp_object(misp_object)
+        else:
+            attribute = self._create_attribute_dict(stix_object)
+            attribute.update(attributes[0])
+            self._add_misp_attribute(attribute)
+
     def _handle_observable_mapping(self, observed_data: ObservedData_v21) -> str:
         """
         Takes a STIX 2.1 Observed Data object and redirects to the appropriate
@@ -320,3 +345,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _extract_types_from_observable_refs(self, observable_refs: list) -> tuple:
         return sorted(tuple({self._observable[object_ref].type for object_ref in observable_refs}))
+
+    @staticmethod
+    def _handle_object_forcing(attributes: list, object_forcing: tuple) -> bool:
+        for attribute in attributes:
+            if attribute['object_relation'] in object_forcing:
+                return True
+        return False
