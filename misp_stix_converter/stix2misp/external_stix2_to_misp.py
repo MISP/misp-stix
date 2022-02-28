@@ -4,7 +4,7 @@
 from misp_stix_converter.stix2misp.exceptions import (UnknownParsingFunctionError,
     UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
 from .external_stix2_mapping import ExternalSTIX2Mapping
-from .stix2_to_misp import STIX2toMISPParser
+from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
 from pymisp import MISPObject
 from stix2.v20.sdo import (Indicator as Indicator_v20, ObservedData as ObservedData_v20,
     Vulnerability as Vulnerability_v20)
@@ -260,6 +260,55 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             }
         )
         self._add_misp_object(misp_object)
+
+    def _parse_sigma_pattern(self, indicator: Indicator_v21):
+        attribute = self._create_attribute_dict(indicator)
+        attribute['value'] = indicator.pattern
+        attribute.update(self._mapping.sigma_attribute)
+        self._add_misp_attribute(attribute)
+
+    def _parse_snort_pattern(self, indicator: Indicator_v21):
+        attribute = self._create_attribute_dict(indicator)
+        attribute['value'] = indicator.pattern
+        attribute.update(self._mapping.snort_attribute)
+        self._add_misp_attribute(attribute)
+
+    def _parse_suricata_pattern(self, indicator: Indicator_v21):
+        misp_object = self._create_misp_object('suricata', indicator)
+        for feature, attribute in self._mapping.suricata_object_mapping.items():
+            if hasattr(indicator, feature):
+                misp_attribute = {'value': getattr(indicator, feature)}
+                misp_attribute.update(attribute)
+                misp_object.add_attribute(**misp_attribute)
+        self._add_misp_object(misp_object)
+
+    def _parse_yara_pattern(self, indicator: Indicator_v21):
+        if hasattr(indicator, 'pattern_version'):
+            misp_object = self._create_misp_object('yara', indicator)
+            for feature, attribute in self._mapping.yara_object_mapping.items():
+                if hasattr(indicator, feature):
+                    misp_attribute = {'value': getattr(indicator, feature)}
+                    misp_attribute.update(attribute)
+                    misp_object.add_attribute(**misp_attribute)
+            self._add_misp_object(misp_object)
+        else:
+            attribute = self._create_attribute_dict(indicator)
+            attribute['value'] = indicator.pattern
+            attribute.update(self._mapping.yara_attribute)
+            self._add_misp_attribute(attribute)
+
+    ################################################################################
+    #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #
+    ################################################################################
+
+    def _create_attribute_dict(self, stix_object: _MISP_OBJECT_TYPING, feature: str) -> dict:
+        attribute = {'uuid': stix_object.id.split('--')[-1]}
+        attribute.update(self._parse_timeline(stix_object))
+        if hasattr(stix_object, 'description') and stix_object.description:
+            attribute['comment'] = stix_object.description
+        if hasattr(stix_object, 'object_marking_refs'):
+            self._update_marking_refs(attribute['uuid'])
+        return attribute
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #

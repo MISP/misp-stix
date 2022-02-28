@@ -93,12 +93,23 @@ class STIX2Mapping:
             }
         )
 
+        # ATTRIBUTES MAPPING DECLARATION
+        comment_attribute = Mapping(type='comment', object_relation='comment')
+        snort_attribute = Mapping(type='snort', object_relation='suricata')
+        version_attribute = Mapping(type='text', object_realtion='version')
+        yara_attribute = Mapping(type='yara', object_relation='yara')
+
         # SINGLE ATTRIBUTES MAPPING
         self.__accuracy_radius_attribute = Mapping(type='float', object_relation='accuracy_radius')
+        self.__comment_attribute = comment_attribute
         self.__description_attribute = Mapping(type='text', object_relation='description')
         self.__references_attribute = Mapping(type='link', object_relation='references')
+        self.__sigma_attribute = Mapping(type='sigma')
+        self.__snort_attribute = snort_attribute
         self.__summary_attribute = Mapping(type='text', object_relation='summary')
+        self.__version_attribute = version_attribute
         self.__vulnerability_attribute = Mapping(type='vulnerability', object_relation='id')
+        self.__yara_attribute = yara_attribute
 
         # MISP OBJECTS MAPPING
         self.__location_object_mapping = Mapping(
@@ -110,6 +121,16 @@ class STIX2Mapping:
             region = Mapping(type='text', object_relation='region'),
             street_address = Mapping(type='text', object_relation='address')
         )
+        self.__suricata_object_mapping = Mapping(
+            description = comment_attribute,
+            pattern = snort_attribute,
+            pattern_version = version_attribute
+        )
+        self.__yara_object_mapping = Mapping(
+            description = comment_attribute,
+            pattern = yara_attribute,
+            pattern_version = version_attribute
+        )
 
     @property
     def accuracy_radius_attribute(self) -> dict:
@@ -120,12 +141,24 @@ class STIX2Mapping:
         return self.__bundle_to_misp_mapping
 
     @property
+    def comment_attribute(self) -> dict:
+        return self.__comment_attribute
+
+    @property
     def description_attribute(self) -> dict:
         return self.__description_attribute
 
     @property
     def location_object_mapping(self) -> dict:
         return self.__location_object_mapping
+
+    @property
+    def sigma_attribute(self) -> dict:
+        return self.__sigma_attribute
+
+    @property
+    def snort_attribute(self) -> dict:
+        return self.__snort_attribute
 
     @property
     def stix_object_loading_mapping(self) -> dict:
@@ -140,6 +173,10 @@ class STIX2Mapping:
         return self.__summary_attribute
 
     @property
+    def suricata_object_mapping(self) -> dict:
+        return self.__suricata_object_mapping
+
+    @property
     def timeline_mapping(self) -> dict:
         return self.__timeline_mapping
 
@@ -148,5 +185,17 @@ class STIX2Mapping:
         return self.__references_attribute
 
     @property
+    def version_attribute(self) -> dict:
+        return self.__version_attribute
+
+    @property
     def vulnerability_attribute(self) -> dict:
         return self.__vulnerability_attribute
+
+    @property
+    def yara_attribute(self) -> dict:
+        return self.__yara_attribute
+
+    @property
+    def yara_object_mapping(self) -> dict:
+        return self.__yara_object_mapping
