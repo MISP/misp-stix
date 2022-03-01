@@ -7,7 +7,20 @@ from .test_events import *
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export
 
 
-class TestSTIX21Export(TestSTIX2Export):
+class TestSTIX21ExportGrouping(TestSTIX2Export):
+    def _check_grouping_features(self, grouping, event, identity_id):
+        timestamp = self._datetime_from_timestamp(event['timestamp'])
+        self.assertEqual(grouping.type, 'grouping')
+        self.assertEqual(grouping.id, f"grouping--{event['uuid']}")
+        self.assertEqual(grouping.created_by_ref, identity_id)
+        self.assertEqual(grouping.labels, self._labels)
+        self.assertEqual(grouping.name, event['info'])
+        self.assertEqual(grouping.created, timestamp)
+        self.assertEqual(grouping.modified, timestamp)
+        return grouping.object_refs
+
+
+class TestSTIX21Export(TestSTIX21ExportGrouping):
     def setUp(self):
         self.parser = MISPtoSTIX21Parser()
 
@@ -24,17 +37,6 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(bundle.type, 'bundle')
         self.assertEqual(len(bundle.objects), length)
         return bundle.objects
-
-    def _check_grouping_features(self, grouping, event, identity_id):
-        timestamp = self._datetime_from_timestamp(event['timestamp'])
-        self.assertEqual(grouping.type, 'grouping')
-        self.assertEqual(grouping.id, f"grouping--{event['uuid']}")
-        self.assertEqual(grouping.created_by_ref, identity_id)
-        self.assertEqual(grouping.labels, self._labels)
-        self.assertEqual(grouping.name, event['info'])
-        self.assertEqual(grouping.created, timestamp)
-        self.assertEqual(grouping.modified, timestamp)
-        return grouping.object_refs
 
     def _check_pattern_features(self, indicator):
         self.assertEqual(indicator.pattern_type, 'stix')
@@ -2282,7 +2284,6 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertEqual(additional_header['X-Mailer'], _x_mailer['value'])
         self.assertEqual(message.x_misp_mime_boundary, _boundary['value'])
         self.assertEqual(message.x_misp_user_agent, _user_agent['value'])
-        
         self.assertEqual(message.to_refs, [address2_ref])
         self.assertEqual(message.cc_refs, [address3_ref, address4_ref])
         self._assert_multiple_equal(
@@ -3474,7 +3475,7 @@ class TestSTIX21Export(TestSTIX2Export):
         self.assertIsNotNone(self.parser.bundle)
 
 
-class TestSTIX21ExportInteroperability(TestSTIX2Export):
+class TestSTIX21ExportInteroperability(TestSTIX21ExportGrouping):
     def setUp(self):
         self.parser = MISPtoSTIX21Parser(interoperability=True)
 
@@ -3487,14 +3488,8 @@ class TestSTIX21ExportInteroperability(TestSTIX2Export):
         mitre_identity, identity, grouping, stix_object = stix_objects
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         args = (grouping, event['Event'], identity_id)
-        self.assertEqual(grouping.type, 'grouping')
-        self.assertEqual(grouping.id, f"grouping--{event['Event']['uuid']}")
-        self.assertEqual(grouping.created_by_ref, identity_id)
-        self.assertEqual(grouping.labels, self._labels)
-        self.assertEqual(grouping.name, event['Event']['info'])
-        self.assertEqual(grouping.created, timestamp)
-        self.assertEqual(grouping.modified, timestamp)
-        self.assertEqual(stix_object.id, grouping.object_refs[0])
+        object_ref = self._check_grouping_features(*args)[0]
+        self.assertEqual(stix_object.id, object_ref)
         self.assertEqual(stix_object.created_by_ref, mitre_identity.id)
         return stix_object
 
