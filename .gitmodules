@@ -1,9 +1,6 @@
-[submodule "cti"]
+[submodule "data/cti"]
     path = data/cti
-    url = https://github.com/mitre/cti.git
-[submodule "misp-galaxy"]
-    path = data/misp-galaxy
-    url = https://github.com/MISP/misp-galaxy.git
+    url = https://github.com/mitre/cti
 [submodule "data/misp-galaxy"]
-	path = data/misp-galaxy
-	url = https://github.com/MISP/misp-galaxy.git
+    path = data/misp-galaxy
+    url = https://github.com/MISP/misp-galaxy
