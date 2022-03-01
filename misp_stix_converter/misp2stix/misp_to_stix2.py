@@ -178,7 +178,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _generate_galaxies_catalog(self):
         current_path = Path(os.path.dirname(os.path.realpath(__file__)))
-        cti_path = current_path.parent.parent / 'cti'
+        cti_path = current_path.parent.parent / 'data' / 'cti'
         self._galaxies_catalog = defaultdict(lambda: defaultdict(list))
         self._identities = {}
         for filename in cti_path.glob('*/*.json'):
