@@ -62,7 +62,6 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def load_stix_bundle(self, bundle: Union[Bundle_v20, Bundle_v21]):
         self._identifier = bundle.id
-        self._relationship = defaultdict(list)
         self.__stix_version = bundle.spec_version if hasattr(bundle, 'spec_version') else '2.1'
         n_report = 0
         for stix_object in bundle.objects:
@@ -132,29 +131,26 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                        STIX OBJECTS LOADING FUNCTIONS                        #
     ################################################################################
 
+    @property
+    def _build_data_to_load(stix_object) -> dict:
+        return {
+            'stix_object': stix_object,
+            'used': False
+        }
+
     def _load_attack_pattern(self, attack_pattern: Union[AttackPattern_v20, AttackPattern_v21]):
+        data_to_load = self._build_object_to_load(attack_pattern)
         try:
-            self._attack_pattern[attack_pattern.id] = attack_pattern
+            self._attack_pattern[attack_pattern.id] = data_to_load
         except AttributeError:
-            self._attack_pattern = {attack_pattern.id: attack_pattern}
+            self._attack_pattern = {attack_pattern.id: data_to_load}
 
     def _load_course_of_action(self, course_of_action: Union[CourseOfAction_v20, CourseOfAction_v21]):
+        data_to_load = self._build_data_to_load(course_of_action)
         try:
-            self._course_of_action[course_of_action.id] = course_of_action
+            self._course_of_action[course_of_action.id] = data_to_load
         except AttributeError:
-            self._course_of_action = {course_of_action.id: course_of_action}
-
-    def _load_custom_attribute(self, custom_attribute: Union[CustomObject_v20, CustomObject_v21]):
-        try:
-            self._custom_attribute[custom_attribute.id] = custom_attribute
-        except AttributeError:
-            self._custom_attribute = {custom_attribute.id: custom_attribute}
-
-    def _load_custom_object(self, custom_object: Union[CustomObject_v20, CustomObject_v21]):
-        try:
-            self._custom_object[custom_object.id] = custom_object
-        except AttributeError:
-            self._custom_object = {custom_object.id: custom_object}
+            self._course_of_action = {course_of_action.id: data_to_load}
 
     def _load_grouping(self, grouping: Grouping):
         try:
@@ -163,42 +159,37 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._grouping = {grouping.id: grouping}
 
     def _load_identity(self, identity: Union[Identity_v20, Identity_v21]):
+        data_to_load = self._build_data_to_load(identity)
         try:
-            self._identity[identity.id] = identity
+            self._identity[identity.id] = data_to_load
         except AttributeError:
-            self._identity = {identity.id: identity}
-
-    def _load_indicator(self, indicator: Union[Indicator_v20, Indicator_v21]):
-        try:
-            self._indicator[indicator.id] = indicator
-        except:
-            self._indicator = {indicator.id: indicator}
+            self._identity = {identity.id: data_to_load}
 
     def _load_intrusion_set(self, intrusion_set: Union[IntrusionSet_v20, IntrusionSet_v21]):
+        data_to_load = self._build_data_to_load(intrusion_set)
         try:
-            self._intrusion_set[intrusion_set.id] = intrusion_set
+            self._intrusion_set[intrusion_set.id] = data_to_load
         except AttributeError:
-            self._intrusion_set = {intrusion_set.id: intrusion_set}
+            self._intrusion_set = {intrusion_set.id: data_to_load}
 
     def _load_malware(self, malware: Union[Malware_v20, Malware_v21]):
+        data_to_load = self._build_data_to_load(malware)
         try:
-            self._malware[malware.id] = malware
+            self._malware[malware.id] = data_to_load
         except AttributeError:
-            self._malware = {malware.id: malware}
+            self._malware = {malware.id: data_to_load}
 
     def _load_marking_definition(self, marking_definition: Union[MarkingDefinition_v20, MarkingDefinition_v21]):
         definition_type = marking_definition.definition_type
-        tag_name = f"{definition_type}:{marking_definition.definition[definition_type]}"
+        definition = marking_definition.definition[definition_type]
+        data_to_load = {
+            'tag_name': f"{definition_type}:{definition}",
+            'used': False
+        }
         try:
-            self._marking_definition[marking_definition.id] = tag_name
+            self._marking_definition[marking_definition.id] = data_to_load
         except AttributeError:
-            self._marking_definition = {marking_definition.id: tag_name}
-
-    def _load_note(self, note: Note):
-        try:
-            self._note[note.id] = note
-        except AttributeError:
-            self._note = {note.id: note}
+            self._marking_definition = {marking_definition.id: data_to_load}
 
     def _load_observable_object(self, observable: _OBSERVABLE_TYPES):
         try:
@@ -206,19 +197,17 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             self._observable = {observable.id: observable}
 
-    def _load_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
-        try:
-            self._observed_data[observed_data.id] = observed_data
-        except AttributeError:
-            self._observed_data = {observed_data.id: observed_data}
-
     def _load_relationship(self, relationship: Union[Relationship_v20, Relationship_v21]):
-        self._relationship[relationship.source_ref].append(
-            {
-                'referenced_uuid': relationship.target_ref,
-                'relationship_type': relationship.relationship_type
-            }
-        )
+        reference = {
+            'referenced_uuid': relationship.target_ref,
+            'relationship_type': relationship.relationship_type
+        }
+        try:
+            self._relationship[relationship.source_ref].append(reference)
+        except AttributeError:
+            self._relationship = defaultdict(list)
+            self._relationship[relationship.source_ref].append(reference)
+
 
     def _load_report(self, report: Union[Report_v20, Report_v21]):
         try:
@@ -233,22 +222,25 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._sighting = {sighting.id: sighting}
 
     def _load_threat_actor(self, threat_actor: Union[ThreatActor_v20, ThreatActor_v21]):
+        data_to_load = self._build_data_to_load(threat_actor)
         try:
-            self._threat_actor[threat_actor.id] = threat_actor
+            self._threat_actor[threat_actor.id] = data_to_load
         except AttributeError:
-            self._threat_actor = {threat_actor.id: threat_actor}
+            self._threat_actor = {threat_actor.id: data_to_load}
 
     def _load_tool(self, tool: Union[Tool_v20, Tool_v21]):
+        data_to_load = self._build_data_to_load(tool)
         try:
-            self._tool[tool.id] = tool
+            self._tool[tool.id] = data_to_load
         except AttributeError:
-            self._tool = {tool.id: tool}
+            self._tool = {tool.id: data_to_load}
 
     def _load_vulnerability(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
+        data_to_load = self._build_data_to_load(vulnerability)
         try:
-            self._vulnerability[vulnerability.id] = vulnerability
+            self._vulnerability[vulnerability.id] = data_to_load
         except AttributeError:
-            self._vulnerability = {vulnerability.id: vulnerability}
+            self._vulnerability = {vulnerability.id: data_to_load}
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #

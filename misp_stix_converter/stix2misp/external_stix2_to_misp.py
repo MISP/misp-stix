@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from .. import Mapping
 from .external_stix2_mapping import ExternalSTIX2Mapping
 from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
 from misp_stix_converter.stix2misp.exceptions import (UnknownParsingFunctionError,
@@ -22,6 +23,38 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def __init__(self, single_event: Optional[bool]=False, synonyms_path: Optional[str]=None):
         super().__init__(single_event, synonyms_path)
         self._mapping = ExternalSTIX2Mapping()
+
+    ################################################################################
+    #                        STIX OBJECTS LOADING FUNCTIONS                        #
+    ################################################################################
+
+    def _load_custom_object(self, custom_object: Union[CustomObject_v20, CustomObject_v21]):
+        data_to_load = self._build_data_to_load(custom_object)
+        try:
+            self._custom_object[custom_object.id] = data_to_load
+        except AttributeError:
+            self._custom_object = {custom_object.id: data_to_load}
+
+    def _load_indicator(self, indicator: Union[Indicator_v20, Indicator_v21]):
+        data_to_load = self._build_data_to_load(indicator)
+        try:
+            self._indicator[indicator.id] = data_to_load
+        except AttributeError:
+            self._indicator = {indicator.id: data_to_load}
+
+    def _load_note(self, note: Note):
+        data_to_load = self._build_data_to_load(note)
+        try:
+            self._note[note.id] = data_to_load
+        except AttributeError:
+            self._note = {note.id: data_to_load}
+
+    def _load_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
+        data_to_load = self._build_data_to_load(observed_data)
+        try:
+            self._observed_data[observed_data.id] = data_to_load
+        except AttributeError:
+            self._observed_data = {observed_data.id: data_to_load}
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
