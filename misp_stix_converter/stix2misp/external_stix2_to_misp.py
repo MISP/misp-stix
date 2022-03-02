@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from misp_stix_converter.stix2misp.exceptions import (UnknownParsingFunctionError,
-    UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
 from .external_stix2_mapping import ExternalSTIX2Mapping
 from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
+from misp_stix_converter.stix2misp.exceptions import (UnknownParsingFunctionError,
+    UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
 from pymisp import MISPObject
 from stix2.v20.sdo import (Indicator as Indicator_v20, ObservedData as ObservedData_v20,
     Vulnerability as Vulnerability_v20)
@@ -19,7 +19,7 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
 
 
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, single_event: bool, synonyms_path: Optional[str]=None):
+    def __init__(self, single_event: Optional[bool]=False, synonyms_path: Optional[str]=None):
         super().__init__(single_event, synonyms_path)
         self._mapping = ExternalSTIX2Mapping()
 
@@ -133,7 +133,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         will simply parse the pattern, create the appropriate MISP data structure
         and add it to the associated MISP event.
 
-        :param indicator_ref: An indicator id used to find the corresponding
+        :param indicator_ref: The indicator id used to find the corresponding
             indicator object
         """
         indicator = self._get_stix_object(indicator_ref)

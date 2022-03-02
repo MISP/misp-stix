@@ -58,13 +58,13 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def __init__(self, single_event: bool, synonyms_path: Union[None, str]):
         super().__init__(synonyms_path)
         self.__single_event = single_event
-        self.__n_report = 0
+        self.__n_events = 0
 
     def load_stix_bundle(self, bundle: Union[Bundle_v20, Bundle_v21]):
         self._identifier = bundle.id
         self._relationship = defaultdict(list)
         self.__stix_version = bundle.spec_version if hasattr(bundle, 'spec_version') else '2.1'
-        n_report = self.__n_report
+        n_report = 0
         for stix_object in bundle.objects:
             object_type = stix_object.type
             if object_type in ('grouping', 'report'):

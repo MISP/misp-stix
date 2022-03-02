@@ -32,7 +32,7 @@ _MISP_FEATURES_TYPING = Union[
 
 
 class InternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, single_event: bool, synonyms_path: Optional[str]=None):
+    def __init__(self, single_event: Optional[bool]=False, synonyms_path: Optional[str]=None):
         super().__init__(single_event, synonyms_path)
         self._mapping = InternalSTIX2Mapping()
 
