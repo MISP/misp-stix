@@ -10,12 +10,18 @@ class ExternalSTIX2Mapping(STIX2Mapping):
         super().__init__()
         self._declare_mapping()
         self.__pattern_forbidden_relations = (
-            ' LIKE ',
+            ' < ',
+            ' <= ',
+            ' > ',
+            ' >= ',
             ' FOLLOWEDBY ',
-            ' MATCHES ',
             ' ISSUBSET ',
             ' ISSUPERSET',
-            ' REPEATS '
+            ' LIKE ',
+            ' MATCHES ',
+            ' NOT ',
+            ' REPEATS ',
+            ' WITHIN '
         )
 
         # MAIN STIX OBJECTS MAPPING

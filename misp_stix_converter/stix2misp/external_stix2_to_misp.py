@@ -151,7 +151,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 return self._mapping.pattern_type_mapping[indicator.pattern_type]
             except KeyError:
                 raise UnknownPatternTypeError(indicator.pattern_type)
-        if any(keyword in indicator.pattern for keyword in self._mapping.pattern_forbiden_relations):
+        if self._is_pattern_too_complex(indicator.pattern):
             return '_create_stix_pattern_object'
         observable_types = self._extract_types_from_pattern(indicator.pattern)
         try:
@@ -384,4 +384,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for attribute in attributes:
             if attribute['object_relation'] in object_forcing:
                 return True
+        return False
+
+    @staticmethod
+    def _is_pattern_too_complex(pattern: str) -> bool:
+        if any(keyword in pattern for keyword in self._mapping.pattern_forbiden_relations):
+            return True
+        if all(keyword in pattern for keyword in (' AND ', ' OR '):
+            return True
         return False
