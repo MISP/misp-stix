@@ -43,7 +43,9 @@ class Stix21Mapping(Stix2Mapping):
     def declare_objects_mapping(self):
         v21_specific_objects = {
             'annotation': '_populate_objects_to_parse',
-            'geolocation': '_parse_geolocation_object'
+            'geolocation': '_parse_geolocation_object',
+            'suricata': '_parse_suricata_object',
+            'yara': '_parse_yara_object'
         }
         self._declare_objects_mapping(updates=v21_specific_objects)
         self.__annotation_data_fields = (
@@ -198,6 +200,11 @@ class Stix21Mapping(Stix2Mapping):
             'parent-image',
             'parent-pid'
         )
+        self.__suricata_object_mapping = Mapping(
+            comment = 'description',
+            snort = 'pattern',
+            version = 'pattern_version'
+        )
         self.__user_account_object_mapping = Mapping(
             features = Mapping(
                 **{
@@ -227,6 +234,11 @@ class Stix21Mapping(Stix2Mapping):
                 last_login = 'account_last_login',
                 password_last_changed = 'credential_last_changed'
             )
+        )
+        self.__yara_object_mapping = Mapping(
+            comment = 'description',
+            version = 'pattern_version',
+            yara = 'pattern'
         )
 
     @property
@@ -318,9 +330,17 @@ class Stix21Mapping(Stix2Mapping):
         return self.__process_uuid_fields
 
     @property
+    def suricata_object_mapping(self) -> dict:
+        return self.__suricata_object_mapping
+
+    @property
     def tlp_markings(self) -> dict:
         return self.__tlp_markings
 
     @property
     def user_account_object_mapping(self) -> dict:
         return self.__user_account_object_mapping
+
+    @property
+    def yara_object_mapping(self) -> dict:
+        return self.__yara_object_mapping

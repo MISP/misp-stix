@@ -531,6 +531,35 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _handle_file_observable_objects(self, args: dict, objects: list):
         objects.insert(0, self._create_file_object(args))
 
+    def _handle_patterning_object_indicator(self, misp_object: dict, indicator_args: dict):
+        indicator_id = getattr(self, self._id_parsing_function['object'])('indicator', misp_object)
+        indicator_args.update(
+            {
+                'id': indicator_id,
+                'type': 'indicator',
+                'labels': self._create_object_labels(misp_object, to_ids=True),
+                'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
+                'created_by_ref': self.__identity_id,
+                'allow_custom': True,
+                'interoperability': True
+            }
+        )
+        indicator_args.update(self._handle_indicator_time_fields(misp_object))
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            indicator_id,
+            indicator_args['modified']
+        )
+        if markings:
+            self._handle_markings(indicator_args, markings)
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                misp_object['ObjectReference'],
+                indicator_id,
+                indicator_args['modified']
+            )
+        self._append_SDO(Indicator(**indicator_args))
+
     def _parse_account_object_observable(self, misp_object: dict, account_type: str):
         account_args = self._parse_account_args(misp_object['Attribute'], account_type)
         account_args['id'] = getattr(self, self._id_parsing_function['object'])('user-account', misp_object)
@@ -1097,6 +1126,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             pattern.append(f"{prefix}:modified_time = '{modified}'")
         return pattern
 
+    def _parse_suricata_object(self, misp_object: dict):
+        indicator_args = self._parse_patterning_language_args(misp_object['Attribute'], 'suricata')
+        self._handle_patterning_object_indicator(misp_object, indicator_args)
+
     def _parse_url_object_observable(self, misp_object: dict):
         url_args = self._parse_url_args(misp_object['Attribute'])
         url_args['id'] = getattr(self, self._id_parsing_function['object'])('url', misp_object)
@@ -1119,6 +1152,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         x509_certificate = X509Certificate(**x509_args)
         self._handle_object_observable(misp_object, [x509_certificate])
+
+    def _parse_yara_object(self, misp_object: dict):
+        indicator_args = self._parse_patterning_language_args(misp_object['Attribute'], 'yara')
+        self._handle_patterning_object_indicator(misp_object, indicator_args)
 
     ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
@@ -1271,6 +1308,21 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_windowsPESection(section_args: dict) -> WindowsPESection:
         return WindowsPESection(**section_args)
+
+    def _parse_patterning_language_args(self, attributes: list, name: str) -> dict:
+        indicator_args = {}
+        mapping = getattr(self._mapping, f'{name}_object_mapping')
+        for attribute in attributes:
+            relation = attribute['object_relation']
+            value = attribute['value']
+            if relation in mapping:
+                if relation == name:
+                    value = self._handle_value_for_pattern(value)
+                    indicator_args['pattern_type'] = attribute['type']
+                indicator_args[mapping[relation]] = value
+            else:
+                indicator_args[f"x_misp_{relation.replace('-', '_')}"] = value
+        return indicator_args
 
     ################################################################################
     #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #
