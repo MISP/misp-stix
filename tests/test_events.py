@@ -4383,6 +4383,61 @@ def get_event_with_organization_object():
     return event
 
 
+def get_event_with_patterning_language_objects():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        {
+            "uuid": "efc15547-4fe9-4188-aa71-b688e1bfa59c",
+            "meta-category": "network",
+            "description": "An object describing a suricata rule",
+            "name": "suricata",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "snort",
+                    "object_relation": "suricata",
+                    "value": "alert http any 443 -> 8.8.8.8 any"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "version",
+                    "value": "3.1.6"
+                },
+                {
+                    "type": "comment",
+                    "object_relation": "comment",
+                    "value": "To rule them all"
+                }
+            ]
+        },
+        {
+            "uuid": "cafdd27e-c3e2-4f7a-88b4-4c1c98f18be7",
+            "meta-category": "misc",
+            "description": "An object describing a YARA rule (or a YARA rule name) along with its version.",
+            "name": "yara",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "yara",
+                    "object_relation": "yara",
+                    "value": 'rule torcryptomining { meta: description = "Tor miner - broken UPX magic string" strings: $upx_erase = {(00 FF 99 41|DF DD 30 33)} condition: $upx_erase at 236 }'
+                },
+                {
+                    "type": "text",
+                    "object_relation": "version",
+                    "value": "4.1.0"
+                },
+                {
+                    "type": "comment",
+                    "object_relation": "comment",
+                    "value": "To rule them all"
+                }
+            ]
+        }
+    ]
+    return event
+
+
 def get_event_with_pe_objects():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
