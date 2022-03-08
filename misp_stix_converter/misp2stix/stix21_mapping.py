@@ -202,7 +202,7 @@ class Stix21Mapping(Stix2Mapping):
         )
         self.__suricata_object_mapping = Mapping(
             comment = 'description',
-            snort = 'pattern',
+            suricata = 'pattern',
             version = 'pattern_version'
         )
         self.__user_account_object_mapping = Mapping(
