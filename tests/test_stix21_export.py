@@ -3034,6 +3034,30 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(organization.roles, [role])
         self.assertEqual(organization.x_misp_alias, alias)
 
+    def test_event_with_patterning_language_objects(self):
+        event = get_event_with_patterning_language_objects()
+        orgc = event['Event']['Orgc']
+        objects = event['Event']['Object']
+        self.parser.parse_misp_event(event)
+        import json
+        print(json.dumps(json.loads(self.parser.bundle.serialize()), indent=4))
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, *indicators = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        object_refs = self._check_grouping_features(grouping, event['Event'], identity_id)
+        for indicator, misp_object, object_ref in zip(indicators, objects, object_refs):
+            rule, version, comment = misp_object['Attribute']
+            self._check_object_indicator_features(indicator, misp_object, identity_id, object_ref)
+            self.assertEqual(indicator.pattern, rule['value'].replace('"', '\\\\"'))
+            self.assertEqual(indicator.pattern_type, rule['type'])
+            self.assertEqual(indicator.pattern_version, version['value'])
+            self.assertEqual(indicator.description, comment['value'])
+
     def test_event_with_pe_and_section_indicator_objects(self):
         event = get_event_with_pe_objects()
         misp_objects, pattern = self._run_indicator_from_objects_tests(event)
