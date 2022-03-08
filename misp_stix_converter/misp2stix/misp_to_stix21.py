@@ -539,7 +539,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 'type': 'indicator',
                 'labels': self._create_object_labels(misp_object, to_ids=True),
                 'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
-                'created_by_ref': self.__identity_id,
+                'created_by_ref': self.identity_id,
                 'allow_custom': True,
                 'interoperability': True
             }
