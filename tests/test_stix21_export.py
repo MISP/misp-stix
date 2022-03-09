@@ -3039,8 +3039,6 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         orgc = event['Event']['Orgc']
         objects = event['Event']['Object']
         self.parser.parse_misp_event(event)
-        import json
-        print(json.dumps(json.loads(self.parser.bundle.serialize()), indent=4))
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
         identity, grouping, *indicators = stix_objects
