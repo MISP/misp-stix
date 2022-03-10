@@ -339,6 +339,12 @@ class TestSTIX2Export(unittest.TestCase):
             return int(value[2:])
         return int(value)
 
+    def _populate_documentation(self, attribute = None, misp_object = None, **kwargs):
+        if attribute is not None:
+            self._populate_attributes_documentation(attribute, **kwargs)
+        elif misp_object is not None:
+            self._populate_objects_documentation(misp_object, **kwargs)
+
     @staticmethod
     def _reassemble_pattern(pattern):
         reassembled = []
