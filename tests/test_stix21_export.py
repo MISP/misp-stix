@@ -37,23 +37,24 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         documentation_path = _ROOT_PATH / 'documentation' / 'mapping'
         with open(documentation_path / 'misp_attributes_to_stix21.json', 'rt', encoding='utf-8') as f:
             attributes_mapping = json.loads(f.read())
-        for attribute_type, mapping in self.__attributes.items():
-            if attribute_type not in attributes_mapping:
-                attributes_mapping[attribute_type] = mapping
-                continue
-            if mapping['MISP'] != attributes_mapping[attribute_type]['MISP']:
-                attributes_mapping[attribute_type]['MISP'] = mapping['MISP']
-            for stix_type, stix_object in mapping['STIX'].items():
-                try:
-                    stixobject = attributes_mapping[attribute_type]['STIX'][stix_type]
-                except KeyError:
-                    attributes_mapping[attribute_type]['STIX'][stix_type] = stix_object
+        if attributes_mapping != self.__attributes:
+            for attribute_type, mapping in self.__attributes.items():
+                if attribute_type not in attributes_mapping:
+                    attributes_mapping[attribute_type] = mapping
                     continue
-                if stix_object != stixobject:
-                    attributes_mapping[attribute_type]['STIX'][stix_type] = stix_object
-        with open(documentation_path / 'misp_attributes_to_stix21.json', 'wt', encoding='utf-8') as f:
-            attributes = {key: value for key, value in sorted(self.__attributes.items())}
-            f.write(json.dumps(attributes, indent=4))
+                if mapping['MISP'] != attributes_mapping[attribute_type]['MISP']:
+                    attributes_mapping[attribute_type]['MISP'] = mapping['MISP']
+                for stix_type, stix_object in mapping['STIX'].items():
+                    try:
+                        stixobject = attributes_mapping[attribute_type]['STIX'][stix_type]
+                    except KeyError:
+                        attributes_mapping[attribute_type]['STIX'][stix_type] = stix_object
+                        continue
+                    if stix_object != stixobject:
+                        attributes_mapping[attribute_type]['STIX'][stix_type] = stix_object
+            with open(documentation_path / 'misp_attributes_to_stix21.json', 'wt', encoding='utf-8') as f:
+                attributes = {key: value for key, value in sorted(self.__attributes.items())}
+                f.write(json.dumps(attributes, indent=4))
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
