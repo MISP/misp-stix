@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json, sys
+import json
 from collections import defaultdict
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX21Parser, misp_collection_to_stix2_1, misp_to_stix2_1
-from pathlib import Path
 from .test_events import *
+from .update_documentation import DocumentationUpdater
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export
-
-_ROOT_PATH = Path(__file__).parents[1].resolve()
 
 
 class TestSTIX21ExportGrouping(TestSTIX2Export):
@@ -34,27 +32,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
 
     @classmethod
     def tearDownClass(self):
-        documentation_path = _ROOT_PATH / 'documentation' / 'mapping'
-        with open(documentation_path / 'misp_attributes_to_stix21.json', 'rt', encoding='utf-8') as f:
-            attributes_mapping = json.loads(f.read())
-        if attributes_mapping != self.__attributes:
-            for attribute_type, mapping in self.__attributes.items():
-                if attribute_type not in attributes_mapping:
-                    attributes_mapping[attribute_type] = mapping
-                    continue
-                if mapping['MISP'] != attributes_mapping[attribute_type]['MISP']:
-                    attributes_mapping[attribute_type]['MISP'] = mapping['MISP']
-                for stix_type, stix_object in mapping['STIX'].items():
-                    try:
-                        stixobject = attributes_mapping[attribute_type]['STIX'][stix_type]
-                    except KeyError:
-                        attributes_mapping[attribute_type]['STIX'][stix_type] = stix_object
-                        continue
-                    if stix_object != stixobject:
-                        attributes_mapping[attribute_type]['STIX'][stix_type] = stix_object
-            with open(documentation_path / 'misp_attributes_to_stix21.json', 'wt', encoding='utf-8') as f:
-                attributes = {key: value for key, value in sorted(self.__attributes.items())}
-                f.write(json.dumps(attributes, indent=4))
+        attributes_documentation = DocumentationUpdater('misp_attributes_to_stix21')
+        attributes_documentation.check_stix21_attributes_mapping(self.__attributes)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
