@@ -1265,9 +1265,12 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             filename, hash_value = value.split('|')
             self.assertEqual(observable.name, filename)
             self.assertEqual(observable.hashes[hash_type], hash_value)
-        objects = self.parser.stix_objects
-        for attribute, observed_data, observable in zip(attributes, objects[-16::2], objects[-15::2]):
-            self._populate_documentation(attribute=attribute, observed_data=[observed_data, observable])
+        objects = (obj for obj in self.parser.stix_objects if obj.type == 'observed-data')
+        for attribute, observed_data, observable in zip(attributes, objects, observables):
+            self._populate_documentation(
+                attribute = attribute,
+                observed_data = [observed_data, observable]
+            )
 
     def test_event_with_hash_indicator_attributes(self):
         event = get_event_with_hash_attributes()
@@ -1293,9 +1296,12 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         hash_types = ('MD5', 'SHA-1', 'SHA224', 'SHA-256', 'SHA3-256', 'SHA384', 'SSDEEP', 'TLSH')
         for observable, hash_type, value in zip(observables, hash_types, values):
             self.assertEqual(observable.hashes[hash_type], value)
-        objects = self.parser.stix_objects
-        for attribute, observed_data, observable in zip(attributes, objects[-16::2], objects[-15::2]):
-            self._populate_documentation(attribute=attribute, observed_data=[observed_data, observable])
+        objects = (obj for obj in self.parser.stix_objects if obj.type == 'observed-data')
+        for attribute, observed_data, observable in zip(attributes, objects, observables):
+            self._populate_documentation(
+                attribute = attribute,
+                observed_data = [observed_data, observable]
+            )
 
     def test_event_with_hostname_indicator_attribute(self):
         event = get_event_with_hostname_attribute()
@@ -1813,9 +1819,12 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(md5_object.hashes['MD5'], md5)
         self.assertEqual(sha1_object.hashes['SHA-1'], sha1)
         self.assertEqual(sha256_object.hashes['SHA-256'], sha256)
-        objects = self.parser.stix_objects
-        for attribute, observed_data, observable in zip(attributes, objects[-6::2], objects[-5::2]):
-            self._populate_documentation(attribute=attribute, observed_data=[observed_data, observable])
+        objects = (obj for obj in self.parser.stix_objects if obj.type == 'observed-data')
+        for attribute, observed_data, observable in zip(attributes, objects, observables):
+            self._populate_documentation(
+                attribute = attribute,
+                observed_data=[observed_data, observable]
+            )
 
     ################################################################################
     #                          MISP OBJECTS EXPORT TESTS.                          #
