@@ -2723,8 +2723,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
     def test_event_with_file_and_pe_indicator_objects(self):
         event = get_event_with_file_and_pe_objects()
         misp_objects, pattern = self._run_indicator_from_objects_tests(event)
-        file, pe, section = misp_objects
-        _filename, _md5, _sha1, _sha256, _size, _entropy = (attribute['value'] for attribute in file['Attribute'])
+        _file, pe, section = misp_objects
+        _filename, _md5, _sha1, _sha256, _size, _entropy = (attribute['value'] for attribute in _file['Attribute'])
         pattern = pattern[1:-1].split(' AND ')
         md5_, sha1_, sha256_, name_, size_, entropy_ = pattern[:6]
         self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5}'")
