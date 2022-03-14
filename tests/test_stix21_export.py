@@ -1564,7 +1564,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(mac_address.value, attribute_value.lower())
         self._populate_documentation(
             attribute = attribute,
-            observed_data = self.parser.stix_objects[-3:]
+            observed_data = self.parser.stix_objects[-2:]
         )
 
     def test_event_with_malware_sample_indicator_attribute(self):
