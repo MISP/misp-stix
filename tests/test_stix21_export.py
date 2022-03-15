@@ -34,6 +34,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
     def tearDownClass(self):
         attributes_documentation = DocumentationUpdater('misp_attributes_to_stix21')
         attributes_documentation.check_stix21_attributes_mapping(self.__attributes)
+        objects_documentation = DocumentationUpdater('misp_objects_to_stix21')
+        objects_documentation.check_stix21_attributes_mapping(self.__objects)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
@@ -83,17 +85,18 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
                 documented = json.loads(stix_object.serialize())
                 self.__attributes[feature]['STIX'][object_type.capitalize()] = documented
 
-    def _populate_objects_documentation(self, misp_object, **kwargs):
-        feature = misp_object['name']
-        if 'MISP' not in self.__objects[feature]:
-            self.__objects[feature]['MISP'] = misp_object
+    def _populate_objects_documentation(self, misp_object, name=None, **kwargs):
+        if name is None:
+            name = misp_object['name']
+        if 'MISP' not in self.__objects[name]:
+            self.__objects[name]['MISP'] = misp_object
         if 'observed_data' in kwargs:
             documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
-            self.__objects[feature]['STIX']['Observed Data'] = documented
+            self.__objects[name]['STIX']['Observed Data'] = documented
         else:
             for object_type, stix_object in kwargs.items():
                 documented = json.loads(stix_object.serialize())
-                self.__objects[feature]['STIX'][object_type.capitalize()] = documented
+                self.__objects[name]['STIX'][object_type.capitalize()] = documented
 
     @staticmethod
     def _reorder_observable_objects(observables, ids):
@@ -2070,6 +2073,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(user_id, f"user-account:user_id = '{_id}'")
         self.assertEqual(account_login, f"user-account:account_login = '{name}'")
         self.assertEqual(_followers, f"user-account:x_misp_followers = '{followers}'")
+        for misp_object, indicator in zip(misp_objects, self.parser.stix_objects[-4:]):
+            self._populate_documentation(misp_object=misp_object, indicator=indicator)
 
     def test_event_with_account_observable_objects(self):
         event = get_event_with_account_objects()
@@ -2112,6 +2117,12 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(twitter.account_login, name)
         self.assertEqual(twitter.display_name, displayed_name)
         self.assertEqual(twitter.x_misp_followers, followers)
+        objects = (obj for obj in self.parser.stix_objects if obj.type == 'observed-data')
+        for misp_object, observed_data, observable in zip(misp_objects, objects, observables):
+            self._populate_documentation(
+                misp_object = misp_object,
+                observed_data = [observed_data, observable[0]]
+            )
 
     def test_event_with_account_indicator_objects_with_attachment(self):
         event = get_event_with_account_objects_with_attachment()
@@ -2146,6 +2157,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         data = reddit_account['Attribute'][-1]['data'].replace('\\', '')
         self.assertEqual(image_data, f"user-account:x_misp_account_avatar.data = '{data}'")
         self.assertEqual(image_value, f"user-account:x_misp_account_avatar.value = '{account_avatar}'")
+        for misp_object, indicator in zip(misp_objects, self.parser.stix_objects[-3:]):
+            self._populate_documentation(misp_object=misp_object, indicator=indicator)
 
     def test_event_with_account_observable_object_with_attachment(self):
         event = get_event_with_account_objects_with_attachment()
@@ -2196,6 +2209,12 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             reddit.x_misp_account_avatar['data'],
             reddit_account['Attribute'][-1]['data'].replace('\\', '')
         )
+        objects = (obj for obj in self.parser.stix_objects if obj.type == 'observed-data')
+        for misp_object, observed_data, observable in zip(misp_objects, objects, observables):
+            self._populate_documentation(
+                misp_object = misp_object,
+                observed_data = [observed_data, observable[0]]
+            )
 
     def test_object_with_annotation_object(self):
         event = get_event_with_annotation_object()
@@ -2235,6 +2254,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(note.x_misp_type, annotation_type)
         self.assertEqual(note.x_misp_attachment['value'], attachment)
         self.assertEqual(note.x_misp_attachment['data'], misp_object['Attribute'][-1]['data'])
+        self._populate_documentation(misp_object=misp_object, note=note)
 
     def test_event_with_android_app_indicator_object(self):
         event = get_event_with_android_app_object()
@@ -2244,6 +2264,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(name_pattern, f"software:name = '{name}'")
         self.assertEqual(cert_pattern, f"software:x_misp_certificate = '{certificate}'")
         self.assertEqual(domain_pattern, f"software:x_misp_domain = '{domain}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_android_app_observable_object(self):
         event = get_event_with_android_app_object()
@@ -2262,6 +2286,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(software.name, name)
         self.assertEqual(software.x_misp_certificate, certificate)
         self.assertEqual(software.x_misp_domain, domain)
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-2:]
+        )
 
     def test_event_with_asn_indicator_object(self):
         event = get_event_with_asn_object()
@@ -2277,6 +2305,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(
             subnet2_pattern,
             f"autonomous-system:x_misp_subnet_announced = '{subnet2}'"
+        )
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
         )
 
     def test_event_with_asn_observable_object(self):
@@ -2297,6 +2329,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(
             autonomous_system.x_misp_subnet_announced,
             [subnet1, subnet2]
+        )
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-2:]
         )
 
     def test_event_with_attack_pattern_object(self):
@@ -2335,6 +2371,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             'capec',
             f'CAPEC-{id}'
         )
+        self._populate_documentation(misp_object=misp_object, attack_pattern=attack_pattern)
 
     def test_event_with_course_of_action_object(self):
         event = get_event_with_course_of_action_object()
@@ -2372,6 +2409,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
                 ),
                 attribute['value']
             )
+        self._populate_documentation(misp_object=misp_object, course_of_action=course_of_action)
 
     def test_event_with_cpe_asset_indicator_object(self):
         event = get_event_with_cpe_asset_object()
@@ -2384,6 +2422,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(vendor_pattern, f"software:vendor = '{vendor}'")
         self.assertEqual(version_pattern, f"software:version = '{version}'")
         self.assertEqual(description_pattern, f"software:x_misp_description = '{description}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_cpe_asset_observable_object(self):
         event = get_event_with_cpe_asset_object()
@@ -2404,6 +2446,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(software.vendor, vendor)
         self.assertEqual(software.version, version)
         self.assertEqual(software.x_misp_description, description)
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-2:]
+        )
 
     def test_event_with_credential_indicator_object(self):
         event = get_event_with_credential_object()
@@ -2416,6 +2462,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         for pattern_part, attribute in zip(pattern, attributes):
             feature, value = attribute
             self.assertEqual(pattern_part, f"user-account:x_misp_{feature} = '{value}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_credential_observable_object(self):
         event = get_event_with_credential_object()
@@ -2435,6 +2485,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(user_account.credential, password[1])
         for feature, value in attributes:
             self.assertEqual(getattr(user_account, f'x_misp_{feature}'), value)
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-2:]
+        )
 
     def test_event_with_custom_objects(self):
         event = get_event_with_custom_objects()
@@ -2467,6 +2521,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(hostname_, f"domain-name:value = '{_hostname}'")
         self.assertEqual(ip_, f"domain-name:resolves_to_refs[*].value = '{_ip}'")
         self.assertEqual(port_, f"domain-name:x_misp_port = '{_port}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_domain_ip_observable_object_custom(self):
         event = get_event_with_domain_ip_object_custom()
@@ -2495,6 +2553,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         )
         self.assertEqual(address.type, 'ipv4-addr')
         self.assertEqual(address.value, _ip['value'])
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-3:]
+        )
 
     def test_event_with_domain_ip_observable_object_standard(self):
         event = get_event_with_domain_ip_object_standard()
@@ -2510,6 +2572,11 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(domain2_.resolves_to_refs, [ip1_ref, ip2_ref])
         self._check_SCO(ip1_, _ip1, ip1_ref, 'ipv4-addr')
         self._check_SCO(ip2_, _ip2, ip2_ref, 'ipv4-addr')
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-5:],
+            name = 'domain-ip with the perfect domain & ip matching'
+        )
 
     def test_event_with_email_indicator_object(self):
         event = get_event_with_email_object()
@@ -2540,6 +2607,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         )
         self.assertEqual(user_agent_, f"email-message:x_misp_user_agent = '{_user_agent}'")
         self.assertEqual(boundary_, f"email-message:x_misp_mime_boundary = '{_boundary}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_observable_object(self):
         event = get_event_with_email_object()
@@ -2625,6 +2696,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         )
         self.assertEqual(file2.type, 'file')
         self.assertEqual(file2.name, _attachment2['value'])
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-8:]
+        )
 
     def test_event_with_email_indicator_object_with_display_names(self):
         event = get_event_with_email_object_with_display_names()
@@ -2641,6 +2716,11 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(to2_, f"email-message:to_refs.value = '{_to2}'")
         self.assertEqual(to1_name_, f"email-message:to_refs.display_name = '{_to1_name}'")
         self.assertEqual(to2_name_, f"email-message:to_refs.display_name = '{_to2_name}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1],
+            name = 'email with display names'
+        )
 
     def test_event_with_email_observable_object_with_display_names(self):
         event = get_event_with_email_object_with_display_names()
@@ -2698,6 +2778,11 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             f"email-addr--{_bcc['uuid']}"
         )
         self._check_email_address(bcc_, _bcc['value'], display_name=_bcc_name['value'])
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-7:],
+            name = 'email with display names'
+        )
 
     def test_event_with_employee_object(self):
         event = get_event_with_employee_object()
@@ -2728,6 +2813,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(employee.description, description)
         self.assertEqual(employee.contact_information, email)
         self.assertEqual(employee.roles, [employee_type])
+        self._populate_documentation(misp_object=misp_object, identity=employee)
 
     def test_event_with_file_and_pe_indicator_objects(self):
         event = get_event_with_file_and_pe_objects()
@@ -2743,6 +2829,11 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(size_, f"file:size = '{_size}'")
         self.assertEqual(entropy_, f"file:x_misp_entropy = '{_entropy}'")
         self._check_pe_and_section_pattern(pattern[6:], pe, section)
+        self._populate_documentation(
+            misp_object = misp_objects,
+            indicator = self.parser.stix_objects[-1],
+            name = 'file with references to pe & pe-section'
+        )
 
     def test_event_with_file_and_pe_observable_objects(self):
         event = get_event_with_file_and_pe_objects()
@@ -2769,6 +2860,11 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             pe,
             section
         )
+        self._populate_documentation(
+            misp_object = misp_objects,
+            observed_data = self.parser.stix_objects[-2:],
+            name = 'file with references to pe & pe-section'
+        )
 
     def test_event_with_file_indicator_object(self):
         event = get_event_with_file_object_with_artifact()
@@ -2793,6 +2889,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         a_data, a_filename = attachment_.split(' AND ')
         self.assertEqual(a_data, f"(file:content_ref.payload_bin = '{attributes[6]['data']}'")
         self.assertEqual(a_filename, f"file:content_ref.x_misp_filename = '{_attachment}')")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_file_observable_object(self):
         event = get_event_with_file_object_with_artifact()
@@ -2845,6 +2945,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         filename, md5 = _malware_sample['value'].split('|')
         self.assertEqual(artifact.hashes['MD5'], md5)
         self.assertEqual(artifact.x_misp_filename, filename)
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-4:]
+        )
 
     def test_event_with_geolocation_object(self):
         event = get_event_with_geolocation_object()
@@ -2882,6 +2986,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(location.latitude, float(latitude))
         self.assertEqual(location.longitude, float(longitude))
         self.assertEqual(location.x_misp_altitude, altitude)
+        self._populate_documentation(misp_object=misp_object, location=location)
 
     def test_event_with_image_indicator_object(self):
         event = get_event_with_image_object()
@@ -2895,6 +3000,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(name_ref, f"file:content_ref.x_misp_filename = '{attachment}'")
         self.assertEqual(url_pattern, f"file:content_ref.url = '{url}'")
         self.assertEqual(text_pattern, f"file:x_misp_image_text = '{text}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_image_observable_object(self):
         event = get_event_with_image_object()
@@ -2925,6 +3034,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(artifact.x_misp_url, url['value'])
         self.assertEqual(artifact.x_misp_filename, attachment['value'])
         self.assertEqual(file.x_misp_image_text, text['value'])
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-3:]
+        )
 
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
@@ -2942,6 +3055,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         )
         self.assertEqual(pattern[4], f"{prefix}:dst_port = '{port}'")
         self.assertEqual(pattern[5], f"{prefix}:start = '{first_seen}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_ip_port_observable_object(self):
         event = get_event_with_ip_port_object()
@@ -2974,6 +3091,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         )
         self.assertEqual(address_object.type, 'ipv4-addr')
         self.assertEqual(address_object.value, ip['value'])
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-3:]
+        )
 
     def test_event_with_legal_entity_object(self):
         event = get_event_with_legal_entity_object()
@@ -3009,6 +3130,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             legal_entity.x_misp_logo['data'],
             misp_object['Attribute'][-1]['data'].replace('\\', '')
         )
+        self._populate_documentation(misp_object=misp_object, identity=legal_entity)
 
     def test_event_with_lnk_indicator_object(self):
         event = get_event_with_lnk_object()
@@ -3033,6 +3155,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(ctime, f"file:ctime = '{creation}'")
         self.assertEqual(mtime, f"file:mtime = '{modification}'")
         self.assertEqual(atime, f"file:atime = '{access}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_lnk_observable_object(self):
         event = get_event_with_lnk_object()
@@ -3088,6 +3214,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         filename, md5 = malware_sample['value'].split('|')
         self.assertEqual(artifact.x_misp_filename, filename)
         self.assertEqual(artifact.hashes['MD5'], md5)
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-4:]
+        )
 
     def test_event_with_mutex_indicator_object(self):
         event = get_event_with_mutex_object()
@@ -3097,6 +3227,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(name_, f"mutex:name = '{_name}'")
         self.assertEqual(description_, f"mutex:x_misp_description = '{_description}'")
         self.assertEqual(os_, f"mutex:x_misp_operating_system = '{_os}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_mutex_observable_object(self):
         event = get_event_with_mutex_object()
@@ -3114,6 +3248,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(mutex.name, name)
         self.assertEqual(mutex.x_misp_description, description)
         self.assertEqual(mutex.x_misp_operating_system, _os)
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-2:]
+        )
 
     def test_event_with_network_connection_indicator_object(self):
         event = get_event_with_network_connection_object()
@@ -3134,6 +3272,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(layer3_, f"network-traffic:protocols[0] = '{_layer3.lower()}'")
         self.assertEqual(layer4_, f"network-traffic:protocols[1] = '{_layer4.lower()}'")
         self.assertEqual(layer7_, f"network-traffic:protocols[2] = '{_layer7.lower()}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_network_connection_observable_object(self):
         event = get_event_with_network_connection_object()
@@ -3177,6 +3319,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         )
         self.assertEqual(address2.type, 'ipv4-addr')
         self.assertEqual(address2.value, ip_dst['value'])
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-4:]
+        )
 
     def test_event_with_network_socket_indicator_object(self):
         event = get_event_with_network_socket_object()
@@ -3199,6 +3345,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(socket_type_, f"network-traffic:extensions.'socket-ext'.socket_type = '{_socket_type}'")
         self.assertEqual(state_, f"network-traffic:extensions.'socket-ext'.is_{_state} = true")
         self.assertEqual(domain_family_, f"network-traffic:x_misp_domain_family = '{_domain_family}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_network_socket_observable_object(self):
         event = get_event_with_network_socket_object()
@@ -3242,6 +3392,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         )
         self.assertEqual(address2.type, 'ipv4-addr')
         self.assertEqual(address2.value, ip_dst['value'])
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-4:]
+        )
 
     def test_event_with_news_agency_object(self):
         event = get_event_with_news_agency_object()
@@ -3279,6 +3433,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             news_agency.x_misp_attachment['data'],
             misp_object['Attribute'][-1]['data'].replace('\\', '')
         )
+        self._populate_documentation(misp_object=misp_object, identity=news_agency)
 
     def test_event_with_organization_object(self):
         event = get_event_with_organization_object()
@@ -3313,6 +3468,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         )
         self.assertEqual(organization.roles, [role])
         self.assertEqual(organization.x_misp_alias, alias)
+        self._populate_documentation(misp_object = misp_object, identity=organization)
 
     def test_event_with_patterning_language_objects(self):
         event = get_event_with_patterning_language_objects()
@@ -3335,11 +3491,17 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             self.assertEqual(indicator.pattern_type, rule['type'])
             self.assertEqual(indicator.pattern_version, version['value'])
             self.assertEqual(indicator.description, comment['value'])
+            self._populate_documentation(misp_object=misp_object, indicator=indicator)
 
     def test_event_with_pe_and_section_indicator_objects(self):
         event = get_event_with_pe_objects()
         misp_objects, pattern = self._run_indicator_from_objects_tests(event)
         self._check_pe_and_section_pattern(pattern[1:-1].split(' AND '), *misp_objects)
+        self._populate_documentation(
+            misp_object = misp_objects,
+            indicator = self.parser.stix_objects[-1],
+            name = 'pe & pe-sections'
+        )
 
     def test_event_with_pe_and_section_observable_objects(self):
         event = get_event_with_pe_objects()
@@ -3348,6 +3510,11 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self._check_pe_and_section_observable(
             observables[0].extensions['windows-pebinary-ext'],
             *misp_objects
+        )
+        self._populate_documentation(
+            misp_object = misp_objects,
+            observed_data = self.parser.stix_objects[-2:],
+            name = 'pe & pe-sections'
         )
 
     def test_event_with_process_indicator_object(self):
@@ -3364,6 +3531,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(child_pid_, f"process:child_refs[0].pid = '{_child_pid}'")
         self.assertEqual(name_, f"process:x_misp_name = '{_name}'")
         self.assertEqual(port_, f"process:x_misp_port = '{_port}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_process_observable_object(self):
         event = get_event_with_process_object_v2()
@@ -3421,6 +3592,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         )
         self.assertEqual(image_object.type, 'file')
         self.assertEqual(image_object.name, image['value'])
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-6:]
+        )
 
     def test_event_with_registry_key_indicator_object(self):
         event = get_event_with_registry_key_object()
@@ -3434,6 +3609,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(data_type_, f"windows-registry-key:values[0].data_type = '{_data_type}'")
         self.assertEqual(name_, f"windows-registry-key:values[0].name = '{_name}'")
         self.assertEqual(hive_, f"windows-registry-key:x_misp_hive = '{_hive}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_registry_key_observable_object(self):
         event = get_event_with_registry_key_object()
@@ -3458,6 +3637,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(registry_value.data, data)
         self.assertEqual(registry_value.data_type, data_type)
         self.assertEqual(registry_value.name, name)
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-2:]
+        )
 
     def test_event_with_url_indicator_object(self):
         event = get_event_with_url_object()
@@ -3469,6 +3652,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(host_, f"url:x_misp_host = '{_host}'")
         self.assertEqual(ip_, f"url:x_misp_ip = '{_ip}'")
         self.assertEqual(port_, f"url:x_misp_port = '{_port}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_url_observable_object(self):
         event = get_event_with_url_object()
@@ -3488,6 +3675,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(url_object.x_misp_host, host)
         self.assertEqual(url_object.x_misp_ip, ip)
         self.assertEqual(url_object.x_misp_port, port)
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-2:]
+        )
 
     def test_event_with_user_account_indicator_object(self):
         event = get_event_with_user_account_object()
@@ -3504,6 +3695,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(group2_, f"user-account:extensions.'unix-account-ext'.groups = '{_group2}'")
         self.assertEqual(groupid_, f"user-account:extensions.'unix-account-ext'.gid = '{_groupid}'")
         self.assertEqual(home_, f"user-account:extensions.'unix-account-ext'.home_dir = '{_home}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_user_account_observable_object(self):
         event = get_event_with_user_account_object()
@@ -3531,6 +3726,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             datetime.strftime(user_account.credential_last_changed, '%Y-%m-%dT%H:%M:%S'),
             plc
         )
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-2:]
+        )
 
     def test_event_with_vulnerability_object(self):
         event = get_event_with_vulnerability_object()
@@ -3548,6 +3747,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         args = (grouping, event['Event'], identity_id)
         object_ref = self._check_grouping_features(*args)[0]
         self._check_object_vulnerability_features(vulnerability, misp_object, identity_id, object_ref)
+        self._populate_documentation(misp_object=misp_object, vulnerability=vulnerability)
 
     def test_event_with_x509_indicator_object(self):
         event = get_event_with_x509_object()
@@ -3567,6 +3767,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(vna_, f"x509-certificate:validity_not_after = '{_vna}'")
         self.assertEqual(vnb_, f"x509-certificate:validity_not_before = '{_vnb}'")
         self.assertEqual(pem_, f"x509-certificate:x_misp_pem = '{_pem}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_x509_observable_object(self):
         event = get_event_with_x509_object()
@@ -3601,6 +3805,10 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(x509.subject_public_key_modulus, pim)
         self.assertEqual(x509.subject_public_key_exponent, int(pie))
         self.assertEqual(x509.x_misp_pem, pem)
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-2:]
+        )
 
     def test_object_references(self):
         event = get_event_with_object_references()
