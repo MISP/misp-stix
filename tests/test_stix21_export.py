@@ -33,9 +33,9 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
     @classmethod
     def tearDownClass(self):
         attributes_documentation = DocumentationUpdater('misp_attributes_to_stix21')
-        attributes_documentation.check_stix21_attributes_mapping(self.__attributes)
+        attributes_documentation.check_stix21_mapping(self.__attributes)
         objects_documentation = DocumentationUpdater('misp_objects_to_stix21')
-        objects_documentation.check_stix21_attributes_mapping(self.__objects)
+        objects_documentation.check_stix21_mapping(self.__objects)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
@@ -85,11 +85,13 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
                 documented = json.loads(stix_object.serialize())
                 self.__attributes[feature]['STIX'][object_type.capitalize()] = documented
 
-    def _populate_objects_documentation(self, misp_object, name=None, **kwargs):
+    def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
         if name is None:
             name = misp_object['name']
         if 'MISP' not in self.__objects[name]:
             self.__objects[name]['MISP'] = misp_object
+        if summary is not None:
+            self.__objects['summary'][name] = summary
         if 'observed_data' in kwargs:
             documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
             self.__objects[name]['STIX']['Observed Data'] = documented
@@ -2575,7 +2577,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],
             observed_data = self.parser.stix_objects[-5:],
-            name = 'domain-ip with the perfect domain & ip matching'
+            name = 'domain-ip with the perfect domain & ip matching',
+            summary = 'A tuple of IPv4/IPv6 Address & Network Objects for each associated domain & ip'
         )
 
     def test_event_with_email_indicator_object(self):
@@ -2832,7 +2835,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self._populate_documentation(
             misp_object = misp_objects,
             indicator = self.parser.stix_objects[-1],
-            name = 'file with references to pe & pe-section'
+            name = 'file with references to pe & pe-section',
+            summary = 'File Object with a windows pebinary extension'
         )
 
     def test_event_with_file_and_pe_observable_objects(self):
@@ -2891,7 +2895,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(a_filename, f"file:content_ref.x_misp_filename = '{_attachment}')")
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],
-            indicator = self.parser.stix_objects[-1]
+            indicator = self.parser.stix_objects[-1],
+            summary = 'File Object (potential references to Artifact & Directory Objects)'
         )
 
     def test_event_with_file_observable_object(self):
@@ -3274,7 +3279,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(layer7_, f"network-traffic:protocols[2] = '{_layer7.lower()}'")
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],
-            indicator = self.parser.stix_objects[-1]
+            indicator = self.parser.stix_objects[-1],
+            summary = 'Network Traffic, IPv4/IPv6 Address & Domain Name Objects'
         )
 
     def test_event_with_network_connection_observable_object(self):
@@ -3347,7 +3353,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(domain_family_, f"network-traffic:x_misp_domain_family = '{_domain_family}'")
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],
-            indicator = self.parser.stix_objects[-1]
+            indicator = self.parser.stix_objects[-1],
+            summary = 'Network Traffic with a socket extension, IPv4/IPv6 Address & Domain Name Objects'
         )
 
     def test_event_with_network_socket_observable_object(self):
@@ -3500,7 +3507,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self._populate_documentation(
             misp_object = misp_objects,
             indicator = self.parser.stix_objects[-1],
-            name = 'pe & pe-sections'
+            name = 'pe & pe-sections',
+            summary = 'Windows PE binary extension within a File Object'
         )
 
     def test_event_with_pe_and_section_observable_objects(self):
@@ -3533,7 +3541,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(port_, f"process:x_misp_port = '{_port}'")
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],
-            indicator = self.parser.stix_objects[-1]
+            indicator = self.parser.stix_objects[-1],
+            summary = 'Process Objects (potential reference to File Objects)'
         )
 
     def test_event_with_process_observable_object(self):
