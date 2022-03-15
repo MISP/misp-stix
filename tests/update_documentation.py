@@ -42,7 +42,8 @@ class DocumentationUpdater:
     def summary_path(self):
         return self.__summary_path
 
-    def check_stix21_attributes_mapping(self, mapping_to_check):
+    def check_stix21_mapping(self, mapping_to_check):
+        summary_mapping = mapping_to_check.pop('summary', {})
         if self._documentation != mapping_to_check:
             for attribute_type, mapping in mapping_to_check.items():
                 stix_mapping = mapping['STIX']
@@ -55,7 +56,7 @@ class DocumentationUpdater:
                         stixobject = self._documentation[attribute_type]['STIX'].get(stix_type, {})
                         if stix_object != stixobject:
                             self._documentation[attribute_type]['STIX'][stix_type] = stix_object
-                summary = self._define_stix21_summary(stix_mapping)
+                summary = summary_mapping[attribute_type] if attribute_type in summary_mapping else self._define_stix21_summary(stix_mapping)
                 if attribute_type not in self._summary or self._summary != summary:
                     self._summary[attribute_type] = summary
             with open(self.mapping_path, 'wt', encoding='utf-8') as f:
