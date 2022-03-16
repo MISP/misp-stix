@@ -1791,10 +1791,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             'cve',
             attribute['value']
         )
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            vulnerability = self.parser.stix_objects[-1]
-        )
+        self._populate_documentation(attribute=attribute, vulnerability=vulnerability)
 
     def test_event_with_x509_fingerprint_indicator_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
