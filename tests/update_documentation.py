@@ -46,7 +46,6 @@ class DocumentationUpdater:
         summary_mapping = mapping_to_check.pop('summary', {})
         if self._documentation != mapping_to_check:
             for attribute_type, mapping in mapping_to_check.items():
-                stix_mapping = mapping['STIX']
                 if attribute_type not in self._documentation:
                     self._documentation[attribute_type] = mapping
                 else:
@@ -56,7 +55,7 @@ class DocumentationUpdater:
                         stixobject = self._documentation[attribute_type]['STIX'].get(stix_type, {})
                         if stix_object != stixobject:
                             self._documentation[attribute_type]['STIX'][stix_type] = stix_object
-                summary = summary_mapping[attribute_type] if attribute_type in summary_mapping else self._define_stix21_summary(stix_mapping)
+                summary = summary_mapping[attribute_type] if attribute_type in summary_mapping else self._define_stix21_summary(mapping['STIX'])
                 if attribute_type not in self._summary or self._summary != summary:
                     self._summary[attribute_type] = summary
             with open(self.mapping_path, 'wt', encoding='utf-8') as f:
@@ -66,7 +65,7 @@ class DocumentationUpdater:
         else:
             summary_changed = False
             for attribute_type, mapping in mapping_to_check.items():
-                summary = self._define_stix21_summary(stix_mapping)
+                summary = self._define_stix21_summary(mapping['STIX'])
                 if attribute_type not in self._summary or self._summary != summary:
                     summary_changed = True
                     self._summary[attribute_type] = summary
