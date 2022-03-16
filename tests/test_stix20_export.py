@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
+from collections import defaultdict
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX20Parser, misp_collection_to_stix2_0, misp_to_stix2_0
 from .test_events import *
@@ -8,6 +10,8 @@ from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export
 
 
 class TestSTIX20Export(TestSTIX2Export):
+    __attributes = defaultdict(lambda: defaultdict(dict))
+    __objects = defaultdict(lambda: defaultdict(dict))
     def setUp(self):
         self.parser = MISPtoSTIX20Parser()
 
@@ -21,6 +25,26 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(bundle.spec_version, '2.0')
         self.assertEqual(len(bundle.objects), length)
         return bundle
+
+    def _populate_attributes_documentation(self, attribute, **kwargs):
+        feature = attribute['type']
+        if 'MISP' not in self.__attributes[feature]:
+            self.__attributes[feature]['MISP'] = self._sanitize_documentation(attribute)
+        for object_type, stix_object in kwargs.items():
+            documented = json.loads(stix_object.serialize())
+            self.__attributes[feature]['STIX'][object_type.capitalize()] = documented
+
+    def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
+        if name is None:
+            name = misp_object['name']
+        if 'MISP' not in self.__objects[name]:
+            self.__objects[name]['MISP'] = self._sanitize_documentation(misp_object)
+        if summary is not None:
+            self.__objects['summary'][name] = summary
+        for object_type, stix_object in kwargs.items():
+            documented = json.loads(stix_object.serialize())
+            feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
+            self.__objects[name]['STIX'][feature] = documented
 
     def _run_custom_attributes_tests(self, event):
         orgc = event['Event']['Orgc']
@@ -416,6 +440,10 @@ class TestSTIX20Export(TestSTIX2Export):
         attribute_value, pattern = self._run_indicator_tests(event)
         number = self._parse_AS_value(attribute_value)
         self.assertEqual(pattern, f"[autonomous-system:number = '{number}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_as_observable_attribute(self):
         event = get_event_with_as_attribute()
@@ -424,25 +452,37 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(observable.type, 'autonomous-system')
         number = self._parse_AS_value(attribute_value)
         self.assertEqual(observable.number, number)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_attachment_indicator_attribute(self):
         event = get_event_with_attachment_attribute()
-        data = event['Event']['Attribute'][0]['data']
+        attribute = event['Event']['Attribute'][0]
         attribute_value, pattern = self._run_indicator_tests(event)
         file_pattern = f"file:name = '{attribute_value}'"
-        data_pattern = f"file:content_ref.payload_bin = '{data}'"
+        data_pattern = f"file:content_ref.payload_bin = '{attribute['data']}'"
         self.assertEqual(pattern, f"[{file_pattern} AND {data_pattern}]")
+        self._populate_documentation(
+            attribute = attribute,
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_attachment_observable_attribute(self):
         event = get_event_with_attachment_attribute()
-        data = event['Event']['Attribute'][0]['data']
+        attribute = event['Event']['Attribute'][0]
         attribute_value, observable_objects = self._run_observable_tests(event)
         file_object, artifact_object = observable_objects.values()
         self.assertEqual(file_object.type, 'file')
         self.assertEqual(file_object.name, attribute_value)
         self.assertEqual(file_object.content_ref, '1')
         self.assertEqual(artifact_object.type, 'artifact')
-        self.assertEqual(artifact_object.payload_bin, data)
+        self.assertEqual(artifact_object.payload_bin, attribute['data'])
+        self._populate_documentation(
+            attribute = attribute,
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_campaign_name_attribute(self):
         event = get_event_with_campaign_name_attribute()
@@ -462,6 +502,10 @@ class TestSTIX20Export(TestSTIX2Export):
             object_ref
         )
         self.assertEqual(campaign.name, attribute['value'])
+        self._populate_documentation(
+            attribute = attribute,
+            campaign = campaign
+        )
 
     def test_event_with_custom_attributes(self):
         event = get_event_with_stix2_custom_attributes()
@@ -471,6 +515,10 @@ class TestSTIX20Export(TestSTIX2Export):
         event = get_event_with_domain_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[domain-name:value = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_domain_observable_attribute(self):
         event = get_event_with_domain_attribute()
@@ -478,6 +526,10 @@ class TestSTIX20Export(TestSTIX2Export):
         observable = observable_objects['0']
         self.assertEqual(observable.type, 'domain-name')
         self.assertEqual(observable.value, attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_domain_ip_indicator_attribute(self):
         event = get_event_with_domain_ip_attribute()
@@ -486,6 +538,10 @@ class TestSTIX20Export(TestSTIX2Export):
         domain_pattern = f"domain-name:value = '{domain}'"
         ip_pattern = f"domain-name:resolves_to_refs[*].value = '{ip}'"
         self.assertEqual(pattern, f'[{domain_pattern} AND {ip_pattern}]')
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_domain_ip_observable_attribute(self):
         event = get_event_with_domain_ip_attribute()
@@ -497,6 +553,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(domain_object.resolves_to_refs, ['1'])
         self.assertEqual(address_object.type, 'ipv4-addr')
         self.assertEqual(address_object.value, ip)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_attachment_indicator_attribute(self):
         event = get_event_with_email_attachment_attribute()
@@ -504,6 +564,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(
             pattern,
             f"[email-message:body_multipart[*].body_raw_ref.name = '{attribute_value}']"
+        )
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
         )
 
     def test_event_with_email_attachment_observable_attribute(self):
@@ -517,6 +581,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(body.body_raw_ref, '1')
         self.assertEqual(file_object.type, 'file')
         self.assertEqual(file_object.name, attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_body_indicator_attribute(self):
         event = get_event_with_email_body_attribute()
@@ -524,6 +592,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(
             pattern,
             f"[email-message:body = '{attribute_value}']"
+        )
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
         )
 
     def test_event_with_email_body_observable_attribute(self):
@@ -533,11 +605,19 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(email_object.type, 'email-message')
         self.assertEqual(email_object.is_multipart, False)
         self.assertEqual(email_object.body, attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_destination_indicator_attribute(self):
         event = get_event_with_email_destination_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[email-message:to_refs[*].value = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_destination_observable_attribute(self):
         event = get_event_with_email_destination_attribute()
@@ -547,11 +627,19 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.to_refs, ['1'])
         self._check_email_address(address, attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_header_indicator_attribute(self):
         event = get_event_with_email_header_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[email-message:received_lines = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_header_observable_attribute(self):
         event = get_event_with_email_header_attribute()
@@ -560,17 +648,29 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(message_object.type, 'email-message')
         self.assertEqual(message_object.is_multipart, False)
         self.assertEqual(message_object.received_lines, [attribute_value])
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_indicator_attribute(self):
         event = get_event_with_email_address_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[email-addr:value = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_observable_attribute(self):
         event = get_event_with_email_address_attribute()
         attribute_value, observable_objects = self._run_observable_tests(event)
         address_object = observable_objects['0']
         self._check_email_address(address_object, attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_reply_to_indicator_attribute(self):
         event = get_event_with_email_reply_to_attribute()
@@ -578,6 +678,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(
             pattern,
             f"[email-message:additional_header_fields.reply_to = '{attribute_value}']"
+        )
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
         )
 
     def test_event_with_email_reply_to_observable_attribute(self):
@@ -587,11 +691,19 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.additional_header_fields['Reply-To'], attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_source_indicator_attribute(self):
         event = get_event_with_email_source_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[email-message:from_ref.value = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_source_observable_attribute(self):
         event = get_event_with_email_source_attribute()
@@ -601,11 +713,19 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.from_ref, '1')
         self._check_email_address(address, attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_subject_indicator_attribute(self):
         event = get_event_with_email_subject_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[email-message:subject = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_subject_observable_attribute(self):
         event = get_event_with_email_subject_attribute()
@@ -614,6 +734,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.subject, attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_x_mailer_indicator_attribute(self):
         event = get_event_with_email_x_mailer_attribute()
@@ -621,6 +745,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(
             pattern,
             f"[email-message:additional_header_fields.x_mailer = '{attribute_value}']"
+        )
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
         )
 
     def test_event_with_email_x_mailer_attribute(self):
@@ -630,11 +758,30 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.additional_header_fields['X-Mailer'], attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_filename_indicator_attribute(self):
         event = get_event_with_filename_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[file:name = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_filename_observable_attribute(self):
+        event = get_event_with_filename_attribute()
+        attribute_value, observable_objects = self._run_observable_tests(event)
+        observable = observable_objects['0']
+        self.assertEqual(observable.type, 'file')
+        self.assertEqual(observable.name, attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_github_username_indicator_attribute(self):
         event = get_event_with_github_username_attribute()
@@ -643,17 +790,18 @@ class TestSTIX20Export(TestSTIX2Export):
             pattern,
             f"[user-account:account_type = 'github' AND user-account:account_login = '{attribute_value}']"
         )
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_github_username_observable_attribute(self):
         event = get_event_with_github_username_attribute()
         self._run_custom_attributes_tests(event)
-
-    def test_event_with_filename_observable_attribute(self):
-        event = get_event_with_filename_attribute()
-        attribute_value, observable_objects = self._run_observable_tests(event)
-        observable = observable_objects['0']
-        self.assertEqual(observable.type, 'file')
-        self.assertEqual(observable.name, attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_hash_composite_indicator_attributes(self):
         event = get_event_with_hash_composite_attributes()
@@ -664,6 +812,8 @@ class TestSTIX20Export(TestSTIX2Export):
             filename_pattern = f"file:name = '{filename}'"
             hash_pattern = f"file:hashes.{hash_type} = '{hash_value}'"
             self.assertEqual(pattern, f"[{filename_pattern} AND {hash_pattern}]")
+        for attribute, indicator in zip(event['Event']['Attribute'], self.parser.stix_objects[-8:]):
+            self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_hash_composite_observable_attributes(self):
         event = get_event_with_hash_composite_attributes()
@@ -674,6 +824,8 @@ class TestSTIX20Export(TestSTIX2Export):
             self.assertEqual(observable_object['0'].type, 'file')
             self.assertEqual(observable_object['0'].name, filename)
             self.assertEqual(observable_object['0'].hashes[hash_type], hash_value)
+        for attribute, observed_data in zip(event['Event']['Attribute'], self.parser.stix_objects[-8:]):
+            self._populate_documentation(attribute=attribute, observed_data=observed_data)
 
     def test_event_with_hash_indicator_attributes(self):
         event = get_event_with_hash_attributes()
@@ -681,6 +833,8 @@ class TestSTIX20Export(TestSTIX2Export):
         hash_types = ('MD5', 'SHA1', 'SHA224', 'SHA256', 'SHA3256', 'SHA384', 'SSDEEP', 'TLSH')
         for pattern, hash_type, value in zip(patterns, hash_types, values):
             self.assertEqual(pattern, f"[file:hashes.{hash_type} = '{value}']")
+        for attribute, indicator in zip(event['Event']['Attribute'], self.parser.stix_objects[-8:]):
+            self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_hash_observable_attributes(self):
         event = get_event_with_hash_attributes()
@@ -689,11 +843,17 @@ class TestSTIX20Export(TestSTIX2Export):
         for value, observable_object, hash_type in zip(values, observable_objects, hash_types):
             self.assertEqual(observable_object['0'].type, 'file')
             self.assertEqual(observable_object['0'].hashes[hash_type], value)
+        for attribute, observed_data in zip(event['Event']['Attribute'], self.parser.stix_objects[-8:]):
+            self._populate_documentation(attribute=attribute, observed_data=observed_data)
 
     def test_event_with_hostname_indicator_attribute(self):
         event = get_event_with_hostname_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[domain-name:value = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_hostname_observable_attribute(self):
         event = get_event_with_hostname_attribute()
@@ -701,6 +861,10 @@ class TestSTIX20Export(TestSTIX2Export):
         observable = observable_objects['0']
         self.assertEqual(observable.type, 'domain-name')
         self.assertEqual(observable.value, attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_hostname_port_indicator_attribute(self):
         event = get_event_with_hostname_port_attribute()
@@ -709,6 +873,10 @@ class TestSTIX20Export(TestSTIX2Export):
         hostname_pattern = f"domain-name:value = '{hostname}'"
         port_pattern = f"network-traffic:dst_port = '{port}'"
         self.assertEqual(pattern, f"[{hostname_pattern} AND {port_pattern}]")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_hostname_port_observable_attribute(self):
         event = get_event_with_hostname_port_attribute()
@@ -720,6 +888,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(network_traffic_object.type, 'network-traffic')
         self.assertEqual(network_traffic_object.dst_port, int(port))
         self.assertEqual(network_traffic_object.dst_ref, '0')
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_http_indicator_attributes(self):
         event = get_event_with_http_attributes()
@@ -735,6 +907,8 @@ class TestSTIX20Export(TestSTIX2Export):
             user_agent_pattern,
             f"[{prefix}.request_header.'User-Agent' = '{user_agent}']"
         )
+        for attribute, indicator in zip(event['Event']['Attribute'], self.parser.stix_objects[-2:]):
+            self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_ip_indicator_attributes(self):
         event = get_event_with_ip_attributes()
@@ -747,6 +921,8 @@ class TestSTIX20Export(TestSTIX2Export):
         dst_type_pattern = "network-traffic:dst_ref.type = 'ipv4-addr'"
         dst_value_pattern = f"network-traffic:dst_ref.value = '{dst}'"
         self.assertEqual(dst_pattern, f"[{dst_type_pattern} AND {dst_value_pattern}]")
+        for attribute, indicator in zip(event['Event']['Attribute'], self.parser.stix_objects[-2:]):
+            self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_ip_observable_attributes(self):
         event = get_event_with_ip_attributes()
@@ -763,6 +939,8 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(dst_network.dst_ref, '1')
         self.assertEqual(dst_address.type, 'ipv4-addr')
         self.assertEqual(dst_address.value, dst)
+        for attribute, observed_data in zip(event['Event']['Attribute'], self.parser.stix_objects[-2:]):
+            self._populate_documentation(attribute=attribute, observed_data=observed_data)
 
     def test_event_with_ip_port_indicator_attributes(self):
         event = get_event_with_ip_port_attributes()
@@ -785,6 +963,8 @@ class TestSTIX20Export(TestSTIX2Export):
             dst_pattern,
             f"[{dst_type_pattern} AND {dst_value_pattern} AND {dst_port_pattern}]"
         )
+        for attribute, indicator in zip(event['Event']['Attribute'], self.parser.stix_objects[-2:]):
+            self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_ip_port_observable_attributes(self):
         event = get_event_with_ip_port_attributes()
@@ -805,11 +985,17 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(dst_network.dst_port, int(dst_port_value))
         self.assertEqual(dst_address.type, 'ipv4-addr')
         self.assertEqual(dst_address.value, dst_ip_value)
+        for attribute, observed_data in zip(event['Event']['Attribute'], self.parser.stix_objects[-2:]):
+            self._populate_documentation(attribute=observed_data, indicator=observed_data)
 
     def test_event_with_mac_address_indicator_attribute(self):
         event = get_event_with_mac_address_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[mac-addr:value = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_mac_address_observable_attribute(self):
         event = get_event_with_mac_address_attribute()
@@ -817,6 +1003,10 @@ class TestSTIX20Export(TestSTIX2Export):
         observable = observable_objects['0']
         self.assertEqual(observable.type, 'mac-addr')
         self.assertEqual(observable.value, attribute_value.lower())
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_malware_sample_indicator_attribute(self):
         event = get_event_with_malware_sample_attribute()
@@ -828,6 +1018,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(hash_pattern, f"file:hashes.MD5 = '{hash_value}'")
         self.assertEqual(data_pattern, f"file:content_ref.payload_bin = '{data}'")
         self.assertEqual(mime_type, f"file:content_ref.mime_type = 'application/zip'")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_malware_sample_observable_attribute(self):
         event = get_event_with_malware_sample_attribute()
@@ -841,11 +1035,19 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(file_object.content_ref, '1')
         self.assertEqual(artifact_object.type, 'artifact')
         self.assertEqual(artifact_object.payload_bin, data)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_mutex_indicator_attribute(self):
         event = get_event_with_mutex_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[mutex:name = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_mutex_observable_attribute(self):
         event = get_event_with_mutex_attribute()
@@ -853,11 +1055,19 @@ class TestSTIX20Export(TestSTIX2Export):
         observable = observable_objects['0']
         self.assertEqual(observable.type, 'mutex')
         self.assertEqual(observable.name, attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_port_indicator_attribute(self):
         event = get_event_with_port_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[network-traffic:dst_port = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_regkey_indicator_attribute(self):
         event = get_event_with_regkey_attribute()
@@ -866,6 +1076,10 @@ class TestSTIX20Export(TestSTIX2Export):
             pattern.replace('\\\\', '\\'),
             f"[windows-registry-key:key = '{attribute_value.strip()}']"
         )
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_regkey_observable_attribute(self):
         event = get_event_with_regkey_attribute()
@@ -873,6 +1087,10 @@ class TestSTIX20Export(TestSTIX2Export):
         observable = observable_objects['0']
         self.assertEqual(observable.type, 'windows-registry-key')
         self.assertEqual(observable.key, attribute_value.strip())
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_regkey_value_indicator_attribute(self):
         event = get_event_with_regkey_value_attribute()
@@ -881,6 +1099,10 @@ class TestSTIX20Export(TestSTIX2Export):
         key_pattern = f"windows-registry-key:key = '{self._sanitize_registry_key_value(key)}'"
         value_pattern = f"windows-registry-key:values.data = '{self._sanitize_registry_key_value(value)}'"
         self.assertEqual(pattern, f"[{key_pattern} AND {value_pattern}]")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_regkey_value_observable_attribute(self):
         event = get_event_with_regkey_value_attribute()
@@ -890,16 +1112,28 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(observable.type, 'windows-registry-key')
         self.assertEqual(observable.key, key.strip())
         self.assertEqual(observable['values'][0].data, value.strip())
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            obsevred_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_size_in_bytes_indicator_attribute(self):
         event = get_event_with_size_in_bytes_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[file:size = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_url_indicator_attribute(self):
         event = get_event_with_url_attribute()
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[url:value = '{attribute_value}']")
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_url_observable_attribute(self):
         event = get_event_with_url_attribute()
@@ -907,6 +1141,10 @@ class TestSTIX20Export(TestSTIX2Export):
         observable = observable_objects['0']
         self.assertEqual(observable.type, 'url')
         self.assertEqual(observable.value, attribute_value)
+        self._populate_documentation(
+            attribute = event['Event']['Attribute'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_vulnerability_attribute(self):
         event = get_event_with_vulnerability_attribute()
@@ -931,6 +1169,7 @@ class TestSTIX20Export(TestSTIX2Export):
             'cve',
             attribute['value']
         )
+        self._populate_documentation(attribute=attribute, vulnerability=vulnerability)
 
     def test_event_with_x509_fingerprint_indicator_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
@@ -940,6 +1179,8 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(md5_pattern, f"[x509-certificate:hashes.MD5 = '{md5}']")
         self.assertEqual(sha1_pattern, f"[x509-certificate:hashes.SHA1 = '{sha1}']")
         self.assertEqual(sha256_pattern, f"[x509-certificate:hashes.SHA256 = '{sha256}']")
+        for attribute, indicator in zip(event['Event']['Attribute'], self.parser.stix_objects[-3:]):
+            self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_x509_fingerprint_observable_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
@@ -948,6 +1189,8 @@ class TestSTIX20Export(TestSTIX2Export):
         for attribute_value, observable_object, hash_type in zip(attribute_values, observable_objects, hash_types):
             self.assertEqual(observable_object['0'].type, 'x509-certificate')
             self.assertEqual(observable_object['0'].hashes[hash_type], attribute_value)
+        for attribute, observed_data in zip(event['Event']['Attribute'], self.parser.stix_objects[-3:]):
+            self._populate_documentation(attribute=attribute, observed_data=observed_data)
 
     ################################################################################
     #                          MISP OBJECTS EXPORT TESTS.                          #
@@ -1084,6 +1327,8 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(user_id, f"user-account:user_id = '{_id}'")
         self.assertEqual(account_login, f"user-account:account_login = '{name}'")
         self.assertEqual(_followers, f"user-account:x_misp_followers = '{followers}'")
+        for misp_object, indicator in zip(misp_objects, self.parser.stix_objects[-4:]):
+            self._populate_documentation(misp_object=misp_object, indicator=indicator)
 
     def test_event_with_account_observable_objects(self):
         event = get_event_with_account_objects()
@@ -1119,6 +1364,8 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(twitter.account_login, name)
         self.assertEqual(twitter.display_name, displayed_name)
         self.assertEqual(twitter.x_misp_followers, followers)
+        for misp_object, observed_data in zip(misp_objects, self.parser.stix_objects[-4:]):
+            self._populate_documentation(misp_object=misp_object, observed_data=observed_data)
 
     def test_event_with_account_indicator_objects_with_attachment(self):
         event = get_event_with_account_objects_with_attachment()
@@ -1153,6 +1400,8 @@ class TestSTIX20Export(TestSTIX2Export):
         data = reddit_account['Attribute'][-1]['data'].replace('\\', '')
         self.assertEqual(image_data, f"user-account:x_misp_account_avatar.data = '{data}'")
         self.assertEqual(image_value, f"user-account:x_misp_account_avatar.value = '{account_avatar}'")
+        for misp_object, indicator in zip(misp_objects, self.parser.stix_objects[-4:]):
+            self._populate_documentation(misp_object=misp_object, indicator=indicator)
 
     def test_event_with_account_observable_object_with_attachment(self):
         event = get_event_with_account_objects_with_attachment()
@@ -1196,6 +1445,8 @@ class TestSTIX20Export(TestSTIX2Export):
             reddit.x_misp_account_avatar['data'],
             reddit_account['Attribute'][-1]['data'].replace('\\', '')
         )
+        for misp_object, observed_data in zip(misp_objects, self.parser.stix_objects[-4:]):
+            self._populate_documentation(misp_object=misp_object, observed_data=observed_data)
 
     def test_event_with_android_app_indicator_object(self):
         event = get_event_with_android_app_object()
@@ -1205,6 +1456,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(name_pattern, f"software:name = '{name}'")
         self.assertEqual(cert_pattern, f"software:x_misp_certificate = '{certificate}'")
         self.assertEqual(domain_pattern, f"software:x_misp_domain = '{domain}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_android_app_observable_object(self):
         event = get_event_with_android_app_object()
@@ -1215,6 +1470,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(software.name, name)
         self.assertEqual(software.x_misp_certificate, certificate)
         self.assertEqual(software.x_misp_domain, domain)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_asn_indicator_object(self):
         event = get_event_with_asn_object()
@@ -1231,6 +1490,10 @@ class TestSTIX20Export(TestSTIX2Export):
             subnet2_pattern,
             f"autonomous-system:x_misp_subnet_announced = '{subnet2}'"
         )
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_asn_observable_object(self):
         event = get_event_with_asn_object()
@@ -1242,6 +1505,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(
             observable_objects['0'].x_misp_subnet_announced,
             [subnet1, subnet2]
+        )
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
         )
 
     def test_event_with_attack_pattern_object(self):
@@ -1271,6 +1538,7 @@ class TestSTIX20Export(TestSTIX2Export):
             'capec',
             f'CAPEC-{id}'
         )
+        self._populate_documentation(misp_object=misp_object, attack_pattern=attack_pattern)
 
     def test_event_with_course_of_action_object(self):
         event = get_event_with_course_of_action_object()
@@ -1299,6 +1567,10 @@ class TestSTIX20Export(TestSTIX2Export):
                 ),
                 attribute['value']
             )
+        self._populate_documentation(
+            misp_object = misp_object,
+            course_of_action = course_of_action
+        )
 
     def test_event_with_cpe_asset_indicator_object(self):
         event = get_event_with_cpe_asset_object()
@@ -1311,6 +1583,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(vendor_pattern, f"software:vendor = '{vendor}'")
         self.assertEqual(version_pattern, f"software:version = '{version}'")
         self.assertEqual(description_pattern, f"software:x_misp_description = '{description}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_cpe_asset_observable_object(self):
         event = get_event_with_cpe_asset_object()
@@ -1324,6 +1600,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(software.vendor, vendor)
         self.assertEqual(software.version, version)
         self.assertEqual(software.x_misp_description, description)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_credential_indicator_object(self):
         event = get_event_with_credential_object()
@@ -1335,6 +1615,10 @@ class TestSTIX20Export(TestSTIX2Export):
         for pattern_part, attribute in zip(pattern, attributes):
             feature, value = attribute
             self.assertEqual(pattern_part, f"user-account:x_misp_{feature} = '{value}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_credential_observable_object(self):
         event = get_event_with_credential_object()
@@ -1346,6 +1630,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(user_account.user_id, username[1])
         for feature, value in attributes:
             self.assertEqual(getattr(user_account, f'x_misp_{feature}'), value)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_custom_objects(self):
         event = get_event_with_custom_objects()
@@ -1369,6 +1657,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(hostname_, f"domain-name:value = '{_hostname}'")
         self.assertEqual(ip_, f"domain-name:resolves_to_refs[*].value = '{_ip}'")
         self.assertEqual(port_, f"domain-name:x_misp_port = '{_port}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_domain_ip_observable_object_custom(self):
         event = get_event_with_domain_ip_object_custom()
@@ -1383,6 +1675,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(domain_.resolves_to_refs, ['1'])
         self.assertEqual(ip_.type, 'ipv4-addr')
         self.assertEqual(ip_.value, _ip)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_domain_ip_observable_object_standard(self):
         event = get_event_with_domain_ip_object_standard()
@@ -1402,6 +1698,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(domain2_.type, 'domain-name')
         self.assertEqual(domain2_.value, _domain2)
         self.assertEqual(domain2_.resolves_to_refs, ['0', '1'])
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_indicator_object(self):
         event = get_event_with_email_object()
@@ -1432,6 +1732,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(user_agent_, f"email-message:x_misp_user_agent = '{_user_agent}'")
         self.assertEqual(boundary_, f"email-message:x_misp_mime_boundary = '{_boundary}'")
         self.assertEqual(message_id_, f"email-message:x_misp_message_id = '{_message_id}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_observable_object(self):
         event = get_event_with_email_object()
@@ -1469,6 +1773,10 @@ class TestSTIX20Export(TestSTIX2Export):
         file2 = observable_objects['6']
         self.assertEqual(file2.type, 'file')
         self.assertEqual(file2.name, _attachment2)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_indicator_object_with_display_names(self):
         event = get_event_with_email_object_with_display_names()
@@ -1485,6 +1793,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(to2_, f"email-message:to_refs.value = '{_to2}'")
         self.assertEqual(to1_name_, f"email-message:to_refs.display_name = '{_to1_name}'")
         self.assertEqual(to2_name_, f"email-message:to_refs.display_name = '{_to2_name}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_email_observable_object_with_display_names(self):
         event = get_event_with_email_object_with_display_names()
@@ -1507,6 +1819,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self._check_email_address(cc_, _cc, display_name=_cc_name)
         bcc_ = observable_objects['5']
         self._check_email_address(bcc_, _bcc, display_name=_bcc_name)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_employee_object(self):
         event = get_event_with_employee_object()
@@ -1531,6 +1847,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(employee.description, description)
         self.assertEqual(employee.contact_information, email)
         self.assertEqual(employee.x_misp_employee_type, employee_type)
+        self._populate_documentation(misp_object=misp_object, identity=employee)
 
     def test_event_with_file_and_pe_indicator_objects(self):
         event = get_event_with_file_and_pe_objects()
@@ -1546,6 +1863,12 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(size_, f"file:size = '{_size}'")
         self.assertEqual(entropy_, f"file:x_misp_entropy = '{_entropy}'")
         self._check_pe_and_section_pattern(pattern[6:], pe, section)
+        self._populate_documentation(
+            misp_object = misp_objects,
+            indicator = self.parser.stix_objects[-1],
+            name = 'file with references to pe & pe-section(s)',
+            summary = 'File Object with a windows pebinary extension'
+        )
 
     def test_event_with_file_and_pe_observable_objects(self):
         event = get_event_with_file_and_pe_objects()
@@ -1565,6 +1888,11 @@ class TestSTIX20Export(TestSTIX2Export):
             file_object.extensions['windows-pebinary-ext'],
             pe,
             section
+        )
+        self._populate_documentation(
+            misp_object = misp_objects,
+            observed_data = self.parser.stix_objects[-2:],
+            name = 'file with references to pe & pe-section(s)'
         )
 
     def test_event_with_file_indicator_object(self):
@@ -1588,6 +1916,11 @@ class TestSTIX20Export(TestSTIX2Export):
         a_data, a_filename = attachment_.split(' AND ')
         self.assertEqual(a_data, f"(file:content_ref.payload_bin = '{attributes[6]['data']}'")
         self.assertEqual(a_filename, f"file:content_ref.x_misp_filename = '{_attachment}')")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1],
+            summary = 'File Object (potential references to Artifact & Directory Objects)'
+        )
 
     def test_event_with_file_observable_object(self):
         event = get_event_with_file_object_with_artifact()
@@ -1620,6 +1953,11 @@ class TestSTIX20Export(TestSTIX2Export):
         filename, md5 = _malware_sample.split('|')
         self.assertEqual(artifact1.hashes['MD5'], md5)
         self.assertEqual(artifact1.x_misp_filename, filename)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1],
+            summary = 'File Object (potential references to Artifact & Directory Objects)'
+        )
 
     def test_event_with_image_indicator_object(self):
         event = get_event_with_image_object()
@@ -1633,6 +1971,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(name_ref, f"file:content_ref.x_misp_filename = '{attachment}'")
         self.assertEqual(url_pattern, f"file:content_ref.url = '{url}'")
         self.assertEqual(text_pattern, f"file:x_misp_image_text = '{text}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_image_observable_object(self):
         event = get_event_with_image_object()
@@ -1649,6 +1991,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(artifact.mime_type, 'image/png')
         self.assertEqual(artifact.x_misp_url, url)
         self.assertEqual(artifact.x_misp_filename, attachment)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_ip_port_indicator_object(self):
         prefix = 'network-traffic'
@@ -1666,6 +2012,10 @@ class TestSTIX20Export(TestSTIX2Export):
         )
         self.assertEqual(pattern[4], f"{prefix}:dst_port = '{port}'")
         self.assertEqual(pattern[5], f"{prefix}:start = '{first_seen}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_ip_port_observable_object(self):
         event = get_event_with_ip_port_object()
@@ -1684,6 +2034,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(network_traffic.x_misp_domain, domain)
         self.assertEqual(address_object.type, 'ipv4-addr')
         self.assertEqual(address_object.value, ip)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_legal_entity_object(self):
         event = get_event_with_legal_entity_object()
@@ -1713,6 +2067,7 @@ class TestSTIX20Export(TestSTIX2Export):
             legal_entity.x_misp_logo['data'],
             misp_object['Attribute'][-1]['data'].replace('\\', '')
         )
+        self._populate_documentation(misp_object=misp_object, identity=legal_entity)
 
     def test_event_with_lnk_indicator_object(self):
         event = get_event_with_lnk_object()
@@ -1735,6 +2090,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(ctime, f"file:x_misp_lnk_creation_time = '{creation}'")
         self.assertEqual(mtime, f"file:x_misp_lnk_modification_time = '{modification}'")
         self.assertEqual(atime, f"file:x_misp_lnk_access_time = '{access}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_lnk_observable_object(self):
         event = get_event_with_lnk_object()
@@ -1762,6 +2121,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(file.x_misp_lnk_creation_time, creation)
         self.assertEqual(file.x_misp_lnk_modification_time, modification)
         self.assertEqual(file.x_misp_lnk_access_time, access)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_mutex_indicator_object(self):
         event = get_event_with_mutex_object()
@@ -1771,6 +2134,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(name_, f"mutex:name = '{_name}'")
         self.assertEqual(description_, f"mutex:x_misp_description = '{_description}'")
         self.assertEqual(os_, f"mutex:x_misp_operating_system = '{_os}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_mutex_observable_object(self):
         event = get_event_with_mutex_object()
@@ -1781,6 +2148,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(mutex.name, name)
         self.assertEqual(mutex.x_misp_description, description)
         self.assertEqual(mutex.x_misp_operating_system, _os)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_network_connection_indicator_object(self):
         event = get_event_with_network_connection_object()
@@ -1801,6 +2172,11 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(layer3_, f"network-traffic:protocols[0] = '{_layer3.lower()}'")
         self.assertEqual(layer4_, f"network-traffic:protocols[1] = '{_layer4.lower()}'")
         self.assertEqual(layer7_, f"network-traffic:protocols[2] = '{_layer7.lower()}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1],
+            summary = 'Network Traffic, IPv4/IPv6 Address & Domain Name Objects'
+        )
 
     def test_event_with_network_connection_observable_object(self):
         event = get_event_with_network_connection_object()
@@ -1820,6 +2196,10 @@ class TestSTIX20Export(TestSTIX2Export):
         address2 = observable_objects['2']
         self.assertEqual(address2.type, 'ipv4-addr')
         self.assertEqual(address2.value, ip_dst)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_network_socket_indicator_object(self):
         event = get_event_with_network_socket_object()
@@ -1842,6 +2222,11 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(domain_family_, f"network-traffic:extensions.'socket-ext'.protocol_family = '{_domain_family}'")
         self.assertEqual(socket_type_, f"network-traffic:extensions.'socket-ext'.socket_type = '{_socket_type}'")
         self.assertEqual(state_, f"network-traffic:extensions.'socket-ext'.is_{_state} = true")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1],
+            summary = 'Network Traffic with a socket extension, IPv4/IPv6 Address & Domain Name Objects'
+        )
 
     def test_event_with_network_socket_observable_object(self):
         event = get_event_with_network_socket_object()
@@ -1866,6 +2251,10 @@ class TestSTIX20Export(TestSTIX2Export):
         address2 = observable_objects['2']
         self.assertEqual(address2.type, 'ipv4-addr')
         self.assertEqual(address2.value, ip_dst)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_news_agency_object(self):
         event = get_event_with_news_agency_object()
@@ -1897,6 +2286,7 @@ class TestSTIX20Export(TestSTIX2Export):
             news_agency.x_misp_attachment['data'],
             misp_object['Attribute'][-1]['data'].replace('\\', '')
         )
+        self._populate_documentation(misp_object=misp_object, identity=news_agency)
 
     def test_event_with_organization_object(self):
         event = get_event_with_organization_object()
@@ -1925,11 +2315,18 @@ class TestSTIX20Export(TestSTIX2Export):
         )
         self.assertEqual(organization.x_misp_role, role)
         self.assertEqual(organization.x_misp_alias, alias)
+        self._populate_documentation(misp_object = misp_object, identity=organization)
 
     def test_event_with_pe_and_section_indicator_objects(self):
         event = get_event_with_pe_objects()
         misp_objects, pattern = self._run_indicator_from_objects_tests(event)
         self._check_pe_and_section_pattern(pattern[1:-1].split(' AND '), *misp_objects)
+        self._populate_documentation(
+            misp_object = misp_objects,
+            indicator = self.parser.stix_objects[-1],
+            name = 'pe & pe-sections',
+            summary = 'Windows PE binary extension within a File Object'
+        )
 
     def test_event_with_pe_and_section_observable_objects(self):
         event = get_event_with_pe_objects()
@@ -1937,6 +2334,11 @@ class TestSTIX20Export(TestSTIX2Export):
         self._check_pe_and_section_observable(
             observable_objects['0'].extensions['windows-pebinary-ext'],
             *misp_objects
+        )
+        self._populate_documentation(
+            misp_object = misp_objects,
+            observed_data = self.parser.stix_objects[-2:],
+            name = 'pe & pe-sections'
         )
 
     def test_event_with_process_indicator_object(self):
@@ -1953,6 +2355,11 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(parent_name_, f"process:parent_ref.name = '{_parent_name}'")
         self.assertEqual(child_pid_, f"process:child_refs[0].pid = '{_child_pid}'")
         self.assertEqual(port_, f"process:x_misp_port = '{_port}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1],
+            summary = 'Process Objects (potential reference to File Objects)'
+        )
 
     def test_event_with_process_observable_object(self):
         event = get_event_with_process_object_v2()
@@ -1981,6 +2388,10 @@ class TestSTIX20Export(TestSTIX2Export):
         image_object = observable_objects['4']
         self.assertEqual(image_object.type, 'file')
         self.assertEqual(image_object.name, image)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_registry_key_indicator_object(self):
         event = get_event_with_registry_key_object()
@@ -1994,6 +2405,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(name_, f"windows-registry-key:values[0].name = '{_name}'")
         self.assertEqual(hive_, f"windows-registry-key:x_misp_hive = '{_hive}'")
         self.assertEqual(modified_, f"windows-registry-key:x_misp_last_modified = '{_modified}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_registry_key_observable_object(self):
         event = get_event_with_registry_key_object()
@@ -2008,6 +2423,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(registry_value.data, data)
         self.assertEqual(registry_value.data_type, data_type)
         self.assertEqual(registry_value.name, name)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_url_indicator_object(self):
         event = get_event_with_url_object()
@@ -2019,6 +2438,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(host_, f"url:x_misp_host = '{_host}'")
         self.assertEqual(ip_, f"url:x_misp_ip = '{_ip}'")
         self.assertEqual(port_, f"url:x_misp_port = '{_port}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_url_observable_object(self):
         event = get_event_with_url_object()
@@ -2031,6 +2454,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(url_object.x_misp_host, host)
         self.assertEqual(url_object.x_misp_ip, ip)
         self.assertEqual(url_object.x_misp_port, port)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_user_account_indicator_object(self):
         event = get_event_with_user_account_object()
@@ -2047,6 +2474,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(groupid_, f"user-account:extensions.'unix-account-ext'.gid = '{_groupid}'")
         self.assertEqual(home_, f"user-account:extensions.'unix-account-ext'.home_dir = '{_home}'")
         self.assertEqual(passwd_, f"user-account:x_misp_password = '{_passwd}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_user_account_observable_object(self):
         event = get_event_with_user_account_object()
@@ -2067,6 +2498,10 @@ class TestSTIX20Export(TestSTIX2Export):
             datetime.strftime(user_account.password_last_changed, '%Y-%m-%dT%H:%M:%S'),
             plc
         )
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_vulnerability_object(self):
         event = get_event_with_vulnerability_object()
@@ -2079,6 +2514,7 @@ class TestSTIX20Export(TestSTIX2Export):
         args = (report, event['Event'], identity_id, timestamp)
         object_ref = self._check_report_features(*args)[0]
         self._check_object_vulnerability_features(vulnerability, misp_object, identity_id, object_ref)
+        self._populate_documentation(misp_object=misp_object, vulnerability=vulnerability)
 
     def test_event_with_x509_indicator_object(self):
         event = get_event_with_x509_object()
@@ -2098,6 +2534,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(vna_, f"x509-certificate:validity_not_after = '{_vna}'")
         self.assertEqual(vnb_, f"x509-certificate:validity_not_before = '{_vnb}'")
         self.assertEqual(pem_, f"x509-certificate:x_misp_pem = '{_pem}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
 
     def test_event_with_x509_observable_object(self):
         event = get_event_with_x509_object()
@@ -2125,6 +2565,10 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(x509.subject_public_key_modulus, pim)
         self.assertEqual(x509.subject_public_key_exponent, int(pie))
         self.assertEqual(x509.x_misp_pem, pem)
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
 
     def test_object_references(self):
         event = get_event_with_object_references()
