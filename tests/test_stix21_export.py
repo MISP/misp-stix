@@ -680,7 +680,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         number = self._parse_AS_value(attribute_value)
         self.assertEqual(pattern, f"[autonomous-system:number = '{number}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -712,7 +712,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         data_pattern = f"file:content_ref.payload_bin = '{data}'"
         self.assertEqual(pattern, f"[{file_pattern} AND {data_pattern}]")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -804,7 +804,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[domain-name:value = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -834,7 +834,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         ip_pattern = f"domain-name:resolves_to_refs[*].value = '{ip}'"
         self.assertEqual(pattern, f'[{domain_pattern} AND {ip_pattern}]')
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -873,7 +873,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[email-message:body_multipart[*].body_raw_ref.name = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -915,7 +915,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             f"[email-message:body = '{attribute_value}']"
         )
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -943,7 +943,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[email-message:to_refs[*].value = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -980,7 +980,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[email-message:received_lines = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1008,7 +1008,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[email-addr:value = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1017,7 +1017,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[email-message:message_id = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1065,7 +1065,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             f"[email-message:additional_header_fields.reply_to = '{attribute_value}']"
         )
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1093,7 +1093,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[email-message:from_ref.value = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1130,7 +1130,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[email-message:subject = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1161,7 +1161,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             f"[email-message:additional_header_fields.x_mailer = '{attribute_value}']"
         )
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1189,7 +1189,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[file:name = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1219,7 +1219,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             f"[user-account:account_type = 'github' AND user-account:account_login = '{attribute_value}']"
         )
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1314,7 +1314,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[domain-name:value = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1344,7 +1344,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         port_pattern = f"network-traffic:dst_port = '{port}'"
         self.assertEqual(pattern, f"[{hostname_pattern} AND {port_pattern}]")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1536,7 +1536,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[mac-addr:value = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1571,7 +1571,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertEqual(encryption, f"file:content_ref.encryption_algorithm = 'mime-type-indicated'")
         self.assertEqual(decryption, f"file:content_ref.decryption_key = 'infected'")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1611,7 +1611,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[mutex:name = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1658,7 +1658,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[network-traffic:dst_port = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1670,7 +1670,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             f"[windows-registry-key:key = '{attribute_value.strip()}']"
         )
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1700,7 +1700,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         value_pattern = f"windows-registry-key:values.data = '{self._sanitize_registry_key_value(value)}'"
         self.assertEqual(pattern, f"[{key_pattern} AND {value_pattern}]")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1729,7 +1729,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[file:size = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1738,7 +1738,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         attribute_value, pattern = self._run_indicator_tests(event)
         self.assertEqual(pattern, f"[url:value = '{attribute_value}']")
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             indicator = self.parser.stix_objects[-1]
         )
 
@@ -1793,7 +1793,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             attribute['value']
         )
         self._populate_documentation(
-            attribute = self.parser._misp_event['Attribute'][0],
+            attribute = event['Event']['Attribute'][0],
             vulnerability = self.parser.stix_objects[-1]
         )
 
