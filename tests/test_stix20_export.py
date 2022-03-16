@@ -235,6 +235,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(custom.created, timestamp)
         self.assertEqual(custom.modified, timestamp)
         self.assertEqual(custom.object_ref, report.id)
+        self.assertEqual(object_ref, report.id)
         self.assertEqual(
             custom.x_misp_event_note,
             "This MISP Event is empty and contains no attribute, object, galaxy or tag."
@@ -245,8 +246,10 @@ class TestSTIX20Export(TestSTIX2Export):
         orgc = event['Event']['Orgc']
         self.parser.parse_misp_event(event)
         bundle = self._check_bundle_features(3)
-        _, report, _ = bundle.objects
+        identity, report, _ = bundle.objects
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        self._check_report_features(report, event['Event'], identity_id, timestamp)
         self.assertEqual(report.created, timestamp)
         self.assertEqual(report.modified, timestamp)
         self.assertEqual(
@@ -328,7 +331,6 @@ class TestSTIX20Export(TestSTIX2Export):
 
     def test_event_with_tags(self):
         event = get_event_with_tags()
-        orgc = event['Event']['Orgc']
         self.parser.parse_misp_event(event)
         bundle = self._check_bundle_features(4)
         _, _, _, marking = bundle.objects
