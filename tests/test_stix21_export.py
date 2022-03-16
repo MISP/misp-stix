@@ -389,7 +389,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         )
         object_ref = self._check_grouping_features(*args)[0]
         self.assertEqual(note.type, 'note')
-        self.assertEqual(note.id, f"note--{event['Event']['uuid']}")
+        self._assert_multiple_equal(note.id, object_ref, f"note--{event['Event']['uuid']}")
         self.assertEqual(note.created_by_ref, identity_id)
         self.assertEqual(note.created, timestamp)
         self.assertEqual(note.modified, timestamp)
@@ -522,7 +522,6 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
 
     def test_event_with_tags(self):
         event = get_event_with_tags()
-        orgc = event['Event']['Orgc']
         self.parser.parse_misp_event(event)
         stix_objects = self._check_bundle_features(4)
         self._check_spec_versions(stix_objects)
