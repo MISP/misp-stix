@@ -419,6 +419,16 @@ class TestSTIX2Export(unittest.TestCase):
                 if attribute.get(feature):
                     self.assertEqual(custom_attribute[feature], attribute[feature])
 
+    def _sanitize_documentation(self, documentation):
+        if isinstance(documentation, list):
+            return [self._sanitize_documentation(value) for value in documentation]
+        sanitized = {}
+        for key, value in documentation.items():
+            if key == 'to_ids':
+                continue
+            sanitized[key] = self._sanitize_documentation(value) if isinstance(value, (dict, list)) else value
+        return sanitized
+
     @staticmethod
     def _sanitize_registry_key_value(value: str) -> str:
         sanitized = value.strip().replace('\\', '\\\\')

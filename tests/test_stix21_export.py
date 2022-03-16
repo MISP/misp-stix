@@ -76,7 +76,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
     def _populate_attributes_documentation(self, attribute, **kwargs):
         feature = attribute['type']
         if 'MISP' not in self.__attributes[feature]:
-            self.__attributes[feature]['MISP'] = {key: value for key, value in attribute.items() if key != 'to_ids'}
+            self.__attributes[feature]['MISP'] = self._sanitize_documentation(attribute)
         if 'observed_data' in kwargs:
             documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
             self.__attributes[feature]['STIX']['Observed Data'] = documented
@@ -89,7 +89,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         if name is None:
             name = misp_object['name']
         if 'MISP' not in self.__objects[name]:
-            self.__objects[name]['MISP'] = misp_object
+            self.__objects[name]['MISP'] = self._sanitize_documentation(misp_object)
         if summary is not None:
             self.__objects['summary'][name] = summary
         if 'observed_data' in kwargs:
@@ -98,7 +98,8 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         else:
             for object_type, stix_object in kwargs.items():
                 documented = json.loads(stix_object.serialize())
-                self.__objects[name]['STIX'][object_type.capitalize()] = documented
+                feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
+                self.__objects[name]['STIX'][feature] = documented
 
     @staticmethod
     def _reorder_observable_objects(observables, ids):
@@ -2835,7 +2836,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self._populate_documentation(
             misp_object = misp_objects,
             indicator = self.parser.stix_objects[-1],
-            name = 'file with references to pe & pe-section',
+            name = 'file with references to pe & pe-section(s)',
             summary = 'File Object with a windows pebinary extension'
         )
 
@@ -2867,7 +2868,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self._populate_documentation(
             misp_object = misp_objects,
             observed_data = self.parser.stix_objects[-2:],
-            name = 'file with references to pe & pe-section'
+            name = 'file with references to pe & pe-section(s)'
         )
 
     def test_event_with_file_indicator_object(self):
