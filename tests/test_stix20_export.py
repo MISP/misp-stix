@@ -255,11 +255,11 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(report.published, timestamp)
         self.assertEqual(custom.type, 'x-misp-event-note')
         self.assertEqual(custom.id, f"x-misp-event-note--{event['Event']['uuid']}")
+        self.assertEqual(custom.id, object_ref)
         self.assertEqual(custom.created_by_ref, identity_id)
         self.assertEqual(custom.created, timestamp)
         self.assertEqual(custom.modified, timestamp)
         self.assertEqual(custom.object_ref, report.id)
-        self.assertEqual(object_ref, report.id)
         self.assertEqual(
             custom.x_misp_event_note,
             "This MISP Event is empty and contains no attribute, object, galaxy or tag."
@@ -986,7 +986,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(dst_address.type, 'ipv4-addr')
         self.assertEqual(dst_address.value, dst_ip_value)
         for attribute, observed_data in zip(event['Event']['Attribute'], self.parser.stix_objects[-2:]):
-            self._populate_documentation(attribute=observed_data, indicator=observed_data)
+            self._populate_documentation(attribute=attribute, indicator=observed_data)
 
     def test_event_with_mac_address_indicator_attribute(self):
         event = get_event_with_mac_address_attribute()
@@ -1891,7 +1891,7 @@ class TestSTIX20Export(TestSTIX2Export):
         )
         self._populate_documentation(
             misp_object = misp_objects,
-            observed_data = self.parser.stix_objects[-2:],
+            observed_data = self.parser.stix_objects[-1],
             name = 'file with references to pe & pe-section(s)'
         )
 
@@ -2337,7 +2337,7 @@ class TestSTIX20Export(TestSTIX2Export):
         )
         self._populate_documentation(
             misp_object = misp_objects,
-            observed_data = self.parser.stix_objects[-2:],
+            observed_data = self.parser.stix_objects[-1],
             name = 'pe & pe-sections'
         )
 
