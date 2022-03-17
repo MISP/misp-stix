@@ -42,36 +42,62 @@ class DocumentationUpdater:
     def summary_path(self):
         return self.__summary_path
 
-    def check_stix21_mapping(self, mapping_to_check):
+    def check_stix20_mapping(self, mapping_to_check):
         summary_mapping = mapping_to_check.pop('summary', {})
         if self._documentation != mapping_to_check:
             for attribute_type, mapping in mapping_to_check.items():
-                if attribute_type not in self._documentation:
-                    self._documentation[attribute_type] = mapping
-                else:
-                    if mapping['MISP'] != self._documentation[attribute_type]['MISP']:
-                        self._documentation[attribute_type]['MISP'] = mapping['MISP']
-                    for stix_type, stix_object in mapping['STIX'].items():
-                        stixobject = self._documentation[attribute_type]['STIX'].get(stix_type, {})
-                        if stix_object != stixobject:
-                            self._documentation[attribute_type]['STIX'][stix_type] = stix_object
-                summary = summary_mapping[attribute_type] if attribute_type in summary_mapping else self._define_stix21_summary(mapping['STIX'])
+                self._check_mapping(attribute_type, mapping)
+                summary = summary_mapping[attribute_type] if attribute_type in summary_mapping else self._define_stix20_summary(mapping['STIX'])
                 if attribute_type not in self._summary or self._summary != summary:
                     self._summary[attribute_type] = summary
-            with open(self.mapping_path, 'wt', encoding='utf-8') as f:
-                f.write(json.dumps(self._order_mapping('_documentation'), indent=4))
-            with open(self.summary_path, 'wt', encoding='utf-8') as f:
-                f.write(json.dumps(self._order_mapping('_summary'), indent=4))
+            self._write_mappings()
         else:
             summary_changed = False
             for attribute_type, mapping in mapping_to_check.items():
-                summary = self._define_stix21_summary(mapping['STIX'])
+                summary = summary_mapping[attribute_type] if attribute_type in summary_mapping else self._define_stix20_summary(mapping['STIX'])
                 if attribute_type not in self._summary or self._summary != summary:
                     summary_changed = True
                     self._summary[attribute_type] = summary
             if summary_changed:
-                with open(self.summary_path, 'wt', encoding='utf-8') as f:
-                    f.write(json.dumps(self._order_mapping('_summary'), indent=4))
+                self._write_summary_mapping()
+
+    def check_stix21_mapping(self, mapping_to_check):
+        summary_mapping = mapping_to_check.pop('summary', {})
+        if self._documentation != mapping_to_check:
+            for attribute_type, mapping in mapping_to_check.items():
+                self._check_mapping(attribute_type, mapping)
+                summary = summary_mapping[attribute_type] if attribute_type in summary_mapping else self._define_stix21_summary(mapping['STIX'])
+                if attribute_type not in self._summary or self._summary != summary:
+                    self._summary[attribute_type] = summary
+            self._write_mappings()
+        else:
+            summary_changed = False
+            for attribute_type, mapping in mapping_to_check.items():
+                summary = summary_mapping[attribute_type] if attribute_type in summary_mapping else self._define_stix21_summary(mapping['STIX'])
+                if attribute_type not in self._summary or self._summary != summary:
+                    summary_changed = True
+                    self._summary[attribute_type] = summary
+            if summary_changed:
+                self._write_summary_mapping()
+
+    def _check_mapping(self, attribute_type, mapping):
+        if attribute_type not in self._documentation:
+            self._documentation[attribute_type] = mapping
+        else:
+            if mapping['MISP'] != self._documentation[attribute_type]['MISP']:
+                self._documentation[attribute_type]['MISP'] = mapping['MISP']
+            for stix_type, stix_object in mapping['STIX'].items():
+                stixobject = self._documentation[attribute_type]['STIX'].get(stix_type, {})
+                if stix_object != stixobject:
+                    self._documentation[attribute_type]['STIX'][stix_type] = stix_object
+
+    def _define_stix20_summary(self, stix_mapping):
+        if all(feature in stix_mapping for feature in _OBJECT_FEATURES):
+            return self._observable_types(stix_mapping['Observed Data']['objects'].values())
+        if len(stix_mapping.keys()) == 1 and 'Indicator' in stix_mapping:
+            indicator_type = self._pattern_types(stix_mapping['Indicator']['pattern'])
+            return f"{indicator_type} / Custom Object"
+        return self._define_summary(stix_mapping)
 
     def _define_stix21_summary(self, stix_mapping):
         if all(feature in stix_mapping for feature in _OBJECT_FEATURES):
@@ -81,6 +107,9 @@ class DocumentationUpdater:
             if indicator['pattern_type'] in _PATTERNING_TYPES:
                 return '**Indicator**'
             return f"{self._pattern_types(indicator['pattern'])} / Custom Object"
+        return self._define_summary(stix_mapping)
+
+    def _define_summary(self, stix_mapping):
         types = []
         for stix_type, stix_object in stix_mapping.items():
             if stix_type == 'Indicator':
@@ -109,3 +138,12 @@ class DocumentationUpdater:
         for part in pattern[1:-1].split(' AND '):
             types.add(self._observable_type(part.split(':')[0]))
         return f"{' & '.join(types)} {'Objects' if len(types) > 1 else 'Object'} (pattern)"
+
+    def _write_mappings(self):
+        with open(self.mapping_path, 'wt', encoding='utf-8') as f:
+            f.write(json.dumps(self._order_mapping('_documentation'), indent=4))
+        self._write_summary_mapping()
+
+    def _write_summary_mapping(self):
+        with open(self.summary_path, 'wt', encoding='utf-8') as f:
+            f.write(json.dumps(self._order_mapping('_summary'), indent=4))

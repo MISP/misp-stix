@@ -6,6 +6,7 @@ from collections import defaultdict
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX20Parser, misp_collection_to_stix2_0, misp_to_stix2_0
 from .test_events import *
+from .update_documentation import DocumentationUpdater
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export
 
 
@@ -14,6 +15,13 @@ class TestSTIX20Export(TestSTIX2Export):
     __objects = defaultdict(lambda: defaultdict(dict))
     def setUp(self):
         self.parser = MISPtoSTIX20Parser()
+
+    @classmethod
+    def tearDownClass(self):
+        attributes_documentation = DocumentationUpdater('misp_attributes_to_stix20')
+        attributes_documentation.check_stix20_mapping(self.__attributes)
+        objects_documentation = DocumentationUpdater('misp_objects_to_stix20')
+        objects_documentation.check_stix20_mapping(self.__objects)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
@@ -27,12 +35,13 @@ class TestSTIX20Export(TestSTIX2Export):
         return bundle
 
     def _populate_attributes_documentation(self, attribute, **kwargs):
-        feature = attribute['type']
-        if 'MISP' not in self.__attributes[feature]:
-            self.__attributes[feature]['MISP'] = self._sanitize_documentation(attribute)
+        attribute_type = attribute['type']
+        if 'MISP' not in self.__attributes[attribute_type]:
+            self.__attributes[attribute_type]['MISP'] = self._sanitize_documentation(attribute)
         for object_type, stix_object in kwargs.items():
             documented = json.loads(stix_object.serialize())
-            self.__attributes[feature]['STIX'][object_type.capitalize()] = documented
+            feature = object_type.replace('_', ' ').title()
+            self.__attributes[attribute_type]['STIX'][feature] = documented
 
     def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
         if name is None:
@@ -798,10 +807,6 @@ class TestSTIX20Export(TestSTIX2Export):
     def test_event_with_github_username_observable_attribute(self):
         event = get_event_with_github_username_attribute()
         self._run_custom_attributes_tests(event)
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-1]
-        )
 
     def test_event_with_hash_composite_indicator_attributes(self):
         event = get_event_with_hash_composite_attributes()
