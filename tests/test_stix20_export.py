@@ -1867,7 +1867,7 @@ class TestSTIX20Export(TestSTIX2Export):
             misp_object = misp_objects,
             indicator = self.parser.stix_objects[-1],
             name = 'file with references to pe & pe-section(s)',
-            summary = 'File Object with a windows pebinary extension'
+            summary = 'File Object with a Windows PE binary extension'
         )
 
     def test_event_with_file_and_pe_observable_objects(self):
