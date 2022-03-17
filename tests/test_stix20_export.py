@@ -991,7 +991,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(dst_address.type, 'ipv4-addr')
         self.assertEqual(dst_address.value, dst_ip_value)
         for attribute, observed_data in zip(event['Event']['Attribute'], self.parser.stix_objects[-2:]):
-            self._populate_documentation(attribute=attribute, indicator=observed_data)
+            self._populate_documentation(attribute=attribute, observed_data=observed_data)
 
     def test_event_with_mac_address_indicator_attribute(self):
         event = get_event_with_mac_address_attribute()
@@ -1119,7 +1119,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(observable['values'][0].data, value.strip())
         self._populate_documentation(
             attribute = event['Event']['Attribute'][0],
-            obsevred_data = self.parser.stix_objects[-1]
+            observed_data = self.parser.stix_objects[-1]
         )
 
     def test_event_with_size_in_bytes_indicator_attribute(self):
@@ -1450,7 +1450,7 @@ class TestSTIX20Export(TestSTIX2Export):
             reddit.x_misp_account_avatar['data'],
             reddit_account['Attribute'][-1]['data'].replace('\\', '')
         )
-        for misp_object, observed_data in zip(misp_objects, self.parser.stix_objects[-4:]):
+        for misp_object, observed_data in zip(misp_objects, self.parser.stix_objects[-3:]):
             self._populate_documentation(misp_object=misp_object, observed_data=observed_data)
 
     def test_event_with_android_app_indicator_object(self):
