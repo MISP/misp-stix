@@ -14,7 +14,7 @@
     "facebook-account": "User Account Object",
     "file": "File Object (potential references to Artifact & Directory Objects)",
     "file with references to pe & pe-section": "File Object with a windows pebinary extension",
-    "file with references to pe & pe-section(s)": "File Object with a windows pebinary extension",
+    "file with references to pe & pe-section(s)": "File Object with a Windows PE binary extension",
     "geolocation": "**Location**",
     "github-user": "User Account Object",
     "gitlab-user": "User Account Object",
