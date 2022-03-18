@@ -243,17 +243,17 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | MISP Attribute type | STIX Object type / Observable Object type |
 | -- | -- |
 | AS | Autonomous System Object |
-| attachment | File & Artifact Objects |
+| attachment | Artifact & File Objects |
 | campaign-name | **Campaign** |
 | domain | Domain Name Object |
 | domain\|ip | Domain Name & IPv4/IPv6 Address Objects |
 | email | Email Address Object |
-| email-attachment | Email Message  & File Objects |
+| email-attachment | Email Message & File Objects |
 | email-body | Email Message Object |
-| email-dst | Email Message & Email Address Objects |
+| email-dst | Email Address & Email Message Objects |
 | email-header | Email Message Object |
 | email-reply-to | Email Message Object |
-| email-src | Email Message & Email Address Objects |
+| email-src | Email Address & Email Message Objects |
 | email-subject | Email Message Object |
 | email-x-mailer | Email Message Object |
 | filename | File Object |
@@ -261,26 +261,27 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | filename\|sha1 | File Object |
 | filename\|sha224 | File Object |
 | filename\|sha256 | File Object |
-| filename\|sha384 | File Object |
-| filename\|sha512 | File Object |
-| filename\|sha512/224 | File Object |
-| filename\|sha512/256 | File Object |
 | filename\|sha3-224 | File Object |
 | filename\|sha3-256 | File Object |
 | filename\|sha3-384 | File Object |
 | filename\|sha3-512 | File Object |
+| filename\|sha384 | File Object |
+| filename\|sha512 | File Object |
+| filename\|sha512/224 | File Object |
+| filename\|sha512/256 | File Object |
 | filename\|ssdeep | File Object |
 | filename\|tlsh | File Object |
+| github-username | User Account Object (pattern) / Custom Object |
 | hostname | Domain Name Object |
 | hostname\|port | Domain Name & Network Traffic Objects |
 | http-method | Network Traffic Object (pattern) / Custom Object |
-| ip-src | Network Traffic & IPv4/IPv6 Address Objects |
-| ip-dst | Network Traffic & IPv4/IPv6 Address Objects |
-| ip-src\|port | Network Traffic & IPv4/IPv6 Address Objects |
-| ip-dst\|port | Network Traffic & IPv4/IPv6 Address Objects |
+| ip-dst | IPv4/IPv6 Address & Network Traffic Objects |
+| ip-dst\|port | IPv4/IPv6 Address & Network Traffic Objects |
+| ip-src | IPv4/IPv6 Address & Network Traffic Objects |
+| ip-src\|port | IPv4/IPv6 Address & Network Traffic Objects |
 | link | URL Object |
 | mac-address | Mac Address Object |
-| malware-sample | File & Artifact Objects |
+| malware-sample | Artifact & File Objects |
 | md5 | File Object |
 | mutex | Mutex Object |
 | port | Network Traffic Object (pattern) / Custom Object |
@@ -289,20 +290,20 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | sha1 | File Object |
 | sha224 | File Object |
 | sha256 | File Object |
-| sha384 | File Object |
-| sha512 | File Object |
-| sha512/224 | File Object |
-| sha512/256 | File Object |
 | sha3-224 | File Object |
 | sha3-256 | File Object |
 | sha3-384 | File Object |
 | sha3-512 | File Object |
-| size-in-bytes | File Object (pattern) / Custom Object|
+| sha384 | File Object |
+| sha512 | File Object |
+| sha512/224 | File Object |
+| sha512/256 | File Object |
+| size-in-bytes | File Object (pattern) / Custom Object |
 | ssdeep | File Object |
 | tlsh | File Object |
 | uri | URL Object |
 | url | URL Object |
-| user-agent | Network Traffic Object (pattern) / Custom Object|
+| user-agent | Network Traffic Object (pattern) / Custom Object |
 | vulnerability | **Vulnerability** |
 | x509-fingerprint-md5 | X509 Certificate Object |
 | x509-fingerprint-sha1 | X509 Certificate Object |
@@ -318,23 +319,37 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 
 | MISP Object name | STIX Object type |
 | -- | -- |
+| android-app | Software Object |
 | asn | Autonomous System Object |
 | attack-pattern | **Attack Pattern** |
 | course-of-action | **Course of Action** |
+| cpe-asset | Software Object |
 | credential | User Account Object |
 | domain-ip | Domain Name & IPv4/IPv6 Address Objects |
-| email | Email Message & Email Address Objects |
+| email | Email Address & Email Message Objects |
+| employee | **Identity** |
 | facebook-account | User Account Object |
-| file | File Object |
-| file with references to pe & pe-section | File Object with Windows PE binary extension |
-| ip-port | Network Traffic & IPv4/IPv6 Address Objects |
+| file | File Object (potential references to Artifact & Directory Objects) |
+| file with references to pe & pe-section(s) | File Object with a Windows PE binary extension |
+| github-user | User Account Object |
+| gitlab-user | User Account Object |
+| image | Artifact & File Objects |
+| ip-port | IPv4/IPv6 Address & Network Traffic Objects |
+| legal-entity | **Identity** |
+| lnk | Artifact & Directory & File Objects |
 | mutex | Mutex Object |
 | network-connection | Network Traffic, IPv4/IPv6 Address & Domain Name Objects |
-| network-socket | Network Traffic with socket extension, IPv4/IPv6 Address & Domain Name Objects |
+| network-socket | Network Traffic with a socket extension, IPv4/IPv6 Address & Domain Name Objects |
+| news-agency | **Identity** |
+| organization | **Identity** |
+| parler-account | User Account Object |
 | pe | Windows PE binary extension within a File Object |
+| pe & pe-sections | Windows PE binary extension within a File Object |
 | pe-section | Sections fields in the Windows PE binary extension (always exported with the related pe object) |
-| process | Process Object |
+| process | Process Objects (potential reference to File Objects) |
+| reddit-account | User Account Object |
 | registry-key | Windows Registry Key Object |
+| telegram-account | User Account Object |
 | twitter-account | User Account Object |
 | url | URL Object |
 | user-account | User Account Object |
@@ -392,17 +407,18 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | MISP Attribute type | STIX Object type / Observable Object type |
 | -- | -- |
 | AS | Autonomous System Object |
-| attachment | File & Artifact Objects |
+| attachment | Artifact & File Objects |
 | campaign-name | **Campaign** |
 | domain | Domain Name Object |
 | domain\|ip | Domain Name & IPv4/IPv6 Address Objects |
 | email | Email Address Object |
-| email-attachment | Email Message  & File Objects |
+| email-attachment | Email Message & File Objects |
 | email-body | Email Message Object |
-| email-dst | Email Message & Email Address Objects |
+| email-dst | Email Address & Email Message Objects |
 | email-header | Email Message Object |
+| email-message-id | Email Message Object |
 | email-reply-to | Email Message Object |
-| email-src | Email Message & Email Address Objects |
+| email-src | Email Address & Email Message Objects |
 | email-subject | Email Message Object |
 | email-x-mailer | Email Message Object |
 | filename | File Object |
@@ -410,26 +426,27 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | filename\|sha1 | File Object |
 | filename\|sha224 | File Object |
 | filename\|sha256 | File Object |
-| filename\|sha384 | File Object |
-| filename\|sha512 | File Object |
-| filename\|sha512/224 | File Object |
-| filename\|sha512/256 | File Object |
 | filename\|sha3-224 | File Object |
 | filename\|sha3-256 | File Object |
 | filename\|sha3-384 | File Object |
 | filename\|sha3-512 | File Object |
+| filename\|sha384 | File Object |
+| filename\|sha512 | File Object |
+| filename\|sha512/224 | File Object |
+| filename\|sha512/256 | File Object |
 | filename\|ssdeep | File Object |
 | filename\|tlsh | File Object |
+| github-username | User Account Object |
 | hostname | Domain Name Object |
 | hostname\|port | Domain Name & Network Traffic Objects |
 | http-method | Network Traffic Object (pattern) / Custom Object |
-| ip-src | Network Traffic & IPv4/IPv6 Address Objects |
-| ip-dst | Network Traffic & IPv4/IPv6 Address Objects |
-| ip-src\|port | Network Traffic & IPv4/IPv6 Address Objects |
-| ip-dst\|port | Network Traffic & IPv4/IPv6 Address Objects |
+| ip-dst | IPv4/IPv6 Address & Network Traffic Objects |
+| ip-dst\|port | IPv4/IPv6 Address & Network Traffic Objects |
+| ip-src | Network Traffic Object |
+| ip-src\|port | Network Traffic Object |
 | link | URL Object |
 | mac-address | Mac Address Object |
-| malware-sample | File & Artifact Objects |
+| malware-sample | Artifact & File Objects |
 | md5 | File Object |
 | mutex | Mutex Object |
 | port | Network Traffic Object (pattern) / Custom Object |
@@ -438,24 +455,27 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | sha1 | File Object |
 | sha224 | File Object |
 | sha256 | File Object |
-| sha384 | File Object |
-| sha512 | File Object |
-| sha512/224 | File Object |
-| sha512/256 | File Object |
 | sha3-224 | File Object |
 | sha3-256 | File Object |
 | sha3-384 | File Object |
 | sha3-512 | File Object |
-| size-in-bytes | File Object (pattern) / Custom Object|
+| sha384 | File Object |
+| sha512 | File Object |
+| sha512/224 | File Object |
+| sha512/256 | File Object |
+| sigma | **Indicator** |
+| size-in-bytes | File Object (pattern) / Custom Object |
+| snort | **Indicator** |
 | ssdeep | File Object |
 | tlsh | File Object |
 | uri | URL Object |
 | url | URL Object |
-| user-agent | Network Traffic Object (pattern) / Custom Object|
+| user-agent | Network Traffic Object (pattern) / Custom Object |
 | vulnerability | **Vulnerability** |
 | x509-fingerprint-md5 | X509 Certificate Object |
 | x509-fingerprint-sha1 | X509 Certificate Object |
 | x509-fingerprint-sha256 | X509 Certificate Object |
+| yara | **Indicator** |
 
 ##### Detailed mapping
 
@@ -467,29 +487,49 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 
 | MISP Object name | STIX Object type |
 | -- | -- |
+| android-app | Software Object |
+| annotation | **Note** |
 | asn | Autonomous System Object |
 | attack-pattern | **Attack Pattern** |
 | course-of-action | **Course of Action** |
+| cpe-asset | Software Object |
 | credential | User Account Object |
 | domain-ip | Domain Name & IPv4/IPv6 Address Objects |
-| email | Email Message & Email Address Objects |
+| domain-ip with the perfect domain & ip matching | A tuple of IPv4/IPv6 Address & Network Objects for each associated domain & ip |
+| email | Email Address & Email Message & File Objects |
+| email with display names | Email Address & Email Message Objects |
+| employee | **Identity** |
 | facebook-account | User Account Object |
-| file | File Object |
-| file with references to pe & pe-section | File Object with windows pebinary extension |
-| geolocation | Location Object |
-| ip-port | Network Traffic & IPv4/IPv6 Address Objects |
+| file | File Object (potential references to Artifact & Directory Objects) |
+| file with references to pe & pe-section | File Object with a windows pebinary extension |
+| file with references to pe & pe-section(s) | File Object with a Windows PE binary extension |
+| geolocation | **Location** |
+| github-user | User Account Object |
+| gitlab-user | User Account Object |
+| image | Artifact & File Objects |
+| ip-port | IPv4/IPv6 Address & Network Traffic Objects |
+| legal-entity | **Identity** |
+| lnk | Artifact & Directory & File Objects |
 | mutex | Mutex Object |
 | network-connection | Network Traffic, IPv4/IPv6 Address & Domain Name Objects |
-| network-socket | Network Traffic with socket extension, IPv4/IPv6 Address & Domain Name Objects |
+| network-socket | Network Traffic with a socket extension, IPv4/IPv6 Address & Domain Name Objects |
+| news-agency | **Identity** |
+| organization | **Identity** |
+| parler-account | User Account Object |
 | pe | Windows PE binary extension within a File Object |
+| pe & pe-sections | Windows PE binary extension within a File Object |
 | pe-section | Sections fields in the Windows PE binary extension (always exported with the related pe object) |
-| process | Process Object |
+| process | Process Objects (potential reference to File Objects) |
+| reddit-account | User Account Object |
 | registry-key | Windows Registry Key Object |
+| suricata | **Indicator** |
+| telegram-account | User Account Object |
 | twitter-account | User Account Object |
 | url | URL Object |
 | user-account | User Account Object |
 | vulnerability | **Vulnerability** |
 | x509 | X509 Certificate Object |
+| yara | **Indicator** |
 
 ##### Detailed mapping
 

@@ -70,6 +70,29 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "autonomous-system",
+                  "number": 174
+              }
+          },
+          "labels": [
+              "misp:type=\"AS\"",
+              "misp:category=\"Network activity\""
+          ]
+      }
+      ```
 
 - attachment
   - MISP
@@ -108,6 +131,34 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
     - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "name": "attachment.test",
+                  "content_ref": "1"
+              },
+              "1": {
+                  "type": "artifact",
+                  "payload_bin": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK"
+              }
+          },
+          "labels": [
+              "misp:type=\"attachment\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
       ```json
       {
           "type": "observed-data",
@@ -224,6 +275,29 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "domain-name",
+                  "value": "circl.lu"
+              }
+          },
+          "labels": [
+              "misp:type=\"domain\"",
+              "misp:category=\"Network activity\""
+          ]
+      }
+      ```
 
 - domain|ip
   - MISP
@@ -292,6 +366,118 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "domain-name",
+                  "value": "circl.lu",
+                  "resolves_to_refs": [
+                      "1"
+                  ]
+              },
+              "1": {
+                  "type": "ipv4-addr",
+                  "value": "149.13.33.14"
+              }
+          },
+          "labels": [
+              "misp:type=\"domain|ip\"",
+              "misp:category=\"Network activity\""
+          ]
+      }
+      ```
+
+- email
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "email",
+        "category": "Payload delivery",
+        "value": "address@email.test",
+        "timestamp": "1603642920"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "pattern": "[email-addr:value = 'address@email.test']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"email\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "email-addr",
+                  "value": "address@email.test"
+              }
+          },
+          "labels": [
+              "misp:type=\"email\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "email-addr",
+                  "value": "address@email.test"
+              }
+          },
+          "labels": [
+              "misp:type=\"email\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
 
 - email-attachment
   - MISP
@@ -331,6 +517,39 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
     - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "email-message",
+                  "is_multipart": true,
+                  "body_multipart": [
+                      {
+                          "body_raw_ref": "1",
+                          "content_disposition": "attachment; filename='email_attachment.test'"
+                      }
+                  ]
+              },
+              "1": {
+                  "type": "file",
+                  "name": "email_attachment.test"
+              }
+          },
+          "labels": [
+              "misp:type=\"email-attachment\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
       ```json
       {
           "type": "observed-data",
@@ -423,6 +642,30 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "email-message",
+                  "is_multipart": false,
+                  "body": "Email body test"
+              }
+          },
+          "labels": [
+              "misp:type=\"email-body\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
 
 - email-dst
   - MISP
@@ -462,6 +705,36 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
     - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "email-message",
+                  "is_multipart": false,
+                  "to_refs": [
+                      "1"
+                  ]
+              },
+              "1": {
+                  "type": "email-addr",
+                  "value": "dst@email.test"
+              }
+          },
+          "labels": [
+              "misp:type=\"email-dst\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
       ```json
       {
           "type": "observed-data",
@@ -553,43 +826,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
-
-- email
-  - MISP
-    ```json
-    {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "type": "email",
-        "category": "Payload delivery",
-        "value": "address@email.test",
-        "timestamp": "1603642920"
-    }
-    ```
-  - STIX
-    - Indicator
-      ```json
-      {
-          "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[email-addr:value = 'address@email.test']",
-          "valid_from": "2020-10-25T16:22:00Z",
-          "kill_chain_phases": [
-              {
-                  "kill_chain_name": "misp-category",
-                  "phase_name": "Payload delivery"
-              }
-          ],
-          "labels": [
-              "misp:type=\"email\"",
-              "misp:category=\"Payload delivery\"",
-              "misp:to_ids=\"True\""
-          ]
-      }
-      ```
-    - Observed Data
+    - Observed_data
       ```json
       {
           "type": "observed-data",
@@ -602,12 +839,15 @@ For the rest of this documentation, we will then, in order to keep the content c
           "number_observed": 1,
           "objects": {
               "0": {
-                  "type": "email-addr",
-                  "value": "address@email.test"
+                  "type": "email-message",
+                  "is_multipart": false,
+                  "received_lines": [
+                      "from mail.example.com ([198.51.100.3]) by smtp.gmail.com"
+                  ]
               }
           },
           "labels": [
-              "misp:type=\"email\"",
+              "misp:type=\"email-header\"",
               "misp:category=\"Payload delivery\""
           ]
       }
@@ -664,9 +904,33 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "type": "email-message",
                   "is_multipart": false,
                   "additional_header_fields": {
-                      "Reply-To": [
-                          "reply-to@email.test"
-                      ]
+                      "Reply-To": "reply-to@email.test"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"email-reply-to\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "email-message",
+                  "is_multipart": false,
+                  "additional_header_fields": {
+                      "Reply-To": "reply-to@email.test"
                   }
               }
           },
@@ -715,6 +979,34 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
     - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "email-message",
+                  "is_multipart": false,
+                  "from_ref": "1"
+              },
+              "1": {
+                  "type": "email-addr",
+                  "value": "src@email.test"
+              }
+          },
+          "labels": [
+              "misp:type=\"email-src\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
       ```json
       {
           "type": "observed-data",
@@ -802,6 +1094,30 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "email-message",
+                  "is_multipart": false,
+                  "subject": "Test Subject"
+              }
+          },
+          "labels": [
+              "misp:type=\"email-subject\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
 
 - email-x-mailer
   - MISP
@@ -839,6 +1155,32 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
     - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--f09d8496-e2ba-4250-878a-bec9b85c7e96",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "email-message",
+                  "is_multipart": false,
+                  "additional_header_fields": {
+                      "X-Mailer": "Email X-Mailer test"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"email-x-mailer\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
       ```json
       {
           "type": "observed-data",
@@ -925,6 +1267,29 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "name": "test_file_name"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
 
 - filename|md5
   - MISP
@@ -933,7 +1298,7 @@ For the rest of this documentation, we will then, in order to keep the content c
         "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "type": "filename|md5",
         "category": "Payload delivery",
-        "value": "testfile.name|b2a5abfeef9e36964281a31e17b57c97",
+        "value": "filename1|b2a5abfeef9e36964281a31e17b57c97",
         "timestamp": "1603642920",
         "comment": "Filename|md5 test attribute"
     }
@@ -948,7 +1313,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "Filename|md5 test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+          "pattern": "[file:name = 'filename1' AND file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -980,7 +1345,33 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "hashes": {
                       "MD5": "b2a5abfeef9e36964281a31e17b57c97"
                   },
-                  "name": "testfile.name"
+                  "name": "filename1"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|md5\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "MD5": "b2a5abfeef9e36964281a31e17b57c97"
+                  },
+                  "name": "filename1"
               }
           },
           "labels": [
@@ -997,7 +1388,7 @@ For the rest of this documentation, we will then, in order to keep the content c
         "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
         "type": "filename|sha1",
         "category": "Payload delivery",
-        "value": "testfile.name|2920d5e6c579fce772e5506caf03af65579088bd",
+        "value": "filename2|2920d5e6c579fce772e5506caf03af65579088bd",
         "timestamp": "1603642920",
         "comment": "Filename|sha1 test attribute"
     }
@@ -1012,7 +1403,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "Filename|sha1 test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
+          "pattern": "[file:name = 'filename2' AND file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -1044,7 +1435,33 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "hashes": {
                       "SHA-1": "2920d5e6c579fce772e5506caf03af65579088bd"
                   },
-                  "name": "testfile.name"
+                  "name": "filename2"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|sha1\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA-1": "2920d5e6c579fce772e5506caf03af65579088bd"
+                  },
+                  "name": "filename2"
               }
           },
           "labels": [
@@ -1061,9 +1478,9 @@ For the rest of this documentation, we will then, in order to keep the content c
         "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
         "type": "filename|sha224",
         "category": "Payload delivery",
-        "value": "testfile.name|5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+        "value": "filename3|5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
         "timestamp": "1603642920",
-        "comment": "filename|sha224 test attribute"
+        "comment": "Filename|sha224 test attribute"
     }
     ```
   - STIX
@@ -1073,10 +1490,10 @@ For the rest of this documentation, we will then, in order to keep the content c
           "type": "indicator",
           "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2021-06-07T14:36:59.000Z",
-          "modified": "2021-06-07T14:36:59.000Z",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
           "description": "Filename|sha224 test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+          "pattern": "[file:name = 'filename3' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -1097,8 +1514,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "type": "observed-data",
           "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2021-06-07T14:36:59.000Z",
-          "modified": "2021-06-07T14:36:59.000Z",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
           "first_observed": "2020-10-25T16:22:00Z",
           "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
@@ -1108,7 +1525,33 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "hashes": {
                       "SHA-224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
                   },
-                  "name": "testfile.name"
+                  "name": "filename3"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|sha224\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA-224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
+                  },
+                  "name": "filename3"
               }
           },
           "labels": [
@@ -1182,6 +1625,288 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
 
+- filename|sha3-224
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "filename|sha3-224",
+        "category": "Payload delivery",
+        "value": "testfile.name|3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618",
+        "timestamp": "1603642920",
+        "comment": "Filename|sha3-224 test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "Filename|sha3-224 test attribute",
+          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA3224 = '3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"filename|sha3-224\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA3-224": "3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618"
+                  },
+                  "name": "testfile.name"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|sha3-224\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
+- filename|sha3-256
+  - MISP
+    ```json
+    {
+        "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "type": "filename|sha3-256",
+        "category": "Payload delivery",
+        "value": "filename5|39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
+        "timestamp": "1603642920",
+        "comment": "Filename|sha3-256 test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "Filename|sha3-256 test attribute",
+          "pattern": "[file:name = 'filename5' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"filename|sha3-256\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
+                  },
+                  "name": "filename5"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|sha3-256\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
+                  },
+                  "name": "filename5"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|sha3-256\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
+- filename|sha3-384
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "filename|sha3-384",
+        "category": "Payload delivery",
+        "value": "testfile.name|93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568",
+        "timestamp": "1603642920",
+        "comment": "Filename|sha3-384 test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "Filename|sha3-384 test attribute",
+          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"filename|sha3-384\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA3-384": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568"
+                  },
+                  "name": "testfile.name"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|sha3-384\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
+- filename|sha3-512
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "filename|sha3-512",
+        "category": "Payload delivery",
+        "value": "testfile.name|fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
+        "timestamp": "1603642920",
+        "comment": "Filename|sha3-512 test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "Filename|sha3-512 test attribute",
+          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"filename|sha3-512\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA3-512": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748"
+                  },
+                  "name": "testfile.name"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|sha3-512\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
 - filename|sha384
   - MISP
     ```json
@@ -1189,9 +1914,9 @@ For the rest of this documentation, we will then, in order to keep the content c
         "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
         "type": "filename|sha384",
         "category": "Payload delivery",
-        "value": "testfile.name|302d83d92882003081448357ba1ebbfc5528f7c164b615e7a5c532eb6209f35eb05c442460222236a13732a28aa0f4d3",
+        "value": "filename6|ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce",
         "timestamp": "1603642920",
-        "comment": "filename|sha384 test attribute"
+        "comment": "Filename|sha384 test attribute"
     }
     ```
   - STIX
@@ -1201,10 +1926,10 @@ For the rest of this documentation, we will then, in order to keep the content c
           "type": "indicator",
           "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2021-06-07T14:36:59.000Z",
-          "modified": "2021-06-07T14:36:59.000Z",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
           "description": "Filename|sha384 test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+          "pattern": "[file:name = 'filename6' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -1225,8 +1950,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "type": "observed-data",
           "id": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2021-06-07T14:36:59.000Z",
-          "modified": "2021-06-07T14:36:59.000Z",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
           "first_observed": "2020-10-25T16:22:00Z",
           "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
@@ -1236,7 +1961,33 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "hashes": {
                       "SHA-384": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce"
                   },
-                  "name": "testfile.name"
+                  "name": "filename6"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|sha384\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA-384": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce"
+                  },
+                  "name": "filename6"
               }
           },
           "labels": [
@@ -1378,10 +2129,10 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
         "type": "filename|sha512/256",
         "category": "Payload delivery",
-        "value": "testfile.name|82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
+        "value": "filename4|82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
         "timestamp": "1603642920",
         "comment": "Filename|sha512/256 test attribute"
     }
@@ -1391,12 +2142,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "Filename|sha512/256 test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+          "pattern": "[file:name = 'filename4' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -1415,7 +2166,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -1428,7 +2179,7 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "hashes": {
                       "SHA-256": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93"
                   },
-                  "name": "testfile.name"
+                  "name": "filename4"
               }
           },
           "labels": [
@@ -1437,45 +2188,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
-
-- filename|sha3-224
-  - MISP
-    ```json
-    {
-        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-        "type": "filename|sha3-224",
-        "category": "Payload delivery",
-        "value": "testfile.name|3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618",
-        "timestamp": "1603642920",
-        "comment": "Filename|sha3-224 test attribute"
-    }
-    ```
-  - STIX
-    - Indicator
-      ```json
-      {
-          "type": "indicator",
-          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "description": "Filename|sha3-224 test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA3224 = '3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618']",
-          "valid_from": "2020-10-25T16:22:00Z",
-          "kill_chain_phases": [
-              {
-                  "kill_chain_name": "misp-category",
-                  "phase_name": "Payload delivery"
-              }
-          ],
-          "labels": [
-              "misp:type=\"filename|sha3-224\"",
-              "misp:category=\"Payload delivery\"",
-              "misp:to_ids=\"True\""
-          ]
-      }
-      ```
-    - Observed Data
+    - Observed_data
       ```json
       {
           "type": "observed-data",
@@ -1490,205 +2203,13 @@ For the rest of this documentation, we will then, in order to keep the content c
               "0": {
                   "type": "file",
                   "hashes": {
-                      "SHA3-224": "3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618"
+                      "SHA-256": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93"
                   },
-                  "name": "testfile.name"
+                  "name": "filename4"
               }
           },
           "labels": [
-              "misp:type=\"filename|sha3-224\"",
-              "misp:category=\"Payload delivery\""
-          ]
-      }
-      ```
-
-- filename|sha3-256
-  - MISP
-    ```json
-    {
-        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-        "type": "filename|sha3-256",
-        "category": "Payload delivery",
-        "value": "testfile.name|39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
-        "timestamp": "1603642920",
-        "comment": "Filename|sha3-256 test attribute"
-    }
-    ```
-  - STIX
-    - Indicator
-      ```json
-      {
-          "type": "indicator",
-          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "description": "Filename|sha3-256 test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
-          "valid_from": "2020-10-25T16:22:00Z",
-          "kill_chain_phases": [
-              {
-                  "kill_chain_name": "misp-category",
-                  "phase_name": "Payload delivery"
-              }
-          ],
-          "labels": [
-              "misp:type=\"filename|sha3-256\"",
-              "misp:category=\"Payload delivery\"",
-              "misp:to_ids=\"True\""
-          ]
-      }
-      ```
-    - Observed Data
-      ```json
-      {
-          "type": "observed-data",
-          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "first_observed": "2020-10-25T16:22:00Z",
-          "last_observed": "2020-10-25T16:22:00Z",
-          "number_observed": 1,
-          "objects": {
-              "0": {
-                  "type": "file",
-                  "hashes": {
-                      "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
-                  },
-                  "name": "testfile.name"
-              }
-          },
-          "labels": [
-              "misp:type=\"filename|sha3-256\"",
-              "misp:category=\"Payload delivery\""
-          ]
-      }
-      ```
-
-- filename|sha3-384
-  - MISP
-    ```json
-    {
-        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-        "type": "filename|sha3-384",
-        "category": "Payload delivery",
-        "value": "testfile.name|93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568",
-        "timestamp": "1603642920",
-        "comment": "Filename|sha3-384 test attribute"
-    }
-    ```
-  - STIX
-    - Indicator
-      ```json
-      {
-          "type": "indicator",
-          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "description": "Filename|sha3-384 test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
-          "valid_from": "2020-10-25T16:22:00Z",
-          "kill_chain_phases": [
-              {
-                  "kill_chain_name": "misp-category",
-                  "phase_name": "Payload delivery"
-              }
-          ],
-          "labels": [
-              "misp:type=\"filename|sha3-384\"",
-              "misp:category=\"Payload delivery\"",
-              "misp:to_ids=\"True\""
-          ]
-      }
-      ```
-    - Observed Data
-      ```json
-      {
-          "type": "observed-data",
-          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "first_observed": "2020-10-25T16:22:00Z",
-          "last_observed": "2020-10-25T16:22:00Z",
-          "number_observed": 1,
-          "objects": {
-              "0": {
-                  "type": "file",
-                  "hashes": {
-                      "SHA3-384": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568"
-                  },
-                  "name": "testfile.name"
-              }
-          },
-          "labels": [
-              "misp:type=\"filename|sha3-384\"",
-              "misp:category=\"Payload delivery\""
-          ]
-      }
-      ```
-
-- filename|sha3-512
-  - MISP
-    ```json
-    {
-        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-        "type": "filename|sha3-512",
-        "category": "Payload delivery",
-        "value": "testfile.name|fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
-        "timestamp": "1603642920",
-        "comment": "Filename|sha3-512 test attribute"
-    }
-    ```
-  - STIX
-    - Indicator
-      ```json
-      {
-          "type": "indicator",
-          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "description": "Filename|sha3-512 test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
-          "valid_from": "2020-10-25T16:22:00Z",
-          "kill_chain_phases": [
-              {
-                  "kill_chain_name": "misp-category",
-                  "phase_name": "Payload delivery"
-              }
-          ],
-          "labels": [
-              "misp:type=\"filename|sha3-512\"",
-              "misp:category=\"Payload delivery\"",
-              "misp:to_ids=\"True\""
-          ]
-      }
-      ```
-    - Observed Data
-      ```json
-      {
-          "type": "observed-data",
-          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "first_observed": "2020-10-25T16:22:00Z",
-          "last_observed": "2020-10-25T16:22:00Z",
-          "number_observed": 1,
-          "objects": {
-              "0": {
-                  "type": "file",
-                  "hashes": {
-                      "SHA3-512": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748"
-                  },
-                  "name": "testfile.name"
-              }
-          },
-          "labels": [
-              "misp:type=\"filename|sha3-512\"",
+              "misp:type=\"filename|sha512/256\"",
               "misp:category=\"Payload delivery\""
           ]
       }
@@ -1701,9 +2222,9 @@ For the rest of this documentation, we will then, in order to keep the content c
         "uuid": "2007ec09-8137-4a71-a3ce-6ef967bebacf",
         "type": "filename|ssdeep",
         "category": "Payload delivery",
-        "value": "testfile.name|3072:WsyjTzEvLFOL8AqCiueLt1VFu9+zcSywy0mcj90nSJ5NatCmtWwNQLK:W/zEvLFOLdq9uebdSwHN9n5wtkwNwK",
+        "value": "filename7|96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi",
         "timestamp": "1603642920",
-        "comment": "filename|ssdeep test attribute"
+        "comment": "Filename|ssdeep test attribute"
     }
     ```
   - STIX
@@ -1713,10 +2234,10 @@ For the rest of this documentation, we will then, in order to keep the content c
           "type": "indicator",
           "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2021-06-07T14:36:59.000Z",
-          "modified": "2021-06-07T14:36:59.000Z",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
           "description": "Filename|ssdeep test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
+          "pattern": "[file:name = 'filename7' AND file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -1737,8 +2258,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "type": "observed-data",
           "id": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2021-06-07T14:36:59.000Z",
-          "modified": "2021-06-07T14:36:59.000Z",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
           "first_observed": "2020-10-25T16:22:00Z",
           "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
@@ -1748,7 +2269,33 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "hashes": {
                       "ssdeep": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi"
                   },
-                  "name": "testfile.name"
+                  "name": "filename7"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|ssdeep\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "ssdeep": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi"
+                  },
+                  "name": "filename7"
               }
           },
           "labels": [
@@ -1765,9 +2312,9 @@ For the rest of this documentation, we will then, in order to keep the content c
         "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
         "type": "filename|tlsh",
         "category": "Payload delivery",
-        "value": "testfile.name|5b73df03d9a5fb42c11952fc3d570de6aa5f2358618897eb20e18e2fad611b34ecf14d",
+        "value": "filename8|c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
         "timestamp": "1603642920",
-        "comment": "filename|tlsh test attribute"
+        "comment": "Filename|tlsh test attribute"
     }
     ```
   - STIX
@@ -1777,10 +2324,10 @@ For the rest of this documentation, we will then, in order to keep the content c
           "type": "indicator",
           "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2021-06-07T14:36:59.000Z",
-          "modified": "2021-06-07T14:36:59.000Z",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
           "description": "Filename|tlsh test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
+          "pattern": "[file:name = 'filename8' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -1801,8 +2348,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "type": "observed-data",
           "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2021-06-07T14:36:59.000Z",
-          "modified": "2021-06-07T14:36:59.000Z",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
           "first_observed": "2020-10-25T16:22:00Z",
           "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
@@ -1812,13 +2359,95 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "hashes": {
                       "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
                   },
-                  "name": "testfile.name"
+                  "name": "filename8"
               }
           },
           "labels": [
               "misp:type=\"filename|tlsh\"",
               "misp:category=\"Payload delivery\""
           ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
+                  },
+                  "name": "filename8"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|tlsh\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
+- github-username
+  - MISP
+    ```json
+    {
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "github-username",
+        "category": "Social network",
+        "value": "chrisr3d",
+        "timestamp": "1603642920",
+        "comment": "Github username test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "Github username test attribute",
+          "pattern": "[user-account:account_type = 'github' AND user-account:account_login = 'chrisr3d']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Social network"
+              }
+          ],
+          "labels": [
+              "misp:type=\"github-username\"",
+              "misp:category=\"Social network\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "x-misp-attribute",
+          "id": "x-misp-attribute--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "labels": [
+              "misp:type=\"github-username\"",
+              "misp:category=\"Social network\""
+          ],
+          "x_misp_category": "Social network",
+          "x_misp_comment": "Github username test attribute",
+          "x_misp_type": "github-username",
+          "x_misp_value": "chrisr3d"
       }
       ```
 
@@ -1860,6 +2489,29 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
     - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "domain-name",
+                  "value": "circl.lu"
+              }
+          },
+          "labels": [
+              "misp:type=\"hostname\"",
+              "misp:category=\"Network activity\""
+          ]
+      }
+      ```
+    - Observed_data
       ```json
       {
           "type": "observed-data",
@@ -1951,6 +2603,37 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "domain-name",
+                  "value": "circl.lu"
+              },
+              "1": {
+                  "type": "network-traffic",
+                  "dst_ref": "0",
+                  "dst_port": 8443,
+                  "protocols": [
+                      "tcp"
+                  ]
+              }
+          },
+          "labels": [
+              "misp:type=\"hostname|port\"",
+              "misp:category=\"Network activity\""
+          ]
+      }
+      ```
 
 - http-method
   - MISP
@@ -1960,8 +2643,7 @@ For the rest of this documentation, we will then, in order to keep the content c
         "type": "http-method",
         "category": "Network activity",
         "value": "POST",
-        "timestamp": "1603642920",
-        "to_ids": true
+        "timestamp": "1603642920"
     }
     ```
   - STIX
@@ -1985,6 +2667,204 @@ For the rest of this documentation, we will then, in order to keep the content c
               "misp:type=\"http-method\"",
               "misp:category=\"Network activity\"",
               "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+
+- ip-dst
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "ip-dst",
+        "category": "Network activity",
+        "value": "5.6.7.8",
+        "timestamp": "1603642920",
+        "comment": "Destination IP test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "Destination IP test attribute",
+          "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Network activity"
+              }
+          ],
+          "labels": [
+              "misp:type=\"ip-dst\"",
+              "misp:category=\"Network activity\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "network-traffic",
+                  "dst_ref": "1",
+                  "protocols": [
+                      "tcp"
+                  ]
+              },
+              "1": {
+                  "type": "ipv4-addr",
+                  "value": "5.6.7.8"
+              }
+          },
+          "labels": [
+              "misp:type=\"ip-dst\"",
+              "misp:category=\"Network activity\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "network-traffic",
+                  "dst_ref": "1",
+                  "protocols": [
+                      "tcp"
+                  ]
+              },
+              "1": {
+                  "type": "ipv4-addr",
+                  "value": "5.6.7.8"
+              }
+          },
+          "labels": [
+              "misp:type=\"ip-dst\"",
+              "misp:category=\"Network activity\""
+          ]
+      }
+      ```
+
+- ip-dst|port
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "ip-dst|port",
+        "category": "Network activity",
+        "value": "5.6.7.8|5678",
+        "timestamp": "1603642920",
+        "comment": "Destination IP | Port test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "Destination IP | Port test attribute",
+          "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = '5678']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Network activity"
+              }
+          ],
+          "labels": [
+              "misp:type=\"ip-dst|port\"",
+              "misp:category=\"Network activity\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "network-traffic",
+                  "dst_ref": "1",
+                  "dst_port": 5678,
+                  "protocols": [
+                      "tcp"
+                  ]
+              },
+              "1": {
+                  "type": "ipv4-addr",
+                  "value": "5.6.7.8"
+              }
+          },
+          "labels": [
+              "misp:type=\"ip-dst|port\"",
+              "misp:category=\"Network activity\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "network-traffic",
+                  "dst_ref": "1",
+                  "dst_port": 5678,
+                  "protocols": [
+                      "tcp"
+                  ]
+              },
+              "1": {
+                  "type": "ipv4-addr",
+                  "value": "5.6.7.8"
+              }
+          },
+          "labels": [
+              "misp:type=\"ip-dst|port\"",
+              "misp:category=\"Network activity\""
           ]
       }
       ```
@@ -2056,49 +2936,11 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
-
-- ip-dst
-  - MISP
-    ```json
-    {
-        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
-        "type": "ip-dst",
-        "category": "Network activity",
-        "value": "5.6.7.8",
-        "timestamp": "1603642920",
-        "comment": "Destination IP test attribute"
-    }
-    ```
-  - STIX
-    - Indicator
-      ```json
-      {
-          "type": "indicator",
-          "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "description": "Destination IP test attribute",
-          "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8']",
-          "valid_from": "2020-10-25T16:22:00Z",
-          "kill_chain_phases": [
-              {
-                  "kill_chain_name": "misp-category",
-                  "phase_name": "Network activity"
-              }
-          ],
-          "labels": [
-              "misp:type=\"ip-dst\"",
-              "misp:category=\"Network activity\"",
-              "misp:to_ids=\"True\""
-          ]
-      }
-      ```
-    - Observed Data
+    - Observed_data
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -2108,18 +2950,18 @@ For the rest of this documentation, we will then, in order to keep the content c
           "objects": {
               "0": {
                   "type": "network-traffic",
-                  "dst_ref": "1",
+                  "src_ref": "1",
                   "protocols": [
                       "tcp"
                   ]
               },
               "1": {
                   "type": "ipv4-addr",
-                  "value": "5.6.7.8"
+                  "value": "1.2.3.4"
               }
           },
           "labels": [
-              "misp:type=\"ip-dst\"",
+              "misp:type=\"ip-src\"",
               "misp:category=\"Network activity\""
           ]
       }
@@ -2193,49 +3035,11 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
-
-- ip-dst|port
-  - MISP
-    ```json
-    {
-        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
-        "type": "ip-dst|port",
-        "category": "Network activity",
-        "value": "5.6.7.8|5678",
-        "timestamp": "1603642920",
-        "comment": "Destination IP | Port test attribute"
-    }
-    ```
-  - STIX
-    - Indicator
-      ```json
-      {
-          "type": "indicator",
-          "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "description": "Destination IP | Port test attribute",
-          "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = '5678']",
-          "valid_from": "2020-10-25T16:22:00Z",
-          "kill_chain_phases": [
-              {
-                  "kill_chain_name": "misp-category",
-                  "phase_name": "Network activity"
-              }
-          ],
-          "labels": [
-              "misp:type=\"ip-dst|port\"",
-              "misp:category=\"Network activity\"",
-              "misp:to_ids=\"True\""
-          ]
-      }
-      ```
-    - Observed Data
+    - Observed_data
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -2245,19 +3049,19 @@ For the rest of this documentation, we will then, in order to keep the content c
           "objects": {
               "0": {
                   "type": "network-traffic",
-                  "dst_ref": "1",
-                  "dst_port": 5678,
+                  "src_ref": "1",
+                  "src_port": 1234,
                   "protocols": [
                       "tcp"
                   ]
               },
               "1": {
                   "type": "ipv4-addr",
-                  "value": "5.6.7.8"
+                  "value": "1.2.3.4"
               }
           },
           "labels": [
-              "misp:type=\"ip-dst|port\"",
+              "misp:type=\"ip-src|port\"",
               "misp:category=\"Network activity\""
           ]
       }
@@ -2373,7 +3177,30 @@ For the rest of this documentation, we will then, in order to keep the content c
           "objects": {
               "0": {
                   "type": "mac-addr",
-                  "value": "12:34:56:78:90:AB"
+                  "value": "12:34:56:78:90:ab"
+              }
+          },
+          "labels": [
+              "misp:type=\"mac-address\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "mac-addr",
+                  "value": "12:34:56:78:90:ab"
               }
           },
           "labels": [
@@ -2391,7 +3218,7 @@ For the rest of this documentation, we will then, in order to keep the content c
         "type": "malware-sample",
         "category": "Payload delivery",
         "value": "oui|8764605c6f388c89096b534d33565802",
-        "data": "UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==",
+        "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
         "timestamp": "1603642920",
         "comment": "Malware Sample test attribute"
     }
@@ -2406,7 +3233,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "Malware Sample test attribute",
-          "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==']",
+          "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.mime_type = 'application/zip']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -2443,7 +3270,40 @@ For the rest of this documentation, we will then, in order to keep the content c
               },
               "1": {
                   "type": "artifact",
-                  "payload_bin": "UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA=="
+                  "mime_type": "application/zip",
+                  "payload_bin": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA=="
+              }
+          },
+          "labels": [
+              "misp:type=\"malware-sample\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "MD5": "8764605c6f388c89096b534d33565802"
+                  },
+                  "name": "oui",
+                  "content_ref": "1"
+              },
+              "1": {
+                  "type": "artifact",
+                  "mime_type": "application/zip",
+                  "payload_bin": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA=="
               }
           },
           "labels": [
@@ -2491,6 +3351,31 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
     - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "MD5": "b2a5abfeef9e36964281a31e17b57c97"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"md5\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
       ```json
       {
           "type": "observed-data",
@@ -2576,6 +3461,29 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "mutex",
+                  "name": "MutexTest"
+              }
+          },
+          "labels": [
+              "misp:type=\"mutex\"",
+              "misp:category=\"Artifacts dropped\""
+          ]
+      }
+      ```
 
 - port
   - MISP
@@ -2585,8 +3493,7 @@ For the rest of this documentation, we will then, in order to keep the content c
         "type": "port",
         "category": "Network activity",
         "value": "8443",
-        "timestamp": "1603642920",
-        "to_ids": true
+        "timestamp": "1603642920"
     }
     ```
   - STIX
@@ -2674,6 +3581,29 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "windows-registry-key",
+                  "key": "HKLM\\Software\\mthjk"
+              }
+          },
+          "labels": [
+              "misp:type=\"regkey\"",
+              "misp:category=\"Persistence mechanism\""
+          ]
+      }
+      ```
 
 - regkey|value
   - MISP
@@ -2682,7 +3612,7 @@ For the rest of this documentation, we will then, in order to keep the content c
         "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "type": "regkey|value",
         "category": "Persistence mechanism",
-        "value": "HKLM\\Software\\mthjk|1234567890",
+        "value": "HKLM\\Software\\mthjk|%DATA%\\1234567890",
         "timestamp": "1603642920",
         "comment": "Regkey | value test attribute"
     }
@@ -2697,7 +3627,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "Regkey | value test attribute",
-          "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk' AND windows-registry-key:values.data = '1234567890']",
+          "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk' AND windows-registry-key:values.data = '\\\\%DATA\\\\%\\\\1234567890']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -2730,7 +3660,65 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "values": [
                       {
                           "name": "",
-                          "data": "1234567890"
+                          "data": "%DATA%\\1234567890"
+                      }
+                  ]
+              }
+          },
+          "labels": [
+              "misp:type=\"regkey|value\"",
+              "misp:category=\"Persistence mechanism\""
+          ]
+      }
+      ```
+    - Obsevred_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "windows-registry-key",
+                  "key": "HKLM\\Software\\mthjk",
+                  "values": [
+                      {
+                          "name": "",
+                          "data": "%DATA%\\1234567890"
+                      }
+                  ]
+              }
+          },
+          "labels": [
+              "misp:type=\"regkey|value\"",
+              "misp:category=\"Persistence mechanism\""
+          ]
+      }
+      ```
+    - Obsevred Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "windows-registry-key",
+                  "key": "HKLM\\Software\\mthjk",
+                  "values": [
+                      {
+                          "name": "",
+                          "data": "%DATA%\\1234567890"
                       }
                   ]
               }
@@ -2804,6 +3792,31 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA-1": "2920d5e6c579fce772e5506caf03af65579088bd"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"sha1\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
 
 - sha224
   - MISP
@@ -2848,8 +3861,33 @@ For the rest of this documentation, we will then, in order to keep the content c
           "type": "observed-data",
           "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2021-06-07T13:25:36.000Z",
-          "modified": "2021-06-07T13:25:36.000Z",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA-224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"sha224\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
           "first_observed": "2020-10-25T16:22:00Z",
           "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
@@ -2931,6 +3969,283 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
 
+- sha3-224
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "sha3-224",
+        "category": "Payload delivery",
+        "value": "3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618",
+        "timestamp": "1603642920",
+        "comment": "SHA3-224 test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "SHA3-224 test attribute",
+          "pattern": "[file:hashes.SHA3224 = '3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"sha3-224\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA3-224": "3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"sha3-224\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
+- sha3-256
+  - MISP
+    ```json
+    {
+        "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "type": "sha3-256",
+        "category": "Payload delivery",
+        "value": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
+        "timestamp": "1603642920",
+        "comment": "SHA3-256 test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "SHA3-256 test attribute",
+          "pattern": "[file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"sha3-256\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"sha3-256\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"sha3-256\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
+- sha3-384
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "sha3-384",
+        "category": "Payload delivery",
+        "value": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568",
+        "timestamp": "1603642920",
+        "comment": "SHA3-384 test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "SHA3-384 test attribute",
+          "pattern": "[file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"sha3-384\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA3-384": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"sha3-384\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
+- sha3-512
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "sha3-512",
+        "category": "Payload delivery",
+        "value": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
+        "timestamp": "1603642920",
+        "comment": "SHA3-512 test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "SHA3-512 test attribute",
+          "pattern": "[file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"sha3-512\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA3-512": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"sha3-512\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
 - sha384
   - MISP
     ```json
@@ -2938,7 +4253,7 @@ For the rest of this documentation, we will then, in order to keep the content c
         "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
         "type": "sha384",
         "category": "Payload delivery",
-        "value": "302d83d92882003081448357ba1ebbfc5528f7c164b615e7a5c532eb6209f35eb05c442460222236a13732a28aa0f4d3",
+        "value": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce",
         "timestamp": "1603642920",
         "comment": "SHA384 test attribute"
     }
@@ -2974,8 +4289,33 @@ For the rest of this documentation, we will then, in order to keep the content c
           "type": "observed-data",
           "id": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2021-06-07T13:25:36.000Z",
-          "modified": "2021-06-07T13:25:36.000Z",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA-384": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"sha384\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
           "first_observed": "2020-10-25T16:22:00Z",
           "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
@@ -3124,7 +4464,7 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
         "type": "sha512/256",
         "category": "Payload delivery",
         "value": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
@@ -3137,7 +4477,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -3161,7 +4501,32 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "SHA-256": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"sha512/256\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -3183,258 +4548,6 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
 
-- sha3-224
-  - MISP
-    ```json
-    {
-        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-        "type": "sha3-224",
-        "category": "Payload delivery",
-        "value": "3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618",
-        "timestamp": "1603642920",
-        "comment": "SHA3-224 test attribute"
-    }
-    ```
-  - STIX
-    - Indicator
-      ```json
-      {
-          "type": "indicator",
-          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "description": "SHA3-224 test attribute",
-          "pattern": "[file:hashes.SHA3224 = '3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618']",
-          "valid_from": "2020-10-25T16:22:00Z",
-          "kill_chain_phases": [
-              {
-                  "kill_chain_name": "misp-category",
-                  "phase_name": "Payload delivery"
-              }
-          ],
-          "labels": [
-              "misp:type=\"sha3-224\"",
-              "misp:category=\"Payload delivery\"",
-              "misp:to_ids=\"True\""
-          ]
-      }
-      ```
-    - Observed Data
-      ```json
-      {
-          "type": "observed-data",
-          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "first_observed": "2020-10-25T16:22:00Z",
-          "last_observed": "2020-10-25T16:22:00Z",
-          "number_observed": 1,
-          "objects": {
-              "0": {
-                  "type": "file",
-                  "hashes": {
-                      "SHA3-224": "3bd6507ef58d2fecb14d39bfffbee5c71dcf7930191cc2df2e507618"
-                  }
-              }
-          },
-          "labels": [
-              "misp:type=\"sha3-224\"",
-              "misp:category=\"Payload delivery\""
-          ]
-      }
-      ```
-
-- sha3-256
-  - MISP
-    ```json
-    {
-        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-        "type": "sha3-256",
-        "category": "Payload delivery",
-        "value": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
-        "timestamp": "1603642920",
-        "comment": "SHA3-256 test attribute"
-    }
-    ```
-  - STIX
-    - Indicator
-      ```json
-      {
-          "type": "indicator",
-          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "description": "SHA3-256 test attribute",
-          "pattern": "[file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
-          "valid_from": "2020-10-25T16:22:00Z",
-          "kill_chain_phases": [
-              {
-                  "kill_chain_name": "misp-category",
-                  "phase_name": "Payload delivery"
-              }
-          ],
-          "labels": [
-              "misp:type=\"sha3-256\"",
-              "misp:category=\"Payload delivery\"",
-              "misp:to_ids=\"True\""
-          ]
-      }
-      ```
-    - Observed Data
-      ```json
-      {
-          "type": "observed-data",
-          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "first_observed": "2020-10-25T16:22:00Z",
-          "last_observed": "2020-10-25T16:22:00Z",
-          "number_observed": 1,
-          "objects": {
-              "0": {
-                  "type": "file",
-                  "hashes": {
-                      "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
-                  }
-              }
-          },
-          "labels": [
-              "misp:type=\"sha3-256\"",
-              "misp:category=\"Payload delivery\""
-          ]
-      }
-      ```
-
-- sha3-384
-  - MISP
-    ```json
-    {
-        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-        "type": "sha3-384",
-        "category": "Payload delivery",
-        "value": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568",
-        "timestamp": "1603642920",
-        "comment": "SHA3-384 test attribute"
-    }
-    ```
-  - STIX
-    - Indicator
-      ```json
-      {
-          "type": "indicator",
-          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "description": "SHA3-384 test attribute",
-          "pattern": "[file:hashes.SHA3384 = '93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568']",
-          "valid_from": "2020-10-25T16:22:00Z",
-          "kill_chain_phases": [
-              {
-                  "kill_chain_name": "misp-category",
-                  "phase_name": "Payload delivery"
-              }
-          ],
-          "labels": [
-              "misp:type=\"sha3-384\"",
-              "misp:category=\"Payload delivery\"",
-              "misp:to_ids=\"True\""
-          ]
-      }
-      ```
-    - Observed Data
-      ```json
-      {
-          "type": "observed-data",
-          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "first_observed": "2020-10-25T16:22:00Z",
-          "last_observed": "2020-10-25T16:22:00Z",
-          "number_observed": 1,
-          "objects": {
-              "0": {
-                  "type": "file",
-                  "hashes": {
-                      "SHA3-384": "93bc97650d11bd9814f6658989605751f3279da1cffe4c7e3fafc99ce5a7bee9884daa8b70a6f0010132ee9585ead568"
-                  }
-              }
-          },
-          "labels": [
-              "misp:type=\"sha3-384\"",
-              "misp:category=\"Payload delivery\""
-          ]
-      }
-      ```
-
-- sha3-512
-  - MISP
-    ```json
-    {
-        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-        "type": "sha3-512",
-        "category": "Payload delivery",
-        "value": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748",
-        "timestamp": "1603642920",
-        "comment": "SHA3-512 test attribute"
-    }
-    ```
-  - STIX
-    - Indicator
-      ```json
-      {
-          "type": "indicator",
-          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "description": "SHA3-512 test attribute",
-          "pattern": "[file:hashes.SHA3512 = 'fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748']",
-          "valid_from": "2020-10-25T16:22:00Z",
-          "kill_chain_phases": [
-              {
-                  "kill_chain_name": "misp-category",
-                  "phase_name": "Payload delivery"
-              }
-          ],
-          "labels": [
-              "misp:type=\"sha3-512\"",
-              "misp:category=\"Payload delivery\"",
-              "misp:to_ids=\"True\""
-          ]
-      }
-      ```
-    - Observed Data
-      ```json
-      {
-          "type": "observed-data",
-          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2020-10-25T16:22:00.000Z",
-          "modified": "2020-10-25T16:22:00.000Z",
-          "first_observed": "2020-10-25T16:22:00Z",
-          "last_observed": "2020-10-25T16:22:00Z",
-          "number_observed": 1,
-          "objects": {
-              "0": {
-                  "type": "file",
-                  "hashes": {
-                      "SHA3-512": "fdd67b8bd14e66e4b4fd9b67cff26e8e8d254569e5977c41a1bf11a33ddd758681d8f0a891be4c6c728509e2cbf20ea272a443b2a494fe52e85a3f45954db748"
-                  }
-              }
-          },
-          "labels": [
-              "misp:type=\"sha3-512\"",
-              "misp:category=\"Payload delivery\""
-          ]
-      }
-      ```
-
 - size-in-bytes
   - MISP
     ```json
@@ -3443,8 +4556,7 @@ For the rest of this documentation, we will then, in order to keep the content c
         "type": "size-in-bytes",
         "value": "1234",
         "category": "Other",
-        "timestamp": "1603642920",
-        "to_ids": true
+        "timestamp": "1603642920"
     }
     ```
   - STIX
@@ -3479,7 +4591,7 @@ For the rest of this documentation, we will then, in order to keep the content c
         "uuid": "2007ec09-8137-4a71-a3ce-6ef967bebacf",
         "type": "ssdeep",
         "category": "Payload delivery",
-        "value": "3072:WsyjTzEvLFOL8AqCiueLt1VFu9+zcSywy0mcj90nSJ5NatCmtWwNQLK:W/zEvLFOLdq9uebdSwHN9n5wtkwNwK",
+        "value": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi",
         "timestamp": "1603642920",
         "comment": "SSDEEP test attribute"
     }
@@ -3515,8 +4627,33 @@ For the rest of this documentation, we will then, in order to keep the content c
           "type": "observed-data",
           "id": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2021-06-07T13:25:36.000Z",
-          "modified": "2021-06-07T13:25:36.000Z",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "ssdeep": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"ssdeep\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
           "first_observed": "2020-10-25T16:22:00Z",
           "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
@@ -3542,7 +4679,7 @@ For the rest of this documentation, we will then, in order to keep the content c
         "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
         "type": "tlsh",
         "category": "Payload delivery",
-        "value": "5b73df03d9a5fb42c11952fc3d570de6aa5f2358618897eb20e18e2fad611b34ecf14d",
+        "value": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
         "timestamp": "1603642920",
         "comment": "TLSH test attribute"
     }
@@ -3578,8 +4715,33 @@ For the rest of this documentation, we will then, in order to keep the content c
           "type": "observed-data",
           "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-          "created": "2021-06-07T13:25:36.000Z",
-          "modified": "2021-06-07T13:25:36.000Z",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"tlsh\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
           "first_observed": "2020-10-25T16:22:00Z",
           "last_observed": "2020-10-25T16:22:00Z",
           "number_observed": 1,
@@ -3719,6 +4881,29 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "url",
+                  "value": "https://misp-project.org/download/"
+              }
+          },
+          "labels": [
+              "misp:type=\"url\"",
+              "misp:category=\"Network activity\""
+          ]
+      }
+      ```
 
 - user-agent
   - MISP
@@ -3729,8 +4914,7 @@ For the rest of this documentation, we will then, in order to keep the content c
         "category": "Network activity",
         "value": "Mozilla Firefox",
         "timestamp": "1603642920",
-        "comment": "User-agent test attribute",
-        "to_ids": true
+        "comment": "User-agent test attribute"
     }
     ```
   - STIX
@@ -3857,6 +5041,31 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "x509-certificate",
+                  "hashes": {
+                      "MD5": "8764605c6f388c89096b534d33565802"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"x509-fingerprint-md5\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
 
 - x509-fingerprint-sha1
   - MISP
@@ -3920,6 +5129,31 @@ For the rest of this documentation, we will then, in order to keep the content c
           ]
       }
       ```
+    - Observed_data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "x509-certificate",
+                  "hashes": {
+                      "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"x509-fingerprint-sha1\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
 
 - x509-fingerprint-sha256
   - MISP
@@ -3959,6 +5193,31 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
     - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "x509-certificate",
+                  "hashes": {
+                      "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"x509-fingerprint-sha256\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+    - Observed_data
       ```json
       {
           "type": "observed-data",
