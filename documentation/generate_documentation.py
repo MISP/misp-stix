@@ -24,7 +24,9 @@ class DocumentationGenerator():
         # mapping
         self._misp_attributes_to_stix1_mapping = 'mapping/misp_attributes_to_stix1.json'
         self._misp_attributes_to_stix20_mapping = 'mapping/misp_attributes_to_stix20.json'
+        self._misp_attributes_to_stix20_summary = 'mapping/misp_attributes_to_stix20_summary.json'
         self._misp_attributes_to_stix21_mapping = 'mapping/misp_attributes_to_stix21.json'
+        self._misp_attributes_to_stix21_summary = 'mapping/misp_attributes_to_stix21_summary.json'
         self._misp_custom_attributes_to_stix1_mapping = 'mapping/misp_custom_attributes_to_stix1.json'
         self._misp_custom_attributes_to_stix20_mapping = 'mapping/misp_custom_attributes_to_stix20.json'
         self._misp_custom_attributes_to_stix21_mapping = 'mapping/misp_custom_attributes_to_stix21.json'
@@ -33,7 +35,9 @@ class DocumentationGenerator():
         self._misp_custom_objects_to_stix21_mapping = 'mapping/misp_custom_objects_to_stix21.json'
         self._misp_objects_to_stix1_mapping = 'mapping/misp_objects_to_stix1.json'
         self._misp_objects_to_stix20_mapping = 'mapping/misp_objects_to_stix20.json'
+        self._misp_objects_to_stix20_summary = 'mapping/misp_objects_to_stix20_summary.json'
         self._misp_objects_to_stix21_mapping = 'mapping/misp_objects_to_stix21.json'
+        self._misp_objects_to_stix21_summary = 'mapping/misp_objects_to_stix21_summary.json'
         self._misp_galaxies_to_stix1_mapping = 'mapping/misp_galaxies_to_stix1.json'
         self._misp_galaxies_to_stix20_mapping = 'mapping/misp_galaxies_to_stix20.json'
         self._misp_galaxies_to_stix21_mapping = 'mapping/misp_galaxies_to_stix21.json'
@@ -118,11 +122,11 @@ class DocumentationGenerator():
             f.write(galaxies_mapping)
 
     def _generate_misp_to_stix20_documentation(self):
-        with open(self._misp_to_stix20_filename, 'rt', encoding='utf-8') as f:
-            self._misp_to_stix20 = f.read()
         # Attributes documentation
         with open(self._misp_attributes_to_stix20_mapping, 'rt', encoding='utf-8') as f:
             mapping = json.loads(f.read())
+        with open(self._misp_attributes_to_stix20_summary, 'rt', encoding='utf-8') as f:
+            attributes_summary = self._parse_summary(json.loads(f.read()))
         data_format = 'json'
         mapping = self._parse_mapping(mapping, 'stix2', data_format)
         with open(self._misp_custom_attributes_to_stix20_mapping, 'rt', encoding='utf-8') as f:
@@ -138,6 +142,8 @@ class DocumentationGenerator():
         # Objects documentation
         with open(self._misp_objects_to_stix20_mapping, 'rt', encoding='utf-8') as f:
             mapping = json.loads(f.read())
+        with open(self._misp_objects_to_stix20_summary, 'rt', encoding='utf-8') as f:
+            objects_summary = self._parse_summary(json.loads(f.read()))
         mapping = self._parse_mapping(mapping, 'stix2', data_format)
         with open(self._misp_custom_objects_to_stix20_mapping, 'rt', encoding='utf-8') as f:
             custom_mapping = json.loads(f.read())
@@ -157,13 +163,20 @@ class DocumentationGenerator():
             galaxies_mapping = f.read().format(_galaxies_to_stix20_mapping_=mapping)
         with open(self._misp_galaxies_to_stix20, 'wt', encoding='utf-8') as f:
             f.write(galaxies_mapping)
+        # Formatting the STIX 2.0 documentation summary
+        with open(self._misp_to_stix20_filename, 'rt', encoding='utf-8') as f:
+            self._misp_to_stix20 = f.read().format(
+                _attributes_to_stix20_summary_=attributes_summary,
+                _objects_to_stix20_summary_=objects_summary
+            )
+            print(self._misp_to_stix20)
 
     def _generate_misp_to_stix21_documentation(self):
-        with open(self._misp_to_stix21_filename, 'rt', encoding='utf-8') as f:
-            self._misp_to_stix21 = f.read()
         # Attributes documentation
         with open(self._misp_attributes_to_stix21_mapping, 'rt', encoding='utf-8') as f:
             mapping = json.loads(f.read())
+        with open(self._misp_attributes_to_stix21_summary, 'rt', encoding='utf-8') as f:
+            attributes_summary = self._parse_summary(json.loads(f.read()))
         data_format = 'json'
         mapping = self._parse_mapping(mapping, 'stix2', data_format)
         with open(self._misp_custom_attributes_to_stix21_mapping, 'rt', encoding='utf-8') as f:
@@ -179,6 +192,8 @@ class DocumentationGenerator():
         # Objects documentation
         with open(self._misp_objects_to_stix21_mapping, 'rt', encoding='utf-8') as f:
             mapping = json.loads(f.read())
+        with open(self._misp_objects_to_stix21_summary, 'rt', encoding='utf-8') as f:
+            objects_summary = self._parse_summary(json.loads(f.read()))
         mapping = self._parse_mapping(mapping, 'stix2', data_format)
         with open(self._misp_custom_objects_to_stix21_mapping, 'rt', encoding='utf-8') as f:
             custom_mapping = json.loads(f.read())
@@ -198,6 +213,12 @@ class DocumentationGenerator():
             galaxies_mapping = f.read().format(_galaxies_to_stix21_mapping_=mapping)
         with open(self._misp_galaxies_to_stix21, 'wt', encoding='utf-8') as f:
             f.write(galaxies_mapping)
+        # Formatting the STIX 2.1 documentation summary
+        with open(self._misp_to_stix21_filename, 'rt', encoding='utf-8') as f:
+            self._misp_to_stix21 = f.read().format(
+                _attributes_to_stix21_summary_=attributes_summary,
+                _objects_to_stix21_summary_=objects_summary
+            )
 
     def _parse_mapping(self, misp2stix_mapping, stix_type, data_format):
         table = []
@@ -232,6 +253,14 @@ class DocumentationGenerator():
         misp_blob = self._parse_json_documentation(mapping['MISP'], 'MISP')
         stix_blob = self._parse_json_documentation(mapping['STIX'], 'STIX')
         return f'- {attribute_type}\n{misp_blob}\n{stix_blob}\n'
+
+    @staticmethod
+    def _parse_summary(mapping):
+        summary = []
+        for attribute_type, feature in mapping.items():
+            sanitized = attribute_type.replace('|', '\|')
+            summary.append(f"| {sanitized} | {feature} |")
+        return '\n'.join(summary)
 
 
 if __name__ == '__main__':
