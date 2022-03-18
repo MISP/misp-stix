@@ -25,71 +25,7 @@ When another object type is mentioned in bold, it means the corresponding attrib
 
 | MISP Attribute type | STIX Object type / Observable Object type |
 | -- | -- |
-| AS | Autonomous System Object |
-| attachment | File & Artifact Objects |
-| campaign-name | **Campaign** |
-| domain | Domain Name Object |
-| domain\|ip | Domain Name & IPv4/IPv6 Address Objects |
-| email | Email Address Object |
-| email-attachment | Email Message  & File Objects |
-| email-body | Email Message Object |
-| email-dst | Email Message & Email Address Objects |
-| email-header | Email Message Object |
-| email-reply-to | Email Message Object |
-| email-src | Email Message & Email Address Objects |
-| email-subject | Email Message Object |
-| email-x-mailer | Email Message Object |
-| filename | File Object |
-| filename\|md5 | File Object |
-| filename\|sha1 | File Object |
-| filename\|sha224 | File Object |
-| filename\|sha256 | File Object |
-| filename\|sha384 | File Object |
-| filename\|sha512 | File Object |
-| filename\|sha512/224 | File Object |
-| filename\|sha512/256 | File Object |
-| filename\|sha3-224 | File Object |
-| filename\|sha3-256 | File Object |
-| filename\|sha3-384 | File Object |
-| filename\|sha3-512 | File Object |
-| filename\|ssdeep | File Object |
-| filename\|tlsh | File Object |
-| hostname | Domain Name Object |
-| hostname\|port | Domain Name & Network Traffic Objects |
-| http-method | Network Traffic Object (pattern) / Custom Object |
-| ip-src | Network Traffic & IPv4/IPv6 Address Objects |
-| ip-dst | Network Traffic & IPv4/IPv6 Address Objects |
-| ip-src\|port | Network Traffic & IPv4/IPv6 Address Objects |
-| ip-dst\|port | Network Traffic & IPv4/IPv6 Address Objects |
-| link | URL Object |
-| mac-address | Mac Address Object |
-| malware-sample | File & Artifact Objects |
-| md5 | File Object |
-| mutex | Mutex Object |
-| port | Network Traffic Object (pattern) / Custom Object |
-| regkey | Windows Registry Key Object |
-| regkey\|value | Windows Registry Key Object |
-| sha1 | File Object |
-| sha224 | File Object |
-| sha256 | File Object |
-| sha384 | File Object |
-| sha512 | File Object |
-| sha512/224 | File Object |
-| sha512/256 | File Object |
-| sha3-224 | File Object |
-| sha3-256 | File Object |
-| sha3-384 | File Object |
-| sha3-512 | File Object |
-| size-in-bytes | File Object (pattern) / Custom Object|
-| ssdeep | File Object |
-| tlsh | File Object |
-| uri | URL Object |
-| url | URL Object |
-| user-agent | Network Traffic Object (pattern) / Custom Object|
-| vulnerability | **Vulnerability** |
-| x509-fingerprint-md5 | X509 Certificate Object |
-| x509-fingerprint-sha1 | X509 Certificate Object |
-| x509-fingerprint-sha256 | X509 Certificate Object |
+{_attributes_to_stix20_summary_}
 
 ##### Detailed mapping
 
@@ -101,28 +37,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 
 | MISP Object name | STIX Object type |
 | -- | -- |
-| asn | Autonomous System Object |
-| attack-pattern | **Attack Pattern** |
-| course-of-action | **Course of Action** |
-| credential | User Account Object |
-| domain-ip | Domain Name & IPv4/IPv6 Address Objects |
-| email | Email Message & Email Address Objects |
-| facebook-account | User Account Object |
-| file | File Object |
-| file with references to pe & pe-section | File Object with Windows PE binary extension |
-| ip-port | Network Traffic & IPv4/IPv6 Address Objects |
-| mutex | Mutex Object |
-| network-connection | Network Traffic, IPv4/IPv6 Address & Domain Name Objects |
-| network-socket | Network Traffic with socket extension, IPv4/IPv6 Address & Domain Name Objects |
-| pe | Windows PE binary extension within a File Object |
-| pe-section | Sections fields in the Windows PE binary extension (always exported with the related pe object) |
-| process | Process Object |
-| registry-key | Windows Registry Key Object |
-| twitter-account | User Account Object |
-| url | URL Object |
-| user-account | User Account Object |
-| vulnerability | **Vulnerability** |
-| x509 | X509 Certificate Object |
+{_objects_to_stix20_summary_}
 
 ##### Detailed mapping
 
