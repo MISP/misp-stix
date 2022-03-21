@@ -1998,6 +1998,20 @@ _TEST_REPORT_OBJECT = {
     ]
 }
 
+_TEST_SCRIPT_OBJECT = {
+    "name": "script",
+    "meta-category": "misc",
+    "description": "Object describing a computer program written to be run in a special run-time environment.",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "language",
+            "value": "Python"
+        }
+    ]
+}
+
 _TEST_SIGHTINGS = [
     {
         "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -4484,6 +4498,79 @@ def get_event_with_registry_key_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_REGISTRY_KEY_OBJECT)
+    ]
+    return event
+
+
+def get_event_with_script_objects():
+    event = deepcopy(_BASE_EVENT)
+    script_to_malware_object = deepcopy(_TEST_SCRIPT_OBJECT)
+    script_to_malware_object['uuid'] = 'ce12c406-cf09-457b-875a-41ab75d6dc4d'
+    script_to_malware_object['Attribute'].extend(
+        [
+            {
+                "type": "text",
+                "object_relation": "comment",
+                "value": "A script that infects command line shells"
+            },
+            {
+                "type": "filename",
+                "object_relation": "filename",
+                "value": "infected.py"
+            },
+            {
+                "type": "text",
+                "object_relation": "script",
+                "value": "print('You are infected')"
+            },
+            {
+                "type": "attachment",
+                "object_relation": "script-as-attachment",
+                "value": "infected.py",
+                "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo"
+            },
+            {
+                "type": "text",
+                "object_relation": "state",
+                "value": "Malicious"
+            }
+        ]
+    )
+    script_to_tool_object = deepcopy(_TEST_SCRIPT_OBJECT)
+    script_to_tool_object['uuid'] = '9d14bdd1-5d32-4b4d-bd50-fd3a9d1c1c04'
+    script_to_tool_object['Attribute'].extend(
+        [
+            {
+                "type": "text",
+                "object_relation": "comment",
+                "value": "A peaceful script"
+            },
+            {
+                "type": "filename",
+                "object_relation": "filename",
+                "value": "hello.py"
+            },
+            {
+                "type": "text",
+                "object_relation": "script",
+                "value": "print('Hello World')"
+            },
+            {
+                "type": "attachment",
+                "object_relation": "script-as-attachment",
+                "value": "hello.py",
+                "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK"
+            },
+            {
+                "type": "text",
+                "object_relation": "state",
+                "value": "Harmless"
+            }
+        ]
+    )
+    event['Event']['Object'] = [
+        script_to_malware_object,
+        script_to_tool_object
     ]
     return event
 
