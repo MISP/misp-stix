@@ -319,6 +319,8 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 
 | MISP Object name | STIX Object type |
 | -- | -- |
+| Script object where state is "Malicious" | **Malware** |
+| Script object where state is not "Malicious" | **Tool** |
 | android-app | Software Object |
 | asn | Autonomous System Object |
 | attack-pattern | **Attack Pattern** |
@@ -487,6 +489,8 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 
 | MISP Object name | STIX Object type |
 | -- | -- |
+| Script object where state is "Malicious" | **Malware** |
+| Script object where state is not "Malicious" | **Tool** |
 | android-app | Software Object |
 | annotation | **Note** |
 | asn | Autonomous System Object |
