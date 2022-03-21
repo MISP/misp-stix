@@ -3648,6 +3648,63 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
             observed_data = self.parser.stix_objects[-2:]
         )
 
+    def test_event_with_script_objects(self):
+        event = get_event_with_script_objects()
+        orgc = event['Event']['Orgc']
+        malware_script, tool_script = deepcopy(event['Event']['Object'])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, malware, tool = stix_objects
+        identity_id = self._check_identity_features(
+            identity,
+            orgc,
+            self._datetime_from_timestamp(event['Event']['timestamp'])
+        )
+        args = (grouping, event['Event'], identity_id)
+        malware_ref, tool_ref = self._check_grouping_features(*args)
+        language, comment, name, script, script_attachment, state = malware_script['Attribute']
+        self._assert_multiple_equal(malware.id, malware_ref, f"malware--{malware_script['uuid']}")
+        self.assertEqual(malware.type, 'malware')
+        self.assertEqual(malware.implementation_languages, [language['value']])
+        self.assertEqual(malware.name, name['value'])
+        self.assertEqual(malware.description, comment['value'])
+        self.assertEqual(malware.x_misp_script, script['value'])
+        self.assertEqual(
+            malware.x_misp_script_as_attachment,
+            {
+                'value': script_attachment['value'],
+                'data': script_attachment['data']
+            }
+        )
+        self.assertEqual(malware.x_misp_state, state['value'])
+        self.assertEqual(malware.is_family, False)
+        self._populate_documentation(
+            misp_object = malware_script,
+            malware = malware,
+            name = 'Script object where state is "Malicious"'
+        )
+        language, comment, name, script, script_attachment, state = tool_script['Attribute']
+        self._assert_multiple_equal(tool.id, tool_ref, f"tool--{tool_script['uuid']}")
+        self.assertEqual(tool.type, 'tool')
+        self.assertEqual(tool.name, name['value'])
+        self.assertEqual(tool.description, comment['value'])
+        self.assertEqual(tool.x_misp_language, language['value'])
+        self.assertEqual(tool.x_misp_script, script['value'])
+        self.assertEqual(
+            tool.x_misp_script_as_attachment,
+            {
+                'value': script_attachment['value'],
+                'data': script_attachment['data']
+            }
+        )
+        self.assertEqual(tool.x_misp_state, state['value'])
+        self._populate_documentation(
+            misp_object = tool_script,
+            tool = tool,
+            name = 'Script object where state is not "Malicious"'
+        )
+
     def test_event_with_url_indicator_object(self):
         event = get_event_with_url_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
