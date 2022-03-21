@@ -1,4 +1,6 @@
 {
+    "Script object where state is \"Malicious\"": "**Malware**",
+    "Script object where state is not \"Malicious\"": "**Tool**",
     "android-app": "Software Object",
     "asn": "Autonomous System Object",
     "attack-pattern": "**Attack Pattern**",
