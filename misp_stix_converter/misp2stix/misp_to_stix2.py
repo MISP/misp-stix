@@ -776,6 +776,40 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _extract_object_attributes_escaped(self, attributes: list) -> dict:
         return {attribute['object_relation']: self._handle_value_for_pattern(attribute['value']) for attribute in attributes}
 
+    def _handle_non_indicator_object(self, misp_object: dict, object_args: dict, object_type: str, killchain: bool = False):
+        object_id = getattr(self, self._id_parsing_function['object'])(object_type, misp_object)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        object_args.update(
+            {
+                'id': object_id,
+                'type': object_type,
+                'labels': self._create_object_labels(
+                    misp_object,
+                    to_ids=self._fetch_ids_flag(misp_object['Attribute'])
+                ),
+                'created_by_ref': self.__identity_id,
+                'created': timestamp,
+                'modified': timestamp,
+                'interoperability': True
+            }
+        )
+        if killchain:
+            object_args['kill_chain_phases'] = self._create_killchain(misp_object['meta-category'])
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            object_id,
+            object_args['modified']
+        )
+        if markings:
+            self._handle_markings(object_args, markings)
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                misp_object['ObjectReference'],
+                object_id,
+                object_args['modified']
+            )
+        self._append_SDO(getattr(self, f"_create_{object_type.replace('-', '_')}")(object_args))
+
     def _handle_object_indicator(self, misp_object: dict, pattern: list):
         indicator_id = getattr(self, self._id_parsing_function['object'])('indicator', misp_object)
         indicator_args = {
@@ -989,9 +1023,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             misp_object['Attribute'],
             force_single=self._mapping.attack_pattern_single_fields
         )
-        prefix = 'attack-pattern'
-        attack_pattern_id = getattr(self, self._id_parsing_function['object'])(prefix, misp_object)
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         attack_pattern_args = defaultdict(list)
         for key, feature in self._mapping.attack_pattern_object_mapping.items():
             if attributes.get(key):
@@ -1006,35 +1037,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     attack_pattern_args['external_references'].append(reference)
         if attributes:
             attack_pattern_args.update(self._handle_observable_multiple_properties(attributes))
-        attack_pattern_args. update(
-            {
-                'id': attack_pattern_id,
-                'type': prefix,
-                'created_by_ref': self.__identity_id,
-                'labels': self._create_object_labels(
-                    misp_object,
-                    to_ids=self._fetch_ids_flag(misp_object['Attribute'])
-                ),
-                'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
-                'created': timestamp,
-                'modified': timestamp,
-                'interoperability': True
-            }
-        )
-        markings = self._handle_object_tags_and_galaxies(
+        self._handle_non_indicator_object(
             misp_object,
-            attack_pattern_id,
-            timestamp
+            attack_pattern_args,
+            'attack-pattern',
+            killchain = True
         )
-        if markings:
-            self._handle_markings(attack_pattern_args, markings)
-        if misp_object.get('ObjectReference'):
-            self._parse_object_relationships(
-                misp_object['ObjectReference'],
-                attack_pattern_id,
-                timestamp
-            )
-        self._append_SDO(self._create_attack_pattern(attack_pattern_args))
 
     def _parse_attack_pattern_reference(self, feature: str, value: str) -> dict:
         source_name, key = self._mapping.attack_pattern_reference_mapping[feature]
@@ -1048,40 +1056,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_course_of_action_object(self, misp_object: dict):
         attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
-        prefix = 'course-of-action'
-        course_of_action_id = getattr(self, self._id_parsing_function['object'])(prefix, misp_object)
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        course_of_action_args = {
-            'id': course_of_action_id,
-            'type': prefix,
-            'created_by_ref': self.__identity_id,
-            'labels': self._create_object_labels(
-                misp_object,
-                to_ids=self._fetch_ids_flag(misp_object['Attribute'])
-            ),
-            'created': timestamp,
-            'modified': timestamp,
-            'interoperability': True
-        }
+        course_of_action_args = {}
         for feature in self._mapping.course_of_action_object_mapping:
             if attributes.get(feature):
                 course_of_action_args[feature] = attributes.pop(feature)
         if attributes:
             course_of_action_args.update(self._handle_observable_properties(attributes))
-        markings = self._handle_object_tags_and_galaxies(
-            misp_object,
-            course_of_action_id,
-            timestamp
-        )
-        if markings:
-            self._handle_markings(course_of_action_args, markings)
-        if misp_object.get('ObjectReference'):
-            self._parse_object_relationships(
-                misp_object['ObjectReference'],
-                course_of_action_id,
-                timestamp
-            )
-        self._append_SDO(self._create_course_of_action(course_of_action_args))
+        self._handle_non_indicator_object(misp_object, course_of_action_args, 'course-of-action')
 
     def _parse_cpe_asset_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
@@ -1646,6 +1627,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_registry_key_object_observable(misp_object)
 
+    def _parse_script_object(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes_with_data(
+            misp_object['Attribute'],
+            force_single = self._mapping.script_single_fields,
+            with_data = self._mapping.script_data_fields
+        )
+        object_type = 'malware' if 'state' in attributes and 'Malicious' in attributes['state'] else 'tool'
+        object_args = {}
+        for key, feature in getattr(self._mapping, f'script_to_{object_type}_mapping').items():
+            if key in attributes:
+                object_args[feature] = attributes.pop(key)
+        if attributes:
+            object_args.update(self._handle_observable_multiple_properties_with_data(attributes, misp_object['name']))
+        self._handle_non_indicator_object(misp_object, object_args, object_type, killchain=True)
+
     def _parse_url_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'url'
@@ -1687,7 +1683,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._parse_user_account_object_observable(misp_object)
 
     def _parse_vulnerability_object(self, misp_object: dict):
-        vulnerability_id = getattr(self, self._id_parsing_function['object'])('vulnerability', misp_object)
         vulnerability_args = defaultdict(list)
         attributes = self._extract_multiple_object_attributes_escaped(misp_object['Attribute'])
         if attributes.get('id'):
@@ -1715,35 +1710,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 )
         if attributes:
             vulnerability_args.update(self._handle_observable_multiple_properties(attributes))
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        vulnerability_args.update(
-            {
-                'id': vulnerability_id,
-                'type': 'vulnerability',
-                'labels': self._create_object_labels(
-                    misp_object,
-                    to_ids=self._fetch_ids_flag(misp_object['Attribute'])
-                ),
-                'created_by_ref': self.__identity_id,
-                'created': timestamp,
-                'modified': timestamp,
-                'interoperability': True
-            }
-        )
-        markings = self._handle_object_tags_and_galaxies(
-            misp_object,
-            vulnerability_id,
-            vulnerability_args['modified']
-        )
-        if markings:
-            self._handle_markings(vulnerability_args, markings)
-        if misp_object.get('ObjectReference'):
-            self._parse_object_relationships(
-                misp_object['ObjectReference'],
-                vulnerability_id,
-                vulnerability_args['modified']
-            )
-        self._append_SDO(self._create_vulnerability(vulnerability_args))
+        self._handle_non_indicator_object(misp_object, vulnerability_args, 'vulnerability')
 
     def _parse_x509_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
