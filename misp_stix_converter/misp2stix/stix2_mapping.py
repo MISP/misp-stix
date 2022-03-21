@@ -324,6 +324,7 @@ class Stix2Mapping:
             'process': '_parse_process_object',
             'reddit-account': '_parse_account_object_with_attachment',
             'registry-key': '_parse_registry_key_object',
+            'script': '_parse_script_object',
             'telegram-account': '_parse_account_object',
             'twitter-account': '_parse_account_object',
             'url': '_parse_url_object',
@@ -685,6 +686,22 @@ class Stix2Mapping:
                 'data-type': 'data_type',
                 'name': 'name'
             }
+        )
+        self.__script_data_fields = (
+            'script-as-attachment',
+        )
+        self.__script_single_fields = (
+            'comment',
+            'filename'
+        )
+        self.__script_to_malware_mapping = Mapping(
+            comment = 'description',
+            filename = 'name',
+            language = 'implementation_languages'
+        )
+        self.__script_to_tool_mapping = Mapping(
+            comment = 'description',
+            filename = 'name'
         )
         self.__socket_type_enum_list = (
             "SOCK_STREAM",
@@ -1065,6 +1082,22 @@ class Stix2Mapping:
     @property
     def relationship_specs(self) -> dict:
         return self.__relationship_specs
+
+    @property
+    def script_data_fields(self) -> tuple:
+        return self.__script_data_fields
+
+    @property
+    def script_single_fields(self) -> tuple:
+        return self.__script_single_fields
+
+    @property
+    def script_to_malware_mapping(self) -> dict:
+        return self.__script_to_malware_mapping
+
+    @property
+    def script_to_tool_mapping(self) -> dict:
+        return self.__script_to_tool_mapping
 
     @property
     def socket_type_enum_list(self) -> tuple:
