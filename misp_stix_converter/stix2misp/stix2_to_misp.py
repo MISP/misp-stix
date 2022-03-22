@@ -131,7 +131,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                        STIX OBJECTS LOADING FUNCTIONS                        #
     ################################################################################
 
-    @property
+    @staticmethod
     def _build_data_to_load(stix_object) -> dict:
         return {
             'stix_object': stix_object,
@@ -139,7 +139,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         }
 
     def _load_attack_pattern(self, attack_pattern: Union[AttackPattern_v20, AttackPattern_v21]):
-        data_to_load = self._build_object_to_load(attack_pattern)
+        data_to_load = self._build_data_to_load(attack_pattern)
         try:
             self._attack_pattern[attack_pattern.id] = data_to_load
         except AttributeError:

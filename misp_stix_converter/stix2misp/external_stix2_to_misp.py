@@ -390,6 +390,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _is_pattern_too_complex(pattern: str) -> bool:
         if any(keyword in pattern for keyword in self._mapping.pattern_forbiden_relations):
             return True
-        if all(keyword in pattern for keyword in (' AND ', ' OR '):
+        if all(keyword in pattern for keyword in (' AND ', ' OR ')):
             return True
         return False
