@@ -34,7 +34,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'regkey': '_attribute_from_regkey',
             'regkey|value': '_attribute_from_regkey_value',
             'size-in-bytes': '_attribute_from_size_in_bytes',
-            'user-agent': '_attribute_from_user_agent'
+            'user-agent': '_attribute_from_user_agent',
+            'vulnerability': '_parse_vulnerability_attribute'
         }
         attributes_mapping.update(
             dict.fromkeys(
@@ -145,6 +146,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'process': '_object_from_process',
             'registry-key': '_object_from_registry_key',
             'url': '_object_from_url',
+            'vulnerability': '_parse_vulnerability_object',
             'x509': '_object_from_x509'
         }
         objects_mapping.update(

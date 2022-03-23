@@ -53,8 +53,8 @@ class STIXtoMISPParser:
         self.__errors[self._identifier].add(message)
 
     def _observed_data_error(self, observed_data_id: str, exception: Exception):
-        traceback = self._parse_traceback(exception)
-        message = f"Error with the observed data object with id {observed_data_id}: {traceback}"
+        tb = self._parse_traceback(exception)
+        message = f"Error with the Observed Data object with id {observed_data_id}: {tb}"
         self.__errors[self._identifier].add(message)
 
     @staticmethod
@@ -90,6 +90,11 @@ class STIXtoMISPParser:
     def _unknown_stix_object_type_warning(self, object_type: str):
         message = f"Unknown STIX object type: {object_type}"
         self.__warnings[self._identifier].add(message)
+
+    def _vulnerability_error(self, vulnerability_id: str, exception: Exception):
+        tb = self._parse_traceback(exception)
+        message = f"Error with the Vulnerability object with id {vulnerability_id}: {tb}"
+        self.__errors[self._identifier].add(message)
 
     ################################################################################
     #           SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING FUNCTIONS.           #
