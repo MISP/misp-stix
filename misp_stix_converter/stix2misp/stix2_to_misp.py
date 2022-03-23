@@ -71,7 +71,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             try:
                 feature = self._mapping.stix_object_loading_mapping[object_type]
             except KeyError:
-                self._unknown_stix_object_type_warning(object_type)
+                self._unable_to_load_stix_object_type_warning(object_type)
                 continue
             try:
                 getattr(self, feature)(stix_object)
@@ -276,7 +276,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             try:
                 feature = self._mapping.stix_to_misp_mapping[object_type]
             except KeyError:
-                self._unknown_stix_object_type_warning(object_type)
+                self._unknown_stix_object_type_error(object_type)
                 continue
             try:
                 parser = getattr(self, feature)

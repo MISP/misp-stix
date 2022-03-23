@@ -62,6 +62,10 @@ class STIXtoMISPParser:
         tb = ''.join(traceback.format_tb(exception.__traceback__))
         return f'{tb}{exception.__str__()}'
 
+    def _unable_to_load_stix_object_type_error(self, object_type: str):
+        message = f"Unable to load STIX object type: {object_type}"
+        self.__errors[self._identifier].add(message)
+
     def _undefined_object_error(self, object_id: str):
         message = f"Unable to define the object identified with the id: {object_id}"
         self.__errors[self._identifier].add(message)
@@ -87,9 +91,9 @@ class STIXtoMISPParser:
         message = f"Unknown pattern type in indicator with id {indicator_id}: {pattern_type}"
         self.__errors[self._identifier].add(message)
 
-    def _unknown_stix_object_type_warning(self, object_type: str):
+    def _unknown_stix_object_type_error(self, object_type: str):
         message = f"Unknown STIX object type: {object_type}"
-        self.__warnings[self._identifier].add(message)
+        self.__errors[self._identifier].add(message)
 
     def _vulnerability_error(self, vulnerability_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
