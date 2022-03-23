@@ -34,6 +34,7 @@ class STIX2Mapping:
             'marking-definition': '_load_marking_definition',
             'note': '_load_note',
             'observed-data': '_load_observed_data',
+            'opinion': '_load_opinion',
             'relationship': '_load_relationship',
             'report': '_load_report',
             'sighting': '_load_sighting',

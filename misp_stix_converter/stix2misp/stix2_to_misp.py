@@ -191,11 +191,23 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             self._marking_definition = {marking_definition.id: data_to_load}
 
+    def _load_note(self, note: Note):
+        try:
+            self._note[note.id] = note
+        except AttributeError:
+            self._note = {note.id: note}
+
     def _load_observable_object(self, observable: _OBSERVABLE_TYPES):
         try:
             self._observable[observable.id] = observable
         except AttributeError:
             self._observable = {observable.id: observable}
+
+    def _load_opinion(self, opinion: Opinion):
+        try:
+            self._opinion[opinion.id] = opinion
+        except AttributeError:
+            self._opinion = {opinion.id: opinion}
 
     def _load_relationship(self, relationship: Union[Relationship_v20, Relationship_v21]):
         reference = {
