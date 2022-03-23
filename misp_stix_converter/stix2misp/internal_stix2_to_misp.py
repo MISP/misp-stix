@@ -74,22 +74,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 
-    def _handle_observable_mapping(self, labels: list, object_id: str) -> str:
-        try:
-            is_object, name = self._parse_labels(labels)
-        except TypeError:
-            raise UndefinedSTIXObjectError(object_id)
-        if is_object:
-            try:
-                feature = self._mapping.objects_mapping[name]
-            except KeyError:
-                raise UnknownObjectNameError(name)
-            return feature
-        try:
-            feature = self._mapping.attributes_mapping[name]
-        except KeyError:
-            raise UnknownAttributeTypeError(name)
-        return feature
+    def _handle_object_mapping(self, labels: list, object_id: str) -> str:
+        parsed_labels = {key: value.strip('"') for key, value in (label.split('=') for label in labels)}
+        if any(label.startswith('misp-galaxy:') for label in parsed_labels):
+            for label in parsed_labels:
+                if label.startswith('misp-galaxy:'):
+                    return self._mapping.galaxies_mapping[label.split(':')[1]]
+        elif 'misp:name' in parsed_labels:
+            return self._mapping.objects_mapping[parsed_labels['misp:name']]
+        elif 'misp:type' in parsed_labels:
+            return self._mapping.attributes_mapping[parsed_labels['misp:type']]
+        raise UndefinedSTIXObjectError(object_id)
 
     def _parse_custom_attribute(self, custom_ref: str):
         custom_attribute = self._get_stix_object(custom_ref)
@@ -119,7 +114,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_indicator(self, indicator_ref: str):
         indicator = self._get_stix_object(indicator_ref)
-        feature = self._handle_observable_mapping(indicator.labels, indicator.id)
+        feature = self._handle_object_mapping(indicator.labels, indicator.id)
         try:
             parser = getattr(self, f"{feature}_pattern")
         except AttributeError:
@@ -141,7 +136,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._add_misp_object(misp_object)
 
     def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
-        feature = self._handle_observable_mapping(observed_data.labels, observed_data.id)
+        feature = self._handle_object_mapping(observed_data.labels, observed_data.id)
         try:
             parser = getattr(self, f"{feature}_observable_v20")
         except AttributeError:
@@ -152,7 +147,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._observed_data_error(observed_data.id, exception)
 
     def _parse_observed_data_v21(self, observed_data: ObservedData_v21):
-        feature = self._handle_observable_mapping(observed_data.labels, observed_data.id)
+        feature = self._handle_object_mapping(observed_data.labels, observed_data.id)
         try:
             parser = getattr(self, f"{feature}_observable_v21")
         except AttributeError as error:
@@ -164,7 +159,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_vulnerability(self, vulnerability_ref: str):
         vulnerability = self._get_stix_object(vulnerability_ref)['stix_object']
-        feature = self._handle_observable_mapping(vulnerability.labels, vulnerability.id)
+        feature = self._handle_object_mapping(vulnerability.labels, vulnerability.id)
         try:
             parser = getattr(self, feature)
         except AttributeError:
@@ -300,10 +295,3 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _fetch_tags_from_labels(self, misp_feature: _MISP_FEATURES_TYPING, labels: list):
         for label in (label for label in labels if label != 'Threat-Report'):
             misp_feature.add_tag(label)
-
-    @staticmethod
-    def _parse_labels(labels: list) -> Tuple[bool, str]:
-        for label in labels:
-            if 'misp:name="' in label or 'misp:type="' in label:
-                feature, value = label.split('=')
-                return feature == 'misp:name', value.strip('"')
