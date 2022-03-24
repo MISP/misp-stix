@@ -205,7 +205,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         objects_mapping = {
             'android-app': '_object_from_android_app',
             'asn': '_object_from_asn',
-            'attack-pattern': '_object_from_attack_pattern',
+            'attack-pattern': '_parse_attack_pattern_object',
             'cpe-asset': '_object_from_cpe_asset',
             'credential': '_object_from_credential',
             'domain-ip': '_object_from_domain_ip',
@@ -239,6 +239,19 @@ class InternalSTIX2Mapping(STIX2Mapping):
             )
         )
         self.__objects_mapping = Mapping(**objects_mapping)
+
+        # STIX TO MISP OBJECTS MAPPING
+        self.__attack_pattern_object_mapping = Mapping(
+            description = Mapping(type='text', object_relation='summary'),
+            name = Mapping(type='text', object_relation='name'),
+            x_misp_prerequisites = Mapping(type='text', object_relation='prerequisites'),
+            x_misp_related_weakness = Mapping(type='weakness', object_relation='related-weakness'),
+            x_misp_solutions = Mapping(type='text', object_relation='solutions')
+        )
+
+    @property
+    def attack_pattern_object_mapping(self) -> dict:
+        return self.__attack_pattern_object_mapping
 
     @property
     def attributes_mapping(self) -> dict:
