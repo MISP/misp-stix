@@ -938,6 +938,26 @@ _TEST_ATTACK_PATTERN_OBJECT = {
             "type": "text",
             "object_relation": "summary",
             "value": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root."
+        },
+        {
+            "type": "weakness",
+            "object_relation": "related-weakness",
+            "value": "CWE-118"
+        },
+        {
+            "type": "weakness",
+            "object_relation": "related-weakness",
+            "value": "CWE-120"
+        },
+        {
+            "type": "text",
+            "object_relation": "prerequisites",
+            "value": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited."
+        },
+        {
+            "type": "text",
+            "object_relation": "solutions",
+            "value": "Carefully review the service's implementation before making it available to users."
         }
     ]
 }
