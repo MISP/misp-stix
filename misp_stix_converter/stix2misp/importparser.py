@@ -10,7 +10,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Union
 
-_ROOT_PATH = Path(__file__).parents[2]
+_ROOT_PATH = Path(__file__).parents[2].resolve()
 
 
 class STIXtoMISPParser:
@@ -39,6 +39,11 @@ class STIXtoMISPParser:
     ################################################################################
     #                    ERRORS AND WARNINGS HANDLING FUNCTIONS                    #
     ################################################################################
+
+    def _attack_pattern_error(self, attack_pattern_id: str, exception: Exception):
+        tb = self._parse_traceback(exception)
+        message = f"Error with the Attack Pattern object with id {attack_pattern_id}: {tb}"
+        self.__errors[self._identifier].add(message)
 
     def _attribute_from_pattern_parsing_error(self, indicator_id: str):
         message = f"Error while parsing pattern from indicator with id {indicator_id}"

@@ -335,7 +335,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     @staticmethod
     def _populate_object_attributes(misp_object: MISPObject, mapping: dict, values: Union[list, str]):
         if isinstance(values, list):
-            for value in value:
+            for value in values:
                 attribute = {'value': value}
                 attribute.update(mapping)
                 misp_object.add_attribute(**attribute)
