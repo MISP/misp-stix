@@ -2215,7 +2215,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
                 observed_data = [observed_data, observable[0]]
             )
 
-    def test_object_with_annotation_object(self):
+    def test_event_with_annotation_object(self):
         event = get_event_with_annotation_object()
         orgc = event['Event']['Orgc']
         misp_object = deepcopy(event['Event']['Object'][0])
