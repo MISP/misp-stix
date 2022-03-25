@@ -1535,14 +1535,17 @@ class TestSTIX20Export(TestSTIX2Export):
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         self.assertEqual(attack_pattern.created, timestamp)
         self.assertEqual(attack_pattern.modified, timestamp)
-        id, name, summary = (attribute['value'] for attribute in misp_object['Attribute'])
+        id_, name, summary, weakness1, weakness2, prerequisite, solution = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(attack_pattern.name, name)
         self.assertEqual(attack_pattern.description, summary)
         self._check_external_reference(
             attack_pattern.external_references[0],
             'capec',
-            f'CAPEC-{id}'
+            f'CAPEC-{id_}'
         )
+        self.assertEqual(attack_pattern.x_misp_related_weakness, [weakness1, weakness2])
+        self.assertEqual(attack_pattern.x_misp_prerequisites, prerequisite)
+        self.assertEqual(attack_pattern.x_misp_solutions, solution.replace("'", "\\'"))
         self._populate_documentation(misp_object=misp_object, attack_pattern=attack_pattern)
 
     def test_event_with_course_of_action_object(self):

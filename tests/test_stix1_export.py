@@ -2152,7 +2152,7 @@ class TestStix11Export(TestStix1Export):
     def test_event_with_asn_object_observable(self):
         self._test_event_with_asn_object_observable()
 
-    def est_event_with_attack_pattern_object(self):
+    def test_event_with_attack_pattern_object(self):
         self._test_event_with_attack_pattern_object()
 
     def test_event_with_course_of_action_object(self):
@@ -2385,55 +2385,55 @@ class TestStix12Export(TestStix1Export):
     def test_event_with_malware_sample_attribute(self):
         self._test_event_with_malware_sample_attribute()
 
-    def _test_event_with_mutex_attribute(self):
+    def test_event_with_mutex_attribute(self):
         self._test_event_with_mutex_attribute()
 
-    def _test_event_with_named_pipe_attribute(self):
+    def test_event_with_named_pipe_attribute(self):
         self._test_event_with_named_pipe_attribute()
 
-    def _test_event_with_pattern_attribute(self):
+    def test_event_with_pattern_attribute(self):
         self._test_event_with_pattern_attribute()
 
-    def _test_event_with_port_attribute(self):
+    def test_event_with_port_attribute(self):
         self._test_event_with_port_attribute()
 
-    def _test_event_with_regkey_attribute(self):
+    def test_event_with_regkey_attribute(self):
         self._test_event_with_regkey_attribute()
 
-    def _test_event_with_regkey_value_attribute(self):
+    def test_event_with_regkey_value_attribute(self):
         self._test_event_with_regkey_value_attribute()
 
-    def _test_event_with_size_in_bytes_attribute(self):
+    def test_event_with_size_in_bytes_attribute(self):
         self._test_event_with_size_in_bytes_attribute()
 
-    def _test_event_with_target_attributes(self):
+    def test_event_with_target_attributes(self):
         self._test_event_with_target_attributes()
 
-    def _test_event_with_test_mechanism_attributes(self):
+    def test_event_with_test_mechanism_attributes(self):
         self._test_event_with_test_mechanism_attributes()
 
-    def _test_event_with_undefined_attributes(self):
+    def test_event_with_undefined_attributes(self):
         self._test_event_with_undefined_attributes()
 
-    def _test_event_with_url_attribute(self):
+    def test_event_with_url_attribute(self):
         self._test_event_with_url_attribute()
 
-    def _test_event_with_vulnerability_attribute(self):
+    def test_event_with_vulnerability_attribute(self):
         self._test_event_with_vulnerability_attribute()
 
-    def _test_event_with_weakness_attribute(self):
+    def test_event_with_weakness_attribute(self):
         self._test_event_with_weakness_attribute()
 
-    def _test_event_with_whois_registrant_attributes(self):
+    def test_event_with_whois_registrant_attributes(self):
         self._test_event_with_whois_registrant_attributes()
 
-    def _test_event_with_whois_registrar_attribute(self):
+    def test_event_with_whois_registrar_attribute(self):
         self._test_event_with_whois_registrar_attribute()
 
-    def _test_event_with_windows_service_attributes(self):
+    def test_event_with_windows_service_attributes(self):
         self._test_event_with_windows_service_attributes()
 
-    def _test_event_with_x509_fingerprint_attributes(self):
+    def test_event_with_x509_fingerprint_attributes(self):
         self._test_event_with_x509_fingerprint_attributes()
 
     ################################################################################
@@ -2458,7 +2458,7 @@ class TestStix12Export(TestStix1Export):
     def test_event_with_asn_object_observable(self):
         self._test_event_with_asn_object_observable()
 
-    def est_event_with_attack_pattern_object(self):
+    def test_event_with_attack_pattern_object(self):
         self._test_event_with_attack_pattern_object()
 
     def test_event_with_course_of_action_object(self):
