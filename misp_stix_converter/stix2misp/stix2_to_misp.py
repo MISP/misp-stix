@@ -359,7 +359,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         self.misp_event.add_object(misp_object)
 
     def _create_misp_event(self, stix_object: Union[Grouping, Report_v20, Report_v21]) -> MISPEvent:
-        misp_event = MISPEvent()
+        misp_event = MISPEvent(force_timestamps=True)
         misp_event.uuid = stix_object.id.split('--')[-1]
         misp_event.info = stix_object.name
         misp_event.timestamp = self._timestamp_from_date(stix_object.modified)
@@ -367,7 +367,11 @@ class STIX2toMISPParser(STIXtoMISPParser):
         return misp_event
 
     def _create_misp_object(self, name: str, stix_object: _MISP_OBJECT_TYPING) -> MISPObject:
-        misp_object = MISPObject(name, misp_objects_path_custom=_MISP_OBJECTS_PATH)
+        misp_object = MISPObject(
+            name,
+            misp_objects_path_custom=_MISP_OBJECTS_PATH,
+            force_timestamps=True
+        )
         misp_object.uuid = stix_object.id.split('--')[-1]
         misp_object.update(self._parse_timeline(stix_object))
         return misp_object
