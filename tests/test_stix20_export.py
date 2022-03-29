@@ -263,8 +263,11 @@ class TestSTIX20Export(TestSTIX2Export):
         object_ref = self._check_report_features(report, event['Event'], identity_id, timestamp)[0]
         self.assertEqual(report.published, timestamp)
         self.assertEqual(custom.type, 'x-misp-event-note')
-        self.assertEqual(custom.id, f"x-misp-event-note--{event['Event']['uuid']}")
-        self.assertEqual(custom.id, object_ref)
+        self._assert_multiple_equal(
+            custom.id,
+            f"x-misp-event-note--{event['Event']['uuid']}",
+            object_ref
+        )
         self.assertEqual(custom.created_by_ref, identity_id)
         self.assertEqual(custom.created, timestamp)
         self.assertEqual(custom.modified, timestamp)
@@ -1528,7 +1531,11 @@ class TestSTIX20Export(TestSTIX2Export):
         object_ref = self._check_report_features(*args)[0]
         self.assertEqual(report.published, timestamp)
         self.assertEqual(attack_pattern.type, 'attack-pattern')
-        self.assertEqual(attack_pattern.id, object_ref)
+        self._assert_multiple_equal(
+            attack_pattern.id,
+            f"attack-pattern--{misp_object['uuid']}",
+            object_ref
+        )
         self.assertEqual(attack_pattern.created_by_ref, identity_id)
         self._check_killchain(attack_pattern.kill_chain_phases[0], misp_object['meta-category'])
         self._check_object_labels(misp_object, attack_pattern.labels, to_ids=False)
@@ -1560,7 +1567,11 @@ class TestSTIX20Export(TestSTIX2Export):
         object_ref = self._check_report_features(*args)[0]
         self.assertEqual(report.published, timestamp)
         self.assertEqual(course_of_action.type, 'course-of-action')
-        self.assertEqual(course_of_action.id, object_ref)
+        self._assert_multiple_equal(
+            course_of_action.id,
+            f"course-of-action--{misp_object['uuid']}",
+            object_ref
+        )
         self.assertEqual(course_of_action.created_by_ref, identity_id)
         self._check_object_labels(misp_object, course_of_action.labels, to_ids=False)
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
@@ -1845,8 +1856,7 @@ class TestSTIX20Export(TestSTIX2Export):
         employee_id = f"identity--{misp_object['uuid']}"
         first_name, last_name, description, email, employee_type = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(employee.type, 'identity')
-        self.assertEqual(object_ref, employee_id)
-        self.assertEqual(employee.id, employee_id)
+        self._assert_multiple_equal(employee.id, employee_id, object_ref)
         self.assertEqual(employee.identity_class, 'individual')
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         self.assertEqual(employee.created, timestamp)
@@ -2060,8 +2070,11 @@ class TestSTIX20Export(TestSTIX2Export):
         legal_entity_id = f"identity--{misp_object['uuid']}"
         name, description, business, phone, logo = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(legal_entity.type, 'identity')
-        self.assertEqual(object_ref, legal_entity_id)
-        self.assertEqual(legal_entity.id, legal_entity_id)
+        self._assert_multiple_equal(
+            legal_entity.id,
+            legal_entity_id,
+            object_ref
+        )
         self.assertEqual(legal_entity.identity_class, 'organization')
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         self.assertEqual(legal_entity.created, timestamp)
@@ -2277,8 +2290,11 @@ class TestSTIX20Export(TestSTIX2Export):
         news_agency_id = f"identity--{misp_object['uuid']}"
         name, address1, email1, phone1, address2, email2, phone2, link, attachment = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(news_agency.type, 'identity')
-        self.assertEqual(object_ref, news_agency_id)
-        self.assertEqual(news_agency.id, news_agency_id)
+        self._assert_multiple_equal(
+            news_agency.id,
+            news_agency_id,
+            object_ref
+        )
         self.assertEqual(news_agency.identity_class, 'organization')
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         self.assertEqual(news_agency.created, timestamp)
@@ -2309,8 +2325,11 @@ class TestSTIX20Export(TestSTIX2Export):
         organization_id = f"identity--{misp_object['uuid']}"
         name, description, address, email, phone, role, alias = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(organization.type, 'identity')
-        self.assertEqual(object_ref, organization_id)
-        self.assertEqual(organization.id, organization_id)
+        self._assert_multiple_equal(
+            organization.id,
+            organization_id,
+            object_ref
+        )
         self.assertEqual(organization.identity_class, 'organization')
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         self.assertEqual(organization.created, timestamp)
@@ -2447,8 +2466,11 @@ class TestSTIX20Export(TestSTIX2Export):
         args = (report, event['Event'], identity_id, timestamp)
         malware_ref, tool_ref = self._check_report_features(*args)
         language, comment, name, script, script_attachment, state = malware_script['Attribute']
-        self.assertEqual(malware.id, malware_ref)
-        self.assertEqual(malware.id, f"malware--{malware_script['uuid']}")
+        self._assert_multiple_equal(
+            malware.id,
+            f"malware--{malware_script['uuid']}",
+            malware_ref
+        )
         self.assertEqual(malware.type, 'malware')
         self.assertEqual(malware.implementation_languages, [language['value']])
         self.assertEqual(malware.name, name['value'])
@@ -2468,8 +2490,11 @@ class TestSTIX20Export(TestSTIX2Export):
             name = 'Script object where state is "Malicious"'
         )
         language, comment, name, script, script_attachment, state = tool_script['Attribute']
-        self.assertEqual(tool.id, tool_ref)
-        self.assertEqual(tool.id, f"tool--{tool_script['uuid']}")
+        self._assert_multiple_equal(
+            tool.id,
+            f"tool--{tool_script['uuid']}",
+            tool_ref
+        )
         self.assertEqual(tool.type, 'tool')
         self.assertEqual(tool.name, name['value'])
         self.assertEqual(tool.description, comment['value'])

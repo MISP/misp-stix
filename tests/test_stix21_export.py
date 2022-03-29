@@ -7,23 +7,11 @@ from datetime import datetime
 from misp_stix_converter import MISPtoSTIX21Parser, misp_collection_to_stix2_1, misp_to_stix2_1
 from .test_events import *
 from .update_documentation import DocumentationUpdater
+from ._test_stix import TestSTIX21
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export
 
 
-class TestSTIX21ExportGrouping(TestSTIX2Export):
-    def _check_grouping_features(self, grouping, event, identity_id):
-        timestamp = self._datetime_from_timestamp(event['timestamp'])
-        self.assertEqual(grouping.type, 'grouping')
-        self.assertEqual(grouping.id, f"grouping--{event['uuid']}")
-        self.assertEqual(grouping.created_by_ref, identity_id)
-        self.assertEqual(grouping.labels, self._labels)
-        self.assertEqual(grouping.name, event['info'])
-        self.assertEqual(grouping.created, timestamp)
-        self.assertEqual(grouping.modified, timestamp)
-        return grouping.object_refs
-
-
-class TestSTIX21Export(TestSTIX21ExportGrouping):
+class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
     __attributes = defaultdict(lambda: defaultdict(dict))
     __objects = defaultdict(lambda: defaultdict(dict))
 
@@ -40,10 +28,6 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
-
-    def _assert_multiple_equal(self, reference, *elements):
-        for element in elements:
-            self.assertEqual(reference, element)
 
     def _check_bundle_features(self, length):
         bundle = self.parser.bundle
@@ -4051,7 +4035,7 @@ class TestSTIX21Export(TestSTIX21ExportGrouping):
         self.assertIsNotNone(self.parser.bundle)
 
 
-class TestSTIX21ExportInteroperability(TestSTIX21ExportGrouping):
+class TestSTIX21ExportInteroperability(TestSTIX2Export, TestSTIX21):
     def setUp(self):
         self.parser = MISPtoSTIX21Parser(interoperability=True)
 
