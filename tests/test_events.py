@@ -2418,7 +2418,6 @@ _TEST_X509_OBJECT = {
 #                               BASE EVENT TESTS                               #
 ################################################################################
 
-
 def get_base_event():
     return deepcopy(_BASE_EVENT)
 
@@ -2468,7 +2467,6 @@ def get_event_with_tags():
 ################################################################################
 #                                GALAXIES TESTS                                #
 ################################################################################
-
 
 def get_event_with_attack_pattern_galaxy():
     event = deepcopy(_BASE_EVENT)

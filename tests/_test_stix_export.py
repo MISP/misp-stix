@@ -9,6 +9,7 @@ from misp_stix_converter import MISPtoSTIX20Parser, MISPtoSTIX21Parser
 from pathlib import Path
 from stix.core import STIXPackage
 from uuid import uuid5, UUID
+from ._test_stix import TestSTIX2
 
 _DEFAULT_ORGNAME = 'MISP'
 
@@ -78,7 +79,7 @@ class TestCollectionSTIX2Export(TestCollectionSTIXExport):
         self.assertEqual(reference['objects'], to_test['objects'])
 
 
-class TestSTIX2Export(unittest.TestCase):
+class TestSTIX2Export(TestSTIX2):
     _labels = [
         'Threat-Report',
         'misp:tool="MISP-STIX-Converter"'
@@ -95,9 +96,11 @@ class TestSTIX2Export(unittest.TestCase):
             misp_object['Attribute'][0]['to_ids'] = True
 
     def _check_attribute_campaign_features(self, campaign, attribute, identity_id, object_ref):
-        uuid = f"campaign--{attribute['uuid']}"
-        self.assertEqual(uuid, object_ref)
-        self.assertEqual(campaign.id, uuid)
+        self._assert_multiple_equal(
+            campaign.id,
+            f"campaign--{attribute['uuid']}",
+            object_ref
+        )
         self.assertEqual(campaign.type, 'campaign')
         self.assertEqual(campaign.created_by_ref, identity_id)
         self._check_attribute_labels(attribute, campaign.labels)
@@ -126,9 +129,11 @@ class TestSTIX2Export(unittest.TestCase):
         self._check_observable_time_features(observed_data, attribute['timestamp'])
 
     def _check_attribute_vulnerability_features(self, vulnerability, attribute, identity_id, object_ref):
-        uuid = f"vulnerability--{attribute['uuid']}"
-        self.assertEqual(uuid, object_ref)
-        self.assertEqual(vulnerability.id, uuid)
+        self._assert_multiple_equal(
+            vulnerability.id,
+            f"vulnerability--{attribute['uuid']}",
+            object_ref
+        )
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
         self._check_attribute_labels(attribute, vulnerability.labels)
@@ -174,9 +179,11 @@ class TestSTIX2Export(unittest.TestCase):
             self.assertIn(identity.name, names)
 
     def _check_indicator_features(self, indicator, identity_id, object_ref, object_uuid):
-        uuid = f"indicator--{object_uuid}"
-        self.assertEqual(uuid, object_ref)
-        self.assertEqual(indicator.id, uuid)
+        self._assert_multiple_equal(
+            indicator.id,
+            f"indicator--{object_uuid}",
+            object_ref
+        )
         self.assertEqual(indicator.type, 'indicator')
         self.assertEqual(indicator.created_by_ref, identity_id)
 
@@ -211,9 +218,11 @@ class TestSTIX2Export(unittest.TestCase):
         self._check_observable_time_features(observed_data, misp_object['timestamp'])
 
     def _check_object_vulnerability_features(self, vulnerability, misp_object, identity_id, object_ref):
-        uuid = f"vulnerability--{misp_object['uuid']}"
-        self.assertEqual(uuid, object_ref)
-        self.assertEqual(vulnerability.id, uuid)
+        self._assert_multiple_equal(
+            vulnerability.id,
+            f"vulnerability--{misp_object['uuid']}",
+            object_ref
+        )
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
         self._check_object_labels(misp_object, vulnerability.labels, to_ids=False)
@@ -237,9 +246,11 @@ class TestSTIX2Export(unittest.TestCase):
         self.assertEqual(vulnerability.x_misp_published, published)
 
     def _check_observable_features(self, observed_data, identity_id, object_ref, object_uuid):
-        uuid = f"observed-data--{object_uuid}"
-        self.assertEqual(uuid, object_ref)
-        self.assertEqual(observed_data.id, uuid)
+        self._assert_multiple_equal(
+            observed_data.id,
+            f"observed-data--{object_uuid}",
+            object_ref
+        )
         self.assertEqual(observed_data.type, 'observed-data')
         self.assertEqual(observed_data.created_by_ref, identity_id)
         self.assertEqual(observed_data.number_observed, 1)
@@ -381,8 +392,11 @@ class TestSTIX2Export(unittest.TestCase):
         category = attribute['category']
         custom_type = f"x-misp-attribute"
         self.assertEqual(custom_object.type, custom_type)
-        self.assertEqual(object_ref, f"{custom_type}--{attribute['uuid']}")
-        self.assertEqual(custom_object.id, object_ref)
+        self._assert_multiple_equal(
+            custom_object.id,
+            f"{custom_type}--{attribute['uuid']}",
+            object_ref
+        )
         self.assertEqual(custom_object.created_by_ref, identity_id)
         self.assertEqual(custom_object.labels[0], f'misp:type="{attribute_type}"')
         self.assertEqual(custom_object.labels[1], f'misp:category="{category}"')
@@ -399,8 +413,11 @@ class TestSTIX2Export(unittest.TestCase):
         category = misp_object['meta-category']
         custom_type = 'x-misp-object'
         self.assertEqual(custom_object.type, custom_type)
-        self.assertEqual(object_ref, f"{custom_type}--{misp_object['uuid']}")
-        self.assertEqual(custom_object.id, object_ref)
+        self._assert_multiple_equal(
+            custom_object.id,
+            f"{custom_type}--{misp_object['uuid']}",
+            object_ref
+        )
         self.assertEqual(custom_object.created_by_ref, identity_id)
         self.assertEqual(custom_object.labels[0], f'misp:name="{name}"')
         self.assertEqual(custom_object.labels[1], f'misp:meta-category="{category}"')
