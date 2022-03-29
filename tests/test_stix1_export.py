@@ -1519,7 +1519,7 @@ class TestStix1Export(unittest.TestCase):
         ttp = self._check_ttp_fields_from_object(stix_package, misp_object)
         attack_pattern = ttp.behavior.attack_patterns[0]
         self.assertEqual(attack_pattern.id_, f"{_ORGNAME_ID}:AttackPattern-{misp_object['uuid']}")
-        id_, name, summary = misp_object['Attribute']
+        id_, name, summary, _, _, _, _ = misp_object['Attribute']
         self.assertEqual(attack_pattern.capec_id, f"CAPEC-{id_['value']}")
         self.assertEqual(attack_pattern.title, name['value'])
         self.assertEqual(attack_pattern.description.value, summary['value'])
