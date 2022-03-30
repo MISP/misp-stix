@@ -95,6 +95,26 @@ class TestSTIX2Export(TestSTIX2):
         for misp_object in event['Event']['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
 
+    def _check_attack_pattern_object(self, attack_pattern, misp_object, identity_id):
+        self.assertEqual(attack_pattern.type, 'attack-pattern')
+        self.assertEqual(attack_pattern.created_by_ref, identity_id)
+        self._check_killchain(attack_pattern.kill_chain_phases[0], misp_object['meta-category'])
+        self._check_object_labels(misp_object, attack_pattern.labels, to_ids=False)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(attack_pattern.created, timestamp)
+        self.assertEqual(attack_pattern.modified, timestamp)
+        id_, name, summary, weakness1, weakness2, prerequisite, solution = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(attack_pattern.name, name)
+        self.assertEqual(attack_pattern.description, summary)
+        self._check_external_reference(
+            attack_pattern.external_references[0],
+            'capec',
+            f'CAPEC-{id_}'
+        )
+        self.assertEqual(attack_pattern.x_misp_related_weakness, [weakness1, weakness2])
+        self.assertEqual(attack_pattern.x_misp_prerequisites, prerequisite)
+        self.assertEqual(attack_pattern.x_misp_solutions, solution.replace("'", "\\'"))
+
     def _check_attribute_campaign_features(self, campaign, attribute, identity_id, object_ref):
         self._assert_multiple_equal(
             campaign.id,
@@ -327,8 +347,11 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(relationship.source_ref, source_id)
         self.assertEqual(relationship.target_ref, target_id)
         self.assertEqual(relationship.relationship_type, relationship_type)
-        self.assertEqual(relationship.created, timestamp)
-        self.assertEqual(relationship.modified, timestamp)
+        self._assert_multiple_equal(
+            timestamp,
+            relationship.created,
+            relationship.modified
+        )
 
     def _check_report_features(self, report, event, identity_id, timestamp):
         self.assertEqual(report.type, 'report')
@@ -336,8 +359,11 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(report.created_by_ref, identity_id)
         self.assertEqual(report.labels, self._labels)
         self.assertEqual(report.name, event['info'])
-        self.assertEqual(report.created, timestamp)
-        self.assertEqual(report.modified, timestamp)
+        self._assert_multiple_equal(
+            timestamp,
+            report.created,
+            report.modified
+        )
         return report.object_refs
 
     @staticmethod

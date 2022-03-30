@@ -1530,29 +1530,12 @@ class TestSTIX20Export(TestSTIX2Export):
         args = (report, event['Event'], identity_id, timestamp)
         object_ref = self._check_report_features(*args)[0]
         self.assertEqual(report.published, timestamp)
-        self.assertEqual(attack_pattern.type, 'attack-pattern')
         self._assert_multiple_equal(
             attack_pattern.id,
             f"attack-pattern--{misp_object['uuid']}",
             object_ref
         )
-        self.assertEqual(attack_pattern.created_by_ref, identity_id)
-        self._check_killchain(attack_pattern.kill_chain_phases[0], misp_object['meta-category'])
-        self._check_object_labels(misp_object, attack_pattern.labels, to_ids=False)
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        self.assertEqual(attack_pattern.created, timestamp)
-        self.assertEqual(attack_pattern.modified, timestamp)
-        id_, name, summary, weakness1, weakness2, prerequisite, solution = (attribute['value'] for attribute in misp_object['Attribute'])
-        self.assertEqual(attack_pattern.name, name)
-        self.assertEqual(attack_pattern.description, summary)
-        self._check_external_reference(
-            attack_pattern.external_references[0],
-            'capec',
-            f'CAPEC-{id_}'
-        )
-        self.assertEqual(attack_pattern.x_misp_related_weakness, [weakness1, weakness2])
-        self.assertEqual(attack_pattern.x_misp_prerequisites, prerequisite)
-        self.assertEqual(attack_pattern.x_misp_solutions, solution.replace("'", "\\'"))
+        self._check_attack_pattern_object(attack_pattern, misp_object, identity_id)
         self._populate_documentation(misp_object=misp_object, attack_pattern=attack_pattern)
 
     def test_event_with_course_of_action_object(self):
