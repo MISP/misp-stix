@@ -5,7 +5,6 @@ import json
 import os
 import unittest
 from datetime import datetime
-from misp_stix_converter import MISPtoSTIX20Parser, MISPtoSTIX21Parser
 from pathlib import Path
 from stix.core import STIXPackage
 from uuid import uuid5, UUID
@@ -371,16 +370,14 @@ class TestSTIX2Export(TestSTIX2):
         return datetime.utcfromtimestamp(int(timestamp))
 
     @staticmethod
+    def _datetime_to_str(datetime_value):
+        return datetime.strftime(datetime_value, '%Y-%m-%dT%H:%M:%S')
+
+    @staticmethod
     def _parse_AS_value(value):
         if value.startswith('AS'):
             return int(value[2:])
         return int(value)
-
-    def _populate_documentation(self, attribute = None, misp_object = None, **kwargs):
-        if attribute is not None:
-            self._populate_attributes_documentation(attribute, **kwargs)
-        elif misp_object is not None:
-            self._populate_objects_documentation(misp_object, **kwargs)
 
     @staticmethod
     def _reassemble_pattern(pattern):
@@ -461,16 +458,6 @@ class TestSTIX2Export(TestSTIX2):
             for feature in ('category', 'comment', 'data', 'to_ids', 'uuid'):
                 if attribute.get(feature):
                     self.assertEqual(custom_attribute[feature], attribute[feature])
-
-    def _sanitize_documentation(self, documentation):
-        if isinstance(documentation, list):
-            return [self._sanitize_documentation(value) for value in documentation]
-        sanitized = {}
-        for key, value in documentation.items():
-            if key == 'to_ids':
-                continue
-            sanitized[key] = self._sanitize_documentation(value) if isinstance(value, (dict, list)) else value
-        return sanitized
 
     @staticmethod
     def _sanitize_registry_key_value(value: str) -> str:

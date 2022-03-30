@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json
-from collections import defaultdict
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX21Parser, misp_collection_to_stix2_1, misp_to_stix2_1
 from .test_events import *
@@ -12,18 +10,15 @@ from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export
 
 
 class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
-    __attributes = defaultdict(lambda: defaultdict(dict))
-    __objects = defaultdict(lambda: defaultdict(dict))
-
     def setUp(self):
         self.parser = MISPtoSTIX21Parser()
 
     @classmethod
     def tearDownClass(self):
         attributes_documentation = DocumentationUpdater('misp_attributes_to_stix21')
-        attributes_documentation.check_stix21_mapping(self.__attributes)
+        attributes_documentation.check_stix21_mapping(self._attributes)
         objects_documentation = DocumentationUpdater('misp_objects_to_stix21')
-        objects_documentation.check_stix21_mapping(self.__objects)
+        objects_documentation.check_stix21_mapping(self._objects)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
@@ -51,39 +46,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             self.assertEqual(stix_object.spec_version, '2.1')
 
     @staticmethod
-    def _datetime_from_str(timestamp: str) -> datetime:
+    def _datetime_from_str(timestamp):
         regex = '%Y-%m-%dT%H:%M:%S'
         if '.' in timestamp:
             regex = f'{regex}.%f'
         return datetime.strptime(timestamp.split('+')[0], regex)
-
-    def _populate_attributes_documentation(self, attribute, **kwargs):
-        feature = attribute['type']
-        if 'MISP' not in self.__attributes[feature]:
-            self.__attributes[feature]['MISP'] = self._sanitize_documentation(attribute)
-        if 'observed_data' in kwargs:
-            documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
-            self.__attributes[feature]['STIX']['Observed Data'] = documented
-        else:
-            for object_type, stix_object in kwargs.items():
-                documented = json.loads(stix_object.serialize())
-                self.__attributes[feature]['STIX'][object_type.capitalize()] = documented
-
-    def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
-        if name is None:
-            name = misp_object['name']
-        if 'MISP' not in self.__objects[name]:
-            self.__objects[name]['MISP'] = self._sanitize_documentation(misp_object)
-        if summary is not None:
-            self.__objects['summary'][name] = summary
-        if 'observed_data' in kwargs:
-            documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
-            self.__objects[name]['STIX']['Observed Data'] = documented
-        else:
-            for object_type, stix_object in kwargs.items():
-                documented = json.loads(stix_object.serialize())
-                feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
-                self.__objects[name]['STIX'][feature] = documented
 
     @staticmethod
     def _reorder_observable_objects(observables, ids):
@@ -3605,7 +3572,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(registry_key.type, 'windows-registry-key')
         self.assertEqual(registry_key.key, key)
         self.assertEqual(
-            datetime.strftime(registry_key.modified_time, '%Y-%m-%dT%H:%M:%S'),
+            self._datetime_to_str(registry_key.modified_time),
             modified
         )
         self.assertEqual(registry_key.x_misp_hive, hive)
@@ -3756,7 +3723,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(extension.groups, [group1, group2])
         self.assertEqual(extension.home_dir, home)
         self.assertEqual(
-            datetime.strftime(user_account.credential_last_changed, '%Y-%m-%dT%H:%M:%S'),
+            self._datetime_to_str(user_account.credential_last_changed),
             plc
         )
         self._populate_documentation(
@@ -3826,11 +3793,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(x509.signature_algorithm, signalg)
         self.assertEqual(x509.issuer, issuer)
         self.assertEqual(
-            datetime.strftime(x509.validity_not_before, '%Y-%m-%dT%H:%M:%S'),
+            self._datetime_to_str(x509.validity_not_before),
             vnb
         )
         self.assertEqual(
-            datetime.strftime(x509.validity_not_after, '%Y-%m-%dT%H:%M:%S'),
+            self._datetime_to_str(x509.validity_not_after),
             vna
         )
         self.assertEqual(x509.subject, subject)

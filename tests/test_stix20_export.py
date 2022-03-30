@@ -1,27 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json
-from collections import defaultdict
-from datetime import datetime
 from misp_stix_converter import MISPtoSTIX20Parser, misp_collection_to_stix2_0, misp_to_stix2_0
 from .test_events import *
 from .update_documentation import DocumentationUpdater
+from ._test_stix import TestSTIX20
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export
 
 
-class TestSTIX20Export(TestSTIX2Export):
-    __attributes = defaultdict(lambda: defaultdict(dict))
-    __objects = defaultdict(lambda: defaultdict(dict))
+class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
     def setUp(self):
         self.parser = MISPtoSTIX20Parser()
 
     @classmethod
     def tearDownClass(self):
         attributes_documentation = DocumentationUpdater('misp_attributes_to_stix20')
-        attributes_documentation.check_stix20_mapping(self.__attributes)
+        attributes_documentation.check_stix20_mapping(self._attributes)
         objects_documentation = DocumentationUpdater('misp_objects_to_stix20')
-        objects_documentation.check_stix20_mapping(self.__objects)
+        objects_documentation.check_stix20_mapping(self._objects)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
@@ -33,27 +29,6 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(bundle.spec_version, '2.0')
         self.assertEqual(len(bundle.objects), length)
         return bundle
-
-    def _populate_attributes_documentation(self, attribute, **kwargs):
-        attribute_type = attribute['type']
-        if 'MISP' not in self.__attributes[attribute_type]:
-            self.__attributes[attribute_type]['MISP'] = self._sanitize_documentation(attribute)
-        for object_type, stix_object in kwargs.items():
-            documented = json.loads(stix_object.serialize())
-            feature = object_type.replace('_', ' ').title()
-            self.__attributes[attribute_type]['STIX'][feature] = documented
-
-    def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
-        if name is None:
-            name = misp_object['name']
-        if 'MISP' not in self.__objects[name]:
-            self.__objects[name]['MISP'] = self._sanitize_documentation(misp_object)
-        if summary is not None:
-            self.__objects['summary'][name] = summary
-        for object_type, stix_object in kwargs.items():
-            documented = json.loads(stix_object.serialize())
-            feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
-            self.__objects[name]['STIX'][feature] = documented
 
     def _run_custom_attributes_tests(self, event):
         orgc = event['Event']['Orgc']
@@ -2564,7 +2539,7 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(extension.home_dir, home)
         self.assertEqual(user_account.x_misp_password, passwd)
         self.assertEqual(
-            datetime.strftime(user_account.password_last_changed, '%Y-%m-%dT%H:%M:%S'),
+            self._datetime_to_str(user_account.password_last_changed),
             plc
         )
         self._populate_documentation(
@@ -2622,11 +2597,11 @@ class TestSTIX20Export(TestSTIX2Export):
         self.assertEqual(x509.signature_algorithm, signalg)
         self.assertEqual(x509.issuer, issuer)
         self.assertEqual(
-            datetime.strftime(x509.validity_not_before, '%Y-%m-%dT%H:%M:%S'),
+            self._datetime_to_str(x509.validity_not_before),
             vnb
         )
         self.assertEqual(
-            datetime.strftime(x509.validity_not_after, '%Y-%m-%dT%H:%M:%S'),
+            self._datetime_to_str(x509.validity_not_after),
             vna
         )
         self.assertEqual(x509.subject, subject)
