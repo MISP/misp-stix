@@ -33,6 +33,23 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             attack_pattern.external_references[0].external_id
         )
 
+    def _check_course_of_action_object(self, misp_object, course_of_action):
+        self.assertEqual(misp_object.uuid, course_of_action.id.split('--')[1])
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            self._timestamp_from_datetime(course_of_action.created),
+            self._timestamp_from_datetime(course_of_action.modified)
+        )
+        self._check_object_labels(misp_object, course_of_action.labels, False)
+        name, description, *attributes = misp_object.attributes
+        self.assertEqual(name.value, course_of_action.name)
+        self.assertEqual(description.value, course_of_action.description)
+        for attribute in attributes:
+            self.assertEqual(
+                attribute.value,
+                getattr(course_of_action, f"x_misp_{attribute.object_relation}")
+            )
+
 
 class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
     @classmethod
@@ -56,6 +73,16 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         self._check_attack_pattern_object(misp_object, attack_pattern)
         self._populate_documentation(misp_object=misp_object, attack_pattern=attack_pattern)
 
+    def test_stix20_course_of_action_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_course_of_action_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, course_of_action = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_course_of_action_object(misp_object, course_of_action)
+        self._populate_documentation(misp_object=misp_object, course_of_action=course_of_action)
+
 
 class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
     @classmethod
@@ -78,3 +105,13 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         self._check_attack_pattern_object(misp_object, attack_pattern)
         self._populate_documentation(misp_object=misp_object, attack_pattern=attack_pattern)
+
+    def test_stix21_course_of_action_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_course_of_action_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, course_of_action = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_course_of_action_object(misp_object, course_of_action)
+        self._populate_documentation(misp_object=misp_object, course_of_action=course_of_action)

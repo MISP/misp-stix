@@ -45,6 +45,7 @@ _COURSE_OF_ACTION_OBJECT = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
+    "description": "Block communication between the PIVY agents and the C2 Server",
     "labels": [
         "misp:name=\"course-of-action\"",
         "misp:meta-category=\"misc\"",
