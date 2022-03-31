@@ -95,32 +95,52 @@ class STIX2Mapping:
         )
 
         # ATTRIBUTES MAPPING DECLARATION
-        comment_attribute = Mapping(type='comment', object_relation='comment')
-        snort_attribute = Mapping(type='snort', object_relation='suricata')
-        version_attribute = Mapping(type='text', object_realtion='version')
-        yara_attribute = Mapping(type='yara', object_relation='yara')
+        comment_attribute = {'type': 'comment', 'object_relation': 'comment'}
+        snort_attribute = {'type': 'snort', 'object_relation': 'suricata'}
+        version_attribute = {'type': 'text', 'object_realtion': 'version'}
+        yara_attribute = {'type': 'yara', 'object_relation': 'yara'}
 
         # SINGLE ATTRIBUTES MAPPING
-        self.__accuracy_radius_attribute = Mapping(type='float', object_relation='accuracy_radius')
-        self.__comment_attribute = comment_attribute
-        self.__description_attribute = Mapping(type='text', object_relation='description')
-        self.__references_attribute = Mapping(type='link', object_relation='references')
-        self.__sigma_attribute = Mapping(type='sigma')
-        self.__snort_attribute = snort_attribute
-        self.__summary_attribute = Mapping(type='text', object_relation='summary')
-        self.__version_attribute = version_attribute
-        self.__vulnerability_attribute = Mapping(type='vulnerability', object_relation='id')
-        self.__yara_attribute = yara_attribute
+        self.__accuracy_radius_attribute = Mapping(
+            **{
+                'type': 'float',
+                'object_relation': 'accuracy_radius'
+            }
+        )
+        self.__comment_attribute = Mapping(**comment_attribute)
+        self.__description_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'description'
+            }
+        )
+        self.__references_attribute = Mapping(
+            **{
+                'type': 'link',
+                'object_relation': 'references'
+            }
+        )
+        self.__sigma_attribute = Mapping(**{'type': 'sigma'})
+        self.__snort_attribute = Mapping(**snort_attribute)
+        self.__summary_attribute = Mapping(**{'type': 'text', 'object_relation': 'summary'})
+        self.__version_attribute = Mapping(**version_attribute)
+        self.__vulnerability_attribute = Mapping(
+            **{
+                'type': 'vulnerability',
+                'object_relation': 'id'
+            }
+        )
+        self.__yara_attribute = Mapping(**yara_attribute)
 
         # MISP OBJECTS MAPPING
         self.__location_object_mapping = Mapping(
-            city = Mapping(type='text', object_relation='city'),
-            country = Mapping(type='text', object_relation='country'),
-            latitude = Mapping(type='float', object_relation='latitude'),
-            longitude = Mapping(type='float', object_relation='longitude'),
-            postal_code = Mapping(type='text', object_relation='zipcode'),
-            region = Mapping(type='text', object_relation='region'),
-            street_address = Mapping(type='text', object_relation='address')
+            city = {'type': 'text', 'object_relation': 'city'},
+            country = {'type': 'text', 'object_relation': 'country'},
+            latitude = {'type': 'float', 'object_relation': 'latitude'},
+            longitude = {'type': 'float', 'object_relation': 'longitude'},
+            postal_code = {'type': 'text', 'object_relation': 'zipcode'},
+            region = {'type': 'text', 'object_relation': 'region'},
+            street_address = {'type': 'text', 'object_relation': 'address'}
         )
         self.__suricata_object_mapping = Mapping(
             description = comment_attribute,
