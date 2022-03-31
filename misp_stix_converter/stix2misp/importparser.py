@@ -49,6 +49,11 @@ class STIXtoMISPParser:
         message = f"Error while parsing pattern from indicator with id {indicator_id}"
         self.__errors[self._identifier].add(message)
 
+    def _course_of_action_error(self, course_of_action_id: str, exception: Exception):
+        tb = self._parse_traceback(exception)
+        message = f"Error with the Course of Action object with id {course_of_action_id}: {tb}"
+        self.__error[self._identifier].add(message)
+
     def _object_ref_loading_error(self, object_ref: str):
         message = f"Error loading the STIX object with id {object_ref}"
         self.__errors[self._identifier].add(message)

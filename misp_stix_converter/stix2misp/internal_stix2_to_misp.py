@@ -7,9 +7,12 @@ from .exceptions import (AttributeFromPatternParsingError, UndefinedSTIXObjectEr
 from .internal_stix2_mapping import InternalSTIX2Mapping
 from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
 from pymisp import MISPAttribute, MISPEvent, MISPObject
-from stix2.v20.sdo import (AttackPattern as AttackPattern_v20, CustomObject as CustomObject_v20,
-    Indicator as Indicator_v20, ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
-from stix2.v21.sdo import (AttackPattern as AttackPattern_v21, CustomObject as CustomObject_v21,
+from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
+    CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
+    Indicator as Indicator_v20, ObservedData as ObservedData_v20,
+    Vulnerability as Vulnerability_v20)
+from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
+    CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21,
     Indicator as Indicator_v21, Note, ObservedData as ObservedData_v21,
     Vulnerability as Vulnerability_v21)
 from typing import Optional, Union
@@ -98,6 +101,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             parser(attack_pattern)
         except Exception as exception:
             self._attack_pattern_error(attack_pattern.id, exception)
+
+    def _parse_course_of_action(self, course_of_action_ref: str):
+        course_of_action = self._get_stix_object(course_of_action_ref)['stix_object']
+        feature = self._handle_object_mapping(course_of_action.labels, course_of_action.id)
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        try:
+            parser(course_of_action)
+        except Exception as exception:
+            self._course_of_action_error(course_of_action.id, exception)
 
     def _parse_custom_attribute(self, custom_ref: str):
         custom_attribute = self._get_stix_object(custom_ref)
@@ -190,7 +205,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         misp_object = self._create_misp_object('attack-pattern', attack_pattern)
         for key, mapping in self._mapping.attack_pattern_object_mapping.items():
             if hasattr(attack_pattern, key):
-                self._populate_object_attributes(misp_object, mapping, getattr(attack_pattern, key))
+                self._populate_object_attributes(
+                    misp_object,
+                    mapping,
+                    getattr(attack_pattern, key)
+                )
         if hasattr(attack_pattern, 'external_references'):
             for reference in attack_pattern.external_references:
                 misp_object.add_attribute(**self._parse_attack_pattern_reference(reference))
@@ -208,6 +227,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             'object_relation': 'references',
             'value': reference['url']
         }
+
+    def _parse_course_of_action_object(self, course_of_action: Union[CourseOfAction_v20, CourseOfAction_v21]):
+        misp_object = self._create_misp_object('course-of-action', course_of_action)
+        for key, mapping in self._mapping.course_of_action_mapping.items():
+            if hasattr(course_of_action, key):
+                self._populate_object_attributes(
+                    misp_object,
+                    mapping,
+                    getattr(course_of_action, key)
+                )
+        self._add_misp_object(misp_object)
 
     def _parse_vulnerability_attribute(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
         attribute = self._create_attribute_dict(vulnerability)

@@ -206,6 +206,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'android-app': '_object_from_android_app',
             'asn': '_object_from_asn',
             'attack-pattern': '_parse_attack_pattern_object',
+            'course-of-action': '_parse_course_of_action_object',
             'cpe-asset': '_object_from_cpe_asset',
             'credential': '_object_from_credential',
             'domain-ip': '_object_from_domain_ip',
@@ -242,11 +243,21 @@ class InternalSTIX2Mapping(STIX2Mapping):
 
         # STIX TO MISP OBJECTS MAPPING
         self.__attack_pattern_object_mapping = Mapping(
-            description = Mapping(type='text', object_relation='summary'),
-            name = Mapping(type='text', object_relation='name'),
-            x_misp_prerequisites = Mapping(type='text', object_relation='prerequisites'),
-            x_misp_related_weakness = Mapping(type='weakness', object_relation='related-weakness'),
-            x_misp_solutions = Mapping(type='text', object_relation='solutions')
+            description = {'type': 'text', 'object_relation': 'summary'},
+            name = {'type': 'text', 'object_relation': 'name'},
+            x_misp_prerequisites = {'type': 'text', 'object_relation': 'prerequisites'},
+            x_misp_related_weakness = {'type': 'weakness', 'object_relation': 'related-weakness'},
+            x_misp_solutions = {'type': 'text', 'object_relation': 'solutions'}
+        )
+        self.__course_of_action_object_mapping = Mapping(
+            name = {'type': 'text', 'object_relation': 'name'},
+            description = {'type': 'text', 'object_relation': 'description'},
+            x_misp_cost = {'type': 'text', 'object_relation': 'cost'},
+            x_misp_efficacy = {'type': 'text', 'object_relation': 'efficacy'},
+            x_misp_impact = {'type': 'text', 'object_relation': 'impact'},
+            x_misp_objective = {'type': 'text', 'object_relation': 'objective'},
+            x_misp_stage = {'type': 'text', 'object_relation': 'stage'},
+            x_misp_type = {'type': 'text', 'object_relation': 'type'}
         )
 
     @property
@@ -256,6 +267,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def attributes_mapping(self) -> dict:
         return self.__attributes_mapping
+
+    @property
+    def course_of_action_mapping(self) -> dict:
+        return self.__course_of_action_object_mapping
 
     @property
     def galaxies_mapping(self) -> dict:
