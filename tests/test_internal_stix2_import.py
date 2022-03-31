@@ -13,6 +13,26 @@ class TestInternalSTIX2Import(TestSTIX2Import):
     def setUp(self):
         self.parser = InternalSTIX2toMISPParser(False)
 
+    def _check_attack_pattern_object(self, misp_object, attack_pattern):
+        self.assertEqual(misp_object.uuid, attack_pattern.id.split('--')[1])
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            self._timestamp_from_datetime(attack_pattern.created),
+            self._timestamp_from_datetime(attack_pattern.modified)
+        )
+        self._check_object_labels(misp_object, attack_pattern.labels, False)
+        summary, name, prerequisites, weakness1, weakness2, solution, capec_id = misp_object.attributes
+        self.assertEqual(summary.value, attack_pattern.description)
+        self.assertEqual(name.value, attack_pattern.name)
+        self.assertEqual(prerequisites.value, attack_pattern.x_misp_prerequisites)
+        self.assertEqual(weakness1.value, attack_pattern.x_misp_related_weakness[0])
+        self.assertEqual(weakness2.value, attack_pattern.x_misp_related_weakness[1])
+        self.assertEqual(solution.value, attack_pattern.x_misp_solutions)
+        self.assertEqual(
+            f"CAPEC-{capec_id.value}",
+            attack_pattern.external_references[0].external_id
+        )
+
 
 class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
     @classmethod
