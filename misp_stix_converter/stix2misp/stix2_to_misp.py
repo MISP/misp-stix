@@ -264,7 +264,11 @@ class STIX2toMISPParser(STIXtoMISPParser):
             object_type = object_type.replace('x-misp', 'custom')
         feature = f"_{object_type.replace('-', '_')}"
         try:
-            return getattr(self, feature)[object_ref]
+            stix_object = getattr(self, feature)[object_ref]
+            if isinstance(stix_object, dict):
+                stix_object['used'] = True
+                return stix_object['stix_object']
+            return stix_object
         except AttributeError:
             raise ObjectTypeLoadingError(object_type)
         except KeyError:

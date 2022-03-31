@@ -91,7 +91,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         raise UndefinedSTIXObjectError(object_id)
 
     def _parse_attack_pattern(self, attack_pattern_ref: str):
-        attack_pattern = self._get_stix_object(attack_pattern_ref)['stix_object']
+        attack_pattern = self._get_stix_object(attack_pattern_ref)
         feature = self._handle_object_mapping(attack_pattern.labels, attack_pattern.id)
         try:
             parser = getattr(self, feature)
@@ -103,7 +103,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._attack_pattern_error(attack_pattern.id, exception)
 
     def _parse_course_of_action(self, course_of_action_ref: str):
-        course_of_action = self._get_stix_object(course_of_action_ref)['stix_object']
+        course_of_action = self._get_stix_object(course_of_action_ref)
         feature = self._handle_object_mapping(course_of_action.labels, course_of_action.id)
         try:
             parser = getattr(self, feature)
