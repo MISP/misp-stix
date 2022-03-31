@@ -160,6 +160,24 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(vulnerability.created, timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
 
+    def _check_course_of_action_object(self, course_of_action, misp_object, identity_id):
+        self.assertEqual(course_of_action.type, 'course-of-action')
+        self.assertEqual(course_of_action.created_by_ref, identity_id)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(course_of_action.created, timestamp)
+        self.assertEqual(course_of_action.modified, timestamp)
+        name, description, *attributes = misp_object['Attribute']
+        self.assertEqual(course_of_action.name, name['value'])
+        self.assertEqual(course_of_action.description, description['value'])
+        for attribute in attributes:
+            self.assertEqual(
+                getattr(
+                    course_of_action,
+                    f"x_misp_{attribute['object_relation']}"
+                ),
+                attribute['value']
+            )
+
     def _check_email_address(self, address_object, address, display_name=None):
         self.assertEqual(address_object.type, 'email-addr')
         self.assertEqual(address_object.value, address)

@@ -86,8 +86,9 @@ class TestStix1Export(unittest.TestCase):
 
     def _check_course_of_action_fields(self, course_of_action, misp_object):
         self.assertEqual(course_of_action.id_, f"{_ORGNAME_ID}:CourseOfAction-{misp_object['uuid']}")
-        name, type_, objective, stage, cost, impact, efficacy = misp_object['Attribute']
+        name, description, type_, objective, stage, cost, impact, efficacy = misp_object['Attribute']
         self.assertEqual(course_of_action.title, name['value'])
+        self.assertEqual(course_of_action.description.value, description['value'])
         self.assertEqual(course_of_action.type_.value, type_['value'])
         self.assertEqual(course_of_action.objective.description.value, objective['value'])
         self.assertEqual(course_of_action.stage.value, stage['value'])

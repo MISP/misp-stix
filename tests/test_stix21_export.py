@@ -2324,27 +2324,13 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         )
         args = (grouping, event['Event'], identity_id)
         object_ref = self._check_grouping_features(*args)[0]
-        self.assertEqual(course_of_action.type, 'course-of-action')
         self._assert_multiple_equal(
             course_of_action.id,
             grouping['object_refs'][0],
             object_ref,
             f"course-of-action--{misp_object['uuid']}"
         )
-        self.assertEqual(course_of_action.created_by_ref, identity_id)
-        self._check_object_labels(misp_object, course_of_action.labels, to_ids=False)
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        self.assertEqual(course_of_action.created, timestamp)
-        self.assertEqual(course_of_action.modified, timestamp)
-        self.assertEqual(course_of_action.name, misp_object['Attribute'][0]['value'])
-        for attribute in misp_object['Attribute'][1:]:
-            self.assertEqual(
-                getattr(
-                    course_of_action,
-                    f"x_misp_{attribute['object_relation']}"
-                ),
-                attribute['value']
-            )
+        self._check_course_of_action_object(course_of_action, misp_object, identity_id)
         self._populate_documentation(misp_object=misp_object, course_of_action=course_of_action)
 
     def test_event_with_cpe_asset_indicator_object(self):

@@ -1524,26 +1524,12 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         args = (report, event['Event'], identity_id, timestamp)
         object_ref = self._check_report_features(*args)[0]
         self.assertEqual(report.published, timestamp)
-        self.assertEqual(course_of_action.type, 'course-of-action')
         self._assert_multiple_equal(
             course_of_action.id,
             f"course-of-action--{misp_object['uuid']}",
             object_ref
         )
-        self.assertEqual(course_of_action.created_by_ref, identity_id)
-        self._check_object_labels(misp_object, course_of_action.labels, to_ids=False)
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        self.assertEqual(course_of_action.created, timestamp)
-        self.assertEqual(course_of_action.modified, timestamp)
-        self.assertEqual(course_of_action.name, misp_object['Attribute'][0]['value'])
-        for attribute in misp_object['Attribute'][1:]:
-            self.assertEqual(
-                getattr(
-                    course_of_action,
-                    f"x_misp_{attribute['object_relation']}"
-                ),
-                attribute['value']
-            )
+        self._check_course_of_action_object(course_of_action, misp_object, identity_id)
         self._populate_documentation(
             misp_object = misp_object,
             course_of_action = course_of_action

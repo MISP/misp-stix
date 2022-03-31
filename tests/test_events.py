@@ -1053,6 +1053,11 @@ _TEST_COURSE_OF_ACTION_OBJECT = {
         },
         {
             "type": "text",
+            "object_relation": "description",
+            "value": "Block communication between the PIVY agents and the C2 Server"
+        },
+        {
+            "type": "text",
             "object_relation": "type",
             "value": "Perimeter Blocking"
         },
