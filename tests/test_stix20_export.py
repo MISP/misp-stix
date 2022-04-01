@@ -2006,26 +2006,11 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         args = (report, event['Event'], identity_id, timestamp)
         object_ref = self._check_report_features(*args)[0]
-        legal_entity_id = f"identity--{misp_object['uuid']}"
-        name, description, business, phone, logo = (attribute['value'] for attribute in misp_object['Attribute'])
-        self.assertEqual(legal_entity.type, 'identity')
-        self._assert_multiple_equal(
-            legal_entity.id,
-            legal_entity_id,
-            object_ref
-        )
-        self.assertEqual(legal_entity.identity_class, 'organization')
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        self.assertEqual(legal_entity.created, timestamp)
-        self.assertEqual(legal_entity.modified, timestamp)
-        self.assertEqual(legal_entity.name, name)
-        self.assertEqual(legal_entity.description, description)
-        self.assertEqual(legal_entity.sectors, [business])
-        self.assertEqual(legal_entity.contact_information, f"phone-number: {phone}")
-        self.assertEqual(legal_entity.x_misp_logo['value'], logo)
-        self.assertEqual(
-            legal_entity.x_misp_logo['data'],
-            misp_object['Attribute'][-1]['data'].replace('\\', '')
+        self._check_legal_entity_object_features(
+            legal_entity,
+            misp_object,
+            object_ref,
+            identity_id
         )
         self._populate_documentation(misp_object=misp_object, identity=legal_entity)
 

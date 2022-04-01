@@ -255,6 +255,35 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(killchain['kill_chain_name'], 'misp-category')
         self.assertEqual(killchain['phase_name'], category)
 
+    def _check_legal_entity_object_features(self, legal_entity, misp_object, legal_entity_ref, identity_id):
+        self.assertEqual(legal_entity.type, 'identity')
+        self._assert_multiple_equal(
+            legal_entity.id,
+            legal_entity_ref,
+            f"identity--{misp_object['uuid']}"
+        )
+        self.assertEqual(legal_entity.identity_class, 'organization')
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(legal_entity.created, timestamp)
+        self.assertEqual(legal_entity.modified, timestamp)
+        self.assertEqual(legal_entity.created_by_ref, identity_id)
+        name, description, business, phone, website, registration_number, logo = misp_object['Attribute']
+        self.assertEqual(legal_entity.name, name['value'])
+        self.assertEqual(legal_entity.description, description['value'])
+        self.assertEqual(legal_entity.sectors, [business['value']])
+        self.assertEqual(
+            legal_entity.contact_information,
+            f"{phone['object_relation']}: {phone['value']} / {website['object_relation']}: {website['value']}"
+        )
+        self.assertEqual(
+            legal_entity.x_misp_registration_number,
+            registration_number['value']
+        )
+        self.assertEqual(
+            legal_entity.x_misp_logo,
+            {'value': logo['value'], 'data': logo['data']}
+        )
+
     def _check_object_indicator_features(self, indicator, misp_object, identity_id, object_ref):
         self._check_indicator_features(indicator, identity_id, object_ref, misp_object['uuid'])
         self._check_killchain(indicator.kill_chain_phases[0], misp_object['meta-category'])

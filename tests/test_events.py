@@ -4129,6 +4129,16 @@ def get_event_with_legal_entity_object():
                     "value": "1234567890"
                 },
                 {
+                    "type": "link",
+                    "object_relation": "website",
+                    "value": "https://umbrella.org"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "registration-number",
+                    "value": "11223344556677889900"
+                },
+                {
                     "type": "attachment",
                     "object_relation": "logo",
                     "value": "umbrella_logo",
