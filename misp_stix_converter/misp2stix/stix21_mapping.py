@@ -96,6 +96,7 @@ class Stix21Mapping(Stix2Mapping):
             **{
                 'email-address': 'contact_information',
                 'employee-type': 'roles',
+                'full-name': 'name',
                 'text': 'description'
             }
         )

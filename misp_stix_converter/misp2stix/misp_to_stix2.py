@@ -1205,9 +1205,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             misp_object['Attribute'],
             force_single=self._mapping.employee_single_fields
         )
-        name = [attributes.pop(key) for key in ('first-name', 'last-name') if attributes.get(key)]
-        if name:
-            identity_args['name'] = ' '.join(name)
+        if 'full-name' not in attributes:
+            name = [attributes.pop(key) for key in ('first-name', 'last-name') if attributes.get(key)]
+            if name:
+                identity_args['name'] = ' '.join(name)
         for key, feature in self._mapping.employee_object_mapping.items():
             if attributes.get(key):
                 identity_args[feature] = attributes.pop(key)

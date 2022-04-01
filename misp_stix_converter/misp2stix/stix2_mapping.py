@@ -426,6 +426,7 @@ class Stix2Mapping:
         self.__employee_single_fields = (
             'email-address',
             'first-name',
+            'full-name',
             'last-name',
             'text'
         )

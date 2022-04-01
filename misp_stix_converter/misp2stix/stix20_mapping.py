@@ -53,6 +53,7 @@ class Stix20Mapping(Stix2Mapping):
         self.__employee_object_mapping = Mapping(
             **{
                 'email-address': 'contact_information',
+                'full-name': 'name',
                 'text': 'description'
             }
         )
