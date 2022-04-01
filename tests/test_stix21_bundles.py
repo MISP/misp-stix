@@ -58,6 +58,26 @@ _COURSE_OF_ACTION_OBJECT = {
     "x_misp_stage": "Response",
     "x_misp_type": "Perimeter Blocking"
 }
+_EMPLOYEE_OBJECT = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--685a38e1-3ca1-40ef-874d-3a04b9fb3af6",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "John Doe",
+    "description": "John Doe is known",
+    "roles": [
+        "Supervisor"
+    ],
+    "identity_class": "individual",
+    "contact_information": "jdoe@email.com",
+    "labels": [
+        "misp:name=\"employee\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 
 
 class TestSTIX21Bundles:
@@ -113,3 +133,7 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_course_of_action_object(cls):
         return cls.__assemble_bundle(_COURSE_OF_ACTION_OBJECT)
+
+    @classmethod
+    def get_bundle_with_employee_object(cls):
+        return cls.__assemble_bundle(_EMPLOYEE_OBJECT)
