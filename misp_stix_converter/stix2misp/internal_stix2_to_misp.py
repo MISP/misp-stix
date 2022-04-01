@@ -242,7 +242,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_course_of_action_object(self, course_of_action: Union[CourseOfAction_v20, CourseOfAction_v21]):
         misp_object = self._create_misp_object('course-of-action', course_of_action)
-        for key, mapping in self._mapping.course_of_action_mapping.items():
+        for key, mapping in self._mapping.course_of_action_object_mapping.items():
             if hasattr(course_of_action, key):
                 self._populate_object_attributes(
                     misp_object,

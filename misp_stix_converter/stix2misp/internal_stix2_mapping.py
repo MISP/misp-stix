@@ -283,7 +283,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__attributes_mapping
 
     @property
-    def course_of_action_mapping(self) -> dict:
+    def course_of_action_object_mapping(self) -> dict:
         return self.__course_of_action_object_mapping
 
     @property
