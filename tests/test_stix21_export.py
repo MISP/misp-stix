@@ -2721,20 +2721,12 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             self._datetime_from_timestamp(event['Event']['timestamp'])
         )
         employee_ref = self._check_grouping_features(grouping, event['Event'], identity_id)[0]
-        first_name, last_name, description, email, employee_type = (attribute['value'] for attribute in misp_object['Attribute'])
-        self.assertEqual(employee.type, 'identity')
-        self._assert_multiple_equal(
-            employee.id,
+        employee_type = self._check_employee_object(
+            employee,
+            misp_object,
             employee_ref,
-            f"identity--{misp_object['uuid']}"
+            identity_id
         )
-        self.assertEqual(employee.identity_class, 'individual')
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        self.assertEqual(employee.created, timestamp)
-        self.assertEqual(employee.modified, timestamp)
-        self.assertEqual(employee.name, f"{first_name} {last_name}")
-        self.assertEqual(employee.description, description)
-        self.assertEqual(employee.contact_information, email)
         self.assertEqual(employee.roles, [employee_type])
         self._populate_documentation(misp_object=misp_object, identity=employee)
 

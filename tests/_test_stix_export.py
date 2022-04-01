@@ -184,6 +184,27 @@ class TestSTIX2Export(TestSTIX2):
         if display_name is not None:
             self.assertEqual(address_object.display_name, display_name)
 
+    def _check_employee_object(self, employee, misp_object, employee_ref, identity_id):
+        self.assertEqual(employee.type, 'identity')
+        self._assert_multiple_equal(
+            employee.id,
+            employee_ref,
+            f"identity--{misp_object['uuid']}"
+        )
+        self.assertEqual(employee.identity_class, 'individual')
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(employee.created, timestamp)
+        self.assertEqual(employee.modified, timestamp)
+        self.assertEqual(employee.created_by_ref, identity_id)
+        first_name, last_name, description, email, employee_type = misp_object['Attribute']
+        self.assertEqual(employee.name, f"{first_name['value']} {last_name['value']}")
+        self.assertEqual(employee.description, description['value'])
+        self.assertEqual(
+            employee.contact_information,
+            f"{email['object_relation']}: {email['value']}"
+        )
+        return employee_type['value']
+
     def _check_external_reference(self, reference, source_name, value):
         self.assertEqual(reference.source_name, source_name)
         self.assertEqual(reference.external_id, value)

@@ -1797,17 +1797,12 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         args = (report, event['Event'], identity_id, timestamp)
         object_ref = self._check_report_features(*args)[0]
-        employee_id = f"identity--{misp_object['uuid']}"
-        first_name, last_name, description, email, employee_type = (attribute['value'] for attribute in misp_object['Attribute'])
-        self.assertEqual(employee.type, 'identity')
-        self._assert_multiple_equal(employee.id, employee_id, object_ref)
-        self.assertEqual(employee.identity_class, 'individual')
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        self.assertEqual(employee.created, timestamp)
-        self.assertEqual(employee.modified, timestamp)
-        self.assertEqual(employee.name, f"{first_name} {last_name}")
-        self.assertEqual(employee.description, description)
-        self.assertEqual(employee.contact_information, email)
+        employee_type = self._check_employee_object(
+            employee,
+            misp_object,
+            object_ref,
+            identity_id
+        )
         self.assertEqual(employee.x_misp_employee_type, employee_type)
         self._populate_documentation(misp_object=misp_object, identity=employee)
 
