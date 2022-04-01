@@ -1212,6 +1212,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for key, feature in self._mapping.employee_object_mapping.items():
             if attributes.get(key):
                 identity_args[feature] = attributes.pop(key)
+        contact_information = self._parse_contact_information(
+            attributes,
+            misp_object['name']
+        )
+        if contact_information:
+            identity_args['contact_information'] = ' / '.join(contact_information)
         if attributes:
             identity_args.update(self._handle_observable_multiple_properties(attributes))
         self._append_SDO(self._create_identity(identity_args))
@@ -1342,7 +1348,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if contact_info:
             identity_args['contact_information'] = ' / '.join(contact_info)
         if attributes:
-            identity_args.update(self._handle_observable_multiple_properties_with_data(attributes, name))
+            identity_args.update(
+                self._handle_observable_multiple_properties_with_data(
+                    attributes,
+                    name
+                )
+            )
         self._append_SDO(self._create_identity(identity_args))
 
     def _parse_lnk_object_pattern(self, attributes: dict) -> list:
@@ -1487,7 +1498,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for key, feature in self._mapping.organization_object_mapping.items():
             if attributes.get(key):
                 identity_args[feature] = attributes.pop(key)
-        contact_info = self._parse_contact_information(attributes, misp_object['name'].replace('-', '_'))
+        contact_info = self._parse_contact_information(
+            attributes,
+            misp_object['name'].replace('-', '_')
+        )
         if contact_info:
             identity_args['contact_information'] = ' / '.join(contact_info)
         if attributes:
