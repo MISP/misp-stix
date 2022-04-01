@@ -211,6 +211,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'credential': '_object_from_credential',
             'domain-ip': '_object_from_domain_ip',
             'email': '_object_from_email',
+            'employee': '_parse_employee_object',
             'facebook-account': '_object_from_account',
             'file': '_object_from_file',
             'image': '_object_from_image',
@@ -259,6 +260,19 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_stage = {'type': 'text', 'object_relation': 'stage'},
             x_misp_type = {'type': 'text', 'object_relation': 'type'}
         )
+        employee_type = {'type': 'text', 'object_relation': 'employee-type'}
+        self.__employee_object_mapping = Mapping(
+            name = {'type': 'full-name', 'object_relation': 'full-name'},
+            contact_information = {'type': 'target-email', 'object_relation': 'email-address'},
+            description = {'type': 'text', 'object_relation': 'text'},
+            roles = employee_type,
+            x_misp_business_unit = {'type': 'target-org', 'object_relation': 'business_unit'},
+            x_misp_employee_type = employee_type,
+            x_misp_first_name = {'type': 'first-name', 'object_relation': 'first-name'},
+            x_misp_last_name = {'type': 'last-name', 'object_relation': 'last-name'},
+            x_misp_primary_asset = {'type': 'target-machine', 'object_relation': 'primary-asset'},
+            x_misp_userid = {'type': 'target-user', 'object_relation': 'userid'}
+        )
 
     @property
     def attack_pattern_object_mapping(self) -> dict:
@@ -271,6 +285,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def course_of_action_mapping(self) -> dict:
         return self.__course_of_action_object_mapping
+
+    @property
+    def employee_object_mapping(self) -> dict:
+        return self.__employee_object_mapping
 
     @property
     def galaxies_mapping(self) -> dict:

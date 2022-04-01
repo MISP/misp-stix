@@ -9,12 +9,12 @@ from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
     CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
-    Indicator as Indicator_v20, ObservedData as ObservedData_v20,
-    Vulnerability as Vulnerability_v20)
+    Identity as Identity_v20, Indicator as Indicator_v20,
+    ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
 from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
     CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21,
-    Indicator as Indicator_v21, Note, ObservedData as ObservedData_v21,
-    Vulnerability as Vulnerability_v21)
+    Identity as Identity_v21, Indicator as Indicator_v21, Note,
+    ObservedData as ObservedData_v21, Vulnerability as Vulnerability_v21)
 from typing import Optional, Union
 
 _attribute_additional_fields = (
@@ -140,6 +140,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
+    def _parse_identity(self, identity_ref: str):
+        identity = self._get_stix_object(identity_ref)
+        feature = self._handle_object_mapping(identity.labels, identity.id)
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        try:
+            parser(identity)
+        except Exception as exception:
+            self._identity_error(identity.id, exception)
+
     def _parse_indicator(self, indicator_ref: str):
         indicator = self._get_stix_object(indicator_ref)
         feature = self._handle_object_mapping(indicator.labels, indicator.id)
@@ -236,6 +248,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     misp_object,
                     mapping,
                     getattr(course_of_action, key)
+                )
+        self._add_misp_object(misp_object)
+
+    def _parse_employee_object(self, identity: Union[Identity_v20, Identity_v21]):
+        misp_object = self._create_misp_object('employee', identity)
+        for key, mapping in self._mapping.employee_object_mapping.items():
+            if hasattr(identity, key):
+                self._populate_object_attributes(
+                    misp_object,
+                    mapping,
+                    getattr(identity, key)
                 )
         self._add_misp_object(misp_object)
 
