@@ -537,6 +537,7 @@ class Stix2Mapping:
         )
         self.__legal_entity_contact_info_fields = (
             'phone-number',
+            'website'
         )
         self.__legal_entity_data_fields = (
             'logo',
