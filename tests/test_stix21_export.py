@@ -4,7 +4,7 @@
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX21Parser, misp_collection_to_stix2_1, misp_to_stix2_1
 from .test_events import *
-from .update_documentation import DocumentationUpdater
+from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
 from ._test_stix import TestSTIX21
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export
 
@@ -15,10 +15,10 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
 
     @classmethod
     def tearDownClass(self):
-        attributes_documentation = DocumentationUpdater('misp_attributes_to_stix21')
-        attributes_documentation.check_stix21_mapping(self._attributes)
-        objects_documentation = DocumentationUpdater('misp_objects_to_stix21')
-        objects_documentation.check_stix21_mapping(self._objects)
+        attributes_documentation = AttributesDocumentationUpdater('misp_attributes_to_stix21', self._attributes)
+        attributes_documentation.check_mapping('stix21')
+        objects_documentation = ObjectsDocumentationUpdater('misp_objects_to_stix21', self._objects)
+        objects_documentation.check_mapping('stix21')
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
