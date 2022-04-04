@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from base64 import b64encode
 from copy import deepcopy
+from pathlib import Path
+
+_TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
 
 ################################################################################
 #                           DATA STRUCTURES EXAMPLES                           #
@@ -237,7 +241,6 @@ _EVENT_FOR_ESCAPING_TESTS = {
                 "type": "malware-sample",
                 "category": "Payload delivery",
                 "value": "oui|8764605c6f388c89096b534d33565802",
-                "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
                 "to_ids": True,
                 "timestamp": "1603642920",
                 "comment": "Malware Sample test attribute"
@@ -706,8 +709,7 @@ _TEST_EVENT_REPORT = {
             "to_ids": False,
             "uuid": "f715be9f-845f-4d8c-8dce-852b353b3488",
             "timestamp": "1603642920",
-            "value": "google_screenshot.png",
-            "data": "iVBORw0KGgoAAAANSUhEUgA[...]dLlpgAAAABJRU5ErkJggg=="
+            "value": "google_screenshot.png"
         }
     ],
     "Object": [
@@ -1388,7 +1390,6 @@ _TEST_FILE_OBJECT = {
             "type": "malware-sample",
             "object_relation": "malware-sample",
             "value": "oui|8764605c6f388c89096b534d33565802",
-            "data": "UEsDBAoACQAAAPKLQ1AvUbi[...]AACAAIA2QAAAB8BAAAAAA=="
         },
         {
             "type": "filename",
@@ -1419,8 +1420,7 @@ _TEST_FILE_OBJECT = {
             "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
             "type": "attachment",
             "object_relation": "attachment",
-            "value": "non",
-            "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+            "value": "non"
         },
         {
             "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
@@ -2437,11 +2437,16 @@ def get_published_event():
 
 
 def get_event_with_escaped_values_v20():
-    return deepcopy(_EVENT_FOR_ESCAPING_TESTS)
+    event = deepcopy(_EVENT_FOR_ESCAPING_TESTS)
+    with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+        event['Event']['Attribute'][22]['data'] = b64encode(f.read()).decode()
+    return event
 
 
 def get_event_with_escaped_values_v21():
     event = deepcopy(_EVENT_FOR_ESCAPING_TESTS)
+    with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+        event['Event']['Attribute'][22]['data'] = b64encode(f.read()).decode()
     event['Event']['Attribute'].append(
         {
             "uuid": "f3745b11-2b82-4798-80ba-d32c506135ec",
@@ -2943,6 +2948,8 @@ def get_event_with_email_subject_attribute():
 def get_event_with_event_report():
     event = deepcopy(_BASE_EVENT)
     event['Event'].update(deepcopy(_TEST_EVENT_REPORT))
+    with open(_TESTFILES_PATH / 'google_screenshot.png', 'rb') as f:
+        event['Event']['Attribute'][-1]['data'] = b64encode(f.read()).decode()
     return event
 
 
@@ -3100,18 +3107,19 @@ def get_event_with_mac_address_attribute():
 
 def get_event_with_malware_sample_attribute():
     event = deepcopy(_BASE_EVENT)
-    event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "malware-sample",
-            "category": "Payload delivery",
-            "value": "oui|8764605c6f388c89096b534d33565802",
-            "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
-            "to_ids": True,
-            "timestamp": "1603642920",
-            "comment": "Malware Sample test attribute"
-        }
-    ]
+    with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+        event['Event']['Attribute'] = [
+            {
+                "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "type": "malware-sample",
+                "category": "Payload delivery",
+                "value": "oui|8764605c6f388c89096b534d33565802",
+                "data": b64encode(f.read()).decode(),
+                "to_ids": True,
+                "timestamp": "1603642920",
+                "comment": "Malware Sample test attribute"
+            }
+        ]
     return event
 
 
@@ -3666,6 +3674,8 @@ def get_event_with_account_objects():
 
 def get_event_with_account_objects_with_attachment():
     event = deepcopy(_BASE_EVENT)
+    with open(_TESTFILES_PATH / 'octocat.png', 'rb') as f:
+        data = b64encode(f.read()).decode()
     event['Event']['Object'] = [
         {
             "name": "github-user",
@@ -3698,7 +3708,7 @@ def get_event_with_account_objects_with_attachment():
                     "type": "attachment",
                     "object_relation": "profile-image",
                     "value": "octocat.png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    "data": data
                 }
             ]
         },
@@ -3728,7 +3738,7 @@ def get_event_with_account_objects_with_attachment():
                     "type": "attachment",
                     "object_relation": "profile-photo",
                     "value": "octocat.png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    "data": data
                 }
             ]
         },
@@ -3758,7 +3768,7 @@ def get_event_with_account_objects_with_attachment():
                     "type": "attachment",
                     "object_relation": "account-avatar",
                     "value": "octocat.png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+                    "data": data
                 }
             ]
         }
@@ -3799,39 +3809,40 @@ def get_event_with_android_app_object():
 
 def get_event_with_annotation_object():
     event = deepcopy(_BASE_EVENT)
-    event['Event']['Object'] = [
-        {
-            "name": "annotation",
-            "description": "An annotation object allowing analysts to add annotations, comments, executive summary to a MISP event, objects or attributes.",
-            "meta-category": "misc",
-            "uuid": "eb6592bb-675c-48f3-9272-157141196b93",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "text",
-                    "value": "Google public DNS"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "type",
-                    "value": "Executive Summary"
-                },
-                {
-                    "type": "attachment",
-                    "object_relation": "attachment",
-                    "value": "annotation.attachment",
-                    "data": "OC44LjguOCBpcyB0aGUgR29[...]WRkcmVzc2VzIChJUHY0KS4K"
-                }
-            ],
-            "ObjectReference": [
-                {
-                    "referenced_uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                    "relationship_type": "annotates"
-                }
-            ]
-        }
-    ]
+    with open(_TESTFILES_PATH / 'annotation.attachment', 'rb') as f:
+        event['Event']['Object'] = [
+            {
+                "name": "annotation",
+                "description": "An annotation object allowing analysts to add annotations, comments, executive summary to a MISP event, objects or attributes.",
+                "meta-category": "misc",
+                "uuid": "eb6592bb-675c-48f3-9272-157141196b93",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "text",
+                        "value": "Google public DNS"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "type",
+                        "value": "Executive Summary"
+                    },
+                    {
+                        "type": "attachment",
+                        "object_relation": "attachment",
+                        "value": "annotation.attachment",
+                        "data": b64encode(f.read()).decode()
+                    }
+                ],
+                "ObjectReference": [
+                    {
+                        "referenced_uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "relationship_type": "annotates"
+                    }
+                ]
+            }
+        ]
     event['Event']['Attribute'] = [
         {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -4017,8 +4028,12 @@ def get_event_with_employee_object():
 
 def get_event_with_file_object_with_artifact():
     event = deepcopy(_BASE_EVENT)
+    file_object = deepcopy(_TEST_FILE_OBJECT)
+    with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+        file_object['Attribute'][0]['data'] = b64encode(f.read()).decode()
+    file_object['Attribute'][6]['data'] = "Tm9uLW1hbGljaW91cyBmaWxlCg=="
     event['Event']['Object'] = [
-        deepcopy(_TEST_FILE_OBJECT)
+        file_object
     ]
     return event
 
@@ -4035,10 +4050,8 @@ def get_event_with_file_and_pe_objects():
 
 def get_event_with_file_object():
     event = deepcopy(_BASE_EVENT)
-    file_object = deepcopy(_TEST_FILE_OBJECT)
-    file_object['Attribute'] = [{field: value for field, value in attribute.items() if field != 'data'} for attribute in file_object['Attribute']]
     event['Event']['Object'] = [
-        file_object
+        deepcopy(_TEST_FILE_OBJECT)
     ]
     return event
 
@@ -4053,40 +4066,41 @@ def get_event_with_geolocation_object():
 
 def get_event_with_image_object():
     event = deepcopy(_BASE_EVENT)
-    event['Event']['Object'] = [
-        {
-            "name": "image",
-            "description": "Object describing an image file.",
-            "meta-category": "file",
-            "uuid": "939b2f03-c487-4f62-a90e-cab7acfee294",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                    "type": "attachment",
-                    "object_relation": "attachment",
-                    "value": "STIX.png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]gEefQAAAABJRU5ErkJggg=="
-                },
-                {
-                    "type": "filename",
-                    "object_relation": "filename",
-                    "value": "STIX.png"
-                },
-                {
-                    "uuid": "d85eeb1a-f4a2-4b9f-a367-d84f9a7e6303",
-                    "type": "url",
-                    "object_relation": "url",
-                    "value": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "image-text",
-                    "value": "STIX"
-                }
-            ]
-        }
-    ]
+    with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
+        event['Event']['Object'] = [
+            {
+                "name": "image",
+                "description": "Object describing an image file.",
+                "meta-category": "file",
+                "uuid": "939b2f03-c487-4f62-a90e-cab7acfee294",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "type": "attachment",
+                        "object_relation": "attachment",
+                        "value": "STIX.png",
+                        "data": b64encode(f.read()).decode()
+                    },
+                    {
+                        "type": "filename",
+                        "object_relation": "filename",
+                        "value": "STIX.png"
+                    },
+                    {
+                        "uuid": "d85eeb1a-f4a2-4b9f-a367-d84f9a7e6303",
+                        "type": "url",
+                        "object_relation": "url",
+                        "value": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "image-text",
+                        "value": "STIX"
+                    }
+                ]
+            }
+        ]
     return event
 
 
@@ -4100,122 +4114,124 @@ def get_event_with_ip_port_object():
 
 def get_event_with_legal_entity_object():
     event = deepcopy(_BASE_EVENT)
-    event['Event']['Object'] = [
-        {
-            "name": "legal-entity",
-            "description": "An object to describe a legal entity.",
-            "meta-category": "misc",
-            "uuid": "0d55ba1f-c3ff-4b91-8a09-8713576e178b",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "name",
-                    "value": "Umbrella Corporation"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "text",
-                    "value": "The Umbrella Corporation is an international pharmaceutical company."
-                },
-                {
-                    "type": "text",
-                    "object_relation": "business",
-                    "value": "Pharmaceutical"
-                },
-                {
-                    "type": "phone-number",
-                    "object_relation": "phone-number",
-                    "value": "1234567890"
-                },
-                {
-                    "type": "link",
-                    "object_relation": "website",
-                    "value": "https://umbrella.org"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "registration-number",
-                    "value": "11223344556677889900"
-                },
-                {
-                    "type": "attachment",
-                    "object_relation": "logo",
-                    "value": "umbrella_logo",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC"
-                }
-            ]
-        }
-    ]
+    with open(_TESTFILES_PATH / 'umbrella_logo.png', 'rb') as f:
+        event['Event']['Object'] = [
+            {
+                "name": "legal-entity",
+                "description": "An object to describe a legal entity.",
+                "meta-category": "misc",
+                "uuid": "0d55ba1f-c3ff-4b91-8a09-8713576e178b",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "name",
+                        "value": "Umbrella Corporation"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "text",
+                        "value": "The Umbrella Corporation is an international pharmaceutical company."
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "business",
+                        "value": "Pharmaceutical"
+                    },
+                    {
+                        "type": "phone-number",
+                        "object_relation": "phone-number",
+                        "value": "1234567890"
+                    },
+                    {
+                        "type": "link",
+                        "object_relation": "website",
+                        "value": "https://umbrella.org"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "registration-number",
+                        "value": "11223344556677889900"
+                    },
+                    {
+                        "type": "attachment",
+                        "object_relation": "logo",
+                        "value": "umbrella_logo",
+                        "data": b64encode(f.read()).decode()
+                    }
+                ]
+            }
+        ]
     return event
 
 
 def get_event_with_lnk_object():
     event = deepcopy(_BASE_EVENT)
-    event['Event']['Object'] = [
-        {
-            "name": "lnk",
-            "descrption": "LNK object describing a Windows LNK binary file (aka Windows shortcut)",
-            "meta-category": "file",
-            "uuid": "153ef8d5-9182-45ec-bf1c-5819932b9ab7",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "filename",
-                    "object_relation": "filename",
-                    "value": "oui"
-                },
-                {
-                    "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-                    "type": "text",
-                    "object_relation": "fullpath",
-                    "value": "/var/www/MISP/app/files/scripts/tmp"
-                },
-                {
-                    "type": "md5",
-                    "object_relation": "md5",
-                    "value": "8764605c6f388c89096b534d33565802"
-                },
-                {
-                    "type": "sha1",
-                    "object_relation": "sha1",
-                    "value": "46aba99aa7158e4609aaa72b50990842fd22ae86"
-                },
-                {
-                    "type": "sha256",
-                    "object_relation": "sha256",
-                    "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
-                },
-                {
-                    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                    "type": "malware-sample",
-                    "object_relation": "malware-sample",
-                    "value": "oui|8764605c6f388c89096b534d33565802",
-                    "data": "UEsDBAoACQAAAPKLQ1AvUbi[...]AACAAIA2QAAAB8BAAAAAA=="
-                },
-                {
-                    "type": "size-in-bytes",
-                    "object_relation": "size-in-bytes",
-                    "value": "35"
-                },
-                {
-                    "type": "datetime",
-                    "object_relation": "lnk-creation-time",
-                    "value": "2017-10-01T08:00:00"
-                },
-                {
-                    "type": "datetime",
-                    "object_relation": "lnk-modification-time",
-                    "value": "2020-10-25T16:22:00"
-                },
-                {
-                    "type": "datetime",
-                    "object_relation": "lnk-access-time",
-                    "value": "2021-01-01T00:00:00"
-                }
-            ]
-        }
-    ]
+    with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+        event['Event']['Object'] = [
+            {
+                "name": "lnk",
+                "descrption": "LNK object describing a Windows LNK binary file (aka Windows shortcut)",
+                "meta-category": "file",
+                "uuid": "153ef8d5-9182-45ec-bf1c-5819932b9ab7",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "filename",
+                        "object_relation": "filename",
+                        "value": "oui"
+                    },
+                    {
+                        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+                        "type": "text",
+                        "object_relation": "fullpath",
+                        "value": "/var/www/MISP/app/files/scripts/tmp"
+                    },
+                    {
+                        "type": "md5",
+                        "object_relation": "md5",
+                        "value": "8764605c6f388c89096b534d33565802"
+                    },
+                    {
+                        "type": "sha1",
+                        "object_relation": "sha1",
+                        "value": "46aba99aa7158e4609aaa72b50990842fd22ae86"
+                    },
+                    {
+                        "type": "sha256",
+                        "object_relation": "sha256",
+                        "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+                    },
+                    {
+                        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                        "type": "malware-sample",
+                        "object_relation": "malware-sample",
+                        "value": "oui|8764605c6f388c89096b534d33565802",
+                        "data": b64encode(f.read()).decode()
+                    },
+                    {
+                        "type": "size-in-bytes",
+                        "object_relation": "size-in-bytes",
+                        "value": "35"
+                    },
+                    {
+                        "type": "datetime",
+                        "object_relation": "lnk-creation-time",
+                        "value": "2017-10-01T08:00:00"
+                    },
+                    {
+                        "type": "datetime",
+                        "object_relation": "lnk-modification-time",
+                        "value": "2020-10-25T16:22:00"
+                    },
+                    {
+                        "type": "datetime",
+                        "object_relation": "lnk-access-time",
+                        "value": "2021-01-01T00:00:00"
+                    }
+                ]
+            }
+        ]
     return event
 
 
@@ -4245,63 +4261,64 @@ def get_event_with_network_socket_object():
 
 def get_event_with_news_agency_object():
     event = deepcopy(_BASE_EVENT)
-    event['Event']['Object'] = [
-        {
-            "name": "news-agency",
-            "description": "News agencies compile news and disseminate news in bulk.",
-            "meta-category": "misc",
-            "uuid": "d17e31ce-5a7a-4713-bdff-49d89548c259",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "name",
-                    "value": "Agence France-Presse"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "address",
-                    "value": "13 place de la Bourse, 75002 Paris"
-                },
-                {
-                    "type": "email-src",
-                    "object_relation": "e-mail",
-                    "value": "contact@afp.fr"
-                },
-                {
-                    "type": "phone-number",
-                    "object_relation": "phone-number",
-                    "value": "(33)0140414646"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "address",
-                    "value": "Southern Railway Building, 1500 K Street, NW, Suite 600"
-                },
-                {
-                    "type": "email-src",
-                    "object_relation": "e-mail",
-                    "value": "contact@afp.us"
-                },
-                {
-                    "type": "phone-number",
-                    "object_relation": "phone-number",
-                    "value": "(1)2024140600"
-                },
-                {
-                    "type": "link",
-                    "object_relation": "link",
-                    "value": "https://www.afp.com/"
-                },
-                {
-                    "type": "attachment",
-                    "object_relation": "attachment",
-                    "value": "AFP_logo.png",
-                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg=="
-                }
-            ]
-        }
-    ]
+    with open(_TESTFILES_PATH / 'AFP_logo.png', 'rb') as f:
+        event['Event']['Object'] = [
+            {
+                "name": "news-agency",
+                "description": "News agencies compile news and disseminate news in bulk.",
+                "meta-category": "misc",
+                "uuid": "d17e31ce-5a7a-4713-bdff-49d89548c259",
+                "timestamp": "1603642920",
+                "Attribute": [
+                    {
+                        "type": "text",
+                        "object_relation": "name",
+                        "value": "Agence France-Presse"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "address",
+                        "value": "13 place de la Bourse, 75002 Paris"
+                    },
+                    {
+                        "type": "email-src",
+                        "object_relation": "e-mail",
+                        "value": "contact@afp.fr"
+                    },
+                    {
+                        "type": "phone-number",
+                        "object_relation": "phone-number",
+                        "value": "(33)0140414646"
+                    },
+                    {
+                        "type": "text",
+                        "object_relation": "address",
+                        "value": "Southern Railway Building, 1500 K Street, NW, Suite 600"
+                    },
+                    {
+                        "type": "email-src",
+                        "object_relation": "e-mail",
+                        "value": "contact@afp.us"
+                    },
+                    {
+                        "type": "phone-number",
+                        "object_relation": "phone-number",
+                        "value": "(1)2024140600"
+                    },
+                    {
+                        "type": "link",
+                        "object_relation": "link",
+                        "value": "https://www.afp.com/"
+                    },
+                    {
+                        "type": "attachment",
+                        "object_relation": "attachment",
+                        "value": "AFP_logo.png",
+                        "data": b64encode(f.read()).decode()
+                    }
+                ]
+            }
+        ]
     return event
 
 
