@@ -2895,14 +2895,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 )
             self.__relationships.append(relationship)
 
-    @staticmethod
-    def _sanitize_registry_key_value(value: str) -> str:
-        sanitized = value.strip().replace('\\', '\\\\')
+    def _sanitize_registry_key_value(self, value: str) -> str:
+        sanitized = self._sanitize_value(value.strip()).replace('\\', '\\\\')
         if '%' not in sanitized or '\\\\%' in sanitized:
             return sanitized
         if '\\%' in sanitized:
             return sanitized.replace('\\%', '\\\\%')
         return sanitized.replace('%', '\\\\%')
+
+    def _sanitize_value(self, value: str) -> str:
+        for character in ('"', "'"):
+            if value.startswith(character):
+                return self._sanitize_value(value[1:])
+            if value.endswith(character):
+                return self._sanitize_value(value[:-1])
+        return value
 
     def _select_pe_object(self, pe_uuid: str) -> dict:
         to_ids, pe_object = self._objects_to_parse['pe'][pe_uuid]
