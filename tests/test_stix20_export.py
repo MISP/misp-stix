@@ -270,11 +270,20 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
 
     def test_event_with_escaped_characters(self):
         event = get_event_with_escaped_values_v20()
+        attributes = deepcopy(event['Event']['Attribute'])
         self.parser.parse_misp_event(event)
         bundle = self._check_bundle_features(48)
         _, _, *indicators = bundle.objects
-        for indicator in indicators:
+        self.assertIn(attributes[0]['value'][2:], indicators[0].pattern)
+        for attribute, indicator in zip(attributes[1:], indicators[1:]):
             self.assertEqual(indicator.type, 'indicator')
+            attribute_value = attribute['value']
+            if '|' in attribute_value:
+                attribute_value, value = attribute_value.split('|')
+                self.assertIn(self._sanitize_pattern_value(value), indicator.pattern)
+            self.assertIn(self._sanitize_pattern_value(attribute_value), indicator.pattern)
+            if 'data' in attribute:
+                self.assertIn(self._sanitize_pattern_value(attribute['data']), indicator.pattern)
 
     def test_event_with_sightings(self):
         event = get_event_with_sightings()
