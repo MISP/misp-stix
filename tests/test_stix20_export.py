@@ -1392,7 +1392,7 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         data = reddit_account['Attribute'][-1]['data'].replace('\\', '')
         self.assertEqual(image_data, f"user-account:x_misp_account_avatar.data = '{data}'")
         self.assertEqual(image_value, f"user-account:x_misp_account_avatar.value = '{account_avatar}'")
-        for misp_object, indicator in zip(misp_objects, self.parser.stix_objects[-4:]):
+        for misp_object, indicator in zip(misp_objects, self.parser.stix_objects[-3:]):
             self._populate_documentation(misp_object=misp_object, indicator=indicator)
 
     def test_event_with_account_observable_object_with_attachment(self):
