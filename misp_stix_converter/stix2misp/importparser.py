@@ -57,7 +57,7 @@ class STIXtoMISPParser:
     def _identity_error(self, identity_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         message = f"Error with the Identity object with id {identity_id}: {tb}"
-        self.__error[self._identifier].add(message)
+        self.__errors[self._identifier].add(message)
 
     def _object_ref_loading_error(self, object_ref: str):
         message = f"Error loading the STIX object with id {object_ref}"
