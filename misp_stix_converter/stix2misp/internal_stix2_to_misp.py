@@ -198,7 +198,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._observed_data_error(observed_data.id, exception)
 
     def _parse_vulnerability(self, vulnerability_ref: str):
-        vulnerability = self._get_stix_object(vulnerability_ref)['stix_object']
+        vulnerability = self._get_stix_object(vulnerability_ref)
         feature = self._handle_object_mapping(vulnerability.labels, vulnerability.id)
         try:
             parser = getattr(self, feature)
