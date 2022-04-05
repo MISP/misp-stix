@@ -263,7 +263,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
         employee_type = {'type': 'text', 'object_relation': 'employee-type'}
         self.__employee_object_mapping = Mapping(
             name = {'type': 'full-name', 'object_relation': 'full-name'},
-            contact_information = {'type': 'target-email', 'object_relation': 'email-address'},
             description = {'type': 'text', 'object_relation': 'text'},
             roles = employee_type,
             x_misp_business_unit = {'type': 'target-org', 'object_relation': 'business_unit'},

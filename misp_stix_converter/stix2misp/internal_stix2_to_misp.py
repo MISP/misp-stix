@@ -260,6 +260,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     mapping,
                     getattr(identity, key)
                 )
+        if hasattr(identity, 'contact_information'):
+            object_relation, value = identity.contact_information.split(': ')
+            attribute = {
+                'type': 'target-email',
+                'object_relation': object_relation,
+                'value': value
+            }
+            misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
     def _parse_vulnerability_attribute(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
