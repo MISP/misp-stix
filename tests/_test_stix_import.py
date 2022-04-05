@@ -6,6 +6,15 @@ from ._test_stix import TestSTIX2
 
 
 class TestSTIX2Import(TestSTIX2):
+    def _check_attribute_labels(self, attribute, labels):
+        if len(labels) == 3:
+            type_label, category_label, ids_label = labels
+            self.assertEqual(ids_label, f'misp:to_ids="{attribute.to_ids}"')
+        else:
+            type_label, category_label = labels
+        self.assertEqual(type_label, f'misp:type="{attribute.type}"')
+        self.assertEqual(category_label, f'misp:category="{attribute.category}"')
+
     def _check_misp_event_features(self, event, report, published=False):
         self.assertEqual(event.uuid, report.id.split('--')[1])
         self.assertEqual(event.info, report.name)

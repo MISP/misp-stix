@@ -4,6 +4,7 @@
 import json
 import unittest
 from collections import defaultdict
+from datetime import datetime
 
 
 class TestSTIX2(unittest.TestCase):
@@ -13,6 +14,10 @@ class TestSTIX2(unittest.TestCase):
     def _assert_multiple_equal(self, reference, *elements):
         for element in elements:
             self.assertEqual(reference, element)
+
+    @staticmethod
+    def _datetime_to_str(datetime_value):
+        return datetime.strftime(datetime_value, '%Y-%m-%dT%H:%M:%S')
 
     def _populate_documentation(self, attribute = None, misp_object = None, **kwargs):
         if attribute is not None:

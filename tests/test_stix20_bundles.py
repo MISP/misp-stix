@@ -99,6 +99,56 @@ _LEGAL_ENTITY_OBJECT = {
         "value": "umbrella_logo"
     }
 }
+_VULNERABILITY_ATTRIBUTE = {
+    "type": "vulnerability",
+    "id": "vulnerability--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "CVE-2017-11774",
+    "labels": [
+        "misp:type=\"vulnerability\"",
+        "misp:category=\"External analysis\"",
+        "misp:to_ids=\"True\""
+    ],
+    "external_references": [
+        {
+            "source_name": "cve",
+            "external_id": "CVE-2017-11774"
+        }
+    ]
+}
+_VULNERABILITY_OBJECT = {
+    "type": "vulnerability",
+    "id": "vulnerability--5e579975-e9cc-46c6-a6ad-1611a964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "CVE-2017-11774",
+    "description": "Microsoft Outlook allow an attacker to execute arbitrary commands",
+    "labels": [
+        "misp:name=\"vulnerability\"",
+        "misp:meta-category=\"vulnerability\"",
+        "misp:to_ids=\"False\""
+    ],
+    "external_references": [
+        {
+            "source_name": "cve",
+            "external_id": "CVE-2017-11774"
+        },
+        {
+            "source_name": "url",
+            "url": "http://www.securityfocus.com/bid/101098"
+        },
+        {
+            "source_name": "url",
+            "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
+        }
+    ],
+    "x_misp_created": "2017-10-13T07:29:00",
+    "x_misp_cvss_score": "6.8",
+    "x_misp_published": "2017-10-13T07:29:00"
+}
 
 
 class TestSTIX20Bundles:
@@ -142,6 +192,10 @@ class TestSTIX20Bundles:
     #                               ATTRIBUTES TESTS                               #
     ################################################################################
 
+    @classmethod
+    def get_bundle_with_vulnerability_attribute(cls):
+        return cls.__assemble_bundle(_VULNERABILITY_ATTRIBUTE)
+
     ################################################################################
     #                              MISP OBJECTS TESTS                              #
     ################################################################################
@@ -164,3 +218,7 @@ class TestSTIX20Bundles:
         with open(_TESTFILES_PATH / 'umbrella_logo.png', 'rb') as f:
             identity['x_misp_logo']['data'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(identity)
+
+    @classmethod
+    def get_bundle_with_vulnerability_object(cls):
+        return cls.__assemble_bundle(_VULNERABILITY_OBJECT)

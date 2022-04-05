@@ -13,6 +13,29 @@ class TestInternalSTIX2Import(TestSTIX2Import):
     def setUp(self):
         self.parser = InternalSTIX2toMISPParser(False)
 
+    ################################################################################
+    #                      MISP ATTRIBUTES CHECKING FUNCTIONS                      #
+    ################################################################################
+
+    def _check_vulnerability_attribute(self, attribute, vulnerability):
+        self.assertEqual(attribute.uuid, vulnerability.id.split('--')[1])
+        self.assertEqual(attribute.type, vulnerability.type)
+        self._assert_multiple_equal(
+            attribute.timestamp,
+            vulnerability.created,
+            vulnerability.modified
+        )
+        self._check_attribute_labels(attribute, vulnerability.labels)
+        self._assert_multiple_equal(
+            attribute.value,
+            vulnerability.name,
+            vulnerability.external_references[0].external_id
+        )
+
+    ################################################################################
+    #                       MISP OBJECTS CHECKING FUNCTIONS.                       #
+    ################################################################################
+
     def _check_attack_pattern_object(self, misp_object, attack_pattern):
         self.assertEqual(misp_object.uuid, attack_pattern.id.split('--')[1])
         self.assertEqual(misp_object.name, attack_pattern.type)
@@ -90,6 +113,29 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(logo.value, identity.x_misp_logo['value'])
         self.assertEqual(self._get_data_value(logo.data), identity.x_misp_logo['data'])
 
+    def _check_vulnerability_object(self, misp_object, vulnerability):
+        self.assertEqual(misp_object.uuid, vulnerability.id.split('--')[1])
+        self.assertEqual(misp_object.name, vulnerability.type)
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            self._timestamp_from_datetime(vulnerability.created),
+            self._timestamp_from_datetime(vulnerability.modified)
+        )
+        self._check_object_labels(misp_object, vulnerability.labels, False)
+        external_id, external_ref1, external_ref2 = vulnerability.external_references
+        cve_id, reference1, reference2, description, created, cvss_score, published = misp_object.attributes
+        self._assert_multiple_equal(
+            cve_id.value,
+            vulnerability.name,
+            external_id.external_id
+        )
+        self.assertEqual(reference1.value, external_ref1.url)
+        self.assertEqual(reference2.value, external_ref2.url)
+        self.assertEqual(description.value, vulnerability.description)
+        self.assertEqual(self._datetime_to_str(created.value), vulnerability.x_misp_created)
+        self.assertEqual(cvss_score.value, vulnerability.x_misp_cvss_score)
+        self.assertEqual(self._datetime_to_str(published.value), vulnerability.x_misp_published)
+
 
 class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
     @classmethod
@@ -98,6 +144,20 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         attributes_documentation.check_stix20_mapping(self._attributes)
         objects_documentation = DocumentationUpdater('stix20_to_misp_objects')
         objects_documentation.check_stix20_mapping(self._objects)
+
+    ################################################################################
+    #                         MISP ATTRIBUTES IMPORT TESTS                         #
+    ################################################################################
+
+    def test_stix20_bundle_with_vulnerability_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_vulnerability_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, vulnerability = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        self._check_vulnerability_attribute(attribute, vulnerability)
+        self._populate_documentation(attribute=attribute, vulnerability=vulnerability)
 
     ################################################################################
     #                          MISP OBJECTS IMPORT TESTS.                          #
@@ -144,6 +204,16 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         self._check_legal_entity_object(misp_object, identity)
         self._populate_documentation(misp_object=misp_object, identity=identity)
 
+    def test_stix20_bundle_with_vulnerability_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_vulnerability_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, vulnerability = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_vulnerability_object(misp_object, vulnerability)
+        self._populate_documentation(misp_object=misp_object, vulnerability=vulnerability)
+
 
 class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
     @classmethod
@@ -152,6 +222,20 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         attributes_documentation.check_stix21_mapping(self._attributes)
         objects_documentation = DocumentationUpdater('stix21_to_misp_objects')
         objects_documentation.check_stix21_mapping(self._objects)
+
+    ################################################################################
+    #                         MISP ATTRIBUTES IMPORT TESTS                         #
+    ################################################################################
+
+    def test_stix21_bundle_with_vulnerability_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_vulnerability_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, vulnerability = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_vulnerability_attribute(attribute, vulnerability)
+        self._populate_documentation(attribute=attribute, vulnerability=vulnerability)
 
     ################################################################################
     #                          MISP OBJECTS IMPORT TESTS.                          #
@@ -197,3 +281,13 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         self._check_legal_entity_object(misp_object, identity)
         self._populate_documentation(misp_object=misp_object, identity=identity)
+
+    def test_stix21_bundle_with_vulnerability_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_vulnerability_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, vulnerability = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_vulnerability_object(misp_object, vulnerability)
+        self._populate_documentation(misp_object=misp_object, vulnerability=vulnerability)
