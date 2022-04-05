@@ -216,6 +216,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'file': '_object_from_file',
             'image': '_object_from_image',
             'ip-port': '_object_from_ip_port',
+            'legal-entity': '_parse_legal_entity_object',
             'lnk': '_object_from_lnk',
             'mutex': '_object_from_mutex',
             'network-connection': '_object_from_network_connection',
@@ -272,6 +273,20 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_primary_asset = {'type': 'target-machine', 'object_relation': 'primary-asset'},
             x_misp_userid = {'type': 'target-user', 'object_relation': 'userid'}
         )
+        self.__legal_entity_contact_information_mapping = Mapping(
+            **{
+                'phone-number': {'type': 'phone-number'},
+                'website': {'type': 'link'}
+            }
+        )
+        self.__legal_entity_object_mapping = Mapping(
+            name = {'type': 'text', 'object_relation': 'name'},
+            description = {'type': 'text', 'object_relation': 'text'},
+            sectors = {'type': 'text', 'object_relation': 'business'},
+            x_misp_commercial_name = {'type': 'text', 'object_relation': 'commercial-name'},
+            x_misp_legal_form = {'type': 'text', 'object_relation': 'legal-form'},
+            x_misp_registration_number = {'type': 'text', 'object_relation': 'registration-number'}
+        )
 
     @property
     def attack_pattern_object_mapping(self) -> dict:
@@ -292,6 +307,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def galaxies_mapping(self) -> dict:
         return self.__galaxies_mapping
+
+    @property
+    def legal_entity_contact_information_mapping(self) -> dict:
+        return self.__legal_entity_contact_information_mapping
+
+    @property
+    def legal_entity_object_mapping(self) -> dict:
+        return self.__legal_entity_object_mapping
 
     @property
     def objects_mapping(self) -> dict:
