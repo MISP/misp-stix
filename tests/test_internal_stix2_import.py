@@ -15,6 +15,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
 
     def _check_attack_pattern_object(self, misp_object, attack_pattern):
         self.assertEqual(misp_object.uuid, attack_pattern.id.split('--')[1])
+        self.assertEqual(misp_object.name, attack_pattern.type)
         self._assert_multiple_equal(
             misp_object.timestamp,
             self._timestamp_from_datetime(attack_pattern.created),
@@ -35,6 +36,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
 
     def _check_course_of_action_object(self, misp_object, course_of_action):
         self.assertEqual(misp_object.uuid, course_of_action.id.split('--')[1])
+        self.assertEqual(misp_object.name, course_of_action.type)
         self._assert_multiple_equal(
             misp_object.timestamp,
             self._timestamp_from_datetime(course_of_action.created),
@@ -52,6 +54,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
 
     def _check_employee_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        self.assertEqual(misp_object.name, 'employee')
         self._assert_multiple_equal(
             misp_object.timestamp,
             self._timestamp_from_datetime(identity.created),
@@ -69,6 +72,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
 
     def _check_legal_entity_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        self.assertEqual(misp_object.name, 'legal-entity')
         self._assert_multiple_equal(
             misp_object.timestamp,
             self._timestamp_from_datetime(identity.created),
@@ -99,7 +103,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
     #                          MISP OBJECTS IMPORT TESTS.                          #
     ################################################################################
 
-    def test_stix20_attack_pattern_object(self):
+    def test_stix20_bundle_with_attack_pattern_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_attack_pattern_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -109,7 +113,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         self._check_attack_pattern_object(misp_object, attack_pattern)
         self._populate_documentation(misp_object=misp_object, attack_pattern=attack_pattern)
 
-    def test_stix20_course_of_action_object(self):
+    def test_stix20_bundle_with_course_of_action_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_course_of_action_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -119,7 +123,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         self._check_course_of_action_object(misp_object, course_of_action)
         self._populate_documentation(misp_object=misp_object, course_of_action=course_of_action)
 
-    def test_stix20_employee_object(self):
+    def test_stix20_bundle_with_employee_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_employee_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -130,7 +134,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         self.assertEqual(employee_type.value, identity.x_misp_employee_type)
         self._populate_documentation(misp_object=misp_object, identity=identity)
 
-    def test_stix20_legal_entity_object(self):
+    def test_stix20_bundle_with_legal_entity_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_legal_entity_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -153,7 +157,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
     #                          MISP OBJECTS IMPORT TESTS.                          #
     ################################################################################
 
-    def test_stix21_attack_pattern_object(self):
+    def test_stix21_bundle_with_attack_pattern_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_attack_pattern_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -163,7 +167,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         self._check_attack_pattern_object(misp_object, attack_pattern)
         self._populate_documentation(misp_object=misp_object, attack_pattern=attack_pattern)
 
-    def test_stix21_course_of_action_object(self):
+    def test_stix21_bundle_with_course_of_action_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_course_of_action_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -173,7 +177,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         self._check_course_of_action_object(misp_object, course_of_action)
         self._populate_documentation(misp_object=misp_object, course_of_action=course_of_action)
 
-    def test_stix21_employee_object(self):
+    def test_stix21_bundle_with_employee_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_employee_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -184,7 +188,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         self.assertEqual([employee_type.value], identity.roles)
         self._populate_documentation(misp_object=misp_object, identity=identity)
 
-    def test_stix21_legal_entity_object(self):
+    def test_stix21_bundle_with_legal_entity_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_legal_entity_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
