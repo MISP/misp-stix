@@ -65,7 +65,7 @@ _EMPLOYEE_OBJECT = {
     "name": "John Doe",
     "description": "John Doe is known",
     "identity_class": "individual",
-    "contact_information": "jdoe@email.com",
+    "contact_information": "email-address: jdoe@email.com",
     "labels": [
         "misp:name=\"employee\"",
         "misp:meta-category=\"misc\"",

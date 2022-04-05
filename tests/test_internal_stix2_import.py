@@ -58,10 +58,13 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self._timestamp_from_datetime(identity.modified)
         )
         self._check_object_labels(misp_object, identity.labels, False)
-        name, email, description, employee_type = misp_object.attributes
+        name, description, employee_type, email = misp_object.attributes
         self.assertEqual(name.value, identity.name)
-        self.assertEqual(email.value, identity.contact_information)
         self.assertEqual(description.value, identity.description)
+        self.assertEqual(
+            identity.contact_information,
+            f"{email.object_relation}: {email.value}"
+        )
         return employee_type
 
 

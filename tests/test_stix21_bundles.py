@@ -71,7 +71,7 @@ _EMPLOYEE_OBJECT = {
         "Supervisor"
     ],
     "identity_class": "individual",
-    "contact_information": "jdoe@email.com",
+    "contact_information": "email-address: jdoe@email.com",
     "labels": [
         "misp:name=\"employee\"",
         "misp:meta-category=\"misc\"",
