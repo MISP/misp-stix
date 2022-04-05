@@ -67,6 +67,25 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
         return employee_type
 
+    def _check_legal_entity_object(self, misp_object, identity):
+        self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            self._timestamp_from_datetime(identity.created),
+            self._timestamp_from_datetime(identity.modified)
+        )
+        self._check_object_labels(misp_object, identity.labels, False)
+        name, description, business, registration_number, phone, website, logo = misp_object.attributes
+        self.assertEqual(name.value, identity.name)
+        self.assertEqual(description.value, identity.description)
+        self.assertEqual([business.value], identity.sectors)
+        phone_info, website_info = identity.contact_information.split(' / ')
+        self.assertEqual(phone_info, f"{phone.object_relation}: {phone.value}")
+        self.assertEqual(website_info, f"{website.object_relation}: {website.value}")
+        self.assertEqual(registration_number.value, identity.x_misp_registration_number)
+        self.assertEqual(logo.value, identity.x_misp_logo['value'])
+        self.assertEqual(self._get_data_value(logo.data), identity.x_misp_logo['data'])
+
 
 class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
     @classmethod
@@ -111,6 +130,16 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         self.assertEqual(employee_type.value, identity.x_misp_employee_type)
         self._populate_documentation(misp_object=misp_object, identity=identity)
 
+    def test_stix20_legal_entity_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_legal_entity_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, identity = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_legal_entity_object(misp_object, identity)
+        self._populate_documentation(misp_object=misp_object, identity=identity)
+
 
 class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
     @classmethod
@@ -153,4 +182,14 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         employee_type = self._check_employee_object(misp_object, identity)
         self.assertEqual([employee_type.value], identity.roles)
+        self._populate_documentation(misp_object=misp_object, identity=identity)
+
+    def test_stix21_legal_entity_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_legal_entity_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, identity = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_legal_entity_object(misp_object, identity)
         self._populate_documentation(misp_object=misp_object, identity=identity)

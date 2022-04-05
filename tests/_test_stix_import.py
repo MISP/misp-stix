@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from base64 import b64encode
 from ._test_stix import TestSTIX2
 
 
@@ -27,6 +28,10 @@ class TestSTIX2Import(TestSTIX2):
             category_label,
             f'misp:meta-category="{getattr(misp_object, "meta-category")}"'
         )
+
+    @staticmethod
+    def _get_data_value(data):
+        return b64encode(data.getvalue()).decode()
 
     @staticmethod
     def _timestamp_from_datetime(datetime_value):

@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from base64 import b64encode
 from copy import deepcopy
+from pathlib import Path
 from stix2.parsing import dict_to_stix2
 
+_TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
 _ATTACK_PATTERN_OBJECT = {
     "type": "attack-pattern",
     "spec_version": "2.1",
@@ -78,6 +81,30 @@ _EMPLOYEE_OBJECT = {
         "misp:to_ids=\"False\""
     ]
 }
+_LEGAL_ENTITY_OBJECT = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--0d55ba1f-c3ff-4b91-8a09-8713576e178b",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Umbrella Corporation",
+    "description": "The Umbrella Corporation is an international pharmaceutical company.",
+    "identity_class": "organization",
+    "sectors": [
+        "Pharmaceutical"
+    ],
+    "contact_information": "phone-number: 1234567890 / website: https://umbrella.org",
+    "labels": [
+        "misp:name=\"legal-entity\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ],
+    "x_misp_registration_number": "11223344556677889900",
+    "x_misp_logo": {
+        "value": "umbrella_logo"
+    }
+}
 
 
 class TestSTIX21Bundles:
@@ -137,3 +164,10 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_employee_object(cls):
         return cls.__assemble_bundle(_EMPLOYEE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_legal_entity_object(cls):
+        identity = _LEGAL_ENTITY_OBJECT
+        with open(_TESTFILES_PATH / 'umbrella_logo.png', 'rb') as f:
+            identity['x_misp_logo']['data'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(identity)
