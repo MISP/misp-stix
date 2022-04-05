@@ -321,10 +321,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute = {'value': reference['url']}
                 attribute.update(self._mapping.references_attribute)
                 misp_object.add_attribute(**attribute)
-        if hasattr(vulnerability, 'description'):
-            attribute = {'value': vulnerability.description}
-            attribute.update(self._mapping.description_attribute)
-            misp_object.add_attribute(**attribute)
+        for key, mapping in self._mapping.vulnerability_object_mapping.items():
+            if hasattr(vulnerability, key):
+                self._populate_object_attributes(
+                    misp_object,
+                    mapping,
+                    getattr(vulnerability, key)
+                )
         self._add_misp_object(misp_object)
 
     ################################################################################

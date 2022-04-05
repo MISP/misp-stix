@@ -243,6 +243,11 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__objects_mapping = Mapping(**objects_mapping)
 
+        # ATTRIBUTES DECLARATION
+        description_attribute = {'type': 'text', 'object_relation': 'description'}
+        employee_type_attribute = {'type': 'text', 'object_relation': 'employee-type'}
+
+
         # STIX TO MISP OBJECTS MAPPING
         self.__attack_pattern_object_mapping = Mapping(
             description = {'type': 'text', 'object_relation': 'summary'},
@@ -253,7 +258,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__course_of_action_object_mapping = Mapping(
             name = {'type': 'text', 'object_relation': 'name'},
-            description = {'type': 'text', 'object_relation': 'description'},
+            description = description_attribute,
             x_misp_cost = {'type': 'text', 'object_relation': 'cost'},
             x_misp_efficacy = {'type': 'text', 'object_relation': 'efficacy'},
             x_misp_impact = {'type': 'text', 'object_relation': 'impact'},
@@ -261,13 +266,12 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_stage = {'type': 'text', 'object_relation': 'stage'},
             x_misp_type = {'type': 'text', 'object_relation': 'type'}
         )
-        employee_type = {'type': 'text', 'object_relation': 'employee-type'}
         self.__employee_object_mapping = Mapping(
             name = {'type': 'full-name', 'object_relation': 'full-name'},
             description = {'type': 'text', 'object_relation': 'text'},
-            roles = employee_type,
+            roles = employee_type_attribute,
             x_misp_business_unit = {'type': 'target-org', 'object_relation': 'business_unit'},
-            x_misp_employee_type = employee_type,
+            x_misp_employee_type = employee_type_attribute,
             x_misp_first_name = {'type': 'first-name', 'object_relation': 'first-name'},
             x_misp_last_name = {'type': 'last-name', 'object_relation': 'last-name'},
             x_misp_primary_asset = {'type': 'target-machine', 'object_relation': 'primary-asset'},
@@ -286,6 +290,20 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_commercial_name = {'type': 'text', 'object_relation': 'commercial-name'},
             x_misp_legal_form = {'type': 'text', 'object_relation': 'legal-form'},
             x_misp_registration_number = {'type': 'text', 'object_relation': 'registration-number'}
+        )
+        self.__vulnerability_object_mapping = Mapping(
+            description = description_attribute,
+            x_misp_created = {'type': 'datetime', 'object_relation': 'created'},
+            x_misp_credit = {'type': 'text', 'object_relation': 'credit'},
+            x_misp_cvss_score = {'type': 'float', 'object_relation': 'cvss-score'},
+            x_misp_modified = {'type': 'datetime', 'object_relation': 'modified'},
+            x_misp_published = {'type': 'datetime', 'object_relation': 'published'},
+            x_misp_state = {'type': 'text', 'object_relation': 'state'},
+            x_misp_summary = {'type': 'text', 'object_relation': 'summary'},
+            x_misp_vulnerable_configuration = {
+                'type': 'cpe',
+                'object_relation': 'vulnerable-configuration'
+            }
         )
 
     @property
@@ -319,3 +337,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def objects_mapping(self) -> dict:
         return self.__objects_mapping
+
+    @property
+    def vulnerability_object_mapping(self) -> dict:
+        return self.__vulnerability_object_mapping
