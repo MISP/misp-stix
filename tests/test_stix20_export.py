@@ -2235,9 +2235,8 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         self.assertEqual(news_agency.name, name)
         self.assertEqual(
             news_agency.contact_information,
-            f"address: {address1}; {address2} / e-mail: {email1}; {email2} / phone-number: {phone1}; {phone2}"
+            f"address: {address1}; {address2} / e-mail: {email1}; {email2} / phone-number: {phone1}; {phone2} / link: {link}"
         )
-        self.assertEqual(news_agency.x_misp_link, link)
         self.assertEqual(news_agency.x_misp_attachment['value'], attachment)
         self.assertEqual(
             news_agency.x_misp_attachment['data'],
