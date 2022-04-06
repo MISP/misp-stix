@@ -113,6 +113,46 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(logo.value, identity.x_misp_logo['value'])
         self.assertEqual(self._get_data_value(logo.data), identity.x_misp_logo['data'])
 
+    def _check_news_agency_object(self, misp_object, identity):
+        self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        self.assertEqual(misp_object.name, 'news-agency')
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            self._timestamp_from_datetime(identity.created),
+            self._timestamp_from_datetime(identity.modified)
+        )
+        self._check_object_labels(misp_object, identity.labels, False)
+        name, address, email, phone, attachment = misp_object.attributes
+        self.assertEqual(name.value, identity.name)
+        address_info, email_info, phone_info = identity.contact_information.split(' / ')
+        self.assertEqual(address_info, f'{address.object_relation}: {address.value}')
+        self.assertEqual(email_info, f'{email.object_relation}: {email.value}')
+        self.assertEqual(phone_info, f'{phone.object_relation}: {phone.value}')
+        self.assertEqual(attachment.value, identity.x_misp_attachment['value'])
+        self.assertEqual(
+            self._get_data_value(attachment.data),
+            identity.x_misp_attachment['data']
+        )
+
+    def _check_organization_object(self, misp_object, identity):
+        self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        self.assertEqual(misp_object.name, 'organization')
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            self._timestamp_from_datetime(identity.created),
+            self._timestamp_from_datetime(identity.modified)
+        )
+        self._check_object_labels(misp_object, identity.labels, False)
+        name, description, role, alias, address, email, phone = misp_object.attributes
+        self.assertEqual(name.value, identity.name)
+        self.assertEqual(description.value, identity.description)
+        self.assertEqual(alias.value, identity.x_misp_alias)
+        address_info, email_info, phone_info = identity.contact_information.split(' / ')
+        self.assertEqual(address_info, f'{address.object_relation}: {address.value}')
+        self.assertEqual(email_info, f'{email.object_relation}: {email.value}')
+        self.assertEqual(phone_info, f'{phone.object_relation}: {phone.value}')
+        return role
+
     def _check_vulnerability_object(self, misp_object, vulnerability):
         self.assertEqual(misp_object.uuid, vulnerability.id.split('--')[1])
         self.assertEqual(misp_object.name, vulnerability.type)
@@ -204,6 +244,27 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         self._check_legal_entity_object(misp_object, identity)
         self._populate_documentation(misp_object=misp_object, identity=identity)
 
+    def test_stix20_bundle_with_news_agency_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_news_agency_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, identity = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_news_agency_object(misp_object, identity)
+        self._populate_documentation(misp_object=misp_object, identity=identity)
+
+    def test_stix20_bundle_with_organization_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_organization_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, identity = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        role = self._check_organization_object(misp_object, identity)
+        self.assertEqual(role.value, identity.x_misp_role)
+        self._populate_documentation(misp_object=misp_object, identity=identity)
+
     def test_stix20_bundle_with_vulnerability_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_vulnerability_object()
         self.parser.load_stix_bundle(bundle)
@@ -280,6 +341,27 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         _, grouping, identity = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         self._check_legal_entity_object(misp_object, identity)
+        self._populate_documentation(misp_object=misp_object, identity=identity)
+
+    def test_stix21_bundle_with_news_agency_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_news_agency_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, identity = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_news_agency_object(misp_object, identity)
+        self._populate_documentation(misp_object=misp_object, identity=identity)
+
+    def test_stix21_bundle_with_organization_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_organization_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, identity = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        role = self._check_organization_object(misp_object, identity)
+        self.assertEqual(identity.roles, [role.value])
         self._populate_documentation(misp_object=misp_object, identity=identity)
 
     def test_stix21_bundle_with_vulnerability_object(self):

@@ -105,6 +105,47 @@ _LEGAL_ENTITY_OBJECT = {
         "value": "umbrella_logo"
     }
 }
+_NEWS_AGENCY_OBJECT = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--d17e31ce-5a7a-4713-bdff-49d89548c259",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Agence France-Presse",
+    "identity_class": "organization",
+    "contact_information": "address: 13 place de la Bourse, 75002 Paris; Southern Railway Building, 1500 K Street, NW, Suite 600 / e-mail: contact@afp.fr; contact@afp.us / phone-number: (33)0140414646; (1)2024140600",
+    "labels": [
+        "misp:name=\"news-agency\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ],
+    "x_misp_attachment": {
+        "value": "AFP_logo.png",
+    },
+    "x_misp_link": "https://www.afp.com/"
+}
+_ORGANIZATION_OBJECT = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--fe85995c-189d-4c20-9d0e-dfc03e72000b",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Computer Incident Response Center of Luxembourg",
+    "description": "The Computer Incident Response Center Luxembourg (CIRCL) is a government-driven initiative designed to gather, review, report and respond to computer security threats and incidents.",
+    "roles": [
+        "national CERT"
+    ],
+    "identity_class": "organization",
+    "contact_information": "address: 16, bd d'Avranches, L-1160 Luxembourg / e-mail: info@circl.lu / phone-number: (+352) 247 88444",
+    "labels": [
+        "misp:name=\"organization\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ],
+    "x_misp_alias": "CIRCL"
+}
 _VULNERABILITY_ATTRIBUTE = {
     "type": "vulnerability",
     "spec_version": "2.1",
@@ -227,6 +268,17 @@ class TestSTIX21Bundles:
         with open(_TESTFILES_PATH / 'umbrella_logo.png', 'rb') as f:
             identity['x_misp_logo']['data'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(identity)
+
+    @classmethod
+    def get_bundle_with_news_agency_object(cls):
+        identity = _NEWS_AGENCY_OBJECT
+        with open(_TESTFILES_PATH / 'AFP_logo.png', 'rb') as f:
+            identity['x_misp_attachment']['data'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(identity)
+
+    @classmethod
+    def get_bundle_with_organization_object(cls):
+        return cls.__assemble_bundle(_ORGANIZATION_OBJECT)
 
     @classmethod
     def get_bundle_with_vulnerability_object(cls):
