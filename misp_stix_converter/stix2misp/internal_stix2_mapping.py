@@ -221,6 +221,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'mutex': '_object_from_mutex',
             'network-connection': '_object_from_network_connection',
             'network-socket': '_object_from_network_socket',
+            'news-agency': '_parse_news_agency_object',
+            'organization': '_parse_organization_object',
             'process': '_object_from_process',
             'registry-key': '_object_from_registry_key',
             'url': '_object_from_url',
@@ -246,18 +248,19 @@ class InternalSTIX2Mapping(STIX2Mapping):
         # ATTRIBUTES DECLARATION
         description_attribute = {'type': 'text', 'object_relation': 'description'}
         employee_type_attribute = {'type': 'text', 'object_relation': 'employee-type'}
-
+        name_attribute = {'type': 'text', 'object_relation': 'name'}
+        role_attribute = {'type': 'text', 'object_relation': 'role'}
 
         # STIX TO MISP OBJECTS MAPPING
         self.__attack_pattern_object_mapping = Mapping(
             description = {'type': 'text', 'object_relation': 'summary'},
-            name = {'type': 'text', 'object_relation': 'name'},
+            name = name_attribute,
             x_misp_prerequisites = {'type': 'text', 'object_relation': 'prerequisites'},
             x_misp_related_weakness = {'type': 'weakness', 'object_relation': 'related-weakness'},
             x_misp_solutions = {'type': 'text', 'object_relation': 'solutions'}
         )
         self.__course_of_action_object_mapping = Mapping(
-            name = {'type': 'text', 'object_relation': 'name'},
+            name = name_attribute,
             description = description_attribute,
             x_misp_cost = {'type': 'text', 'object_relation': 'cost'},
             x_misp_efficacy = {'type': 'text', 'object_relation': 'efficacy'},
@@ -284,12 +287,51 @@ class InternalSTIX2Mapping(STIX2Mapping):
             }
         )
         self.__legal_entity_object_mapping = Mapping(
-            name = {'type': 'text', 'object_relation': 'name'},
+            name = name_attribute,
             description = {'type': 'text', 'object_relation': 'text'},
             sectors = {'type': 'text', 'object_relation': 'business'},
             x_misp_commercial_name = {'type': 'text', 'object_relation': 'commercial-name'},
             x_misp_legal_form = {'type': 'text', 'object_relation': 'legal-form'},
             x_misp_registration_number = {'type': 'text', 'object_relation': 'registration-number'}
+        )
+        self.__news_agency_contact_information_mapping = Mapping(
+            **{
+                'address': {'type': 'text'},
+                'e-mail': {'type': 'email-src'},
+                'fax-number': {'type': 'phone-number'},
+                'link': {'type': 'link'},
+                'phone-number': {'type': 'phone-number'}
+            }
+        )
+        self.__news_agency_object_mapping = Mapping(
+            name = name_attribute,
+            x_misp_alias = {'type': 'text', 'object_relation': 'alias'},
+            x_misp_archive = {'type': 'link', 'object_relation': 'archive'},
+            x_misp_url = {'type': 'url', 'object_relation': 'url'}
+        )
+        self.__organization_contact_information_mapping = Mapping(
+            **{
+                'address': {'type': 'text'},
+                'e-mail': {'type': 'email-src'},
+                'fax-number': {'type': 'phone-number'},
+                'phone-number': {'type': 'phone-number'}
+            }
+        )
+        self.__organization_object_mapping = Mapping(
+            name = name_attribute,
+            description = description_attribute,
+            roles = role_attribute,
+            x_misp_role = role_attribute,
+            x_misp_alias = {'type': 'text', 'object_relation': 'alias'},
+            x_misp_date_of_inception = {
+                'type': 'datetime',
+                'object_relation': 'date-of-inception'
+            },
+            x_misp_type_of_organization = {
+                'type': 'text',
+                'object_relation': 'type-of-organization'
+            },
+            x_misp_VAT = {'type': 'text', 'object_relation': 'VAT'}
         )
         self.__vulnerability_object_mapping = Mapping(
             description = description_attribute,
@@ -335,8 +377,24 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__legal_entity_object_mapping
 
     @property
+    def news_agency_object_mapping(self) -> dict:
+        return self.__news_agency_object_mapping
+
+    @property
+    def news_agency_contact_information_mapping(self) -> dict:
+        return self.__news_agency_contact_information_mapping
+
+    @property
     def objects_mapping(self) -> dict:
         return self.__objects_mapping
+
+    @property
+    def organization_object_mapping(self) -> dict:
+        return self.__organization_object_mapping
+
+    @property
+    def organization_contact_information_mapping(self) -> dict:
+        return self.__organization_contact_information_mapping
 
     @property
     def vulnerability_object_mapping(self) -> dict:

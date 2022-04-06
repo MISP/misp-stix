@@ -270,9 +270,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
-    def _parse_legal_entity_object(self, identity: Union[Identity_v20, Identity_v21]):
-        misp_object = self._create_misp_object('legal-entity', identity)
-        for key, mapping in self._mapping.legal_entity_object_mapping.items():
+    def _parse_identity_object(self, identity: Union[Identity_v20, Identity_v21], name: str) -> MISPObject:
+        misp_object = self._create_misp_object(name, identity)
+        feature = name.replace('-', '_')
+        for key, mapping in getattr(self._mapping, f'{feature}_object_mapping').items():
             if hasattr(identity, key):
                 self._populate_object_attributes(
                     misp_object,
@@ -280,24 +281,41 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     getattr(identity, key)
                 )
         if hasattr(identity, 'contact_information'):
+            mapping = getattr(self._mapping, f'{feature}_contact_information_mapping')
             for contact_info in identity.contact_information.split(' / '):
                 object_relation, value = contact_info.split(': ')
                 attribute = {
                     'object_relation': object_relation,
                     'value': value
                 }
-                attribute.update(self._mapping.legal_entity_contact_information_mapping[object_relation])
+                attribute.update(mapping[object_relation])
                 misp_object.add_attribute(**attribute)
+        return misp_object
+
+    def _parse_legal_entity_object(self, identity: Union[Identity_v20, Identity_v21]):
+        misp_object = self._parse_identity_object(identity, 'legal-entity')
         if hasattr(identity, 'x_misp_logo'):
-            attribute = {
-                'type': 'attachment',
-                'object_relation': 'logo'
-            }
+            attribute = {'type': 'attachment', 'object_relation': 'logo'}
             if isinstance(identity.x_misp_logo, dict):
                 attribute.update(identity.x_misp_logo)
             else:
                 attribute['value'] = identity.x_misp_logo
             misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
+    def _parse_news_agency_object(self, identity: Union[Identity_v20, Identity_v21]):
+        misp_object = self._parse_identity_object(identity, 'news-agency')
+        if hasattr(identity, 'x_misp_attachment'):
+            attribute = {'type': 'attachment', 'object_relation': 'attachment'}
+            if isinstance(identity.x_misp_attachment, dict):
+                attribute.update(identity.x_misp_attachment)
+            else:
+                attribute['value'] = identity.x_misp_attachment
+            misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
+    def _parse_organization_object(self, identity: Union[Identity_v20, Identity_v21]):
+        misp_object = self._parse_identity_object(identity, 'organization')
         self._add_misp_object(misp_object)
 
     def _parse_vulnerability_attribute(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
