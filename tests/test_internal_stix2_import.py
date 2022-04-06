@@ -17,6 +17,17 @@ class TestInternalSTIX2Import(TestSTIX2Import):
     #                      MISP ATTRIBUTES CHECKING FUNCTIONS                      #
     ################################################################################
 
+    def _check_campaign_name_attribute(self, attribute, campaign):
+        self.assertEqual(attribute.uuid, campaign.id.split('--')[1])
+        self.assertEqual(attribute.type, 'campaign-name')
+        self._assert_multiple_equal(
+            attribute.timestamp,
+            campaign.created,
+            campaign.modified
+        )
+        self._check_attribute_labels(attribute, campaign.labels)
+        self.assertEqual(attribute.value, campaign.name)
+
     def _check_vulnerability_attribute(self, attribute, vulnerability):
         self.assertEqual(attribute.uuid, vulnerability.id.split('--')[1])
         self.assertEqual(attribute.type, vulnerability.type)
@@ -189,6 +200,16 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
     #                         MISP ATTRIBUTES IMPORT TESTS                         #
     ################################################################################
 
+    def test_stix20_bundle_with_campaign_name_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_campaign_name_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, campaign = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        self._check_campaign_name_attribute(attribute, campaign)
+        self._populate_documentation(attribute=attribute, campaign=campaign)
+
     def test_stix20_bundle_with_vulnerability_attribute(self):
         bundle = TestSTIX20Bundles.get_bundle_with_vulnerability_attribute()
         self.parser.load_stix_bundle(bundle)
@@ -287,6 +308,16 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
     ################################################################################
     #                         MISP ATTRIBUTES IMPORT TESTS                         #
     ################################################################################
+
+    def test_stix21_bundle_with_campaign_name_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_campaign_name_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, campaign = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_campaign_name_attribute(attribute, campaign)
+        self._populate_documentation(attribute=attribute, campaign=campaign)
 
     def test_stix21_bundle_with_vulnerability_attribute(self):
         bundle = TestSTIX21Bundles.get_bundle_with_vulnerability_attribute()

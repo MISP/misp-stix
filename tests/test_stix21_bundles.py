@@ -40,6 +40,19 @@ _ATTACK_PATTERN_OBJECT = {
     ],
     "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
 }
+_CAMPAIGN_NAME_ATTRIBUTE = {
+    "type": "campaign",
+    "spec_version": "2.1",
+    "id": "campaign--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "MartyMcFly",
+    "labels": [
+        "misp:type=\"campaign-name\"",
+        "misp:category=\"Attribution\""
+    ]
+}
 _COURSE_OF_ACTION_OBJECT = {
     "type": "course-of-action",
     "spec_version": "2.1",
@@ -241,6 +254,10 @@ class TestSTIX21Bundles:
     ################################################################################
     #                               ATTRIBUTES TESTS                               #
     ################################################################################
+
+    @classmethod
+    def get_bundle_with_campaign_name_attribute(cls):
+        return cls.__assemble_bundle(_CAMPAIGN_NAME_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_vulnerability_attribute(cls):
