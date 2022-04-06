@@ -14,7 +14,7 @@ from pymisp import AbstractMISP, MISPEvent, MISPAttribute, MISPObject
 from stix2.parsing import parse as stix2_parser
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
-from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
+from stix2.v20.sdo import (AttackPattern as AttackPattern_v20, Campaign as Campaign_v20,
     CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
     Identity as Identity_v20, Indicator as Indicator_v20,
     IntrusionSet as IntrusionSet_v20, Malware as Malware_v20,
@@ -28,7 +28,7 @@ from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, Domain
     EmailAddress, EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
     NetworkTraffic, Process, Software, URL, UserAccount, WindowsRegistryKey,
     X509Certificate)
-from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
+from stix2.v21.sdo import (AttackPattern as AttackPattern_v21, Campaign as Campaign_v21,
     CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21, Grouping,
     Identity as Identity_v21, Indicator as Indicator_v21,
     IntrusionSet as IntrusionSet_v21, Location, Malware as Malware_v21,
@@ -144,6 +144,13 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._attack_pattern[attack_pattern.id] = data_to_load
         except AttributeError:
             self._attack_pattern = {attack_pattern.id: data_to_load}
+
+    def _load_campaign(self, campaign: Union[Campaign_v20, Campaign_v21]):
+        data_to_load = self._build_data_to_load(campaign)
+        try:
+            self._campaign[campaign.id] = data_to_load
+        except AttributeError:
+            self._campaign = {campaign.id: campaign}
 
     def _load_course_of_action(self, course_of_action: Union[CourseOfAction_v20, CourseOfAction_v21]):
         data_to_load = self._build_data_to_load(course_of_action)

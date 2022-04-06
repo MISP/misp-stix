@@ -24,6 +24,7 @@ class STIX2Mapping:
     def _declare_mapping(self, updates: Optional[dict]=None):
         stix_object_loading_mapping = {
             'attack-pattern': '_load_attack_pattern',
+            'campaign': '_load_campaign',
             'course-of-action': '_load_course_of_action',
             'grouping': '_load_grouping',
             'identity': '_load_identity',
@@ -73,6 +74,7 @@ class STIX2Mapping:
         self.__stix_to_misp_mapping = Mapping(
             **{
                 'attack-pattern': '_parse_attack_pattern',
+                'campaign': '_parse_campaign',
                 'course-of-action': '_parse_course_of_action',
                 'grouping': '_parse_grouping',
                 'identity': '_parse_identity',

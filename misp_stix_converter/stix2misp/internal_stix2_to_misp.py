@@ -102,6 +102,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except Exception as exception:
             self._attack_pattern_error(attack_pattern.id, exception)
 
+    def _parse_campaign(self, campaign_ref: str):
+        campaign = self._get_stix_object(campaign_ref)
+        attribute = self._create_attribute_dict(campaign)
+        attribute['value'] = campaign.name
+        self._add_misp_attribute(attribute)
+
     def _parse_course_of_action(self, course_of_action_ref: str):
         course_of_action = self._get_stix_object(course_of_action_ref)
         feature = self._handle_object_mapping(course_of_action.labels, course_of_action.id)
