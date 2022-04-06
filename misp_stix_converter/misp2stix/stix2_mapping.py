@@ -605,7 +605,8 @@ class Stix2Mapping:
             'address',
             'e-mail',
             'fax-number',
-            'phone-number'
+            'phone-number',
+            'link'
         )
         self.__news_agency_data_fields = (
             'attachment',
