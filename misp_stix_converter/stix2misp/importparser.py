@@ -59,6 +59,11 @@ class STIXtoMISPParser:
         message = f"Error with the Identity object with id {identity_id}: {tb}"
         self.__errors[self._identifier].add(message)
 
+    def _malware_error(self, malware_id: str, exception: Exception):
+        tb = self._parse_traceback(exception)
+        message = f"Error with the Malware object with id {malware_id}: {tb}"
+        self.__errors[self._identifier].add(message)
+
     def _object_ref_loading_error(self, object_ref: str):
         message = f"Error loading the STIX object with id {object_ref}"
         self.__errors[self._identifier].add(message)
@@ -76,6 +81,11 @@ class STIXtoMISPParser:
     def _parse_traceback(exception: Exception) -> str:
         tb = ''.join(traceback.format_tb(exception.__traceback__))
         return f'{tb}{exception.__str__()}'
+
+    def _tool_error(self, tool_id: str, exception: Exception):
+        tb = self._parse_traceback(exception)
+        message = f"Error with the Tool object with id {tool_id}: {tb}"
+        self.__errors[self._identifier].add(message)
 
     def _unable_to_load_stix_object_type_error(self, object_type: str):
         message = f"Unable to load STIX object type: {object_type}"

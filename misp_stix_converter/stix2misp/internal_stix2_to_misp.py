@@ -9,12 +9,14 @@ from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
     CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
-    Identity as Identity_v20, Indicator as Indicator_v20,
-    ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
+    Identity as Identity_v20, Indicator as Indicator_v20, Malware as Malware_v20,
+    ObservedData as ObservedData_v20, Tool as Tool_v20,
+    Vulnerability as Vulnerability_v20)
 from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
     CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21,
-    Identity as Identity_v21, Indicator as Indicator_v21, Note,
-    ObservedData as ObservedData_v21, Vulnerability as Vulnerability_v21)
+    Identity as Identity_v21, Indicator as Indicator_v21, Malware as Malware_v21,
+    Note, ObservedData as ObservedData_v21, Tool as Tool_v21,
+    Vulnerability as Vulnerability_v21)
 from typing import Optional, Union
 
 _attribute_additional_fields = (
@@ -181,6 +183,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_tag(label)
         self._add_misp_object(misp_object)
 
+    def _parse_malware(self, malware_ref: str):
+        malware = self._get_stix_object(malware_ref)
+        feature = self._handle_object_mapping(malware.labels, malware.id)
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        try:
+            parser(malware)
+        except Exception as exception:
+            self._malware_error(malware.id, exception)
+
     def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
         feature = self._handle_object_mapping(observed_data.labels, observed_data.id)
         try:
@@ -202,6 +216,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             parser(observed_data)
         except Exception as exception:
             self._observed_data_error(observed_data.id, exception)
+
+    def _parse_tool(self, tool_ref: str):
+        tool = self._get_stix_object(tool_ref)
+        feature = self._handle_object_mapping(tool.labels, tool.id)
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        try:
+            parser(tool)
+        except Exception as exception:
+            self._tool_error(tool.id, exception)
 
     def _parse_vulnerability(self, vulnerability_ref: str):
         vulnerability = self._get_stix_object(vulnerability_ref)
@@ -322,6 +348,25 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_organization_object(self, identity: Union[Identity_v20, Identity_v21]):
         misp_object = self._parse_identity_object(identity, 'organization')
+        self._add_misp_object(misp_object)
+
+    def _parse_script_object(self, stix_object: Union[Malware_v20, Malware_v21, Tool_v20, Tool_v21]):
+        misp_object = self._create_misp_object('script', stix_object)
+        feature = f'script_from_{stix_object.type}_object_mapping'
+        for key, mapping in getattr(self._mapping, feature).items():
+            if hasattr(stix_object, key):
+                self._populate_object_attributes(
+                    misp_object,
+                    mapping,
+                    getattr(stix_object, key)
+                )
+        if hasattr(stix_object, 'x_misp_script_as_attachment'):
+            attribute = {'type': 'attachment', 'object_relation': 'script-as-attachment'}
+            if isinstance(stix_object.x_misp_script_as_attachment, dict):
+                attribute.update(stix_object.x_misp_script_as_attachment)
+            else:
+                attribute['value'] = stix_object.x_misp_script_as_attachment
+            misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
     def _parse_vulnerability_attribute(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):

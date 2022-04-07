@@ -225,6 +225,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'organization': '_parse_organization_object',
             'process': '_object_from_process',
             'registry-key': '_object_from_registry_key',
+            'script': '_parse_script_object',
             'url': '_object_from_url',
             'vulnerability': '_parse_vulnerability_object',
             'x509': '_object_from_x509'
@@ -246,10 +247,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__objects_mapping = Mapping(**objects_mapping)
 
         # ATTRIBUTES DECLARATION
+        alias_attribute = {'type': 'text', 'object_relation': 'alias'}
+        comment_attribute = {'type': 'text', 'object_relation': 'comment'}
         description_attribute = {'type': 'text', 'object_relation': 'description'}
         employee_type_attribute = {'type': 'text', 'object_relation': 'employee-type'}
+        filename_attribute = {'type': 'filename', 'object_relation': 'filename'}
         name_attribute = {'type': 'text', 'object_relation': 'name'}
+        language_attribute = {'type': 'text', 'object_relation': 'language'}
         role_attribute = {'type': 'text', 'object_relation': 'role'}
+        script_attribute = {'type': 'text', 'object_relation': 'script'}
+        state_attribute = {'type': 'text', 'object_relation': 'state'}
 
         # STIX TO MISP OBJECTS MAPPING
         self.__attack_pattern_object_mapping = Mapping(
@@ -305,7 +312,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__news_agency_object_mapping = Mapping(
             name = name_attribute,
-            x_misp_alias = {'type': 'text', 'object_relation': 'alias'},
+            x_misp_alias = alias_attribute,
             x_misp_archive = {'type': 'link', 'object_relation': 'archive'},
             x_misp_url = {'type': 'url', 'object_relation': 'url'}
         )
@@ -322,7 +329,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             description = description_attribute,
             roles = role_attribute,
             x_misp_role = role_attribute,
-            x_misp_alias = {'type': 'text', 'object_relation': 'alias'},
+            x_misp_alias = alias_attribute,
             x_misp_date_of_inception = {
                 'type': 'datetime',
                 'object_relation': 'date-of-inception'
@@ -332,6 +339,20 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'object_relation': 'type-of-organization'
             },
             x_misp_VAT = {'type': 'text', 'object_relation': 'VAT'}
+        )
+        self.__script_from_malware_object_mapping = Mapping(
+            name = filename_attribute,
+            description = comment_attribute,
+            implementation_languages = language_attribute,
+            x_misp_script = script_attribute,
+            x_misp_state = state_attribute
+        )
+        self.__script_from_tool_object_mapping = Mapping(
+            name = filename_attribute,
+            description = comment_attribute,
+            x_misp_language = language_attribute,
+            x_misp_script = script_attribute,
+            x_misp_state = state_attribute
         )
         self.__vulnerability_object_mapping = Mapping(
             description = description_attribute,
@@ -395,6 +416,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def organization_contact_information_mapping(self) -> dict:
         return self.__organization_contact_information_mapping
+
+    @property
+    def script_from_malware_object_mapping(self) -> dict:
+        return self.__script_from_malware_object_mapping
+
+    @property
+    def script_from_tool_object_mapping(self) -> dict:
+        return self.__script_from_tool_object_mapping
 
     @property
     def vulnerability_object_mapping(self) -> dict:
