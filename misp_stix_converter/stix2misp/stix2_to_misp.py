@@ -179,6 +179,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             self._intrusion_set = {intrusion_set.id: data_to_load}
 
+    def _load_location(self, location: Location):
+        try:
+            self._location[location.id] = location
+        except AttributeError:
+            self._location = {location.id: location}
+
     def _load_malware(self, malware: Union[Malware_v20, Malware_v21]):
         data_to_load = self._build_data_to_load(malware)
         try:

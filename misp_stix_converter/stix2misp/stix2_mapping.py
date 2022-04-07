@@ -21,7 +21,7 @@ class STIX2Mapping:
             }
         )
 
-    def _declare_mapping(self, updates: Optional[dict]=None):
+    def _declare_mapping(self, updates: Optional[dict]={}):
         stix_object_loading_mapping = {
             'attack-pattern': '_load_attack_pattern',
             'campaign': '_load_campaign',
@@ -135,15 +135,19 @@ class STIX2Mapping:
         self.__yara_attribute = Mapping(**yara_attribute)
 
         # MISP OBJECTS MAPPING
-        self.__location_object_mapping = Mapping(
-            city = {'type': 'text', 'object_relation': 'city'},
-            country = {'type': 'text', 'object_relation': 'country'},
-            latitude = {'type': 'float', 'object_relation': 'latitude'},
-            longitude = {'type': 'float', 'object_relation': 'longitude'},
-            postal_code = {'type': 'text', 'object_relation': 'zipcode'},
-            region = {'type': 'text', 'object_relation': 'region'},
-            street_address = {'type': 'text', 'object_relation': 'address'}
-        )
+        location_object_mapping = {
+            'city': {'type': 'text', 'object_relation': 'city'},
+            'country': {'type': 'text', 'object_relation': 'countrycode'},
+            'description': {'type': 'text', 'object_relation': 'text'},
+            'latitude': {'type': 'float', 'object_relation': 'latitude'},
+            'longitude': {'type': 'float', 'object_relation': 'longitude'},
+            'postal_code': {'type': 'text', 'object_relation': 'zipcode'},
+            'region': {'type': 'text', 'object_relation': 'region'},
+            'street_address': {'type': 'text', 'object_relation': 'address'}
+        }
+        if 'location' in updates:
+            location_object_mapping.update(updates['location'])
+        self.__location_object_mapping = Mapping(**location_object_mapping)
         self.__suricata_object_mapping = Mapping(
             description = comment_attribute,
             pattern = snort_attribute,

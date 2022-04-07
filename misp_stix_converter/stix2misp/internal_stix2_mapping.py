@@ -8,7 +8,22 @@ from .stix2_mapping import STIX2Mapping
 class InternalSTIX2Mapping(STIX2Mapping):
     def __init__(self):
         super().__init__()
-        self._declare_mapping()
+        self._declare_mapping(
+            updates = {
+                'location': {
+                    'x_misp_altitude': {'type': 'float', 'object_relation': 'altitude'},
+                    'x_misp_country': {'type': 'text', 'object_relation': 'country'},
+                    'x_misp_epsg': {'type': 'text', 'object_relation': 'epsg'},
+                    'x_misp_first_seen': {'type': 'datetime', 'object_relation': 'first-seen'},
+                    'x_misp_last_seen': {'type': 'datetime', 'object_relation': 'last-seen'},
+                    'x_misp_neighborhood': {'type': 'text', 'object_relation': 'neighborhood'},
+                    'x_misp_spacial_reference': {
+                        'type': 'text',
+                        'object_relation': 'spacial-reference'
+                    }
+                }
+            }
+        )
         attributes_mapping = {
             'AS': '_attribute_from_AS',
             'attachment': '_attribute_from_attachment',
