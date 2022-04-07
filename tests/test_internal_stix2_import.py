@@ -408,6 +408,25 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         self.assertEqual([employee_type.value], identity.roles)
         self._populate_documentation(misp_object=misp_object, identity=identity)
 
+    def test_stix21_bundle_with_geolocation_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_geolocation_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, location = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        city, countrycode, latitude, longitude, zipcode, region, address, altitude, country, accuracy = misp_object.attributes
+        self.assertEqual(city.value, location.city)
+        self.assertEqual(countrycode.value, location.country)
+        self.assertEqual(latitude.value, location.latitude)
+        self.assertEqual(longitude.value, location.longitude)
+        self.assertEqual(zipcode.value, location.postal_code)
+        self.assertEqual(region.value, location.region)
+        self.assertEqual(address.value, location.street_address)
+        self.assertEqual(altitude.value, location.x_misp_altitude)
+        self.assertEqual(country.value, location.x_misp_country)
+        self.assertEqual(accuracy.value, location.precision / 1000)
+
     def test_stix21_bundle_with_legal_entity_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_legal_entity_object()
         self.parser.load_stix_bundle(bundle)

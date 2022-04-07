@@ -94,6 +94,29 @@ _EMPLOYEE_OBJECT = {
         "misp:to_ids=\"False\""
     ]
 }
+_GEOLOCATION_OBJECT = {
+    "type": "location",
+    "spec_version": "2.1",
+    "id": "location--6a10dac8-71ac-4d9b-8269-1e9c73ea4d8f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "latitude": 39.108889,
+    "longitude": -76.771389,
+    "precision": 1000.0,
+    "region": "northern-america",
+    "country": "US",
+    "city": "Fort Meade",
+    "street_address": "9800 Savage Rd. Suite 6272",
+    "postal_code": "MD 20755",
+    "labels": [
+        "misp:name=\"geolocation\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ],
+    "x_misp_altitude": "55",
+    "x_misp_country": "USA"
+}
 _LEGAL_ENTITY_OBJECT = {
     "type": "identity",
     "spec_version": "2.1",
@@ -339,6 +362,10 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_employee_object(cls):
         return cls.__assemble_bundle(_EMPLOYEE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_geolocation_object(cls):
+        return cls.__assemble_bundle(_GEOLOCATION_OBJECT)
 
     @classmethod
     def get_bundle_with_legal_entity_object(cls):
