@@ -2891,7 +2891,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         )
         args = (grouping, event['Event'], identity_id)
         object_ref = self._check_grouping_features(*args)[0]
-        address, zipcode, city, country, region, latitude, longitude, altitude = (attribute['value'] for attribute in misp_object['Attribute'])
+        address, zipcode, city, country, countrycode, region, latitude, longitude, accuracy, altitude = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(location.type, 'location')
         self._assert_multiple_equal(
             location.id,
@@ -2907,10 +2907,12 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(location.street_address, address)
         self.assertEqual(location.postal_code, zipcode)
         self.assertEqual(location.city, city)
-        self.assertEqual(location.country, country)
+        self.assertEqual(location.country, countrycode)
         self.assertEqual(location.region, region)
         self.assertEqual(location.latitude, float(latitude))
         self.assertEqual(location.longitude, float(longitude))
+        self.assertEqual(location.precision, float(accuracy) * 1000)
+        self.assertEqual(location.x_misp_country, country)
         self.assertEqual(location.x_misp_altitude, altitude)
         self._populate_documentation(misp_object=misp_object, location=location)
 

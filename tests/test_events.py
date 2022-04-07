@@ -1516,6 +1516,11 @@ _TEST_GEOLOCATION_OBJECT = {
         },
         {
             "type": "text",
+            "object_relation": "countrycode",
+            "value": "US"
+        },
+        {
+            "type": "text",
             "object_relation": "region",
             "value": "northern-america"
         },
@@ -1528,6 +1533,11 @@ _TEST_GEOLOCATION_OBJECT = {
             "type": "float",
             "object_relation": "longitude",
             "value": "-76.771389"
+        },
+        {
+            "type": "float",
+            "object_relation": "accuracy-radius",
+            "value": "1"
         },
         {
             "type": "float",
