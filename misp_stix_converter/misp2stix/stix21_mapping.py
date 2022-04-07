@@ -103,10 +103,11 @@ class Stix21Mapping(Stix2Mapping):
         self.__geolocation_object_mapping = Mapping(
             address = 'street_address',
             city = 'city',
-            country = 'country',
+            countrycode = 'country',
             latitude = 'latitude',
             longitude = 'longitude',
             region = 'region',
+            text = 'description',
             zipcode = 'postal_code'
         )
         self.__ip_port_uuid_fields = (
