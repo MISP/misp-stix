@@ -4577,7 +4577,7 @@ def get_event_with_script_objects():
                 "type": "attachment",
                 "object_relation": "script-as-attachment",
                 "value": "infected.py",
-                "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo"
+                "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
             },
             {
                 "type": "text",

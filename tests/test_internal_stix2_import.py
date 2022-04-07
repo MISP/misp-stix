@@ -164,6 +164,26 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(phone_info, f'{phone.object_relation}: {phone.value}')
         return role
 
+    def _check_script_object(self, misp_object, stix_object):
+        self.assertEqual(misp_object.uuid, stix_object.id.split('--')[1])
+        self.assertEqual(misp_object.name, 'script')
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            self._timestamp_from_datetime(stix_object.created),
+            self._timestamp_from_datetime(stix_object.modified)
+        )
+        self._check_object_labels(misp_object, stix_object.labels, False)
+        filename, comment, language, script, state, attachment = misp_object.attributes
+        self.assertEqual(filename.value, stix_object.name)
+        self.assertEqual(comment.value, stix_object.description)
+        self.assertEqual(script.value, stix_object.x_misp_script)
+        self.assertEqual(attachment.value, stix_object.x_misp_script_as_attachment['value'])
+        self.assertEqual(
+            self._get_data_value(attachment.data),
+            stix_object.x_misp_script_as_attachment['data']
+        )
+        return language, state
+
     def _check_vulnerability_object(self, misp_object, vulnerability):
         self.assertEqual(misp_object.uuid, vulnerability.id.split('--')[1])
         self.assertEqual(misp_object.name, vulnerability.type)
@@ -286,6 +306,30 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         self.assertEqual(role.value, identity.x_misp_role)
         self._populate_documentation(misp_object=misp_object, identity=identity)
 
+    def test_stix20_bundle_with_script_objects(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_script_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, malware, tool = bundle.objects
+        script_from_malware, script_from_tool = self._check_misp_event_features(event, report)
+        language, state = self._check_script_object(script_from_malware, malware)
+        self.assertEqual([language.value], malware.implementation_languages)
+        self.assertEqual(state.value, 'Malicious')
+        self._populate_documentation(
+            misp_object = script_from_malware,
+            malware = malware,
+            name = 'Script object where state is "Malicious"'
+        )
+        language, state = self._check_script_object(script_from_tool, tool)
+        self.assertEqual(language.value, tool.x_misp_language)
+        self.assertEqual(state.value, 'Harmless')
+        self._populate_documentation(
+            misp_object = script_from_tool,
+            tool = tool,
+            name = 'Script object where state is not "Malicious"'
+        )
+
     def test_stix20_bundle_with_vulnerability_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_vulnerability_object()
         self.parser.load_stix_bundle(bundle)
@@ -394,6 +438,33 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         role = self._check_organization_object(misp_object, identity)
         self.assertEqual(identity.roles, [role.value])
         self._populate_documentation(misp_object=misp_object, identity=identity)
+
+    def test_stix21_bundle_with_script_objects(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_script_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, malware, tool = bundle.objects
+        script_from_malware, script_from_tool = self._check_misp_event_features_from_grouping(
+            event,
+            grouping
+        )
+        language, state = self._check_script_object(script_from_malware, malware)
+        self.assertEqual([language.value], malware.implementation_languages)
+        self.assertEqual(state.value, 'Malicious')
+        self._populate_documentation(
+            misp_object = script_from_malware,
+            malware = malware,
+            name = 'Script object where state is "Malicious"'
+        )
+        language, state = self._check_script_object(script_from_tool, tool)
+        self.assertEqual(language.value, tool.x_misp_language)
+        self.assertEqual(state.value, 'Harmless')
+        self._populate_documentation(
+            misp_object = script_from_tool,
+            tool = tool,
+            name = 'Script object where state is not "Malicious"'
+        )
 
     def test_stix21_bundle_with_vulnerability_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_vulnerability_object()

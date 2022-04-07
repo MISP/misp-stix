@@ -148,6 +148,64 @@ _ORGANIZATION_OBJECT = {
     "x_misp_alias": "CIRCL",
     "x_misp_role": "national CERT"
 }
+_SCRIPT_OBJECTS = [
+    {
+        "type": "malware",
+        "id": "malware--ce12c406-cf09-457b-875a-41ab75d6dc4d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "infected.py",
+        "description": "A script that infects command line shells",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"script\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ],
+        "implementation_languages": [
+            "Python"
+        ],
+        "x_misp_script": "print('You are infected')",
+        "x_misp_script_as_attachment": {
+            "value": "infected.py",
+            "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
+        },
+        "x_misp_state": "Malicious"
+    },
+    {
+        "type": "tool",
+        "id": "tool--9d14bdd1-5d32-4b4d-bd50-fd3a9d1c1c04",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "hello.py",
+        "description": "A peaceful script",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"script\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ],
+        "x_misp_language": "Python",
+        "x_misp_script": "print('Hello World')",
+        "x_misp_script_as_attachment": {
+            "value": "hello.py",
+            "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK"
+        },
+        "x_misp_state": "Harmless"
+    }
+]
 _VULNERABILITY_ATTRIBUTE = {
     "type": "vulnerability",
     "id": "vulnerability--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -282,6 +340,10 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_organization_object(cls):
         return cls.__assemble_bundle(_ORGANIZATION_OBJECT)
+
+    @classmethod
+    def get_bundle_with_script_objects(cls):
+        return cls.__assemble_bundle(*_SCRIPT_OBJECTS)
 
     @classmethod
     def get_bundle_with_vulnerability_object(cls):
