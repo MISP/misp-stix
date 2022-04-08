@@ -148,7 +148,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         """
         if isinstance(indicator, Indicator_v21) and indicator.pattern_type != 'stix':
             try:
-                return self._mapping.pattern_type_mapping[indicator.pattern_type]
+                return f'_parse_{indicator.pattern_type}_pattern'
             except KeyError:
                 raise UnknownPatternTypeError(indicator.pattern_type)
         if self._is_pattern_too_complex(indicator.pattern):

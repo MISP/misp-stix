@@ -194,12 +194,6 @@ class ExternalSTIX2Mapping(STIX2Mapping):
             )
         )
         self.__pattern_mapping = Mapping(**pattern_mapping)
-        self.__pattern_type_mapping = Mapping(
-            sigma = '_parse_sigma_pattern',
-            snort = '_parse_snort_pattern',
-            suricata = '_parse_suricata_pattern',
-            yara = '_parse_yara_pattern'
-        )
 
         # MISP OBJECTS MAPPING
         self.__vulnerability_object_mapping = Mapping(
@@ -218,10 +212,6 @@ class ExternalSTIX2Mapping(STIX2Mapping):
     @property
     def pattern_mapping(self) -> dict:
         return self.__pattern_mapping
-
-    @property
-    def pattern_type_mapping(self) -> dict:
-        return self.__pattern_type_mapping
 
     @property
     def vulnerability_object_mapping(self) -> dict:
