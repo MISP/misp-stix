@@ -450,10 +450,32 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_patterning_language(self, indicator: Indicator_v21):
+    def _attribute_from_patterning_language_pattern(self, indicator: Indicator_v21):
         attribute = self._create_attribute_dict(indicator)
         attribute['value'] = indicator.pattern
         self._add_misp_attribute(attribute)
+
+    def _object_from_patterning_language_pattern(self, indicator: Indicator_v21):
+        name = 'suricata' if indicator.pattern_type == 'snort' else indicator.pattern_type
+        misp_object = self._create_misp_object(name, indicator)
+        for key, mapping in getattr(self._mapping, f'{name}_object_mapping').items():
+            if hasattr(indicator, key):
+                self._populate_object_attributes(
+                    misp_object,
+                    mapping,
+                    getattr(indicator, key)
+                )
+        if hasattr(indicator, 'external_references') and name == 'suricata':
+            for reference in indicator.external_references:
+                attribute = {
+                    'type': 'link',
+                    'object_relation': 'ref',
+                    'value': reference.url
+                }
+                if hasattr(reference, 'description'):
+                    attribute['comment'] = reference.description
+                misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
 
     ################################################################################
     #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #

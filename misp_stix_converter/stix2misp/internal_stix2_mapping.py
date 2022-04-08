@@ -259,6 +259,15 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 '_object_from_account'
             )
         )
+        objects_mapping.update(
+            dict.fromkeys(
+                (
+                    'suricata',
+                    'yara'
+                ),
+                '_object_from_patterning_language'
+            )
+        )
         self.__objects_mapping = Mapping(**objects_mapping)
 
         # ATTRIBUTES DECLARATION
@@ -272,6 +281,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         role_attribute = {'type': 'text', 'object_relation': 'role'}
         script_attribute = {'type': 'text', 'object_relation': 'script'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
+        version_attribute = {'type': 'text', 'object_relation': 'version'}
 
         # STIX TO MISP OBJECTS MAPPING
         self.__attack_pattern_object_mapping = Mapping(
@@ -369,6 +379,11 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_script = script_attribute,
             x_misp_state = state_attribute
         )
+        self.__suricata_object_mapping = Mapping(
+            pattern = {'type': 'snort', 'object_relation': 'suricata'},
+            description = comment_attribute,
+            pattern_version = version_attribute
+        )
         self.__vulnerability_object_mapping = Mapping(
             description = description_attribute,
             x_misp_created = {'type': 'datetime', 'object_relation': 'created'},
@@ -382,6 +397,13 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'type': 'cpe',
                 'object_relation': 'vulnerable-configuration'
             }
+        )
+        self.__yara_object_mapping = Mapping(
+            pattern = {'type': 'yara', 'object_relation': 'yara'},
+            description = comment_attribute,
+            pattern_version = version_attribute,
+            x_misp_context = {'type': 'text', 'object_relation': 'context'},
+            x_misp_yara_rule_name = {'type': 'text', 'object_relation': 'yara-rule-name'}
         )
 
     @property
@@ -441,5 +463,13 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__script_from_tool_object_mapping
 
     @property
+    def suricata_object_mapping(self) -> dict:
+        return self.__suricata_object_mapping
+
+    @property
     def vulnerability_object_mapping(self) -> dict:
         return self.__vulnerability_object_mapping
+
+    @property
+    def yara_object_mapping(self) -> dict:
+        return self.__yara_object_mapping

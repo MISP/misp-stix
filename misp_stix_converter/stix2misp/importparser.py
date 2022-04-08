@@ -59,6 +59,11 @@ class STIXtoMISPParser:
         message = f"Error with the Identity object with id {identity_id}: {tb}"
         self.__errors[self._identifier].add(message)
 
+    def _indicator_error(self, indicator_id: str, exception: Exception):
+        tb = self._parse_traceback(exception)
+        message = f"Error with the Indicator object with id {indicator_id}: {tb}"
+        self.__errors[self._identifier].add(message)
+
     def _malware_error(self, malware_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         message = f"Error with the Malware object with id {malware_id}: {tb}"
