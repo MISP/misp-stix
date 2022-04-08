@@ -3400,12 +3400,16 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         )
         object_refs = self._check_grouping_features(grouping, event['Event'], identity_id)
         for indicator, misp_object, object_ref in zip(indicators, objects, object_refs):
-            rule, version, comment = misp_object['Attribute']
+            rule, version, comment, attribute = misp_object['Attribute']
             self._check_object_indicator_features(indicator, misp_object, identity_id, object_ref)
             self.assertEqual(indicator.pattern, rule['value'].replace('"', '\\\\"'))
             self.assertEqual(indicator.pattern_type, rule['type'])
             self.assertEqual(indicator.pattern_version, version['value'])
             self.assertEqual(indicator.description, comment['value'])
+            if misp_object['name'] == 'suricata':
+                self.assertEqual(indicator.external_references[0].url, attribute['value'])
+            else:
+                self.assertEqual(indicator.x_misp_yara_rule_name, attribute['value'])
             self._populate_documentation(misp_object=misp_object, indicator=indicator)
 
     def test_event_with_pe_and_section_indicator_objects(self):

@@ -4481,6 +4481,11 @@ def get_event_with_patterning_language_objects():
                     "type": "comment",
                     "object_relation": "comment",
                     "value": "To rule them all"
+                },
+                {
+                    "type": "link",
+                    "object_relation": "ref",
+                    "value": "https://suricata.readthedocs.io/en/suricata-6.0.4/index.html"
                 }
             ]
         },
@@ -4505,6 +4510,11 @@ def get_event_with_patterning_language_objects():
                     "type": "comment",
                     "object_relation": "comment",
                     "value": "To rule them all"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "yara-rule-name",
+                    "value": "Ultimate rule"
                 }
             ]
         }
