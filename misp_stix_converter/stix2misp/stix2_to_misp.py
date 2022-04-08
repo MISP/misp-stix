@@ -420,15 +420,26 @@ class STIX2toMISPParser(STIXtoMISPParser):
         object_type = stix_object.type
         if object_type in self._mapping.timeline_mapping:
             first, last = self._mapping.timeline_mapping[object_type]
-            if hasattr(stix_object, first) and getattr(stix_object, first):
-                misp_object['first_seen'] = getattr(stix_object, first)
-            if hasattr(stix_object, last) and getattr(stix_object, last):
-                misp_object['last_seen'] = getattr(stix_object, last)
+            if not self._skip_first_seen_last_seen(stix_object):
+                if hasattr(stix_object, first) and getattr(stix_object, first):
+                    misp_object['first_seen'] = getattr(stix_object, first)
+                if hasattr(stix_object, last) and getattr(stix_object, last):
+                    misp_object['last_seen'] = getattr(stix_object, last)
         return misp_object
 
     @staticmethod
     def _sanitize_value(value: str) -> str:
         return value.replace('\\\\', '\\')
+
+    @staticmethod
+    def _skip_first_seen_last_seen(stix_object: _MISP_OBJECT_TYPING) -> bool:
+        if stix_object.type != 'indicator':
+            return False
+        if stix_object.valid_from != stix_object.modified:
+            return False
+        if not hasattr(stix_object, 'valid_until'):
+            return True
+        return stix_object.valid_until == stix_object.modified
 
     @staticmethod
     def _timestamp_from_date(date: datetime) -> int:
