@@ -1127,7 +1127,26 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return pattern
 
     def _parse_suricata_object(self, misp_object: dict):
-        indicator_args = self._parse_patterning_language_args(misp_object['Attribute'], 'suricata')
+        indicator_args = {}
+        for attribute in misp_object['Attribute']:
+            relation = attribute['object_relation']
+            value = attribute['value']
+            if relation == 'ref':
+                reference = {
+                    'source_name': 'url',
+                    'url': value
+                }
+                if attribute.get('comment'):
+                    reference['description'] = attribute['comment']
+                indicator_args['external_references'] = [reference]
+                continue
+            if relation in self._mapping.suricata_object_mapping:
+                if relation == 'suricata':
+                    value = self._handle_value_for_pattern(value)
+                    indicator_args['pattern_type'] = attribute['type']
+                indicator_args[self._mapping.suricata_object_mapping[relation]] = value
+            else:
+                indicator_args[f'x_misp_{relation}'] = value
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
     def _parse_url_object_observable(self, misp_object: dict):
@@ -1154,7 +1173,17 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, [x509_certificate])
 
     def _parse_yara_object(self, misp_object: dict):
-        indicator_args = self._parse_patterning_language_args(misp_object['Attribute'], 'yara')
+        indicator_args = {}
+        for attribute in misp_object['Attribute']:
+            relation = attribute['object_relation']
+            value = attribute['value']
+            if relation in self._mapping.yara_object_mapping:
+                if relation == 'yara':
+                    value = self._handle_value_for_pattern(value)
+                    indicator_args['pattern_type'] = attribute['type']
+                indicator_args[self._mapping.yara_object_mapping[relation]] = value
+            else:
+                indicator_args[f"x_misp_{relation.replace('-', '_')}"] = value
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
     ################################################################################
@@ -1308,21 +1337,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_windowsPESection(section_args: dict) -> WindowsPESection:
         return WindowsPESection(**section_args)
-
-    def _parse_patterning_language_args(self, attributes: list, name: str) -> dict:
-        indicator_args = {}
-        mapping = getattr(self._mapping, f'{name}_object_mapping')
-        for attribute in attributes:
-            relation = attribute['object_relation']
-            value = attribute['value']
-            if relation in mapping:
-                if relation == name:
-                    value = self._handle_value_for_pattern(value)
-                    indicator_args['pattern_type'] = attribute['type']
-                indicator_args[mapping[relation]] = value
-            else:
-                indicator_args[f"x_misp_{relation.replace('-', '_')}"] = value
-        return indicator_args
 
     ################################################################################
     #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #
