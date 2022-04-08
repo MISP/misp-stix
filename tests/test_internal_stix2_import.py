@@ -350,6 +350,41 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         objects_documentation.check_stix21_mapping(self._objects)
 
     ################################################################################
+    #                      MISP ATTRIBUTES CHECKING FUNCTIONS                      #
+    ################################################################################
+
+    def _check_patterning_language_attribute(self, attribute, indicator):
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self.assertEqual(attribute.type, indicator.pattern_type)
+        self._assert_multiple_equal(
+            attribute.timestamp,
+            indicator.created,
+            indicator.modified
+        )
+        self.assertEqual(attribute.comment, indicator.description)
+        self._check_attribute_labels(attribute, indicator.labels)
+        self.assertEqual(attribute.value, indicator.pattern)
+
+    ################################################################################
+    #                       MISP OBJECTS CHECKING FUNCTIONS.                       #
+    ################################################################################
+
+    def _check_patterning_language_object(self, misp_object, indicator):
+        self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            self._timestamp_from_datetime(indicator.created),
+            self._timestamp_from_datetime(indicator.modified)
+        )
+        self._check_object_labels(misp_object, indicator.labels, True)
+        pattern, comment, version, attribute = misp_object.attributes
+        self.assertEqual(pattern.value, indicator.pattern)
+        self.assertEqual(pattern.type, indicator.pattern_type)
+        self.assertEqual(comment.value, indicator.description)
+        self.assertEqual(version.value, indicator.pattern_version)
+        return attribute
+
+    ################################################################################
     #                         MISP ATTRIBUTES IMPORT TESTS                         #
     ################################################################################
 
@@ -362,6 +397,20 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
         self._check_campaign_name_attribute(attribute, campaign)
         self._populate_documentation(attribute=attribute, campaign=campaign)
+
+    def test_stix21_bundle_with_patterning_language_attributes(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_patterning_language_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, sigma_indicator, snort_indicator, yara_indicator = bundle.objects
+        sigma, snort, yara = self._check_misp_event_features_from_grouping(event, grouping)
+        self._check_patterning_language_attribute(sigma, sigma_indicator)
+        self._populate_documentation(attribute=sigma, indicator=sigma_indicator)
+        self._check_patterning_language_attribute(snort, snort_indicator)
+        self._populate_documentation(attribute=snort, indicator=snort_indicator)
+        self._check_patterning_language_attribute(yara, yara_indicator)
+        self._populate_documentation(attribute=yara, indicator=yara_indicator)
 
     def test_stix21_bundle_with_vulnerability_attribute(self):
         bundle = TestSTIX21Bundles.get_bundle_with_vulnerability_attribute()
@@ -446,6 +495,22 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         self._check_news_agency_object(misp_object, identity)
         self._populate_documentation(misp_object=misp_object, identity=identity)
+
+    def test_stix21_bundle_with_patterning_language_objects(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_patterning_language_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, suricata_indicator, yara_indicator = bundle.objects
+        suricata, yara = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(suricata.name, 'suricata')
+        attribute = self._check_patterning_language_object(suricata, suricata_indicator)
+        self.assertEqual(attribute.value, suricata_indicator.external_references[0].url)
+        self._populate_documentation(misp_object=suricata, indicator=suricata_indicator)
+        self.assertEqual(yara.name, yara_indicator.pattern_type)
+        attribute = self._check_patterning_language_object(yara, yara_indicator)
+        self.assertEqual(attribute.value, yara_indicator.x_misp_yara_rule_name)
+        self._populate_documentation(misp_object=yara, indicator=yara_indicator)
 
     def test_stix21_bundle_with_organization_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_organization_object()

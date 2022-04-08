@@ -182,6 +182,131 @@ _ORGANIZATION_OBJECT = {
     ],
     "x_misp_alias": "CIRCL"
 }
+_PATTERNING_LANGUAGE_ATTRIBUTES = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Sigma test attribute",
+        "pattern": "[title: Ps.exe Renamed SysInternals Tool description: Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A report reference: https://www.us-cert.gov/ncas/alerts/TA17-293A author: Florian Roth date: 2017/10/22 logsource: product: windows service: sysmon detection: selection: EventID: 1 CommandLine: 'ps.exe -accepteula' condition: selection falsepositives: - Renamed SysInternals tool level: high]",
+        "pattern_type": "sigma",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Artifacts dropped"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sigma\"",
+            "misp:category=\"Artifacts dropped\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Snort test attribute",
+        "pattern": "[alert http any 443 -> 8.8.8.8 any]",
+        "pattern_type": "snort",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"snort\"",
+            "misp:category=\"Network activity\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Yara test attribute",
+        "pattern": "[rule torcryptomining { meta: description = \"Tor miner - broken UPX magic string\" strings: $upx_erase = {(00 FF 99 41|DF DD 30 33)} condition: $upx_erase at 236 }]",
+        "pattern_type": "yara",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload installation"
+            }
+        ],
+        "labels": [
+            "misp:type=\"yara\"",
+            "misp:category=\"Payload installation\""
+        ]
+    }
+]
+_PATTERNING_LANGUAGE_OBJECTS = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--efc15547-4fe9-4188-aa71-b688e1bfa59c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "To rule them all",
+        "pattern": "alert http any 443 -> 8.8.8.8 any",
+        "pattern_type": "snort",
+        "pattern_version": "3.1.6",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "network"
+            }
+        ],
+        "labels": [
+            "misp:name=\"suricata\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"True\""
+        ],
+        "external_references": [
+            {
+                "source_name": "url",
+                "url": "https://suricata.readthedocs.io/en/suricata-6.0.4/index.html"
+            }
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--cafdd27e-c3e2-4f7a-88b4-4c1c98f18be7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "To rule them all",
+        "pattern": "rule torcryptomining { meta: description = \\\\\"Tor miner - broken UPX magic string\\\\\" strings: $upx_erase = {(00 FF 99 41|DF DD 30 33)} condition: $upx_erase at 236 }",
+        "pattern_type": "yara",
+        "pattern_version": "4.1.0",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"yara\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"True\""
+        ],
+        "x_misp_yara_rule_name": "Ultimate rule"
+    }
+]
 _SCRIPT_OBJECTS = [
     {
         "type": "malware",
@@ -344,6 +469,10 @@ class TestSTIX21Bundles:
         return cls.__assemble_bundle(_CAMPAIGN_NAME_ATTRIBUTE)
 
     @classmethod
+    def get_bundle_with_patterning_language_attributes(cls):
+        return cls.__assemble_bundle(*_PATTERNING_LANGUAGE_ATTRIBUTES)
+
+    @classmethod
     def get_bundle_with_vulnerability_attribute(cls):
         return cls.__assemble_bundle(_VULNERABILITY_ATTRIBUTE)
 
@@ -384,6 +513,10 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_organization_object(cls):
         return cls.__assemble_bundle(_ORGANIZATION_OBJECT)
+
+    @classmethod
+    def get_bundle_with_patterning_language_objects(cls):
+        return cls.__assemble_bundle(*_PATTERNING_LANGUAGE_OBJECTS)
 
     @classmethod
     def get_bundle_with_script_objects(cls):
