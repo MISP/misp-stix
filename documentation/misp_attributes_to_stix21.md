@@ -4076,7 +4076,7 @@ For the rest of this documentation, we will then, in order to keep the content c
     {
         "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "type": "sigma",
-        "category": "Artifact dropped",
+        "category": "Artifacts dropped",
         "value": "title: Ps.exe Renamed SysInternals Tool description: Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A report reference: https://www.us-cert.gov/ncas/alerts/TA17-293A author: Florian Roth date: 2017/10/22 logsource: product: windows service: sysmon detection: selection: EventID: 1 CommandLine: 'ps.exe -accepteula' condition: selection falsepositives: - Renamed SysInternals tool level: high",
         "timestamp": "1603642920",
         "comment": "Sigma test attribute"
@@ -4099,12 +4099,12 @@ For the rest of this documentation, we will then, in order to keep the content c
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
-                  "phase_name": "Artifact dropped"
+                  "phase_name": "Artifacts dropped"
               }
           ],
           "labels": [
               "misp:type=\"sigma\"",
-              "misp:category=\"Artifact dropped\""
+              "misp:category=\"Artifacts dropped\""
           ]
       }
       ```

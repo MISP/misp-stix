@@ -46,7 +46,7 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "type": "attachment",
                 "object_relation": "script-as-attachment",
                 "value": "infected.py",
-                "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo"
+                "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
             },
             {
                 "type": "text",
@@ -85,7 +85,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "x_misp_script": "print('You are infected')",
           "x_misp_script_as_attachment": {
               "value": "infected.py",
-              "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo"
+              "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
           },
           "x_misp_state": "Malicious"
       }
@@ -357,6 +357,26 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "type": "text",
                 "object_relation": "summary",
                 "value": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root."
+            },
+            {
+                "type": "weakness",
+                "object_relation": "related-weakness",
+                "value": "CWE-118"
+            },
+            {
+                "type": "weakness",
+                "object_relation": "related-weakness",
+                "value": "CWE-120"
+            },
+            {
+                "type": "text",
+                "object_relation": "prerequisites",
+                "value": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited."
+            },
+            {
+                "type": "text",
+                "object_relation": "solutions",
+                "value": "Carefully review the service's implementation before making it available to users."
             }
         ]
     }
@@ -388,7 +408,13 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "source_name": "capec",
                   "external_id": "CAPEC-9"
               }
-          ]
+          ],
+          "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+          "x_misp_related_weakness": [
+              "CWE-118",
+              "CWE-120"
+          ],
+          "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
       }
       ```
 
@@ -406,6 +432,11 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "type": "text",
                 "object_relation": "name",
                 "value": "Block traffic to PIVY C2 Server (10.10.10.10)"
+            },
+            {
+                "type": "text",
+                "object_relation": "description",
+                "value": "Block communication between the PIVY agents and the C2 Server"
             },
             {
                 "type": "text",
@@ -450,6 +481,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
+          "description": "Block communication between the PIVY agents and the C2 Server",
           "labels": [
               "misp:name=\"course-of-action\"",
               "misp:meta-category=\"misc\"",
@@ -992,7 +1024,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "name": "John Doe",
           "description": "John Doe is known",
           "identity_class": "individual",
-          "contact_information": "jdoe@email.com",
+          "contact_information": "email-address: jdoe@email.com",
           "labels": [
               "misp:name=\"employee\"",
               "misp:meta-category=\"misc\"",
@@ -1097,7 +1129,7 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "type": "malware-sample",
                 "object_relation": "malware-sample",
                 "value": "oui|8764605c6f388c89096b534d33565802",
-                "data": "UEsDBAoACQAAAPKLQ1AvUbi[...]AACAAIA2QAAAB8BAAAAAA=="
+                "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA=="
             },
             {
                 "type": "filename",
@@ -1154,7 +1186,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND file:name_enc = 'UTF-8' AND file:size = '35' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAPKLQ1AvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip') AND (file:content_ref.payload_bin = 'Tm9uLW1hbGljaW91cyBmaWxlCg==' AND file:content_ref.x_misp_filename = 'non')]",
+          "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND file:name_enc = 'UTF-8' AND file:size = '35' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip') AND (file:content_ref.payload_bin = 'Tm9uLW1hbGljaW91cyBmaWxlCg==' AND file:content_ref.x_misp_filename = 'non')]",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -1188,7 +1220,7 @@ For the rest of this documentation, we will then, in order to keep the content c
               "2": {
                   "type": "artifact",
                   "mime_type": "application/zip",
-                  "payload_bin": "UEsDBAoACQAAAPKLQ1AvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
+                  "payload_bin": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
                   "hashes": {
                       "MD5": "8764605c6f388c89096b534d33565802"
                   },
@@ -1845,21 +1877,23 @@ For the rest of this documentation, we will then, in order to keep the content c
     - Indicator
       ```json
       {
-          "type": "report",
-          "id": "report--a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+          "type": "indicator",
+          "id": "indicator--5177abbd-c437-4acb-9173-eee371ad24da",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "name": "MISP-STIX-Converter test event",
-          "published": "2020-10-25T16:22:00Z",
-          "object_refs": [
-              "indicator--5177abbd-c437-4acb-9173-eee371ad24da",
-              "indicator--7b0698a0-209a-4da0-a5c5-cfc4734f3af2",
-              "indicator--43d3eff0-fabc-4663-9493-fad3a1eed0d5"
+          "pattern": "[user-account:account_type = 'github' AND user-account:user_id = '1' AND user-account:display_name = 'Octo Cat' AND user-account:account_login = 'octocat' AND user-account:x_misp_organisation = 'GitHub' AND user-account:x_misp_profile_image.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_profile_image.value = 'octocat.png']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "misc"
+              }
           ],
           "labels": [
-              "Threat-Report",
-              "misp:tool=\"MISP-STIX-Converter\""
+              "misp:name=\"github-user\"",
+              "misp:meta-category=\"misc\"",
+              "misp:to_ids=\"True\""
           ]
       }
       ```
@@ -2153,8 +2187,8 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "dst_ref": "1",
                   "dst_port": 443,
                   "protocols": [
-                      "tcp",
-                      "ipv4"
+                      "ipv4",
+                      "tcp"
                   ],
                   "x_misp_domain": "circl.lu"
               }
@@ -2198,6 +2232,16 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "value": "1234567890"
             },
             {
+                "type": "link",
+                "object_relation": "website",
+                "value": "https://umbrella.org"
+            },
+            {
+                "type": "text",
+                "object_relation": "registration-number",
+                "value": "11223344556677889900"
+            },
+            {
                 "type": "attachment",
                 "object_relation": "logo",
                 "value": "umbrella_logo",
@@ -2221,7 +2265,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "sectors": [
               "Pharmaceutical"
           ],
-          "contact_information": "phone-number: 1234567890",
+          "contact_information": "phone-number: 1234567890 / website: https://umbrella.org",
           "labels": [
               "misp:name=\"legal-entity\"",
               "misp:meta-category=\"misc\"",
@@ -2230,7 +2274,8 @@ For the rest of this documentation, we will then, in order to keep the content c
           "x_misp_logo": {
               "value": "umbrella_logo",
               "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC"
-          }
+          },
+          "x_misp_registration_number": "11223344556677889900"
       }
       ```
 
@@ -2275,7 +2320,7 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "type": "malware-sample",
                 "object_relation": "malware-sample",
                 "value": "oui|8764605c6f388c89096b534d33565802",
-                "data": "UEsDBAoACQAAAPKLQ1AvUbi[...]AACAAIA2QAAAB8BAAAAAA=="
+                "data": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA=="
             },
             {
                 "type": "size-in-bytes",
@@ -2309,7 +2354,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[file:name = 'oui' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAPKLQ1AvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip') AND file:size = '35' AND file:x_misp_lnk_creation_time = '2017-10-01T08:00:00' AND file:x_misp_lnk_modification_time = '2020-10-25T16:22:00' AND file:x_misp_lnk_access_time = '2021-01-01T00:00:00']",
+          "pattern": "[file:name = 'oui' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip') AND file:size = '35' AND file:x_misp_lnk_creation_time = '2017-10-01T08:00:00' AND file:x_misp_lnk_modification_time = '2020-10-25T16:22:00' AND file:x_misp_lnk_access_time = '2021-01-01T00:00:00']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -2343,7 +2388,7 @@ For the rest of this documentation, we will then, in order to keep the content c
               "2": {
                   "type": "artifact",
                   "mime_type": "application/zip",
-                  "payload_bin": "UEsDBAoACQAAAPKLQ1AvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
+                  "payload_bin": "UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==",
                   "hashes": {
                       "MD5": "8764605c6f388c89096b534d33565802"
                   },
@@ -2794,7 +2839,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "modified": "2020-10-25T16:22:00.000Z",
           "name": "Agence France-Presse",
           "identity_class": "organization",
-          "contact_information": "address: 13 place de la Bourse, 75002 Paris; Southern Railway Building, 1500 K Street, NW, Suite 600 / e-mail: contact@afp.fr; contact@afp.us / phone-number: (33)0140414646; (1)2024140600",
+          "contact_information": "address: 13 place de la Bourse, 75002 Paris; Southern Railway Building, 1500 K Street, NW, Suite 600 / e-mail: contact@afp.fr; contact@afp.us / phone-number: (33)0140414646; (1)2024140600 / link: https://www.afp.com/",
           "labels": [
               "misp:name=\"news-agency\"",
               "misp:meta-category=\"misc\"",
@@ -2803,8 +2848,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "x_misp_attachment": {
               "value": "AFP_logo.png",
               "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg=="
-          },
-          "x_misp_link": "https://www.afp.com/"
+          }
       }
       ```
 
@@ -2918,11 +2962,11 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--5177abbd-c437-4acb-9173-eee371ad24da",
+          "id": "indicator--7b0698a0-209a-4da0-a5c5-cfc4734f3af2",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[user-account:account_type = 'github' AND user-account:user_id = '1' AND user-account:display_name = 'Octo Cat' AND user-account:account_login = 'octocat' AND user-account:x_misp_organisation = 'GitHub' AND user-account:x_misp_profile_image.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_profile_image.value = 'octocat.png']",
+          "pattern": "[user-account:account_type = 'parler' AND user-account:user_id = '42' AND user-account:account_login = 'ParlerOctocat' AND user-account:x_misp_human = 'False' AND user-account:x_misp_profile_photo.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_profile_photo.value = 'octocat.png']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -2931,7 +2975,7 @@ For the rest of this documentation, we will then, in order to keep the content c
               }
           ],
           "labels": [
-              "misp:name=\"github-user\"",
+              "misp:name=\"parler-account\"",
               "misp:meta-category=\"misc\"",
               "misp:to_ids=\"True\""
           ]
@@ -3384,11 +3428,11 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--7b0698a0-209a-4da0-a5c5-cfc4734f3af2",
+          "id": "indicator--43d3eff0-fabc-4663-9493-fad3a1eed0d5",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[user-account:account_type = 'parler' AND user-account:user_id = '42' AND user-account:account_login = 'ParlerOctocat' AND user-account:x_misp_human = 'False' AND user-account:x_misp_profile_photo.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_profile_photo.value = 'octocat.png']",
+          "pattern": "[user-account:account_type = 'reddit' AND user-account:user_id = '666' AND user-account:account_login = 'RedditOctocat' AND user-account:x_misp_description = 'Reddit account of the OctoCat' AND user-account:x_misp_account_avatar.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_account_avatar.value = 'octocat.png']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -3397,7 +3441,7 @@ For the rest of this documentation, we will then, in order to keep the content c
               }
           ],
           "labels": [
-              "misp:name=\"parler-account\"",
+              "misp:name=\"reddit-account\"",
               "misp:meta-category=\"misc\"",
               "misp:to_ids=\"True\""
           ]
