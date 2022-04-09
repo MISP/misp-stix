@@ -7,10 +7,10 @@ from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
 from misp_stix_converter.stix2misp.exceptions import (UnknownParsingFunctionError,
     UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
 from pymisp import MISPObject
-from stix2.v20.sdo import (Indicator as Indicator_v20, ObservedData as ObservedData_v20,
-    Vulnerability as Vulnerability_v20)
-from stix2.v21.sdo import (Indicator as Indicator_v21, ObservedData as ObservedData_v21,
-    Vulnerability as Vulnerability_v21)
+from stix2.v20.sdo import (CustomObject as CustomObject_v20, Indicator as Indicator_v20,
+    ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
+from stix2.v21.sdo import (CustomObject as CustomObject_v21, Indicator as Indicator_v21,
+    Note, ObservedData as ObservedData_v21, Vulnerability as Vulnerability_v21)
 from typing import Optional, Union
 
 _OBSERVABLE_OBJECTS_TYPING = Union[
