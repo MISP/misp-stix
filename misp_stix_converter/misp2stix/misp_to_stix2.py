@@ -1205,12 +1205,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             misp_object['Attribute'],
             force_single=self._mapping.employee_single_fields
         )
-        name = [attributes.pop(key) for key in ('first-name', 'last-name') if attributes.get(key)]
-        if name:
-            identity_args['name'] = ' '.join(name)
+        if 'full-name' not in attributes:
+            name = [attributes.pop(key) for key in ('first-name', 'last-name') if attributes.get(key)]
+            if name:
+                identity_args['name'] = ' '.join(name)
         for key, feature in self._mapping.employee_object_mapping.items():
             if attributes.get(key):
                 identity_args[feature] = attributes.pop(key)
+        contact_information = self._parse_contact_information(
+            attributes,
+            misp_object['name']
+        )
+        if contact_information:
+            identity_args['contact_information'] = ' / '.join(contact_information)
         if attributes:
             identity_args.update(self._handle_observable_multiple_properties(attributes))
         self._append_SDO(self._create_identity(identity_args))
@@ -1341,7 +1348,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if contact_info:
             identity_args['contact_information'] = ' / '.join(contact_info)
         if attributes:
-            identity_args.update(self._handle_observable_multiple_properties_with_data(attributes, name))
+            identity_args.update(
+                self._handle_observable_multiple_properties_with_data(
+                    attributes,
+                    name
+                )
+            )
         self._append_SDO(self._create_identity(identity_args))
 
     def _parse_lnk_object_pattern(self, attributes: dict) -> list:
@@ -1486,7 +1498,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for key, feature in self._mapping.organization_object_mapping.items():
             if attributes.get(key):
                 identity_args[feature] = attributes.pop(key)
-        contact_info = self._parse_contact_information(attributes, misp_object['name'].replace('-', '_'))
+        contact_info = self._parse_contact_information(
+            attributes,
+            misp_object['name'].replace('-', '_')
+        )
         if contact_info:
             identity_args['contact_information'] = ' / '.join(contact_info)
         if attributes:
@@ -2880,14 +2895,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 )
             self.__relationships.append(relationship)
 
-    @staticmethod
-    def _sanitize_registry_key_value(value: str) -> str:
-        sanitized = value.strip().replace('\\', '\\\\')
+    def _sanitize_registry_key_value(self, value: str) -> str:
+        sanitized = self._sanitize_value(value.strip()).replace('\\', '\\\\')
         if '%' not in sanitized or '\\\\%' in sanitized:
             return sanitized
         if '\\%' in sanitized:
             return sanitized.replace('\\%', '\\\\%')
         return sanitized.replace('%', '\\\\%')
+
+    def _sanitize_value(self, value: str) -> str:
+        for character in ('"', "'"):
+            if value.startswith(character):
+                return self._sanitize_value(value[1:])
+            if value.endswith(character):
+                return self._sanitize_value(value[:-1])
+        return value
 
     def _select_pe_object(self, pe_uuid: str) -> dict:
         to_ids, pe_object = self._objects_to_parse['pe'][pe_uuid]

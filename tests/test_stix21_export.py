@@ -1,29 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json
-from collections import defaultdict
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX21Parser, misp_collection_to_stix2_1, misp_to_stix2_1
 from .test_events import *
-from .update_documentation import DocumentationUpdater
+from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
 from ._test_stix import TestSTIX21
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export
 
 
 class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
-    __attributes = defaultdict(lambda: defaultdict(dict))
-    __objects = defaultdict(lambda: defaultdict(dict))
-
     def setUp(self):
         self.parser = MISPtoSTIX21Parser()
 
     @classmethod
     def tearDownClass(self):
-        attributes_documentation = DocumentationUpdater('misp_attributes_to_stix21')
-        attributes_documentation.check_stix21_mapping(self.__attributes)
-        objects_documentation = DocumentationUpdater('misp_objects_to_stix21')
-        objects_documentation.check_stix21_mapping(self.__objects)
+        attributes_documentation = AttributesDocumentationUpdater('misp_attributes_to_stix21', self._attributes)
+        attributes_documentation.check_mapping('stix21')
+        objects_documentation = ObjectsDocumentationUpdater('misp_objects_to_stix21', self._objects)
+        objects_documentation.check_mapping('stix21')
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
@@ -51,39 +46,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             self.assertEqual(stix_object.spec_version, '2.1')
 
     @staticmethod
-    def _datetime_from_str(timestamp: str) -> datetime:
+    def _datetime_from_str(timestamp):
         regex = '%Y-%m-%dT%H:%M:%S'
         if '.' in timestamp:
             regex = f'{regex}.%f'
         return datetime.strptime(timestamp.split('+')[0], regex)
-
-    def _populate_attributes_documentation(self, attribute, **kwargs):
-        feature = attribute['type']
-        if 'MISP' not in self.__attributes[feature]:
-            self.__attributes[feature]['MISP'] = self._sanitize_documentation(attribute)
-        if 'observed_data' in kwargs:
-            documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
-            self.__attributes[feature]['STIX']['Observed Data'] = documented
-        else:
-            for object_type, stix_object in kwargs.items():
-                documented = json.loads(stix_object.serialize())
-                self.__attributes[feature]['STIX'][object_type.capitalize()] = documented
-
-    def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
-        if name is None:
-            name = misp_object['name']
-        if 'MISP' not in self.__objects[name]:
-            self.__objects[name]['MISP'] = self._sanitize_documentation(misp_object)
-        if summary is not None:
-            self.__objects['summary'][name] = summary
-        if 'observed_data' in kwargs:
-            documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
-            self.__objects[name]['STIX']['Observed Data'] = documented
-        else:
-            for object_type, stix_object in kwargs.items():
-                documented = json.loads(stix_object.serialize())
-                feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
-                self.__objects[name]['STIX'][feature] = documented
 
     @staticmethod
     def _reorder_observable_objects(observables, ids):
@@ -400,12 +367,21 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
 
     def test_event_with_escaped_characters(self):
         event = get_event_with_escaped_values_v21()
+        attributes = deepcopy(event['Event']['Attribute'])
         self.parser.parse_misp_event(event)
         stix_objects = self._check_bundle_features(49)
         self._check_spec_versions(stix_objects)
         _, _, *indicators = stix_objects
-        for indicator in indicators:
+        self.assertIn(attributes[0]['value'][2:], indicators[0].pattern)
+        for attribute, indicator in zip(attributes[1:], indicators[1:]):
             self.assertEqual(indicator.type, 'indicator')
+            attribute_value = attribute['value']
+            if '|' in attribute_value:
+                attribute_value, value = attribute_value.split('|')
+                self.assertIn(self._sanitize_pattern_value(value), indicator.pattern)
+            self.assertIn(self._sanitize_pattern_value(attribute_value), indicator.pattern)
+            if 'data' in attribute:
+                self.assertIn(self._sanitize_pattern_value(attribute['data']), indicator.pattern)
 
     def test_event_with_event_report(self):
         event = get_event_with_event_report()
@@ -2333,30 +2309,13 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         )
         args = (grouping, event['Event'], identity_id)
         object_ref = self._check_grouping_features(*args)[0]
-        self.assertEqual(attack_pattern.type, 'attack-pattern')
         self._assert_multiple_equal(
             attack_pattern.id,
             grouping['object_refs'][0],
             object_ref,
             f"attack-pattern--{misp_object['uuid']}"
         )
-        self.assertEqual(attack_pattern.created_by_ref, identity_id)
-        self._check_killchain(attack_pattern.kill_chain_phases[0], misp_object['meta-category'])
-        self._check_object_labels(misp_object, attack_pattern.labels, to_ids=False)
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        self.assertEqual(attack_pattern.created, timestamp)
-        self.assertEqual(attack_pattern.modified, timestamp)
-        id_, name, summary, weakness1, weakness2, prerequisite, solution = (attribute['value'] for attribute in misp_object['Attribute'])
-        self.assertEqual(attack_pattern.name, name)
-        self.assertEqual(attack_pattern.description, summary)
-        self._check_external_reference(
-            attack_pattern.external_references[0],
-            'capec',
-            f'CAPEC-{id_}'
-        )
-        self.assertEqual(attack_pattern.x_misp_related_weakness, [weakness1, weakness2])
-        self.assertEqual(attack_pattern.x_misp_prerequisites, prerequisite)
-        self.assertEqual(attack_pattern.x_misp_solutions, solution.replace("'", "\\'"))
+        self._check_attack_pattern_object(attack_pattern, misp_object, identity_id)
         self._populate_documentation(misp_object=misp_object, attack_pattern=attack_pattern)
 
     def test_event_with_course_of_action_object(self):
@@ -2374,27 +2333,13 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         )
         args = (grouping, event['Event'], identity_id)
         object_ref = self._check_grouping_features(*args)[0]
-        self.assertEqual(course_of_action.type, 'course-of-action')
         self._assert_multiple_equal(
             course_of_action.id,
             grouping['object_refs'][0],
             object_ref,
             f"course-of-action--{misp_object['uuid']}"
         )
-        self.assertEqual(course_of_action.created_by_ref, identity_id)
-        self._check_object_labels(misp_object, course_of_action.labels, to_ids=False)
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        self.assertEqual(course_of_action.created, timestamp)
-        self.assertEqual(course_of_action.modified, timestamp)
-        self.assertEqual(course_of_action.name, misp_object['Attribute'][0]['value'])
-        for attribute in misp_object['Attribute'][1:]:
-            self.assertEqual(
-                getattr(
-                    course_of_action,
-                    f"x_misp_{attribute['object_relation']}"
-                ),
-                attribute['value']
-            )
+        self._check_course_of_action_object(course_of_action, misp_object, identity_id)
         self._populate_documentation(misp_object=misp_object, course_of_action=course_of_action)
 
     def test_event_with_cpe_asset_indicator_object(self):
@@ -2785,20 +2730,12 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             self._datetime_from_timestamp(event['Event']['timestamp'])
         )
         employee_ref = self._check_grouping_features(grouping, event['Event'], identity_id)[0]
-        first_name, last_name, description, email, employee_type = (attribute['value'] for attribute in misp_object['Attribute'])
-        self.assertEqual(employee.type, 'identity')
-        self._assert_multiple_equal(
-            employee.id,
+        employee_type = self._check_employee_object(
+            employee,
+            misp_object,
             employee_ref,
-            f"identity--{misp_object['uuid']}"
+            identity_id
         )
-        self.assertEqual(employee.identity_class, 'individual')
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        self.assertEqual(employee.created, timestamp)
-        self.assertEqual(employee.modified, timestamp)
-        self.assertEqual(employee.name, f"{first_name} {last_name}")
-        self.assertEqual(employee.description, description)
-        self.assertEqual(employee.contact_information, email)
         self.assertEqual(employee.roles, [employee_type])
         self._populate_documentation(misp_object=misp_object, identity=employee)
 
@@ -2954,7 +2891,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         )
         args = (grouping, event['Event'], identity_id)
         object_ref = self._check_grouping_features(*args)[0]
-        address, zipcode, city, country, region, latitude, longitude, altitude = (attribute['value'] for attribute in misp_object['Attribute'])
+        address, zipcode, city, country, countrycode, region, latitude, longitude, accuracy, altitude = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(location.type, 'location')
         self._assert_multiple_equal(
             location.id,
@@ -2970,10 +2907,12 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(location.street_address, address)
         self.assertEqual(location.postal_code, zipcode)
         self.assertEqual(location.city, city)
-        self.assertEqual(location.country, country)
+        self.assertEqual(location.country, countrycode)
         self.assertEqual(location.region, region)
         self.assertEqual(location.latitude, float(latitude))
         self.assertEqual(location.longitude, float(longitude))
+        self.assertEqual(location.precision, float(accuracy) * 1000)
+        self.assertEqual(location.x_misp_country, country)
         self.assertEqual(location.x_misp_altitude, altitude)
         self._populate_documentation(misp_object=misp_object, location=location)
 
@@ -3099,25 +3038,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             self._datetime_from_timestamp(event['Event']['timestamp'])
         )
         legal_entity_ref = self._check_grouping_features(grouping, event['Event'], identity_id)[0]
-        name, description, business, phone, logo = (attribute['value'] for attribute in misp_object['Attribute'])
-        self.assertEqual(legal_entity.type, 'identity')
-        self._assert_multiple_equal(
-            legal_entity.id,
+        self._check_legal_entity_object_features(
+            legal_entity,
+            misp_object,
             legal_entity_ref,
-            f"identity--{misp_object['uuid']}"
-        )
-        self.assertEqual(legal_entity.identity_class, 'organization')
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
-        self.assertEqual(legal_entity.created, timestamp)
-        self.assertEqual(legal_entity.modified, timestamp)
-        self.assertEqual(legal_entity.name, name)
-        self.assertEqual(legal_entity.description, description)
-        self.assertEqual(legal_entity.sectors, [business])
-        self.assertEqual(legal_entity.contact_information, f"phone-number: {phone}")
-        self.assertEqual(legal_entity.x_misp_logo['value'], logo)
-        self.assertEqual(
-            legal_entity.x_misp_logo['data'],
-            misp_object['Attribute'][-1]['data'].replace('\\', '')
+            identity_id
         )
         self._populate_documentation(misp_object=misp_object, identity=legal_entity)
 
@@ -3416,9 +3341,8 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(news_agency.name, name)
         self.assertEqual(
             news_agency.contact_information,
-            f"address: {address1}; {address2} / e-mail: {email1}; {email2} / phone-number: {phone1}; {phone2}"
+            f"address: {address1}; {address2} / e-mail: {email1}; {email2} / phone-number: {phone1}; {phone2} / link: {link}"
         )
-        self.assertEqual(news_agency.x_misp_link, link)
         self.assertEqual(news_agency.x_misp_attachment['value'], attachment)
         self.assertEqual(
             news_agency.x_misp_attachment['data'],
@@ -3476,12 +3400,16 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         )
         object_refs = self._check_grouping_features(grouping, event['Event'], identity_id)
         for indicator, misp_object, object_ref in zip(indicators, objects, object_refs):
-            rule, version, comment = misp_object['Attribute']
+            rule, version, comment, attribute = misp_object['Attribute']
             self._check_object_indicator_features(indicator, misp_object, identity_id, object_ref)
             self.assertEqual(indicator.pattern, rule['value'].replace('"', '\\\\"'))
             self.assertEqual(indicator.pattern_type, rule['type'])
             self.assertEqual(indicator.pattern_version, version['value'])
             self.assertEqual(indicator.description, comment['value'])
+            if misp_object['name'] == 'suricata':
+                self.assertEqual(indicator.external_references[0].url, attribute['value'])
+            else:
+                self.assertEqual(indicator.x_misp_yara_rule_name, attribute['value'])
             self._populate_documentation(misp_object=misp_object, indicator=indicator)
 
     def test_event_with_pe_and_section_indicator_objects(self):
@@ -3622,7 +3550,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(registry_key.type, 'windows-registry-key')
         self.assertEqual(registry_key.key, key)
         self.assertEqual(
-            datetime.strftime(registry_key.modified_time, '%Y-%m-%dT%H:%M:%S'),
+            self._datetime_to_str(registry_key.modified_time),
             modified
         )
         self.assertEqual(registry_key.x_misp_hive, hive)
@@ -3773,7 +3701,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(extension.groups, [group1, group2])
         self.assertEqual(extension.home_dir, home)
         self.assertEqual(
-            datetime.strftime(user_account.credential_last_changed, '%Y-%m-%dT%H:%M:%S'),
+            self._datetime_to_str(user_account.credential_last_changed),
             plc
         )
         self._populate_documentation(
@@ -3843,11 +3771,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(x509.signature_algorithm, signalg)
         self.assertEqual(x509.issuer, issuer)
         self.assertEqual(
-            datetime.strftime(x509.validity_not_before, '%Y-%m-%dT%H:%M:%S'),
+            self._datetime_to_str(x509.validity_not_before),
             vnb
         )
         self.assertEqual(
-            datetime.strftime(x509.validity_not_after, '%Y-%m-%dT%H:%M:%S'),
+            self._datetime_to_str(x509.validity_not_after),
             vna
         )
         self.assertEqual(x509.subject, subject)

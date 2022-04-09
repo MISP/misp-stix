@@ -5,7 +5,6 @@ import json
 import os
 import unittest
 from datetime import datetime
-from misp_stix_converter import MISPtoSTIX20Parser, MISPtoSTIX21Parser
 from pathlib import Path
 from stix.core import STIXPackage
 from uuid import uuid5, UUID
@@ -95,6 +94,26 @@ class TestSTIX2Export(TestSTIX2):
         for misp_object in event['Event']['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
 
+    def _check_attack_pattern_object(self, attack_pattern, misp_object, identity_id):
+        self.assertEqual(attack_pattern.type, 'attack-pattern')
+        self.assertEqual(attack_pattern.created_by_ref, identity_id)
+        self._check_killchain(attack_pattern.kill_chain_phases[0], misp_object['meta-category'])
+        self._check_object_labels(misp_object, attack_pattern.labels, to_ids=False)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(attack_pattern.created, timestamp)
+        self.assertEqual(attack_pattern.modified, timestamp)
+        id_, name, summary, weakness1, weakness2, prerequisite, solution = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(attack_pattern.name, name)
+        self.assertEqual(attack_pattern.description, summary)
+        self._check_external_reference(
+            attack_pattern.external_references[0],
+            'capec',
+            f'CAPEC-{id_}'
+        )
+        self.assertEqual(attack_pattern.x_misp_related_weakness, [weakness1, weakness2])
+        self.assertEqual(attack_pattern.x_misp_prerequisites, prerequisite)
+        self.assertEqual(attack_pattern.x_misp_solutions, solution.replace("'", "\\'"))
+
     def _check_attribute_campaign_features(self, campaign, attribute, identity_id, object_ref):
         self._assert_multiple_equal(
             campaign.id,
@@ -141,11 +160,50 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(vulnerability.created, timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
 
+    def _check_course_of_action_object(self, course_of_action, misp_object, identity_id):
+        self.assertEqual(course_of_action.type, 'course-of-action')
+        self.assertEqual(course_of_action.created_by_ref, identity_id)
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(course_of_action.created, timestamp)
+        self.assertEqual(course_of_action.modified, timestamp)
+        name, description, *attributes = misp_object['Attribute']
+        self.assertEqual(course_of_action.name, name['value'])
+        self.assertEqual(course_of_action.description, description['value'])
+        for attribute in attributes:
+            self.assertEqual(
+                getattr(
+                    course_of_action,
+                    f"x_misp_{attribute['object_relation']}"
+                ),
+                attribute['value']
+            )
+
     def _check_email_address(self, address_object, address, display_name=None):
         self.assertEqual(address_object.type, 'email-addr')
         self.assertEqual(address_object.value, address)
         if display_name is not None:
             self.assertEqual(address_object.display_name, display_name)
+
+    def _check_employee_object(self, employee, misp_object, employee_ref, identity_id):
+        self.assertEqual(employee.type, 'identity')
+        self._assert_multiple_equal(
+            employee.id,
+            employee_ref,
+            f"identity--{misp_object['uuid']}"
+        )
+        self.assertEqual(employee.identity_class, 'individual')
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(employee.created, timestamp)
+        self.assertEqual(employee.modified, timestamp)
+        self.assertEqual(employee.created_by_ref, identity_id)
+        first_name, last_name, description, email, employee_type = misp_object['Attribute']
+        self.assertEqual(employee.name, f"{first_name['value']} {last_name['value']}")
+        self.assertEqual(employee.description, description['value'])
+        self.assertEqual(
+            employee.contact_information,
+            f"{email['object_relation']}: {email['value']}"
+        )
+        return employee_type['value']
 
     def _check_external_reference(self, reference, source_name, value):
         self.assertEqual(reference.source_name, source_name)
@@ -196,6 +254,35 @@ class TestSTIX2Export(TestSTIX2):
     def _check_killchain(self, killchain, category):
         self.assertEqual(killchain['kill_chain_name'], 'misp-category')
         self.assertEqual(killchain['phase_name'], category)
+
+    def _check_legal_entity_object_features(self, legal_entity, misp_object, legal_entity_ref, identity_id):
+        self.assertEqual(legal_entity.type, 'identity')
+        self._assert_multiple_equal(
+            legal_entity.id,
+            legal_entity_ref,
+            f"identity--{misp_object['uuid']}"
+        )
+        self.assertEqual(legal_entity.identity_class, 'organization')
+        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        self.assertEqual(legal_entity.created, timestamp)
+        self.assertEqual(legal_entity.modified, timestamp)
+        self.assertEqual(legal_entity.created_by_ref, identity_id)
+        name, description, business, phone, website, registration_number, logo = misp_object['Attribute']
+        self.assertEqual(legal_entity.name, name['value'])
+        self.assertEqual(legal_entity.description, description['value'])
+        self.assertEqual(legal_entity.sectors, [business['value']])
+        self.assertEqual(
+            legal_entity.contact_information,
+            f"{phone['object_relation']}: {phone['value']} / {website['object_relation']}: {website['value']}"
+        )
+        self.assertEqual(
+            legal_entity.x_misp_registration_number,
+            registration_number['value']
+        )
+        self.assertEqual(
+            legal_entity.x_misp_logo,
+            {'value': logo['value'], 'data': logo['data']}
+        )
 
     def _check_object_indicator_features(self, indicator, misp_object, identity_id, object_ref):
         self._check_indicator_features(indicator, identity_id, object_ref, misp_object['uuid'])
@@ -327,8 +414,11 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(relationship.source_ref, source_id)
         self.assertEqual(relationship.target_ref, target_id)
         self.assertEqual(relationship.relationship_type, relationship_type)
-        self.assertEqual(relationship.created, timestamp)
-        self.assertEqual(relationship.modified, timestamp)
+        self._assert_multiple_equal(
+            timestamp,
+            relationship.created,
+            relationship.modified
+        )
 
     def _check_report_features(self, report, event, identity_id, timestamp):
         self.assertEqual(report.type, 'report')
@@ -336,8 +426,11 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(report.created_by_ref, identity_id)
         self.assertEqual(report.labels, self._labels)
         self.assertEqual(report.name, event['info'])
-        self.assertEqual(report.created, timestamp)
-        self.assertEqual(report.modified, timestamp)
+        self._assert_multiple_equal(
+            timestamp,
+            report.created,
+            report.modified
+        )
         return report.object_refs
 
     @staticmethod
@@ -345,16 +438,14 @@ class TestSTIX2Export(TestSTIX2):
         return datetime.utcfromtimestamp(int(timestamp))
 
     @staticmethod
+    def _datetime_to_str(datetime_value):
+        return datetime.strftime(datetime_value, '%Y-%m-%dT%H:%M:%S')
+
+    @staticmethod
     def _parse_AS_value(value):
         if value.startswith('AS'):
             return int(value[2:])
         return int(value)
-
-    def _populate_documentation(self, attribute = None, misp_object = None, **kwargs):
-        if attribute is not None:
-            self._populate_attributes_documentation(attribute, **kwargs)
-        elif misp_object is not None:
-            self._populate_objects_documentation(misp_object, **kwargs)
 
     @staticmethod
     def _reassemble_pattern(pattern):
@@ -436,21 +527,22 @@ class TestSTIX2Export(TestSTIX2):
                 if attribute.get(feature):
                     self.assertEqual(custom_attribute[feature], attribute[feature])
 
-    def _sanitize_documentation(self, documentation):
-        if isinstance(documentation, list):
-            return [self._sanitize_documentation(value) for value in documentation]
-        sanitized = {}
-        for key, value in documentation.items():
-            if key == 'to_ids':
-                continue
-            sanitized[key] = self._sanitize_documentation(value) if isinstance(value, (dict, list)) else value
-        return sanitized
+    def _sanitize_pattern_value(self, value):
+        sanitized = self._sanitize_registry_key_value(value)
+        return sanitized.replace("'", "\\'").replace('"', '\\\\"')
 
-    @staticmethod
-    def _sanitize_registry_key_value(value: str) -> str:
-        sanitized = value.strip().replace('\\', '\\\\')
+    def _sanitize_registry_key_value(self, value: str) -> str:
+        sanitized = self._sanitize_value(value.strip()).replace('\\', '\\\\')
         if '%' not in sanitized or '\\\\%' in sanitized:
             return sanitized
         if '\\%' in sanitized:
             return sanitized.replace('\\%', '\\\\%')
         return sanitized.replace('%', '\\\\%')
+
+    def _sanitize_value(self, value):
+        for character in ('"', "'"):
+            if value.startswith(character):
+                return self._sanitize_value(value[1:])
+            if value.endswith(character):
+                return self._sanitize_value(value[:-1])
+        return value

@@ -94,8 +94,8 @@ class Stix21Mapping(Stix2Mapping):
         )
         self.__employee_object_mapping = Mapping(
             **{
-                'email-address': 'contact_information',
                 'employee-type': 'roles',
+                'full-name': 'name',
                 'text': 'description'
             }
         )
@@ -103,10 +103,11 @@ class Stix21Mapping(Stix2Mapping):
         self.__geolocation_object_mapping = Mapping(
             address = 'street_address',
             city = 'city',
-            country = 'country',
+            countrycode = 'country',
             latitude = 'latitude',
             longitude = 'longitude',
             region = 'region',
+            text = 'description',
             zipcode = 'postal_code'
         )
         self.__ip_port_uuid_fields = (

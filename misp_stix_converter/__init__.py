@@ -7,3 +7,4 @@ from .misp_stix_converter import misp_attribute_collection_to_stix1, misp_collec
 from .misp_stix_converter import _get_campaigns, _get_courses_of_action, _get_events, _get_indicators, _get_observables, _get_threat_actors, _get_ttps
 from .misp_stix_converter import _get_campaigns_footer, _get_courses_of_action_footer, _get_indicators_footer, _get_observables_footer, _get_threat_actors_footer, _get_ttps_footer
 from .misp_stix_converter import _get_campaigns_header, _get_courses_of_action_header, _get_indicators_header, _get_observables_header, _get_threat_actors_header, _get_ttps_header
+from .stix2misp import *

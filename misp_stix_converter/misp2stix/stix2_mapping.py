@@ -423,9 +423,12 @@ class Stix2Mapping:
             'attachment',
             'screenshot'
         )
-        self.__employee_single_fields = (
+        self.__employee_contact_info_fields = (
             'email-address',
+        )
+        self.__employee_single_fields = (
             'first-name',
+            'full-name',
             'last-name',
             'text'
         )
@@ -534,6 +537,7 @@ class Stix2Mapping:
         )
         self.__legal_entity_contact_info_fields = (
             'phone-number',
+            'website'
         )
         self.__legal_entity_data_fields = (
             'logo',
@@ -601,7 +605,8 @@ class Stix2Mapping:
             'address',
             'e-mail',
             'fax-number',
-            'phone-number'
+            'phone-number',
+            'link'
         )
         self.__news_agency_data_fields = (
             'attachment',
@@ -878,6 +883,10 @@ class Stix2Mapping:
     @property
     def email_data_fields(self) -> tuple:
         return self.__email_data_fields
+
+    @property
+    def employee_contact_info_fields(self) -> tuple:
+        return self.__employee_contact_info_fields
 
     @property
     def employee_single_fields(self) -> tuple:

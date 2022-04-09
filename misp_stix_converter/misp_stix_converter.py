@@ -9,6 +9,8 @@ from .misp2stix.misp_to_stix1 import MISPtoSTIX1AttributesParser, MISPtoSTIX1Eve
 from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
 from .misp2stix.stix1_mapping import NS_DICT, SCHEMALOC_DICT
+from .stix2misp.external_stix2_to_misp import ExternalSTIX2toMISPParser
+from .stix2misp.internal_stix2_to_misp import InternalSTIX2toMISPParser
 from collections import defaultdict
 from cybox.core.observable import Observables
 from mixbox import idgen
@@ -17,6 +19,7 @@ from pathlib import Path
 from stix.core import Campaigns, CoursesOfAction, Indicators, ThreatActors, STIXHeader, STIXPackage
 from stix.core.ttps import TTPs
 from stix2.base import STIXJSONEncoder
+from stix2.parsing import parse as stix2_parser
 from stix2.v20 import Bundle as Bundle_v20
 from stix2.v21 import Bundle as Bundle_v21
 from typing import List, Union
@@ -441,9 +444,9 @@ def stix_to_misp(filename):
 
 def stix2_to_misp(filename):
     with open(filename, 'rt', encoding='utf-8') as f:
-        event = stix2.parse(f.read(), allow_custom=True, interoperability=True)
-    stix_parser = Stix2FromMISPImportParser() if _from_misp(event.objects) else ExternalStix2ImportParser()
-    stix_parser.handler(event, filename)
+        bundle = stix2_parser(f.read(), allow_custom=True, interoperability=True)
+    stix_parser = InternalSTIX2toMISPParser() if _from_misp(bundle.objects) else ExternalSTIX2toMISPParser()
+    stix_parser.parse_stix_content(bundle)
     stix_parser.save_file()
     return
 
