@@ -438,10 +438,6 @@ class TestSTIX2Export(TestSTIX2):
         return datetime.utcfromtimestamp(int(timestamp))
 
     @staticmethod
-    def _datetime_to_str(datetime_value):
-        return datetime.strftime(datetime_value, '%Y-%m-%dT%H:%M:%S')
-
-    @staticmethod
     def _parse_AS_value(value):
         if value.startswith('AS'):
             return int(value[2:])
