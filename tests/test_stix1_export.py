@@ -1049,44 +1049,65 @@ class TestStix1Export(unittest.TestCase):
     def _test_event_with_hash_attributes(self):
         event = get_event_with_hash_attributes()
         properties, attributes = self._run_indicators_tests(event, 'File')
-        md5_properties, sha1_properties, sha224_properties, sha256_properties, sha3_256_properties, sha384_properties, ssdeep_properties, tlsh_properties = properties
-        md5, sha1, sha224, sha256, sha3_256, sha384, ssdeep, tlsh = attributes
-        self._check_simple_hash_property(md5_properties.hashes[0], md5['value'], 'MD5')
-        self._check_simple_hash_property(sha1_properties.hashes[0], sha1['value'], 'SHA1')
-        self._check_simple_hash_property(sha224_properties.hashes[0], sha224['value'], 'SHA224')
-        self._check_simple_hash_property(sha256_properties.hashes[0], sha256['value'], 'SHA256')
-        self._check_custom_property(sha3_256, sha3_256_properties.custom_properties.property_[0])
-        self._check_simple_hash_property(sha384_properties.hashes[0], sha384['value'], 'SHA384')
-        self._check_fuzzy_hash_property(ssdeep_properties.hashes[0], ssdeep['value'], 'SSDEEP')
-        self._check_simple_hash_property(tlsh_properties.hashes[0], tlsh['value'], 'Other')
+        for stix_property, attribute in zip(properties[:6], attributes[:6]):
+            self._check_simple_hash_property(
+                stix_property.hashes[0],
+                attribute['value'],
+                attribute['type'].upper(),
+            )
+        ssdeep = attributes[6]
+        self._check_fuzzy_hash_property(
+            properties[6].hashes[0],
+            ssdeep['value'],
+            ssdeep['type'].upper()
+        )
+        authentihash_prop, imphash_prop, pehash_prop, sha512_256_prop, *properties = properties[7:]
+        authentihash, imphash, pehash, sha512_256, *attributes = attributes[7:]
+        self._check_simple_hash_property(
+            authentihash_prop.hashes[0],
+            authentihash['value'],
+            'SHA256'
+        )
+        self._check_simple_hash_property(imphash_prop.hashes[0], imphash['value'], 'MD5')
+        self._check_simple_hash_property(pehash_prop.hashes[0], pehash['value'], 'SHA1')
+        self._check_simple_hash_property(sha512_256_prop.hashes[0], sha512_256['value'], 'SHA256')
+        for attribute, stix_property in zip(attributes[:2], properties[:2]):
+            self._check_custom_property(attribute, stix_property.custom_properties.property_[0])
+        for stix_property, attribute in zip(properties[2:], attributes[2:]):
+            self._check_simple_hash_property(stix_property.hashes[0], attribute['value'], 'Other')
 
     def _test_event_with_hash_composite_attributes(self):
         event = get_event_with_hash_composite_attributes()
         properties, attributes = self._run_indicators_tests(event, 'File')
-        md5_properties, sha1_properties, sha224_properties, sha256_properties, sha3_256_properties, sha384_properties, ssdeep_properties, tlsh_properties = properties
-        md5, sha1, sha224, sha256, sha3_256, sha384, ssdeep, tlsh = attributes
-        filename, md5_value = md5['value'].split('|')
-        self.assertEqual(md5_properties.file_name.value, filename)
-        self._check_simple_hash_property(md5_properties.hashes[0], md5_value, 'MD5')
-        filename, sha1_value = sha1['value'].split('|')
-        self.assertEqual(sha1_properties.file_name.value, filename)
-        self._check_simple_hash_property(sha1_properties.hashes[0], sha1_value, 'SHA1')
-        filename, sha224_value = sha224['value'].split('|')
-        self.assertEqual(sha224_properties.file_name.value, filename)
-        self._check_simple_hash_property(sha224_properties.hashes[0], sha224_value, 'SHA224')
-        filename, sha256_value = sha256['value'].split('|')
-        self.assertEqual(sha256_properties.file_name.value, filename)
-        self._check_simple_hash_property(sha256_properties.hashes[0], sha256_value, 'SHA256')
-        self._check_custom_property(sha3_256, sha3_256_properties.custom_properties.property_[0])
-        filename, sha384_value = sha384['value'].split('|')
-        self.assertEqual(sha384_properties.file_name.value, filename)
-        self._check_simple_hash_property(sha384_properties.hashes[0], sha384_value, 'SHA384')
-        filename, ssdeep_value = ssdeep['value'].split('|')
-        self.assertEqual(ssdeep_properties.file_name.value, filename)
-        self._check_fuzzy_hash_property(ssdeep_properties.hashes[0], ssdeep_value, 'SSDEEP')
-        filename, tlsh_value = tlsh['value'].split('|')
-        self.assertEqual(tlsh_properties.file_name.value, filename)
-        self._check_simple_hash_property(tlsh_properties.hashes[0], tlsh_value, 'Other')
+        for stix_property, attribute in zip(properties[:6], attributes[:6]):
+            filename, hash_value = attribute['value'].split('|')
+            _, hash_type = attribute['type'].split('|')
+            self.assertEqual(stix_property.file_name.value, filename)
+            self._check_simple_hash_property(stix_property.hashes[0], hash_value, hash_type.upper())
+        ssdeep_property = properties[6]
+        filename, ssdeep = attributes[6]['value'].split('|')
+        self.assertEqual(ssdeep_property.file_name.value, filename)
+        self._check_fuzzy_hash_property(ssdeep_property.hashes[0], ssdeep, 'SSDEEP')
+        authentihash_prop, imphash_prop, pehash_prop, sha512_256_prop, *properties = properties[7:]
+        authentihash, imphash, pehash, sha512_256, *attributes = attributes[7:]
+        filename, authentihash = authentihash['value'].split('|')
+        self.assertEqual(authentihash_prop.file_name.value, filename)
+        self._check_simple_hash_property(authentihash_prop.hashes[0], authentihash, 'SHA256')
+        filename, imphash = imphash['value'].split('|')
+        self.assertEqual(imphash_prop.file_name.value, filename)
+        self._check_simple_hash_property(imphash_prop.hashes[0], imphash, 'MD5')
+        filename, pehash = pehash['value'].split('|')
+        self.assertEqual(pehash_prop.file_name.value, filename)
+        self._check_simple_hash_property(pehash_prop.hashes[0], pehash, 'SHA1')
+        filename, sha512_256 = sha512_256['value'].split('|')
+        self.assertEqual(sha512_256_prop.file_name.value, filename)
+        self._check_simple_hash_property(sha512_256_prop.hashes[0], sha512_256, 'SHA256')
+        for attribute, stix_property in zip(attributes[:2], properties[:2]):
+            self._check_custom_property(attribute, stix_property.custom_properties.property_[0])
+        for stix_property, attribute in zip(properties[2:], attributes[2:]):
+            filename, hash_value = attribute['value'].split('|')
+            self.assertEqual(stix_property.file_name.value, filename)
+            self._check_simple_hash_property(stix_property.hashes[0], hash_value, 'Other')
 
     def _test_event_with_hostname_attribute(self):
         event = get_event_with_hostname_attribute()
