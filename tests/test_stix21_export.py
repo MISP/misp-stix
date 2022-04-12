@@ -178,9 +178,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         for attribute, indicator, object_ref in zip(attributes, indicators, object_refs):
             self._check_attribute_indicator_features(indicator, attribute, identity_id, object_ref)
             self._check_pattern_features(indicator)
-        attribute_values = (attribute['value'] for attribute in attributes)
-        patterns = (indicator.pattern for indicator in indicators)
-        return attribute_values, patterns
+        return attributes, indicators
 
     def _run_observables_from_objects_tests(self, event):
         self._remove_object_ids_flags(event)
@@ -296,7 +294,6 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self._check_spec_versions(stix_objects)
         identity, grouping, *observables = stix_objects
         observed_datas = observables[::index]
-        observables = [value for count, value in enumerate(observables) if count % index != 0]
         identity_id = self._check_identity_features(
             identity,
             orgc,
@@ -308,7 +305,6 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             identity_id
         )
         observable_ids = ids[::index]
-        object_ids = [value for count, value in enumerate(ids) if count % index != 0]
         for attribute, observed_data, observable_id in zip(attributes, observed_datas, observable_ids):
             self._check_attribute_observable_features(
                 observed_data,
@@ -316,9 +312,33 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
                 identity_id,
                 observable_id
             )
-        attribute_values = tuple(attribute['value'] for attribute in attributes)
-        object_refs = tuple(object_ref for observed_data in observed_datas for object_ref in observed_data['object_refs'])
-        return attribute_values, object_ids, object_refs, observables
+        if index == 2:
+            return (
+                attributes,
+                [value for count, value in enumerate(ids) if count % index != 0],
+                observed_datas,
+                [value for count, value in enumerate(observables) if count % index != 0]
+            )
+        return (
+            attributes,
+            self._group_list_elements(ids, index),
+            observed_datas,
+            self._group_list_elements(observables, index)
+        )
+
+    @staticmethod
+    def _group_list_elements(list_to_group, index):
+        grouped_list = []
+        tmp = []
+        for count, stix_id in enumerate(list_to_group):
+            if count % index != 0:
+                tmp.append(stix_id)
+            else:
+                if tmp:
+                    grouped_list.append(tmp)
+                    tmp = []
+        grouped_list.append(tmp)
+        return grouped_list
 
     ################################################################################
     #                              EVENT FIELDS TESTS                              #
@@ -1203,35 +1223,32 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
 
     def test_event_with_hash_composite_indicator_attributes(self):
         event = get_event_with_hash_composite_attributes()
-        attribute_values, patterns = self._run_indicators_tests(event)
-        hash_types = ('MD5', 'SHA1', 'SHA224', 'SHA256', 'SHA3256', 'SHA384', 'SSDEEP', 'TLSH')
-        for attribute_value, pattern, hash_type in zip(attribute_values, patterns, hash_types):
-            filename, hash_value = attribute_value.split('|')
+        attributes, indicators = self._run_indicators_tests(event)
+        for attribute, indicator in zip(attributes, indicators):
+            filename, hash_value = attribute['value'].split('|')
+            hash_type = attribute['type'].split('|')[1]
+            if '/' in hash_type:
+                hash_type = f"SHA{hash_type.split('/')[1]}"
             filename_pattern = f"file:name = '{filename}'"
-            hash_pattern = f"file:hashes.{hash_type} = '{hash_value}'"
-            self.assertEqual(pattern, f"[{filename_pattern} AND {hash_pattern}]")
-        for attribute, indicator in zip(event['Event']['Attribute'], self.parser.stix_objects[-8:]):
+            hash_pattern = f"file:hashes.{hash_type.replace('-', '').upper()} = '{hash_value}'"
+            self.assertEqual(indicator.pattern, f"[{filename_pattern} AND {hash_pattern}]")
             self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_hash_composite_observable_attributes(self):
         event = get_event_with_hash_composite_attributes()
-        attributes = deepcopy(event['Event']['Attribute'])
-        values, grouping_refs, object_refs, observables = self._run_observables_tests(event)
-        for grouping_ref, object_ref, observable, attribute in zip(grouping_refs, object_refs, observables, attributes):
+        attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(event)
+        for grouping_ref, observed_data, observable, attribute in zip(grouping_refs, observed_datas, observables, attributes):
             self._assert_multiple_equal(
                 observable.id,
                 grouping_ref,
-                object_ref,
+                observed_data['object_refs'][0],
                 f"file--{attribute['uuid']}"
             )
             self.assertEqual(observable.type, 'file')
-        hash_types = ('MD5', 'SHA-1', 'SHA224', 'SHA-256', 'SHA3-256', 'SHA384', 'SSDEEP', 'TLSH')
-        for value, observable, hash_type in zip(values, observables, hash_types):
-            filename, hash_value = value.split('|')
+            filename, hash_value = attribute['value'].split('|')
             self.assertEqual(observable.name, filename)
+            hash_type = self.hash_types_mapping(attribute['type'].split('|')[1])
             self.assertEqual(observable.hashes[hash_type], hash_value)
-        objects = (obj for obj in self.parser.stix_objects if obj.type == 'observed-data')
-        for attribute, observed_data, observable in zip(attributes, objects, observables):
             self._populate_documentation(
                 attribute = attribute,
                 observed_data = [observed_data, observable]
@@ -1239,30 +1256,30 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
 
     def test_event_with_hash_indicator_attributes(self):
         event = get_event_with_hash_attributes()
-        values, patterns = self._run_indicators_tests(event)
-        hash_types = ('MD5', 'SHA1', 'SHA224', 'SHA256', 'SHA3256', 'SHA384', 'SSDEEP', 'TLSH')
-        for pattern, hash_type, value in zip(patterns, hash_types, values):
-            self.assertEqual(pattern, f"[file:hashes.{hash_type} = '{value}']")
-        for attribute, indicator in zip(event['Event']['Attribute'], self.parser.stix_objects[-8:]):
+        attributes, indicators = self._run_indicators_tests(event)
+        for attribute, indicator in zip(attributes, indicators):
+            hash_type = attribute['type']
+            if '/' in hash_type:
+                hash_type = f"SHA{hash_type.split('/')[1]}"
+            self.assertEqual(
+                indicator.pattern,
+                f"[file:hashes.{hash_type.replace('-', '').upper()} = '{attribute['value']}']"
+            )
             self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_hash_observable_attributes(self):
         event = get_event_with_hash_attributes()
-        attributes = deepcopy(event['Event']['Attribute'])
-        values, grouping_refs, object_refs, observables = self._run_observables_tests(event)
-        for grouping_ref, object_ref, observable, attribute in zip(grouping_refs, object_refs, observables, attributes):
+        attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(event)
+        for grouping_ref, observed_data, observable, attribute in zip(grouping_refs, observed_datas, observables, attributes):
             self._assert_multiple_equal(
                 observable.id,
                 grouping_ref,
-                object_ref,
+                observed_data['object_refs'][0],
                 f"file--{attribute['uuid']}"
             )
             self.assertEqual(observable.type, 'file')
-        hash_types = ('MD5', 'SHA-1', 'SHA224', 'SHA-256', 'SHA3-256', 'SHA384', 'SSDEEP', 'TLSH')
-        for observable, hash_type, value in zip(observables, hash_types, values):
-            self.assertEqual(observable.hashes[hash_type], value)
-        objects = (obj for obj in self.parser.stix_objects if obj.type == 'observed-data')
-        for attribute, observed_data, observable in zip(attributes, objects, observables):
+            hash_type = self.hash_types_mapping(attribute['type'])
+            self.assertEqual(observable.hashes[hash_type], attribute['value'])
             self._populate_documentation(
                 attribute = attribute,
                 observed_data = [observed_data, observable]
@@ -1339,156 +1356,103 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
 
     def test_event_with_http_indicator_attributes(self):
         event = get_event_with_http_attributes()
-        attribute_values, patterns = self._run_indicators_tests(event)
-        http_method, user_agent = attribute_values
-        http_method_pattern, user_agent_pattern = patterns
+        attributes, indicators = self._run_indicators_tests(event)
+        features = ('request_method', "request_header.'User-Agent'")
         prefix = f"network-traffic:extensions.'http-request-ext'"
-        self.assertEqual(
-            http_method_pattern,
-            f"[{prefix}.request_method = '{http_method}']"
-        )
-        self.assertEqual(
-            user_agent_pattern,
-            f"[{prefix}.request_header.'User-Agent' = '{user_agent}']"
-        )
-        for attribute, indicator in zip(event['Event']['Attribute'], self.parser.stix_objects[-2:]):
+        for attribute, indicator, feature in zip(attributes, indicators, features):
+            self.assertEqual(
+                indicator.pattern,
+                f"[{prefix}.{feature} = '{attribute['value']}']"
+            )
             self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_ip_indicator_attributes(self):
         event = get_event_with_ip_attributes()
-        attribute_values, patterns = self._run_indicators_tests(event)
-        src, dst = attribute_values
-        src_pattern, dst_pattern = patterns
-        src_type_pattern = "network-traffic:src_ref.type = 'ipv4-addr'"
-        src_value_pattern = f"network-traffic:src_ref.value = '{src}'"
-        self.assertEqual(src_pattern, f"[{src_type_pattern} AND {src_value_pattern}]")
-        dst_type_pattern = "network-traffic:dst_ref.type = 'ipv4-addr'"
-        dst_value_pattern = f"network-traffic:dst_ref.value = '{dst}'"
-        self.assertEqual(dst_pattern, f"[{dst_type_pattern} AND {dst_value_pattern}]")
-        for attribute, indicator in zip(event['Event']['Attribute'], self.parser.stix_objects[-2:]):
+        attributes, indicators = self._run_indicators_tests(event)
+        for attribute, indicator in zip(attributes, indicators):
+            feature = attribute['type'].split('-')[1]
+            type_pattern = f"network-traffic:{feature}_ref.type = 'ipv4-addr'"
+            value_pattern = f"network-traffic:{feature}_ref.value = '{attribute['value']}'"
+            self.assertEqual(indicator.pattern, f"[{type_pattern} AND {value_pattern}]")
             self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_ip_observable_attributes(self):
         event = get_event_with_ip_attributes()
-        src_attribute, dst_attribute = deepcopy(event['Event']['Attribute'])
-        values, grouping_refs, object_refs, observables = self._run_observables_tests(
+        attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(
             event,
             index=3
         )
-        src, dst = values
-        src_network_id, src_address_id, dst_network_id, dst_address_id = grouping_refs
-        src_network_ref, src_address_ref, dst_network_ref, dst_address_ref = object_refs
-        src_network, src_address, dst_network, dst_address = observables
-        self._assert_multiple_equal(
-            src_network.id,
-            src_network_id,
-            src_network_ref,
-            f"network-traffic--{src_attribute['uuid']}"
-        )
-        self.assertEqual(src_network.type, 'network-traffic')
-        self._assert_multiple_equal(
-            src_address.id,
-            src_address_id,
-            src_address_ref,
-            src_network.src_ref,
-            f"ipv4-addr--{src_attribute['uuid']}"
-        )
-        self.assertEqual(src_address.type, 'ipv4-addr')
-        self.assertEqual(src_address.value, src)
-        self._assert_multiple_equal(
-            dst_network.id,
-            dst_network_id,
-            dst_network_ref,
-            f"network-traffic--{dst_attribute['uuid']}"
-        )
-        self.assertEqual(dst_network.type, 'network-traffic')
-        self._assert_multiple_equal(
-            dst_address.id,
-            dst_address_id,
-            dst_address_ref,
-            dst_network.dst_ref,
-            f"ipv4-addr--{dst_attribute['uuid']}"
-        )
-        self.assertEqual(dst_address.type, 'ipv4-addr')
-        self.assertEqual(dst_address.value, dst)
-        objects = self.parser.stix_objects
-        self._populate_documentation(attribute=src_attribute, observed_data=objects[-6:-4])
-        self._populate_documentation(attribute=dst_attribute, observed_data=objects[-3:])
+        for attribute, grouping_ref, observed_data, observable in zip(attributes, grouping_refs, observed_datas, observables):
+            network_id, address_id = grouping_ref
+            network, address = observable
+            network_ref, address_ref = observed_data['object_refs']
+            self._assert_multiple_equal(
+                network.id,
+                network_id,
+                network_ref,
+                f"network-traffic--{attribute['uuid']}"
+            )
+            self.assertEqual(network.type, 'network-traffic')
+            feature = attribute['type'].split('-')[1]
+            self._assert_multiple_equal(
+                address.id,
+                address_id,
+                address_ref,
+                getattr(network, f"{feature}_ref"),
+                f"ipv4-addr--{attribute['uuid']}"
+            )
+            self.assertEqual(address.type, 'ipv4-addr')
+            self.assertEqual(address.value, attribute['value'])
+            self._populate_documentation(
+                attribute = attribute,
+                observed_data = [observed_data, network, address]
+            )
 
     def test_event_with_ip_port_indicator_attributes(self):
         event = get_event_with_ip_port_attributes()
-        attribute_values, patterns = self._run_indicators_tests(event)
-        src, dst = attribute_values
-        src_ip_value, src_port_value = src.split('|')
-        dst_ip_value, dst_port_value = dst.split('|')
-        src_pattern, dst_pattern = patterns
-        src_type_pattern = "network-traffic:src_ref.type = 'ipv4-addr'"
-        src_value_pattern = f"network-traffic:src_ref.value = '{src_ip_value}'"
-        src_port_pattern = f"network-traffic:src_port = '{src_port_value}'"
-        self.assertEqual(
-            src_pattern,
-            f"[{src_type_pattern} AND {src_value_pattern} AND {src_port_pattern}]"
-        )
-        dst_type_pattern = "network-traffic:dst_ref.type = 'ipv4-addr'"
-        dst_value_pattern = f"network-traffic:dst_ref.value = '{dst_ip_value}'"
-        dst_port_pattern = f"network-traffic:dst_port = '{dst_port_value}'"
-        self.assertEqual(
-            dst_pattern,
-            f"[{dst_type_pattern} AND {dst_value_pattern} AND {dst_port_pattern}]"
-        )
-        for attribute, indicator in zip(event['Event']['Attribute'], self.parser.stix_objects[-2:]):
+        attributes, indicators = self._run_indicators_tests(event)
+        for attribute, indicator in zip(attributes, indicators):
+            feature = attribute['type'].split('|')[0].split('-')[1]
+            ip_value, port_value = attribute['value'].split('|')
+            type_pattern = f"network-traffic:{feature}_ref.type = 'ipv4-addr'"
+            value_pattern = f"network-traffic:{feature}_ref.value = '{ip_value}'"
+            port_pattern = f"network-traffic:{feature}_port = '{port_value}'"
+            self.assertEqual(indicator.pattern, f"[{type_pattern} AND {value_pattern} AND {port_pattern}]")
             self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_ip_port_observable_attributes(self):
         event = get_event_with_ip_port_attributes()
-        src_attribute, dst_attribute = deepcopy(event['Event']['Attribute'])
-        values, grouping_refs, object_refs, observables = self._run_observables_tests(
+        attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(
             event,
             index=3
         )
-        src, dst = values
-        src_network_id, src_address_id, dst_network_id, dst_address_id = grouping_refs
-        src_network_ref, src_address_ref, dst_network_ref, dst_address_ref = object_refs
-        src_network, src_address, dst_network, dst_address = observables
-        src_ip_value, src_port_value = src.split('|')
-        self._assert_multiple_equal(
-            src_network.id,
-            src_network_id,
-            src_network_ref,
-            f"network-traffic--{src_attribute['uuid']}"
-        )
-        self.assertEqual(src_network.type, 'network-traffic')
-        self.assertEqual(src_network.src_port, int(src_port_value))
-        self._assert_multiple_equal(
-            src_address.id,
-            src_address_id,
-            src_address_ref,
-            src_network.src_ref,
-            f"ipv4-addr--{src_attribute['uuid']}"
-        )
-        self.assertEqual(src_address.type, 'ipv4-addr')
-        self.assertEqual(src_address.value, src_ip_value)
-        dst_ip_value, dst_port_value = dst.split('|')
-        self._assert_multiple_equal(
-            dst_network.id,
-            dst_network_id,
-            dst_network_ref,
-            f"network-traffic--{dst_attribute['uuid']}"
-        )
-        self.assertEqual(dst_network.type, 'network-traffic')
-        self.assertEqual(dst_network.dst_port, int(dst_port_value))
-        self._assert_multiple_equal(
-            dst_address.id,
-            dst_address_id,
-            dst_address_ref,
-            dst_network.dst_ref,
-            f"ipv4-addr--{dst_attribute['uuid']}"
-        )
-        self.assertEqual(dst_address.type, 'ipv4-addr')
-        self.assertEqual(dst_address.value, dst_ip_value)
-        objects = self.parser.stix_objects
-        self._populate_documentation(attribute=src_attribute, observed_data=objects[-6:-4])
-        self._populate_documentation(attribute=dst_attribute, observed_data=objects[-3:])
+        for attribute, grouping_ref, observed_data, observable in zip(attributes, grouping_refs, observed_datas, observables):
+            network_id, address_id = grouping_ref
+            network, address = observable
+            network_ref, address_ref = observed_data['object_refs']
+            ip_value, port_value = attribute['value'].split('|')
+            feature = attribute['type'].split('|')[0].split('-')[1]
+            self._assert_multiple_equal(
+                network.id,
+                network_id,
+                network_ref,
+                f"network-traffic--{attribute['uuid']}"
+            )
+            self.assertEqual(network.type, 'network-traffic')
+            self.assertEqual(getattr(network, f"{feature}_port"), int(port_value))
+            self._assert_multiple_equal(
+                address.id,
+                address_id,
+                address_ref,
+                getattr(network, f"{feature}_ref"),
+                f"ipv4-addr--{attribute['uuid']}"
+            )
+            self.assertEqual(address.type, 'ipv4-addr')
+            self.assertEqual(address.value, ip_value)
+            self._populate_documentation(
+                attribute = attribute,
+                observed_data = [observed_data, network, address]
+            )
 
     def test_event_with_mac_address_indicator_attribute(self):
         event = get_event_with_mac_address_attribute()
@@ -1755,34 +1719,28 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
 
     def test_event_with_x509_fingerprint_indicator_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
-        attribute_values, patterns = self._run_indicators_tests(event)
-        md5, sha1, sha256 = attribute_values
-        md5_pattern, sha1_pattern, sha256_pattern = patterns
-        self.assertEqual(md5_pattern, f"[x509-certificate:hashes.MD5 = '{md5}']")
-        self.assertEqual(sha1_pattern, f"[x509-certificate:hashes.SHA1 = '{sha1}']")
-        self.assertEqual(sha256_pattern, f"[x509-certificate:hashes.SHA256 = '{sha256}']")
-        for attribute, indicator in zip(event['Event']['Attribute'], self.parser.stix_objects[-3:]):
+        attributes, indicators = self._run_indicators_tests(event)
+        for attribute, indicator in zip(attributes, indicators):
+            hash_type = attribute['type'].split('-')[-1].upper()
+            self.assertEqual(
+                indicator.pattern,
+                f"[x509-certificate:hashes.{hash_type} = '{attribute['value']}']"
+            )
             self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_x509_fingerprint_observable_attributes(self):
         event = get_event_with_x509_fingerprint_attributes()
-        attributes = deepcopy(event['Event']['Attribute'])
-        values, grouping_refs, object_refs, observables = self._run_observables_tests(event)
-        for grouping_ref, object_ref, observable, attribute in zip(grouping_refs, object_refs, observables, attributes):
+        attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(event)
+        for grouping_ref, observed_data, observable, attribute in zip(grouping_refs, observed_datas, observables, attributes):
             self._assert_multiple_equal(
                 observable.id,
                 grouping_ref,
-                object_ref,
+                observed_data['object_refs'][0],
                 f"x509-certificate--{attribute['uuid']}"
             )
             self.assertEqual(observable.type, 'x509-certificate')
-        md5, sha1, sha256 = values
-        md5_object, sha1_object, sha256_object = observables
-        self.assertEqual(md5_object.hashes['MD5'], md5)
-        self.assertEqual(sha1_object.hashes['SHA-1'], sha1)
-        self.assertEqual(sha256_object.hashes['SHA-256'], sha256)
-        objects = (obj for obj in self.parser.stix_objects if obj.type == 'observed-data')
-        for attribute, observed_data, observable in zip(attributes, objects, observables):
+            hash_type = self.hash_types_mapping(attribute['type'].split('-')[-1])
+            self.assertEqual(observable.hashes[hash_type], attribute['value'])
             self._populate_documentation(
                 attribute = attribute,
                 observed_data=[observed_data, observable]

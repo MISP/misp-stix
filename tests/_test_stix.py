@@ -37,6 +37,23 @@ class TestSTIX2(unittest.TestCase):
 
 
 class TestSTIX20(TestSTIX2):
+    __hash_types_mapping = {
+        'sha1': 'SHA-1',
+        'sha224': 'SHA-224',
+        'sha256': 'SHA-256',
+        'sha384': 'SHA-384',
+        'sha512': 'SHA-512',
+        'sha512/224': 'SHA-224',
+        'sha512/256': 'SHA-256',
+        'ssdeep': 'ssdeep'
+    }
+
+    @classmethod
+    def hash_types_mapping(cls, hash_type):
+        if hash_type in cls.__hash_types_mapping:
+            return cls.__hash_types_mapping[hash_type]
+        return hash_type.upper()
+
     def _populate_attributes_documentation(self, attribute, **kwargs):
         attribute_type = attribute['type']
         if 'MISP' not in self._attributes[attribute_type]:
@@ -60,6 +77,22 @@ class TestSTIX20(TestSTIX2):
 
 
 class TestSTIX21(TestSTIX2):
+    __hash_types_mapping = {
+        'sha1': 'SHA-1',
+        'sha224': 'SHA224',
+        'sha256': 'SHA-256',
+        'sha384': 'SHA384',
+        'sha512': 'SHA-512',
+        'sha512/224': 'SHA-224',
+        'sha512/256': 'SHA-256'
+    }
+
+    @classmethod
+    def hash_types_mapping(cls, hash_type):
+        if hash_type in cls.__hash_types_mapping:
+            return cls.__hash_types_mapping[hash_type]
+        return hash_type.upper()
+
     def _check_grouping_features(self, grouping, event, identity_id):
         timestamp = self._datetime_from_timestamp(event['timestamp'])
         self.assertEqual(grouping.type, 'grouping')
