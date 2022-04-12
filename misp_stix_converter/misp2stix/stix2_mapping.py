@@ -24,12 +24,16 @@ class Stix2Mapping:
             'sha512',
             'sha512/224',
             'sha512/256',
+            'authentihash',
+            'imphash',
             'sha3-224',
             'sha3-256',
             'sha3-384',
             'sha3-512',
             'ssdeep',
-            'tlsh'
+            'telfhash',
+            'tlsh',
+            'vhash'
         )
         self.__source_names = (
             'ATTACK',
@@ -129,7 +133,26 @@ class Stix2Mapping:
         )
         _attribute_types_mapping.update(
             dict.fromkeys(
+                (
+                    'cdhash',
+                    'impfuzzy',
+                    'pehash'
+                ),
+                '_parse_hash_attribute'
+            )
+        )
+        _attribute_types_mapping.update(
+            dict.fromkeys(
                 (f"filename|{hash}" for hash in self.__hash_attribute_types),
+                '_parse_hash_composite_attribute'
+            )
+        )
+        _attribute_types_mapping.update(
+            dict.fromkeys(
+                (
+                    'filename|impfuzzy',
+                    'filename|pehash'
+                ),
                 '_parse_hash_composite_attribute'
             )
         )
