@@ -39,10 +39,15 @@ class TestSTIX2(unittest.TestCase):
 class TestSTIX20(TestSTIX2):
     __hash_types_mapping = {
         'sha1': 'SHA-1',
+        'SHA-1': 'sha1',
         'sha224': 'SHA-224',
+        'SHA-224': 'sha224',
         'sha256': 'SHA-256',
+        'SHA-256': 'sha256',
         'sha384': 'SHA-384',
+        'SHA-384': 'sha384',
         'sha512': 'SHA-512',
+        'SHA-512': 'sha512',
         'sha512/224': 'SHA-224',
         'sha512/256': 'SHA-256',
         'ssdeep': 'ssdeep'
@@ -79,11 +84,16 @@ class TestSTIX20(TestSTIX2):
 class TestSTIX21(TestSTIX2):
     __hash_types_mapping = {
         'sha1': 'SHA-1',
+        'SHA-1': 'sha1',
         'sha224': 'SHA224',
+        'SHA224': 'sha224',
         'sha256': 'SHA-256',
+        'SHA-256': 'sha256',
         'sha384': 'SHA384',
+        'SHA384': 'sha384',
         'sha512': 'SHA-512',
-        'sha512/224': 'SHA-224',
+        'SHA-512': 'sha512',
+        'sha512/224': 'SHA224',
         'sha512/256': 'SHA-256'
     }
 

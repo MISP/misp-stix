@@ -117,6 +117,1478 @@ _GEOLOCATION_OBJECT = {
     "x_misp_altitude": "55",
     "x_misp_country": "USA"
 }
+_HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+        ],
+        "labels": [
+            "misp:type=\"filename|md5\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "hashes": {
+            "MD5": "b2a5abfeef9e36964281a31e17b57c97"
+        },
+        "name": "filename1"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
+        ],
+        "labels": [
+            "misp:type=\"filename|sha1\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "hashes": {
+            "SHA-1": "2920d5e6c579fce772e5506caf03af65579088bd"
+        },
+        "name": "filename2"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--90bd7dae-b78c-4025-9073-568950c780fb"
+        ],
+        "labels": [
+            "misp:type=\"filename|sha224\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--90bd7dae-b78c-4025-9073-568950c780fb",
+        "hashes": {
+            "SHA224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
+        },
+        "name": "filename3"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--2007ec09-8137-4a71-a3ce-6ef967bebacf"
+        ],
+        "labels": [
+            "misp:type=\"filename|sha256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "hashes": {
+            "SHA-256": "7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4"
+        },
+        "name": "filename4"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--c8760340-85a9-4e40-bfde-522d66ef1e9f"
+        ],
+        "labels": [
+            "misp:type=\"filename|sha384\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "hashes": {
+            "SHA384": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce"
+        },
+        "name": "filename5"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--55ffda25-c3fe-48b5-a6eb-59c986cb593e"
+        ],
+        "labels": [
+            "misp:type=\"filename|sha512\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "hashes": {
+            "SHA-512": "28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe"
+        },
+        "name": "filename6"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--9060e814-a36f-45ab-84e5-66fc82dc7cff"
+        ],
+        "labels": [
+            "misp:type=\"filename|ssdeep\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "hashes": {
+            "SSDEEP": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi"
+        },
+        "name": "filename7"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:type=\"filename|authentihash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "hashes": {
+            "AUTHENTIHASH": "b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc"
+        },
+        "name": "filename8"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--518b4bcb-a86b-4783-9457-391d548b605b"
+        ],
+        "labels": [
+            "misp:type=\"filename|imphash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--518b4bcb-a86b-4783-9457-391d548b605b",
+        "hashes": {
+            "IMPHASH": "68f013d7437aa653a8a98a05807afeb1"
+        },
+        "name": "filename9"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+        ],
+        "labels": [
+            "misp:type=\"filename|pehash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "hashes": {
+            "PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"
+        },
+        "name": "filename10"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
+        ],
+        "labels": [
+            "misp:type=\"filename|sha512/256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "hashes": {
+            "SHA-256": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93"
+        },
+        "name": "filename11"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--7467406e-88d3-4856-afc9-412459bc3c8b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--7467406e-88d3-4856-afc9-412459bc3c8b"
+        ],
+        "labels": [
+            "misp:type=\"filename|tlsh\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--7467406e-88d3-4856-afc9-412459bc3c8b",
+        "hashes": {
+            "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
+        },
+        "name": "filename12"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--cea8c6f6-696c-41cc-b7c7-2566ca0b0975"
+        ],
+        "labels": [
+            "misp:type=\"filename|vhash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "hashes": {
+            "VHASH": "115056655d15151138z66hz1021z55z66z3"
+        },
+        "name": "filename13"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6"
+        ],
+        "labels": [
+            "misp:type=\"filename|sha3-256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "hashes": {
+            "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
+        },
+        "name": "filename14"
+    }
+]
+_HASH_COMPOSITE_PATTERN_ATTRIBUTES = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|md5 test attribute",
+        "pattern": "[file:name = 'filename1' AND file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|md5\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha1 test attribute",
+        "pattern": "[file:name = 'filename2' AND file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha1\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha224 test attribute",
+        "pattern": "[file:name = 'filename3' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha224\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha256 test attribute",
+        "pattern": "[file:name = 'filename4' AND file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha256\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha384 test attribute",
+        "pattern": "[file:name = 'filename5' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha384\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha512 test attribute",
+        "pattern": "[file:name = 'filename6' AND file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha512\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|ssdeep test attribute",
+        "pattern": "[file:name = 'filename7' AND file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|ssdeep\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|authentihash test attribute",
+        "pattern": "[file:name = 'filename8' AND file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|authentihash\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|imphash test attribute",
+        "pattern": "[file:name = 'filename9' AND file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|imphash\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|pehash test attribute",
+        "pattern": "[file:name = 'filename10' AND file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|pehash\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha512/256 test attribute",
+        "pattern": "[file:name = 'filename11' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha512/256\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|tlsh test attribute",
+        "pattern": "[file:name = 'filename12' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|tlsh\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|vhash test attribute",
+        "pattern": "[file:name = 'filename13' AND file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|vhash\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Filename|sha3-256 test attribute",
+        "pattern": "[file:name = 'filename14' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"filename|sha3-256\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    }
+]
+_HASH_OBSERVABLE_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+        ],
+        "labels": [
+            "misp:type=\"md5\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "hashes": {
+            "MD5": "b2a5abfeef9e36964281a31e17b57c97"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
+        ],
+        "labels": [
+            "misp:type=\"sha1\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "hashes": {
+            "SHA-1": "2920d5e6c579fce772e5506caf03af65579088bd"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--90bd7dae-b78c-4025-9073-568950c780fb"
+        ],
+        "labels": [
+            "misp:type=\"sha224\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--90bd7dae-b78c-4025-9073-568950c780fb",
+        "hashes": {
+            "SHA224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--2007ec09-8137-4a71-a3ce-6ef967bebacf"
+        ],
+        "labels": [
+            "misp:type=\"sha256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "hashes": {
+            "SHA-256": "7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--c8760340-85a9-4e40-bfde-522d66ef1e9f"
+        ],
+        "labels": [
+            "misp:type=\"sha384\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "hashes": {
+            "SHA384": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--55ffda25-c3fe-48b5-a6eb-59c986cb593e"
+        ],
+        "labels": [
+            "misp:type=\"sha512\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "hashes": {
+            "SHA-512": "28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--9060e814-a36f-45ab-84e5-66fc82dc7cff"
+        ],
+        "labels": [
+            "misp:type=\"ssdeep\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "hashes": {
+            "SSDEEP": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:type=\"authentihash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "hashes": {
+            "AUTHENTIHASH": "b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--518b4bcb-a86b-4783-9457-391d548b605b"
+        ],
+        "labels": [
+            "misp:type=\"imphash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--518b4bcb-a86b-4783-9457-391d548b605b",
+        "hashes": {
+            "IMPHASH": "68f013d7437aa653a8a98a05807afeb1"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+        ],
+        "labels": [
+            "misp:type=\"pehash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "hashes": {
+            "PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
+        ],
+        "labels": [
+            "misp:type=\"sha512/256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "hashes": {
+            "SHA-256": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--7467406e-88d3-4856-afc9-412459bc3c8b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--7467406e-88d3-4856-afc9-412459bc3c8b"
+        ],
+        "labels": [
+            "misp:type=\"tlsh\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--7467406e-88d3-4856-afc9-412459bc3c8b",
+        "hashes": {
+            "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--cea8c6f6-696c-41cc-b7c7-2566ca0b0975"
+        ],
+        "labels": [
+            "misp:type=\"vhash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "hashes": {
+            "VHASH": "115056655d15151138z66hz1021z55z66z3"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6"
+        ],
+        "labels": [
+            "misp:type=\"sha3-256\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "hashes": {
+            "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
+        }
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--4846cade-2492-4e7d-856e-2afcd282455b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--4846cade-2492-4e7d-856e-2afcd282455b"
+        ],
+        "labels": [
+            "misp:type=\"telfhash\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--4846cade-2492-4e7d-856e-2afcd282455b",
+        "hashes": {
+            "TELFHASH": "b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b"
+        }
+    }
+]
+_HASH_PATTERN_ATTRIBUTES = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "MD5 test attribute",
+        "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"md5\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA1 test attribute",
+        "pattern": "[file:hashes.SHA1 = '2920d5e6c579fce772e5506caf03af65579088bd']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha1\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA224 test attribute",
+        "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha224\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA256 test attribute",
+        "pattern": "[file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha256\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA384 test attribute",
+        "pattern": "[file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha384\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA512 test attribute",
+        "pattern": "[file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha512\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SSDEEP test attribute",
+        "pattern": "[file:hashes.SSDEEP = '96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ssdeep\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "AUTHENTIHASH test attribute",
+        "pattern": "[file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"authentihash\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "IMPHASH test attribute",
+        "pattern": "[file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"imphash\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "PEHASH test attribute",
+        "pattern": "[file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"pehash\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA512/256 test attribute",
+        "pattern": "[file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha512/256\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "TLSH test attribute",
+        "pattern": "[file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"tlsh\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "VHASH test attribute",
+        "pattern": "[file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"vhash\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "SHA3-256 test attribute",
+        "pattern": "[file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"sha3-256\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--4846cade-2492-4e7d-856e-2afcd282455b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "TELFHASH test attribute",
+        "pattern": "[file:hashes.TELFHASH = 'b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Payload delivery"
+            }
+        ],
+        "labels": [
+            "misp:type=\"telfhash\"",
+            "misp:category=\"Payload delivery\"",
+            "misp:to_ids=\"True\""
+        ]
+    }
+]
 _LEGAL_ENTITY_OBJECT = {
     "type": "identity",
     "spec_version": "2.1",
@@ -495,6 +1967,22 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_geolocation_object(cls):
         return cls.__assemble_bundle(_GEOLOCATION_OBJECT)
+
+    @classmethod
+    def get_bundle_with_hash_composite_observable_attributes(cls):
+        return cls.__assemble_bundle(*_HASH_COMPOSITE_OBSERVABLE_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_hash_composite_pattern_attributes(cls):
+        return cls.__assemble_bundle(*_HASH_COMPOSITE_PATTERN_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_hash_observable_attributes(cls):
+        return cls.__assemble_bundle(*_HASH_OBSERVABLE_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_hash_pattern_attributes(cls):
+        return cls.__assemble_bundle(*_HASH_PATTERN_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_legal_entity_object(cls):
