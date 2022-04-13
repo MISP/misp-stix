@@ -1586,7 +1586,7 @@
             "uuid": "e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
             "type": "filename|sha3-256",
             "category": "Payload delivery",
-            "value": "filename12|39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
+            "value": "filename14|39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
             "timestamp": "1603642920",
             "comment": "Filename|sha3-256 test attribute"
         },
@@ -1599,7 +1599,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|sha3-256 test attribute",
-                "pattern": "[file:name = 'filename12' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+                "pattern": "[file:name = 'filename14' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -1641,7 +1641,7 @@
                     "hashes": {
                         "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
                     },
-                    "name": "filename12"
+                    "name": "filename14"
                 }
             ]
         }
@@ -2101,77 +2101,12 @@
             ]
         }
     },
-    "filename|telfhash": {
-        "MISP": {
-            "uuid": "4846cade-2492-4e7d-856e-2afcd282455b",
-            "type": "filename|telfhash",
-            "category": "Payload delivery",
-            "value": "filename13|b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b",
-            "timestamp": "1603642920",
-            "comment": "Filename|telfhash test attribute"
-        },
-        "STIX": {
-            "Indicator": {
-                "type": "indicator",
-                "spec_version": "2.1",
-                "id": "indicator--4846cade-2492-4e7d-856e-2afcd282455b",
-                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-                "created": "2020-10-25T16:22:00.000Z",
-                "modified": "2020-10-25T16:22:00.000Z",
-                "description": "Filename|telfhash test attribute",
-                "pattern": "[file:name = 'filename13' AND file:hashes.TELFHASH = 'b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b']",
-                "pattern_type": "stix",
-                "pattern_version": "2.1",
-                "valid_from": "2020-10-25T16:22:00Z",
-                "kill_chain_phases": [
-                    {
-                        "kill_chain_name": "misp-category",
-                        "phase_name": "Payload delivery"
-                    }
-                ],
-                "labels": [
-                    "misp:type=\"filename|telfhash\"",
-                    "misp:category=\"Payload delivery\"",
-                    "misp:to_ids=\"True\""
-                ]
-            },
-            "Observed Data": [
-                {
-                    "type": "observed-data",
-                    "spec_version": "2.1",
-                    "id": "observed-data--4846cade-2492-4e7d-856e-2afcd282455b",
-                    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-                    "created": "2020-10-25T16:22:00.000Z",
-                    "modified": "2020-10-25T16:22:00.000Z",
-                    "first_observed": "2020-10-25T16:22:00Z",
-                    "last_observed": "2020-10-25T16:22:00Z",
-                    "number_observed": 1,
-                    "object_refs": [
-                        "file--4846cade-2492-4e7d-856e-2afcd282455b"
-                    ],
-                    "labels": [
-                        "misp:type=\"filename|telfhash\"",
-                        "misp:category=\"Payload delivery\""
-                    ]
-                },
-                {
-                    "type": "file",
-                    "spec_version": "2.1",
-                    "id": "file--4846cade-2492-4e7d-856e-2afcd282455b",
-                    "hashes": {
-                        "TELFHASH": "b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b"
-                    },
-                    "name": "filename13"
-                }
-            ]
-        }
-    },
     "filename|tlsh": {
         "MISP": {
             "uuid": "7467406e-88d3-4856-afc9-412459bc3c8b",
             "type": "filename|tlsh",
             "category": "Payload delivery",
-            "value": "filename14|c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
+            "value": "filename12|c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
             "timestamp": "1603642920",
             "comment": "Filename|tlsh test attribute"
         },
@@ -2184,7 +2119,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|tlsh test attribute",
-                "pattern": "[file:name = 'filename14' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
+                "pattern": "[file:name = 'filename12' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -2226,7 +2161,7 @@
                     "hashes": {
                         "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
                     },
-                    "name": "filename14"
+                    "name": "filename12"
                 }
             ]
         }
@@ -2236,7 +2171,7 @@
             "uuid": "cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
             "type": "filename|vhash",
             "category": "Payload delivery",
-            "value": "filename15|115056655d15151138z66hz1021z55z66z3",
+            "value": "filename13|115056655d15151138z66hz1021z55z66z3",
             "timestamp": "1603642920",
             "comment": "Filename|vhash test attribute"
         },
@@ -2249,7 +2184,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Filename|vhash test attribute",
-                "pattern": "[file:name = 'filename15' AND file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
+                "pattern": "[file:name = 'filename13' AND file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -2291,7 +2226,7 @@
                     "hashes": {
                         "VHASH": "115056655d15151138z66hz1021z55z66z3"
                     },
-                    "name": "filename15"
+                    "name": "filename13"
                 }
             ]
         }

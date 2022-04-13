@@ -31,7 +31,6 @@
     "filename|sha512/224": "File Object",
     "filename|sha512/256": "File Object",
     "filename|ssdeep": "File Object",
-    "filename|telfhash": "File Object",
     "filename|tlsh": "File Object",
     "filename|vhash": "File Object",
     "github-username": "User Account Object (pattern) / Custom Object",
