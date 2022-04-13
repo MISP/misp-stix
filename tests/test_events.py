@@ -2999,6 +2999,17 @@ def get_event_with_hash_attributes(to_ids=True):
     event['Event']['Attribute'] = list(
         _get_hash_attributes(to_ids)
     )
+    event['Event']['Attribute'].append(
+        {
+            "uuid": "4846cade-2492-4e7d-856e-2afcd282455b",
+            "type": "telfhash",
+            "category": "Payload delivery",
+            "timestamp": "1603642920",
+            "value": "b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b",
+            "comment": "TELFHASH test attribute",
+            "to_ids": True
+        }
+    )
     return event
 
 
@@ -4825,14 +4836,6 @@ def get_hash_attributes():
             'value': '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93',
             'uuid': '2d35a390-ccdd-4d6b-a36d-513b05e3682a'
         },
-        'sha3-256': {
-            'value': '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4',
-            'uuid': 'e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6'
-        },
-        'telfhash': {
-            'value': 'b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b',
-            'uuid': '4846cade-2492-4e7d-856e-2afcd282455b'
-        },
         'tlsh': {
             'value': 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297',
             'uuid': '7467406e-88d3-4856-afc9-412459bc3c8b'
@@ -4840,5 +4843,9 @@ def get_hash_attributes():
         'vhash': {
             'value': '115056655d15151138z66hz1021z55z66z3',
             'uuid': 'cea8c6f6-696c-41cc-b7c7-2566ca0b0975'
+        },
+        'sha3-256': {
+            'value': '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4',
+            'uuid': 'e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6'
         }
     }

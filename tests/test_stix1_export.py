@@ -1071,10 +1071,10 @@ class TestStix1Export(unittest.TestCase):
         self._check_simple_hash_property(imphash_prop.hashes[0], imphash['value'], 'MD5')
         self._check_simple_hash_property(pehash_prop.hashes[0], pehash['value'], 'SHA1')
         self._check_simple_hash_property(sha512_256_prop.hashes[0], sha512_256['value'], 'SHA256')
-        for attribute, stix_property in zip(attributes[:2], properties[:2]):
-            self._check_custom_property(attribute, stix_property.custom_properties.property_[0])
-        for stix_property, attribute in zip(properties[2:], attributes[2:]):
+        for stix_property, attribute in zip(properties[:2], attributes[:2]):
             self._check_simple_hash_property(stix_property.hashes[0], attribute['value'], 'Other')
+        for attribute, stix_property in zip(attributes[2:], properties[2:]):
+            self._check_custom_property(attribute, stix_property.custom_properties.property_[0])
 
     def _test_event_with_hash_composite_attributes(self):
         event = get_event_with_hash_composite_attributes()
@@ -1102,12 +1102,14 @@ class TestStix1Export(unittest.TestCase):
         filename, sha512_256 = sha512_256['value'].split('|')
         self.assertEqual(sha512_256_prop.file_name.value, filename)
         self._check_simple_hash_property(sha512_256_prop.hashes[0], sha512_256, 'SHA256')
-        for attribute, stix_property in zip(attributes[:2], properties[:2]):
-            self._check_custom_property(attribute, stix_property.custom_properties.property_[0])
-        for stix_property, attribute in zip(properties[2:], attributes[2:]):
+        for stix_property, attribute in zip(properties[:2], attributes[:2]):
             filename, hash_value = attribute['value'].split('|')
             self.assertEqual(stix_property.file_name.value, filename)
             self._check_simple_hash_property(stix_property.hashes[0], hash_value, 'Other')
+        self._check_custom_property(
+            attributes[-1],
+            properties[-1].custom_properties.property_[0]
+        )
 
     def _test_event_with_hostname_attribute(self):
         event = get_event_with_hostname_attribute()
