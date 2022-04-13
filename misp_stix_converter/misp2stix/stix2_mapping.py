@@ -15,7 +15,7 @@ class Stix2Mapping:
             PRE = 'mitre-pre-attack',
             REF = 'reference_from_CAPEC'
         )
-        self.__hash_attribute_types = (
+        self.__pe_section_hash_types = (
             'md5',
             'sha1',
             'sha224',
@@ -24,17 +24,20 @@ class Stix2Mapping:
             'sha512',
             'sha512/224',
             'sha512/256',
+            'ssdeep'
+        )
+        hash_attribute_types = (
             'authentihash',
             'imphash',
             'sha3-224',
             'sha3-256',
             'sha3-384',
             'sha3-512',
-            'ssdeep',
             'telfhash',
             'tlsh',
             'vhash'
         )
+        self.__hash_attribute_types = self.__pe_section_hash_types + hash_attribute_types
         self.__source_names = (
             'ATTACK',
             'NIST Mobile Threat Catalogue',
@@ -1090,6 +1093,10 @@ class Stix2Mapping:
     @property
     def pe_object_single_fields(self) -> tuple:
         return self.__pe_object_single_fields
+
+    @property
+    def pe_section_hash_types(self) -> tuple:
+        return self.__pe_section_hash_types
 
     @property
     def pe_section_mapping(self) -> dict:

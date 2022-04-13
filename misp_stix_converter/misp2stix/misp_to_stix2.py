@@ -1576,7 +1576,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 for key, feature in self._mapping.pe_section_mapping.items():
                     if attributes.get(key):
                         pattern.append(f"{section_prefix}.{feature} = '{attributes.pop(key)}'")
-                for hash_type in self._mapping.hash_attribute_types:
+                for hash_type in self._mapping.pe_section_hash_types:
                     if attributes.get(hash_type):
                         pattern.append(
                             self._create_hash_pattern(
