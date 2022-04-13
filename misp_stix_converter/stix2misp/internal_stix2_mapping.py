@@ -55,7 +55,12 @@ class InternalSTIX2Mapping(STIX2Mapping):
         attributes_mapping.update(
             dict.fromkeys(
                 (
+                    'authentihash',
+                    'cdhash',
+                    'imphash',
+                    'impfuzzy',
                     'md5',
+                    'pehash',
                     'sha1',
                     'sha224',
                     'sha256',
@@ -68,7 +73,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'sha3-384',
                     'sha3-512',
                     'ssdeep',
-                    'tlsh'
+                    'telfhash',
+                    'tlsh',
+                    'vhash'
                 ),
                 '_attribute_from_hash'
             )
@@ -76,7 +83,11 @@ class InternalSTIX2Mapping(STIX2Mapping):
         attributes_mapping.update(
             dict.fromkeys(
                 (
+                    'filename|authentihash',
+                    'filename|imphash',
+                    'filename|impfuzzy',
                     'filename|md5',
+                    'filename|pehash',
                     'filename|sha1',
                     'filename|sha224',
                     'filename|sha256',
@@ -89,7 +100,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'filename|sha3-384',
                     'filename|sha3-512',
                     'filename|ssdeep',
-                    'filename|tlsh'
+                    'filename|tlsh',
+                    'filename|vhash'
                 ),
                 '_attribute_from_filename_hash'
             )
