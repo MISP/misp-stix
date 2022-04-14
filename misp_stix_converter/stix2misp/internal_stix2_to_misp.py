@@ -454,6 +454,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = f'{address.value}|{port_value}'
         self._add_misp_attribute(attribute)
 
+    def _attribute_from_x509_fingerprint_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute['value'] = list(observed_data.objects['0'].hashes.values())[0]
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_x509_fingerprint_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = list(observable.hashes.values())[0]
+        self._add_misp_attribute(attribute)
+
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
     ################################################################################
@@ -491,6 +502,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _attribute_from_patterning_language_pattern(self, indicator: Indicator_v21):
         attribute = self._create_attribute_dict(indicator)
         attribute['value'] = indicator.pattern
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_x509_fingerprint_pattern(self, indicator: _INDICATOR_TYPING):
+        attribute = self._create_attribute_dict(indicator)
+        attribute['value'] = self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
         self._add_misp_attribute(attribute)
 
     def _object_from_patterning_language_pattern(self, indicator: Indicator_v21):
