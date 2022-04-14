@@ -412,7 +412,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _attribute_from_filename_hash_observable_v21(self, observed_data: ObservedData_v21):
         attribute = self._create_attribute_dict(observed_data)
-        observable = self._observable[observed_data.object_refs[0]]
+        observable = self._fetch_observables(observed_data.object_refs)
         hash_value = list(observable.hashes.values())[0]
         attribute['value'] = f'{observable.name}|{hash_value}'
         self._add_misp_attribute(attribute)
@@ -424,7 +424,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _attribute_from_hash_observable_v21(self, observed_data: ObservedData_v21):
         attribute = self._create_attribute_dict(observed_data)
-        observable = self._observable[observed_data.object_refs[0]]
+        observable = self._fetch_observables(observed_data.object_refs)
         attribute['value'] = list(observable.hashes.values())[0]
         self._add_misp_attribute(attribute)
 
@@ -512,6 +512,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     @staticmethod
     def _extract_attribute_value_from_pattern(pattern: str) -> str:
         return pattern.split(' = ')[1][1:-1]
+
+    def _fetch_observables(self, object_refs: Union[list, str]):
+        if isinstance(object_refs, str):
+            return self._observable[object_refs]
+        if len(object_refs) == 1:
+            return self._observable[object_refs[0]]
+        return tuple(self._observable[object_ref] for object_ref in object_refs)
 
     def _fetch_tags_from_labels(self, misp_feature: _MISP_FEATURES_TYPING, labels: list):
         for label in (label for label in labels if label != 'Threat-Report'):
