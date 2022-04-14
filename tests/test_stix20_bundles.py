@@ -1357,6 +1357,208 @@ _HASH_PATTERN_ATTRIBUTES = [
         ]
     }
 ]
+_IP_OBSERVABLE_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "src_ref": "1",
+                "protocols": [
+                    "tcp"
+                ]
+            },
+            "1": {
+                "type": "ipv4-addr",
+                "value": "1.2.3.4"
+            }
+        },
+        "labels": [
+            "misp:type=\"ip-src\"",
+            "misp:category=\"Network activity\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "dst_ref": "1",
+                "protocols": [
+                    "tcp"
+                ]
+            },
+            "1": {
+                "type": "ipv4-addr",
+                "value": "5.6.7.8"
+            }
+        },
+        "labels": [
+            "misp:type=\"ip-dst\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+]
+_IP_PATTERN_ATTRIBUTES = [
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Source IP test attribute",
+        "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-src\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Destination IP test attribute",
+        "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-dst\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    }
+]
+_IP_PORT_OBSERVABLE_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "src_ref": "1",
+                "src_port": 1234,
+                "protocols": [
+                    "tcp"
+                ]
+            },
+            "1": {
+                "type": "ipv4-addr",
+                "value": "1.2.3.4"
+            }
+        },
+        "labels": [
+            "misp:type=\"ip-src|port\"",
+            "misp:category=\"Network activity\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "network-traffic",
+                "dst_ref": "1",
+                "dst_port": 5678,
+                "protocols": [
+                    "tcp"
+                ]
+            },
+            "1": {
+                "type": "ipv4-addr",
+                "value": "5.6.7.8"
+            }
+        },
+        "labels": [
+            "misp:type=\"ip-dst|port\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+]
+_IP_PORT_PATTERN_ATTRIBUTES = [
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Source IP | Port test attribute",
+        "pattern": "[network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:src_port = '1234']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-src|port\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Destination IP | Port test attribute",
+        "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_port = '5678']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-dst|port\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    }
+]
 _LEGAL_ENTITY_OBJECT = {
     "type": "identity",
     "id": "identity--0d55ba1f-c3ff-4b91-8a09-8713576e178b",
@@ -1607,6 +1809,22 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_hash_pattern_attributes(cls):
         return cls.__assemble_bundle(*_HASH_PATTERN_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_ip_observable_attributes(cls):
+        return cls.__assemble_bundle(*_IP_OBSERVABLE_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_ip_pattern_attributes(cls):
+        return cls.__assemble_bundle(*_IP_PATTERN_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_ip_port_observable_attributes(cls):
+        return cls.__assemble_bundle(*_IP_PORT_OBSERVABLE_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_ip_port_pattern_attributes(cls):
+        return cls.__assemble_bundle(*_IP_PORT_PATTERN_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_legal_entity_object(cls):

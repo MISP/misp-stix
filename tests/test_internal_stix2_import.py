@@ -326,9 +326,92 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         event = self.parser.misp_event
         _, report, *indicators = bundle.objects
         attributes = self._check_misp_event_features(event, report)
+        self.assertEqual(len(attributes), 15)
         for attribute, indicator in zip(attributes, indicators):
             pattern = self._check_indicator_attribute(attribute, indicator)
-            self.assertEqual(attribute['value'], pattern[1:-1].split(' = ')[1].strip("'"))
+            self.assertEqual(attribute.value, pattern[1:-1].split(' = ')[1].strip("'"))
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                indicator = indicator
+            )
+
+    def test_stix20_bundle_with_ip_observable_attributes(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_ip_observable_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, *observables = bundle.objects
+        attributes = self._check_misp_event_features(event, report)
+        self.assertEqual(len(attributes), 2)
+        for attribute, observed_data in zip(attributes, observables):
+            network, address = self._check_observed_data_attribute(attribute, observed_data).values()
+            feature = attribute.type.split('-')[1]
+            self.assertTrue(hasattr(network, f"{feature}_ref"))
+            self.assertEqual(attribute.value, address.value)
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                observed_data = observed_data
+            )
+
+    def test_stix20_bundle_with_ip_pattern_attributes(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_ip_pattern_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, *indicators = bundle.objects
+        attributes = self._check_misp_event_features(event, report)
+        self.assertEqual(len(attributes), 2)
+        for attribute, indicator in zip(attributes, indicators):
+            pattern = self._check_indicator_attribute(attribute, indicator)[1:-1].split(' AND ')[1]
+            identifier, value = pattern.split(' = ')
+            self.assertEqual(attribute.type, f"ip-{identifier.split(':')[1].split('_')[0]}")
+            self.assertEqual(attribute.value, value.strip("'"))
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                indicator = indicator
+            )
+
+    def test_stix20_bundle_with_ip_port_observable_attributes(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_ip_port_observable_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, *observables = bundle.objects
+        attributes = self._check_misp_event_features(event, report)
+        self.assertEqual(len(attributes), 2)
+        for attribute, observed_data in zip(attributes, observables):
+            network, address = self._check_observed_data_attribute(attribute, observed_data).values()
+            feature = attribute.type.split('|')[0].split('-')[1]
+            ip_value, port_value = attribute.value.split('|')
+            self.assertEqual(ip_value, address.value)
+            self.assertEqual(int(port_value), getattr(network, f"{feature}_port"))
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                observed_data = observed_data
+            )
+
+    def test_stix20_bundle_with_ip_port_pattern_attributes(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_ip_port_pattern_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, *indicators = bundle.objects
+        attributes = self._check_misp_event_features(event, report)
+        self.assertEqual(len(attributes), 2)
+        for attribute, indicator in zip(attributes, indicators):
+            pattern = self._check_indicator_attribute(attribute, indicator)
+            ip_pattern, port_pattern = pattern[1:-1].split(' AND ')[1:]
+            ip_identifier, ip_value = ip_pattern.split(' = ')
+            port_identifier, port_value = port_pattern.split(' = ')
+            self._assert_multiple_equal(
+                attribute.type,
+                f"ip-{ip_identifier.split(':')[1].split('_')[0]}|port",
+                f"ip-{port_identifier.split(':')[1].split('_')[0]}|port"
+            )
+            self.assertEqual(
+                attribute.value,
+                "%s|%s" % (ip_value.strip("'"), port_value.strip("'"))
+            )
             self._populate_documentation(
                 attribute = json.loads(attribute.to_json()),
                 indicator = indicator
@@ -621,6 +704,102 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         for attribute, indicator in zip(attributes, indicators):
             pattern = self._check_indicator_attribute(attribute, indicator)
             self.assertEqual(attribute['value'], pattern[1:-1].split(' = ')[1].strip("'"))
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                indicator = indicator
+            )
+
+    def test_stix21_bundle_with_ip_observable_attributes(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_ip_observable_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, *observables = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 2)
+        for attribute, observed_data, network, address in zip(attributes, *[iter(observables)]*3):
+            network_ref, address_ref = self._check_observed_data_attribute(attribute, observed_data)
+            self._assert_multiple_equal(
+                attribute.uuid,
+                network.id.split('--')[1],
+                network_ref.split('--')[1],
+                address.id.split('--')[1],
+                address_ref.split('--')[1]
+            )
+            feature = attribute.type.split('-')[1]
+            self.assertTrue(hasattr(network, f"{feature}_ref"))
+            self.assertEqual(attribute.value, address.value)
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                observed_data = [observed_data, network, address]
+            )
+
+    def test_stix21_bundle_with_ip_pattern_attributes(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_ip_pattern_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, *indicators = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 2)
+        for attribute, indicator in zip(attributes, indicators):
+            pattern = self._check_indicator_attribute(attribute, indicator)[1:-1].split(' AND ')[1]
+            identifier, value = pattern.split(' = ')
+            self.assertEqual(attribute.type, f"ip-{identifier.split(':')[1].split('_')[0]}")
+            self.assertEqual(attribute.value, value.strip("'"))
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                indicator = indicator
+            )
+
+    def test_stix21_bundle_with_ip_port_observable_attributes(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_ip_port_observable_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, *observables = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 2)
+        for attribute, observed_data, network, address in zip(attributes, *[iter(observables)]*3):
+            network_ref, address_ref = self._check_observed_data_attribute(attribute, observed_data)
+            self._assert_multiple_equal(
+                attribute.uuid,
+                network.id.split('--')[1],
+                network_ref.split('--')[1],
+                address.id.split('--')[1],
+                address_ref.split('--')[1]
+            )
+            feature = attribute.type.split('|')[0].split('-')[1]
+            ip_value, port_value = attribute.value.split('|')
+            self.assertEqual(ip_value, address.value)
+            self.assertEqual(int(port_value), getattr(network, f'{feature}_port'))
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                observed_data = [observed_data, network, address]
+            )
+
+    def test_stix21_bundle_with_ip_port_pattern_attributes(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_ip_port_pattern_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, *indicators = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 2)
+        for attribute, indicator in zip(attributes, indicators):
+            pattern = self._check_indicator_attribute(attribute, indicator)
+            ip_pattern, port_pattern = pattern[1:-1].split(' AND ')[1:]
+            ip_identifier, ip_value = ip_pattern.split(' = ')
+            port_identifier, port_value = port_pattern.split(' = ')
+            self._assert_multiple_equal(
+                attribute.type,
+                f"ip-{ip_identifier.split(':')[1].split('_')[0]}|port",
+                f"ip-{port_identifier.split(':')[1].split('_')[0]}|port"
+            )
+            self.assertEqual(
+                attribute.value,
+                "%s|%s" % (ip_value.strip("'"), port_value.strip("'"))
+            )
             self._populate_documentation(
                 attribute = json.loads(attribute.to_json()),
                 indicator = indicator
