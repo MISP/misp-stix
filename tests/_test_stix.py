@@ -57,7 +57,7 @@ class TestSTIX20(TestSTIX2):
     def hash_types_mapping(cls, hash_type):
         if hash_type in cls.__hash_types_mapping:
             return cls.__hash_types_mapping[hash_type]
-        return hash_type.upper()
+        return hash_type.lower() if hash_type.isupper() else hash_type.upper()
 
     def _populate_attributes_documentation(self, attribute, **kwargs):
         attribute_type = attribute['type']
@@ -101,7 +101,7 @@ class TestSTIX21(TestSTIX2):
     def hash_types_mapping(cls, hash_type):
         if hash_type in cls.__hash_types_mapping:
             return cls.__hash_types_mapping[hash_type]
-        return hash_type.upper()
+        return hash_type.lower() if hash_type.isupper() else hash_type.upper()
 
     def _check_grouping_features(self, grouping, event, identity_id):
         timestamp = self._datetime_from_timestamp(event['timestamp'])
