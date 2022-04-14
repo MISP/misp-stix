@@ -428,6 +428,32 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = list(observable.hashes.values())[0]
         self._add_misp_attribute(attribute)
 
+    def _attribute_from_ip_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute['value'] = observed_data.objects['1'].value
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_ip_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        address = self._fetch_observables(observed_data.object_refs[1])
+        attribute['value'] = address.value
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_ip_port_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        ip_value = observed_data.objects['1'].value
+        network = observed_data.objects['0']
+        port_value = network.src_port if hasattr(network, 'src_port') else network.dst_port
+        attribute['value'] = f"{ip_value}|{port_value}"
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_ip_port_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        network, address = self._fetch_observables(observed_data.object_refs)
+        port_value = network.src_port if hasattr(network, 'src_port') else network.dst_port
+        attribute['value'] = f'{address.value}|{port_value}'
+        self._add_misp_attribute(attribute)
+
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
     ################################################################################
@@ -448,6 +474,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _attribute_from_hash_pattern(self, indicator: _INDICATOR_TYPING):
         attribute = self._create_attribute_dict(indicator)
         attribute['value'] = self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_ip_pattern(self, indicator: _INDICATOR_TYPING):
+        attribute = self._create_attribute_dict(indicator)
+        address_pattern = indicator.pattern[1:-1].split(' AND ')[1]
+        attribute['value'] = self._extract_attribute_value_from_pattern(address_pattern)
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_ip_port_pattern(self, indicator: _INDICATOR_TYPING):
+        attribute = self._create_attribute_dict(indicator)
+        values = [self._extract_attribute_value_from_pattern(pattern) for pattern in indicator.pattern[1:-1].split(' AND ')[1:]]
+        attribute['value'] = '|'.join(values)
         self._add_misp_attribute(attribute)
 
     def _attribute_from_patterning_language_pattern(self, indicator: Indicator_v21):
