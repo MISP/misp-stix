@@ -271,6 +271,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         event = self.parser.misp_event
         _, report, *observables = bundle.objects
         attributes = self._check_misp_event_features(event, report)
+        self.assertEqual(len(attributes), 14)
         for attribute, observed_data in zip(attributes, observables):
             observable = self._check_observed_data_attribute(attribute, observed_data)['0']
             filename, hash_value = attribute.value.split('|')
@@ -289,6 +290,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         event = self.parser.misp_event
         _, report, *indicators = bundle.objects
         attributes = self._check_misp_event_features(event, report)
+        self.assertEqual(len(attributes), 14)
         for attribute, indicator in zip(attributes, indicators):
             pattern = self._check_indicator_attribute(attribute, indicator)
             filename, hash_value = attribute.value.split('|')
@@ -307,6 +309,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         event = self.parser.misp_event
         _, report, *observables = bundle.objects
         attributes = self._check_misp_event_features(event, report)
+        self.assertEqual(len(attributes), 15)
         for attribute, observed_data in zip(attributes, observables):
             observable = self._check_observed_data_attribute(attribute, observed_data)['0']
             hash_type = self.hash_types_mapping(attribute.type)
@@ -549,6 +552,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         event = self.parser.misp_event
         _, grouping, *observables = bundle.objects
         attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 14)
         for attribute, observed_data, observable in zip(attributes, observables[::2], observables[1::2]):
             object_ref = self._check_observed_data_attribute(attribute, observed_data)[0]
             self._assert_multiple_equal(
@@ -572,6 +576,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         event = self.parser.misp_event
         _, grouping, *indicators = bundle.objects
         attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 14)
         for attribute, indicator in zip(attributes, indicators):
             pattern = self._check_indicator_attribute(attribute, indicator)
             filename, hash_value = attribute.value.split('|')
@@ -590,6 +595,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         event = self.parser.misp_event
         _, grouping, *observables = bundle.objects
         attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 15)
         for attribute, observed_data, observable in zip(attributes, observables[::2], observables[1::2]):
             object_ref = self._check_observed_data_attribute(attribute, observed_data)[0]
             self._assert_multiple_equal(
@@ -611,6 +617,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         event = self.parser.misp_event
         _, grouping, *indicators = bundle.objects
         attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 15)
         for attribute, indicator in zip(attributes, indicators):
             pattern = self._check_indicator_attribute(attribute, indicator)
             self.assertEqual(attribute['value'], pattern[1:-1].split(' = ')[1].strip("'"))
