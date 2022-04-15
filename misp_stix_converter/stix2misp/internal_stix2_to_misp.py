@@ -403,6 +403,68 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #
     ################################################################################
 
+    def _attribute_from_AS_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = observed_data.objects['0']
+        attribute['value'] = self._parse_AS_value(observable.number)
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_AS_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = self._parse_AS_value(observable.number)
+        self._add_misp_attribute(attribute)
+
+    @staticmethod
+    def _attribute_from_attachment_observable(observables: tuple) -> dict:
+        attribute = {}
+        for observable in observables:
+            if observable.type == 'file':
+                attribute['value'] = observable.name
+            else:
+                attribute['data'] = observable.payload_bin
+        return attribute
+
+    def _attribute_from_attachment_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute.update(
+            self._attribute_from_attachment_observable(tuple(observed_data.objects.values()))
+        )
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_attachment_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observables = self._fetch_observables(observed_data.object_refs)
+        if isinstance(observables, tuple):
+            attribute.update(self._attribute_from_attachment_observable(observables))
+        else:
+            attribute['value'] = observables.name
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_domain_ip_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        domain, address = observed_data.objects.values()
+        attribute['value'] = f'{domain.value}|{address.value}'
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_domain_ip_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        domain, address = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = f'{domain.value}|{address.value}'
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_domain_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = observed_data.objects['0']
+        attribute['value'] = observable.value
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_domain_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = observable.value
+        self._add_misp_attribute(attribute)
+
     def _attribute_from_filename_hash_observable_v20(self, observed_data: ObservedData_v20):
         attribute = self._create_attribute_dict(observed_data)
         observable = observed_data.objects['0']
@@ -468,6 +530,35 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
     ################################################################################
+
+    def _attribute_from_AS_pattern(self, indicator: _INDICATOR_TYPING):
+        attribute = self._create_attribute_dict(indicator)
+        attribute['value'] = self._parse_AS_value(
+            self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
+        )
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_attachment_pattern(self, indicator: _INDICATOR_TYPING):
+        attribute = self._create_attribute_dict(indicator)
+        pattern = indicator.pattern[1:-1]
+        if ' AND ' in pattern:
+            pattern, data_pattern = pattern.split(' AND ')
+            attribute['data'] = self._extract_attribute_value_from_pattern(data_pattern)
+        attribute['value'] = self._extract_attribute_value_from_pattern(pattern)
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_domain_ip_pattern(self, indicator: _INDICATOR_TYPING):
+        attribute = self._create_attribute_dict(indicator)
+        domain_pattern, address_pattern = indicator.pattern[1:-1].split(' AND ')
+        domain_value = self._extract_attribute_value_from_pattern(domain_pattern)
+        ip_value = self._extract_attribute_value_from_pattern(address_pattern)
+        attribute['value'] = f'{domain_value}|{ip_value}'
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_domain_pattern(self, indicator: _INDICATOR_TYPING):
+        attribute = self._create_attribute_dict(indicator)
+        attribute['value'] = self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
+        self._add_misp_attribute(attribute)
 
     def _attribute_from_filename_hash_pattern(self, indicator: _INDICATOR_TYPING):
         attribute = self._create_attribute_dict(indicator)

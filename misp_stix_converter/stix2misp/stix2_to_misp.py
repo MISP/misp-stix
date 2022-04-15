@@ -403,6 +403,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             return False
 
+    @staticmethod
+    def _parse_AS_value(number: Union[int, str]) -> str:
+        if isinstance(number, int) or not number.startswith('AS'):
+            return f'AS{number}'
+        return number
+
     def _parse_markings(self, misp_feature: Union[MISPAttribute, MISPObject], marking_refs: list):
         for marking_ref in marking_refs:
             try:
