@@ -43,5 +43,9 @@ class TestSTIX2Import(TestSTIX2):
         return b64encode(data.getvalue()).decode()
 
     @staticmethod
+    def _get_pattern_value(pattern):
+        return pattern.split(' = ')[1].strip("'")
+
+    @staticmethod
     def _timestamp_from_datetime(datetime_value):
         return int(datetime_value.timestamp())

@@ -7,6 +7,91 @@ from pathlib import Path
 from stix2.parsing import dict_to_stix2
 
 _TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
+_AS_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[autonomous-system:number = '174']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Network activity"
+        }
+    ],
+    "labels": [
+        "misp:type=\"AS\"",
+        "misp:category=\"Network activity\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_AS_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "autonomous-system",
+            "number": 174
+        }
+    },
+    "labels": [
+        "misp:type=\"AS\"",
+        "misp:category=\"Network activity\""
+    ]
+}
+_ATTACHMENT_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[file:name = 'attachment.test' AND file:content_ref.payload_bin = 'ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"attachment\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_ATTACHMENT_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "file",
+            "name": "attachment.test",
+            "content_ref": "1"
+        },
+        "1": {
+            "type": "artifact",
+            "payload_bin": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK"
+        }
+    },
+    "labels": [
+        "misp:type=\"attachment\"",
+        "misp:category=\"Payload delivery\""
+    ]
+}
 _ATTACK_PATTERN_OBJECT = {
     "type": "attack-pattern",
     "id": "attack-pattern--7205da54-70de-4fa7-9b34-e14e63fe6787",
@@ -70,6 +155,95 @@ _COURSE_OF_ACTION_OBJECT = {
     "x_misp_objective": "Block communication between the PIVY agents and the C2 Server",
     "x_misp_stage": "Response",
     "x_misp_type": "Perimeter Blocking"
+}
+_DOMAIN_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Domain test attribute",
+    "pattern": "[domain-name:value = 'circl.lu']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Network activity"
+        }
+    ],
+    "labels": [
+        "misp:type=\"domain\"",
+        "misp:category=\"Network activity\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_DOMAIN_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "domain-name",
+            "value": "circl.lu"
+        }
+    },
+    "labels": [
+        "misp:type=\"domain\"",
+        "misp:category=\"Network activity\""
+    ]
+}
+_DOMAIN_IP_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Domain|ip test attribute",
+    "pattern": "[domain-name:value = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Network activity"
+        }
+    ],
+    "labels": [
+        "misp:type=\"domain|ip\"",
+        "misp:category=\"Network activity\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_DOMAIN_IP_OBSERVABLE_ATTRIBUTE ={
+    "type": "observed-data",
+    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "domain-name",
+            "value": "circl.lu",
+            "resolves_to_refs": [
+                "1"
+            ]
+        },
+        "1": {
+            "type": "ipv4-addr",
+            "value": "149.13.33.14"
+        }
+    },
+    "labels": [
+        "misp:type=\"domain|ip\"",
+        "misp:category=\"Network activity\""
+    ]
 }
 _EMPLOYEE_OBJECT = {
     "type": "identity",
@@ -1904,8 +2078,40 @@ class TestSTIX20Bundles:
     ################################################################################
 
     @classmethod
+    def get_bundle_with_AS_indicator_attribute(cls):
+        return cls.__assemble_bundle(_AS_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_AS_observable_attribute(cls):
+        return cls.__assemble_bundle(_AS_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_attachment_indicator_attribute(cls):
+        return cls.__assemble_bundle(_ATTACHMENT_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_attachment_observable_attribute(cls):
+        return cls.__assemble_bundle(_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
     def get_bundle_with_campaign_name_attribute(cls):
         return cls.__assemble_bundle(_CAMPAIGN_NAME_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_domain_indicator_attribute(cls):
+        return cls.__assemble_bundle(_DOMAIN_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_domain_ip_indicator_attribute(cls):
+        return cls.__assemble_bundle(_DOMAIN_IP_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_domain_ip_observable_attribute(cls):
+        return cls.__assemble_bundle(_DOMAIN_IP_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_domain_observable_attribute(cls):
+        return cls.__assemble_bundle(_DOMAIN_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_hash_composite_indicator_attributes(cls):
