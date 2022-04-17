@@ -33,7 +33,6 @@ class Stix2Mapping:
             'sha3-256',
             'sha3-384',
             'sha3-512',
-            'telfhash',
             'tlsh',
             'vhash'
         )
@@ -139,7 +138,8 @@ class Stix2Mapping:
                 (
                     'cdhash',
                     'impfuzzy',
-                    'pehash'
+                    'pehash',
+                    'telfhash'
                 ),
                 '_parse_hash_attribute'
             )
