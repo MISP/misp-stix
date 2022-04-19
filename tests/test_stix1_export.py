@@ -672,7 +672,6 @@ class TestStix1Export(unittest.TestCase):
 
     def _run_observable_tests(self, event, object_type):
         attribute = event['Event']['Attribute'][0]
-        orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
         observable = incident.related_observables.observable[0]
@@ -1294,7 +1293,6 @@ class TestStix1Export(unittest.TestCase):
     def _test_event_with_vulnerability_attribute(self):
         event = get_event_with_vulnerability_attribute()
         attribute = event['Event']['Attribute'][0]
-        orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         ttp = self._check_ttp_fields_from_attribute(stix_package, attribute)
@@ -1387,7 +1385,6 @@ class TestStix1Export(unittest.TestCase):
         tool_galaxy, coa_event_galaxy = event['Event']['Galaxy']
         tool_cluster = tool_galaxy['GalaxyCluster'][0]
         coa_event_cluster = coa_event_galaxy['GalaxyCluster'][0]
-        orgc = event['Event']['Orgc']['name']
         self.parser.parse_misp_event(event)
         stix_package = self.parser.stix_package
         tool_ttp, malware_ttp = self._check_ttps_from_galaxies(
