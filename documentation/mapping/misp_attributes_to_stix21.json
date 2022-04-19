@@ -1908,23 +1908,23 @@
     },
     "filename|sha512/224": {
         "MISP": {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
             "type": "filename|sha512/224",
             "category": "Payload delivery",
-            "value": "testfile.name|2874893927788197307efb678d9462ea3cb7680b0826a9ff69e2fafc",
+            "value": "filename11|5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
             "timestamp": "1603642920",
-            "comment": "filename|sha512/224 test attribute"
+            "comment": "Filename|sha512/224 test attribute"
         },
         "STIX": {
             "Indicator": {
                 "type": "indicator",
                 "spec_version": "2.1",
-                "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "description": "filename|sha512/224 test attribute",
-                "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA224 = '2874893927788197307efb678d9462ea3cb7680b0826a9ff69e2fafc']",
+                "description": "Filename|sha512/224 test attribute",
+                "pattern": "[file:name = 'filename11' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -2822,7 +2822,7 @@
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "link",
             "category": "Network activity",
-            "value": "https://github.com/MISP/MISP",
+            "value": "https://misp-project.org/download/",
             "timestamp": "1603642920",
             "comment": "Link test attribute"
         },
@@ -2835,7 +2835,7 @@
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "Link test attribute",
-                "pattern": "[url:value = 'https://github.com/MISP/MISP']",
+                "pattern": "[url:value = 'https://misp-project.org/download/']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -2874,7 +2874,7 @@
                     "type": "url",
                     "spec_version": "2.1",
                     "id": "url--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                    "value": "https://github.com/MISP/MISP"
+                    "value": "https://misp-project.org/download/"
                 }
             ]
         }
@@ -3947,23 +3947,23 @@
     },
     "sha512/224": {
         "MISP": {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "sha512/224",
             "category": "Payload delivery",
-            "value": "2874893927788197307efb678d9462ea3cb7680b0826a9ff69e2fafc",
             "timestamp": "1603642920",
-            "comment": "SHA512/224 test attribute"
+            "comment": "SHA512/224 test attribute",
+            "value": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+            "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a"
         },
         "STIX": {
             "Indicator": {
                 "type": "indicator",
                 "spec_version": "2.1",
-                "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "SHA512/224 test attribute",
-                "pattern": "[file:hashes.SHA224 = '2874893927788197307efb678d9462ea3cb7680b0826a9ff69e2fafc']",
+                "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -4369,10 +4369,10 @@
     },
     "uri": {
         "MISP": {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
             "type": "uri",
             "category": "Network activity",
-            "value": "http://176.58.32.109/upd/51",
+            "value": "https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova",
             "timestamp": "1603642920",
             "comment": "URI test attribute"
         },
@@ -4380,12 +4380,12 @@
             "Indicator": {
                 "type": "indicator",
                 "spec_version": "2.1",
-                "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "URI test attribute",
-                "pattern": "[url:value = 'http://176.58.32.109/upd/51']",
+                "pattern": "[url:value = 'https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -4405,7 +4405,7 @@
                 {
                     "type": "observed-data",
                     "spec_version": "2.1",
-                    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                    "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
@@ -4413,7 +4413,7 @@
                     "last_observed": "2020-10-25T16:22:00Z",
                     "number_observed": 1,
                     "object_refs": [
-                        "url--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+                        "url--518b4bcb-a86b-4783-9457-391d548b605b"
                     ],
                     "labels": [
                         "misp:type=\"uri\"",
@@ -4423,18 +4423,18 @@
                 {
                     "type": "url",
                     "spec_version": "2.1",
-                    "id": "url--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                    "value": "http://176.58.32.109/upd/51"
+                    "id": "url--518b4bcb-a86b-4783-9457-391d548b605b",
+                    "value": "https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova"
                 }
             ]
         }
     },
     "url": {
         "MISP": {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
             "type": "url",
             "category": "Network activity",
-            "value": "https://misp-project.org/download/",
+            "value": "https://vm.misp-project.org/latest/",
             "timestamp": "1603642920",
             "comment": "URL test attribute"
         },
@@ -4442,12 +4442,12 @@
             "Indicator": {
                 "type": "indicator",
                 "spec_version": "2.1",
-                "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
                 "description": "URL test attribute",
-                "pattern": "[url:value = 'https://misp-project.org/download/']",
+                "pattern": "[url:value = 'https://vm.misp-project.org/latest/']",
                 "pattern_type": "stix",
                 "pattern_version": "2.1",
                 "valid_from": "2020-10-25T16:22:00Z",
@@ -4467,7 +4467,7 @@
                 {
                     "type": "observed-data",
                     "spec_version": "2.1",
-                    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                    "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
                     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                     "created": "2020-10-25T16:22:00.000Z",
                     "modified": "2020-10-25T16:22:00.000Z",
@@ -4475,7 +4475,7 @@
                     "last_observed": "2020-10-25T16:22:00Z",
                     "number_observed": 1,
                     "object_refs": [
-                        "url--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+                        "url--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
                     ],
                     "labels": [
                         "misp:type=\"url\"",
@@ -4485,8 +4485,8 @@
                 {
                     "type": "url",
                     "spec_version": "2.1",
-                    "id": "url--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                    "value": "https://misp-project.org/download/"
+                    "id": "url--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+                    "value": "https://vm.misp-project.org/latest/"
                 }
             ]
         }
