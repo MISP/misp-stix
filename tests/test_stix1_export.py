@@ -1286,9 +1286,10 @@ class TestStix1Export(unittest.TestCase):
         )
 
     def _test_event_with_url_attribute(self):
-        event = get_event_with_url_attribute()
-        properties, attribute = self._run_indicator_tests(event, 'URI')
-        self.assertEqual(properties.value.value, attribute['value'])
+        event = get_event_with_url_attributes()
+        properties_list, attributes = self._run_indicators_tests(event, 'URI')
+        for properties, attribute in zip(properties_list, attributes):
+            self.assertEqual(properties.value.value, attribute['value'])
 
     def _test_event_with_vulnerability_attribute(self):
         event = get_event_with_vulnerability_attribute()

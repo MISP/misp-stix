@@ -1084,25 +1084,21 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
             indicator = self.parser.stix_objects[-1]
         )
 
-    def test_event_with_url_indicator_attribute(self):
-        event = get_event_with_url_attribute()
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[url:value = '{attribute_value}']")
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
-        )
+    def test_event_with_url_indicator_attributes(self):
+        event = get_event_with_url_attributes()
+        attributes, indicators = self._run_indicators_tests(event)
+        for attribute, indicator in zip(attributes, indicators):
+            self.assertEqual(indicator.pattern, f"[url:value = '{attribute['value']}']")
+            self._populate_documentation(attribute=attribute, indicator=indicator)
 
-    def test_event_with_url_observable_attribute(self):
-        event = get_event_with_url_attribute()
-        attribute_value, observable_objects = self._run_observable_tests(event)
-        observable = observable_objects['0']
-        self.assertEqual(observable.type, 'url')
-        self.assertEqual(observable.value, attribute_value)
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            observed_data = self.parser.stix_objects[-1]
-        )
+    def test_event_with_url_observable_attributes(self):
+        event = get_event_with_url_attributes()
+        attributes, observables = self._run_observables_tests(event)
+        for attribute, observed_data in zip(attributes, observables):
+            observable = observed_data.objects['0']
+            self.assertEqual(observable.type, 'url')
+            self.assertEqual(observable.value, attribute['value'])
+            self._populate_documentation(attribute=attribute, observed_data=observed_data)
 
     def test_event_with_vulnerability_attribute(self):
         event = get_event_with_vulnerability_attribute()

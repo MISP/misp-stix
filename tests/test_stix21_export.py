@@ -1657,31 +1657,28 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         )
 
     def test_event_with_url_indicator_attribute(self):
-        event = get_event_with_url_attribute()
-        attribute_value, pattern = self._run_indicator_tests(event)
-        self.assertEqual(pattern, f"[url:value = '{attribute_value}']")
-        self._populate_documentation(
-            attribute = event['Event']['Attribute'][0],
-            indicator = self.parser.stix_objects[-1]
-        )
+        event = get_event_with_url_attributes()
+        attributes, indicators = self._run_indicators_tests(event)
+        for attribute, indicator in zip(attributes, indicators):
+            self.assertEqual(indicator.pattern, f"[url:value = '{attribute['value']}']")
+            self._populate_documentation(attribute=attribute, indicator=indicator)
 
     def test_event_with_url_observable_attribute(self):
-        event = get_event_with_url_attribute()
-        attribute = deepcopy(event['Event']['Attribute'][0])
-        attribute_value, grouping_refs, object_refs, observable = self._run_observable_tests(event)
-        url = observable[0]
-        self._assert_multiple_equal(
-            url.id,
-            grouping_refs[0],
-            object_refs[0],
-            f"url--{attribute['uuid']}"
-        )
-        self.assertEqual(url.type, 'url')
-        self.assertEqual(url.value, attribute_value)
-        self._populate_documentation(
-            attribute = attribute,
-            observed_data = self.parser.stix_objects[-2:]
-        )
+        event = get_event_with_url_attributes()
+        attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(event)
+        for grouping_ref, observed_data, observable, attribute in zip(grouping_refs, observed_datas, observables, attributes):
+            self._assert_multiple_equal(
+                observable.id,
+                grouping_ref,
+                observed_data.object_refs[0],
+                f"url--{attribute['uuid']}"
+            )
+            self.assertEqual(observable.type, 'url')
+            self.assertEqual(observable.value, attribute['value'])
+            self._populate_documentation(
+                attribute = attribute,
+                observed_data = [observed_data, observable]
+            )
 
     def test_event_with_vulnerability_attribute(self):
         event = get_event_with_vulnerability_attribute()
