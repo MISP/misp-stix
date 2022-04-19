@@ -3368,7 +3368,7 @@ def get_event_with_url_attributes():
         {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "link",
-            "category": "Network activity",
+            "category": "External activity",
             "value": "https://misp-project.org/download/",
             "to_ids": True,
             "timestamp": "1603642920",
