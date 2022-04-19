@@ -1656,14 +1656,14 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             indicator = self.parser.stix_objects[-1]
         )
 
-    def test_event_with_url_indicator_attribute(self):
+    def test_event_with_url_indicator_attributes(self):
         event = get_event_with_url_attributes()
         attributes, indicators = self._run_indicators_tests(event)
         for attribute, indicator in zip(attributes, indicators):
             self.assertEqual(indicator.pattern, f"[url:value = '{attribute['value']}']")
             self._populate_documentation(attribute=attribute, indicator=indicator)
 
-    def test_event_with_url_observable_attribute(self):
+    def test_event_with_url_observable_attributes(self):
         event = get_event_with_url_attributes()
         attributes, grouping_refs, observed_datas, observables = self._run_observables_tests(event)
         for grouping_ref, observed_data, observable, attribute in zip(grouping_refs, observed_datas, observables, attributes):
