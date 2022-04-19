@@ -3362,14 +3362,32 @@ def get_event_with_undefined_attributes():
     return event
 
 
-def get_event_with_url_attribute():
+def get_event_with_url_attributes():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
         {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "url",
+            "type": "link",
             "category": "Network activity",
             "value": "https://misp-project.org/download/",
+            "to_ids": True,
+            "timestamp": "1603642920",
+            "comment": "Link test attribute"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "uri",
+            "category": "Network activity",
+            "value": "https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova",
+            "to_ids": True,
+            "timestamp": "1603642920",
+            "comment": "URI test attribute"
+        },
+        {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "type": "url",
+            "category": "Network activity",
+            "value": "https://vm.misp-project.org/latest/",
             "to_ids": True,
             "timestamp": "1603642920",
             "comment": "URL test attribute"
