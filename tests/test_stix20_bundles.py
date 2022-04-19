@@ -1851,6 +1851,133 @@ _SCRIPT_OBJECTS = [
         "x_misp_state": "Harmless"
     }
 ]
+_URL_INDICATOR_ATTRIBUTES = [
+    {
+        "type": "indicator",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Link test attribute",
+        "pattern": "[url:value = 'https://misp-project.org/download/']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "External analysis"
+            }
+        ],
+        "labels": [
+            "misp:type=\"link\"",
+            "misp:category=\"External analysis\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "URI test attribute",
+        "pattern": "[url:value = 'https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"uri\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "URL test attribute",
+        "pattern": "[url:value = 'https://vm.misp-project.org/latest/']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"url\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    }
+]
+_URL_OBSERVABLE_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "url",
+                "value": "https://misp-project.org/download/"
+            }
+        },
+        "labels": [
+            "misp:type=\"link\"",
+            "misp:category=\"External analysis\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "url",
+                "value": "https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova"
+            }
+        },
+        "labels": [
+            "misp:type=\"uri\"",
+            "misp:category=\"Network activity\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "url",
+                "value": "https://vm.misp-project.org/latest/"
+            }
+        },
+        "labels": [
+            "misp:type=\"url\"",
+            "misp:category=\"Network activity\""
+        ]
+    }
+]
 _VULNERABILITY_ATTRIBUTE = {
     "type": "vulnerability",
     "id": "vulnerability--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -2144,6 +2271,14 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_ip_port_observable_attributes(cls):
         return cls.__assemble_bundle(*_IP_PORT_OBSERVABLE_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_url_indicator_attributes(cls):
+        return cls.__assemble_bundle(*_URL_INDICATOR_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_url_observable_attributes(cls):
+        return cls.__assemble_bundle(*_URL_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_vulnerability_attribute(cls):

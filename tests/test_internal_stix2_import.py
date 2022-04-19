@@ -553,6 +553,38 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
                 observed_data = observed_data
             )
 
+    def test_stix20_bundle_with_url_indicator_attributes(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_url_indicator_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, *indicators = bundle.objects
+        attributes = self._check_misp_event_features(event, report)
+        self.assertEqual(len(attributes), 3)
+        for attribute, indicator in zip(attributes, indicators):
+            pattern = self._check_indicator_attribute(attribute, indicator)[1:-1]
+            self.assertEqual(attribute.value, self._get_pattern_value(pattern))
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                indicator = indicator
+            )
+
+    def test_stix20_bundle_with_url_observable_attributes(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_url_observable_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, *observables = bundle.objects
+        attributes = self._check_misp_event_features(event, report)
+        self.assertEqual(len(attributes), 3)
+        for attribute, observed_data in zip(attributes, observables):
+            url = self._check_observed_data_attribute(attribute, observed_data)['0']
+            self.assertEqual(attribute.value, url.value)
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                observed_data = observed_data
+            )
+
     def test_stix20_bundle_with_vulnerability_attribute(self):
         bundle = TestSTIX20Bundles.get_bundle_with_vulnerability_attribute()
         self.parser.load_stix_bundle(bundle)
@@ -1158,6 +1190,43 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             attribute = json.loads(yara.to_json()),
             indicator = yara_indicator
         )
+
+    def test_stix21_bundle_with_url_indicator_attributes(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_url_indicator_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, *indicators = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 3)
+        for attribute, indicator in zip(attributes, indicators):
+            pattern = self._check_indicator_attribute(attribute, indicator)[1:-1]
+            self.assertEqual(attribute.value, self._get_pattern_value(pattern))
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                indicator = indicator
+            )
+
+    def test_stix21_bundle_with_url_observable_attributes(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_url_observable_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, *observables = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 3)
+        for attribute, observed_data, observable in zip(attributes, observables[::2], observables[1::2]):
+            object_ref = self._check_observed_data_attribute(attribute, observed_data)[0]
+            self._assert_multiple_equal(
+                attribute.uuid,
+                object_ref.split('--')[1],
+                observable.id.split('--')[1]
+            )
+            self.assertEqual(attribute.value, observable.value)
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                observed_data = [observed_data, observable]
+            )
 
     def test_stix21_bundle_with_vulnerability_attribute(self):
         bundle = TestSTIX21Bundles.get_bundle_with_vulnerability_attribute()

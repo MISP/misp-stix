@@ -2298,6 +2298,154 @@ _SCRIPT_OBJECTS = [
         "x_misp_state": "Harmless"
     }
 ]
+_URL_INDICATOR_ATTRIBUTES = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Link test attribute",
+        "pattern": "[url:value = 'https://misp-project.org/download/']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "External analysis"
+            }
+        ],
+        "labels": [
+            "misp:type=\"link\"",
+            "misp:category=\"External analysis\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "URI test attribute",
+        "pattern": "[url:value = 'https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"uri\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "URL test attribute",
+        "pattern": "[url:value = 'https://vm.misp-project.org/latest/']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"url\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    }
+]
+_URL_OBSERVABLE_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "url--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:type=\"link\"",
+            "misp:category=\"External analysis\""
+        ]
+    },
+    {
+        "type": "url",
+        "spec_version": "2.1",
+        "id": "url--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "value": "https://misp-project.org/download/"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "url--518b4bcb-a86b-4783-9457-391d548b605b"
+        ],
+        "labels": [
+            "misp:type=\"uri\"",
+            "misp:category=\"Network activity\""
+        ]
+    },
+    {
+        "type": "url",
+        "spec_version": "2.1",
+        "id": "url--518b4bcb-a86b-4783-9457-391d548b605b",
+        "value": "https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "url--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+        ],
+        "labels": [
+            "misp:type=\"url\"",
+            "misp:category=\"Network activity\""
+        ]
+    },
+    {
+        "type": "url",
+        "spec_version": "2.1",
+        "id": "url--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "value": "https://vm.misp-project.org/latest/"
+    }
+]
 _VULNERABILITY_ATTRIBUTE = {
     "type": "vulnerability",
     "spec_version": "2.1",
@@ -2619,6 +2767,14 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_patterning_language_attributes(cls):
         return cls.__assemble_bundle(*_PATTERNING_LANGUAGE_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_url_indicator_attributes(cls):
+        return cls.__assemble_bundle(*_URL_INDICATOR_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_url_observable_attributes(cls):
+        return cls.__assemble_bundle(*_URL_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_vulnerability_attribute(cls):
