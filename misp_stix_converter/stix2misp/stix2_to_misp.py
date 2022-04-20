@@ -447,7 +447,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
     @staticmethod
     def _skip_first_seen_last_seen(stix_object: _MISP_OBJECT_TYPING) -> bool:
         if stix_object.type != 'indicator':
-            return False
+            return stix_object.modified == stix_object.first_observed == stix_object.last_observed
         if stix_object.valid_from != stix_object.modified:
             return False
         if not hasattr(stix_object, 'valid_until'):
