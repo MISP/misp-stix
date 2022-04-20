@@ -463,6 +463,36 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             observed_data = observed_data
         )
 
+    def test_stix20_bundle_with_filename_indicator_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_filename_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'filename')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_filename_observable_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_filename_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_attribute(attribute, observed_data)['0']
+        self.assertEqual(attribute.type, 'filename')
+        self.assertEqual(attribute.value, observable.name)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = observed_data
+        )
+
     def test_stix20_bundle_with_hash_composite_indicator_attributes(self):
         bundle = TestSTIX20Bundles.get_bundle_with_hash_composite_indicator_attributes()
         self.parser.load_stix_bundle(bundle)

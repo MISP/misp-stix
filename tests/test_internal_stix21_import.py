@@ -601,6 +601,41 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             observed_data = [observed_data, email_message]
         )
 
+    def test_stix21_bundle_with_filename_indicator_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_filename_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'filename')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_filename_observable_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_filename_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, file_object = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        file_ref = self._check_observed_data_attribute(attribute, observed_data)[0]
+        self.assertEqual(attribute.type, 'filename')
+        self._assert_multiple_equal(
+            attribute.uuid,
+            file_object.id.split('--')[1],
+            file_ref.split('--')[1]
+        )
+        self.assertEqual(attribute.value, file_object.name)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = [observed_data, file_object]
+        )
+
     def test_stix21_bundle_with_hash_composite_indicator_attributes(self):
         bundle = TestSTIX21Bundles.get_bundle_with_hash_composite_indicator_attributes()
         self.parser.load_stix_bundle(bundle)

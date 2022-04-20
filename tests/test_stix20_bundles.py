@@ -658,6 +658,47 @@ _EMPLOYEE_OBJECT = {
     ],
     "x_misp_employee_type": "Supervisor"
 }
+_FILENAME_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Filename test attribute",
+    "pattern": "[file:name = 'test_file_name']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"filename\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_FILENAME_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "file",
+            "name": "test_file_name"
+        }
+    },
+    "labels": [
+        "misp:type=\"filename\"",
+        "misp:category=\"Payload delivery\""
+    ]
+}
 _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
@@ -2707,6 +2748,14 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_email_x_mailer_observable_attribute(cls):
         return cls.__assemble_bundle(_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_filename_indicator_attribute(cls):
+        return cls.__assemble_bundle(_FILENAME_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_filename_observable_attribute(cls):
+        return cls.__assemble_bundle(_FILENAME_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_hash_composite_indicator_attributes(cls):

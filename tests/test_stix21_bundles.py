@@ -846,6 +846,56 @@ _EMPLOYEE_OBJECT = {
         "misp:to_ids=\"False\""
     ]
 }
+_FILENAME_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Filename test attribute",
+    "pattern": "[file:name = 'test_file_name']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"filename\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_FILENAME_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:type=\"filename\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "name": "test_file_name"
+    }
+]
 _GEOLOCATION_OBJECT = {
     "type": "location",
     "spec_version": "2.1",
@@ -3347,6 +3397,14 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_email_x_mailer_observable_attribute(cls):
         return cls.__assemble_bundle(*_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_filename_indicator_attribute(cls):
+        return cls.__assemble_bundle(_FILENAME_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_filename_observable_attribute(cls):
+        return cls.__assemble_bundle(*_FILENAME_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_hash_composite_indicator_attributes(cls):
