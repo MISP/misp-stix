@@ -554,6 +554,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = f'{observable.name}|{hash_value}'
         self._add_misp_attribute(attribute)
 
+    def _attribute_from_filename_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute['value'] = observed_data.objects['0'].name
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_filename_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = observable.name
+        self._add_misp_attribute(attribute)
+
     def _attribute_from_first_observable_v20(self, observed_data: ObservedData_v20):
         attribute = self._create_attribute_dict(observed_data)
         attribute['value'] = observed_data.objects['0'].value

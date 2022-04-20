@@ -48,6 +48,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'email-src',
                     'email-subject',
                     'email-x-mailer',
+                    'filename',
                     'imphash',
                     'impfuzzy',
                     'link',
@@ -143,7 +144,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'email-message-id': '_attribute_from_email_message_id',
             'email-reply-to': '_attribute_from_email_reply_to',
             'email-subject': '_attribute_from_email_subject',
-            'email-x-mailer': '_attribute_from_email_x_mailer'
+            'email-x-mailer': '_attribute_from_email_x_mailer',
+            'filename': '_attribute_from_filename'
         }
         observable_attributes_mapping.update(
             dict.fromkeys(
