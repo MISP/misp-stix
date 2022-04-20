@@ -14,6 +14,26 @@ class STIX2Mapping:
                 '2': '_parse_bundle_with_multiple_reports'
             }
         )
+        self.__observable_object_types = (
+            'artifact',
+            'autonomous-system',
+            'directory',
+            'domain-name',
+            'email-addr',
+            'email-message',
+            'file',
+            'ipv4-addr',
+            'ipv6-addr',
+            'mac-addr',
+            'mutex',
+            'network-traffic',
+            'process',
+            'software',
+            'url',
+            'user-account',
+            'windows-registry-key',
+            'x509-certificate'
+        )
         self.__timeline_mapping = Mapping(
             **{
                 'indicator': ('valid_from', 'valid_until'),
@@ -47,26 +67,7 @@ class STIX2Mapping:
         }
         stix_object_loading_mapping.update(
             dict.fromkeys(
-                (
-                    'artifact',
-                    'autonomous-system',
-                    'directory',
-                    'domain-name',
-                    'email-addr',
-                    'email-message',
-                    'file',
-                    'ipv4-addr',
-                    'ipv6-addr',
-                    'mac-addr',
-                    'mutex',
-                    'network-traffic',
-                    'process',
-                    'software',
-                    'url',
-                    'user-account',
-                    'windows-registry-key',
-                    'x509-certificate'
-                ),
+                self.observable_object_types,
                 '_load_observable_object'
             )
         )
@@ -178,6 +179,10 @@ class STIX2Mapping:
     @property
     def location_object_mapping(self) -> dict:
         return self.__location_object_mapping
+
+    @property
+    def observable_object_types(self) -> tuple:
+        return self.__observable_object_types
 
     @property
     def sigma_attribute(self) -> dict:

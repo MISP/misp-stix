@@ -291,6 +291,8 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
             object_type = object_ref.split('--')[0]
+            if object_type in self._mapping.observable_object_types:
+                continue
             try:
                 feature = self._mapping.stix_to_misp_mapping[object_type]
             except KeyError:
