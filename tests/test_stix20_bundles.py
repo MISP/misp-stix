@@ -245,6 +245,402 @@ _DOMAIN_IP_OBSERVABLE_ATTRIBUTE ={
         "misp:category=\"Network activity\""
     ]
 }
+_EMAIL_ATTACHMENT_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Email attachment test attribute",
+    "pattern": "[email-message:body_multipart[*].body_raw_ref.name = 'email_attachment.test']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"email-attachment\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "email-message",
+            "is_multipart": True,
+            "body_multipart": [
+                {
+                    "body_raw_ref": "1",
+                    "content_disposition": "attachment; filename='email_attachment.test'"
+                }
+            ]
+        },
+        "1": {
+            "type": "file",
+            "name": "email_attachment.test"
+        }
+    },
+    "labels": [
+        "misp:type=\"email-attachment\"",
+        "misp:category=\"Payload delivery\""
+    ]
+}
+_EMAIL_BODY_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[email-message:body = 'Email body test']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"email-body\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_EMAIL_BODY_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "email-message",
+            "is_multipart": False,
+            "body": "Email body test"
+        }
+    },
+    "labels": [
+        "misp:type=\"email-body\"",
+        "misp:category=\"Payload delivery\""
+    ]
+}
+_EMAIL_DESTINATION_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Destination email address test attribute",
+    "pattern": "[email-message:to_refs[*].value = 'dst@email.test']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"email-dst\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "email-message",
+            "is_multipart": False,
+            "to_refs": [
+                "1"
+            ]
+        },
+        "1": {
+            "type": "email-addr",
+            "value": "dst@email.test"
+        }
+    },
+    "labels": [
+        "misp:type=\"email-dst\"",
+        "misp:category=\"Payload delivery\""
+    ]
+}
+_EMAIL_HEADER_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[email-message:received_lines = 'from mail.example.com ([198.51.100.3]) by smtp.gmail.com']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"email-header\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "email-message",
+            "is_multipart": False,
+            "received_lines": [
+                "from mail.example.com ([198.51.100.3]) by smtp.gmail.com"
+            ]
+        }
+    },
+    "labels": [
+        "misp:type=\"email-header\"",
+        "misp:category=\"Payload delivery\""
+    ]
+}
+_EMAIL_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[email-addr:value = 'address@email.test']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"email\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_EMAIL_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "email-addr",
+            "value": "address@email.test"
+        }
+    },
+    "labels": [
+        "misp:type=\"email\"",
+        "misp:category=\"Payload delivery\""
+    ]
+}
+_EMAIL_REPLY_TO_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[email-message:additional_header_fields.reply_to = 'reply-to@email.test']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"email-reply-to\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "email-message",
+            "is_multipart": False,
+            "additional_header_fields": {
+                "Reply-To": "reply-to@email.test"
+            }
+        }
+    },
+    "labels": [
+        "misp:type=\"email-reply-to\"",
+        "misp:category=\"Payload delivery\""
+    ]
+}
+_EMAIL_SOURCE_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Source email address test attribute",
+    "pattern": "[email-message:from_ref.value = 'src@email.test']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"email-src\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "email-message",
+            "is_multipart": False,
+            "from_ref": "1"
+        },
+        "1": {
+            "type": "email-addr",
+            "value": "src@email.test"
+        }
+    },
+    "labels": [
+        "misp:type=\"email-src\"",
+        "misp:category=\"Payload delivery\""
+    ]
+}
+_EMAIL_SUBJECT_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[email-message:subject = 'Test Subject']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"email-subject\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "email-message",
+            "is_multipart": False,
+            "subject": "Test Subject"
+        }
+    },
+    "labels": [
+        "misp:type=\"email-subject\"",
+        "misp:category=\"Payload delivery\""
+    ]
+}
+_EMAIL_X_MAILER_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "id": "indicator--f09d8496-e2ba-4250-878a-bec9b85c7e96",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[email-message:additional_header_fields.x_mailer = 'Email X-Mailer test']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"email-x-mailer\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE = {
+    "type": "observed-data",
+    "id": "observed-data--f09d8496-e2ba-4250-878a-bec9b85c7e96",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "email-message",
+            "is_multipart": False,
+            "additional_header_fields": {
+                "X-Mailer": "Email X-Mailer test"
+            }
+        }
+    },
+    "labels": [
+        "misp:type=\"email-x-mailer\"",
+        "misp:category=\"Payload delivery\""
+    ]
+}
 _EMPLOYEE_OBJECT = {
     "type": "identity",
     "id": "identity--685a38e1-3ca1-40ef-874d-3a04b9fb3af6",
@@ -2239,6 +2635,78 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_domain_observable_attribute(cls):
         return cls.__assemble_bundle(_DOMAIN_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_attachment_indicator_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_ATTACHMENT_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_attachment_observable_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_ATTACHMENT_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_body_indicator_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_BODY_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_body_observable_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_BODY_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_destination_indicator_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_DESTINATION_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_destination_observable_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_DESTINATION_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_header_indicator_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_HEADER_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_header_observable_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_HEADER_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_indicator_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_observable_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_reply_to_indicator_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_REPLY_TO_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_reply_to_observable_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_REPLY_TO_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_source_indicator_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_SOURCE_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_source_observable_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_SOURCE_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_subject_indicator_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_SUBJECT_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_subject_observable_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_SUBJECT_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_x_mailer_indicator_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_X_MAILER_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_email_x_mailer_observable_attribute(cls):
+        return cls.__assemble_bundle(_EMAIL_X_MAILER_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_hash_composite_indicator_attributes(cls):
