@@ -32,7 +32,15 @@ class UnavailableSynonymsResourceError(STIXtoMISPError):
     pass
 
 
+class UndefinedIndicatorError(STIXtoMISPError):
+    pass
+
+
 class UndefinedSTIXObjectError(STIXtoMISPError):
+    pass
+
+
+class UndefinedObservableError(STIXtoMISPError):
     pass
 
 

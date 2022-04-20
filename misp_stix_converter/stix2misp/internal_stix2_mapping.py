@@ -24,41 +24,33 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 }
             }
         )
-        attributes_mapping = {
-            'AS': '_attribute_from_AS',
-            'attachment': '_attribute_from_attachment',
-            'domain': '_attribute_from_domain',
-            'domain|ip': '_attribute_from_domain_ip',
-            'email': '_attribute_from_email',
-            'email-attachment': '_attribute_from_email_attachment',
-            'email-body': '_attribute_from_email_body',
-            'email-dst': '_attribute_from_email_destination',
-            'email-header': '_attribute_from_email_header',
-            'email-reply-to': '_attribute_from_email_reply_to',
-            'email-src': '_attribute_from_email_source',
-            'email-subject': '_attribute_from_email_subject',
-            'email-x-mailer': '_attribute_from_email_x_mailer',
-            'filename': '_attribute_from_filename',
-            'hostname': '_attribute_from_domain',
-            'hostname|port': '_attribute_from_hostname_port',
-            'http-method': '_attribute_from_http_method',
-            'mac-address': '_attribute_from_mac_address',
-            'malware-sample': '_attribute_from_malware_sample',
-            'mutex': '_attribute_from_mutex',
-            'port': '_attribute_from_port',
-            'regkey': '_attribute_from_regkey',
-            'regkey|value': '_attribute_from_regkey_value',
-            'size-in-bytes': '_attribute_from_size_in_bytes',
-            'user-agent': '_attribute_from_user_agent',
+        self.__attributes_mapping = {
             'vulnerability': '_parse_vulnerability_attribute'
         }
-        attributes_mapping.update(
+        indicator_attributes_mapping = {
+            'AS': '_attribute_from_AS',
+            'attachment': '_attribute_from_attachment',
+            'domain|ip': '_attribute_from_domain_ip',
+        }
+        indicator_attributes_mapping.update(
             dict.fromkeys(
                 (
                     'authentihash',
                     'cdhash',
+                    'domain',
+                    'email',
+                    'email-attachment',
+                    'email-body',
+                    'email-dst',
+                    'email-header',
+                    'email-message-id',
+                    'email-reply-to',
+                    'email-src',
+                    'email-subject',
+                    'email-x-mailer',
                     'imphash',
                     'impfuzzy',
+                    'link',
                     'md5',
                     'pehash',
                     'sha1',
@@ -75,12 +67,17 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'ssdeep',
                     'telfhash',
                     'tlsh',
-                    'vhash'
+                    'uri',
+                    'url',
+                    'vhash',
+                    'x509-fingerprint-md5',
+                    'x509-fingerprint-sha1',
+                    'x509-fingerprint-sha256'
                 ),
-                '_attribute_from_hash'
+                '_attribute_from_simple_pattern'
             )
         )
-        attributes_mapping.update(
+        indicator_attributes_mapping.update(
             dict.fromkeys(
                 (
                     'filename|authentihash',
@@ -106,7 +103,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 '_attribute_from_filename_hash'
             )
         )
-        attributes_mapping.update(
+        indicator_attributes_mapping.update(
             dict.fromkeys(
                 (
                     'ip-src',
@@ -115,7 +112,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 '_attribute_from_ip'
             )
         )
-        attributes_mapping.update(
+        indicator_attributes_mapping.update(
             dict.fromkeys(
                 (
                     'ip-src|port',
@@ -124,27 +121,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 '_attribute_from_ip_port'
             )
         )
-        attributes_mapping.update(
-            dict.fromkeys(
-                (
-                    'uri',
-                    'url',
-                    'link'
-                ),
-                '_attribute_from_url'
-            )
-        )
-        attributes_mapping.update(
-            dict.fromkeys(
-                (
-                    'x509-fingerprint-md5',
-                    'x509-fingerprint-sha1',
-                    'x509-fingerprint-sha256'
-                ),
-                '_attribute_from_x509_fingerprint'
-            )
-        )
-        attributes_mapping.update(
+        indicator_attributes_mapping.update(
             dict.fromkeys(
                 (
                     'sigma',
@@ -154,7 +131,110 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 '_attribute_from_patterning_language'
             )
         )
-        self.__attributes_mapping = Mapping(**attributes_mapping)
+        self.__indicator_attributes_mapping = Mapping(**indicator_attributes_mapping)
+        observable_attributes_mapping = {
+            'AS': '_attribute_from_AS',
+            'attachment': '_attribute_from_attachment',
+            'domain': '_attribute_from_domain',
+            'domain|ip': '_attribute_from_domain_ip',
+            'email-attachment': '_attribute_from_email_attachment',
+            'email-body': '_attribute_from_email_body',
+            'email-header': '_attribute_from_email_header',
+            'email-message-id': '_attribute_from_email_message_id',
+            'email-reply-to': '_attribute_from_email_reply_to',
+            'email-subject': '_attribute_from_email_subject',
+            'email-x-mailer': '_attribute_from_email_x_mailer'
+        }
+        observable_attributes_mapping.update(
+            dict.fromkeys(
+                (
+                    'domain',
+                    'email',
+                    'uri',
+                    'url',
+                    'link'
+                ),
+                '_attribute_from_first'
+            )
+        )
+        observable_attributes_mapping.update(
+            dict.fromkeys(
+                (
+                    'authentihash',
+                    'cdhash',
+                    'imphash',
+                    'impfuzzy',
+                    'md5',
+                    'pehash',
+                    'sha1',
+                    'sha224',
+                    'sha256',
+                    'sha384',
+                    'sha512',
+                    'sha512/224',
+                    'sha512/256',
+                    'sha3-224',
+                    'sha3-256',
+                    'sha3-384',
+                    'sha3-512',
+                    'ssdeep',
+                    'telfhash',
+                    'tlsh',
+                    'vhash',
+                    'x509-fingerprint-md5',
+                    'x509-fingerprint-sha1',
+                    'x509-fingerprint-sha256'
+                ),
+                '_attribute_from_hash'
+            )
+        )
+        observable_attributes_mapping.update(
+            dict.fromkeys(
+                (
+                    'filename|authentihash',
+                    'filename|imphash',
+                    'filename|impfuzzy',
+                    'filename|md5',
+                    'filename|pehash',
+                    'filename|sha1',
+                    'filename|sha224',
+                    'filename|sha256',
+                    'filename|sha384',
+                    'filename|sha512',
+                    'filename|sha512/224',
+                    'filename|sha512/256',
+                    'filename|sha3-224',
+                    'filename|sha3-256',
+                    'filename|sha3-384',
+                    'filename|sha3-512',
+                    'filename|ssdeep',
+                    'filename|tlsh',
+                    'filename|vhash'
+                ),
+                '_attribute_from_filename_hash'
+            )
+        )
+        observable_attributes_mapping.update(
+            dict.fromkeys(
+                (
+                    'ip-src|port',
+                    'ip-dst|port'
+                ),
+                '_attribute_from_ip_port'
+            )
+        )
+        observable_attributes_mapping.update(
+            dict.fromkeys(
+                (
+                    'email-dst',
+                    'email-src',
+                    'ip-src',
+                    'ip-dst'
+                ),
+                '_attribute_from_second'
+            )
+        )
+        self.__observable_attributes_mapping = Mapping(**observable_attributes_mapping)
         galaxies_mapping = {'branded-vulnerability': '_galaxy_from_attack_pattern'}
         galaxies_mapping.update(
             dict.fromkeys(
@@ -439,6 +519,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__galaxies_mapping
 
     @property
+    def indicator_attributes_mapping(self) -> dict:
+        return self.__indicator_attributes_mapping
+
+    @property
     def legal_entity_contact_information_mapping(self) -> dict:
         return self.__legal_entity_contact_information_mapping
 
@@ -457,6 +541,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def objects_mapping(self) -> dict:
         return self.__objects_mapping
+
+    @property
+    def observable_attributes_mapping(self) -> dict:
+        return self.__observable_attributes_mapping
 
     @property
     def organization_object_mapping(self) -> dict:

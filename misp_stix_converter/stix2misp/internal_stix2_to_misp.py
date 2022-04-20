@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import json
 from .exceptions import (AttributeFromPatternParsingError, UndefinedSTIXObjectError,
-    UnknownAttributeTypeError, UnknownObjectNameError, UnknownParsingFunctionError)
+    UndefinedIndicatorError, UndefinedObservableError, UnknownParsingFunctionError)
 from .internal_stix2_mapping import InternalSTIX2Mapping
 from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
 from pymisp import MISPAttribute, MISPEvent, MISPObject
@@ -80,6 +79,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 
+    def _handle_indicator_object_mapping(self, labels: list, object_id: str) -> str:
+        parsed_labels = {key: value.strip('"') for key, value in (label.split('=') for label in labels)}
+        if 'misp:name' in parsed_labels:
+            return self._mapping.objects_mapping[parsed_labels['misp:name']]
+        elif 'misp:type' in parsed_labels:
+            return self._mapping.indicator_attributes_mapping[parsed_labels['misp:type']]
+        raise UndefinedIndicatorError(object_id)
+
     def _handle_object_mapping(self, labels: list, object_id: str) -> str:
         parsed_labels = {key: value.strip('"') for key, value in (label.split('=') for label in labels)}
         if any(label.startswith('misp-galaxy:') for label in parsed_labels):
@@ -91,6 +98,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         elif 'misp:type' in parsed_labels:
             return self._mapping.attributes_mapping[parsed_labels['misp:type']]
         raise UndefinedSTIXObjectError(object_id)
+
+    def _handle_observable_object_mapping(self, labels: list, object_id: str) -> str:
+        parsed_labels = {key: value.strip('"') for key, value in (label.split('=') for label in labels)}
+        if 'misp:name' in parsed_labels:
+            return self._mapping.objects_mapping[parsed_labels['misp:name']]
+        elif 'misp:type' in parsed_labels:
+            return self._mapping.observable_attributes_mapping[parsed_labels['misp:type']]
+        raise UndefinedObservableError(object_id)
 
     def _parse_attack_pattern(self, attack_pattern_ref: str):
         attack_pattern = self._get_stix_object(attack_pattern_ref)
@@ -162,11 +177,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_indicator(self, indicator_ref: str):
         indicator = self._get_stix_object(indicator_ref)
-        feature = self._handle_object_mapping(indicator.labels, indicator.id)
+        feature = self._handle_indicator_object_mapping(indicator.labels, indicator.id)
         try:
-            parser = getattr(self, f"{feature}_pattern")
+            parser = getattr(self, f"{feature}_indicator")
         except AttributeError:
-            raise UnknownParsingFunctionError(f"{feature}_pattern")
+            raise UnknownParsingFunctionError(f"{feature}_indicator")
         try:
             parser(indicator)
         except AttributeFromPatternParsingError as error:
@@ -196,7 +211,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._malware_error(malware.id, exception)
 
     def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
-        feature = self._handle_object_mapping(observed_data.labels, observed_data.id)
+        feature = self._handle_observable_object_mapping(observed_data.labels, observed_data.id)
         try:
             parser = getattr(self, f"{feature}_observable_v20")
         except AttributeError:
@@ -207,7 +222,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._observed_data_error(observed_data.id, exception)
 
     def _parse_observed_data_v21(self, observed_data: ObservedData_v21):
-        feature = self._handle_object_mapping(observed_data.labels, observed_data.id)
+        feature = self._handle_observable_object_mapping(observed_data.labels, observed_data.id)
         try:
             parser = getattr(self, f"{feature}_observable_v21")
         except AttributeError as error:
@@ -453,16 +468,76 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = f'{domain.value}|{address.value}'
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_domain_observable_v20(self, observed_data: ObservedData_v20):
+    def _attribute_from_email_attachment_observable_v20(self, observed_data: ObservedData_v20):
         attribute = self._create_attribute_dict(observed_data)
-        observable = observed_data.objects['0']
-        attribute['value'] = observable.value
+        attribute['value'] = observed_data.objects['1'].name
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_domain_observable_v21(self, observed_data: ObservedData_v21):
+    def _attribute_from_email_attachment_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs[1])
+        attribute['value'] = observable.name
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_email_body_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute['value'] = observed_data.objects['0'].body
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_email_body_observable_v21(self, observed_data: ObservedData_v21):
         attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observables(observed_data.object_refs)
-        attribute['value'] = observable.value
+        attribute['value'] = observable.body
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_email_header_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute['value'] = observed_data.objects['0'].received_lines[0]
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_email_header_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = observable.received_lines[0]
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_email_message_id_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = observable.message_id
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_email_reply_to_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute['value'] = observed_data.objects['0'].additional_header_fields['Reply-To']
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_email_reply_to_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = observable.additional_header_fields['Reply-To']
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_email_subject_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute['value'] = observed_data.objects['0'].subject
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_email_subject_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = observable.subject
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_email_x_mailer_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute['value'] = observed_data.objects['0'].additional_header_fields['X-Mailer']
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_email_x_mailer_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = observable.additional_header_fields['X-Mailer']
         self._add_misp_attribute(attribute)
 
     def _attribute_from_filename_hash_observable_v20(self, observed_data: ObservedData_v20):
@@ -479,6 +554,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = f'{observable.name}|{hash_value}'
         self._add_misp_attribute(attribute)
 
+    def _attribute_from_first_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute['value'] = observed_data.objects['0'].value
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_first_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs[0])
+        attribute['value'] = observable.value
+        self._add_misp_attribute(attribute)
+
     def _attribute_from_hash_observable_v20(self, observed_data: ObservedData_v20):
         attribute = self._create_attribute_dict(observed_data)
         attribute['value'] = list(observed_data.objects['0'].hashes.values())[0]
@@ -488,17 +574,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observables(observed_data.object_refs)
         attribute['value'] = list(observable.hashes.values())[0]
-        self._add_misp_attribute(attribute)
-
-    def _attribute_from_ip_observable_v20(self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = observed_data.objects['1'].value
-        self._add_misp_attribute(attribute)
-
-    def _attribute_from_ip_observable_v21(self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
-        address = self._fetch_observables(observed_data.object_refs[1])
-        attribute['value'] = address.value
         self._add_misp_attribute(attribute)
 
     def _attribute_from_ip_port_observable_v20(self, observed_data: ObservedData_v20):
@@ -516,40 +591,29 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = f'{address.value}|{port_value}'
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_url_observable_v20(self, observed_data: ObservedData_v20):
+    def _attribute_from_second_observable_v20(self, observed_data: ObservedData_v20):
         attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = observed_data.objects['0'].value
+        attribute['value'] = observed_data.objects['1'].value
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_url_observable_v21(self, observed_data: ObservedData_v21):
+    def _attribute_from_second_observable_v21(self, observed_data: ObservedData_v21):
         attribute = self._create_attribute_dict(observed_data)
-        url = self._fetch_observables(observed_data.object_refs)
-        attribute['value'] = url.value
-        self._add_misp_attribute(attribute)
-
-    def _attribute_from_x509_fingerprint_observable_v20(self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = list(observed_data.objects['0'].hashes.values())[0]
-        self._add_misp_attribute(attribute)
-
-    def _attribute_from_x509_fingerprint_observable_v21(self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
-        observable = self._fetch_observables(observed_data.object_refs)
-        attribute['value'] = list(observable.hashes.values())[0]
+        observable = self._fetch_observables(observed_data.object_refs[1])
+        attribute['value'] = observable.value
         self._add_misp_attribute(attribute)
 
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
     ################################################################################
 
-    def _attribute_from_AS_pattern(self, indicator: _INDICATOR_TYPING):
+    def _attribute_from_AS_indicator(self, indicator: _INDICATOR_TYPING):
         attribute = self._create_attribute_dict(indicator)
         attribute['value'] = self._parse_AS_value(
             self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
         )
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_attachment_pattern(self, indicator: _INDICATOR_TYPING):
+    def _attribute_from_attachment_indicator(self, indicator: _INDICATOR_TYPING):
         attribute = self._create_attribute_dict(indicator)
         pattern = indicator.pattern[1:-1]
         if ' AND ' in pattern:
@@ -558,7 +622,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = self._extract_attribute_value_from_pattern(pattern)
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_domain_ip_pattern(self, indicator: _INDICATOR_TYPING):
+    def _attribute_from_domain_ip_indicator(self, indicator: _INDICATOR_TYPING):
         attribute = self._create_attribute_dict(indicator)
         domain_pattern, address_pattern = indicator.pattern[1:-1].split(' AND ')
         domain_value = self._extract_attribute_value_from_pattern(domain_pattern)
@@ -566,12 +630,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = f'{domain_value}|{ip_value}'
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_domain_pattern(self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
-        attribute['value'] = self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
-        self._add_misp_attribute(attribute)
-
-    def _attribute_from_filename_hash_pattern(self, indicator: _INDICATOR_TYPING):
+    def _attribute_from_filename_hash_indicator(self, indicator: _INDICATOR_TYPING):
         attribute = self._create_attribute_dict(indicator)
         for pattern in indicator.pattern[1:-1].split(' AND '):
             if 'file:name = ' in pattern:
@@ -584,39 +643,29 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             raise AttributeFromPatternParsingError(indicator.id)
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_hash_pattern(self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
-        attribute['value'] = self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
-        self._add_misp_attribute(attribute)
-
-    def _attribute_from_ip_pattern(self, indicator: _INDICATOR_TYPING):
+    def _attribute_from_ip_indicator(self, indicator: _INDICATOR_TYPING):
         attribute = self._create_attribute_dict(indicator)
         address_pattern = indicator.pattern[1:-1].split(' AND ')[1]
         attribute['value'] = self._extract_attribute_value_from_pattern(address_pattern)
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_ip_port_pattern(self, indicator: _INDICATOR_TYPING):
+    def _attribute_from_ip_port_indicator(self, indicator: _INDICATOR_TYPING):
         attribute = self._create_attribute_dict(indicator)
         values = [self._extract_attribute_value_from_pattern(pattern) for pattern in indicator.pattern[1:-1].split(' AND ')[1:]]
         attribute['value'] = '|'.join(values)
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_patterning_language_pattern(self, indicator: Indicator_v21):
+    def _attribute_from_patterning_language_indicator(self, indicator: Indicator_v21):
         attribute = self._create_attribute_dict(indicator)
         attribute['value'] = indicator.pattern
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_url_pattern(self, indicator: _INDICATOR_TYPING):
+    def _attribute_from_simple_pattern_indicator(self, indicator: _INDICATOR_TYPING):
         attribute = self._create_attribute_dict(indicator)
         attribute['value'] = self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_x509_fingerprint_pattern(self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
-        attribute['value'] = self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
-        self._add_misp_attribute(attribute)
-
-    def _object_from_patterning_language_pattern(self, indicator: Indicator_v21):
+    def _object_from_patterning_language_indicator(self, indicator: Indicator_v21):
         name = 'suricata' if indicator.pattern_type == 'snort' else indicator.pattern_type
         misp_object = self._create_misp_object(name, indicator)
         for key, mapping in getattr(self._mapping, f'{name}_object_mapping').items():

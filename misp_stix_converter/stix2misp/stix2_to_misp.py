@@ -5,7 +5,8 @@ import sys
 import time
 from .exceptions import (ObjectRefLoadingError, ObjectTypeLoadingError,
     SynonymsResourceJSONError, UnavailableGalaxyResourcesError,
-    UnavailableSynonymsResourceError, UndefinedSTIXObjectError, UnknownAttributeTypeError,
+    UnavailableSynonymsResourceError, UndefinedIndicatorError,
+    UndefinedSTIXObjectError, UndefinedObservableError, UnknownAttributeTypeError,
     UnknownObjectNameError, UnknownParsingFunctionError)
 from .importparser import STIXtoMISPParser
 from collections import defaultdict
@@ -306,8 +307,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 self._object_ref_loading_error(error)
             except ObjectTypeLoadingError as error:
                 self._object_type_loading_error(error)
+            except UndefinedIndicatorError as error:
+                self._undefined_indicator_error(error)
             except UndefinedSTIXObjectError as error:
                 self._undefined_object_error(error)
+            except UndefinedObservableError as error:
+                self._undefined_observable_error(error)
             except UnknownAttributeTypeError as error:
                 self._unknown_attribute_type_warning(error)
             except UnknownObjectNameError as error:
