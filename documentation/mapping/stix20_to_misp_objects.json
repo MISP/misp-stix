@@ -1,0 +1,833 @@
+{
+    "Script object where state is \"Malicious\"": {
+        "MISP": {
+            "name": "script",
+            "meta-category": "misc",
+            "template_uuid": "6bce7d01-dbec-4054-b3c2-3655a19382e2",
+            "description": "Object describing a computer program written to be run in a special run-time environment. The script or shell script can be used for malicious activities but also as support tools for threat analysts.",
+            "template_version": "7",
+            "uuid": "ce12c406-cf09-457b-875a-41ab75d6dc4d",
+            "Attribute": [
+                {
+                    "uuid": "173e67d6-e98d-4e6a-9e03-bb16bfe1df4b",
+                    "object_relation": "filename",
+                    "value": "infected.py",
+                    "type": "filename",
+                    "disable_correlation": true,
+                    "category": "Payload delivery"
+                },
+                {
+                    "uuid": "53e4d1e3-d531-48f4-b8d7-05bcd1e6d47b",
+                    "object_relation": "comment",
+                    "value": "A script that infects command line shells",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "a31342b6-f36c-496d-a7e5-4cf8fd3ec234",
+                    "object_relation": "language",
+                    "value": "Python",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "ba21ae1e-5222-4b65-b915-dbbbe73c4f46",
+                    "object_relation": "script",
+                    "value": "print('You are infected')",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "aba95b39-1857-414a-a3ed-b0ccc53f300e",
+                    "object_relation": "state",
+                    "value": "Malicious",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo=",
+                    "uuid": "c3886545-af70-4703-ba5e-57f7f4b6b5e2",
+                    "object_relation": "script-as-attachment",
+                    "value": "infected.py",
+                    "type": "attachment",
+                    "disable_correlation": false,
+                    "category": "External analysis"
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "Malware": {
+                "type": "malware",
+                "id": "malware--ce12c406-cf09-457b-875a-41ab75d6dc4d",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "name": "infected.py",
+                "description": "A script that infects command line shells",
+                "kill_chain_phases": [
+                    {
+                        "kill_chain_name": "misp-category",
+                        "phase_name": "misc"
+                    }
+                ],
+                "labels": [
+                    "misp:name=\"script\"",
+                    "misp:meta-category=\"misc\"",
+                    "misp:to_ids=\"False\""
+                ],
+                "implementation_languages": [
+                    "Python"
+                ],
+                "x_misp_script": "print('You are infected')",
+                "x_misp_script_as_attachment": {
+                    "value": "infected.py",
+                    "data": "cHJpbnQoJ1lvdSBhcmUgaW5mZWN0ZWQnKQo="
+                },
+                "x_misp_state": "Malicious"
+            }
+        }
+    },
+    "Script object where state is not \"Malicious\"": {
+        "MISP": {
+            "name": "script",
+            "meta-category": "misc",
+            "template_uuid": "6bce7d01-dbec-4054-b3c2-3655a19382e2",
+            "description": "Object describing a computer program written to be run in a special run-time environment. The script or shell script can be used for malicious activities but also as support tools for threat analysts.",
+            "template_version": "7",
+            "uuid": "9d14bdd1-5d32-4b4d-bd50-fd3a9d1c1c04",
+            "Attribute": [
+                {
+                    "uuid": "f796bbd1-e507-49de-b138-ecdf8365fde3",
+                    "object_relation": "filename",
+                    "value": "hello.py",
+                    "type": "filename",
+                    "disable_correlation": true,
+                    "category": "Payload delivery"
+                },
+                {
+                    "uuid": "a26c0917-8044-4a73-a652-59141583c1a5",
+                    "object_relation": "comment",
+                    "value": "A peaceful script",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "f6c95925-d764-4903-bbf8-f1ef4e6a48d1",
+                    "object_relation": "language",
+                    "value": "Python",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "5fabeeb7-64b9-4e38-a901-1e11524273df",
+                    "object_relation": "script",
+                    "value": "print('Hello World')",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "458618d1-cb99-49eb-938f-f11de3479968",
+                    "object_relation": "state",
+                    "value": "Harmless",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK",
+                    "uuid": "3b82dad7-fab7-4014-b9c6-455b065b131e",
+                    "object_relation": "script-as-attachment",
+                    "value": "hello.py",
+                    "type": "attachment",
+                    "disable_correlation": false,
+                    "category": "External analysis"
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "Tool": {
+                "type": "tool",
+                "id": "tool--9d14bdd1-5d32-4b4d-bd50-fd3a9d1c1c04",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "name": "hello.py",
+                "description": "A peaceful script",
+                "kill_chain_phases": [
+                    {
+                        "kill_chain_name": "misp-category",
+                        "phase_name": "misc"
+                    }
+                ],
+                "labels": [
+                    "misp:name=\"script\"",
+                    "misp:meta-category=\"misc\"",
+                    "misp:to_ids=\"False\""
+                ],
+                "x_misp_language": "Python",
+                "x_misp_script": "print('Hello World')",
+                "x_misp_script_as_attachment": {
+                    "value": "hello.py",
+                    "data": "cHJpbnQoJ0hlbGxvIFdvcmxkJykK"
+                },
+                "x_misp_state": "Harmless"
+            }
+        }
+    },
+    "attack-pattern": {
+        "MISP": {
+            "name": "attack-pattern",
+            "meta-category": "vulnerability",
+            "template_uuid": "35928348-56be-4d7f-9752-a80927936351",
+            "description": "Attack pattern describing a common attack pattern enumeration and classification.",
+            "template_version": "1",
+            "uuid": "7205da54-70de-4fa7-9b34-e14e63fe6787",
+            "Attribute": [
+                {
+                    "uuid": "9a0c070a-bdc1-477f-a957-7d29e8b088b7",
+                    "object_relation": "summary",
+                    "value": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "d094c0f9-ff79-485c-8cf3-e80ff1825744",
+                    "object_relation": "name",
+                    "value": "Buffer Overflow in Local Command-Line Utilities",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "f25dfb1a-9f6c-4815-a84a-20b6328ef5d8",
+                    "object_relation": "prerequisites",
+                    "value": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "dfea863f-9635-41c0-a130-bd092c2c5ebf",
+                    "object_relation": "related-weakness",
+                    "value": "CWE-118",
+                    "type": "weakness",
+                    "disable_correlation": false,
+                    "category": "External analysis"
+                },
+                {
+                    "uuid": "5e2829fb-8408-45c3-8334-11e33e11f34a",
+                    "object_relation": "related-weakness",
+                    "value": "CWE-120",
+                    "type": "weakness",
+                    "disable_correlation": false,
+                    "category": "External analysis"
+                },
+                {
+                    "uuid": "dc75daef-f59e-4eb9-b6be-64dbdf22fcaa",
+                    "object_relation": "solutions",
+                    "value": "Carefully review the service\\'s implementation before making it available to users.",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "bfc7a4ed-467f-4b1c-82c1-bad1938992d8",
+                    "object_relation": "id",
+                    "value": "9",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "Attack Pattern": {
+                "type": "attack-pattern",
+                "id": "attack-pattern--7205da54-70de-4fa7-9b34-e14e63fe6787",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "name": "Buffer Overflow in Local Command-Line Utilities",
+                "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
+                "kill_chain_phases": [
+                    {
+                        "kill_chain_name": "misp-category",
+                        "phase_name": "vulnerability"
+                    }
+                ],
+                "labels": [
+                    "misp:name=\"attack-pattern\"",
+                    "misp:meta-category=\"vulnerability\"",
+                    "misp:to_ids=\"False\""
+                ],
+                "external_references": [
+                    {
+                        "source_name": "capec",
+                        "external_id": "CAPEC-9"
+                    }
+                ],
+                "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+                "x_misp_related_weakness": [
+                    "CWE-118",
+                    "CWE-120"
+                ],
+                "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
+            }
+        }
+    },
+    "course-of-action": {
+        "MISP": {
+            "name": "course-of-action",
+            "meta-category": "misc",
+            "template_uuid": "3d1c2c06-68a9-4394-8c8d-258d115f796f",
+            "description": "An object describing a specific measure taken to prevent or respond to an attack.",
+            "template_version": "1",
+            "uuid": "5d514ff9-ac30-4fb5-b9e7-3eb4a964451a",
+            "Attribute": [
+                {
+                    "uuid": "e3c82d17-ad88-4124-823e-b28f63798a8a",
+                    "object_relation": "name",
+                    "value": "Block traffic to PIVY C2 Server (10.10.10.10)",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "f95fafa2-f0c3-4104-9a1d-090a4b32507f",
+                    "object_relation": "description",
+                    "value": "Block communication between the PIVY agents and the C2 Server",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "9d39122b-cf75-4d65-8bf4-214235952a84",
+                    "object_relation": "cost",
+                    "value": "Low",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "b6963b56-9753-49cd-8bd2-4129ddc4fc28",
+                    "object_relation": "efficacy",
+                    "value": "High",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "63e1b5b7-c016-412c-8afb-91d08d9471ed",
+                    "object_relation": "impact",
+                    "value": "Low",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "0681b9f3-f1f6-4ed4-b13d-108157a3a82f",
+                    "object_relation": "objective",
+                    "value": "Block communication between the PIVY agents and the C2 Server",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "d7bfb81f-1ddf-4f20-8a05-81e9b8a88c04",
+                    "object_relation": "stage",
+                    "value": "Response",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "7b796b56-c01b-4750-8a18-46a4779de085",
+                    "object_relation": "type",
+                    "value": "Perimeter Blocking",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "Course of Action": {
+                "type": "course-of-action",
+                "id": "course-of-action--5d514ff9-ac30-4fb5-b9e7-3eb4a964451a",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
+                "description": "Block communication between the PIVY agents and the C2 Server",
+                "labels": [
+                    "misp:name=\"course-of-action\"",
+                    "misp:meta-category=\"misc\"",
+                    "misp:to_ids=\"False\""
+                ],
+                "x_misp_cost": "Low",
+                "x_misp_efficacy": "High",
+                "x_misp_impact": "Low",
+                "x_misp_objective": "Block communication between the PIVY agents and the C2 Server",
+                "x_misp_stage": "Response",
+                "x_misp_type": "Perimeter Blocking"
+            }
+        }
+    },
+    "employee": {
+        "MISP": {
+            "name": "employee",
+            "meta-category": "misc",
+            "template_uuid": "443b2f15-d7c9-4d3d-bfd2-38f099753e83",
+            "description": "An employee and related data points",
+            "template_version": "1",
+            "uuid": "685a38e1-3ca1-40ef-874d-3a04b9fb3af6",
+            "Attribute": [
+                {
+                    "uuid": "dadeaad5-fa0c-49af-bfd9-cc0ed5e9b2f8",
+                    "object_relation": "full-name",
+                    "value": "John Doe",
+                    "type": "full-name",
+                    "disable_correlation": false,
+                    "category": "Person"
+                },
+                {
+                    "uuid": "0866bcc4-a32f-4198-a34b-4ff2b5c68cce",
+                    "object_relation": "text",
+                    "value": "John Doe is known",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "35d31034-4195-4602-8fa4-e9ae1bc39148",
+                    "object_relation": "employee-type",
+                    "value": "Supervisor",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "e31bf2b7-3269-46eb-8cd2-d38578bebc5b",
+                    "object_relation": "email-address",
+                    "value": "jdoe@email.com",
+                    "type": "target-email",
+                    "disable_correlation": false,
+                    "category": "Targeting data"
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "Identity": {
+                "type": "identity",
+                "id": "identity--685a38e1-3ca1-40ef-874d-3a04b9fb3af6",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "name": "John Doe",
+                "description": "John Doe is known",
+                "identity_class": "individual",
+                "contact_information": "email-address: jdoe@email.com",
+                "labels": [
+                    "misp:name=\"employee\"",
+                    "misp:meta-category=\"misc\"",
+                    "misp:to_ids=\"False\""
+                ],
+                "x_misp_employee_type": "Supervisor"
+            }
+        }
+    },
+    "legal-entity": {
+        "MISP": {
+            "name": "legal-entity",
+            "meta-category": "misc",
+            "template_uuid": "14f5688f-d89c-469f-9878-c48bf6c41c65",
+            "description": "An object to describe a legal entity.",
+            "template_version": "2",
+            "uuid": "0d55ba1f-c3ff-4b91-8a09-8713576e178b",
+            "Attribute": [
+                {
+                    "uuid": "4fb890f5-e381-4e1d-bc8e-419094c4ff04",
+                    "object_relation": "name",
+                    "value": "Umbrella Corporation",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "55d92489-026e-492c-9ecb-9fb476457e53",
+                    "object_relation": "text",
+                    "value": "The Umbrella Corporation is an international pharmaceutical company.",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "edfd28b1-1e18-44c3-a585-7c594203ef7e",
+                    "object_relation": "business",
+                    "value": "Pharmaceutical",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "d56632a4-fce8-4d5e-8580-5f54a5fa9cfb",
+                    "object_relation": "registration-number",
+                    "value": "11223344556677889900",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "e86c38ad-ae81-446b-887b-d2810f78d4ed",
+                    "object_relation": "phone-number",
+                    "value": "1234567890",
+                    "type": "phone-number",
+                    "disable_correlation": false,
+                    "category": "Person"
+                },
+                {
+                    "uuid": "b99fd88c-6aa4-460d-aba2-ffae0989f22b",
+                    "object_relation": "website",
+                    "value": "https://umbrella.org",
+                    "type": "link",
+                    "disable_correlation": false,
+                    "category": "External analysis"
+                },
+                {
+                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC",
+                    "uuid": "3b777b36-0858-46bf-ac75-965786027608",
+                    "object_relation": "logo",
+                    "value": "umbrella_logo",
+                    "type": "attachment",
+                    "disable_correlation": false,
+                    "category": "External analysis"
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "Identity": {
+                "type": "identity",
+                "id": "identity--0d55ba1f-c3ff-4b91-8a09-8713576e178b",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "name": "Umbrella Corporation",
+                "description": "The Umbrella Corporation is an international pharmaceutical company.",
+                "identity_class": "organization",
+                "sectors": [
+                    "Pharmaceutical"
+                ],
+                "contact_information": "phone-number: 1234567890 / website: https://umbrella.org",
+                "labels": [
+                    "misp:name=\"legal-entity\"",
+                    "misp:meta-category=\"misc\"",
+                    "misp:to_ids=\"False\""
+                ],
+                "x_misp_logo": {
+                    "value": "umbrella_logo",
+                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]DAbmag+AAAAAElFTkSuQmCC"
+                },
+                "x_misp_registration_number": "11223344556677889900"
+            }
+        }
+    },
+    "news-agency": {
+        "MISP": {
+            "name": "news-agency",
+            "meta-category": "misc",
+            "template_uuid": "92b3f7fd-c4bc-42af-a73b-033ace439622",
+            "description": "News agencies compile news and disseminate news in bulk.",
+            "template_version": "2",
+            "uuid": "d17e31ce-5a7a-4713-bdff-49d89548c259",
+            "Attribute": [
+                {
+                    "uuid": "f89d457b-8f36-434a-9253-daefa2e72eed",
+                    "object_relation": "name",
+                    "value": "Agence France-Presse",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "9c7d7b7a-3bb5-4ce7-9e1c-10d21e972800",
+                    "object_relation": "address",
+                    "value": "13 place de la Bourse, 75002 Paris; Southern Railway Building, 1500 K Street, NW, Suite 600",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "d966e365-4f9c-4e95-af5d-7ea8688639ec",
+                    "object_relation": "e-mail",
+                    "value": "contact@afp.fr; contact@afp.us",
+                    "type": "email-src",
+                    "disable_correlation": false,
+                    "category": "Payload delivery"
+                },
+                {
+                    "uuid": "87330645-c519-4c3f-8310-b75d7ed05988",
+                    "object_relation": "phone-number",
+                    "value": "(33)0140414646; (1)2024140600",
+                    "type": "phone-number",
+                    "disable_correlation": false,
+                    "category": "Person"
+                },
+                {
+                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg==",
+                    "uuid": "2e321e65-7421-487b-b22c-6e60c1a492c8",
+                    "object_relation": "attachment",
+                    "value": "AFP_logo.png",
+                    "type": "attachment",
+                    "disable_correlation": false,
+                    "category": "External analysis"
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "Identity": {
+                "type": "identity",
+                "id": "identity--d17e31ce-5a7a-4713-bdff-49d89548c259",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "name": "Agence France-Presse",
+                "identity_class": "organization",
+                "contact_information": "address: 13 place de la Bourse, 75002 Paris; Southern Railway Building, 1500 K Street, NW, Suite 600 / e-mail: contact@afp.fr; contact@afp.us / phone-number: (33)0140414646; (1)2024140600",
+                "labels": [
+                    "misp:name=\"news-agency\"",
+                    "misp:meta-category=\"misc\"",
+                    "misp:to_ids=\"False\""
+                ],
+                "x_misp_attachment": {
+                    "value": "AFP_logo.png",
+                    "data": "iVBORw0KGgoAAAANSUhEUgA[...]OkjUAAAAABJRU5ErkJggg=="
+                },
+                "x_misp_link": "https://www.afp.com/"
+            }
+        }
+    },
+    "organization": {
+        "MISP": {
+            "name": "organization",
+            "meta-category": "misc",
+            "template_uuid": "f750e12b-127a-432c-b022-b3f9153c4e2a",
+            "description": "An object which describes an organization.",
+            "template_version": "4",
+            "uuid": "fe85995c-189d-4c20-9d0e-dfc03e72000b",
+            "Attribute": [
+                {
+                    "uuid": "d506c66d-e09c-441e-8335-816d8af1230b",
+                    "object_relation": "name",
+                    "value": "Computer Incident Response Center of Luxembourg",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "7e2cb299-79c6-40ce-b5a8-140dffe32569",
+                    "object_relation": "description",
+                    "value": "The Computer Incident Response Center Luxembourg (CIRCL) is a government-driven initiative designed to gather, review, report and respond to computer security threats and incidents.",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "862e042f-3690-4326-92a8-35c49ff28299",
+                    "object_relation": "role",
+                    "value": "national CERT",
+                    "type": "text",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "23b8d9d6-e43b-423b-ae80-747be7c56c82",
+                    "object_relation": "alias",
+                    "value": "CIRCL",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "b3620572-6670-4ef7-a725-a1d4ad2e92b1",
+                    "object_relation": "address",
+                    "value": "16, bd d'Avranches, L-1160 Luxembourg",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "43e58a05-da57-48bb-9882-91abfacbec3d",
+                    "object_relation": "e-mail",
+                    "value": "info@circl.lu",
+                    "type": "email-src",
+                    "disable_correlation": false,
+                    "category": "Payload delivery"
+                },
+                {
+                    "uuid": "ea647e7e-d724-4e05-ae4a-91b07cfa8d1e",
+                    "object_relation": "phone-number",
+                    "value": "(+352) 247 88444",
+                    "type": "phone-number",
+                    "disable_correlation": false,
+                    "category": "Person"
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "Identity": {
+                "type": "identity",
+                "id": "identity--fe85995c-189d-4c20-9d0e-dfc03e72000b",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "name": "Computer Incident Response Center of Luxembourg",
+                "description": "The Computer Incident Response Center Luxembourg (CIRCL) is a government-driven initiative designed to gather, review, report and respond to computer security threats and incidents.",
+                "identity_class": "organization",
+                "contact_information": "address: 16, bd d'Avranches, L-1160 Luxembourg / e-mail: info@circl.lu / phone-number: (+352) 247 88444",
+                "labels": [
+                    "misp:name=\"organization\"",
+                    "misp:meta-category=\"misc\"",
+                    "misp:to_ids=\"False\""
+                ],
+                "x_misp_alias": "CIRCL",
+                "x_misp_role": "national CERT"
+            }
+        }
+    },
+    "vulnerability": {
+        "MISP": {
+            "name": "vulnerability",
+            "meta-category": "vulnerability",
+            "template_uuid": "81650945-f186-437b-8945-9f31715d32da",
+            "description": "Vulnerability object describing a common vulnerability enumeration which can describe published, unpublished, under review or embargo vulnerability for software, equipments or hardware.",
+            "template_version": "8",
+            "uuid": "5e579975-e9cc-46c6-a6ad-1611a964451a",
+            "Attribute": [
+                {
+                    "uuid": "10e95954-44b3-4070-885f-389f7e7dd778",
+                    "object_relation": "id",
+                    "value": "CVE-2017-11774",
+                    "type": "vulnerability",
+                    "disable_correlation": false,
+                    "category": "External analysis"
+                },
+                {
+                    "uuid": "60bc7a94-03f2-40b9-877c-18625d5c082c",
+                    "object_relation": "references",
+                    "value": "http://www.securityfocus.com/bid/101098",
+                    "type": "link",
+                    "disable_correlation": false,
+                    "category": "External analysis"
+                },
+                {
+                    "uuid": "ff9fe488-f35b-44ce-a96b-288678a17338",
+                    "object_relation": "references",
+                    "value": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774",
+                    "type": "link",
+                    "disable_correlation": false,
+                    "category": "External analysis"
+                },
+                {
+                    "uuid": "1a0f149c-c0d8-4b33-9561-98c16e65205b",
+                    "object_relation": "description",
+                    "value": "Microsoft Outlook allow an attacker to execute arbitrary commands",
+                    "type": "text",
+                    "disable_correlation": false,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "6430b04c-be1a-472e-be47-f5eb3b4ff753",
+                    "object_relation": "created",
+                    "value": "2017-10-13T07:29:00",
+                    "type": "datetime",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "52f9c796-a085-4d8c-894e-f16696ec0029",
+                    "object_relation": "cvss-score",
+                    "value": "6.8",
+                    "type": "float",
+                    "disable_correlation": true,
+                    "category": "Other"
+                },
+                {
+                    "uuid": "188d237c-d039-480c-8f15-b71d045559db",
+                    "object_relation": "published",
+                    "value": "2017-10-13T07:29:00",
+                    "type": "datetime",
+                    "disable_correlation": true,
+                    "category": "Other"
+                }
+            ],
+            "distribution": "5",
+            "sharing_group_id": "0",
+            "timestamp": "1603642920"
+        },
+        "STIX": {
+            "Vulnerability": {
+                "type": "vulnerability",
+                "id": "vulnerability--5e579975-e9cc-46c6-a6ad-1611a964451a",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "name": "CVE-2017-11774",
+                "description": "Microsoft Outlook allow an attacker to execute arbitrary commands",
+                "labels": [
+                    "misp:name=\"vulnerability\"",
+                    "misp:meta-category=\"vulnerability\"",
+                    "misp:to_ids=\"False\""
+                ],
+                "external_references": [
+                    {
+                        "source_name": "cve",
+                        "external_id": "CVE-2017-11774"
+                    },
+                    {
+                        "source_name": "url",
+                        "url": "http://www.securityfocus.com/bid/101098"
+                    },
+                    {
+                        "source_name": "url",
+                        "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
+                    }
+                ],
+                "x_misp_created": "2017-10-13T07:29:00",
+                "x_misp_cvss_score": "6.8",
+                "x_misp_published": "2017-10-13T07:29:00"
+            }
+        }
+    }
+}
