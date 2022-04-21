@@ -636,6 +636,44 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             observed_data = [observed_data, file_object]
         )
 
+    def test_stix21_bundl_with_github_username_indicator_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_github_username_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'github-username')
+        self.assertEqual(
+            attribute.value,
+            self._get_pattern_value(pattern[1:-1].split(' AND ')[1])
+        )
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_github_username_observable_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_github_username_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, user_account = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        account_ref = self._check_observed_data_attribute(attribute, observed_data)[0]
+        self.assertEqual(attribute.type, 'github-username')
+        self._assert_multiple_equal(
+            attribute.uuid,
+            user_account.id.split('--')[1],
+            account_ref.split('--')[1]
+        )
+        self.assertEqual(attribute.value, user_account.account_login)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = [observed_data, user_account]
+        )
+
     def test_stix21_bundle_with_hash_composite_indicator_attributes(self):
         bundle = TestSTIX21Bundles.get_bundle_with_hash_composite_indicator_attributes()
         self.parser.load_stix_bundle(bundle)
@@ -715,6 +753,99 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             self._populate_documentation(
                 attribute = json.loads(attribute.to_json()),
                 observed_data = [observed_data, observable]
+            )
+
+    def test_stix21_bundle_with_hostname_indicator_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_hostname_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'hostname')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_hostname_observable_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_hostname_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, domain = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        domain_ref = self._check_observed_data_attribute(attribute, observed_data)[0]
+        self.assertEqual(attribute.type, 'hostname')
+        self._assert_multiple_equal(
+            attribute.uuid,
+            domain.id.split('--')[1],
+            domain_ref.split('--')[1]
+        )
+        self.assertEqual(attribute.value, domain.value)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = [observed_data, domain]
+        )
+
+    def test_stix21_bundle_with_hostname_port_indicator_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_hostname_port_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'hostname|port')
+        hostname_pattern, port_pattern = pattern[1:-1].split(' AND ')
+        hostname_value = self._get_pattern_value(hostname_pattern)
+        port_value = self._get_pattern_value(port_pattern)
+        self.assertEqual(attribute.value, f'{hostname_value}|{port_value}')
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_hostname_port_observable_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_hostname_port_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, domain, network = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        domain_ref, network_ref = self._check_observed_data_attribute(attribute, observed_data)
+        self.assertEqual(attribute.type, 'hostname|port')
+        self._assert_multiple_equal(
+            attribute.uuid,
+            domain.id.split('--')[1],
+            domain_ref.split('--')[1],
+            network.id.split('--')[1],
+            network_ref.split('--')[1]
+        )
+        self.assertEqual(attribute.value, f'{domain.value}|{network.dst_port}')
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = [observed_data, domain, network]
+        )
+
+    def test_stix21_bundle_with_http_indicator_attributes(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_http_indicator_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, *indicators = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 2)
+        types = ('http-method', 'user-agent')
+        for attribute, indicator, attribute_type in zip(attributes, indicators, types):
+            pattern = self._check_indicator_attribute(attribute, indicator)
+            self.assertEqual(attribute.type, attribute_type)
+            self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                indicator = indicator
             )
 
     def test_stix21_bundle_with_ip_indicator_attributes(self):
@@ -813,6 +944,121 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
                 observed_data = [observed_data, network, address]
             )
 
+    def test_stix21_bundle_with_mac_address_indicator_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_mac_address_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'mac-address')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_mac_address_observable_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_mac_address_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, mac_address = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        mac_address_ref = self._check_observed_data_attribute(attribute, observed_data)[0]
+        self.assertEqual(attribute.type, 'mac-address')
+        self._assert_multiple_equal(
+            attribute.uuid,
+            mac_address.id.split('--')[1],
+            mac_address_ref.split('--')[1]
+        )
+        self.assertEqual(attribute.value, mac_address.value)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = [observed_data, mac_address]
+        )
+
+    def test_stix21_bundle_with_malware_sample_indicator_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_malware_sample_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'malware-sample')
+        filename_pattern, md5_pattern, data_pattern, *_ = pattern[1:-1].split(' AND ')
+        filename_value = self._get_pattern_value(filename_pattern)
+        md5_value = self._get_pattern_value(md5_pattern)
+        self.assertEqual(attribute.value, f'{filename_value}|{md5_value}')
+        self.assertEqual(
+            self._get_data_value(attribute.data),
+            self._get_pattern_value(data_pattern)
+        )
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_malware_sample_observable_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_malware_sample_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, file_object, artifact = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        file_ref, artifact_ref = self._check_observed_data_attribute(attribute, observed_data)
+        self.assertEqual(attribute.type, 'malware-sample')
+        self._assert_multiple_equal(
+            attribute.uuid,
+            file_object.id.split('--')[1],
+            file_ref.split('--')[1],
+            artifact.id.split('--')[1],
+            artifact_ref.split('--')[1]
+        )
+        self.assertEqual(attribute.value, f"{file_object.name}|{file_object.hashes['MD5']}")
+        self.assertEqual(self._get_data_value(attribute.data), artifact.payload_bin)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = [observed_data, file_object, artifact]
+        )
+
+    def test_stix21_bundle_with_mutex_indicator_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_mutex_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'mutex')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_mutex_observable_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_mutex_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, mutex = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        mutex_ref = self._check_observed_data_attribute(attribute, observed_data)[0]
+        self.assertEqual(attribute.type, 'mutex')
+        self._assert_multiple_equal(
+            attribute.uuid,
+            mutex.id.split('--')[1],
+            mutex_ref.split('--')[1]
+        )
+        self.assertEqual(attribute.value, mutex.name)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = [observed_data, mutex]
+        )
+
     def test_stix21_bundle_with_patterning_language_attributes(self):
         bundle = TestSTIX21Bundles.get_bundle_with_patterning_language_attributes()
         self.parser.load_stix_bundle(bundle)
@@ -834,6 +1080,112 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         self._populate_documentation(
             attribute = json.loads(yara.to_json()),
             indicator = yara_indicator
+        )
+
+    def test_stix21_bundle_with_port_indicator_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_port_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'port')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_regkey_indicator_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_regkey_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'regkey')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_regkey_observable_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_regkey_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, registry_key = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        registry_ref = self._check_observed_data_attribute(attribute, observed_data)[0]
+        self.assertEqual(attribute.type, 'regkey')
+        self._assert_multiple_equal(
+            attribute.uuid,
+            registry_key.id.split('--')[1],
+            registry_ref.split('--')[1]
+        )
+        self.assertEqual(attribute.value, registry_key.key)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = [observed_data, registry_key]
+        )
+
+    def test_stix21_bundle_with_regkey_value_indicator_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_regkey_value_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'regkey|value')
+        key_pattern, data_pattern = pattern[1:-1].split(' AND ')
+        key_value = self._get_pattern_value(key_pattern)
+        data_value = self._get_pattern_value(data_pattern)
+        self.assertEqual(attribute.value, f'{key_value}|{data_value}')
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_regkey_value_observable_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_regkey_value_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, registry_key = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        registry_ref = self._check_observed_data_attribute(attribute, observed_data)[0]
+        self.assertEqual(attribute.type, 'regkey|value')
+        self._assert_multiple_equal(
+            attribute.uuid,
+            registry_key.id.split('--')[1],
+            registry_ref.split('--')[1]
+        )
+        self.assertEqual(
+            attribute.value,
+            f"{registry_key.key}|{registry_key['values'][0].data}"
+        )
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = [observed_data, registry_key]
+        )
+
+    def test_stix21_bundle_with_size_in_bytes_indicator_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_size_in_bytes_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        attribute = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'size-in-bytes')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
         )
 
     def test_stix21_bundle_with_url_indicator_attributes(self):

@@ -493,6 +493,24 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             observed_data = observed_data
         )
 
+    def test_stix20_bundl_with_github_username_indicator_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_github_username_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'github-username')
+        self.assertEqual(
+            attribute.value,
+            self._get_pattern_value(pattern[1:-1].split(' AND ')[1])
+        )
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
     def test_stix20_bundle_with_hash_composite_indicator_attributes(self):
         bundle = TestSTIX20Bundles.get_bundle_with_hash_composite_indicator_attributes()
         self.parser.load_stix_bundle(bundle)
@@ -562,6 +580,87 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             self._populate_documentation(
                 attribute = json.loads(attribute.to_json()),
                 observed_data = observed_data
+            )
+
+    def test_stix20_bundle_with_hostname_indicator_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_hostname_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'hostname')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_hostname_observable_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_hostname_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_attribute(attribute, observed_data)['0']
+        self.assertEqual(attribute.type, 'hostname')
+        self.assertEqual(attribute.value, observable.value)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = observed_data
+        )
+
+    def test_stix20_bundle_with_hostname_port_indicator_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_hostname_port_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'hostname|port')
+        hostname_pattern, port_pattern = pattern[1:-1].split(' AND ')
+        hostname_value = self._get_pattern_value(hostname_pattern)
+        port_value = self._get_pattern_value(port_pattern)
+        self.assertEqual(attribute.value, f'{hostname_value}|{port_value}')
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_hostname_port_observable_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_hostname_port_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        domain, network = self._check_observed_data_attribute(attribute, observed_data).values()
+        self.assertEqual(attribute.type, 'hostname|port')
+        self.assertEqual(attribute.value, f'{domain.value}|{network.dst_port}')
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = observed_data
+        )
+
+    def test_stix20_bundle_with_http_indicator_attributes(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_http_indicator_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, *indicators = bundle.objects
+        attributes = self._check_misp_event_features(event, report)
+        self.assertEqual(len(attributes), 2)
+        types = ('http-method', 'user-agent')
+        for attribute, indicator, attribute_type in zip(attributes, indicators, types):
+            pattern = self._check_indicator_attribute(attribute, indicator)
+            self.assertEqual(attribute.type, attribute_type)
+            self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+            self._populate_documentation(
+                attribute = json.loads(attribute.to_json()),
+                indicator = indicator
             )
 
     def test_stix20_bundle_with_ip_indicator_attributes(self):
@@ -645,6 +744,197 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
                 attribute = json.loads(attribute.to_json()),
                 observed_data = observed_data
             )
+
+    def test_stix20_bundle_with_mac_address_indicator_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_mac_address_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'mac-address')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_mac_address_observable_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_mac_address_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_attribute(attribute, observed_data)['0']
+        self.assertEqual(attribute.type, 'mac-address')
+        self.assertEqual(attribute.value, observable.value)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = observed_data
+        )
+
+    def test_stix20_bundle_with_malware_sample_indicator_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_malware_sample_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'malware-sample')
+        filename_pattern, md5_pattern, data_pattern, _ = pattern[1:-1].split(' AND ')
+        filename_value = self._get_pattern_value(filename_pattern)
+        md5_value = self._get_pattern_value(md5_pattern)
+        self.assertEqual(attribute.value, f'{filename_value}|{md5_value}')
+        self.assertEqual(
+            self._get_data_value(attribute.data),
+            self._get_pattern_value(data_pattern)
+        )
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_malware_sample_observable_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_malware_sample_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        file_object, artifact = self._check_observed_data_attribute(attribute, observed_data).values()
+        self.assertEqual(attribute.type, 'malware-sample')
+        self.assertEqual(attribute.value, f"{file_object.name}|{file_object.hashes['MD5']}")
+        self.assertEqual(self._get_data_value(attribute.data), artifact.payload_bin)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = observed_data
+        )
+
+    def test_stix20_bundle_with_mutex_indicator_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_mutex_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'mutex')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_mutex_observable_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_mutex_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_attribute(attribute, observed_data)['0']
+        self.assertEqual(attribute.type, 'mutex')
+        self.assertEqual(attribute.value, observable.name)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = observed_data
+        )
+
+    def test_stix20_bundle_with_port_indicator_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_port_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'port')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_regkey_indicator_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_regkey_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'regkey')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_regkey_observable_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_regkey_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_attribute(attribute, observed_data)['0']
+        self.assertEqual(attribute.type, 'regkey')
+        self.assertEqual(attribute.value, observable.key)
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = observed_data
+        )
+
+    def test_stix20_bundle_with_regkey_value_indicator_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_regkey_value_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'regkey|value')
+        key_pattern, data_pattern = pattern[1:-1].split(' AND ')
+        key_value = self._get_pattern_value(key_pattern)
+        data_value = self._get_pattern_value(data_pattern)
+        self.assertEqual(attribute.value, f'{key_value}|{data_value}')
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_regkey_value_observable_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_regkey_value_observable_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_attribute(attribute, observed_data)['0']
+        self.assertEqual(attribute.type, 'regkey|value')
+        self.assertEqual(attribute.value, f"{observable.key}|{observable['values'][0].data}")
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            observed_data = observed_data
+        )
+
+    def test_stix20_bundle_with_size_in_bytes_indicator_attribute(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_size_in_bytes_indicator_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_attribute(attribute, indicator)
+        self.assertEqual(attribute.type, 'size-in-bytes')
+        self.assertEqual(attribute.value, self._get_pattern_value(pattern[1:-1]))
+        self._populate_documentation(
+            attribute = json.loads(attribute.to_json()),
+            indicator = indicator
+        )
 
     def test_stix20_bundle_with_url_indicator_attributes(self):
         bundle = TestSTIX20Bundles.get_bundle_with_url_indicator_attributes()

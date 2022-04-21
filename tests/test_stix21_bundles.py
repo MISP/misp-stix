@@ -919,6 +919,57 @@ _GEOLOCATION_OBJECT = {
     "x_misp_altitude": "55",
     "x_misp_country": "USA"
 }
+_GITHUB_USERNAME_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Github username test attribute",
+    "pattern": "[user-account:account_type = 'github' AND user-account:account_login = 'chrisr3d']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Social network"
+        }
+    ],
+    "labels": [
+        "misp:type=\"github-username\"",
+        "misp:category=\"Social network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_GITHUB_USERNAME_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "user-account--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:type=\"github-username\"",
+            "misp:category=\"Social network\""
+        ]
+    },
+    {
+        "type": "user-account",
+        "spec_version": "2.1",
+        "id": "user-account--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "account_login": "chrisr3d",
+        "account_type": "github"
+    }
+]
 _HASH_COMPOSITE_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
@@ -2391,6 +2442,166 @@ _HASH_OBSERVABLE_ATTRIBUTES = [
         }
     }
 ]
+_HOSTNAME_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Hostname test attribute",
+    "pattern": "[domain-name:value = 'circl.lu']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Network activity"
+        }
+    ],
+    "labels": [
+        "misp:type=\"hostname\"",
+        "misp:category=\"Network activity\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_HOSTNAME_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:type=\"hostname\"",
+            "misp:category=\"Network activity\""
+        ]
+    },
+    {
+        "type": "domain-name",
+        "spec_version": "2.1",
+        "id": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "value": "circl.lu"
+    }
+]
+_HOSTNAME_PORT_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Hostname|port test attribute",
+    "pattern": "[domain-name:value = 'circl.lu' AND network-traffic:dst_port = '8443']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Network activity"
+        }
+    ],
+    "labels": [
+        "misp:type=\"hostname|port\"",
+        "misp:category=\"Network activity\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "network-traffic--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:type=\"hostname|port\"",
+            "misp:category=\"Network activity\""
+        ]
+    },
+    {
+        "type": "domain-name",
+        "spec_version": "2.1",
+        "id": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "value": "circl.lu"
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "dst_ref": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "dst_port": 8443,
+        "protocols": [
+            "tcp"
+        ]
+    }
+]
+_HTTP_INDICATOR_ATTRIBUTES = [
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:extensions.'http-request-ext'.request_method = 'POST']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"http-method\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "User-agent test attribute",
+        "pattern": "[network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = 'Mozilla Firefox']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"user-agent\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    }
+]
 _IP_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
@@ -2657,6 +2868,169 @@ _LEGAL_ENTITY_OBJECT = {
         "value": "umbrella_logo"
     }
 }
+_MAC_ADDRESS_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[mac-addr:value = '12:34:56:78:90:AB']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"mac-address\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "mac-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:type=\"mac-address\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "mac-addr",
+        "spec_version": "2.1",
+        "id": "mac-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "value": "12:34:56:78:90:ab"
+    }
+]
+_MALWARE_SAMPLE_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Malware Sample test attribute",
+    "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.mime_type = 'application/zip' AND file:content_ref.encryption_algorithm = 'mime-type-indicated' AND file:content_ref.decryption_key = 'infected']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Payload delivery"
+        }
+    ],
+    "labels": [
+        "misp:type=\"malware-sample\"",
+        "misp:category=\"Payload delivery\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:type=\"malware-sample\"",
+            "misp:category=\"Payload delivery\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "hashes": {
+            "MD5": "8764605c6f388c89096b534d33565802"
+        },
+        "name": "oui",
+        "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    },
+    {
+        "type": "artifact",
+        "spec_version": "2.1",
+        "id": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "mime_type": "application/zip",
+        "payload_bin": "UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==",
+        "encryption_algorithm": "mime-type-indicated",
+        "decryption_key": "infected"
+    }
+]
+_MUTEX_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Mutex test attribute",
+    "pattern": "[mutex:name = 'MutexTest']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Artifacts dropped"
+        }
+    ],
+    "labels": [
+        "misp:type=\"mutex\"",
+        "misp:category=\"Artifacts dropped\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_MUTEX_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "mutex--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:type=\"mutex\"",
+            "misp:category=\"Artifacts dropped\""
+        ]
+    },
+    {
+        "type": "mutex",
+        "spec_version": "2.1",
+        "id": "mutex--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "name": "MutexTest"
+    }
+]
 _NEWS_AGENCY_OBJECT = {
     "type": "identity",
     "spec_version": "2.1",
@@ -2823,6 +3197,134 @@ _PATTERNING_LANGUAGE_OBJECTS = [
         "x_misp_yara_rule_name": "Ultimate rule"
     }
 ]
+_PORT_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[network-traffic:dst_port = '8443']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Network activity"
+        }
+    ],
+    "labels": [
+        "misp:type=\"port\"",
+        "misp:category=\"Network activity\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_REGKEY_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Regkey test attribute",
+    "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Persistence mechanism"
+        }
+    ],
+    "labels": [
+        "misp:type=\"regkey\"",
+        "misp:category=\"Persistence mechanism\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_REGKEY_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "windows-registry-key--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:type=\"regkey\"",
+            "misp:category=\"Persistence mechanism\""
+        ]
+    },
+    {
+        "type": "windows-registry-key",
+        "spec_version": "2.1",
+        "id": "windows-registry-key--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "key": "HKLM\\Software\\mthjk"
+    }
+]
+_REGKEY_VALUE_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "description": "Regkey | value test attribute",
+    "pattern": "[windows-registry-key:key = 'HKLM\\\\Software\\\\mthjk' AND windows-registry-key:values.data = '\\\\%DATA\\\\%\\\\1234567890']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Persistence mechanism"
+        }
+    ],
+    "labels": [
+        "misp:type=\"regkey|value\"",
+        "misp:category=\"Persistence mechanism\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "windows-registry-key--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:type=\"regkey|value\"",
+            "misp:category=\"Persistence mechanism\""
+        ]
+    },
+    {
+        "type": "windows-registry-key",
+        "spec_version": "2.1",
+        "id": "windows-registry-key--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "key": "HKLM\\Software\\mthjk",
+        "values": [
+            {
+                "data": "%DATA%\\1234567890"
+            }
+        ]
+    }
+]
 _SCRIPT_OBJECTS = [
     {
         "type": "malware",
@@ -2884,6 +3386,29 @@ _SCRIPT_OBJECTS = [
         "x_misp_state": "Harmless"
     }
 ]
+_SIZE_IN_BYTES_INDICATOR_ATTRIBUTE = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[file:size = '1234']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "Other"
+        }
+    ],
+    "labels": [
+        "misp:type=\"size-in-bytes\"",
+        "misp:category=\"Other\"",
+        "misp:to_ids=\"True\""
+    ]
+}
 _URL_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
@@ -3407,6 +3932,14 @@ class TestSTIX21Bundles:
         return cls.__assemble_bundle(*_FILENAME_OBSERVABLE_ATTRIBUTE)
 
     @classmethod
+    def get_bundle_with_github_username_indicator_attribute(cls):
+        return cls.__assemble_bundle(_GITHUB_USERNAME_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_github_username_observable_attribute(cls):
+        return cls.__assemble_bundle(*_GITHUB_USERNAME_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
     def get_bundle_with_hash_composite_indicator_attributes(cls):
         return cls.__assemble_bundle(*_HASH_COMPOSITE_INDICATOR_ATTRIBUTES)
 
@@ -3421,6 +3954,26 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_hash_observable_attributes(cls):
         return cls.__assemble_bundle(*_HASH_OBSERVABLE_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_hostname_indicator_attribute(cls):
+        return cls.__assemble_bundle(_HOSTNAME_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_hostname_observable_attribute(cls):
+        return cls.__assemble_bundle(*_HOSTNAME_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_hostname_port_indicator_attribute(cls):
+        return cls.__assemble_bundle(_HOSTNAME_PORT_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_hostname_port_observable_attribute(cls):
+        return cls.__assemble_bundle(*_HOSTNAME_PORT_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_http_indicator_attributes(cls):
+        return cls.__assemble_bundle(*_HTTP_INDICATOR_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_ip_indicator_attributes(cls):
@@ -3439,8 +3992,56 @@ class TestSTIX21Bundles:
         return cls.__assemble_bundle(*_IP_PORT_OBSERVABLE_ATTRIBUTES)
 
     @classmethod
+    def get_bundle_with_mac_address_indicator_attribute(cls):
+        return cls.__assemble_bundle(_MAC_ADDRESS_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_mac_address_observable_attribute(cls):
+        return cls.__assemble_bundle(*_MAC_ADDRESS_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_malware_sample_indicator_attribute(cls):
+        return cls.__assemble_bundle(_MALWARE_SAMPLE_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_malware_sample_observable_attribute(cls):
+        return cls.__assemble_bundle(*_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_mutex_indicator_attribute(cls):
+        return cls.__assemble_bundle(_MUTEX_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_mutex_observable_attribute(cls):
+        return cls.__assemble_bundle(*_MUTEX_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
     def get_bundle_with_patterning_language_attributes(cls):
         return cls.__assemble_bundle(*_PATTERNING_LANGUAGE_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_port_indicator_attribute(cls):
+        return cls.__assemble_bundle(_PORT_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_regkey_indicator_attribute(cls):
+        return cls.__assemble_bundle(_REGKEY_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_regkey_observable_attribute(cls):
+        return cls.__assemble_bundle(*_REGKEY_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_regkey_value_indicator_attribute(cls):
+        return cls.__assemble_bundle(_REGKEY_VALUE_INDICATOR_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_regkey_value_observable_attribute(cls):
+        return cls.__assemble_bundle(*_REGKEY_VALUE_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_size_in_bytes_indicator_attribute(cls):
+        return cls.__assemble_bundle(_SIZE_IN_BYTES_INDICATOR_ATTRIBUTE)
 
     @classmethod
     def get_bundle_with_url_indicator_attributes(cls):
