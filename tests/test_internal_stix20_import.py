@@ -36,6 +36,16 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         self._check_attribute_labels(attribute, observed_data.labels)
         return observed_data.objects
 
+    def _check_observed_data_object(self, misp_object, observed_data):
+        self.assertEqual(misp_object.uuid, observed_data.id.split('--')[1])
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            self._timestamp_from_datetime(observed_data.created),
+            self._timestamp_from_datetime(observed_data.modified)
+        )
+        self._check_object_labels(misp_object, observed_data.labels, False)
+        return observed_data.objects
+
     ################################################################################
     #                         MISP ATTRIBUTES IMPORT TESTS                         #
     ################################################################################
@@ -1022,6 +1032,26 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
     ################################################################################
     #                          MISP OBJECTS IMPORT TESTS.                          #
     ################################################################################
+
+    def test_stix20_bundle_with_asn_indicator_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_asn_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        self._check_asn_indicator_object(misp_object.attributes, pattern)
+
+    def test_stix20_bundle_with_asn_observable_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_asn_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_object(misp_object, observed_data)['0']
+        self._check_asn_observable_object(misp_object.attributes, observable)
 
     def test_stix20_bundle_with_attack_pattern_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_attack_pattern_object()

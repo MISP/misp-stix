@@ -56,6 +56,61 @@ _AS_OBSERVABLE_ATTRIBUTE = [
         "number": 174
     }
 ]
+_ASN_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5b23c82b-6508-4bdc-b580-045b0a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[autonomous-system:number = '66642' AND autonomous-system:name = 'AS name' AND autonomous-system:x_misp_subnet_announced = '1.2.3.4' AND autonomous-system:x_misp_subnet_announced = '8.8.8.8']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"asn\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_ASN_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f"
+        ],
+        "labels": [
+            "misp:name=\"asn\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "autonomous-system",
+        "spec_version": "2.1",
+        "id": "autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "number": 66642,
+        "name": "AS name",
+        "x_misp_subnet_announced": [
+            "1.2.3.4",
+            "8.8.8.8"
+        ]
+    }
+]
 _ATTACHMENT_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -3814,6 +3869,14 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_AS_observable_attribute(cls):
         return cls.__assemble_bundle(*_AS_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_asn_indicator_object(cls):
+        return cls.__assemble_bundle(_ASN_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_asn_observable_object(cls):
+        return cls.__assemble_bundle(*_ASN_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_attachment_indicator_attribute(cls):

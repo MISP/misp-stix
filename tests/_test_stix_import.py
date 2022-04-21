@@ -81,6 +81,16 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self._check_attribute_labels(attribute, indicator.labels)
         return indicator.pattern
 
+    def _check_indicator_object(self, misp_object, indicator):
+        self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            self._timestamp_from_datetime(indicator.created),
+            self._timestamp_from_datetime(indicator.modified)
+        )
+        self._check_object_labels(misp_object, indicator.labels, True)
+        return indicator.pattern
+
     def _check_vulnerability_attribute(self, attribute, vulnerability):
         self.assertEqual(attribute.uuid, vulnerability.id.split('--')[1])
         self.assertEqual(attribute.type, vulnerability.type)
@@ -99,6 +109,35 @@ class TestInternalSTIX2Import(TestSTIX2Import):
     ################################################################################
     #                       MISP OBJECTS CHECKING FUNCTIONS.                       #
     ################################################################################
+
+    def _check_asn_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 4)
+        number, name, *subnets = pattern[1:-1].split(' AND ')
+        asn, description, *subnets_announced = attributes
+        self.assertEqual(asn.type, 'AS')
+        self.assertEqual(asn.object_relation, 'asn')
+        self.assertEqual(asn.value, f'AS{self._get_pattern_value(number)}')
+        self.assertEqual(description.type, 'text')
+        self.assertEqual(description.object_relation, 'description')
+        self.assertEqual(description.value, self._get_pattern_value(name))
+        for subnet_announced, subnet in zip(subnets_announced, subnets):
+            self.assertEqual(subnet_announced.type, 'ip-src')
+            self.assertEqual(subnet_announced.object_relation, 'subnet-announced')
+            self.assertEqual(subnet_announced.value, self._get_pattern_value(subnet))
+
+    def _check_asn_observable_object(self, attributes, observable):
+        self.assertEqual(len(attributes), 4)
+        asn, description, *subnets_announced = attributes
+        self.assertEqual(asn.type, 'AS')
+        self.assertEqual(asn.object_relation, 'asn')
+        self.assertEqual(asn.value, f'AS{observable.number}')
+        self.assertEqual(description.type, 'text')
+        self.assertEqual(description.object_relation, 'description')
+        self.assertEqual(description.value, observable.name)
+        for attribute, subnet in zip(subnets_announced, observable.x_misp_subnet_announced):
+            self.assertEqual(attribute.type, 'ip-src')
+            self.assertEqual(attribute.object_relation, 'subnet-announced')
+            self.assertEqual(attribute.value, subnet)
 
     def _check_attack_pattern_object(self, misp_object, attack_pattern):
         self.assertEqual(misp_object.uuid, attack_pattern.id.split('--')[1])
