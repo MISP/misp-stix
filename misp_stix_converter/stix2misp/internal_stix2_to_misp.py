@@ -34,6 +34,10 @@ _MISP_FEATURES_TYPING = Union[
     MISPEvent,
     MISPObject
 ]
+_OBSERVED_DATA_TYPING = Union[
+    ObservedData_v20,
+    ObservedData_v21
+]
 
 
 class InternalSTIX2toMISPParser(STIX2toMISPParser):
@@ -680,6 +684,25 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = observable.value
         self._add_misp_attribute(attribute)
 
+    def _object_from_asn_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('asn', observed_data)
+        observable = getattr(self, f'_fetch_observables_{version}')(observed_data)
+        for feature, mapping in self._mapping.asn_object_mapping.items():
+            if hasattr(observable, feature):
+                value = getattr(observable, feature)
+                self._populate_object_attributes(
+                    misp_object,
+                    mapping,
+                    self._parse_AS_value(value) if feature == 'number' else value
+                )
+        self._add_misp_object(misp_object)
+
+    def _object_from_asn_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_asn_observable(observed_data, 'v20')
+
+    def _object_from_asn_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_asn_observable(observed_data, 'v21')
+
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
     ################################################################################
@@ -754,6 +777,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
         self._add_misp_attribute(attribute)
 
+    def _object_from_asn_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('asn', indicator)
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            attribute = {
+                'value': self._parse_AS_value(value) if feature == 'number' else value
+            }
+            attribute.update(self._mapping.asn_object_mapping[feature])
+            misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
     def _object_from_patterning_language_indicator(self, indicator: Indicator_v21):
         name = 'suricata' if indicator.pattern_type == 'snort' else indicator.pattern_type
         misp_object = self._create_misp_object(name, indicator)
@@ -812,12 +846,25 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _extract_attribute_value_from_pattern(pattern: str) -> str:
         return pattern.split(' = ')[1][1:-1]
 
+    @staticmethod
+    def _extract_features_from_pattern(pattern: str) -> tuple:
+        identifier, value = pattern.split(' = ')
+        return identifier.split(':')[1], value.strip("'")
+
     def _fetch_observables(self, object_refs: Union[list, str]):
         if isinstance(object_refs, str):
             return self._observable[object_refs]
         if len(object_refs) == 1:
             return self._observable[object_refs[0]]
         return tuple(self._observable[object_ref] for object_ref in object_refs)
+
+    @staticmethod
+    def _fetch_observables_v20(observed_data: ObservedData_v20):
+        observables = tuple(observed_data.objects.values())
+        return observables[0] if len(observables) == 1 else observables
+
+    def _fetch_observables_v21(self, observed_data: ObservedData_v21):
+        return self._fetch_observables(observed_data.object_refs)
 
     def _fetch_tags_from_labels(self, misp_feature: _MISP_FEATURES_TYPING, labels: list):
         for label in (label for label in labels if label != 'Threat-Report'):

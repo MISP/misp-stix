@@ -413,6 +413,18 @@ class InternalSTIX2Mapping(STIX2Mapping):
         version_attribute = {'type': 'text', 'object_relation': 'version'}
 
         # STIX TO MISP OBJECTS MAPPING
+        self.__asn_object_mapping = Mapping(
+            number = {'type': 'AS', 'object_relation': 'asn'},
+            name = description_attribute,
+            x_misp_country = {'type': 'text', 'object_relation': 'country'},
+            x_misp_export = {'type': 'text', 'object_relation': 'export'},
+            x_misp_first_seen = {'type': 'datetime', 'object_relation': 'first-seen'},
+            x_misp_import = {'type': 'text', 'object_relation': 'import'},
+            x_misp_last_seen = {'type': 'datetime', 'object_relation': 'last-seen'},
+            x_misp_mp_export = {'type': 'text', 'object_relation': 'mp-export'},
+            x_misp_mp_import = {'type': 'text', 'object_relation': 'mp-import'},
+            x_misp_subnet_announced = {'type': 'ip-src', 'object_relation': 'subnet-announced'}
+        )
         self.__attack_pattern_object_mapping = Mapping(
             description = {'type': 'text', 'object_relation': 'summary'},
             name = name_attribute,
@@ -534,6 +546,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_context = {'type': 'text', 'object_relation': 'context'},
             x_misp_yara_rule_name = {'type': 'text', 'object_relation': 'yara-rule-name'}
         )
+
+    @property
+    def asn_object_mapping(self) -> dict:
+        return self.__asn_object_mapping
 
     @property
     def attack_pattern_object_mapping(self) -> dict:
