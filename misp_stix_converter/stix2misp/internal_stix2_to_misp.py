@@ -554,17 +554,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = f'{observable.name}|{hash_value}'
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_filename_observable_v20(self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = observed_data.objects['0'].name
-        self._add_misp_attribute(attribute)
-
-    def _attribute_from_filename_observable_v21(self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
-        observable = self._fetch_observables(observed_data.object_refs)
-        attribute['value'] = observable.name
-        self._add_misp_attribute(attribute)
-
     def _attribute_from_first_observable_v20(self, observed_data: ObservedData_v20):
         attribute = self._create_attribute_dict(observed_data)
         attribute['value'] = observed_data.objects['0'].value
@@ -576,6 +565,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = observable.value
         self._add_misp_attribute(attribute)
 
+    def _attribute_from_github_username_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = observable.account_login
+        self._add_misp_attribute(attribute)
+
     def _attribute_from_hash_observable_v20(self, observed_data: ObservedData_v20):
         attribute = self._create_attribute_dict(observed_data)
         attribute['value'] = list(observed_data.objects['0'].hashes.values())[0]
@@ -585,6 +580,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observables(observed_data.object_refs)
         attribute['value'] = list(observable.hashes.values())[0]
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_hostname_port_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        domain, network = observed_data.objects.values()
+        attribute['value'] = f'{domain.value}|{network.dst_port}'
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_hostname_port_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        domain, network = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = f'{domain.value}|{network.dst_port}'
         self._add_misp_attribute(attribute)
 
     def _attribute_from_ip_port_observable_v20(self, observed_data: ObservedData_v20):
@@ -600,6 +607,66 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         network, address = self._fetch_observables(observed_data.object_refs)
         port_value = network.src_port if hasattr(network, 'src_port') else network.dst_port
         attribute['value'] = f'{address.value}|{port_value}'
+        self._add_misp_attribute(attribute)
+
+    @staticmethod
+    def _attribute_from_malware_sample_observable(observables: tuple) -> dict:
+        attribute = {}
+        for observable in observables:
+            if observable.type == 'file':
+                attribute['value'] = f"{observable.name}|{observable.hashes['MD5']}"
+            else:
+                attribute['data'] = observable.payload_bin
+        return attribute
+
+    def _attribute_from_malware_sample_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute.update(
+            self._attribute_from_malware_sample_observable(observed_data.objects.values())
+        )
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_malware_sample_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observables = self._fetch_observables(observed_data.object_refs)
+        if isinstance(observables, tuple):
+            attribute.update(self._attribute_from_malware_sample_observable(observables))
+        else:
+            attribute['value'] = f"{observables.name}|{observables.hashes['MD5']}"
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_name_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute['value'] = observed_data.objects['0'].name
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_name_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = observable.name
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_regkey_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        attribute['value'] = observed_data.objects['0'].key
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_regkey_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = observable.key
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_regkey_value_observable_v20(self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = observed_data.objects['0']
+        attribute['value'] = f"{observable.key}|{observable['values'][0].data}"
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_regkey_value_observable_v21(self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        observable = self._fetch_observables(observed_data.object_refs)
+        attribute['value'] = f"{observable.key}|{observable['values'][0].data}"
         self._add_misp_attribute(attribute)
 
     def _attribute_from_second_observable_v20(self, observed_data: ObservedData_v20):
@@ -633,12 +700,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = self._extract_attribute_value_from_pattern(pattern)
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_domain_ip_indicator(self, indicator: _INDICATOR_TYPING):
+    def _attribute_from_double_pattern_indicator(self, indicator: _INDICATOR_TYPING):
         attribute = self._create_attribute_dict(indicator)
-        domain_pattern, address_pattern = indicator.pattern[1:-1].split(' AND ')
+        domain_pattern, pattern = indicator.pattern[1:-1].split(' AND ')
         domain_value = self._extract_attribute_value_from_pattern(domain_pattern)
-        ip_value = self._extract_attribute_value_from_pattern(address_pattern)
-        attribute['value'] = f'{domain_value}|{ip_value}'
+        value = self._extract_attribute_value_from_pattern(pattern)
+        attribute['value'] = f'{domain_value}|{value}'
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_dual_pattern_indicator(self, indicator: _INDICATOR_TYPING):
+        attribute = self._create_attribute_dict(indicator)
+        pattern = indicator.pattern[1:-1].split(' AND ')[1]
+        attribute['value'] = self._extract_attribute_value_from_pattern(pattern)
         self._add_misp_attribute(attribute)
 
     def _attribute_from_filename_hash_indicator(self, indicator: _INDICATOR_TYPING):
@@ -654,16 +727,21 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             raise AttributeFromPatternParsingError(indicator.id)
         self._add_misp_attribute(attribute)
 
-    def _attribute_from_ip_indicator(self, indicator: _INDICATOR_TYPING):
-        attribute = self._create_attribute_dict(indicator)
-        address_pattern = indicator.pattern[1:-1].split(' AND ')[1]
-        attribute['value'] = self._extract_attribute_value_from_pattern(address_pattern)
-        self._add_misp_attribute(attribute)
-
     def _attribute_from_ip_port_indicator(self, indicator: _INDICATOR_TYPING):
         attribute = self._create_attribute_dict(indicator)
         values = [self._extract_attribute_value_from_pattern(pattern) for pattern in indicator.pattern[1:-1].split(' AND ')[1:]]
         attribute['value'] = '|'.join(values)
+        self._add_misp_attribute(attribute)
+
+    def _attribute_from_malware_sample_indicator(self, indicator: _INDICATOR_TYPING):
+        attribute = self._create_attribute_dict(indicator)
+        pattern = indicator.pattern[1:-1]
+        filename_pattern, md5_pattern, *pattern = pattern.split(' AND ')
+        filename_value = self._extract_attribute_value_from_pattern(filename_pattern)
+        md5_value = self._extract_attribute_value_from_pattern(md5_pattern)
+        attribute['value'] = f'{filename_value}|{md5_value}'
+        if pattern:
+            attribute['data'] = self._extract_attribute_value_from_pattern(pattern[0])
         self._add_misp_attribute(attribute)
 
     def _attribute_from_patterning_language_indicator(self, indicator: Indicator_v21):

@@ -30,7 +30,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         indicator_attributes_mapping = {
             'AS': '_attribute_from_AS',
             'attachment': '_attribute_from_attachment',
-            'domain|ip': '_attribute_from_domain_ip',
+            'malware-sample': '_attribute_from_malware_sample'
         }
         indicator_attributes_mapping.update(
             dict.fromkeys(
@@ -49,11 +49,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'email-subject',
                     'email-x-mailer',
                     'filename',
+                    'hostname',
+                    'http-method',
                     'imphash',
                     'impfuzzy',
                     'link',
+                    'mac-address',
                     'md5',
+                    'mutex',
                     'pehash',
+                    'port',
                     'sha1',
                     'sha224',
                     'sha256',
@@ -65,11 +70,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'sha3-256',
                     'sha3-384',
                     'sha3-512',
+                    'size-in-bytes',
                     'ssdeep',
+                    'regkey',
                     'telfhash',
                     'tlsh',
                     'uri',
                     'url',
+                    'user-agent',
                     'vhash',
                     'x509-fingerprint-md5',
                     'x509-fingerprint-sha1',
@@ -107,10 +115,21 @@ class InternalSTIX2Mapping(STIX2Mapping):
         indicator_attributes_mapping.update(
             dict.fromkeys(
                 (
+                    'domain|ip',
+                    'hostname|port',
+                    'regkey|value'
+                ),
+                '_attribute_from_double_pattern'
+            )
+        )
+        indicator_attributes_mapping.update(
+            dict.fromkeys(
+                (
+                    'github-username',
                     'ip-src',
                     'ip-dst'
                 ),
-                '_attribute_from_ip'
+                '_attribute_from_dual_pattern'
             )
         )
         indicator_attributes_mapping.update(
@@ -145,16 +164,23 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'email-reply-to': '_attribute_from_email_reply_to',
             'email-subject': '_attribute_from_email_subject',
             'email-x-mailer': '_attribute_from_email_x_mailer',
-            'filename': '_attribute_from_filename'
+            'github-username': '_attribute_from_github_username',
+            'hostname|port': '_attribute_from_hostname_port',
+            'malware-sample': '_attribute_from_malware_sample',
+            'regkey': '_attribute_from_regkey',
+            'regkey|value': '_attribute_from_regkey_value'
         }
         observable_attributes_mapping.update(
             dict.fromkeys(
                 (
                     'domain',
                     'email',
+                    'hostname',
+                    'link',
+                    'mac-address',
+                    'mutex',
                     'uri',
-                    'url',
-                    'link'
+                    'url'
                 ),
                 '_attribute_from_first'
             )
@@ -223,6 +249,15 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'ip-dst|port'
                 ),
                 '_attribute_from_ip_port'
+            )
+        )
+        observable_attributes_mapping.update(
+            dict.fromkeys(
+                (
+                    'filename',
+                    'mutex'
+                ),
+                '_attribute_from_name'
             )
         )
         observable_attributes_mapping.update(
