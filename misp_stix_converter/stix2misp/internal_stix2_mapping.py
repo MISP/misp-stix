@@ -358,6 +358,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'employee': '_parse_employee_object',
             'facebook-account': '_object_from_account',
             'file': '_object_from_file',
+            'github-user': '_object_from_github_user',
+            'gitlab-user': '_object_from_gitlab_user',
             'image': '_object_from_image',
             'ip-port': '_object_from_ip_port',
             'legal-entity': '_parse_legal_entity_object',
@@ -367,27 +369,18 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'network-socket': '_object_from_network_socket',
             'news-agency': '_parse_news_agency_object',
             'organization': '_parse_organization_object',
+            'parler-account': '_object_from_parler_account',
             'process': '_object_from_process',
+            'reddit-account': '_object_from_reddit_account',
             'registry-key': '_object_from_registry_key',
             'script': '_parse_script_object',
+            'telegram-account': '_object_from_telegram_account',
+            'twitter-account': '_object_from_twitter_account',
             'url': '_object_from_url',
+            'user-account': '_object_from_user_account',
             'vulnerability': '_parse_vulnerability_object',
             'x509': '_object_from_x509'
         }
-        objects_mapping.update(
-            dict.fromkeys(
-                (
-                    'github-user',
-                    'gitlab-user',
-                    'parler-account',
-                    'reddit-account',
-                    'telegram-account',
-                    'twitter-account',
-                    'user-account'
-                ),
-                '_object_from_account'
-            )
-        )
         objects_mapping.update(
             dict.fromkeys(
                 (
