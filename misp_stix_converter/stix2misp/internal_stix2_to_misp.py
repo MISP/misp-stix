@@ -703,6 +703,24 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_asn_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_asn_observable(observed_data, 'v21')
 
+    def _object_from_cpe_asset_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('cpe-asset', observed_data)
+        observable = getattr(self, f'_fetch_observables_{version}')(observed_data)
+        for feature, mapping in self._mapping.cpe_asset_object_mapping.items():
+            if hasattr(observable, feature):
+                self._populate_object_attributes(
+                    misp_object,
+                    mapping,
+                    getattr(observable, feature)
+                )
+        self._add_misp_object(misp_object)
+
+    def _object_from_cpe_asset_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_cpe_asset_observable(observed_data, 'v20')
+
+    def _object_from_cpe_asset_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_cpe_asset_observable(observed_data, 'v21')
+
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
     ################################################################################
@@ -785,6 +803,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 'value': self._parse_AS_value(value) if feature == 'number' else value
             }
             attribute.update(self._mapping.asn_object_mapping[feature])
+            misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
+    def _object_from_cpe_asset_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('cpe-asset', indicator)
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            attribute = {'value': value}
+            attribute.update(self._mapping.cpe_asset_object_mapping[feature])
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 

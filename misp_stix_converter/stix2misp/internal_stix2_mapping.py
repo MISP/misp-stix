@@ -442,6 +442,21 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_stage = {'type': 'text', 'object_relation': 'stage'},
             x_misp_type = {'type': 'text', 'object_relation': 'type'}
         )
+        self.__cpe_asset_object_mapping = Mapping(
+            cpe = {'type': 'cpe', 'object_relation': 'cpe'},
+            languages = {'type': 'text', 'object_relation': 'language'},
+            name = {'type': 'text', 'object_relation': 'product'},
+            vendor = {'type': 'text', 'object_relation': 'vendor'},
+            version = {'type': 'text', 'object_relation': 'version'},
+            x_misp_description = description_attribute,
+            x_misp_other = {'type': 'text', 'object_relation': 'other'},
+            x_misp_part = {'type': 'text', 'object_relation': 'part'},
+            x_misp_product = {'type': 'text', 'object_relation': 'product'},
+            x_misp_sw_edition = {'type': 'text', 'object_relation': 'sw_edition'},
+            x_misp_target_hw = {'type': 'text', 'object_relation': 'target_hw'},
+            x_misp_target_sw = {'type': 'text', 'object_relation': 'target_sw'},
+            x_misp_update = {'type': 'text', 'object_relation': 'update'},
+        )
         self.__employee_object_mapping = Mapping(
             name = {'type': 'full-name', 'object_relation': 'full-name'},
             description = {'type': 'text', 'object_relation': 'text'},
@@ -562,6 +577,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def course_of_action_object_mapping(self) -> dict:
         return self.__course_of_action_object_mapping
+
+    @property
+    def cpe_asset_object_mapping(self) -> dict:
+        return self.__cpe_asset_object_mapping
 
     @property
     def employee_object_mapping(self) -> dict:
