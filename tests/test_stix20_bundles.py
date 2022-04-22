@@ -2488,7 +2488,6 @@ _MALWARE_SAMPLE_INDICATOR_ATTRIBUTE = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "description": "Malware Sample test attribute",
-    "pattern": "[file:name = 'oui' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.mime_type = 'application/zip']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
         {
@@ -2522,8 +2521,7 @@ _MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE = {
         },
         "1": {
             "type": "artifact",
-            "mime_type": "application/zip",
-            "payload_bin": "UEsDBAoACQAAAAaOU1EvUbiwLwAAACMAAAAgABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAkAAzu1jV87tY1fdXgLAAEEIQAAAAQhAAAAUxIrDdj2V8dHuHoKPVDwAeOqqY3shFf5CKvJ/TZg7iNXlXSgxTaWwMnb6fESF/RQSwcIL1G4sC8AAAAjAAAAUEsDBAoACQAAAAaOU1FAAezaDwAAAAMAAAAtABwAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQJAAM7tY1fO7WNX3V4CwABBCEAAAAEIQAAAI7lFn9K1EsuznCkFF9PRFBLBwhAAezaDwAAAAMAAABQSwECHgMKAAkAAAAGjlNRL1G4sC8AAAAjAAAAIAAYAAAAAAABAAAApIEAAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDJVVAUAAzu1jV91eAsAAQQhAAAABCEAAABQSwECHgMKAAkAAAAGjlNRQAHs2g8AAAADAAAALQAYAAAAAAABAAAApIGZAAAAODc2NDYwNWM2ZjM4OGM4OTA5NmI1MzRkMzM1NjU4MDIuZmlsZW5hbWUudHh0VVQFAAM7tY1fdXgLAAEEIQAAAAQhAAAAUEsFBgAAAAACAAIA2QAAAB8BAAAAAA=="
+            "mime_type": "application/zip"
         }
     },
     "labels": [
@@ -3330,11 +3328,23 @@ class TestSTIX20Bundles:
 
     @classmethod
     def get_bundle_with_malware_sample_indicator_attribute(cls):
-        return cls.__assemble_bundle(_MALWARE_SAMPLE_INDICATOR_ATTRIBUTE)
+        indicator = deepcopy(_MALWARE_SAMPLE_INDICATOR_ATTRIBUTE)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            pattern = [
+                "file:name = 'oui'",
+                "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+                f"file:content_ref.payload_bin = '{b64encode(f.read()).decode()}'",
+                "file:content_ref.mime_type = 'application/zip'"
+            ]
+        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(indicator)
 
     @classmethod
     def get_bundle_with_malware_sample_observable_attribute(cls):
-        return cls.__assemble_bundle(_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE)
+        observed_data = deepcopy(_MALWARE_SAMPLE_OBSERVABLE_ATTRIBUTE)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            observed_data['objects']['1']['payload_bin'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(observed_data)
 
     @classmethod
     def get_bundle_with_mutex_indicator_attribute(cls):
