@@ -235,6 +235,63 @@ _COURSE_OF_ACTION_OBJECT = {
     "x_misp_stage": "Response",
     "x_misp_type": "Perimeter Blocking"
 }
+_CPE_ASSET_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--3f53a829-6307-4006-b7a2-ff53dace4159",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[software:cpe = 'cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*' AND software:languages = 'ENG' AND software:name = 'Word' AND software:vendor = 'Microsoft' AND software:version = '2002' AND software:x_misp_description = 'Microsoft Word is a word processing software developed by Microsoft.']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "misc"
+        }
+    ],
+    "labels": [
+        "misp:name=\"cpe-asset\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_CPE_ASSET_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3f53a829-6307-4006-b7a2-ff53dace4159",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "software--3f53a829-6307-4006-b7a2-ff53dace4159"
+        ],
+        "labels": [
+            "misp:name=\"cpe-asset\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "software",
+        "spec_version": "2.1",
+        "id": "software--3f53a829-6307-4006-b7a2-ff53dace4159",
+        "name": "Word",
+        "cpe": "cpe:2.3:a:microsoft:word:2000:*:*:*:*:*:*:*",
+        "languages": [
+            "ENG"
+        ],
+        "vendor": "Microsoft",
+        "version": "2002",
+        "x_misp_description": "Microsoft Word is a word processing software developed by Microsoft."
+    }
+]
 _DOMAIN_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -3859,7 +3916,7 @@ class TestSTIX21Bundles:
         return dict_to_stix2(bundle, allow_custom=True)
 
     ################################################################################
-    #                               ATTRIBUTES TESTS                               #
+    #                              ATTRIBUTES SAMPLES                              #
     ################################################################################
 
     @classmethod
@@ -3869,14 +3926,6 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_AS_observable_attribute(cls):
         return cls.__assemble_bundle(*_AS_OBSERVABLE_ATTRIBUTE)
-
-    @classmethod
-    def get_bundle_with_asn_indicator_object(cls):
-        return cls.__assemble_bundle(_ASN_INDICATOR_OBJECT)
-
-    @classmethod
-    def get_bundle_with_asn_observable_object(cls):
-        return cls.__assemble_bundle(*_ASN_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_attachment_indicator_attribute(cls):
@@ -4127,8 +4176,16 @@ class TestSTIX21Bundles:
         return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES)
 
     ################################################################################
-    #                              MISP OBJECTS TESTS                              #
+    #                             MISP OBJECTS SAMPLES                             #
     ################################################################################
+
+    @classmethod
+    def get_bundle_with_asn_indicator_object(cls):
+        return cls.__assemble_bundle(_ASN_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_asn_observable_object(cls):
+        return cls.__assemble_bundle(*_ASN_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_attack_pattern_object(cls):
@@ -4137,6 +4194,14 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_course_of_action_object(cls):
         return cls.__assemble_bundle(_COURSE_OF_ACTION_OBJECT)
+
+    @classmethod
+    def get_bundle_with_cpe_asset_indicator_object(cls):
+        return cls.__assemble_bundle(_CPE_ASSET_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_cpe_asset_observable_object(cls):
+        return cls.__assemble_bundle(*_CPE_ASSET_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_employee_object(cls):

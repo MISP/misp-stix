@@ -1346,6 +1346,31 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             course_of_action = course_of_action
         )
 
+    def test_stix21_bundle_with_cpe_asset_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_cpe_asset_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        self._check_cpe_asset_indicator_object(misp_object.attributes, pattern)
+
+    def test_stix21_bundle_with_cpe_asset_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_cpe_asset_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, observable = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        observable_ref = self._check_observed_data_object(misp_object, observed_data)[0]
+        self.assertEqual(
+            misp_object.uuid,
+            observable.id.split('--')[1],
+            observable_ref.split('--')[1]
+        )
+        self._check_cpe_asset_observable_object(misp_object.attributes, observable)
+
     def test_stix21_bundle_with_employee_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_employee_object()
         self.parser.load_stix_bundle(bundle)
