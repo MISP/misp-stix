@@ -7,6 +7,333 @@ from pathlib import Path
 from stix2.parsing import dict_to_stix2
 
 _TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
+_ACCOUNT_INDICATOR_OBJECTS = [
+    {
+        "type": "indicator",
+        "id": "indicator--7d8ac653-b65c-42a6-8420-ddc71d65f50d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_type = 'facebook' AND user-account:user_id = '1392781243' AND user-account:account_login = 'marcopolo' AND user-account:x_misp_link = 'https://facebook.com/marcopolo']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"facebook-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_type = 'gitlab' AND user-account:user_id = '1234567890' AND user-account:display_name = 'John Doe' AND user-account:account_login = 'j0hnd0e']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"gitlab-user\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7ecc4537-89cd-4f17-8027-6e0f70710c53",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_type = 'telegram' AND user-account:user_id = '1234567890' AND user-account:account_login = 'T3l3gr4mUs3r' AND user-account:x_misp_phone = '0112233445' AND user-account:x_misp_phone = '0556677889']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"telegram-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[user-account:account_type = 'twitter' AND user-account:display_name = 'John Doe' AND user-account:user_id = '1357111317' AND user-account:account_login = 'johndoe' AND user-account:x_misp_followers = '666']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"twitter-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"True\""
+        ]
+    }
+]
+_ACCOUNT_OBSERVABLE_OBJECTS = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--7d8ac653-b65c-42a6-8420-ddc71d65f50d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "1392781243",
+                "account_login": "marcopolo",
+                "account_type": "facebook",
+                "x_misp_link": "https://facebook.com/marcopolo"
+            }
+        },
+        "labels": [
+            "misp:name=\"facebook-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "1234567890",
+                "account_login": "j0hnd0e",
+                "account_type": "gitlab",
+                "display_name": "John Doe"
+            }
+        },
+        "labels": [
+            "misp:name=\"gitlab-user\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--7ecc4537-89cd-4f17-8027-6e0f70710c53",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "1234567890",
+                "account_login": "T3l3gr4mUs3r",
+                "account_type": "telegram",
+                "x_misp_phone": [
+                    "0112233445",
+                    "0556677889"
+                ]
+            }
+        },
+        "labels": [
+            "misp:name=\"telegram-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "1357111317",
+                "account_login": "johndoe",
+                "account_type": "twitter",
+                "display_name": "John Doe",
+                "x_misp_followers": "666"
+            }
+        },
+        "labels": [
+            "misp:name=\"twitter-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    }
+]
+_ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
+    {
+        "type": "indicator",
+        "id": "indicator--5177abbd-c437-4acb-9173-eee371ad24da",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"github-user\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--7b0698a0-209a-4da0-a5c5-cfc4734f3af2",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"parler-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--43d3eff0-fabc-4663-9493-fad3a1eed0d5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"reddit-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"True\""
+        ]
+    }
+]
+_ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5177abbd-c437-4acb-9173-eee371ad24da",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "1",
+                "account_login": "octocat",
+                "account_type": "github",
+                "display_name": "Octo Cat",
+                "x_misp_organisation": "GitHub",
+                "x_misp_profile_image": {
+                    "value": "octocat.png"
+                }
+            }
+        },
+        "labels": [
+            "misp:name=\"github-user\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--7b0698a0-209a-4da0-a5c5-cfc4734f3af2",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "42",
+                "account_login": "ParlerOctocat",
+                "account_type": "parler",
+                "x_misp_human": False,
+                "x_misp_profile_photo": {
+                    "value": "octocat.png"
+                }
+            }
+        },
+        "labels": [
+            "misp:name=\"parler-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--43d3eff0-fabc-4663-9493-fad3a1eed0d5",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "666",
+                "account_login": "RedditOctocat",
+                "account_type": "reddit",
+                "x_misp_account_avatar": {
+                    "value": "octocat.png"
+                },
+                "x_misp_description": "Reddit account of the OctoCat"
+            }
+        },
+        "labels": [
+            "misp:name=\"reddit-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    }
+]
 _AS_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -3401,6 +3728,63 @@ class TestSTIX20Bundles:
     ################################################################################
     #                             MISP OBJECTS SAMPLES                             #
     ################################################################################
+
+    @classmethod
+    def get_bundle_with_account_indicator_objects(cls):
+        return cls.__assemble_bundle(*_ACCOUNT_INDICATOR_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_account_observable_objects(cls):
+        return cls.__assemble_bundle(*_ACCOUNT_OBSERVABLE_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_account_with_attachment_indicator_objects(cls):
+        indicators = deepcopy(_ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS)
+        with open(_TESTFILES_PATH / 'octocat.png', 'rb') as f:
+            data = b64encode(f.read()).decode()
+        patterns = (
+            (
+                "user-account:account_type = 'github'",
+                "user-account:user_id = '1'",
+                "user-account:display_name = 'Octo Cat'",
+                "user-account:account_login = 'octocat'",
+                "user-account:x_misp_organisation = 'GitHub'",
+                f"user-account:x_misp_profile_image.data = '{data}'",
+                "user-account:x_misp_profile_image.value = 'octocat.png'"
+            ),
+            (
+                "user-account:account_type = 'parler'",
+                "user-account:user_id = '42'",
+                "user-account:account_login = 'ParlerOctocat'",
+                "user-account:x_misp_human = 'False'",
+                f"user-account:x_misp_profile_photo.data = '{data}'","user-account:x_misp_profile_photo.value = 'octocat.png'"
+            ),
+            (
+                "user-account:account_type = 'reddit'",
+                "user-account:user_id = '666'",
+                "user-account:account_login = 'RedditOctocat'",
+                "user-account:x_misp_description = 'Reddit account of the OctoCat'",
+                f"user-account:x_misp_account_avatar.data = '{data}'",
+                "user-account:x_misp_account_avatar.value = 'octocat.png'"
+            )
+        )
+        for indicator, pattern in zip(indicators, patterns):
+            indicator['pattern'] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(*indicator)
+
+    @classmethod
+    def get_bundle_with_account_with_attachment_observable_objects(cls):
+        observables = deepcopy(_ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS)
+        with open(_TESTFILES_PATH / 'octocat.png', 'rb') as f:
+            data = b64encode(f.read()).decode()
+        features = (
+            'x_misp_profile_image',
+            'x_misp_profile_photo',
+            'x_misp_account_avatar'
+        )
+        for observed_data, feature in zip(observables, features):
+            observed_data['objects']['0'][feature]['data'] = data
+        return cls.__assemble_bundle(*observables)
 
     @classmethod
     def get_bundle_with_asn_indicator_object(cls):
