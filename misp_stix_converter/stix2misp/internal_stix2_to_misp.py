@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .exceptions import (AttributeFromPatternParsingError, UndefinedSTIXObjectError,
+from .exceptions import (
+    AttributeFromPatternParsingError, UndefinedSTIXObjectError,
     UndefinedIndicatorError, UndefinedObservableError, UnknownParsingFunctionError)
 from .internal_stix2_mapping import InternalSTIX2Mapping
 from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
 from pymisp import MISPAttribute, MISPEvent, MISPObject
-from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
-    CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
-    Identity as Identity_v20, Indicator as Indicator_v20, Malware as Malware_v20,
-    ObservedData as ObservedData_v20, Tool as Tool_v20,
+from stix2.v20.sdo import (
+    AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
+    CustomObject as CustomObject_v20, Identity as Identity_v20, Indicator as Indicator_v20,
+    Malware as Malware_v20, ObservedData as ObservedData_v20, Tool as Tool_v20,
     Vulnerability as Vulnerability_v20)
-from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
-    CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21,
-    Identity as Identity_v21, Indicator as Indicator_v21, Malware as Malware_v21,
-    Note, ObservedData as ObservedData_v21, Tool as Tool_v21,
+from stix2.v21.sdo import (
+    AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
+    CustomObject as CustomObject_v21, Identity as Identity_v21, Indicator as Indicator_v21,
+    Malware as Malware_v21, Note, ObservedData as ObservedData_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
 from typing import Optional, Union
 
@@ -41,7 +42,7 @@ _OBSERVED_DATA_TYPING = Union[
 
 
 class InternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, single_event: Optional[bool]=False, synonyms_path: Optional[str]=None):
+    def __init__(self, single_event: Optional[bool] = False, synonyms_path: Optional[str] = None):
         super().__init__(single_event, synonyms_path)
         self._mapping = InternalSTIX2Mapping()
 
@@ -703,10 +704,20 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_asn_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_asn_observable(observed_data, 'v21')
 
-    def _object_from_cpe_asset_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
-        misp_object = self._create_misp_object('cpe-asset', observed_data)
+    def _object_from_cpe_asset_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_standard_observable(observed_data, 'cpe-asset', 'v20')
+
+    def _object_from_cpe_asset_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_standard_observable(observed_data, 'cpe-asset', 'v21')
+
+    def _object_from_standard_observable(self, observed_data: _OBSERVED_DATA_TYPING,
+                                        name: str, version: str):
+        misp_object = self._create_misp_object(name, observed_data)
         observable = getattr(self, f'_fetch_observables_{version}')(observed_data)
-        for feature, mapping in self._mapping.cpe_asset_object_mapping.items():
+        for feature, mapping in getattr(
+            self._mapping,
+            f"{name.replace('-', '_')}_object_mapping"
+        ).items():
             if hasattr(observable, feature):
                 self._populate_object_attributes(
                     misp_object,
@@ -714,12 +725,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     getattr(observable, feature)
                 )
         self._add_misp_object(misp_object)
-
-    def _object_from_cpe_asset_observable_v20(self, observed_data: ObservedData_v20):
-        self._object_from_cpe_asset_observable(observed_data, 'v20')
-
-    def _object_from_cpe_asset_observable_v21(self, observed_data: ObservedData_v21):
-        self._object_from_cpe_asset_observable(observed_data, 'v21')
 
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
