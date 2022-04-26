@@ -331,7 +331,7 @@ class Stix2Mapping:
             'domain-ip': '_parse_domain_ip_object',
             'email': '_parse_email_object',
             'employee': '_parse_employee_object',
-            'facebook-account': '_parse_account_object',
+            'facebook-account': '_parse_account_object_with_attachment',
             'file': '_parse_file_object',
             'github-user': '_parse_account_object_with_attachment',
             'gitlab-user': '_parse_account_object',
@@ -352,7 +352,7 @@ class Stix2Mapping:
             'registry-key': '_parse_registry_key_object',
             'script': '_parse_script_object',
             'telegram-account': '_parse_account_object',
-            'twitter-account': '_parse_account_object',
+            'twitter-account': '_parse_account_object_with_attachment',
             'url': '_parse_url_object',
             'user-account': '_parse_user_account_object',
             'vulnerability': '_parse_vulnerability_object',
@@ -457,6 +457,10 @@ class Stix2Mapping:
             'full-name',
             'last-name',
             'text'
+        )
+        self.__facebook_account_data_fields = (
+            'attachment',
+            'user-avatar'
         )
         self.__facebook_account_object_mapping = Mapping(
             **{
@@ -706,7 +710,6 @@ class Stix2Mapping:
                 'account-name': 'account_login'
             }
         )
-
         self.__reddit_account_single_fields = (
             'account-id',
             'account-name'
@@ -749,6 +752,11 @@ class Stix2Mapping:
             'id',
             'username'
         )
+        self.__twitter_account_data_fields = (
+            'attachment',
+            'profile-banner',
+            'profile-image'
+        )
         self.__twitter_account_object_mapping = Mapping(
             **{
                 'displayed-name': 'display_name',
@@ -760,6 +768,9 @@ class Stix2Mapping:
             'displayed-name',
             'id',
             'name'
+        )
+        self.__user_account_data_fields = (
+            'user-avatar',
         )
         self.__user_account_single_fields = (
             'account-type',
@@ -921,6 +932,10 @@ class Stix2Mapping:
     @property
     def external_id_to_source_name(self) -> dict:
         return self.__external_id_to_source_name
+
+    @property
+    def facebook_account_data_fields(self) -> tuple:
+        return self.__facebook_account_data_fields
 
     @property
     def facebook_account_object_mapping(self) -> dict:
@@ -1155,12 +1170,20 @@ class Stix2Mapping:
         return self.__telegram_account_single_fields
 
     @property
+    def twitter_account_data_fields(self) -> tuple:
+        return self.__twitter_account_data_fields
+
+    @property
     def twitter_account_object_mapping(self) -> dict:
         return self.__twitter_account_object_mapping
 
     @property
     def twitter_account_single_fields(self) -> tuple:
         return self.__twitter_account_single_fields
+
+    @property
+    def user_account_data_fields(self) -> tuple:
+        return self.__user_account_data_fields
 
     @property
     def user_account_single_fields(self) -> tuple:

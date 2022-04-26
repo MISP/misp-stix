@@ -971,16 +971,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
             if attributes:
                 for key, values in attributes.items():
-                    key = key.replace('-', '_')
                     for value in values:
-                        if isinstance(value, tuple):
-                            value, data = value
-                            if '\\' in data:
-                                data = data.replace('\\', '')
-                            pattern.append(f"{prefix}:x_misp_{key}.data = '{data}'")
-                            pattern.append(f"{prefix}:x_misp_{key}.value = '{value}'")
-                        else:
-                            pattern.append(f"{prefix}:x_misp_{key} = '{value}'")
+                        pattern.extend(
+                            self._handle_custom_data_pattern(
+                                prefix,
+                                key.replace('-', '_'),
+                                value
+                            )
+                        )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_account_object_with_attachment_observable(misp_object, name)
@@ -1673,9 +1671,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_user_account_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'user-account'
-            attributes = self._extract_multiple_object_attributes_escaped(
+            attributes = self._extract_multiple_object_attributes_with_data(
                 misp_object['Attribute'],
-                force_single=self._mapping.user_account_single_fields
+                force_single = self._mapping.user_account_single_fields,
+                with_data = self._mapping.user_account_data_fields
             )
             pattern = []
             for data_type in ('features', 'timeline'):
@@ -1692,7 +1691,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     else:
                         pattern.append(f"{extension_prefix}.{feature} = '{values}'")
             if attributes:
-                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+                for key, values in attributes.items():
+                    if isinstance(values, list):
+                        for value in values:
+                            pattern.extend(
+                                self._handle_custom_data_pattern(
+                                    prefix,
+                                    key.replace('-', '_'),
+                                    value
+                                )
+                            )
+                    else:
+                        pattern.extend(
+                            self._handle_custom_data_pattern(
+                                prefix,
+                                key.replace('-', '_'),
+                                values
+                            )
+                        )
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_user_account_object_observable(misp_object)
@@ -2621,9 +2637,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return url_args
 
     def _parse_user_account_args(self, attributes: dict) -> dict:
-        attributes = self._extract_multiple_object_attributes(
+        attributes = self._extract_multiple_object_attributes_with_data(
             attributes,
-            force_single=self._mapping.user_account_single_fields
+            force_single = self._mapping.user_account_single_fields,
+            with_data = self._mapping.user_account_data_fields
         )
         user_account_args = {}
         for key, feature in self._mapping.user_account_object_mapping['features'].items():
@@ -2639,7 +2656,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if extension:
             user_account_args['extensions'] = {'unix-account-ext': extension}
         if attributes:
-            user_account_args.update(self._handle_observable_multiple_properties(attributes))
+            user_account_args.update(
+                self._handle_observable_multiple_properties_with_data(
+                    attributes,
+                    'user_account'
+                )
+            )
         return user_account_args
 
     def _parse_x509_args(self, attributes: dict) -> dict:
@@ -2810,6 +2832,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 return [self._parse_custom_data_value(value) for value in values]
             return self._parse_custom_data_value(values[0])
         return self._parse_custom_data_value(values)
+
+    @staticmethod
+    def _handle_custom_data_pattern(prefix: str, key: str, value: Union[str, tuple]) -> list:
+        if isinstance(value, tuple):
+            value, data = value
+            if '\\' in data:
+                data = data.replace('\\', '')
+            return [
+                f"{prefix}:x_misp_{key}.data = '{data}'",
+                f"{prefix}:x_misp_{key}.value = '{value}'"
+            ]
+        return [f"{prefix}:x_misp_{key} = '{value}'"]
 
     def _handle_indicator_time_fields(self, attribute: dict) -> dict:
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
