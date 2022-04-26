@@ -3018,7 +3018,7 @@
         "MISP": {
             "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
             "type": "link",
-            "category": "External activity",
+            "category": "External analysis",
             "value": "https://misp-project.org/download/",
             "timestamp": "1603642920",
             "comment": "Link test attribute"
@@ -3036,12 +3036,12 @@
                 "kill_chain_phases": [
                     {
                         "kill_chain_name": "misp-category",
-                        "phase_name": "External activity"
+                        "phase_name": "External analysis"
                     }
                 ],
                 "labels": [
                     "misp:type=\"link\"",
-                    "misp:category=\"External activity\"",
+                    "misp:category=\"External analysis\"",
                     "misp:to_ids=\"True\""
                 ]
             },
@@ -3062,7 +3062,7 @@
                 },
                 "labels": [
                     "misp:type=\"link\"",
-                    "misp:category=\"External activity\""
+                    "misp:category=\"External analysis\""
                 ]
             }
         }
