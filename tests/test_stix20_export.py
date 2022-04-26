@@ -1253,14 +1253,8 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
     def test_event_with_account_indicator_objects(self):
         event = get_event_with_account_objects()
         misp_objects, patterns = self._run_indicators_from_objects_tests(event)
-        facebook_object, gitlab_object, telegram_object, twitter_object = misp_objects
-        facebook_pattern, gitlab_pattern, telegram_pattern, twitter_pattern = patterns
-        account_id, account_name, link = (attribute['value'] for attribute in facebook_object['Attribute'])
-        account_type, user_id, account_login, _link = facebook_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'facebook'")
-        self.assertEqual(user_id, f"user-account:user_id = '{account_id}'")
-        self.assertEqual(account_login, f"user-account:account_login = '{account_name}'")
-        self.assertEqual(_link, f"user-account:x_misp_link = '{link}'")
+        gitlab_object, telegram_object = misp_objects
+        gitlab_pattern, telegram_pattern = patterns
         gitlab_id, name, username = (attribute['value'] for attribute in gitlab_object['Attribute'])
         account_type, user_id, display_name, account_login = gitlab_pattern[1:-1].split(' AND ')
         self.assertEqual(account_type, f"user-account:account_type = 'gitlab'")
@@ -1274,28 +1268,14 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         self.assertEqual(login, f"user-account:account_login = '{username}'")
         self.assertEqual(phone_1, f"user-account:x_misp_phone = '{phone1}'")
         self.assertEqual(phone_2, f"user-account:x_misp_phone = '{phone2}'")
-        _id, name, displayed_name, followers = (attribute['value'] for attribute in twitter_object['Attribute'])
-        account_type, display_name, user_id, account_login, _followers = twitter_pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type, f"user-account:account_type = 'twitter'")
-        self.assertEqual(display_name, f"user-account:display_name = '{displayed_name}'")
-        self.assertEqual(user_id, f"user-account:user_id = '{_id}'")
-        self.assertEqual(account_login, f"user-account:account_login = '{name}'")
-        self.assertEqual(_followers, f"user-account:x_misp_followers = '{followers}'")
-        for misp_object, indicator in zip(misp_objects, self.parser.stix_objects[-4:]):
+        for misp_object, indicator in zip(misp_objects, self.parser.stix_objects[-2:]):
             self._populate_documentation(misp_object=misp_object, indicator=indicator)
 
     def test_event_with_account_observable_objects(self):
         event = get_event_with_account_objects()
         misp_objects, observable_objects = self._run_observables_from_objects_tests(event)
-        facebook_object, gitlab_object, telegram_object, twitter_object = misp_objects
-        facebook, gitlab, telegram, twitter = observable_objects
-        account_id, account_name, link = (attribute['value'] for attribute in facebook_object['Attribute'])
-        facebook = facebook['0']
-        self.assertEqual(facebook.type, 'user-account')
-        self.assertEqual(facebook.account_type, 'facebook')
-        self.assertEqual(facebook.user_id, account_id)
-        self.assertEqual(facebook.account_login, account_name)
-        self.assertEqual(facebook.x_misp_link, link)
+        gitlab_object, telegram_object = misp_objects
+        gitlab, telegram = observable_objects
         gitlab_id, name, username = (attribute['value'] for attribute in gitlab_object['Attribute'])
         gitlab = gitlab['0']
         self.assertEqual(gitlab.type, 'user-account')
@@ -1310,23 +1290,32 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         self.assertEqual(telegram.user_id, telegram_id)
         self.assertEqual(telegram.account_login, username)
         self.assertEqual(telegram.x_misp_phone, [phone1, phone2])
-        _id, name, displayed_name, followers = (attribute['value'] for attribute in twitter_object['Attribute'])
-        twitter = twitter['0']
-        self.assertEqual(twitter.type, 'user-account')
-        self.assertEqual(twitter.account_type, 'twitter')
-        self.assertEqual(twitter.user_id, _id)
-        self.assertEqual(twitter.account_login, name)
-        self.assertEqual(twitter.display_name, displayed_name)
-        self.assertEqual(twitter.x_misp_followers, followers)
-        for misp_object, observed_data in zip(misp_objects, self.parser.stix_objects[-4:]):
+        for misp_object, observed_data in zip(misp_objects, self.parser.stix_objects[-2:]):
             self._populate_documentation(misp_object=misp_object, observed_data=observed_data)
 
     def test_event_with_account_indicator_objects_with_attachment(self):
         event = get_event_with_account_objects_with_attachment()
         misp_objects, patterns = self._run_indicators_from_objects_tests(event)
-        github_user, parler_account, reddit_account = misp_objects
-        github_pattern, parler_pattern, reddit_pattern = patterns
+        facebook_account, github_user, parler_account, reddit_account, twitter_account = misp_objects
+        facebook_pattern, github_pattern, parler_pattern, reddit_pattern, twitter_pattern = patterns
         github_id, username, fullname, organisation, image = (attribute['value'] for attribute in github_user['Attribute'])
+        account_id, account_name, link, avatar = facebook_account['Attribute']
+        account_type, user_id, account_login, _link, avatar_data, avatar_value = facebook_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'facebook'")
+        self.assertEqual(user_id, f"user-account:user_id = '{account_id['value']}'")
+        self.assertEqual(
+            account_login,
+            f"user-account:account_login = '{account_name['value']}'"
+        )
+        self.assertEqual(_link, f"user-account:x_misp_link = '{link['value']}'")
+        self.assertEqual(
+            avatar_data,
+            f"user-account:x_misp_user_avatar.data = '{avatar['data']}'"
+        )
+        self.assertEqual(
+            avatar_value,
+            f"user-account:x_misp_user_avatar.value = '{avatar['value']}'"
+        )
         account_type, user_id, display_name, login, organization, image_data, image_value = github_pattern[1:-1].split(' AND ')
         self.assertEqual(account_type, "user-account:account_type = 'github'")
         self.assertEqual(user_id, f"user-account:user_id = '{github_id}'")
@@ -1354,14 +1343,46 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         data = reddit_account['Attribute'][-1]['data'].replace('\\', '')
         self.assertEqual(image_data, f"user-account:x_misp_account_avatar.data = '{data}'")
         self.assertEqual(image_value, f"user-account:x_misp_account_avatar.value = '{account_avatar}'")
-        for misp_object, indicator in zip(misp_objects, self.parser.stix_objects[-3:]):
+        _id, name, displayed_name, followers, profile_image = twitter_account['Attribute']
+        account_type, display_name, user_id, account_login, _followers, image_data, image_value = twitter_pattern[1:-1].split(' AND ')
+        self.assertEqual(account_type, f"user-account:account_type = 'twitter'")
+        self.assertEqual(
+            display_name,
+            f"user-account:display_name = '{displayed_name['value']}'"
+        )
+        self.assertEqual(user_id, f"user-account:user_id = '{_id['value']}'")
+        self.assertEqual(account_login, f"user-account:account_login = '{name['value']}'")
+        self.assertEqual(_followers, f"user-account:x_misp_followers = '{followers['value']}'")
+        self.assertEqual(
+            image_data,
+            f"user-account:x_misp_profile_image.data = '{profile_image['data']}'"
+        )
+        self.assertEqual(
+            image_value,
+            f"user-account:x_misp_profile_image.value = '{profile_image['value']}'"
+        )
+        for misp_object, indicator in zip(misp_objects, self.parser.stix_objects[-5:]):
             self._populate_documentation(misp_object=misp_object, indicator=indicator)
 
     def test_event_with_account_observable_object_with_attachment(self):
         event = get_event_with_account_objects_with_attachment()
         misp_objects, observable_objects = self._run_observables_from_objects_tests(event)
-        github_user, parler_account, reddit_account = misp_objects
-        github, parler, reddit = observable_objects
+        facebook_account, github_user, parler_account, reddit_account, twitter_account = misp_objects
+        facebook, github, parler, reddit, twitter = observable_objects
+        account_id, account_name, link, avatar = facebook_account['Attribute']
+        facebook = facebook['0']
+        self.assertEqual(facebook.type, 'user-account')
+        self.assertEqual(facebook.account_type, 'facebook')
+        self.assertEqual(facebook.user_id, account_id['value'])
+        self.assertEqual(facebook.account_login, account_name['value'])
+        self.assertEqual(facebook.x_misp_link, link['value'])
+        self.assertEqual(
+            facebook.x_misp_user_avatar,
+            {
+                'value': avatar['value'],
+                'data': avatar['data']
+            }
+        )
         github_id, username, fullname, organisation, image = (attribute['value'] for attribute in github_user['Attribute'])
         github = github['0']
         self.assertEqual(github.type, 'user-account')
@@ -1399,7 +1420,22 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
             reddit.x_misp_account_avatar['data'],
             reddit_account['Attribute'][-1]['data'].replace('\\', '')
         )
-        for misp_object, observed_data in zip(misp_objects, self.parser.stix_objects[-3:]):
+        _id, name, displayed_name, followers, profile_image = twitter_account['Attribute']
+        twitter = twitter['0']
+        self.assertEqual(twitter.type, 'user-account')
+        self.assertEqual(twitter.account_type, 'twitter')
+        self.assertEqual(twitter.user_id, _id['value'])
+        self.assertEqual(twitter.account_login, name['value'])
+        self.assertEqual(twitter.display_name, displayed_name['value'])
+        self.assertEqual(twitter.x_misp_followers, followers['value'])
+        self.assertEqual(
+            twitter.x_misp_profile_image,
+            {
+                'value': profile_image['value'],
+                'data': profile_image['data']
+            }
+        )
+        for misp_object, observed_data in zip(misp_objects, self.parser.stix_objects[-5:]):
             self._populate_documentation(misp_object=misp_object, observed_data=observed_data)
 
     def test_event_with_android_app_indicator_object(self):
@@ -2442,18 +2478,46 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
     def test_event_with_user_account_indicator_object(self):
         event = get_event_with_user_account_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _username, _userid, _display_name, _passwd, _group1, _group2, _groupid, _home, _account_type, _plc = (attribute['value'] for attribute in attributes)
-        account_type_, display_name_, userid_, username_, plc_, group1_, group2_, groupid_, home_, passwd_ = pattern[1:-1].split(' AND ')
-        self.assertEqual(account_type_, f"user-account:account_type = '{_account_type}'")
-        self.assertEqual(display_name_, f"user-account:display_name = '{_display_name}'")
-        self.assertEqual(userid_, f"user-account:user_id = '{_userid}'")
-        self.assertEqual(username_, f"user-account:account_login = '{_username}'")
-        self.assertEqual(plc_, f"user-account:password_last_changed = '{_plc}'")
-        self.assertEqual(group1_, f"user-account:extensions.'unix-account-ext'.groups = '{_group1}'")
-        self.assertEqual(group2_, f"user-account:extensions.'unix-account-ext'.groups = '{_group2}'")
-        self.assertEqual(groupid_, f"user-account:extensions.'unix-account-ext'.gid = '{_groupid}'")
-        self.assertEqual(home_, f"user-account:extensions.'unix-account-ext'.home_dir = '{_home}'")
-        self.assertEqual(passwd_, f"user-account:x_misp_password = '{_passwd}'")
+        _username, _userid, _display_name, _passwd, _group1, _group2, _groupid, _home, user_avatar, _account_type, _plc = attributes
+        import json
+        print(json.dumps(pattern[1:-1].split(' AND '), indent=4))
+        account_type_, display_name_, userid_, username_, plc_, group1_, group2_, groupid_, home_, passwd_, avatar_data, avatar_value = pattern[1:-1].split(' AND ')
+        self.assertEqual(
+            account_type_,
+            f"user-account:account_type = '{_account_type['value']}'"
+        )
+        self.assertEqual(
+            display_name_,
+            f"user-account:display_name = '{_display_name['value']}'"
+        )
+        self.assertEqual(userid_, f"user-account:user_id = '{_userid['value']}'")
+        self.assertEqual(username_, f"user-account:account_login = '{_username['value']}'")
+        self.assertEqual(plc_, f"user-account:password_last_changed = '{_plc['value']}'")
+        self.assertEqual(
+            group1_,
+            f"user-account:extensions.'unix-account-ext'.groups = '{_group1['value']}'"
+        )
+        self.assertEqual(
+            group2_,
+            f"user-account:extensions.'unix-account-ext'.groups = '{_group2['value']}'"
+        )
+        self.assertEqual(
+            groupid_,
+            f"user-account:extensions.'unix-account-ext'.gid = '{_groupid['value']}'"
+        )
+        self.assertEqual(
+            home_,
+            f"user-account:extensions.'unix-account-ext'.home_dir = '{_home['value']}'"
+        )
+        self.assertEqual(passwd_, f"user-account:x_misp_password = '{_passwd['value']}'")
+        self.assertEqual(
+            avatar_data,
+            f"user-account:x_misp_user_avatar.data = '{user_avatar['data']}'"
+        )
+        self.assertEqual(
+            avatar_value,
+            f"user-account:x_misp_user_avatar.value = '{user_avatar['value']}'"
+        )
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],
             indicator = self.parser.stix_objects[-1]
@@ -2462,21 +2526,29 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
     def test_event_with_user_account_observable_object(self):
         event = get_event_with_user_account_object()
         attributes, observable_objects = self._run_observable_from_object_tests(event)
-        username, userid, display_name, passwd, group1, group2, groupid, home, account_type, plc = (attribute['value'] for attribute in attributes)
+        username, userid, display_name, passwd, group1, group2, groupid, home, user_avatar, account_type, plc = attributes
         user_account = observable_objects['0']
         self.assertEqual(user_account.type, 'user-account')
-        self.assertEqual(user_account.user_id, userid)
-        self.assertEqual(user_account.account_login, username)
-        self.assertEqual(user_account.account_type, account_type)
-        self.assertEqual(user_account.display_name, display_name)
+        self.assertEqual(user_account.user_id, userid['value'])
+        self.assertEqual(user_account.account_login, username['value'])
+        self.assertEqual(user_account.account_type, account_type['value'])
+        self.assertEqual(user_account.display_name, display_name['value'])
         extension = user_account.extensions['unix-account-ext']
-        self.assertEqual(extension.gid, int(groupid))
-        self.assertEqual(extension.groups, [group1, group2])
-        self.assertEqual(extension.home_dir, home)
-        self.assertEqual(user_account.x_misp_password, passwd)
+        self.assertEqual(extension.gid, int(groupid['value']))
+        self.assertEqual(extension.groups, [group1['value'], group2['value']])
+        self.assertEqual(extension.home_dir, home['value'])
+        self.assertEqual(user_account.x_misp_password, passwd['value'])
         self.assertEqual(
             self._datetime_to_str(user_account.password_last_changed),
-            plc
+            plc['value']
+        )
+        print(user_account.serialize(indent=4))
+        self.assertEqual(
+            user_account.x_misp_user_avatar,
+            {
+                'value': user_avatar['value'],
+                'data': user_avatar['data']
+            }
         )
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],

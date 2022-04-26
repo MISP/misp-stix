@@ -889,6 +889,220 @@ _TEST_VULNERABILITY_GALAXY = {
     ]
 }
 
+_TEST_ACCOUNT_OBJECTS = [
+    {
+        "name": "gitlab-user",
+        "description": "GitLab user. Gitlab.com user or self-hosted GitLab instance",
+        "meta-category": "misc",
+        "uuid": "20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "id",
+                "value": "1234567890"
+            },
+            {
+                "type": "text",
+                "object_relation": "name",
+                "value": "John Doe"
+            },
+            {
+                "type": "text",
+                "object_relation": "username",
+                "value": "j0hnd0e"
+            }
+        ]
+    },
+    {
+        "name": "telegram-account",
+        "description": "Information related to a telegram account",
+        "meta-category": "misc",
+        "uuid": "7ecc4537-89cd-4f17-8027-6e0f70710c53",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "id",
+                "value": "1234567890"
+            },
+            {
+                "type": "text",
+                "object_relation": "username",
+                "value": "T3l3gr4mUs3r"
+            },
+            {
+                "type": "text",
+                "object_relation": "phone",
+                "value": "0112233445"
+            },
+            {
+                "type": "text",
+                "object_relation": "phone",
+                "value": "0556677889"
+            }
+        ]
+    }
+]
+
+_TEST_ACCOUNT_WITH_ATTACHMENT_OBJECTS = [
+    {
+        "name": "facebook-account",
+        "description": "Facebook account.",
+        "meta-category": "misc",
+        "uuid": "7d8ac653-b65c-42a6-8420-ddc71d65f50d",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "account-id",
+                "value": "1392781243"
+            },
+            {
+                "type": "text",
+                "object_relation": "account-name",
+                "value": "octocat"
+            },
+            {
+                "type": "link",
+                "object_relation": "link",
+                "value": "https://facebook.com/octocat"
+            },
+            {
+                "type": "attachment",
+                "object_relation": "user-avatar",
+                "value": "octocat.png"
+            }
+        ]
+    },
+    {
+        "name": "github-user",
+        "description": "GitHub user",
+        "meta-category": "misc",
+        "uuid": "5177abbd-c437-4acb-9173-eee371ad24da",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "id",
+                "value": "1"
+            },
+            {
+                "type": "github-username",
+                "object_relation": "username",
+                "value": "octocat"
+            },
+            {
+                "type": "text",
+                "object_relation": "user-fullname",
+                "value": "Octo Cat"
+            },
+            {
+                "type": "github-organisation",
+                "object_relation": "organisation",
+                "value": "GitHub"
+            },
+            {
+                "type": "attachment",
+                "object_relation": "profile-image",
+                "value": "octocat.png"
+            }
+        ]
+    },
+    {
+        "name": "parler-account",
+        "description": "Parler account.",
+        "meta-category": "misc",
+        "uuid": "7b0698a0-209a-4da0-a5c5-cfc4734f3af2",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "account-id",
+                "value": "42"
+            },
+            {
+                "type": "text",
+                "object_relation": "account-name",
+                "value": "ParlerOctocat"
+            },
+            {
+                "type": "boolean",
+                "object_relation": "human",
+                "value": False
+            },
+            {
+                "type": "attachment",
+                "object_relation": "profile-photo",
+                "value": "octocat.png"
+            }
+        ]
+    },
+    {
+        "name": "reddit-account",
+        "description": "Reddit account.",
+        "meta-category": "misc",
+        "uuid": "43d3eff0-fabc-4663-9493-fad3a1eed0d5",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "account-id",
+                "value": "666"
+            },
+            {
+                "type": "text",
+                "object_relation": "account-name",
+                "value": "RedditOctocat"
+            },
+            {
+                "type": "text",
+                "object_relation": "description",
+                "value": "Reddit account of the OctoCat"
+            },
+            {
+                "type": "attachment",
+                "object_relation": "account-avatar",
+                "value": "octocat.png"
+            }
+        ]
+    },
+    {
+        "name": "twitter-account",
+        "description": "Twitter account.",
+        "meta-category": "misc",
+        "uuid": "6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "id",
+                "value": "1357111317"
+            },
+            {
+                "type": "text",
+                "object_relation": "name",
+                "value": "octocat"
+            },
+            {
+                "type": "text",
+                "object_relation": "displayed-name",
+                "value": "Octo Cat"
+            },
+            {
+                "type": "text",
+                "object_relation": "followers",
+                "value": "666"
+            },
+            {
+                "type": "attachment",
+                "object_relation": "profile-image",
+                "value": "octocat.png"
+            }
+        ]
+    }
+]
+
 _TEST_ASN_OBJECT = {
     "name": "asn",
     "meta-category": "network",
@@ -2221,6 +2435,11 @@ _TEST_USER_ACCOUNT_OBJECT = {
             "object_relation": "home_dir",
             "value": "/home/iglocska"
         },
+        {
+            "type": "attachment",
+            "object_relation": "user-avatar",
+            "value": "octocat.png"
+        }
     ]
 }
 
@@ -3600,218 +3819,17 @@ def get_embedded_observable_object_galaxy():
 
 def get_event_with_account_objects():
     event = deepcopy(_BASE_EVENT)
-    event['Event']['Object'] = [
-        {
-            "name": "facebook-account",
-            "description": "Facebook account.",
-            "meta-category": "misc",
-            "uuid": "7d8ac653-b65c-42a6-8420-ddc71d65f50d",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "account-id",
-                    "value": "1392781243"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "account-name",
-                    "value": "marcopolo"
-                },
-                {
-                    "type": "link",
-                    "object_relation": "link",
-                    "value": "https://facebook.com/marcopolo"
-                }
-            ]
-        },
-        {
-            "name": "gitlab-user",
-            "description": "GitLab user. Gitlab.com user or self-hosted GitLab instance",
-            "meta-category": "misc",
-            "uuid": "20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "id",
-                    "value": "1234567890"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "name",
-                    "value": "John Doe"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "username",
-                    "value": "j0hnd0e"
-                }
-            ]
-        },
-        {
-            "name": "telegram-account",
-            "description": "Information related to a telegram account",
-            "meta-category": "misc",
-            "uuid": "7ecc4537-89cd-4f17-8027-6e0f70710c53",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "id",
-                    "value": "1234567890"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "username",
-                    "value": "T3l3gr4mUs3r"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "phone",
-                    "value": "0112233445"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "phone",
-                    "value": "0556677889"
-                }
-            ]
-        },
-        {
-            "name": "twitter-account",
-            "description": "Twitter account.",
-            "meta-category": "misc",
-            "uuid": "6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "id",
-                    "value": "1357111317"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "name",
-                    "value": "johndoe"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "displayed-name",
-                    "value": "John Doe"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "followers",
-                    "value": "666"
-                }
-            ]
-        }
-    ]
+    event['Event']['Object'] = deepcopy(_TEST_ACCOUNT_OBJECTS)
     return event
 
 
 def get_event_with_account_objects_with_attachment():
     event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = deepcopy(_TEST_ACCOUNT_WITH_ATTACHMENT_OBJECTS)
     with open(_TESTFILES_PATH / 'octocat.png', 'rb') as f:
         data = b64encode(f.read()).decode()
-    event['Event']['Object'] = [
-        {
-            "name": "github-user",
-            "description": "GitHub user",
-            "meta-category": "misc",
-            "uuid": "5177abbd-c437-4acb-9173-eee371ad24da",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "id",
-                    "value": "1"
-                },
-                {
-                    "type": "github-username",
-                    "object_relation": "username",
-                    "value": "octocat"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "user-fullname",
-                    "value": "Octo Cat"
-                },
-                {
-                    "type": "github-organisation",
-                    "object_relation": "organisation",
-                    "value": "GitHub"
-                },
-                {
-                    "type": "attachment",
-                    "object_relation": "profile-image",
-                    "value": "octocat.png",
-                    "data": data
-                }
-            ]
-        },
-        {
-            "name": "parler-account",
-            "description": "Parler account.",
-            "meta-category": "misc",
-            "uuid": "7b0698a0-209a-4da0-a5c5-cfc4734f3af2",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "account-id",
-                    "value": "42"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "account-name",
-                    "value": "ParlerOctocat"
-                },
-                {
-                    "type": "boolean",
-                    "object_relation": "human",
-                    "value": False
-                },
-                {
-                    "type": "attachment",
-                    "object_relation": "profile-photo",
-                    "value": "octocat.png",
-                    "data": data
-                }
-            ]
-        },
-        {
-            "name": "reddit-account",
-            "description": "Reddit account.",
-            "meta-category": "misc",
-            "uuid": "43d3eff0-fabc-4663-9493-fad3a1eed0d5",
-            "timestamp": "1603642920",
-            "Attribute": [
-                {
-                    "type": "text",
-                    "object_relation": "account-id",
-                    "value": "666"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "account-name",
-                    "value": "RedditOctocat"
-                },
-                {
-                    "type": "text",
-                    "object_relation": "description",
-                    "value": "Reddit account of the OctoCat"
-                },
-                {
-                    "type": "attachment",
-                    "object_relation": "account-avatar",
-                    "value": "octocat.png",
-                    "data": data
-                }
-            ]
-        }
-    ]
+    for misp_object in event['Event']['Object']:
+        misp_object['Attribute'][-1]['data'] = data
     return event
 
 
@@ -4685,6 +4703,8 @@ def get_event_with_url_object():
 def get_event_with_user_account_object():
     event = deepcopy(_BASE_EVENT)
     user_account = deepcopy(_TEST_USER_ACCOUNT_OBJECT)
+    with open(_TESTFILES_PATH / 'octocat.png', 'rb') as f:
+        user_account['Attribute'][-1]['data'] = b64encode(f.read()).decode()
     user_account['Attribute'].extend(
         [
             {

@@ -187,6 +187,7 @@ class AttributesDocumentationUpdater(DocumentationUpdater):
 class ObjectsDocumentationUpdater(DocumentationUpdater):
     __data_replacement = {
         'annotation': '_replace_annotation_data',
+        'facebook-account': '_replace_account_data',
         'file': '_replace_file_data',
         'github-user': '_replace_account_data',
         'image': '_replace_file_data',
@@ -195,6 +196,8 @@ class ObjectsDocumentationUpdater(DocumentationUpdater):
         'news-agency': '_replace_identity_data',
         'parler-account': '_replace_account_data',
         'reddit-account': '_replace_account_data',
+        'twitter-account': '_replace_account_data',
+        'user-account': '_replace_account_data'
     }
 
     def __init__(self, filename, objects_mapping):

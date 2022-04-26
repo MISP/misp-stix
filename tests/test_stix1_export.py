@@ -439,7 +439,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(port_properties.port_value.value, int(port['value']))
 
     def _check_unix_user_account_properties(self, properties, attributes):
-        username, user_id, display_name, password, group1, group2, group_id, home_dir, _ = attributes
+        username, user_id, display_name, password, group1, group2, group_id, home_dir, avatar, _ = attributes
         self.assertEqual(properties.username.value, username['value'])
         self.assertEqual(properties.full_name.value, display_name['value'])
         self.assertEqual(len(properties.authentication), 1)
@@ -448,10 +448,13 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(authentication.authentication_data.value, password['value'])
         self.assertEqual(properties.group_id.value, int(group_id['value']))
         self.assertEqual(properties.home_directory.value, home_dir['value'])
-        self._check_custom_properties((user_id, group1, group2), properties.custom_properties)
+        self._check_custom_properties(
+            (avatar, user_id, group1, group2),
+            properties.custom_properties
+        )
 
     def _check_user_account_properties(self, properties, attributes):
-        username, user_id, display_name, password, group1, group2, group_id, home_dir = attributes
+        username, user_id, display_name, password, group1, group2, group_id, home_dir, avatar = attributes
         self.assertEqual(properties.username.value, username['value'])
         self.assertEqual(properties.full_name.value, display_name['value'])
         self.assertEqual(len(properties.authentication), 1)
@@ -459,10 +462,13 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(authentication.authentication_type.value, 'password')
         self.assertEqual(authentication.authentication_data.value, password['value'])
         self.assertEqual(properties.home_directory.value, home_dir['value'])
-        self._check_custom_properties((user_id, group1, group2, group_id), properties.custom_properties)
+        self._check_custom_properties(
+            (user_id, group1, group2, group_id, avatar),
+            properties.custom_properties
+        )
 
     def _check_windows_user_account_properties(self, properties, attributes):
-        username, user_id, display_name, password, group1, group2, group_id, home_dir, account_type = attributes
+        username, user_id, display_name, password, group1, group2, group_id, home_dir, avatar, account_type = attributes
         self.assertEqual(properties.username.value, username['value'])
         self.assertEqual(properties.security_id.value, user_id['value'])
         self.assertEqual(properties.full_name.value, display_name['value'])
@@ -476,7 +482,10 @@ class TestStix1Export(unittest.TestCase):
         group1_properties, group2_properties = group_list
         self.assertEqual(group1_properties.name.value, group1['value'])
         self.assertEqual(group2_properties.name.value, group2['value'])
-        self._check_custom_properties((group_id, account_type), properties.custom_properties)
+        self._check_custom_properties(
+            (group_id, avatar, account_type),
+            properties.custom_properties
+        )
 
     def _check_whois_properties(self, properties, attributes):
         registrar, email, org, name, phone, creation, modification, expiration, domain, nameserver, ip = attributes
