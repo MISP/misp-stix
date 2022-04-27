@@ -10,26 +10,6 @@ _TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
 _ACCOUNT_INDICATOR_OBJECTS = [
     {
         "type": "indicator",
-        "id": "indicator--7d8ac653-b65c-42a6-8420-ddc71d65f50d",
-        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[user-account:account_type = 'facebook' AND user-account:user_id = '1392781243' AND user-account:account_login = 'marcopolo' AND user-account:x_misp_link = 'https://facebook.com/marcopolo']",
-        "valid_from": "2020-10-25T16:22:00Z",
-        "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
-        ],
-        "labels": [
-            "misp:name=\"facebook-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
-    },
-    {
-        "type": "indicator",
         "id": "indicator--20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
@@ -67,53 +47,9 @@ _ACCOUNT_INDICATOR_OBJECTS = [
             "misp:meta-category=\"misc\"",
             "misp:to_ids=\"True\""
         ]
-    },
-    {
-        "type": "indicator",
-        "id": "indicator--6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
-        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "pattern": "[user-account:account_type = 'twitter' AND user-account:display_name = 'John Doe' AND user-account:user_id = '1357111317' AND user-account:account_login = 'johndoe' AND user-account:x_misp_followers = '666']",
-        "valid_from": "2020-10-25T16:22:00Z",
-        "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "misc"
-            }
-        ],
-        "labels": [
-            "misp:name=\"twitter-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"True\""
-        ]
     }
 ]
 _ACCOUNT_OBSERVABLE_OBJECTS = [
-    {
-        "type": "observed-data",
-        "id": "observed-data--7d8ac653-b65c-42a6-8420-ddc71d65f50d",
-        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "first_observed": "2020-10-25T16:22:00Z",
-        "last_observed": "2020-10-25T16:22:00Z",
-        "number_observed": 1,
-        "objects": {
-            "0": {
-                "type": "user-account",
-                "user_id": "1392781243",
-                "account_login": "marcopolo",
-                "account_type": "facebook",
-                "x_misp_link": "https://facebook.com/marcopolo"
-            }
-        },
-        "labels": [
-            "misp:name=\"facebook-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ]
-    },
     {
         "type": "observed-data",
         "id": "observed-data--20a39ad0-e8e1-4917-9fb8-40fecc4d0e7b",
@@ -164,34 +100,28 @@ _ACCOUNT_OBSERVABLE_OBJECTS = [
             "misp:meta-category=\"misc\"",
             "misp:to_ids=\"False\""
         ]
-    },
-    {
-        "type": "observed-data",
-        "id": "observed-data--6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
-        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "first_observed": "2020-10-25T16:22:00Z",
-        "last_observed": "2020-10-25T16:22:00Z",
-        "number_observed": 1,
-        "objects": {
-            "0": {
-                "type": "user-account",
-                "user_id": "1357111317",
-                "account_login": "johndoe",
-                "account_type": "twitter",
-                "display_name": "John Doe",
-                "x_misp_followers": "666"
-            }
-        },
-        "labels": [
-            "misp:name=\"twitter-account\"",
-            "misp:meta-category=\"misc\"",
-            "misp:to_ids=\"False\""
-        ]
     }
 ]
 _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
+    {
+        "type": "indicator",
+        "id": "indicator--7d8ac653-b65c-42a6-8420-ddc71d65f50d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"facebook-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
     {
         "type": "indicator",
         "id": "indicator--5177abbd-c437-4acb-9173-eee371ad24da",
@@ -248,9 +178,55 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
             "misp:meta-category=\"misc\"",
             "misp:to_ids=\"True\""
         ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"twitter-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"True\""
+        ]
     }
 ]
 _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--7d8ac653-b65c-42a6-8420-ddc71d65f50d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "1392781243",
+                "account_login": "octocat",
+                "account_type": "facebook",
+                "x_misp_link": "https://facebook.com/octocat",
+                "x_misp_user_avatar": {
+                    "value": "octocat.png",
+                }
+            }
+        },
+        "labels": [
+            "misp:name=\"facebook-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
     {
         "type": "observed-data",
         "id": "observed-data--5177abbd-c437-4acb-9173-eee371ad24da",
@@ -329,6 +305,34 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
         },
         "labels": [
             "misp:name=\"reddit-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "1357111317",
+                "account_login": "octocat",
+                "account_type": "twitter",
+                "display_name": "Octo Cat",
+                "x_misp_followers": "666",
+                "x_misp_profile_image": {
+                    "value": "octocat.png",
+                }
+            }
+        },
+        "labels": [
+            "misp:name=\"twitter-account\"",
             "misp:meta-category=\"misc\"",
             "misp:to_ids=\"False\""
         ]
@@ -3744,6 +3748,14 @@ class TestSTIX20Bundles:
             data = b64encode(f.read()).decode()
         patterns = (
             (
+                "user-account:account_type = 'facebook'",
+                "user-account:user_id = '1392781243'",
+                "user-account:account_login = 'octocat'",
+                "user-account:x_misp_link = 'https://facebook.com/octocat'",
+                f"user-account:x_misp_user_avatar.data = '{data}'",
+                "user-account:x_misp_user_avatar.value = 'octocat.png'"
+            ),
+            (
                 "user-account:account_type = 'github'",
                 "user-account:user_id = '1'",
                 "user-account:display_name = 'Octo Cat'",
@@ -3766,6 +3778,15 @@ class TestSTIX20Bundles:
                 "user-account:x_misp_description = 'Reddit account of the OctoCat'",
                 f"user-account:x_misp_account_avatar.data = '{data}'",
                 "user-account:x_misp_account_avatar.value = 'octocat.png'"
+            ),
+            (
+                "user-account:account_type = 'twitter'",
+                "user-account:display_name = 'Octo Cat'",
+                "user-account:user_id = '1357111317'",
+                "user-account:account_login = 'octocat'",
+                "user-account:x_misp_followers = '666'",
+                f"user-account:x_misp_profile_image.data = '{data}'",
+                "user-account:x_misp_profile_image.value = 'octocat.png'"
             )
         )
         for indicator, pattern in zip(indicators, patterns):
@@ -3778,9 +3799,11 @@ class TestSTIX20Bundles:
         with open(_TESTFILES_PATH / 'octocat.png', 'rb') as f:
             data = b64encode(f.read()).decode()
         features = (
+            'x_misp_user_avatar',
             'x_misp_profile_image',
             'x_misp_profile_photo',
-            'x_misp_account_avatar'
+            'x_misp_account_avatar',
+            'x_misp_profile_image'
         )
         for observed_data, feature in zip(observables, features):
             observed_data['objects']['0'][feature]['data'] = data
