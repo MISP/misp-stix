@@ -710,8 +710,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_cpe_asset_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_standard_observable(observed_data, 'cpe-asset', 'v21')
 
+    def _object_from_gitlab_user_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_standard_observable(observed_data, 'gitlab-user', 'v20')
+
+    def _object_from_gitlab_user_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_standard_observable(observed_data, 'gitlab-user', 'v21')
+
     def _object_from_standard_observable(self, observed_data: _OBSERVED_DATA_TYPING,
-                                        name: str, version: str):
+                                         name: str, version: str):
         misp_object = self._create_misp_object(name, observed_data)
         observable = getattr(self, f'_fetch_observables_{version}')(observed_data)
         for feature, mapping in getattr(
@@ -725,6 +731,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     getattr(observable, feature)
                 )
         self._add_misp_object(misp_object)
+
+    def _object_from_telegram_account_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_standard_observable(observed_data, 'telegram-account', 'v20')
+
+    def _object_from_telegram_account_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_standard_observable(observed_data, 'telegram-account', 'v21')
 
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
@@ -800,6 +812,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = self._extract_attribute_value_from_pattern(indicator.pattern[1:-1])
         self._add_misp_attribute(attribute)
 
+    def _object_from_account_indicator(self, indicator: _INDICATOR_TYPING, name: str):
+        misp_object = self._create_misp_object(name, indicator)
+        feature = name.replace('-', '_')
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            key, value = self._extract_features_from_pattern(pattern)
+            if key in getattr(self._mapping, f'{feature}_object_mapping'):
+                attribute = {'value': value}
+                attribute.update(getattr(self._mapping, f'{feature}_object_mapping')[key])
+                misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
     def _object_from_asn_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('asn', indicator)
         for pattern in indicator.pattern[1:-1].split(' AND '):
@@ -819,6 +842,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             attribute.update(self._mapping.cpe_asset_object_mapping[feature])
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
+
+    def _object_from_gitlab_user_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_account_indicator(indicator, 'gitlab-user')
 
     def _object_from_patterning_language_indicator(self, indicator: Indicator_v21):
         name = 'suricata' if indicator.pattern_type == 'snort' else indicator.pattern_type
@@ -841,6 +867,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     attribute['comment'] = reference.description
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
+
+    def _object_from_telegram_account_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_account_indicator(indicator, 'telegram-account')
 
     ################################################################################
     #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #

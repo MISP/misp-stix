@@ -398,11 +398,13 @@ class InternalSTIX2Mapping(STIX2Mapping):
         description_attribute = {'type': 'text', 'object_relation': 'description'}
         employee_type_attribute = {'type': 'text', 'object_relation': 'employee-type'}
         filename_attribute = {'type': 'filename', 'object_relation': 'filename'}
-        name_attribute = {'type': 'text', 'object_relation': 'name'}
+        id_attribute = {'type': 'text', 'object_relation': 'id'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
+        name_attribute = {'type': 'text', 'object_relation': 'name'}
         role_attribute = {'type': 'text', 'object_relation': 'role'}
         script_attribute = {'type': 'text', 'object_relation': 'script'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
+        username_attribute = {'type': 'text', 'object_relation': 'username'}
         version_attribute = {'type': 'text', 'object_relation': 'version'}
 
         # STIX TO MISP OBJECTS MAPPING
@@ -460,6 +462,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_last_name = {'type': 'last-name', 'object_relation': 'last-name'},
             x_misp_primary_asset = {'type': 'target-machine', 'object_relation': 'primary-asset'},
             x_misp_userid = {'type': 'target-user', 'object_relation': 'userid'}
+        )
+        self.__gitlab_user_object_mapping = Mapping(
+            user_id = id_attribute,
+            display_name = name_attribute,
+            account_login = username_attribute,
+            x_misp_avatar_url = {'type': 'link', 'object_relation': 'avatar_url'},
+            x_misp_state = {'type': 'text', 'object_relation': 'state'},
+            x_misp_web_url = {'type': 'link', 'object_relation': 'web_url'}
         )
         self.__legal_entity_contact_information_mapping = Mapping(
             **{
@@ -533,6 +543,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
             description = comment_attribute,
             pattern_version = version_attribute
         )
+        self.__telegram_account_object_mapping = Mapping(
+            user_id = id_attribute,
+            account_login = username_attribute,
+            x_misp_first_name = {'type': 'text', 'object_relation': 'first_name'},
+            x_misp_last_name = {'type': 'text', 'object_relation': 'last_name'},
+            x_misp_phone = {'type': 'text', 'object_relation': 'phone'},
+            x_misp_verified = {'type': 'text', 'object_relation': 'verified'}
+        )
         self.__vulnerability_object_mapping = Mapping(
             description = description_attribute,
             x_misp_created = {'type': 'datetime', 'object_relation': 'created'},
@@ -584,6 +602,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__galaxies_mapping
 
     @property
+    def gitlab_user_object_mapping(self) -> dict:
+        return self.__gitlab_user_object_mapping
+
+    @property
     def indicator_attributes_mapping(self) -> dict:
         return self.__indicator_attributes_mapping
 
@@ -630,6 +652,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def suricata_object_mapping(self) -> dict:
         return self.__suricata_object_mapping
+
+    @property
+    def telegram_account_object_mapping(self) -> dict:
+        return self.__telegram_account_object_mapping
 
     @property
     def vulnerability_object_mapping(self) -> dict:
