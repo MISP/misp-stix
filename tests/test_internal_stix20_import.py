@@ -1033,6 +1033,30 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
     #                          MISP OBJECTS IMPORT TESTS.                          #
     ################################################################################
 
+    def test_stix20_bundle_with_account_indicator_objects(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_account_indicator_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, gitlab_indicator, telegram_indicator = bundle.objects
+        gitlab, telegram = self._check_misp_event_features(event, report)
+        gitlab_pattern = self._check_indicator_object(gitlab, gitlab_indicator)
+        self._check_gitlab_user_indicator_object(gitlab.attributes, gitlab_pattern)
+        telegram_pattern = self._check_indicator_object(telegram, telegram_indicator)
+        self._check_telegram_account_indicator_object(telegram.attributes, telegram_pattern)
+
+    def test_stix20_bundle_with_account_observable_objects(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_account_observable_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, gitlab_observed_data, telegram_observed_data = bundle.objects
+        gitlab, telegram = self._check_misp_event_features(event, report)
+        gitlab_observable = self._check_observed_data_object(gitlab, gitlab_observed_data)['0']
+        self._check_gitlab_user_observable_object(gitlab.attributes, gitlab_observable)
+        telegram_observable = self._check_observed_data_object(telegram, telegram_observed_data)['0']
+        self._check_telegram_account_observable_object(telegram.attributes, telegram_observable)
+
     def test_stix20_bundle_with_asn_indicator_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_asn_indicator_object()
         self.parser.load_stix_bundle(bundle)

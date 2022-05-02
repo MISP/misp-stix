@@ -1295,6 +1295,40 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
     #                          MISP OBJECTS IMPORT TESTS.                          #
     ################################################################################
 
+    def test_stix21_bundle_with_account_indicator_objects(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_account_indicator_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, gitlab_indicator, telegram_indicator = bundle.objects
+        gitlab, telegram = self._check_misp_event_features_from_grouping(event, grouping)
+        gitlab_pattern = self._check_indicator_object(gitlab, gitlab_indicator)
+        self._check_gitlab_user_indicator_object(gitlab.attributes, gitlab_pattern)
+        telegram_pattern = self._check_indicator_object(telegram, telegram_indicator)
+        self._check_telegram_account_indicator_object(telegram.attributes, telegram_pattern)
+
+    def test_stix21_bundle_with_account_observable_objects(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_account_observable_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, gitlab_od, gitlab_o, telegram_od, telegram_o = bundle.objects
+        gitlab, telegram = self._check_misp_event_features_from_grouping(event, grouping)
+        gitlab_ref = self._check_observed_data_object(gitlab, gitlab_od)[0]
+        self._assert_multiple_equal(
+            gitlab.uuid,
+            gitlab_o.id.split('--')[1],
+            gitlab_ref.split('--')[1]
+        )
+        self._check_gitlab_user_observable_object(gitlab.attributes, gitlab_o)
+        telegram_ref = self._check_observed_data_object(telegram, telegram_od)[0]
+        self._assert_multiple_equal(
+            telegram.uuid,
+            telegram_o.id.split('--')[1],
+            telegram_ref.split('--')[1]
+        )
+        self._check_telegram_account_observable_object(telegram.attributes, telegram_o)
+
     def test_stix21_bundle_with_asn_indicator_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_asn_indicator_object()
         self.parser.load_stix_bundle(bundle)
@@ -1313,7 +1347,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         _, grouping, observed_data, observable = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         observable_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        self.assertEqual(
+        self._assert_multiple_equal(
             misp_object.uuid,
             observable.id.split('--')[1],
             observable_ref.split('--')[1]
@@ -1364,7 +1398,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         _, grouping, observed_data, observable = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         observable_ref = self._check_observed_data_object(misp_object, observed_data)[0]
-        self.assertEqual(
+        self._assert_multiple_equal(
             misp_object.uuid,
             observable.id.split('--')[1],
             observable_ref.split('--')[1]

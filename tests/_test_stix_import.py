@@ -241,6 +241,33 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
         return employee_type
 
+    def _check_gitlab_user_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 3)
+        user_id, display_name, account_login = pattern[1:-1].split(' AND ')[1:]
+        id_attribute, name, username = attributes
+        self.assertEqual(id_attribute.type, 'text')
+        self.assertEqual(id_attribute.object_relation, 'id')
+        self.assertEqual(id_attribute.value, self._get_pattern_value(user_id))
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, self._get_pattern_value(display_name))
+        self.assertEqual(username.type, 'text')
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, self._get_pattern_value(account_login))
+
+    def _check_gitlab_user_observable_object(self, attributes, observable):
+        self.assertEqual(len(attributes), 3)
+        user_id, name, username = attributes
+        self.assertEqual(user_id.type, 'text')
+        self.assertEqual(user_id.object_relation, 'id')
+        self.assertEqual(user_id.value, observable.user_id)
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, observable.display_name)
+        self.assertEqual(username.type, 'text')
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, observable.account_login)
+
     def _check_legal_entity_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
         self.assertEqual(misp_object.name, 'legal-entity')
@@ -320,6 +347,35 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             stix_object.x_misp_script_as_attachment['data']
         )
         return language, state
+
+    def _check_telegram_account_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 4)
+        user_id, account_login, *phone_patterns = pattern[1:-1].split(' AND ')[1:]
+        id_attribute, username, *phone_attributes = attributes
+        self.assertEqual(id_attribute.type, 'text')
+        self.assertEqual(id_attribute.object_relation, 'id')
+        self.assertEqual(id_attribute.value, self._get_pattern_value(user_id))
+        self.assertEqual(username.type, 'text')
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, self._get_pattern_value(account_login))
+        for attribute, phone_pattern in zip(phone_attributes, phone_patterns):
+            self.assertEqual(attribute.type, 'text')
+            self.assertEqual(attribute.object_relation, 'phone')
+            self.assertEqual(attribute.value, self._get_pattern_value(phone_pattern))
+
+    def _check_telegram_account_observable_object(self, attributes, observable):
+        self.assertEqual(len(attributes), 4)
+        user_id, username, *phone_attributes = attributes
+        self.assertEqual(user_id.type, 'text')
+        self.assertEqual(user_id.object_relation, 'id')
+        self.assertEqual(user_id.value, observable.user_id)
+        self.assertEqual(username.type, 'text')
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, observable.account_login)
+        for attribute, phone_value in zip(phone_attributes, observable.x_misp_phone):
+            self.assertEqual(attribute.type, 'text')
+            self.assertEqual(attribute.object_relation, 'phone')
+            self.assertEqual(attribute.value, phone_value)
 
     def _check_vulnerability_object(self, misp_object, vulnerability):
         self.assertEqual(misp_object.uuid, vulnerability.id.split('--')[1])
