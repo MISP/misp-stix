@@ -356,7 +356,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'domain-ip': '_object_from_domain_ip',
             'email': '_object_from_email',
             'employee': '_parse_employee_object',
-            'facebook-account': '_object_from_account',
+            'facebook-account': '_object_from_facebook_account',
             'file': '_object_from_file',
             'github-user': '_object_from_github_user',
             'gitlab-user': '_object_from_gitlab_user',
@@ -393,18 +393,29 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__objects_mapping = Mapping(**objects_mapping)
 
         # ATTRIBUTES DECLARATION
+        account_id_attribute = {'type': 'text', 'object_relation': 'account-id'}
+        account_name_attribute = {'type': 'text', 'object_relation': 'account-name'}
         alias_attribute = {'type': 'text', 'object_relation': 'alias'}
+        archive_attribute = {'type': 'link', 'object_relation': 'archive'}
+        attachment_attribute = {'type': 'attachment', 'object_relation': 'attachment'}
+        bio_attribute = {'type': 'text', 'object_relation': 'bio'}
         comment_attribute = {'type': 'text', 'object_relation': 'comment'}
         description_attribute = {'type': 'text', 'object_relation': 'description'}
         employee_type_attribute = {'type': 'text', 'object_relation': 'employee-type'}
         filename_attribute = {'type': 'filename', 'object_relation': 'filename'}
+        followers_attribute = {'type': 'text', 'object_relation': 'followers'}
+        following_attribute = {'type': 'text', 'object_relation': 'following'}
         id_attribute = {'type': 'text', 'object_relation': 'id'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
+        likes_attribute = {'type': 'text', 'object_relation': 'likes'}
+        link_attribute = {'type': 'link', 'object_relation': 'link'}
         name_attribute = {'type': 'text', 'object_relation': 'name'}
         role_attribute = {'type': 'text', 'object_relation': 'role'}
         script_attribute = {'type': 'text', 'object_relation': 'script'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
+        url_attribute = {'type': 'url', 'object_relation': 'url'}
         username_attribute = {'type': 'text', 'object_relation': 'username'}
+        verified_attribute = {'type': 'text', 'object_relation': 'verified'}
         version_attribute = {'type': 'text', 'object_relation': 'version'}
 
         # STIX TO MISP OBJECTS MAPPING
@@ -462,6 +473,37 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_last_name = {'type': 'last-name', 'object_relation': 'last-name'},
             x_misp_primary_asset = {'type': 'target-machine', 'object_relation': 'primary-asset'},
             x_misp_userid = {'type': 'target-user', 'object_relation': 'userid'}
+        )
+        self.__facebook_account_object_mapping = Mapping(
+            user_id = account_id_attribute,
+            account_login = account_name_attribute,
+            x_misp_archive = archive_attribute,
+            x_misp_attachment = attachment_attribute,
+            x_misp_description = description_attribute,
+            x_misp_link = link_attribute,
+            x_misp_url = url_attribute,
+            x_misp_user_avatar = {'type': 'attachment', 'object_relation': 'user-avatar'}
+        )
+        self.__github_user_object_mapping = Mapping(
+            user_id = id_attribute,
+            account_login = {'type': 'github-username', 'object_relation': 'username'},
+            display_name = {'type': 'text', 'object_relation': 'user-fullname'},
+            x_misp_avatar_url = {'type': 'link', 'object_relation': 'avatar_url'},
+            x_misp_bio = bio_attribute,
+            x_misp_blog = {'type': 'text', 'object_relation': 'blog'},
+            x_misp_company = {'type': 'text', 'object_relation': 'company'},
+            x_misp_follower = {'type': 'github-username', 'object_relation': 'follower'},
+            x_misp_following = {'type': 'github-username', 'object_relation': 'following'},
+            x_misp_link = link_attribute,
+            x_misp_location = {'type': 'text', 'object_relation': 'location'},
+            x_misp_node_id = {'type': 'text', 'object_relation': 'node_id'},
+            x_misp_organisation = {'type': 'github-organisation', 'object_relation': 'organisation'},
+            x_misp_profile_image = {'type': 'attachment', 'object_relation': 'profile-image'},
+            x_misp_public_gists = {'type': 'text', 'object_relation': 'public_gists'},
+            x_misp_public_repos = {'type': 'text', 'object_relation': 'public_repos'},
+            x_misp_repository = {'type': 'github-repository', 'object_relation': 'repository'},
+            x_misp_twitter_username = {'type': 'text', 'object_relation': 'twitter_username'},
+            x_misp_verified = verified_attribute
         )
         self.__gitlab_user_object_mapping = Mapping(
             user_id = id_attribute,
@@ -524,6 +566,39 @@ class InternalSTIX2Mapping(STIX2Mapping):
             },
             x_misp_VAT = {'type': 'text', 'object_relation': 'VAT'}
         )
+        self.__parler_account_object_mapping = Mapping(
+            user_id = account_id_attribute,
+            account_login = account_name_attribute,
+            x_misp_archive = archive_attribute,
+            x_misp_attachment = attachment_attribute,
+            x_misp_badge = {'type': 'link', 'object_relation': 'badge'},
+            x_misp_bio = bio_attribute,
+            x_misp_comments = {'type': 'text', 'object_relation': 'comments'},
+            x_misp_cover_photo = {'type': 'attachment', 'object_relation': 'cover-photo'},
+            x_misp_followers = followers_attribute,
+            x_misp_following = following_attribute,
+            x_misp_human = {'type': 'boolean', 'object_relation': 'human'},
+            x_misp_interactions = {'type': 'float', 'object_relation': 'interactions'},
+            x_misp_likes = likes_attribute,
+            x_misp_link = link_attribute,
+            x_misp_posts = {'type': 'text', 'object_relation': 'posts'},
+            x_misp_profile_photo = {'type': 'attachment', 'object_relation': 'profile-photo'},
+            x_misp_url = url_attribute,
+            x_misp_verified = {'type': 'boolean', 'object_relation': 'verified'},
+        )
+        self.__reddit_account_object_mapping = Mapping(
+            user_id = account_id_attribute,
+            account_login = account_name_attribute,
+            x_misp_account_avatar = {'type': 'attachment', 'object_relation': 'account-avatar'},
+            x_misp_account_avatar_url = {'type': 'url', 'object_relation': 'account-avatar-url'},
+            x_misp_archive = archive_attribute,
+            x_misp_attachment = attachment_attribute,
+            x_misp_description = description_attribute,
+            x_misp_link = link_attribute,
+            x_misp_moderator_of = {'type': '', 'object_relation': 'moderator-of'},
+            x_misp_trophies = {'type': '', 'object_relation': 'trophies'},
+            x_misp_url = url_attribute
+        )
         self.__script_from_malware_object_mapping = Mapping(
             name = filename_attribute,
             description = comment_attribute,
@@ -550,6 +625,36 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_last_name = {'type': 'text', 'object_relation': 'last_name'},
             x_misp_phone = {'type': 'text', 'object_relation': 'phone'},
             x_misp_verified = {'type': 'text', 'object_relation': 'verified'}
+        )
+        self.__twitter_account_object_mapping = Mapping(
+            user_id = id_attribute,
+            account_login = name_attribute,
+            displayed_name = {'type': 'text', 'object_relation': 'displayed-name'},
+            x_misp_archive = archive_attribute,
+            x_misp_attachment = attachment_attribute,
+            x_misp_bio = bio_attribute,
+            x_misp_description = description_attribute,
+            x_misp_embedded_link = {'type': 'url', 'object_relation': 'embedded-link'},
+            x_misp_embedded_safe_link = {'type': 'link', 'object_relation': 'embedded-safe-link'},
+            x_misp_followers = followers_attribute,
+            x_misp_following = following_attribute,
+            x_misp_hashtag = {'type': 'text', 'object_relation': 'hashtag'},
+            x_misp_joined_date = {'type': 'text', 'object_relation': 'joined-date'},
+            x_misp_likes = likes_attribute,
+            x_misp_link = link_attribute,
+            x_misp_listed = {'type': 'text', 'object_relation': 'listed'},
+            x_misp_location = {'type': 'text', 'object_relation': 'location'},
+            x_misp_media = {'type': 'text', 'object_relation': 'media'},
+            x_misp_private = {'type': 'text', 'object_relation': 'private'},
+            x_misp_profile_banner = {'type': 'attachment', 'object_relation': 'profile-banner'},
+            x_misp_profile_banner_url = {'type': 'url', 'object_relation': 'profile-banner-url'},
+            x_misp_profile_image = {'type': 'attachment', 'object_relation': 'profile-image'},
+            x_misp_profile_image_url = {'type': 'url', 'object_relation': 'profile-image-url'},
+            x_misp_tweets = {'type': '', 'object_relation': 'tweets'},
+            x_misp_twitter_followers = {'type': 'text', 'object_relation': 'twitter-followers'},
+            x_misp_twitter_following = {'type': 'text', 'object_relation': 'twitter-following'},
+            x_misp_url = url_attribute,
+            x_misp_verified = verified_attribute
         )
         self.__vulnerability_object_mapping = Mapping(
             description = description_attribute,
@@ -598,8 +703,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__employee_object_mapping
 
     @property
+    def facebook_account_object_mapping(self) -> dict:
+        return self.__facebook_account_object_mapping
+
+    @property
     def galaxies_mapping(self) -> dict:
         return self.__galaxies_mapping
+
+    @property
+    def github_user_object_mapping(self) -> dict:
+        return self.__github_user_object_mapping
 
     @property
     def gitlab_user_object_mapping(self) -> dict:
@@ -642,6 +755,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__organization_contact_information_mapping
 
     @property
+    def parler_account_object_mapping(self) -> dict:
+        return self.__parler_account_object_mapping
+
+    @property
+    def reddit_account_object_mapping(self) -> dict:
+        return self.__reddit_account_object_mapping
+
+    @property
     def script_from_malware_object_mapping(self) -> dict:
         return self.__script_from_malware_object_mapping
 
@@ -656,6 +777,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def telegram_account_object_mapping(self) -> dict:
         return self.__telegram_account_object_mapping
+
+    @property
+    def twitter_account_object_mapping(self) -> dict:
+        return self.__twitter_account_object_mapping
 
     @property
     def vulnerability_object_mapping(self) -> dict:

@@ -6,6 +6,8 @@ from .exceptions import (
     UndefinedIndicatorError, UndefinedObservableError, UnknownParsingFunctionError)
 from .internal_stix2_mapping import InternalSTIX2Mapping
 from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
+from collections import defaultdict
+from copy import deepcopy
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
@@ -685,6 +687,29 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute['value'] = observable.value
         self._add_misp_attribute(attribute)
 
+    def _object_from_account_with_attachment_observable(self, observed_data: _OBSERVED_DATA_TYPING,
+                                                        name: str, version: str):
+        misp_object = self._create_misp_object(name, observed_data)
+        observable = getattr(self, f'_fetch_observables_{version}')(observed_data)
+        for feature, mapping in getattr(
+            self._mapping,
+            f"{name.replace('-', '_')}_object_mapping"
+        ).items():
+            if hasattr(observable, feature):
+                if feature.startswith('x_misp_'):
+                    self._populate_object_attributes_with_data(
+                        misp_object,
+                        mapping,
+                        getattr(observable, feature)
+                    )
+                else:
+                    self._populate_object_attributes(
+                        misp_object,
+                        mapping,
+                        getattr(observable, feature)
+                    )
+        self._add_misp_object(misp_object)
+
     def _object_from_asn_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('asn', observed_data)
         observable = getattr(self, f'_fetch_observables_{version}')(observed_data)
@@ -710,11 +735,35 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_cpe_asset_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_standard_observable(observed_data, 'cpe-asset', 'v21')
 
+    def _object_from_facebook_account_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_account_with_attachment_observable(observed_data, 'facebook-account', 'v20')
+
+    def _object_from_facebook_account_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_account_with_attachment_observable(observed_data, 'facebook-account', 'v21')
+
+    def _object_from_github_user_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_account_with_attachment_observable(observed_data, 'github-user', 'v20')
+
+    def _object_from_github_user_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_account_with_attachment_observable(observed_data, 'github-user', 'v21')
+
     def _object_from_gitlab_user_observable_v20(self, observed_data: ObservedData_v20):
         self._object_from_standard_observable(observed_data, 'gitlab-user', 'v20')
 
     def _object_from_gitlab_user_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_standard_observable(observed_data, 'gitlab-user', 'v21')
+
+    def _object_from_parler_account_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_account_with_attachment_observable(observed_data, 'parler-account', 'v20')
+
+    def _object_from_parler_account_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_account_with_attachment_observable(observed_data, 'parler-account', 'v21')
+
+    def _object_from_reddit_account_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_account_with_attachment_observable(observed_data, 'reddit-account', 'v20')
+
+    def _object_from_reddit_account_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_account_with_attachment_observable(observed_data, 'reddit-account', 'v21')
 
     def _object_from_standard_observable(self, observed_data: _OBSERVED_DATA_TYPING,
                                          name: str, version: str):
@@ -737,6 +786,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _object_from_telegram_account_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_standard_observable(observed_data, 'telegram-account', 'v21')
+
+    def _object_from_twitter_account_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_account_with_attachment_observable(observed_data, 'twitter-account', 'v20')
+
+    def _object_from_twitter_account_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_account_with_attachment_observable(observed_data, 'twitter-account', 'v21')
 
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
@@ -814,12 +869,32 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _object_from_account_indicator(self, indicator: _INDICATOR_TYPING, name: str):
         misp_object = self._create_misp_object(name, indicator)
-        feature = name.replace('-', '_')
+        mapping = getattr(self._mapping, f"{name.replace('-', '_')}_object_mapping")
         for pattern in indicator.pattern[1:-1].split(' AND '):
             key, value = self._extract_features_from_pattern(pattern)
-            if key in getattr(self._mapping, f'{feature}_object_mapping'):
+            if key in mapping:
                 attribute = {'value': value}
-                attribute.update(getattr(self._mapping, f'{feature}_object_mapping')[key])
+                attribute.update(mapping[key])
+                misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
+    def _object_from_account_with_attachment_indicator(self, indicator: _INDICATOR_TYPING, name: str):
+        misp_object = self._create_misp_object(name, indicator)
+        mapping = getattr(self._mapping, f"{name.replace('-', '_')}_object_mapping")
+        attachments = defaultdict(dict)
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            key, value = self._extract_features_from_pattern(pattern)
+            if key.startswith('x_misp_') and '.' in key:
+                feature, key = key.split('.')
+                attachments[feature][key] = value
+            else:
+                if key in mapping:
+                    attribute = {'value': value}
+                    attribute.update(mapping[key])
+                    misp_object.add_attribute(**attribute)
+        if attachments:
+            for feature, attribute in attachments.items():
+                attribute.update(mapping[feature])
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
@@ -843,8 +918,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
+    def _object_from_facebook_account_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_account_with_attachment_indicator(indicator, 'facebook-account')
+
+    def _object_from_github_user_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_account_with_attachment_indicator(indicator, 'github-user')
+
     def _object_from_gitlab_user_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_indicator(indicator, 'gitlab-user')
+
+    def _object_from_parler_account_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_account_with_attachment_indicator(indicator, 'parler-account')
 
     def _object_from_patterning_language_indicator(self, indicator: Indicator_v21):
         name = 'suricata' if indicator.pattern_type == 'snort' else indicator.pattern_type
@@ -868,8 +952,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
+    def _object_from_reddit_account_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_account_with_attachment_indicator(indicator, 'reddit-account')
+
     def _object_from_telegram_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_indicator(indicator, 'telegram-account')
+
+    def _object_from_twitter_account_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_account_with_attachment_indicator(indicator, 'twitter-account')
 
     ################################################################################
     #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #
@@ -940,5 +1030,19 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
         else:
             attribute = {'value': values}
+            attribute.update(mapping)
+            misp_object.add_attribute(**attribute)
+
+    @staticmethod
+    def _populate_object_attributes_with_data(misp_object: MISPObject, mapping: dict,
+                                              values: Union[dict, list, str]):
+        if isinstance(values, list):
+            for value in values:
+                if isinstance(value, dict):
+                    attribute = deepcopy(value)
+                    attribute.update(mapping)
+                    misp_object.add_attribute(**attribute)
+        else:
+            attribute = deepcopy(values) if isinstance(values, dict) else {'value': values}
             attribute.update(mapping)
             misp_object.add_attribute(**attribute)
