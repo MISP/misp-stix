@@ -1329,6 +1329,67 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         )
         self._check_telegram_account_observable_object(telegram.attributes, telegram_o)
 
+    def test_stix21_bundle_with_account_with_attachment_indicator_objects(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_account_with_attachment_indicator_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, facebook_i, github_i, parler_i, reddit_i, twitter_i = bundle.objects
+        facebook, github, parler, reddit, twitter = self._check_misp_event_features_from_grouping(event, grouping)
+        facebook_pattern = self._check_indicator_object(facebook, facebook_i)
+        self._check_facebook_account_indicator_object(facebook.attributes, facebook_pattern)
+        github_pattern = self._check_indicator_object(github, github_i)
+        self._check_github_user_indicator_object(github.attributes, github_pattern)
+        parler_pattern = self._check_indicator_object(parler, parler_i)
+        self._check_parler_account_indicator_object(parler.attributes, parler_pattern)
+        reddit_pattern = self._check_indicator_object(reddit, reddit_i)
+        self._check_reddit_account_indicator_object(reddit.attributes, reddit_pattern)
+        twitter_pattern = self._check_indicator_object(twitter, twitter_i)
+        self._check_twitter_account_indicator_object(twitter.attributes, twitter_pattern)
+
+    def test_stix21_bundle_with_account_with_attachment_observable_objects(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_account_with_attachment_observable_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, facebook_od, facebook_o, github_od, github_o, parler_od, parler_o, reddit_od, reddit_o, twitter_od, twitter_o = bundle.objects
+        facebook, github, parler, reddit, twitter = self._check_misp_event_features_from_grouping(event, grouping)
+        facebook_ref = self._check_observed_data_object(facebook, facebook_od)[0]
+        self._assert_multiple_equal(
+            facebook.uuid,
+            facebook_o.id.split('--')[1],
+            facebook_ref.split('--')[1]
+        )
+        self._check_facebook_account_observable_object(facebook.attributes, facebook_o)
+        github_ref = self._check_observed_data_object(github, github_od)[0]
+        self._assert_multiple_equal(
+            github.uuid,
+            github_o.id.split('--')[1],
+            github_ref.split('--')[1]
+        )
+        self._check_github_user_observable_object(github.attributes, github_o)
+        parler_ref = self._check_observed_data_object(parler, parler_od)[0]
+        self._assert_multiple_equal(
+            parler.uuid,
+            parler_o.id.split('--')[1],
+            parler_ref.split('--')[1]
+        )
+        self._check_parler_account_observable_object(parler.attributes, parler_o)
+        reddit_ref = self._check_observed_data_object(reddit, reddit_od)[0]
+        self._assert_multiple_equal(
+            reddit.uuid,
+            reddit_o.id.split('--')[1],
+            reddit_ref.split('--')[1]
+        )
+        self._check_reddit_account_observable_object(reddit.attributes, reddit_o)
+        twitter_ref = self._check_observed_data_object(twitter, twitter_od)[0]
+        self._assert_multiple_equal(
+            twitter.uuid,
+            twitter_o.id.split('--')[1],
+            twitter_ref.split('--')[1]
+        )
+        self._check_twitter_account_observable_object(twitter.attributes, twitter_o)
+
     def test_stix21_bundle_with_asn_indicator_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_asn_indicator_object()
         self.parser.load_stix_bundle(bundle)

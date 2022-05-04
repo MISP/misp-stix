@@ -241,6 +241,96 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
         return employee_type
 
+    def _check_facebook_account_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 4)
+        user_id, account_login, link_pattern, *avatar_pattern = pattern[1:-1].split(' AND ')[1:]
+        account_id, account_name, link, avatar = attributes
+        self.assertEqual(account_id.type, 'text')
+        self.assertEqual(account_id.object_relation, 'account-id')
+        self.assertEqual(account_id.value, self._get_pattern_value(user_id))
+        self.assertEqual(account_name.type, 'text')
+        self.assertEqual(account_name.object_relation, 'account-name')
+        self.assertEqual(account_name.value, self._get_pattern_value(account_login))
+        self.assertEqual(link.type, 'link')
+        self.assertEqual(link.object_relation, 'link')
+        self.assertEqual(link.value, self._get_pattern_value(link_pattern))
+        self.assertEqual(avatar.type, 'attachment')
+        self.assertEqual(avatar.object_relation, 'user-avatar')
+        avatar_data, avatar_value = avatar_pattern
+        self.assertEqual(avatar.value, self._get_pattern_value(avatar_value))
+        self.assertEqual(
+            self._get_data_value(avatar.data),
+            self._get_pattern_value(avatar_data)
+        )
+
+    def _check_facebook_account_observable_object(self, attributes, observable):
+        self.assertEqual(len(attributes), 4)
+        account_id, account_name, link, avatar = attributes
+        self.assertEqual(account_id.type, 'text')
+        self.assertEqual(account_id.object_relation, 'account-id')
+        self.assertEqual(account_id.value, observable.user_id)
+        self.assertEqual(account_name.type, 'text')
+        self.assertEqual(account_name.object_relation, 'account-name')
+        self.assertEqual(account_name.value, observable.account_login)
+        self.assertEqual(link.type, 'link')
+        self.assertEqual(link.object_relation, 'link')
+        self.assertEqual(link.value, observable.x_misp_link)
+        self.assertEqual(avatar.type, 'attachment')
+        self.assertEqual(avatar.object_relation, 'user-avatar')
+        self.assertEqual(avatar.value, observable.x_misp_user_avatar['value'])
+        self.assertEqual(
+            self._get_data_value(avatar.data),
+            observable.x_misp_user_avatar['data']
+        )
+
+    def _check_github_user_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 5)
+        user_id, display_name, account_login, organisation, *image_pattern = pattern[1:-1].split(' AND ')[1:]
+        id_attribute, fullname, username, organisation_attribute, profile_image = attributes
+        self.assertEqual(id_attribute.type, 'text')
+        self.assertEqual(id_attribute.object_relation, 'id')
+        self.assertEqual(id_attribute.value, self._get_pattern_value(user_id))
+        self.assertEqual(fullname.type, 'text')
+        self.assertEqual(fullname.object_relation, 'user-fullname')
+        self.assertEqual(fullname.value, self._get_pattern_value(display_name))
+        self.assertEqual(username.type, 'github-username')
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, self._get_pattern_value(account_login))
+        self.assertEqual(organisation_attribute.type, 'github-organisation')
+        self.assertEqual(organisation_attribute.object_relation, 'organisation')
+        self.assertEqual(organisation_attribute.value, self._get_pattern_value(organisation))
+        self.assertEqual(profile_image.type, 'attachment')
+        self.assertEqual(profile_image.object_relation, 'profile-image')
+        image_data, image_value = image_pattern
+        self.assertEqual(profile_image.value, self._get_pattern_value(image_value))
+        self.assertEqual(
+            self._get_data_value(profile_image.data),
+            self._get_pattern_value(image_data)
+        )
+
+    def _check_github_user_observable_object(self, attributes, observable):
+        self.assertEqual(len(attributes), 5)
+        id_attribute, username, fullname, organisation_attribute, profile_image = attributes
+        self.assertEqual(id_attribute.type, 'text')
+        self.assertEqual(id_attribute.object_relation, 'id')
+        self.assertEqual(id_attribute.value, observable.user_id)
+        self.assertEqual(username.type, 'github-username')
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, observable.account_login)
+        self.assertEqual(fullname.type, 'text')
+        self.assertEqual(fullname.object_relation, 'user-fullname')
+        self.assertEqual(fullname.value, observable.display_name)
+        self.assertEqual(organisation_attribute.type, 'github-organisation')
+        self.assertEqual(organisation_attribute.object_relation, 'organisation')
+        self.assertEqual(organisation_attribute.value, observable.x_misp_organisation)
+        self.assertEqual(profile_image.type, 'attachment')
+        self.assertEqual(profile_image.object_relation, 'profile-image')
+        self.assertEqual(profile_image.value, observable.x_misp_profile_image['value'])
+        self.assertEqual(
+            self._get_data_value(profile_image.data),
+            observable.x_misp_profile_image['data']
+        )
+
     def _check_gitlab_user_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 3)
         user_id, display_name, account_login = pattern[1:-1].split(' AND ')[1:]
@@ -328,6 +418,88 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(phone_info, f'{phone.object_relation}: {phone.value}')
         return role
 
+    def _check_parler_account_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 4)
+        user_id, account_login, human, photo_data, photo_value = pattern[1:-1].split(' AND ')[1:]
+        account_id, account_name, human_attribute, profile_photo = attributes
+        self.assertEqual(account_id.type, 'text')
+        self.assertEqual(account_id.object_relation, 'account-id')
+        self.assertEqual(account_id.value, self._get_pattern_value(user_id))
+        self.assertEqual(account_name.type, 'text')
+        self.assertEqual(account_name.object_relation, 'account-name')
+        self.assertEqual(account_name.value, self._get_pattern_value(account_login))
+        self.assertEqual(human_attribute.type, 'boolean')
+        self.assertEqual(human_attribute.object_relation, 'human')
+        self.assertEqual(human_attribute.value, self._get_pattern_value(human))
+        self.assertEqual(profile_photo.type, 'attachment')
+        self.assertEqual(profile_photo.object_relation, 'profile-photo')
+        self.assertEqual(profile_photo.value, self._get_pattern_value(photo_value))
+        self.assertEqual(
+            self._get_data_value(profile_photo.data),
+            self._get_pattern_value(photo_data)
+        )
+
+    def _check_parler_account_observable_object(self, attributes, observable):
+        self.assertEqual(len(attributes), 4)
+        account_id, account_name, human_attribute, profile_photo = attributes
+        self.assertEqual(account_id.type, 'text')
+        self.assertEqual(account_id.object_relation, 'account-id')
+        self.assertEqual(account_id.value, observable.user_id)
+        self.assertEqual(account_name.type, 'text')
+        self.assertEqual(account_name.object_relation, 'account-name')
+        self.assertEqual(account_name.value, observable.account_login)
+        self.assertEqual(human_attribute.type, 'boolean')
+        self.assertEqual(human_attribute.object_relation, 'human')
+        self.assertEqual(human_attribute.value, observable.x_misp_human)
+        self.assertEqual(profile_photo.type, 'attachment')
+        self.assertEqual(profile_photo.object_relation, 'profile-photo')
+        self.assertEqual(profile_photo.value, observable.x_misp_profile_photo['value'])
+        self.assertEqual(
+            self._get_data_value(profile_photo.data),
+            observable.x_misp_profile_photo['data']
+        )
+
+    def _check_reddit_account_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 4)
+        user_id, account_login, description, avatar_data, avatar_value = pattern[1:-1].split(' AND ')[1:]
+        account_id, account_name, description_attribute, account_avatar = attributes
+        self.assertEqual(account_id.type, 'text')
+        self.assertEqual(account_id.object_relation, 'account-id')
+        self.assertEqual(account_id.value, self._get_pattern_value(user_id))
+        self.assertEqual(account_name.type, 'text')
+        self.assertEqual(account_name.object_relation, 'account-name')
+        self.assertEqual(account_name.value, self._get_pattern_value(account_login))
+        self.assertEqual(description_attribute.type, 'text')
+        self.assertEqual(description_attribute.object_relation, 'description')
+        self.assertEqual(description_attribute.value, self._get_pattern_value(description))
+        self.assertEqual(account_avatar.type, 'attachment')
+        self.assertEqual(account_avatar.object_relation, 'account-avatar')
+        self.assertEqual(account_avatar.value, self._get_pattern_value(avatar_value))
+        self.assertEqual(
+            self._get_data_value(account_avatar.data),
+            self._get_pattern_value(avatar_data)
+        )
+
+    def _check_reddit_account_observable_object(self, attributes, observable):
+        self.assertEqual(len(attributes), 4)
+        account_id, account_name, account_avatar, description_attribute = attributes
+        self.assertEqual(account_id.type, 'text')
+        self.assertEqual(account_id.object_relation, 'account-id')
+        self.assertEqual(account_id.value, observable.user_id)
+        self.assertEqual(account_name.type, 'text')
+        self.assertEqual(account_name.object_relation, 'account-name')
+        self.assertEqual(account_name.value, observable.account_login)
+        self.assertEqual(account_avatar.type, 'attachment')
+        self.assertEqual(account_avatar.object_relation, 'account-avatar')
+        self.assertEqual(account_avatar.value, observable.x_misp_account_avatar['value'])
+        self.assertEqual(
+            self._get_data_value(account_avatar.data),
+            observable.x_misp_account_avatar['data']
+        )
+        self.assertEqual(description_attribute.type, 'text')
+        self.assertEqual(description_attribute.object_relation, 'description')
+        self.assertEqual(description_attribute.value, observable.x_misp_description)
+
     def _check_script_object(self, misp_object, stix_object):
         self.assertEqual(misp_object.uuid, stix_object.id.split('--')[1])
         self.assertEqual(misp_object.name, 'script')
@@ -376,6 +548,54 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self.assertEqual(attribute.type, 'text')
             self.assertEqual(attribute.object_relation, 'phone')
             self.assertEqual(attribute.value, phone_value)
+
+    def _check_twitter_account_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 5)
+        display_name, user_id, account_login, followers, *image_pattern = pattern[1:-1].split(' AND ')[1:]
+        displayed_name, id_attribute, name, followers_attribute, profile_image = attributes
+        self.assertEqual(displayed_name.type, 'text')
+        self.assertEqual(displayed_name.object_relation, 'displayed-name')
+        self.assertEqual(displayed_name.value, self._get_pattern_value(display_name))
+        self.assertEqual(id_attribute.type, 'text')
+        self.assertEqual(id_attribute.object_relation, 'id')
+        self.assertEqual(id_attribute.value, self._get_pattern_value(user_id))
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, self._get_pattern_value(account_login))
+        self.assertEqual(followers_attribute.type, 'text')
+        self.assertEqual(followers_attribute.object_relation, 'followers')
+        self.assertEqual(followers_attribute.value, self._get_pattern_value(followers))
+        self.assertEqual(profile_image.type, 'attachment')
+        self.assertEqual(profile_image.object_relation, 'profile-image')
+        image_data, image_value = image_pattern
+        self.assertEqual(profile_image.value, self._get_pattern_value(image_value))
+        self.assertEqual(
+            self._get_data_value(profile_image.data),
+            self._get_pattern_value(image_data)
+        )
+
+    def _check_twitter_account_observable_object(self, attributes, observable):
+        self.assertEqual(len(attributes), 5)
+        id_attribute, name, displayed_name, followers_attribute, profile_image = attributes
+        self.assertEqual(id_attribute.type, 'text')
+        self.assertEqual(id_attribute.object_relation, 'id')
+        self.assertEqual(id_attribute.value, observable.user_id)
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, observable.account_login)
+        self.assertEqual(displayed_name.type, 'text')
+        self.assertEqual(displayed_name.object_relation, 'displayed-name')
+        self.assertEqual(displayed_name.value, observable.display_name)
+        self.assertEqual(followers_attribute.type, 'text')
+        self.assertEqual(followers_attribute.object_relation, 'followers')
+        self.assertEqual(followers_attribute.value, observable.x_misp_followers)
+        self.assertEqual(profile_image.type, 'attachment')
+        self.assertEqual(profile_image.object_relation, 'profile-image')
+        self.assertEqual(profile_image.value, observable.x_misp_profile_image['value'])
+        self.assertEqual(
+            self._get_data_value(profile_image.data),
+            observable.x_misp_profile_image['data']
+        )
 
     def _check_vulnerability_object(self, misp_object, vulnerability):
         self.assertEqual(misp_object.uuid, vulnerability.id.split('--')[1])
