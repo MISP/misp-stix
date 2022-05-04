@@ -629,7 +629,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__twitter_account_object_mapping = Mapping(
             user_id = id_attribute,
             account_login = name_attribute,
-            displayed_name = {'type': 'text', 'object_relation': 'displayed-name'},
+            display_name = {'type': 'text', 'object_relation': 'displayed-name'},
             x_misp_archive = archive_attribute,
             x_misp_attachment = attachment_attribute,
             x_misp_bio = bio_attribute,
