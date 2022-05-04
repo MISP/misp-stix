@@ -3791,7 +3791,7 @@ class TestSTIX20Bundles:
         )
         for indicator, pattern in zip(indicators, patterns):
             indicator['pattern'] = f"[{' AND '.join(pattern)}]"
-        return cls.__assemble_bundle(*indicator)
+        return cls.__assemble_bundle(*indicators)
 
     @classmethod
     def get_bundle_with_account_with_attachment_observable_objects(cls):
