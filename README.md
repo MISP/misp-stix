@@ -52,12 +52,29 @@ Tests for MISP format export as STIX 2.1:
 poetry run nosetests-3.4 --with-coverage --cover-package=tests --cover-tests tests/test_stix21_export.py
 ```
 
-## Samples and examples
+## Usage
 
-Various examples are provided and used by the different tests scripts in the [tests](tests/) directory.
-Those example files are showing the results of MISP format exported in the various supported STIX formats.
+### Command-line Usage
 
-### Usage examples
+```
+misp_stix_converter -v 2.1 -f tests/test_events_collection_1.json
+```
+
+#### Parameters
+
+- `--version`: STIX version
+- `--file`: Input file(s)
+
+Parameters specific to the case of multiple input file(s):
+- `--single_output`: In case of multiple input files, save the results in on single file
+- `--tmp_files`: Store temporary results in files before gathering the whole conversion result, instead of keeping it on memory
+
+Parameters specific to STIX 1 export:
+- `--feature`: MISP data structure level (attribute or event)
+- `--namespace`: Namespace to be used in the STIX 1 header
+- `--org`: Organisation name to be used in the STIX 1 header
+
+### In Python scripts
 
 Given a MISP Event (with its metadata fields, attributes, objects, galaxies and tags), declared in an `event` variable in JSON format, you can get the result of a conversion into one of the supported STIX versions:
 
@@ -170,6 +187,11 @@ stix21_response = misp_event_collection_to_stix2_1(
 )
 ```
 Again, all the response variables should be `1` and the resulting STIX1 Package and STIX 2.0 & 2.1 Bundles are available in the specific output file names.
+
+### Samples and examples
+
+Various examples are provided and used by the different tests scripts in the [tests](tests/) directory.
+Those example files are showing the results of MISP format exported in the various supported STIX formats.
 
 ## MISP <--> STIX Mapping
 
