@@ -105,7 +105,7 @@ def _process_arguments(stix_args):
                 version = stix_args.version
             )
             if status == 1:
-                results.append(filename)
+                results.append(f'{filename}.out')
             else:
                 print(f'Error while processing {filename} - status code = {status}', file=sys.stderr)
         return results, 1
@@ -131,7 +131,7 @@ def _process_arguments(stix_args):
     for filename in stix_args.file:
         status = method(filename)
         if status == 1:
-            results.append(filename)
+            results.append(f'{filename}.out')
         else:
             print(f'Error while processing {filename} - status code = {status}', file=sys.stderr)
     return results
@@ -156,7 +156,7 @@ def main():
     stix_args.output_dir = stix_args.file[0].parent
     results = _process_arguments(stix_args)
     if isinstance(results, list):
-        files = '\n - '.join(results)
+        files = '\n - '.join(str(result) for result in results)
         print(f"Successfully processed your {'files' if len(results) > 1 else 'file'}. Results available in:\n - {files}")
     else:
         print(f"Successfully processed your {'files' if len(stix_args.file) > 1 else 'file'}. Results available in {results}")
