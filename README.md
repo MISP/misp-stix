@@ -57,7 +57,7 @@ poetry run nosetests-3.4 --with-coverage --cover-package=tests --cover-tests tes
 ### Command-line Usage
 
 ```
-misp_stix_converter -v 2.1 -f tests/test_events_collection_1.json
+misp_stix_converter --version 2.1 -f tests/test_events_collection_1.json
 ```
 
 #### Parameters
