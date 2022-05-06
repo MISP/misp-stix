@@ -244,6 +244,7 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | -- | -- |
 | AS | Autonomous System Object |
 | attachment | Artifact & File Objects |
+| authentihash | File Object |
 | campaign-name | **Campaign** |
 | domain | Domain Name Object |
 | domain\|ip | Domain Name & IPv4/IPv6 Address Objects |
@@ -257,7 +258,10 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | email-subject | Email Message Object |
 | email-x-mailer | Email Message Object |
 | filename | File Object |
+| filename\|authentihash | File Object |
+| filename\|imphash | File Object |
 | filename\|md5 | File Object |
+| filename\|pehash | File Object |
 | filename\|sha1 | File Object |
 | filename\|sha224 | File Object |
 | filename\|sha256 | File Object |
@@ -271,10 +275,12 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | filename\|sha512/256 | File Object |
 | filename\|ssdeep | File Object |
 | filename\|tlsh | File Object |
+| filename\|vhash | File Object |
 | github-username | User Account Object (pattern) / Custom Object |
 | hostname | Domain Name Object |
 | hostname\|port | Domain Name & Network Traffic Objects |
 | http-method | Network Traffic Object (pattern) / Custom Object |
+| imphash | File Object |
 | ip-dst | IPv4/IPv6 Address & Network Traffic Objects |
 | ip-dst\|port | IPv4/IPv6 Address & Network Traffic Objects |
 | ip-src | IPv4/IPv6 Address & Network Traffic Objects |
@@ -284,6 +290,7 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | malware-sample | Artifact & File Objects |
 | md5 | File Object |
 | mutex | Mutex Object |
+| pehash | File Object |
 | port | Network Traffic Object (pattern) / Custom Object |
 | regkey | Windows Registry Key Object |
 | regkey\|value | Windows Registry Key Object |
@@ -300,10 +307,12 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | sha512/256 | File Object |
 | size-in-bytes | File Object (pattern) / Custom Object |
 | ssdeep | File Object |
+| telfhash | File Object |
 | tlsh | File Object |
 | uri | URL Object |
 | url | URL Object |
 | user-agent | Network Traffic Object (pattern) / Custom Object |
+| vhash | File Object |
 | vulnerability | **Vulnerability** |
 | x509-fingerprint-md5 | X509 Certificate Object |
 | x509-fingerprint-sha1 | X509 Certificate Object |
@@ -410,6 +419,7 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | -- | -- |
 | AS | Autonomous System Object |
 | attachment | Artifact & File Objects |
+| authentihash | File Object |
 | campaign-name | **Campaign** |
 | domain | Domain Name Object |
 | domain\|ip | Domain Name & IPv4/IPv6 Address Objects |
@@ -424,7 +434,10 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | email-subject | Email Message Object |
 | email-x-mailer | Email Message Object |
 | filename | File Object |
+| filename\|authentihash | File Object |
+| filename\|imphash | File Object |
 | filename\|md5 | File Object |
+| filename\|pehash | File Object |
 | filename\|sha1 | File Object |
 | filename\|sha224 | File Object |
 | filename\|sha256 | File Object |
@@ -434,23 +447,26 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | filename\|sha3-512 | File Object |
 | filename\|sha384 | File Object |
 | filename\|sha512 | File Object |
-| filename\|sha512/224 | File Object |
+| filename\|sha512/224 | File Object (pattern) / Custom Object |
 | filename\|sha512/256 | File Object |
 | filename\|ssdeep | File Object |
 | filename\|tlsh | File Object |
+| filename\|vhash | File Object |
 | github-username | User Account Object |
 | hostname | Domain Name Object |
 | hostname\|port | Domain Name & Network Traffic Objects |
 | http-method | Network Traffic Object (pattern) / Custom Object |
+| imphash | File Object |
 | ip-dst | IPv4/IPv6 Address & Network Traffic Objects |
 | ip-dst\|port | IPv4/IPv6 Address & Network Traffic Objects |
-| ip-src | Network Traffic Object |
-| ip-src\|port | Network Traffic Object |
+| ip-src | IPv4/IPv6 Address & Network Traffic Objects |
+| ip-src\|port | IPv4/IPv6 Address & Network Traffic Objects |
 | link | URL Object |
 | mac-address | Mac Address Object |
 | malware-sample | Artifact & File Objects |
 | md5 | File Object |
 | mutex | Mutex Object |
+| pehash | File Object |
 | port | Network Traffic Object (pattern) / Custom Object |
 | regkey | Windows Registry Key Object |
 | regkey\|value | Windows Registry Key Object |
@@ -463,16 +479,18 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | sha3-512 | File Object |
 | sha384 | File Object |
 | sha512 | File Object |
-| sha512/224 | File Object |
+| sha512/224 | File Object (pattern) / Custom Object |
 | sha512/256 | File Object |
 | sigma | **Indicator** |
 | size-in-bytes | File Object (pattern) / Custom Object |
 | snort | **Indicator** |
 | ssdeep | File Object |
+| telfhash | File Object |
 | tlsh | File Object |
 | uri | URL Object |
 | url | URL Object |
 | user-agent | Network Traffic Object (pattern) / Custom Object |
+| vhash | File Object |
 | vulnerability | **Vulnerability** |
 | x509-fingerprint-md5 | X509 Certificate Object |
 | x509-fingerprint-sha1 | X509 Certificate Object |

@@ -1480,12 +1480,18 @@ For the rest of this documentation, we will then, in order to keep the content c
             {
                 "type": "text",
                 "object_relation": "account-name",
-                "value": "marcopolo"
+                "value": "octocat"
             },
             {
                 "type": "link",
                 "object_relation": "link",
-                "value": "https://facebook.com/marcopolo"
+                "value": "https://facebook.com/octocat"
+            },
+            {
+                "type": "attachment",
+                "object_relation": "user-avatar",
+                "value": "octocat.png",
+                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
             }
         ]
     }
@@ -1500,7 +1506,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[user-account:account_type = 'facebook' AND user-account:user_id = '1392781243' AND user-account:account_login = 'marcopolo' AND user-account:x_misp_link = 'https://facebook.com/marcopolo']",
+          "pattern": "[user-account:account_type = 'facebook' AND user-account:user_id = '1392781243' AND user-account:account_login = 'octocat' AND user-account:x_misp_link = 'https://facebook.com/octocat' AND user-account:x_misp_user_avatar.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_user_avatar.value = 'octocat.png']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
           "valid_from": "2020-10-25T16:22:00Z",
@@ -1544,9 +1550,13 @@ For the rest of this documentation, we will then, in order to keep the content c
               "spec_version": "2.1",
               "id": "user-account--7d8ac653-b65c-42a6-8420-ddc71d65f50d",
               "user_id": "1392781243",
-              "account_login": "marcopolo",
+              "account_login": "octocat",
               "account_type": "facebook",
-              "x_misp_link": "https://facebook.com/marcopolo"
+              "x_misp_link": "https://facebook.com/octocat",
+              "x_misp_user_avatar": {
+                  "value": "octocat.png",
+                  "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+              }
           }
       ]
       ```
@@ -2492,8 +2502,8 @@ For the rest of this documentation, we will then, in order to keep the content c
               "dst_ref": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
               "dst_port": 443,
               "protocols": [
-                  "ipv4",
-                  "tcp"
+                  "tcp",
+                  "ipv4"
               ],
               "x_misp_domain": "circl.lu"
           },
@@ -4186,17 +4196,23 @@ For the rest of this documentation, we will then, in order to keep the content c
             {
                 "type": "text",
                 "object_relation": "name",
-                "value": "johndoe"
+                "value": "octocat"
             },
             {
                 "type": "text",
                 "object_relation": "displayed-name",
-                "value": "John Doe"
+                "value": "Octo Cat"
             },
             {
                 "type": "text",
                 "object_relation": "followers",
                 "value": "666"
+            },
+            {
+                "type": "attachment",
+                "object_relation": "profile-image",
+                "value": "octocat.png",
+                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
             }
         ]
     }
@@ -4211,7 +4227,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[user-account:account_type = 'twitter' AND user-account:display_name = 'John Doe' AND user-account:user_id = '1357111317' AND user-account:account_login = 'johndoe' AND user-account:x_misp_followers = '666']",
+          "pattern": "[user-account:account_type = 'twitter' AND user-account:display_name = 'Octo Cat' AND user-account:user_id = '1357111317' AND user-account:account_login = 'octocat' AND user-account:x_misp_followers = '666' AND user-account:x_misp_profile_image.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_profile_image.value = 'octocat.png']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
           "valid_from": "2020-10-25T16:22:00Z",
@@ -4255,10 +4271,14 @@ For the rest of this documentation, we will then, in order to keep the content c
               "spec_version": "2.1",
               "id": "user-account--6baef273-d2c3-4ef1-8a93-d2cf552e7bfb",
               "user_id": "1357111317",
-              "account_login": "johndoe",
+              "account_login": "octocat",
               "account_type": "twitter",
-              "display_name": "John Doe",
-              "x_misp_followers": "666"
+              "display_name": "Octo Cat",
+              "x_misp_followers": "666",
+              "x_misp_profile_image": {
+                  "value": "octocat.png",
+                  "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+              }
           }
       ]
       ```
@@ -4419,6 +4439,12 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "value": "/home/iglocska"
             },
             {
+                "type": "attachment",
+                "object_relation": "user-avatar",
+                "value": "octocat.png",
+                "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
+            },
+            {
                 "type": "text",
                 "object_relation": "account-type",
                 "value": "unix"
@@ -4441,7 +4467,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[user-account:account_type = 'unix' AND user-account:display_name = 'Code Monkey' AND user-account:credential = 'P4ssw0rd1234!' AND user-account:user_id = 'iglocska' AND user-account:account_login = 'iglocska' AND user-account:credential_last_changed = '2020-10-25T16:22:00' AND user-account:extensions.'unix-account-ext'.groups = 'viktor-fan' AND user-account:extensions.'unix-account-ext'.groups = 'donald-fan' AND user-account:extensions.'unix-account-ext'.gid = '2004' AND user-account:extensions.'unix-account-ext'.home_dir = '/home/iglocska']",
+          "pattern": "[user-account:account_type = 'unix' AND user-account:display_name = 'Code Monkey' AND user-account:credential = 'P4ssw0rd1234!' AND user-account:user_id = 'iglocska' AND user-account:account_login = 'iglocska' AND user-account:credential_last_changed = '2020-10-25T16:22:00' AND user-account:extensions.'unix-account-ext'.groups = 'viktor-fan' AND user-account:extensions.'unix-account-ext'.groups = 'donald-fan' AND user-account:extensions.'unix-account-ext'.gid = '2004' AND user-account:extensions.'unix-account-ext'.home_dir = '/home/iglocska' AND user-account:x_misp_user_avatar.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_user_avatar.value = 'octocat.png']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
           "valid_from": "2020-10-25T16:22:00Z",
@@ -4499,6 +4525,10 @@ For the rest of this documentation, we will then, in order to keep the content c
                       ],
                       "home_dir": "/home/iglocska"
                   }
+              },
+              "x_misp_user_avatar": {
+                  "value": "octocat.png",
+                  "data": "iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC"
               }
           }
       ]

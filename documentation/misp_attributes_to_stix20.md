@@ -187,6 +187,69 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
 
+- authentihash
+  - MISP
+    ```json
+    {
+        "type": "authentihash",
+        "category": "Payload delivery",
+        "timestamp": "1603642920",
+        "comment": "AUTHENTIHASH test attribute",
+        "value": "b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc",
+        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "AUTHENTIHASH test attribute",
+          "pattern": "[file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"authentihash\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "AUTHENTIHASH": "b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"authentihash\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
 - campaign-name
   - MISP
     ```json
@@ -1291,11 +1354,139 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
 
-- filename|md5
+- filename|authentihash
   - MISP
     ```json
     {
         "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "type": "filename|authentihash",
+        "category": "Payload delivery",
+        "value": "filename8|b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc",
+        "timestamp": "1603642920",
+        "comment": "Filename|authentihash test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "Filename|authentihash test attribute",
+          "pattern": "[file:name = 'filename8' AND file:hashes.AUTHENTIHASH = 'b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"filename|authentihash\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "AUTHENTIHASH": "b3b8b4ac8ac98e610c49b4c5306b95ea2836348492b5c488f584a223541283cc"
+                  },
+                  "name": "filename8"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|authentihash\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
+- filename|imphash
+  - MISP
+    ```json
+    {
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "type": "filename|imphash",
+        "category": "Payload delivery",
+        "value": "filename9|68f013d7437aa653a8a98a05807afeb1",
+        "timestamp": "1603642920",
+        "comment": "Filename|imphash test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "Filename|imphash test attribute",
+          "pattern": "[file:name = 'filename9' AND file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"filename|imphash\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "IMPHASH": "68f013d7437aa653a8a98a05807afeb1"
+                  },
+                  "name": "filename9"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|imphash\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
+- filename|md5
+  - MISP
+    ```json
+    {
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
         "type": "filename|md5",
         "category": "Payload delivery",
         "value": "filename1|b2a5abfeef9e36964281a31e17b57c97",
@@ -1308,7 +1499,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -1332,7 +1523,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -1381,11 +1572,75 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
 
+- filename|pehash
+  - MISP
+    ```json
+    {
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "type": "filename|pehash",
+        "category": "Payload delivery",
+        "value": "filename10|ffb7a38174aab4744cc4a509e34800aee9be8e57",
+        "timestamp": "1603642920",
+        "comment": "Filename|pehash test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "Filename|pehash test attribute",
+          "pattern": "[file:name = 'filename10' AND file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"filename|pehash\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"
+                  },
+                  "name": "filename10"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|pehash\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
 - filename|sha1
   - MISP
     ```json
     {
-        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
         "type": "filename|sha1",
         "category": "Payload delivery",
         "value": "filename2|2920d5e6c579fce772e5506caf03af65579088bd",
@@ -1398,7 +1653,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+          "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -1422,7 +1677,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "id": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -1475,7 +1730,7 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
         "type": "filename|sha224",
         "category": "Payload delivery",
         "value": "filename3|5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
@@ -1488,7 +1743,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+          "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -1512,7 +1767,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+          "id": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -1565,12 +1820,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "uuid": "2007ec09-8137-4a71-a3ce-6ef967bebacf",
         "type": "filename|sha256",
         "category": "Payload delivery",
-        "value": "testfile.name|ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
+        "value": "filename4|7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4",
         "timestamp": "1603642920",
-        "comment": "filename|sha256 test attribute"
+        "comment": "Filename|sha256 test attribute"
     }
     ```
   - STIX
@@ -1578,12 +1833,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "description": "filename|sha256 test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
+          "description": "Filename|sha256 test attribute",
+          "pattern": "[file:name = 'filename4' AND file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -1602,7 +1857,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -1613,9 +1868,9 @@ For the rest of this documentation, we will then, in order to keep the content c
               "0": {
                   "type": "file",
                   "hashes": {
-                      "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+                      "SHA-256": "7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4"
                   },
-                  "name": "testfile.name"
+                  "name": "filename4"
               }
           },
           "labels": [
@@ -1693,10 +1948,10 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "uuid": "e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
         "type": "filename|sha3-256",
         "category": "Payload delivery",
-        "value": "filename5|39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
+        "value": "filename14|39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
         "timestamp": "1603642920",
         "comment": "Filename|sha3-256 test attribute"
     }
@@ -1706,12 +1961,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+          "id": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "Filename|sha3-256 test attribute",
-          "pattern": "[file:name = 'filename5' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
+          "pattern": "[file:name = 'filename14' AND file:hashes.SHA3256 = '39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -1730,7 +1985,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+          "id": "observed-data--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -1743,7 +1998,7 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "hashes": {
                       "SHA3-256": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4"
                   },
-                  "name": "filename5"
+                  "name": "filename14"
               }
           },
           "labels": [
@@ -1911,10 +2166,10 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
+        "uuid": "c8760340-85a9-4e40-bfde-522d66ef1e9f",
         "type": "filename|sha384",
         "category": "Payload delivery",
-        "value": "filename6|ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce",
+        "value": "filename5|ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce",
         "timestamp": "1603642920",
         "comment": "Filename|sha384 test attribute"
     }
@@ -1924,12 +2179,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+          "id": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "Filename|sha384 test attribute",
-          "pattern": "[file:name = 'filename6' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
+          "pattern": "[file:name = 'filename5' AND file:hashes.SHA384 = 'ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -1948,7 +2203,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb",
+          "id": "observed-data--c8760340-85a9-4e40-bfde-522d66ef1e9f",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -1961,7 +2216,7 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "hashes": {
                       "SHA-384": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce"
                   },
-                  "name": "filename6"
+                  "name": "filename5"
               }
           },
           "labels": [
@@ -2001,12 +2256,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "uuid": "55ffda25-c3fe-48b5-a6eb-59c986cb593e",
         "type": "filename|sha512",
         "category": "Payload delivery",
-        "value": "testfile.name|06f531e49154d59f684475da95693df1fccd50b505e6d3ca028c9d84fcfc79ef287704dd0b24b022bfac6ba9ee581d19f440773dd00cfcfecf068b644ecbecb5",
+        "value": "filename6|28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe",
         "timestamp": "1603642920",
-        "comment": "filename|sha512 test attribute"
+        "comment": "Filename|sha512 test attribute"
     }
     ```
   - STIX
@@ -2014,12 +2269,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "description": "filename|sha512 test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA512 = '06f531e49154d59f684475da95693df1fccd50b505e6d3ca028c9d84fcfc79ef287704dd0b24b022bfac6ba9ee581d19f440773dd00cfcfecf068b644ecbecb5']",
+          "description": "Filename|sha512 test attribute",
+          "pattern": "[file:name = 'filename6' AND file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -2038,7 +2293,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "observed-data--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -2049,9 +2304,9 @@ For the rest of this documentation, we will then, in order to keep the content c
               "0": {
                   "type": "file",
                   "hashes": {
-                      "SHA-512": "06f531e49154d59f684475da95693df1fccd50b505e6d3ca028c9d84fcfc79ef287704dd0b24b022bfac6ba9ee581d19f440773dd00cfcfecf068b644ecbecb5"
+                      "SHA-512": "28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe"
                   },
-                  "name": "testfile.name"
+                  "name": "filename6"
               }
           },
           "labels": [
@@ -2065,12 +2320,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
         "type": "filename|sha512/224",
         "category": "Payload delivery",
-        "value": "testfile.name|2874893927788197307efb678d9462ea3cb7680b0826a9ff69e2fafc",
+        "value": "filename11|5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
         "timestamp": "1603642920",
-        "comment": "filename|sha512/224 test attribute"
+        "comment": "Filename|sha512/224 test attribute"
     }
     ```
   - STIX
@@ -2078,12 +2333,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "description": "filename|sha512/224 test attribute",
-          "pattern": "[file:name = 'testfile.name' AND file:hashes.SHA224 = '2874893927788197307efb678d9462ea3cb7680b0826a9ff69e2fafc']",
+          "description": "Filename|sha512/224 test attribute",
+          "pattern": "[file:name = 'filename11' AND file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -2102,7 +2357,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -2113,9 +2368,9 @@ For the rest of this documentation, we will then, in order to keep the content c
               "0": {
                   "type": "file",
                   "hashes": {
-                      "SHA-224": "2874893927788197307efb678d9462ea3cb7680b0826a9ff69e2fafc"
+                      "SHA-224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
                   },
-                  "name": "testfile.name"
+                  "name": "filename11"
               }
           },
           "labels": [
@@ -2129,10 +2384,10 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
         "type": "filename|sha512/256",
         "category": "Payload delivery",
-        "value": "filename4|82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
+        "value": "filename11|82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
         "timestamp": "1603642920",
         "comment": "Filename|sha512/256 test attribute"
     }
@@ -2142,12 +2397,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "Filename|sha512/256 test attribute",
-          "pattern": "[file:name = 'filename4' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
+          "pattern": "[file:name = 'filename11' AND file:hashes.SHA256 = '82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -2166,7 +2421,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -2179,7 +2434,7 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "hashes": {
                       "SHA-256": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93"
                   },
-                  "name": "filename4"
+                  "name": "filename11"
               }
           },
           "labels": [
@@ -2219,7 +2474,7 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "uuid": "9060e814-a36f-45ab-84e5-66fc82dc7cff",
         "type": "filename|ssdeep",
         "category": "Payload delivery",
         "value": "filename7|96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi",
@@ -2232,7 +2487,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+          "id": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -2256,7 +2511,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+          "id": "observed-data--9060e814-a36f-45ab-84e5-66fc82dc7cff",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -2309,10 +2564,10 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "uuid": "7467406e-88d3-4856-afc9-412459bc3c8b",
         "type": "filename|tlsh",
         "category": "Payload delivery",
-        "value": "filename8|c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
+        "value": "filename12|c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
         "timestamp": "1603642920",
         "comment": "Filename|tlsh test attribute"
     }
@@ -2322,12 +2577,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+          "id": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "Filename|tlsh test attribute",
-          "pattern": "[file:name = 'filename8' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
+          "pattern": "[file:name = 'filename12' AND file:hashes.TLSH = 'c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -2346,7 +2601,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+          "id": "observed-data--7467406e-88d3-4856-afc9-412459bc3c8b",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -2359,7 +2614,7 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "hashes": {
                       "TLSH": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297"
                   },
-                  "name": "filename8"
+                  "name": "filename12"
               }
           },
           "labels": [
@@ -2390,6 +2645,70 @@ For the rest of this documentation, we will then, in order to keep the content c
           },
           "labels": [
               "misp:type=\"filename|tlsh\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
+- filename|vhash
+  - MISP
+    ```json
+    {
+        "uuid": "cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+        "type": "filename|vhash",
+        "category": "Payload delivery",
+        "value": "filename13|115056655d15151138z66hz1021z55z66z3",
+        "timestamp": "1603642920",
+        "comment": "Filename|vhash test attribute"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "Filename|vhash test attribute",
+          "pattern": "[file:name = 'filename13' AND file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"filename|vhash\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "VHASH": "115056655d15151138z66hz1021z55z66z3"
+                  },
+                  "name": "filename13"
+              }
+          },
+          "labels": [
+              "misp:type=\"filename|vhash\"",
               "misp:category=\"Payload delivery\""
           ]
       }
@@ -2667,6 +2986,69 @@ For the rest of this documentation, we will then, in order to keep the content c
               "misp:type=\"http-method\"",
               "misp:category=\"Network activity\"",
               "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+
+- imphash
+  - MISP
+    ```json
+    {
+        "type": "imphash",
+        "category": "Payload delivery",
+        "timestamp": "1603642920",
+        "comment": "IMPHASH test attribute",
+        "value": "68f013d7437aa653a8a98a05807afeb1",
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "IMPHASH test attribute",
+          "pattern": "[file:hashes.IMPHASH = '68f013d7437aa653a8a98a05807afeb1']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"imphash\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "IMPHASH": "68f013d7437aa653a8a98a05807afeb1"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"imphash\"",
+              "misp:category=\"Payload delivery\""
           ]
       }
       ```
@@ -3073,8 +3455,8 @@ For the rest of this documentation, we will then, in order to keep the content c
     {
         "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "type": "link",
-        "category": "Network activity",
-        "value": "https://github.com/MISP/MISP",
+        "category": "External analysis",
+        "value": "https://misp-project.org/download/",
         "timestamp": "1603642920",
         "comment": "Link test attribute"
     }
@@ -3089,17 +3471,17 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "Link test attribute",
-          "pattern": "[url:value = 'https://github.com/MISP/MISP']",
+          "pattern": "[url:value = 'https://misp-project.org/download/']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
                   "kill_chain_name": "misp-category",
-                  "phase_name": "Network activity"
+                  "phase_name": "External analysis"
               }
           ],
           "labels": [
               "misp:type=\"link\"",
-              "misp:category=\"Network activity\"",
+              "misp:category=\"External analysis\"",
               "misp:to_ids=\"True\""
           ]
       }
@@ -3118,12 +3500,12 @@ For the rest of this documentation, we will then, in order to keep the content c
           "objects": {
               "0": {
                   "type": "url",
-                  "value": "https://github.com/MISP/MISP"
+                  "value": "https://misp-project.org/download/"
               }
           },
           "labels": [
               "misp:type=\"link\"",
-              "misp:category=\"Network activity\""
+              "misp:category=\"External analysis\""
           ]
       }
       ```
@@ -3317,12 +3699,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "type": "md5",
         "category": "Payload delivery",
-        "value": "b2a5abfeef9e36964281a31e17b57c97",
         "timestamp": "1603642920",
-        "comment": "MD5 test attribute"
+        "comment": "MD5 test attribute",
+        "value": "b2a5abfeef9e36964281a31e17b57c97",
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45"
     }
     ```
   - STIX
@@ -3330,7 +3712,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -3354,7 +3736,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -3481,6 +3863,69 @@ For the rest of this documentation, we will then, in order to keep the content c
           "labels": [
               "misp:type=\"mutex\"",
               "misp:category=\"Artifacts dropped\""
+          ]
+      }
+      ```
+
+- pehash
+  - MISP
+    ```json
+    {
+        "type": "pehash",
+        "category": "Payload delivery",
+        "timestamp": "1603642920",
+        "comment": "PEHASH test attribute",
+        "value": "ffb7a38174aab4744cc4a509e34800aee9be8e57",
+        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "PEHASH test attribute",
+          "pattern": "[file:hashes.PEHASH = 'ffb7a38174aab4744cc4a509e34800aee9be8e57']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"pehash\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "PEHASH": "ffb7a38174aab4744cc4a509e34800aee9be8e57"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"pehash\"",
+              "misp:category=\"Payload delivery\""
           ]
       }
       ```
@@ -3734,12 +4179,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
         "type": "sha1",
         "category": "Payload delivery",
-        "value": "2920d5e6c579fce772e5506caf03af65579088bd",
         "timestamp": "1603642920",
-        "comment": "SHA1 test attribute"
+        "comment": "SHA1 test attribute",
+        "value": "2920d5e6c579fce772e5506caf03af65579088bd",
+        "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
     }
     ```
   - STIX
@@ -3747,7 +4192,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+          "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -3771,7 +4216,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
+          "id": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -3822,12 +4267,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
         "type": "sha224",
         "category": "Payload delivery",
-        "value": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
         "timestamp": "1603642920",
-        "comment": "SHA224 test attribute"
+        "comment": "SHA224 test attribute",
+        "value": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+        "uuid": "90bd7dae-b78c-4025-9073-568950c780fb"
     }
     ```
   - STIX
@@ -3835,7 +4280,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+          "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -3859,7 +4304,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+          "id": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -3910,12 +4355,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "type": "sha256",
         "category": "Payload delivery",
-        "value": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b",
         "timestamp": "1603642920",
-        "comment": "SHA256 test attribute"
+        "comment": "SHA256 test attribute",
+        "value": "7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4",
+        "uuid": "2007ec09-8137-4a71-a3ce-6ef967bebacf"
     }
     ```
   - STIX
@@ -3923,12 +4368,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "SHA256 test attribute",
-          "pattern": "[file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b']",
+          "pattern": "[file:hashes.SHA256 = '7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -3947,7 +4392,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -3958,7 +4403,7 @@ For the rest of this documentation, we will then, in order to keep the content c
               "0": {
                   "type": "file",
                   "hashes": {
-                      "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+                      "SHA-256": "7fa3abc229fd3cb9a0a6f07d9da15e35528c630d0ad5902d5422b305cae7eaa4"
                   }
               }
           },
@@ -4036,12 +4481,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
         "type": "sha3-256",
         "category": "Payload delivery",
-        "value": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
         "timestamp": "1603642920",
-        "comment": "SHA3-256 test attribute"
+        "comment": "SHA3-256 test attribute",
+        "value": "39725234628358bcce613d1d1c07c2c3d2d106e3a6ac192016b46e5dddcd03f4",
+        "uuid": "e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6"
     }
     ```
   - STIX
@@ -4049,7 +4494,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+          "id": "indicator--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4073,7 +4518,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+          "id": "observed-data--e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4250,12 +4695,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "90bd7dae-b78c-4025-9073-568950c780fb",
         "type": "sha384",
         "category": "Payload delivery",
-        "value": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce",
         "timestamp": "1603642920",
-        "comment": "SHA384 test attribute"
+        "comment": "SHA384 test attribute",
+        "value": "ec1f92f1d30b71ffd866fe643a5fde9b64ac86398bfd3f24302bb2bae97e2b281f67666e7167dfdeb60006e2924636ce",
+        "uuid": "c8760340-85a9-4e40-bfde-522d66ef1e9f"
     }
     ```
   - STIX
@@ -4263,7 +4708,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--90bd7dae-b78c-4025-9073-568950c780fb",
+          "id": "indicator--c8760340-85a9-4e40-bfde-522d66ef1e9f",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4287,7 +4732,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--90bd7dae-b78c-4025-9073-568950c780fb",
+          "id": "observed-data--c8760340-85a9-4e40-bfde-522d66ef1e9f",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4338,12 +4783,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "type": "sha512",
         "category": "Payload delivery",
-        "value": "06f531e49154d59f684475da95693df1fccd50b505e6d3ca028c9d84fcfc79ef287704dd0b24b022bfac6ba9ee581d19f440773dd00cfcfecf068b644ecbecb5",
         "timestamp": "1603642920",
-        "comment": "SHA512 test attribute"
+        "comment": "SHA512 test attribute",
+        "value": "28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe",
+        "uuid": "55ffda25-c3fe-48b5-a6eb-59c986cb593e"
     }
     ```
   - STIX
@@ -4351,12 +4796,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "SHA512 test attribute",
-          "pattern": "[file:hashes.SHA512 = '06f531e49154d59f684475da95693df1fccd50b505e6d3ca028c9d84fcfc79ef287704dd0b24b022bfac6ba9ee581d19f440773dd00cfcfecf068b644ecbecb5']",
+          "pattern": "[file:hashes.SHA512 = '28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -4375,7 +4820,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "observed-data--55ffda25-c3fe-48b5-a6eb-59c986cb593e",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4386,7 +4831,7 @@ For the rest of this documentation, we will then, in order to keep the content c
               "0": {
                   "type": "file",
                   "hashes": {
-                      "SHA-512": "06f531e49154d59f684475da95693df1fccd50b505e6d3ca028c9d84fcfc79ef287704dd0b24b022bfac6ba9ee581d19f440773dd00cfcfecf068b644ecbecb5"
+                      "SHA-512": "28c9409ebaed767fe240ecacf727f9a5bd9f17fbd054f7dff2770a81878e56b176bf5f0cd196217ac785dd88e807a78ef3ee8b8122aba15c9ffb5c143794e6fe"
                   }
               }
           },
@@ -4401,12 +4846,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "type": "sha512/224",
         "category": "Payload delivery",
-        "value": "2874893927788197307efb678d9462ea3cb7680b0826a9ff69e2fafc",
         "timestamp": "1603642920",
-        "comment": "SHA512/224 test attribute"
+        "comment": "SHA512/224 test attribute",
+        "value": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9",
+        "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a"
     }
     ```
   - STIX
@@ -4414,12 +4859,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "SHA512/224 test attribute",
-          "pattern": "[file:hashes.SHA224 = '2874893927788197307efb678d9462ea3cb7680b0826a9ff69e2fafc']",
+          "pattern": "[file:hashes.SHA224 = '5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -4438,7 +4883,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4449,7 +4894,7 @@ For the rest of this documentation, we will then, in order to keep the content c
               "0": {
                   "type": "file",
                   "hashes": {
-                      "SHA-224": "2874893927788197307efb678d9462ea3cb7680b0826a9ff69e2fafc"
+                      "SHA-224": "5d6dc524ce96b1bb5e96d8dc116ff53b457ffb7f16afd9019a0dd8e9"
                   }
               }
           },
@@ -4464,12 +4909,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
         "type": "sha512/256",
         "category": "Payload delivery",
-        "value": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
         "timestamp": "1603642920",
-        "comment": "SHA512/256 test attribute"
+        "comment": "SHA512/256 test attribute",
+        "value": "82333533f7f7cb4123bceee76358b36d4110e03c2219b80dced5a4d63424cc93",
+        "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a"
     }
     ```
   - STIX
@@ -4477,7 +4922,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4501,7 +4946,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+          "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4588,12 +5033,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "2007ec09-8137-4a71-a3ce-6ef967bebacf",
         "type": "ssdeep",
         "category": "Payload delivery",
-        "value": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi",
         "timestamp": "1603642920",
-        "comment": "SSDEEP test attribute"
+        "comment": "SSDEEP test attribute",
+        "value": "96:QRWkwoBevsL0JsIQ3pq8dxbuTet7eU/uEzAfue9atn0JbIi:QRWktBe80JsIIq8dxKyPew0JbIi",
+        "uuid": "9060e814-a36f-45ab-84e5-66fc82dc7cff"
     }
     ```
   - STIX
@@ -4601,7 +5046,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+          "id": "indicator--9060e814-a36f-45ab-84e5-66fc82dc7cff",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4625,7 +5070,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+          "id": "observed-data--9060e814-a36f-45ab-84e5-66fc82dc7cff",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4672,16 +5117,16 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
 
-- tlsh
+- telfhash
   - MISP
     ```json
     {
-        "uuid": "2d35a390-ccdd-4d6b-a36d-513b05e3682a",
-        "type": "tlsh",
+        "type": "telfhash",
         "category": "Payload delivery",
-        "value": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
         "timestamp": "1603642920",
-        "comment": "TLSH test attribute"
+        "comment": "TELFHASH test attribute",
+        "value": "b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b",
+        "uuid": "4846cade-2492-4e7d-856e-2afcd282455b"
     }
     ```
   - STIX
@@ -4689,7 +5134,70 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+          "id": "indicator--4846cade-2492-4e7d-856e-2afcd282455b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "TELFHASH test attribute",
+          "pattern": "[file:hashes.TELFHASH = 'b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"telfhash\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--4846cade-2492-4e7d-856e-2afcd282455b",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "TELFHASH": "b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"telfhash\"",
+              "misp:category=\"Payload delivery\""
+          ]
+      }
+      ```
+
+- tlsh
+  - MISP
+    ```json
+    {
+        "type": "tlsh",
+        "category": "Payload delivery",
+        "timestamp": "1603642920",
+        "comment": "TLSH test attribute",
+        "value": "c325af62e2f15cf7c32316389d1b57a46827be703d3879866bf52c385f396813829297",
+        "uuid": "7467406e-88d3-4856-afc9-412459bc3c8b"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--7467406e-88d3-4856-afc9-412459bc3c8b",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4713,7 +5221,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+          "id": "observed-data--7467406e-88d3-4856-afc9-412459bc3c8b",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4764,10 +5272,10 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
         "type": "uri",
         "category": "Network activity",
-        "value": "http://176.58.32.109/upd/51",
+        "value": "https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova",
         "timestamp": "1603642920",
         "comment": "URI test attribute"
     }
@@ -4777,12 +5285,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "URI test attribute",
-          "pattern": "[url:value = 'http://176.58.32.109/upd/51']",
+          "pattern": "[url:value = 'https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -4801,7 +5309,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "observed-data--518b4bcb-a86b-4783-9457-391d548b605b",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4811,7 +5319,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "objects": {
               "0": {
                   "type": "url",
-                  "value": "http://176.58.32.109/upd/51"
+                  "value": "https://vm.misp-project.org/latest/MISP_v2.4.155@ca03678.ova"
               }
           },
           "labels": [
@@ -4825,10 +5333,10 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
         "type": "url",
         "category": "Network activity",
-        "value": "https://misp-project.org/download/",
+        "value": "https://vm.misp-project.org/latest/",
         "timestamp": "1603642920",
         "comment": "URL test attribute"
     }
@@ -4838,12 +5346,12 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
           "description": "URL test attribute",
-          "pattern": "[url:value = 'https://misp-project.org/download/']",
+          "pattern": "[url:value = 'https://vm.misp-project.org/latest/']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -4862,7 +5370,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "observed-data",
-          "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "observed-data--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4872,7 +5380,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "objects": {
               "0": {
                   "type": "url",
-                  "value": "https://misp-project.org/download/"
+                  "value": "https://vm.misp-project.org/latest/"
               }
           },
           "labels": [
@@ -4939,6 +5447,69 @@ For the rest of this documentation, we will then, in order to keep the content c
               "misp:type=\"user-agent\"",
               "misp:category=\"Network activity\"",
               "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+
+- vhash
+  - MISP
+    ```json
+    {
+        "type": "vhash",
+        "category": "Payload delivery",
+        "timestamp": "1603642920",
+        "comment": "VHASH test attribute",
+        "value": "115056655d15151138z66hz1021z55z66z3",
+        "uuid": "cea8c6f6-696c-41cc-b7c7-2566ca0b0975"
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "description": "VHASH test attribute",
+          "pattern": "[file:hashes.VHASH = '115056655d15151138z66hz1021z55z66z3']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "Payload delivery"
+              }
+          ],
+          "labels": [
+              "misp:type=\"vhash\"",
+              "misp:category=\"Payload delivery\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--cea8c6f6-696c-41cc-b7c7-2566ca0b0975",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "0": {
+                  "type": "file",
+                  "hashes": {
+                      "VHASH": "115056655d15151138z66hz1021z55z66z3"
+                  }
+              }
+          },
+          "labels": [
+              "misp:type=\"vhash\"",
+              "misp:category=\"Payload delivery\""
           ]
       }
       ```
