@@ -23,8 +23,9 @@ setup(
     description='Python scripts to convert MISP into STIX or STIX into MISP',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     packages=['misp_stix_converter'],
+    entry_points={"console_scripts": ["misp_stix_converter = misp_stix_converter:main"]},
     classifiers=[
         'License :: OSI Approved :: BSD License',
         'Development Status :: 5 - Production/Stable',
@@ -37,5 +38,5 @@ setup(
         'Topic :: Security',
         'Topic :: Internet',
     ],
-    install_requires=['pymisp', 'stix']
+    install_requires=['pymisp', 'stix', 'stix2']
 )

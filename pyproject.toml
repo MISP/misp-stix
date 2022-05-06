@@ -4,13 +4,16 @@ version = "0.1.0"
 description = "Python scripts used by MISP to export MISP format into STIX and to import STIX into MISP format."
 authors = ["Christian Studer <christian.studer@circl.lu>"]
 maintainers = ["Christian Studer <christian.studer@circl.lu>"]
-license = "BSD-2-Clause"
+license = "BSD-3-Clause"
 repository = "https://github.com/chrisr3d/MISP-STIX-Converter"
 readme = "README.md"
 
+[tool.poetry.scripts]
+misp_stix_converter = 'misp_stix_converter:main'
+
 [tool.poetry.dependencies]
-python = "^3.6"
-pymisp = "^2.4.131"
+python = "^3.7"
+pymisp = "^2.4.157"
 stix = "^1.2.0"
 cybox = "^2.1.0"
 mixbox = "^1.0.3"
