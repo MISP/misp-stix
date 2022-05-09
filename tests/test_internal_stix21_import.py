@@ -1304,8 +1304,16 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         gitlab, telegram = self._check_misp_event_features_from_grouping(event, grouping)
         gitlab_pattern = self._check_indicator_object(gitlab, gitlab_indicator)
         self._check_gitlab_user_indicator_object(gitlab.attributes, gitlab_pattern)
+        self._populate_documentation(
+            misp_object = json.loads(gitlab.to_json()),
+            indicator = gitlab_indicator
+        )
         telegram_pattern = self._check_indicator_object(telegram, telegram_indicator)
         self._check_telegram_account_indicator_object(telegram.attributes, telegram_pattern)
+        self._populate_documentation(
+            misp_object = json.loads(telegram.to_json()),
+            indicator = telegram_indicator
+        )
 
     def test_stix21_bundle_with_account_observable_objects(self):
         bundle = TestSTIX21Bundles.get_bundle_with_account_observable_objects()
@@ -1321,6 +1329,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             gitlab_ref.split('--')[1]
         )
         self._check_gitlab_user_observable_object(gitlab.attributes, gitlab_o)
+        self._populate_documentation(
+            misp_object = json.loads(gitlab.to_json()),
+            observed_data = [gitlab_od, gitlab_o]
+        )
         telegram_ref = self._check_observed_data_object(telegram, telegram_od)[0]
         self._assert_multiple_equal(
             telegram.uuid,
@@ -1328,6 +1340,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             telegram_ref.split('--')[1]
         )
         self._check_telegram_account_observable_object(telegram.attributes, telegram_o)
+        self._populate_documentation(
+            misp_object = json.loads(telegram.to_json()),
+            observed_data = [telegram_od, telegram_o]
+        )
 
     def test_stix21_bundle_with_account_with_attachment_indicator_objects(self):
         bundle = TestSTIX21Bundles.get_bundle_with_account_with_attachment_indicator_objects()
@@ -1338,14 +1354,34 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         facebook, github, parler, reddit, twitter = self._check_misp_event_features_from_grouping(event, grouping)
         facebook_pattern = self._check_indicator_object(facebook, facebook_i)
         self._check_facebook_account_indicator_object(facebook.attributes, facebook_pattern)
+        self._populate_documentation(
+            misp_object = json.loads(facebook.to_json()),
+            indicator = facebook_i
+        )
         github_pattern = self._check_indicator_object(github, github_i)
         self._check_github_user_indicator_object(github.attributes, github_pattern)
+        self._populate_documentation(
+            misp_object = json.loads(github.to_json()),
+            indicator = github_i
+        )
         parler_pattern = self._check_indicator_object(parler, parler_i)
         self._check_parler_account_indicator_object(parler.attributes, parler_pattern)
+        self._populate_documentation(
+            misp_object = json.loads(parler.to_json()),
+            indicator = parler_i
+        )
         reddit_pattern = self._check_indicator_object(reddit, reddit_i)
         self._check_reddit_account_indicator_object(reddit.attributes, reddit_pattern)
+        self._populate_documentation(
+            misp_object = json.loads(reddit.to_json()),
+            indicator = reddit_i
+        )
         twitter_pattern = self._check_indicator_object(twitter, twitter_i)
         self._check_twitter_account_indicator_object(twitter.attributes, twitter_pattern)
+        self._populate_documentation(
+            misp_object = json.loads(twitter.to_json()),
+            indicator = twitter_i
+        )
 
     def test_stix21_bundle_with_account_with_attachment_observable_objects(self):
         bundle = TestSTIX21Bundles.get_bundle_with_account_with_attachment_observable_objects()
@@ -1361,6 +1397,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             facebook_ref.split('--')[1]
         )
         self._check_facebook_account_observable_object(facebook.attributes, facebook_o)
+        self._populate_documentation(
+            misp_object = json.loads(facebook.to_json()),
+            observed_data = [facebook_od, facebook_o]
+        )
         github_ref = self._check_observed_data_object(github, github_od)[0]
         self._assert_multiple_equal(
             github.uuid,
@@ -1368,6 +1408,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             github_ref.split('--')[1]
         )
         self._check_github_user_observable_object(github.attributes, github_o)
+        self._populate_documentation(
+            misp_object = json.loads(github.to_json()),
+            observed_data = [github_od, github_o]
+        )
         parler_ref = self._check_observed_data_object(parler, parler_od)[0]
         self._assert_multiple_equal(
             parler.uuid,
@@ -1375,6 +1419,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             parler_ref.split('--')[1]
         )
         self._check_parler_account_observable_object(parler.attributes, parler_o)
+        self._populate_documentation(
+            misp_object = json.loads(parler.to_json()),
+            observed_data = [parler_od, parler_o]
+        )
         reddit_ref = self._check_observed_data_object(reddit, reddit_od)[0]
         self._assert_multiple_equal(
             reddit.uuid,
@@ -1382,6 +1430,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             reddit_ref.split('--')[1]
         )
         self._check_reddit_account_observable_object(reddit.attributes, reddit_o)
+        self._populate_documentation(
+            misp_object = json.loads(reddit.to_json()),
+            observed_data = [reddit_od, reddit_o]
+        )
         twitter_ref = self._check_observed_data_object(twitter, twitter_od)[0]
         self._assert_multiple_equal(
             twitter.uuid,
@@ -1389,6 +1441,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             twitter_ref.split('--')[1]
         )
         self._check_twitter_account_observable_object(twitter.attributes, twitter_o)
+        self._populate_documentation(
+            misp_object = json.loads(twitter.to_json()),
+            observed_data = [twitter_od, twitter_o]
+        )
 
     def test_stix21_bundle_with_asn_indicator_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_asn_indicator_object()
@@ -1399,6 +1455,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         self._check_asn_indicator_object(misp_object.attributes, pattern)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
 
     def test_stix21_bundle_with_asn_observable_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_asn_observable_object()
@@ -1414,6 +1474,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             observable_ref.split('--')[1]
         )
         self._check_asn_observable_object(misp_object.attributes, observable)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = [observed_data, observable]
+        )
 
     def test_stix21_bundle_with_attack_pattern_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_attack_pattern_object()
@@ -1450,6 +1514,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         self._check_cpe_asset_indicator_object(misp_object.attributes, pattern)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
 
     def test_stix21_bundle_with_cpe_asset_observable_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_cpe_asset_observable_object()
@@ -1465,6 +1533,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             observable_ref.split('--')[1]
         )
         self._check_cpe_asset_observable_object(misp_object.attributes, observable)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = [observed_data, observable]
+        )
 
     def test_stix21_bundle_with_employee_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_employee_object()
