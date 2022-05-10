@@ -1078,8 +1078,8 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, report, facebook_i, github_i, parler_i, reddit_i, twitter_i = bundle.objects
-        facebook, github, parler, reddit, twitter = self._check_misp_event_features(event, report)
+        _, report, facebook_i, github_i, parler_i, reddit_i, twitter_i, user_i = bundle.objects
+        facebook, github, parler, reddit, twitter, user_account = self._check_misp_event_features(event, report)
         facebook_pattern = self._check_indicator_object(facebook, facebook_i)
         self._check_facebook_account_indicator_object(facebook.attributes, facebook_pattern)
         self._populate_documentation(
@@ -1110,14 +1110,31 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             misp_object = json.loads(twitter.to_json()),
             indicator = twitter_i
         )
+        user_account_pattern = self._check_indicator_object(user_account, user_i)
+        account_p, display_p, user_id_p, account_login, last_changed_p, groups1, groups2, gid, home_dir_p, password_p, *user_avatar_p = user_account_pattern[1:-1].split(' AND ')
+        account_a, display_a, user_id_a, username, last_changed_a, group1, group2, group_id, home_dir_a, password_a, user_avatar = user_account.attributes
+        self._check_user_account_indicator_object(
+            (
+                account_a, display_a, password_a, user_id_a, username, last_changed_a,
+                group1, group2, group_id, home_dir_a, user_avatar
+            ),
+            (
+                account_p, display_p, password_p, user_id_p, account_login, last_changed_p,
+                groups1, groups2, gid, home_dir_p, *user_avatar_p
+            )
+        )
+        self._populate_documentation(
+            misp_object = json.loads(user_account.to_json()),
+            indicator = user_i
+        )
 
     def test_stix20_bundle_with_account_with_attachment_observable_objects(self):
         bundle = TestSTIX20Bundles.get_bundle_with_account_with_attachment_observable_objects()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, report, facebook_od, github_od, parler_od, reddit_od, twitter_od = bundle.objects
-        facebook, github, parler, reddit, twitter = self._check_misp_event_features(event, report)
+        _, report, facebook_od, github_od, parler_od, reddit_od, twitter_od, user_od = bundle.objects
+        facebook, github, parler, reddit, twitter, user_account = self._check_misp_event_features(event, report)
         facebook_observable = self._check_observed_data_object(facebook, facebook_od)['0']
         self._check_facebook_account_observable_object(facebook.attributes, facebook_observable)
         self._populate_documentation(
@@ -1147,6 +1164,21 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         self._populate_documentation(
             misp_object = json.loads(twitter.to_json()),
             observed_data = twitter_od
+        )
+        user_account_observable = self._check_observed_data_object(user_account, user_od)['0']
+        password, last_changed = self._check_user_account_observable_object(
+            user_account.attributes,
+            user_account_observable
+        )
+        self.assertEqual(password.type, 'text')
+        self.assertEqual(password.object_relation, 'password')
+        self.assertEqual(password.value, user_account_observable.x_misp_password)
+        self.assertEqual(last_changed.type, 'datetime')
+        self.assertEqual(last_changed.object_relation, 'password_last_changed')
+        self.assertEqual(last_changed.value, user_account_observable.password_last_changed)
+        self._populate_documentation(
+            misp_object = json.loads(user_account.to_json()),
+            observed_data = user_od
         )
 
     def test_stix20_bundle_with_asn_indicator_object(self):

@@ -632,6 +632,86 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             observable.x_misp_profile_image['data']
         )
 
+    def _check_user_account_indicator_object(self, attributes, pattern_list):
+        self.assertEqual(len(attributes), 11)
+        account_p, display_p, credential, user_id_p, account_login, last_changed_p, groups1, groups2, gid, home_dir_p, user_avatar_data, user_avatar_value = pattern_list
+        account_a, display_a, password, user_id_a, username, last_changed_a, group1, group2, group_id, home_dir_a, user_avatar = attributes
+        self.assertEqual(account_a.type, 'text'),
+        self.assertEqual(account_a.object_relation, 'account-type')
+        self.assertEqual(account_a.value, self._get_pattern_value(account_p))
+        self.assertEqual(display_a.type, 'text'),
+        self.assertEqual(display_a.object_relation, 'display-name')
+        self.assertEqual(display_a.value, self._get_pattern_value(display_p))
+        self.assertEqual(password.type, 'text'),
+        self.assertEqual(password.object_relation, 'password')
+        self.assertEqual(password.value, self._get_pattern_value(credential))
+        self.assertEqual(user_id_a.type, 'text'),
+        self.assertEqual(user_id_a.object_relation, 'user-id')
+        self.assertEqual(user_id_a.value, self._get_pattern_value(user_id_p))
+        self.assertEqual(username.type, 'text'),
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, self._get_pattern_value(account_login))
+        self.assertEqual(last_changed_a.type, 'datetime'),
+        self.assertEqual(last_changed_a.object_relation, 'password_last_changed')
+        self.assertEqual(
+            self._datetime_to_str(last_changed_a.value),
+            self._get_pattern_value(last_changed_p)
+        )
+        self.assertEqual(group1.type, 'text'),
+        self.assertEqual(group1.object_relation, 'group')
+        self.assertEqual(group1.value, self._get_pattern_value(groups1))
+        self.assertEqual(group2.type, 'text'),
+        self.assertEqual(group2.object_relation, 'group')
+        self.assertEqual(group2.value, self._get_pattern_value(groups2))
+        self.assertEqual(group_id.type, 'text'),
+        self.assertEqual(group_id.object_relation, 'group-id')
+        self.assertEqual(group_id.value, self._get_pattern_value(gid))
+        self.assertEqual(home_dir_a.type, 'text'),
+        self.assertEqual(home_dir_a.object_relation, 'home_dir')
+        self.assertEqual(home_dir_a.value, self._get_pattern_value(home_dir_p))
+        self.assertEqual(user_avatar.type, 'attachment'),
+        self.assertEqual(user_avatar.object_relation, 'user-avatar')
+        self.assertEqual(user_avatar.value, self._get_pattern_value(user_avatar_value))
+        self.assertEqual(
+            self._get_data_value(user_avatar.data),
+            self._get_pattern_value(user_avatar_data)
+        )
+
+    def _check_user_account_observable_object(self, attributes, observable):
+        self.assertEqual(len(attributes), 11)
+        username, account_type, password, display_name, user_id, user_avatar, last_changed, group_id, group1, group2, home_dir = attributes
+        self.assertEqual(username.type, 'text'),
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, observable.account_login)
+        self.assertEqual(account_type.type, 'text'),
+        self.assertEqual(account_type.object_relation, 'account-type')
+        self.assertEqual(account_type.value, observable.account_type)
+        self.assertEqual(display_name.type, 'text'),
+        self.assertEqual(display_name.object_relation, 'display-name')
+        self.assertEqual(display_name.value, observable.display_name)
+        self.assertEqual(user_id.type, 'text'),
+        self.assertEqual(user_id.object_relation, 'user-id')
+        self.assertEqual(user_id.value, observable.user_id)
+        self.assertEqual(user_avatar.type, 'attachment'),
+        self.assertEqual(user_avatar.object_relation, 'user-avatar')
+        self.assertEqual(user_avatar.value, observable.x_misp_user_avatar['value'])
+        self.assertEqual(
+            self._get_data_value(user_avatar.data),
+            observable.x_misp_user_avatar['data']
+        )
+        extension = observable.extensions['unix-account-ext']
+        self.assertEqual(group_id.type, 'text'),
+        self.assertEqual(group_id.object_relation, 'group-id')
+        self.assertEqual(group_id.value, extension.gid)
+        for attribute, value in zip((group1, group2), extension.groups):
+            self.assertEqual(attribute.type, 'text')
+            self.assertEqual(attribute.object_relation, 'group')
+            self.assertEqual(attribute.value, value)
+        self.assertEqual(home_dir.type, 'text')
+        self.assertEqual(home_dir.object_relation, 'home_dir')
+        self.assertEqual(home_dir.value, extension.home_dir)
+        return password, last_changed
+
     def _check_vulnerability_object(self, misp_object, vulnerability):
         self.assertEqual(misp_object.uuid, vulnerability.id.split('--')[1])
         self.assertEqual(misp_object.name, vulnerability.type)

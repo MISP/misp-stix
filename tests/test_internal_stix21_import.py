@@ -1350,8 +1350,8 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, facebook_i, github_i, parler_i, reddit_i, twitter_i = bundle.objects
-        facebook, github, parler, reddit, twitter = self._check_misp_event_features_from_grouping(event, grouping)
+        _, grouping, facebook_i, github_i, parler_i, reddit_i, twitter_i, user_i = bundle.objects
+        facebook, github, parler, reddit, twitter, user_account = self._check_misp_event_features_from_grouping(event, grouping)
         facebook_pattern = self._check_indicator_object(facebook, facebook_i)
         self._check_facebook_account_indicator_object(facebook.attributes, facebook_pattern)
         self._populate_documentation(
@@ -1382,14 +1382,23 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             misp_object = json.loads(twitter.to_json()),
             indicator = twitter_i
         )
+        user_account_pattern = self._check_indicator_object(user_account, user_i)
+        self._check_user_account_indicator_object(
+            user_account.attributes,
+            user_account_pattern[1:-1].split(' AND ')
+        )
+        self._populate_documentation(
+            misp_object = json.loads(user_account.to_json()),
+            indicator = user_i
+        )
 
     def test_stix21_bundle_with_account_with_attachment_observable_objects(self):
         bundle = TestSTIX21Bundles.get_bundle_with_account_with_attachment_observable_objects()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, facebook_od, facebook_o, github_od, github_o, parler_od, parler_o, reddit_od, reddit_o, twitter_od, twitter_o = bundle.objects
-        facebook, github, parler, reddit, twitter = self._check_misp_event_features_from_grouping(event, grouping)
+        _, grouping, facebook_od, facebook_o, github_od, github_o, parler_od, parler_o, reddit_od, reddit_o, twitter_od, twitter_o, user_od, user_o = bundle.objects
+        facebook, github, parler, reddit, twitter, user_account = self._check_misp_event_features_from_grouping(event, grouping)
         facebook_ref = self._check_observed_data_object(facebook, facebook_od)[0]
         self._assert_multiple_equal(
             facebook.uuid,
@@ -1444,6 +1453,26 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         self._populate_documentation(
             misp_object = json.loads(twitter.to_json()),
             observed_data = [twitter_od, twitter_o]
+        )
+        user_account_ref = self._check_observed_data_object(user_account, user_od)[0]
+        self._assert_multiple_equal(
+            user_account.uuid,
+            user_o.id.split('--')[1],
+            user_account_ref.split('--')[1]
+        )
+        password, last_changed = self._check_user_account_observable_object(
+            user_account.attributes,
+            user_o
+        )
+        self.assertEqual(password.type, 'text')
+        self.assertEqual(password.object_relation, 'password')
+        self.assertEqual(password.value, user_o.credential)
+        self.assertEqual(last_changed.type, 'datetime')
+        self.assertEqual(last_changed.object_relation, 'password_last_changed')
+        self.assertEqual(last_changed.value, user_o.credential_last_changed)
+        self._populate_documentation(
+            misp_object = json.loads(user_account.to_json()),
+            observed_data = [user_od, user_o]
         )
 
     def test_stix21_bundle_with_asn_indicator_object(self):

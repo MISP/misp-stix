@@ -197,6 +197,25 @@ _ACCOUNT_WITH_ATTACHMENT_INDICATOR_OBJECTS = [
             "misp:meta-category=\"misc\"",
             "misp:to_ids=\"True\""
         ]
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--5d234f25-539c-4d12-bf93-2c46a964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"user-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"True\""
+        ]
     }
 ]
 _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
@@ -333,6 +352,45 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
         },
         "labels": [
             "misp:name=\"twitter-account\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--5d234f25-539c-4d12-bf93-2c46a964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "iglocska",
+                "account_login": "iglocska",
+                "account_type": "unix",
+                "display_name": "Code Monkey",
+                "password_last_changed": "2020-10-25T16:22:00Z",
+                "extensions": {
+                    "unix-account-ext": {
+                        "gid": 2004,
+                        "groups": [
+                            "viktor-fan",
+                            "donald-fan"
+                        ],
+                        "home_dir": "/home/iglocska"
+                    }
+                },
+                "x_misp_password": "P4ssw0rd1234!",
+                "x_misp_user_avatar": {
+                    "value": "octocat.png",
+                }
+            }
+        },
+        "labels": [
+            "misp:name=\"user-account\"",
             "misp:meta-category=\"misc\"",
             "misp:to_ids=\"False\""
         ]
@@ -3834,6 +3892,20 @@ class TestSTIX20Bundles:
                 "user-account:x_misp_followers = '666'",
                 f"user-account:x_misp_profile_image.data = '{data}'",
                 "user-account:x_misp_profile_image.value = 'octocat.png'"
+            ),
+            (
+                "user-account:account_type = 'unix'",
+                "user-account:display_name = 'Code Monkey'",
+                "user-account:user_id = 'iglocska'",
+                "user-account:account_login = 'iglocska'",
+                "user-account:password_last_changed = '2020-10-25T16:22:00'",
+                "user-account:extensions.'unix-account-ext'.groups = 'viktor-fan'",
+                "user-account:extensions.'unix-account-ext'.groups = 'donald-fan'",
+                "user-account:extensions.'unix-account-ext'.gid = '2004'",
+                "user-account:extensions.'unix-account-ext'.home_dir = '/home/iglocska'",
+                "user-account:x_misp_password = 'P4ssw0rd1234!'",
+                f"user-account:x_misp_user_avatar.data = '{data}'",
+                "user-account:x_misp_user_avatar.value = 'octocat.png'"
             )
         )
         for indicator, pattern in zip(indicators, patterns):
@@ -3850,7 +3922,8 @@ class TestSTIX20Bundles:
             'x_misp_profile_image',
             'x_misp_profile_photo',
             'x_misp_account_avatar',
-            'x_misp_profile_image'
+            'x_misp_profile_image',
+            'x_misp_user_avatar'
         )
         for observed_data, feature in zip(observables, features):
             observed_data['objects']['0'][feature]['data'] = data
