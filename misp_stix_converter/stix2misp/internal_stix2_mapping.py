@@ -407,6 +407,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         following_attribute = {'type': 'text', 'object_relation': 'following'}
         id_attribute = {'type': 'text', 'object_relation': 'id'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
+        last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
         name_attribute = {'type': 'text', 'object_relation': 'name'}
@@ -416,6 +417,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         state_attribute = {'type': 'text', 'object_relation': 'state'}
         url_attribute = {'type': 'url', 'object_relation': 'url'}
         username_attribute = {'type': 'text', 'object_relation': 'username'}
+        user_avatar_attribute = {'type': 'attachment', 'object_relation': 'user-avatar'}
         verified_attribute = {'type': 'text', 'object_relation': 'verified'}
         version_attribute = {'type': 'text', 'object_relation': 'version'}
 
@@ -493,7 +495,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_description = description_attribute,
             x_misp_link = link_attribute,
             x_misp_url = url_attribute,
-            x_misp_user_avatar = {'type': 'attachment', 'object_relation': 'user-avatar'}
+            x_misp_user_avatar = user_avatar_attribute
         )
         self.__github_user_object_mapping = Mapping(
             user_id = id_attribute,
@@ -667,6 +669,33 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_url = url_attribute,
             x_misp_verified = verified_attribute
         )
+        self.__user_account_object_mapping = Mapping(
+            account_login = username_attribute,
+            account_type = {'type': 'text', 'object_relation': 'account-type'},
+            can_escalate_privs = {'type': 'boolean', 'object_relation': 'can_escalate_privs'},
+            credential = password_attribute,
+            x_misp_password = password_attribute,
+            display_name = {'type': 'text', 'object_relation': 'display-name'},
+            is_disabled = {'type': 'boolean', 'object_relation': 'disabled'},
+            is_privileged = {'type': 'boolean', 'object_relation': 'privileged'},
+            is_service_account = {'type': 'boolean', 'object_relation': 'is_service_account'},
+            user_id = {'type': 'text', 'object_relation': 'user-id'},
+            x_misp_description = description_attribute,
+            x_misp_link = link_attribute,
+            x_misp_user_avatar = user_avatar_attribute,
+            account_created = {'type': 'datetime', 'object_relation': 'created'},
+            account_expires = {'type': 'datetime', 'object_relation': 'expires'},
+            account_first_login = {'type': 'datetime', 'object_relation': 'first_login'},
+            account_last_login = {'type': 'datetime', 'object_relation': 'last_login'},
+            credential_last_changed = last_changed_attribute,
+            password_last_changed = last_changed_attribute
+        )
+        self.__user_account_unix_extenstion_mapping = Mapping(
+            gid = {'type': 'text', 'object_relation': 'group-id'},
+            groups = {'type': 'text', 'object_relation': 'group'},
+            home_dir = {'type': 'text', 'object_relation': 'home_dir'},
+            shell = {'type': 'text', 'object_relation': 'shell'}
+        )
         self.__vulnerability_object_mapping = Mapping(
             description = description_attribute,
             x_misp_created = {'type': 'datetime', 'object_relation': 'created'},
@@ -796,6 +825,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def twitter_account_object_mapping(self) -> dict:
         return self.__twitter_account_object_mapping
+
+    @property
+    def user_account_object_mapping(self) -> dict:
+        return self.__user_account_object_mapping
+
+    @property
+    def user_account_unix_extension_mapping(self) -> dict:
+        return self.__user_account_unix_extenstion_mapping
 
     @property
     def vulnerability_object_mapping(self) -> dict:
