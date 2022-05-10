@@ -661,7 +661,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_profile_banner_url = {'type': 'url', 'object_relation': 'profile-banner-url'},
             x_misp_profile_image = {'type': 'attachment', 'object_relation': 'profile-image'},
             x_misp_profile_image_url = {'type': 'url', 'object_relation': 'profile-image-url'},
-            x_misp_tweets = {'type': '', 'object_relation': 'tweets'},
+            x_misp_tweets = {'type': 'text', 'object_relation': 'tweets'},
             x_misp_twitter_followers = {'type': 'text', 'object_relation': 'twitter-followers'},
             x_misp_twitter_following = {'type': 'text', 'object_relation': 'twitter-following'},
             x_misp_url = url_attribute,
