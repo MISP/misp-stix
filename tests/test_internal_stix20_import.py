@@ -1231,6 +1231,45 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             observed_data = observed_data
         )
 
+    def test_stix20_bundle_with_credential_indicator_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_credential_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        user_id, text_pattern, credential, *patterns = pattern[1:-1].split(' AND ')
+        username, text, password, *attributes = misp_object.attributes
+        self._check_credential_indicator_object(
+            [username, password, text, *attributes],
+            [user_id, credential, text_pattern, *patterns]
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_credential_observable_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_credential_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_object(misp_object, observed_data)['0']
+        password = self._check_credential_observable_object(
+            misp_object.attributes,
+            observable
+        )
+        self.assertEqual(password.type, 'text')
+        self.assertEqual(password.object_relation, 'password')
+        self.assertEqual(password.value, observable.x_misp_password)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = observed_data
+        )
+
     def test_stix20_bundle_with_employee_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_employee_object()
         self.parser.load_stix_bundle(bundle)

@@ -1538,6 +1538,49 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             observed_data = [observed_data, observable]
         )
 
+    def test_stix21_bundle_with_credential_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_credential_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        self._check_credential_indicator_object(
+            misp_object.attributes,
+            pattern[1:-1].split(' AND ')
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_credential_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_credential_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        print(self.parser.errors)
+        _, grouping, observed_data, observable = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        observable_ref = self._check_observed_data_object(misp_object, observed_data)[0]
+        self._assert_multiple_equal(
+            misp_object.uuid,
+            observable.id.split('--')[1],
+            observable_ref.split('--')[1]
+        )
+        password = self._check_credential_observable_object(
+            misp_object.attributes,
+            observable
+        )
+        self.assertEqual(password.type, 'text')
+        self.assertEqual(password.object_relation, 'password')
+        self.assertEqual(password.value, observable.credential)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = [observed_data, observable]
+        )
+
     def test_stix21_bundle_with_employee_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_employee_object()
         self.parser.load_stix_bundle(bundle)

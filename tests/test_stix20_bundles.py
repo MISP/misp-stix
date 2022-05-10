@@ -581,6 +581,53 @@ _CPE_ASSET_OBSERVABLE_OBJECT = {
         "misp:to_ids=\"False\""
     ]
 }
+_CREDENTIAL_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5b1f9378-46d4-494b-a4c1-044e0a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[user-account:user_id = 'misp' AND user-account:x_misp_text = 'MISP default credentials' AND user-account:x_misp_password = 'Password1234' AND user-account:x_misp_type = 'password' AND user-account:x_misp_origin = 'malware-analysis' AND user-account:x_misp_format = 'clear-text' AND user-account:x_misp_notification = 'victim-notified']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "misc"
+        }
+    ],
+    "labels": [
+        "misp:name=\"credential\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_CREDENTIAL_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--5b1f9378-46d4-494b-a4c1-044e0a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "user-account",
+            "user_id": "misp",
+            "x_misp_format": "clear-text",
+            "x_misp_notification": "victim-notified",
+            "x_misp_origin": "malware-analysis",
+            "x_misp_password": "Password1234",
+            "x_misp_text": "MISP default credentials",
+            "x_misp_type": "password"
+        }
+    },
+    "labels": [
+        "misp:name=\"credential\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _DOMAIN_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -3832,6 +3879,14 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_cpe_asset_observable_object(cls):
         return cls.__assemble_bundle(_CPE_ASSET_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_credential_indicator_object(cls):
+        return cls.__assemble_bundle(_CREDENTIAL_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_credential_observable_object(cls):
+        return cls.__assemble_bundle(_CREDENTIAL_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_employee_object(cls):

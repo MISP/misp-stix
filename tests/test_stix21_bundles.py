@@ -672,6 +672,62 @@ _CPE_ASSET_OBSERVABLE_OBJECT = [
         "x_misp_description": "Microsoft Word is a word processing software developed by Microsoft."
     }
 ]
+_CREDENTIAL_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5b1f9378-46d4-494b-a4c1-044e0a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[user-account:user_id = 'misp' AND user-account:credential = 'Password1234' AND user-account:x_misp_text = 'MISP default credentials' AND user-account:x_misp_type = 'password' AND user-account:x_misp_origin = 'malware-analysis' AND user-account:x_misp_format = 'clear-text' AND user-account:x_misp_notification = 'victim-notified']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "misc"
+        }
+    ],
+    "labels": [
+        "misp:name=\"credential\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_CREDENTIAL_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5b1f9378-46d4-494b-a4c1-044e0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "user-account--5b1f9378-46d4-494b-a4c1-044e0a00020f"
+        ],
+        "labels": [
+            "misp:name=\"credential\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "user-account",
+        "spec_version": "2.1",
+        "id": "user-account--5b1f9378-46d4-494b-a4c1-044e0a00020f",
+        "user_id": "misp",
+        "credential": "Password1234",
+        "x_misp_format": "clear-text",
+        "x_misp_notification": "victim-notified",
+        "x_misp_origin": "malware-analysis",
+        "x_misp_text": "MISP default credentials",
+        "x_misp_type": "password"
+    }
+]
 _DOMAIN_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -4671,6 +4727,14 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_cpe_asset_observable_object(cls):
         return cls.__assemble_bundle(*_CPE_ASSET_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_credential_indicator_object(cls):
+        return cls.__assemble_bundle(_CREDENTIAL_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_credential_observable_object(cls):
+        return cls.__assemble_bundle(*_CREDENTIAL_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_employee_object(cls):
