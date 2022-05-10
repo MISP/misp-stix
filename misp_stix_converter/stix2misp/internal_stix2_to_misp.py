@@ -735,6 +735,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_cpe_asset_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_standard_observable(observed_data, 'cpe-asset', 'v21')
 
+    def _object_from_credential_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_standard_observable(observed_data, 'credential', 'v20')
+
+    def _object_from_credential_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_standard_observable(observed_data, 'credential', 'v21')
+
     def _object_from_facebook_account_observable_v20(self, observed_data: ObservedData_v20):
         self._object_from_account_with_attachment_observable(observed_data, 'facebook-account', 'v20')
 
@@ -910,13 +916,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._add_misp_object(misp_object)
 
     def _object_from_cpe_asset_indicator(self, indicator: _INDICATOR_TYPING):
-        misp_object = self._create_misp_object('cpe-asset', indicator)
-        for pattern in indicator.pattern[1:-1].split(' AND '):
-            feature, value = self._extract_features_from_pattern(pattern)
-            attribute = {'value': value}
-            attribute.update(self._mapping.cpe_asset_object_mapping[feature])
-            misp_object.add_attribute(**attribute)
-        self._add_misp_object(misp_object)
+        self._object_from_standard_pattern(indicator, 'cpe-asset')
+
+    def _object_from_credential_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_standard_pattern(indicator, 'credential')
 
     def _object_from_facebook_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'facebook-account')
@@ -954,6 +957,16 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _object_from_reddit_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'reddit-account')
+
+    def _object_from_standard_pattern(self, indicator: _INDICATOR_TYPING, name: str):
+        misp_object = self._create_misp_object(name, indicator)
+        mapping = getattr(self._mapping, f"{name.replace('-', '_')}_object_mapping")
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            attribute = {'value': value}
+            attribute.update(mapping[feature])
+            misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
 
     def _object_from_telegram_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_indicator(indicator, 'telegram-account')

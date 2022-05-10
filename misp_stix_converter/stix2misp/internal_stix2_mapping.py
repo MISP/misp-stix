@@ -410,6 +410,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
         name_attribute = {'type': 'text', 'object_relation': 'name'}
+        password_attribute = {'type': 'text', 'object_relation': 'password'}
         role_attribute = {'type': 'text', 'object_relation': 'role'}
         script_attribute = {'type': 'text', 'object_relation': 'script'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
@@ -462,6 +463,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_target_hw = {'type': 'text', 'object_relation': 'target_hw'},
             x_misp_target_sw = {'type': 'text', 'object_relation': 'target_sw'},
             x_misp_update = {'type': 'text', 'object_relation': 'update'},
+        )
+        self.__credential_object_mapping = Mapping(
+            user_id = username_attribute,
+            credential = password_attribute,
+            x_misp_password = password_attribute,
+            x_misp_format = {'type': 'text', 'object_relation': 'format'},
+            x_misp_notification = {'type': 'text', 'object_relation': 'notification'},
+            x_misp_origin = {'type': 'text', 'object_relation': 'origin'},
+            x_misp_text = {'type': 'text', 'object_relation': 'text'},
+            x_misp_type = {'type': 'text', 'object_relation': 'type'},
         )
         self.__employee_object_mapping = Mapping(
             name = {'type': 'full-name', 'object_relation': 'full-name'},
@@ -697,6 +708,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def cpe_asset_object_mapping(self) -> dict:
         return self.__cpe_asset_object_mapping
+
+    @property
+    def credential_object_mapping(self) -> dict:
+        return self.__credential_object_mapping
 
     @property
     def employee_object_mapping(self) -> dict:
