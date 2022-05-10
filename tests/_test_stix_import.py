@@ -223,6 +223,41 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(description.object_relation, 'description')
         self.assertEqual(description.value, observable.x_misp_description)
 
+    def _check_credential_indicator_object(self, attributes, pattern_list):
+        self.assertEqual(len(attributes), 7)
+        username, password, *attributes = attributes
+        user_id, credential, *patterns = pattern_list
+        self.assertEqual(username.type, 'text')
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, self._get_pattern_value(user_id))
+        self.assertEqual(password.type, 'text')
+        self.assertEqual(password.object_relation, 'password')
+        self.assertEqual(password.value, self._get_pattern_value(credential))
+        for attribute, pattern in zip(attributes, patterns):
+            self.assertEqual(attribute.type, 'text')
+            identifier, value = pattern.split (' = ')
+            self.assertEqual(attribute.object_relation, identifier.split(':')[1][7:])
+            self.assertEqual(attribute.value, value.strip("'"))
+
+    def _check_credential_observable_object(self, attributes, observable):
+        self.assertEqual(len(attributes), 7)
+        username, password, *attributes = attributes
+        self.assertEqual(username.type, 'text')
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, observable.user_id)
+        features = ('format', 'notification', 'origin', 'text', 'type')
+        for attribute, feature in zip(attributes, features):
+            self.assertEqual(attribute.type, 'text')
+            self.assertEqual(
+                attribute.object_relation,
+                feature
+            )
+            self.assertEqual(
+                attribute.value,
+                getattr(observable, f'x_misp_{feature}')
+            )
+        return password
+
     def _check_employee_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
         self.assertEqual(misp_object.name, 'employee')
