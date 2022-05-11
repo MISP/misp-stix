@@ -748,6 +748,26 @@ _DOMAIN_IP_INDICATOR_ATTRIBUTE = {
         "misp:to_ids=\"True\""
     ]
 }
+_DOMAIN_IP_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:x_misp_port = '8443']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"domain-ip\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
 _DOMAIN_IP_OBSERVABLE_ATTRIBUTE ={
     "type": "observed-data",
     "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -775,6 +795,79 @@ _DOMAIN_IP_OBSERVABLE_ATTRIBUTE ={
         "misp:category=\"Network activity\""
     ]
 }
+_DOMAIN_IP_OBSERVABLE_OBJECTS = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "ipv4-addr",
+                "value": "149.13.33.14"
+            },
+            "1": {
+                "type": "ipv4-addr",
+                "value": "185.194.93.14"
+            },
+            "2": {
+                "type": "domain-name",
+                "value": "misp-project.org",
+                "resolves_to_refs": [
+                    "0",
+                    "1"
+                ]
+            },
+            "3": {
+                "type": "domain-name",
+                "value": "circl.lu",
+                "resolves_to_refs": [
+                    "0",
+                    "1"
+                ]
+            }
+        },
+        "labels": [
+            "misp:name=\"domain-ip\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--dc624447-684a-488f-9e16-f78f717d8efd",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "1": {
+                "type": "ipv4-addr",
+                "value": "149.13.33.14"
+            },
+            "0": {
+                "type": "domain-name",
+                "value": "circl.lu",
+                "resolves_to_refs": [
+                    "1"
+                ],
+                "x_misp_hostname": "circl.lu",
+                "x_misp_port": "8443"
+            }
+        },
+        "labels": [
+            "misp:name=\"domain-ip\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    }
+]
 _EMAIL_ATTACHMENT_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -3960,6 +4053,14 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_credential_observable_object(cls):
         return cls.__assemble_bundle(_CREDENTIAL_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_domain_ip_indicator_object(cls):
+        return cls.__assemble_bundle(_DOMAIN_IP_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_domain_ip_observable_objects(cls):
+        return cls.__assemble_bundle(*_DOMAIN_IP_OBSERVABLE_OBJECTS)
 
     @classmethod
     def get_bundle_with_employee_object(cls):

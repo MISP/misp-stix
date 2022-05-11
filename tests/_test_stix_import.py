@@ -258,6 +258,23 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             )
         return password
 
+    def _check_domain_ip_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 4)
+        domain_pattern, hostname_pattern, resolves_to_ref, port_pattern = pattern[1:-1].split(' AND ')
+        domain, hostname, ip, port = attributes
+        self.assertEqual(domain.type, 'domain')
+        self.assertEqual(domain.object_relation, 'domain')
+        self.assertEqual(domain.value, self._get_pattern_value(domain_pattern))
+        self.assertEqual(hostname.type, 'hostname')
+        self.assertEqual(hostname.object_relation, 'hostname')
+        self.assertEqual(hostname.value, self._get_pattern_value(hostname_pattern))
+        self.assertEqual(ip.type, 'ip-dst')
+        self.assertEqual(ip.object_relation, 'ip')
+        self.assertEqual(ip.value, self._get_pattern_value(resolves_to_ref))
+        self.assertEqual(port.type, 'port')
+        self.assertEqual(port.object_relation, 'port')
+        self.assertEqual(port.value, self._get_pattern_value(port_pattern))
+
     def _check_employee_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
         self.assertEqual(misp_object.name, 'employee')

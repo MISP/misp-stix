@@ -1302,6 +1302,62 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             observed_data = observed_data
         )
 
+    def test_stix20_bundle_with_domain_ip_indicator_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_domain_ip_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        self._check_domain_ip_indicator_object(misp_object.attributes, pattern)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_domain_ip_observable_objects(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_domain_ip_observable_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, standard_observed_data, custom_observed_data = bundle.objects
+        standard, custom = self._check_misp_event_features(event, report)
+        standard_observables = self._check_observed_data_object(standard, standard_observed_data)
+        domain1, ip1, ip2, domain2 = standard.attributes
+        for attribute, index in zip((domain1, domain2), ('2', '3')):
+            self.assertEqual(attribute.type,'domain')
+            self.assertEqual(attribute.object_relation, 'domain')
+            self.assertEqual(attribute.value, standard_observables[index].value)
+        for attribute, index in zip((ip1, ip2), ('0', '1')):
+            self.assertEqual(attribute.type, 'ip-dst')
+            self.assertEqual(attribute.object_relation, 'ip')
+            self.assertEqual(attribute.value, standard_observables[index].value)
+        self._populate_documentation(
+            misp_object = json.loads(standard.to_json()),
+            observed_data = standard_observed_data,
+            name = 'Domain-IP object (standard case)'
+        )
+        custom_observables = self._check_observed_data_object(custom, custom_observed_data)
+        domain, hostname, port, ip = custom.attributes
+        self.assertEqual(domain.type, 'domain')
+        self.assertEqual(domain.object_relation, 'domain')
+        self.assertEqual(domain.value, custom_observables['0'].value)
+        self.assertEqual(hostname.type, 'hostname')
+        self.assertEqual(hostname.object_relation, 'hostname')
+        self.assertEqual(hostname.value, custom_observables['0'].x_misp_hostname)
+        self.assertEqual(ip.type, 'ip-dst')
+        self.assertEqual(ip.object_relation, 'ip')
+        self.assertEqual(ip.value, custom_observables['1'].value)
+        self.assertEqual(port.type, 'port')
+        self.assertEqual(port.object_relation, 'port')
+        self.assertEqual(port.value, custom_observables['0'].x_misp_port)
+        self._populate_documentation(
+            misp_object = json.loads(custom.to_json()),
+            observed_data = custom_observed_data,
+            name = 'Domain-IP object (custom case)'
+        )
+
     def test_stix20_bundle_with_employee_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_employee_object()
         self.parser.load_stix_bundle(bundle)

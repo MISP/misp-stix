@@ -867,6 +867,29 @@ _DOMAIN_IP_INDICATOR_ATTRIBUTE = {
         "misp:to_ids=\"True\""
     ]
 }
+_DOMAIN_IP_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:x_misp_port = '8443']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"domain-ip\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
 _DOMAIN_IP_OBSERVABLE_ATTRIBUTE = [
     {
         "type": "observed-data",
@@ -900,6 +923,99 @@ _DOMAIN_IP_OBSERVABLE_ATTRIBUTE = [
         "type": "ipv4-addr",
         "spec_version": "2.1",
         "id": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "value": "149.13.33.14"
+    }
+]
+_DOMAIN_IP_OBSERVABLE_OBJECTS = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5ac337df-e078-4e99-8b17-02550a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+            "ipv4-addr--876133b5-b5fc-449c-ba9e-e467790da8eb",
+            "domain-name--a2e44443-a974-47b6-bb35-69d17b1cd243",
+            "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:name=\"domain-ip\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+        "value": "149.13.33.14"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--876133b5-b5fc-449c-ba9e-e467790da8eb",
+        "value": "185.194.93.14"
+    },
+    {
+        "type": "domain-name",
+        "spec_version": "2.1",
+        "id": "domain-name--a2e44443-a974-47b6-bb35-69d17b1cd243",
+        "value": "misp-project.org",
+        "resolves_to_refs": [
+            "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+            "ipv4-addr--876133b5-b5fc-449c-ba9e-e467790da8eb"
+        ]
+    },
+    {
+        "type": "domain-name",
+        "spec_version": "2.1",
+        "id": "domain-name--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "value": "circl.lu",
+        "resolves_to_refs": [
+            "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+            "ipv4-addr--876133b5-b5fc-449c-ba9e-e467790da8eb"
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--dc624447-684a-488f-9e16-f78f717d8efd",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "domain-name--dc624447-684a-488f-9e16-f78f717d8efd",
+            "ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca"
+        ],
+        "labels": [
+            "misp:name=\"domain-ip\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "domain-name",
+        "spec_version": "2.1",
+        "id": "domain-name--dc624447-684a-488f-9e16-f78f717d8efd",
+        "value": "circl.lu",
+        "resolves_to_refs": [
+            "ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca"
+        ],
+        "x_misp_hostname": "circl.lu",
+        "x_misp_port": "8443"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--fcbaf339-615a-409c-915f-034420dc90ca",
         "value": "149.13.33.14"
     }
 ]
@@ -4815,6 +4931,14 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_credential_observable_object(cls):
         return cls.__assemble_bundle(*_CREDENTIAL_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_domain_ip_indicator_object(cls):
+        return cls.__assemble_bundle(_DOMAIN_IP_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_domain_ip_observable_objects(cls):
+        return cls.__assemble_bundle(*_DOMAIN_IP_OBSERVABLE_OBJECTS)
 
     @classmethod
     def get_bundle_with_employee_object(cls):

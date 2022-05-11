@@ -1610,6 +1610,85 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             observed_data = [observed_data, observable]
         )
 
+    def test_stix21_bundle_with_domain_ip_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_domain_ip_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        self._check_domain_ip_indicator_object(misp_object.attributes, pattern)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_domain_ip_observable_objects(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_domain_ip_observable_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, standard_od, ip1, ip2, domain1, domain2, custom_od, domain3, ip3 = bundle.objects
+        standard, custom = self._check_misp_event_features_from_grouping(event, grouping)
+        ip1_ref, ip2_ref, domain1_ref, domain2_ref = self._check_observed_data_object(
+            standard,
+            standard_od
+        )
+        domain1_a, ip1_a, ip2_a, domain2_a = standard.attributes
+        for attribute, observable, ref in zip((domain1_a, domain2_a), (domain1, domain2), (domain1_ref, domain2_ref)):
+            self._assert_multiple_equal(
+                attribute.uuid,
+                observable.id.split('--')[1],
+                ref.split('--')[1]
+            )
+            self.assertEqual(attribute.type, 'domain')
+            self.assertEqual(attribute.object_relation, 'domain')
+            self.assertEqual(attribute.value, observable.value)
+        for attribute, observable, ref in zip((ip1_a, ip2_a), (ip1, ip2), (ip1_ref, ip2_ref)):
+            self._assert_multiple_equal(
+                attribute.uuid,
+                observable.id.split('--')[1],
+                ref.split('--')[1]
+            )
+            self.assertEqual(attribute.type, 'ip-dst')
+            self.assertEqual(attribute.object_relation, 'ip')
+            self.assertEqual(attribute.value, observable.value)
+        self._populate_documentation(
+            misp_object = json.loads(standard.to_json()),
+            observed_data = [standard_od, ip1, ip2, domain1, domain2],
+            name = 'Domain-IP object (standard case)'
+        )
+        domain_ref, ip_ref = self._check_observed_data_object(custom, custom_od)
+        self._assert_multiple_equal(
+            custom.uuid,
+            domain3.id.split('--')[1],
+            domain_ref.split('--')[1]
+        )
+        domain, hostname, port, ip = custom.attributes
+        self.assertEqual(domain.type, 'domain')
+        self.assertEqual(domain.object_relation, 'domain')
+        self.assertEqual(domain.value, domain3.value)
+        self.assertEqual(hostname.type, 'hostname')
+        self.assertEqual(hostname.object_relation, 'hostname')
+        self.assertEqual(hostname.value, domain3.x_misp_hostname)
+        self.assertEqual(port.type, 'port')
+        self.assertEqual(port.object_relation, 'port')
+        self.assertEqual(port.value, domain3.x_misp_port)
+        self._assert_multiple_equal(
+            ip.uuid,
+            ip3.id.split('--')[1],
+            ip_ref.split('--')[1]
+        )
+        self.assertEqual(ip.type, 'ip-dst')
+        self.assertEqual(ip.object_relation, 'ip')
+        self.assertEqual(ip.value, ip3.value)
+        self._populate_documentation(
+            misp_object = json.loads(custom.to_json()),
+            observed_data = [custom_od, domain3, ip3],
+            name = 'Domain-IP object (custom case)'
+        )
+
     def test_stix21_bundle_with_employee_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_employee_object()
         self.parser.load_stix_bundle(bundle)
