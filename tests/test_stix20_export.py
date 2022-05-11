@@ -1624,7 +1624,7 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         _domain, _hostname, _ip, _port = (attribute['value'] for attribute in attributes)
         domain_, hostname_, ip_, port_ = pattern[1:-1].split(' AND ')
         self.assertEqual(domain_, f"domain-name:value = '{_domain}'")
-        self.assertEqual(hostname_, f"domain-name:value = '{_hostname}'")
+        self.assertEqual(hostname_, f"domain-name:x_misp_hostname = '{_hostname}'")
         self.assertEqual(ip_, f"domain-name:resolves_to_refs[*].value = '{_ip}'")
         self.assertEqual(port_, f"domain-name:x_misp_port = '{_port}'")
         self._populate_documentation(
