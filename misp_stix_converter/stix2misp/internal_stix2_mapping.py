@@ -415,6 +415,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         role_attribute = {'type': 'text', 'object_relation': 'role'}
         script_attribute = {'type': 'text', 'object_relation': 'script'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
+        text_attribute = {'type': 'text', 'object_relation': 'text'}
         url_attribute = {'type': 'url', 'object_relation': 'url'}
         username_attribute = {'type': 'text', 'object_relation': 'username'}
         user_avatar_attribute = {'type': 'attachment', 'object_relation': 'user-avatar'}
@@ -473,8 +474,17 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_format = {'type': 'text', 'object_relation': 'format'},
             x_misp_notification = {'type': 'text', 'object_relation': 'notification'},
             x_misp_origin = {'type': 'text', 'object_relation': 'origin'},
-            x_misp_text = {'type': 'text', 'object_relation': 'text'},
+            x_misp_text = text_attribute,
             x_misp_type = {'type': 'text', 'object_relation': 'type'},
+        )
+        self.__domain_ip_object_mapping = Mapping(
+            value = {'type': 'domain', 'object_relation': 'domain'},
+            x_misp_first_seen = {'type': 'datetime', 'object_relation': ''},
+            x_misp_hostname = {'type': 'hostname', 'object_relation': 'hostname'},
+            x_misp_last_seen = {'type': 'datetime', 'object_relation': ''},
+            x_misp_port = {'type': 'port', 'object_relation': 'port'},
+            x_misp_registration_date = {'type': 'datetime', 'object_relation': ''},
+            x_misp_text = text_attribute
         )
         self.__employee_object_mapping = Mapping(
             name = {'type': 'full-name', 'object_relation': 'full-name'},
@@ -534,7 +544,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__legal_entity_object_mapping = Mapping(
             name = name_attribute,
-            description = {'type': 'text', 'object_relation': 'text'},
+            description = text_attribute,
             sectors = {'type': 'text', 'object_relation': 'business'},
             x_misp_commercial_name = {'type': 'text', 'object_relation': 'commercial-name'},
             x_misp_legal_form = {'type': 'text', 'object_relation': 'legal-form'},
@@ -741,6 +751,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def credential_object_mapping(self) -> dict:
         return self.__credential_object_mapping
+
+    @property
+    def domain_ip_object_mapping(self) -> dict:
+        return self.__domain_ip_object_mapping
 
     @property
     def employee_object_mapping(self) -> dict:

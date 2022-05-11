@@ -14,6 +14,7 @@ from stix2.v20.sdo import (
     CustomObject as CustomObject_v20, Identity as Identity_v20, Indicator as Indicator_v20,
     Malware as Malware_v20, ObservedData as ObservedData_v20, Tool as Tool_v20,
     Vulnerability as Vulnerability_v20)
+from stix2.v21.observables import DomainName
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
     CustomObject as CustomObject_v21, Identity as Identity_v21, Indicator as Indicator_v21,
@@ -741,6 +742,66 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_credential_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_standard_observable(observed_data, 'credential', 'v21')
 
+    def _object_from_domain_ip_observable_v20(self, observed_data: ObservedData_v20):
+        misp_object = self._create_misp_object('domain-ip', observed_data)
+        parsed = []
+        for observable in observed_data.objects.values():
+            if observable.type == 'domain-name':
+                for feature, mapping in self._mapping.domain_ip_object_mapping.items():
+                    if hasattr(observable, feature):
+                        attribute = {'value': getattr(observable, feature)}
+                        attribute.update(mapping)
+                        misp_object.add_attribute(**attribute)
+                if hasattr(observable, 'resolves_to_refs'):
+                    for reference in observable.resolves_to_refs:
+                        if reference in parsed:
+                            continue
+                        misp_object.add_attribute(
+                            **{
+                                'type': 'ip-dst',
+                                'object_relation': 'ip',
+                                'value': observed_data.objects[reference].value
+                            }
+                        )
+                        parsed.append(reference)
+        self._add_misp_object(misp_object)
+
+    def _object_from_domain_ip_observable_v21(self, observed_data: ObservedData_v21):
+        misp_object = self._create_misp_object('domain-ip', observed_data)
+        parsed = []
+        for object_ref in observed_data.object_refs:
+            if object_ref.startswith('domain-name--'):
+                observable = self._observable[object_ref]
+                if self._has_domain_custom_fields(observable):
+                    for feature, mapping in self._mapping.domain_ip_object_mapping.items():
+                        if hasattr(observable, feature):
+                            attribute = {'value': getattr(observable, feature)}
+                            attribute.update(mapping)
+                            misp_object.add_attribute(**attribute)
+                else:
+                    attribute = {
+                        'uuid': observable.id.split('--')[1],
+                        'type': 'domain',
+                        'object_relation': 'domain',
+                        'value': observable.value
+                    }
+                    misp_object.add_attribute(**attribute)
+                if hasattr(observable, 'resolves_to_refs'):
+                    for reference in observable.resolves_to_refs:
+                        if reference in parsed:
+                            continue
+                        address = self._observable[reference]
+                        misp_object.add_attribute(
+                            **{
+                                'uuid': address.id.split('--')[1],
+                                'type': 'ip-dst',
+                                'object_relation': 'ip',
+                                'value': address.value
+                            }
+                        )
+                        parsed.append(reference)
+        self._add_misp_object(misp_object)
+
     def _object_from_facebook_account_observable_v20(self, observed_data: ObservedData_v20):
         self._object_from_account_with_attachment_observable(observed_data, 'facebook-account', 'v20')
 
@@ -955,6 +1016,25 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_credential_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_standard_pattern(indicator, 'credential')
 
+    def _object_from_domain_ip_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('domain-ip', indicator)
+        mapping = self._mapping.domain_ip_object_mapping
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            if 'resolves_to_refs' in feature:
+                attribute = {
+                    'type': 'ip-dst',
+                    'object_relation': 'ip',
+                    'value': value
+                }
+                misp_object.add_attribute(**attribute)
+            else:
+                if feature in mapping:
+                    attribute = {'value': value}
+                    attribute.update(mapping[feature])
+                    misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
     def _object_from_facebook_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'facebook-account')
 
@@ -1094,6 +1174,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _fetch_tags_from_labels(self, misp_feature: _MISP_FEATURES_TYPING, labels: list):
         for label in (label for label in labels if label != 'Threat-Report'):
             misp_feature.add_tag(label)
+
+    def _has_domain_custom_fields(self, observable: DomainName) -> bool:
+        for feature in self._mapping.domain_ip_object_mapping:
+            if feature == 'value':
+                continue
+            if hasattr(observable, feature):
+                return True
+        return False
 
     @staticmethod
     def _populate_object_attributes(misp_object: MISPObject, mapping: dict, values: Union[list, str]):
