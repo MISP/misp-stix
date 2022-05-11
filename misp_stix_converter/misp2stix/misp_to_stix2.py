@@ -1153,9 +1153,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'domain-name'
             attributes = self._extract_multiple_object_attributes_escaped(misp_object['Attribute'])
+            special_case = ('domain' in attributes and 'hostname' in attributes)
             pattern = []
             for key, feature in self._mapping.domain_ip_object_mapping.items():
                 if attributes.get(key):
+                    if key == 'hostname' and special_case:
+                        feature = 'x_misp_hostname'
                     for value in attributes.pop(key):
                         pattern.append(f"{prefix}:{feature} = '{value}'")
             if attributes:
