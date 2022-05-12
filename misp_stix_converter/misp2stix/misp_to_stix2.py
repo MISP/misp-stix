@@ -1189,11 +1189,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 for key in self._mapping.email_data_fields:
                     if attributes.get(key):
                         for name in attributes.pop(key):
-                            feature = f'body_multipart[{n}].body_raw_ref'
+                            feature = f'body_multipart[{n}]'
                             if isinstance(name, tuple):
                                 name, data = name
-                                pattern.append(f"{prefix}:{feature}.payload_bin = '{data}'")
-                            pattern.append(f"{prefix}:{feature}.name = '{name}'")
+                                pattern.append(f"{prefix}:{feature}.body_raw_ref.payload_bin = '{data}'")
+                            pattern.append(f"{prefix}:{feature}.body_raw_ref.name = '{name}'")
+                            pattern.append(f"{prefix}:{feature}.content_disposition = '{key}'")
                             n += 1
                 pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, pattern)
