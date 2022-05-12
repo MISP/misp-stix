@@ -2505,7 +2505,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         event = get_event_with_email_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
         _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary, _message_id = (attribute['value'] for attribute in attributes)
-        cc1_, cc2_, from_, message_id_, reply_to_, subject_, to_, x_mailer_, attachment1_, attachment2_, user_agent_, boundary_ = pattern[1:-1].split(' AND ')
+        cc1_, cc2_, from_, message_id_, reply_to_, subject_, to_, x_mailer_, attachment1_, content1, attachment2_, content2, user_agent_, boundary_ = pattern[1:-1].split(' AND ')
         self.assertEqual(from_, f"email-message:from_ref.value = '{_from}'")
         self.assertEqual(to_, f"email-message:to_refs.value = '{_to}'")
         self.assertEqual(cc1_, f"email-message:cc_refs.value = '{_cc1}'")
@@ -2521,8 +2521,16 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             f"email-message:body_multipart[0].body_raw_ref.name = '{_attachment1}'"
         )
         self.assertEqual(
+            content1,
+            f"email-message:body_multipart[0].content_disposition = 'attachment'"
+        )
+        self.assertEqual(
             attachment2_,
             f"email-message:body_multipart[1].body_raw_ref.name = '{_attachment2}'"
+        )
+        self.assertEqual(
+            content2,
+            f"email-message:body_multipart[1].content_disposition = 'attachment'"
         )
         self.assertEqual(
             x_mailer_,
