@@ -1071,6 +1071,26 @@ _EMAIL_INDICATOR_ATTRIBUTE = {
         "misp:to_ids=\"True\""
     ]
 }
+_EMAIL_INDICATOR_OBJECT ={
+    "type": "indicator",
+    "id": "indicator--5e396622-2a54-4c8d-b61d-159da964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[email-message:cc_refs.value = 'cc1@email.test' AND email-message:cc_refs.value = 'cc2@email.test' AND email-message:from_ref.value = 'source@email.test' AND email-message:additional_header_fields.reply_to = 'reply-to@email.test' AND email-message:subject = 'Email test subject' AND email-message:to_refs.value = 'destination@email.test' AND email-message:additional_header_fields.x_mailer = 'x-mailer-test' AND email-message:body_multipart[0].body_raw_ref.name = 'attachment1.file' AND email-message:body_multipart[0].content_disposition = 'attachment' AND email-message:body_multipart[1].body_raw_ref.name = 'attachment2.file' AND email-message:body_multipart[1].content_disposition = 'attachment' AND email-message:x_misp_user_agent = 'Test user agent' AND email-message:x_misp_mime_boundary = 'Test mime boundary' AND email-message:x_misp_message_id = '25']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"email\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
 _EMAIL_OBSERVABLE_ATTRIBUTE = {
     "type": "observed-data",
     "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -1091,6 +1111,136 @@ _EMAIL_OBSERVABLE_ATTRIBUTE = {
         "misp:category=\"Payload delivery\""
     ]
 }
+_EMAIL_OBSERVABLE_OBJECTS = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-message",
+                "is_multipart": True,
+                "from_ref": "1",
+                "to_refs": [
+                    "2"
+                ],
+                "cc_refs": [
+                    "3",
+                    "4"
+                ],
+                "subject": "Email test subject",
+                "additional_header_fields": {
+                    "Reply-To": "reply-to@email.test",
+                    "X-Mailer": "x-mailer-test"
+                },
+                "body_multipart": [
+                    {
+                        "body_raw_ref": "5",
+                        "content_disposition": "attachment; filename='attachment1.file'"
+                    },
+                    {
+                        "body_raw_ref": "6",
+                        "content_disposition": "attachment; filename='attachment2.file'"
+                    }
+                ],
+                "x_misp_message_id": "25",
+                "x_misp_mime_boundary": "Test mime boundary",
+                "x_misp_user_agent": "Test user agent"
+            },
+            "1": {
+                "type": "email-addr",
+                "value": "source@email.test"
+            },
+            "2": {
+                "type": "email-addr",
+                "value": "destination@email.test"
+            },
+            "3": {
+                "type": "email-addr",
+                "value": "cc1@email.test"
+            },
+            "4": {
+                "type": "email-addr",
+                "value": "cc2@email.test"
+            },
+            "5": {
+                "type": "file",
+                "name": "attachment1.file"
+            },
+            "6": {
+                "type": "file",
+                "name": "attachment2.file"
+            }
+        },
+        "labels": [
+            "misp:name=\"email\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-message",
+                "is_multipart": False,
+                "from_ref": "1",
+                "to_refs": [
+                    "2",
+                    "3"
+                ],
+                "cc_refs": [
+                    "4"
+                ],
+                "bcc_refs": [
+                    "5"
+                ]
+            },
+            "1": {
+                "type": "email-addr",
+                "value": "donald.duck@disney.com",
+                "display_name": "Donald Duck"
+            },
+            "2": {
+                "type": "email-addr",
+                "value": "jdoe@random.org",
+                "display_name": "John Doe"
+            },
+            "3": {
+                "type": "email-addr",
+                "value": "jfk@gov.us",
+                "display_name": "John Fitzgerald Kennedy"
+            },
+            "4": {
+                "type": "email-addr",
+                "value": "diana.prince@dc.us",
+                "display_name": "Diana Prince"
+            },
+            "5": {
+                "type": "email-addr",
+                "value": "marie.curie@nobel.fr",
+                "display_name": "Marie Curie"
+            }
+        },
+        "labels": [
+            "misp:name=\"email\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    }
+]
 _EMAIL_REPLY_TO_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
@@ -4061,6 +4211,14 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_domain_ip_observable_objects(cls):
         return cls.__assemble_bundle(*_DOMAIN_IP_OBSERVABLE_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_email_indicator_object(cls):
+        return cls.__assemble_bundle(_EMAIL_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_email_observable_objects(cls):
+        return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_OBJECTS)
 
     @classmethod
     def get_bundle_with_employee_object(cls):

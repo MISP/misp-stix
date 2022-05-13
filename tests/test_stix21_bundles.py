@@ -1267,6 +1267,29 @@ _EMAIL_INDICATOR_ATTRIBUTE = {
         "misp:to_ids=\"True\""
     ]
 }
+_EMAIL_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5e396622-2a54-4c8d-b61d-159da964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[email-message:cc_refs.value = 'cc1@email.test' AND email-message:cc_refs.value = 'cc2@email.test' AND email-message:from_ref.value = 'source@email.test' AND email-message:message_id = '25' AND email-message:additional_header_fields.reply_to = 'reply-to@email.test' AND email-message:subject = 'Email test subject' AND email-message:to_refs.value = 'destination@email.test' AND email-message:additional_header_fields.x_mailer = 'x-mailer-test' AND email-message:body_multipart[0].body_raw_ref.name = 'attachment1.file' AND email-message:body_multipart[0].content_disposition = 'attachment' AND email-message:body_multipart[1].body_raw_ref.name = 'attachment2.file' AND email-message:body_multipart[1].content_disposition = 'attachment' AND email-message:x_misp_user_agent = 'Test user agent' AND email-message:x_misp_mime_boundary = 'Test mime boundary']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"email\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
 _EMAIL_MESSAGE_ID_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -1341,6 +1364,152 @@ _EMAIL_OBSERVABLE_ATTRIBUTE = [
         "spec_version": "2.1",
         "id": "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
         "value": "address@email.test"
+    }
+]
+_EMAIL_OBSERVABLE_OBJECTS = [
+    {
+        "type": "email-message",
+        "spec_version": "2.1",
+        "id": "email-message--5e396622-2a54-4c8d-b61d-159da964451a",
+        "is_multipart": True,
+        "from_ref": "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "to_refs": [
+            "email-addr--518b4bcb-a86b-4783-9457-391d548b605b"
+        ],
+        "cc_refs": [
+            "email-addr--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "email-addr--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+        ],
+        "message_id": "25",
+        "subject": "Email test subject",
+        "additional_header_fields": {
+            "Reply-To": "reply-to@email.test",
+            "X-Mailer": "x-mailer-test"
+        },
+        "body_multipart": [
+            {
+                "body_raw_ref": "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+                "content_disposition": "attachment; filename='attachment1.file'"
+            },
+            {
+                "body_raw_ref": "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+                "content_disposition": "attachment; filename='attachment2.file'"
+            }
+        ],
+        "x_misp_mime_boundary": "Test mime boundary",
+        "x_misp_user_agent": "Test user agent"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "value": "source@email.test"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+        "value": "destination@email.test"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "value": "cc1@email.test"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+        "value": "cc2@email.test"
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "name": "attachment1.file"
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "name": "attachment2.file"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "email-message--f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
+            "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
+            "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
+            "email-addr--3b940996-f99b-4bda-b065-69b8957f688c",
+            "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
+            "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6"
+        ],
+        "labels": [
+            "misp:name=\"email\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "email-message",
+        "spec_version": "2.1",
+        "id": "email-message--f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
+        "is_multipart": False,
+        "from_ref": "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
+        "to_refs": [
+            "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
+            "email-addr--3b940996-f99b-4bda-b065-69b8957f688c"
+        ],
+        "cc_refs": [
+            "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6"
+        ],
+        "bcc_refs": [
+            "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6"
+        ]
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
+        "value": "donald.duck@disney.com",
+        "display_name": "Donald Duck"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
+        "value": "jdoe@random.org",
+        "display_name": "John Doe"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--3b940996-f99b-4bda-b065-69b8957f688c",
+        "value": "jfk@gov.us",
+        "display_name": "John Fitzgerald Kennedy"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
+        "value": "diana.prince@dc.us",
+        "display_name": "Diana Prince"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6",
+        "value": "marie.curie@nobel.fr",
+        "display_name": "Marie Curie"
     }
 ]
 _EMAIL_REPLY_TO_INDICATOR_ATTRIBUTE = {
@@ -4939,6 +5108,14 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_domain_ip_observable_objects(cls):
         return cls.__assemble_bundle(*_DOMAIN_IP_OBSERVABLE_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_email_indicator_object(cls):
+        return cls.__assemble_bundle(_EMAIL_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_email_observable_objects(cls):
+        return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_OBJECTS)
 
     @classmethod
     def get_bundle_with_employee_object(cls):
