@@ -398,29 +398,57 @@ class InternalSTIX2Mapping(STIX2Mapping):
         alias_attribute = {'type': 'text', 'object_relation': 'alias'}
         archive_attribute = {'type': 'link', 'object_relation': 'archive'}
         attachment_attribute = {'type': 'attachment', 'object_relation': 'attachment'}
+        bcc_attribute = {'type': 'email-dst', 'object_relation': 'bcc'}
+        bcc_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'bcc-display-name'}
         bio_attribute = {'type': 'text', 'object_relation': 'bio'}
+        cc_attribute = {'type': 'email-dst', 'object_relation': 'cc'}
+        cc_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'cc-display-name'}
         comment_attribute = {'type': 'text', 'object_relation': 'comment'}
         description_attribute = {'type': 'text', 'object_relation': 'description'}
+        email_attachment_attribute = {'type': 'email-attachment', 'object_relation': 'attachment'}
+        email_body_attribute = {'type': 'email-body', 'object_relation': 'email-body'}
+        email_header_attribute = {'type': 'email-header', 'object_relation': 'header'}
+        eml_attribute = {'type': 'attachment', 'object_relation': 'eml'}
         employee_type_attribute = {'type': 'text', 'object_relation': 'employee-type'}
         filename_attribute = {'type': 'filename', 'object_relation': 'filename'}
         followers_attribute = {'type': 'text', 'object_relation': 'followers'}
         following_attribute = {'type': 'text', 'object_relation': 'following'}
+        from_attribute = {'type': 'email-src', 'object_relation': 'from'}
+        from_display_name_attribute = {'type': 'email-src-display-name', 'object_relation': 'from-display-name'}
+        from_domain_attribute = {'type': 'domain', 'object_relation': 'from-domain'}
         id_attribute = {'type': 'text', 'object_relation': 'id'}
+        ip_source_attribute = {'type': 'ip-src', 'object_relation': 'ip-src'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
         last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
+        message_id_attribute = {'type': 'email-message-id', 'object_relation': 'message-id'}
+        mime_boundary_attribute = {'type': 'email-mime-boundary', 'object_relation': 'mime-boundary'}
+        msg_attribute = {'type': 'attachment', 'object_relation': 'msg'}
         name_attribute = {'type': 'text', 'object_relation': 'name'}
         password_attribute = {'type': 'text', 'object_relation': 'password'}
+        received_hostname_attribute = {'type': 'hostname', 'object_relation': 'received-header-hostname'}
+        received_ip_attribute = {'type': 'ip-src', 'object_relation': 'received-header-ip'}
+        reply_to_attribute = {'type': 'email-reply-to', 'object_relation': 'reply-to'}
+        reply_to_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'reply-to-display-name'}
+        return_path_attribute = {'type': 'email-src', 'object_relation': 'return-path'}
         role_attribute = {'type': 'text', 'object_relation': 'role'}
+        screenshot_attribute = {'type': 'attachment', 'object_relation': 'screenshot'}
         script_attribute = {'type': 'text', 'object_relation': 'script'}
+        send_date_attribute = {'type': 'datetime', 'object_relation': 'send-date'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
+        subject_attribute = {'type': 'email-subject', 'object_relation': 'subject'}
         text_attribute = {'type': 'text', 'object_relation': 'text'}
+        thread_index_attribute = {'type': 'email-thread-index', 'object_relation': 'thread-index'}
+        to_attribute = {'type': 'email-dst', 'object_relation': 'to'}
+        to_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'to-display-name'}
         url_attribute = {'type': 'url', 'object_relation': 'url'}
         username_attribute = {'type': 'text', 'object_relation': 'username'}
+        user_agent_attribute = {'type': 'text', 'object_relation': 'user-agent'}
         user_avatar_attribute = {'type': 'attachment', 'object_relation': 'user-avatar'}
         verified_attribute = {'type': 'text', 'object_relation': 'verified'}
         version_attribute = {'type': 'text', 'object_relation': 'version'}
+        x_mailer_attribute = {'type': 'email-x-mailer', 'object_relation': 'x-mailer'}
 
         # STIX TO MISP OBJECTS MAPPING
         self.__asn_object_mapping = Mapping(
@@ -485,6 +513,36 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_port = {'type': 'port', 'object_relation': 'port'},
             x_misp_registration_date = {'type': 'datetime', 'object_relation': ''},
             x_misp_text = text_attribute
+        )
+        self.__email_indicator_object_mapping = Mapping(
+            **{
+                'additional_header_fields.reply_to': reply_to_attribute,
+                'additional_header_fields.x_mailer': x_mailer_attribute,
+                'bcc_refs.display_name': bcc_display_name_attribute,
+                'bcc_refs.value': bcc_attribute,
+                'body': email_body_attribute,
+                'cc_refs.display_name': cc_display_name_attribute,
+                'cc_refs.value': cc_attribute,
+                'date': send_date_attribute,
+                'from_ref.display_name': from_display_name_attribute,
+                'from_ref.value': from_attribute,
+                'message_id': message_id_attribute,
+                'subject': subject_attribute,
+                'to_refs.display_name': to_display_name_attribute,
+                'to_refs.value': to_attribute,
+                'x_misp_attachment': email_attachment_attribute,
+                'x_misp_from_domain': from_domain_attribute,
+                'x_misp_ip_src': ip_source_attribute,
+                'x_misp_message_id': message_id_attribute,
+                'x_misp_mime_boundary': mime_boundary_attribute,
+                'x_misp_received_header_hostname': received_hostname_attribute,
+                'x_misp_received_header_ip': received_ip_attribute,
+                'x_misp_reply_to_display_name': reply_to_display_name_attribute,
+                'x_misp_return_path': return_path_attribute,
+                'x_misp_screenshot': screenshot_attribute,
+                'x_misp_thread_index': thread_index_attribute,
+                'x_misp_user_agent': user_agent_attribute
+            }
         )
         self.__employee_object_mapping = Mapping(
             name = {'type': 'full-name', 'object_relation': 'full-name'},
@@ -755,6 +813,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def domain_ip_object_mapping(self) -> dict:
         return self.__domain_ip_object_mapping
+
+    @property
+    def email_indicator_object_mapping(self) -> dict:
+        return self.__email_indicator_object_mapping
 
     @property
     def employee_object_mapping(self) -> dict:

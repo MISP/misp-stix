@@ -1035,6 +1035,31 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
+    def _object_from_email_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('email', indicator)
+        mapping = self._mapping.email_indicator_object_mapping
+        attachments = defaultdict(dict)
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            if 'body_multipart[' in feature:
+                index = feature[15]
+                identifier = feature.split('.')[1]
+                if identifier == 'content_disposition':
+                    attachments[index]['object_relation'] = value
+                else:
+                    key = 'value' if feature.split('.')[-1] == 'name' else 'data'
+                    attachments[index][key] = value
+                continue
+            if feature in mapping:
+                attribute = {'value': value}
+                attribute.update(mapping[feature])
+                misp_object.add_attribute(**attribute)
+        if attachments:
+            for attribute in attachments.values():
+                attribute['type'] = 'attachment'
+                misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
     def _object_from_facebook_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'facebook-account')
 
