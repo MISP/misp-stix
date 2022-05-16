@@ -1358,6 +1358,27 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             name = 'Domain-IP object (custom case)'
         )
 
+    def test_stix20_bundle_with_email_indicator_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_email_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        cc1, cc2, _from, reply_to, subject, dst, x_mailer, user_agent, mime, message_id, *attachments = misp_object.attributes
+        email_pattern = self._get_parsed_email_pattern(self._check_indicator_object(misp_object, indicator))
+        self._check_email_indicator_object(
+            (
+                cc1, cc2, _from, message_id, reply_to, subject, dst, x_mailer,
+                user_agent, mime, *attachments
+            ),
+            email_pattern
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator=indicator
+        )
+
     def test_stix20_bundle_with_employee_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_employee_object()
         self.parser.load_stix_bundle(bundle)

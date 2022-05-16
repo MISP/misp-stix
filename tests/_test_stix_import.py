@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from base64 import b64encode
+from collections import defaultdict
 from misp_stix_converter import InternalSTIX2toMISPParser
 from ._test_stix import TestSTIX2
 
@@ -274,6 +275,41 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(port.type, 'port')
         self.assertEqual(port.object_relation, 'port')
         self.assertEqual(port.value, self._get_pattern_value(port_pattern))
+
+    def _check_email_indicator_object(self, attributes, pattern):
+        cc1, cc2, _from, message_id, reply_to, subject, dst, x_mailer, user_agent, mime, *attachments = attributes
+        for attribute, value in zip((cc1, cc2), pattern['cc_refs.value']):
+            self.assertEqual(attribute.type, 'email-dst')
+            self.assertEqual(attribute.object_relation, 'cc')
+            self.assertEqual(attribute.value, value)
+        self.assertEqual(_from.type, 'email-src')
+        self.assertEqual(_from.object_relation, 'from')
+        self.assertEqual(_from.value, pattern['from_ref.value'])
+        self.assertEqual(message_id.type, 'email-message-id')
+        self.assertEqual(message_id.object_relation, 'message-id')
+        self.assertEqual(message_id.value, pattern['message_id' if 'message_id' in pattern else 'x_misp_message_id'])
+        self.assertEqual(reply_to.type, 'email-reply-to')
+        self.assertEqual(reply_to.object_relation, 'reply-to')
+        self.assertEqual(reply_to.value, pattern['additional_header_fields.reply_to'])
+        self.assertEqual(subject.type, 'email-subject')
+        self.assertEqual(subject.object_relation, 'subject')
+        self.assertEqual(subject.value, pattern['subject'])
+        self.assertEqual(dst.type, 'email-dst')
+        self.assertEqual(dst.object_relation, 'to')
+        self.assertEqual(dst.value, pattern['to_refs.value'])
+        self.assertEqual(x_mailer.type, 'email-x-mailer')
+        self.assertEqual(x_mailer.object_relation, 'x-mailer')
+        self.assertEqual(x_mailer.value, pattern['additional_header_fields.x_mailer'])
+        self.assertEqual(user_agent.type, 'text')
+        self.assertEqual(user_agent.object_relation, 'user-agent')
+        self.assertEqual(user_agent.value, pattern['x_misp_user_agent'])
+        self.assertEqual(mime.type, 'email-mime-boundary')
+        self.assertEqual(mime.object_relation, 'mime-boundary')
+        self.assertEqual(mime.value, pattern['x_misp_mime_boundary'])
+        for attribute, index in zip(attachments, (0, 1)):
+            self.assertEqual(attribute.type, 'attachment')
+            self.assertEqual(attribute.object_relation, pattern[f'body_multipart[{index}].content_disposition'])
+            self.assertEqual(attribute.value, pattern[f'body_multipart[{index}].body_raw_ref.name'])
 
     def _check_employee_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
@@ -751,3 +787,15 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(self._datetime_to_str(created.value), vulnerability.x_misp_created)
         self.assertEqual(cvss_score.value, vulnerability.x_misp_cvss_score)
         self.assertEqual(self._datetime_to_str(published.value), vulnerability.x_misp_published)
+
+    ################################################################################
+    #                              UTILITY FUNCTIONS.                              #
+    ################################################################################
+
+    @staticmethod
+    def _get_parsed_email_pattern(full_pattern):
+        email_pattern = defaultdict(list)
+        for pattern in full_pattern[1:-1].split(' AND '):
+            identifier, value = pattern.split(' = ')
+            email_pattern[identifier.split(':')[1]].append(value.strip("'"))
+        return {key: value[0] if len(value) == 1 else value for key, value in email_pattern.items()}
