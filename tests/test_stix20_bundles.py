@@ -1071,7 +1071,7 @@ _EMAIL_INDICATOR_ATTRIBUTE = {
         "misp:to_ids=\"True\""
     ]
 }
-_EMAIL_INDICATOR_OBJECT ={
+_EMAIL_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5e396622-2a54-4c8d-b61d-159da964451a",
     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
