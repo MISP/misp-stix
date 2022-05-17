@@ -1589,7 +1589,6 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        print(self.parser.errors)
         _, grouping, observed_data, observable = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         observable_ref = self._check_observed_data_object(misp_object, observed_data)[0]
