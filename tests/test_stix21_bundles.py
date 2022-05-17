@@ -1368,6 +1368,31 @@ _EMAIL_OBSERVABLE_ATTRIBUTE = [
 ]
 _EMAIL_OBSERVABLE_OBJECTS = [
     {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "email-message--5e396622-2a54-4c8d-b61d-159da964451a",
+            "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "email-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+            "email-addr--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "email-addr--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+            "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
+        ],
+        "labels": [
+            "misp:name=\"email\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
         "type": "email-message",
         "spec_version": "2.1",
         "id": "email-message--5e396622-2a54-4c8d-b61d-159da964451a",
