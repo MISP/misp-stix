@@ -802,6 +802,95 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                         parsed.append(reference)
         self._add_misp_object(misp_object)
 
+    def _object_from_email_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('email', observed_data)
+        observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
+        for observable in observables.values():
+            if observable.type != 'email-message':
+                continue
+            if hasattr(observable, 'from_ref'):
+                reference = observables[observable.from_ref]
+                attribute = getattr(self, f'_create_attribute_from_reference_{version}')(
+                    'email-src',
+                    'from',
+                    'value',
+                    reference
+                )
+                misp_object.add_attribute(**attribute)
+                if hasattr(reference, 'display_name'):
+                    misp_object.add_attribute(
+                        **{
+                            'type': 'email-src-display-name',
+                            'object_relation': 'from-display-name',
+                            'value': reference.display_name
+                        }
+                    )
+            for feature in ('to', 'cc', 'bcc'):
+                if hasattr(observable, f'{feature}_refs'):
+                    for ref in getattr(observable, f'{feature}_refs'):
+                        reference = observables[ref]
+                        attribute = getattr(self, f'_create_attribute_from_reference_{version}')(
+                            'email-dst',
+                            feature,
+                            'value',
+                            reference
+                        )
+                        misp_object.add_attribute(**attribute)
+                        if hasattr(reference, 'display_name'):
+                            misp_object.add_attribute(
+                                **{
+                                    'type': 'email-dst-display-name',
+                                    'object_relation': f'{feature}-display-name',
+                                    'value': reference.display_name
+                                }
+                            )
+            for feature, mapping in self._mapping.email_object_mapping.items():
+                if hasattr(observable, feature):
+                    self._populate_object_attributes(
+                        misp_object,
+                        mapping,
+                        getattr(observable, feature)
+                    )
+            if hasattr(observable, 'additional_header_fields'):
+                header = observable.additional_header_fields
+                for feature, mapping in self._mapping.email_additional_header_fields_mapping.items():
+                    if feature in header:
+                        self._populate_object_attributes(
+                            misp_object,
+                            mapping,
+                            header[feature]
+                        )
+            if hasattr(observable, 'body_multipart'):
+                for body_part in observable.body_multipart:
+                    relation, value = body_part.content_disposition.split(';')
+                    attribute_type = 'email-attachment' if relation == 'attachment' else 'attachment'
+                    reference = observables[body_part.body_raw_ref]
+                    if reference.type == 'file':
+                        attribute = getattr(self, f'_create_attribute_from_reference_{version}')(
+                            attribute_type,
+                            relation,
+                            'name',
+                            reference
+                        )
+                        misp_object.add_attribute(**attribute)
+                        continue
+                    attribute = getattr(self, f'_create_attribute_from_reference_{version}')(
+                        attribute_type,
+                        relation,
+                        'payload_bin',
+                        reference
+                    )
+                    attribute['data'] = attribute.pop('value')
+                    attribute['value'] = value.split('=').strip("'")
+                    misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
+    def _object_from_email_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_email_observable(observed_data, 'v20')
+
+    def _object_from_email_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_email_observable(observed_data, 'v21')
+
     def _object_from_facebook_account_observable_v20(self, observed_data: ObservedData_v20):
         self._object_from_account_with_attachment_observable(observed_data, 'facebook-account', 'v20')
 
@@ -1154,6 +1243,25 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._update_marking_refs(attribute['uuid'])
         return attribute
 
+    @staticmethod
+    def _create_attribute_from_reference_v20(attribute_type: str, object_relation: str,
+                                             feature: str, reference) -> dict:
+        return {
+            'type': attribute_type,
+            'object_relation': object_relation,
+            'value': getattr(reference, feature)
+        }
+
+    @staticmethod
+    def _create_attribute_from_reference_v21(attribute_type: str, object_relation: str,
+                                             feature: str, reference) -> str:
+        return {
+            'uuid': reference.id.split('--')[1],
+            'type': attribute_type,
+            'object_relation': object_relation,
+            'value': getattr(reference, feature)
+        }
+
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
@@ -1195,6 +1303,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _fetch_observables_v21(self, observed_data: ObservedData_v21):
         return self._fetch_observables(observed_data.object_refs)
+
+    @staticmethod
+    def _fetch_observables_with_id_v20(observed_data: ObservedData_v20) -> dict:
+        return observed_data.objects
+
+    def _fetch_observables_with_id_v21(self, observed_data: ObservedData_v21) -> dict:
+        return {ref: self._observable[ref] for ref in observed_data.object_refs}
 
     def _fetch_tags_from_labels(self, misp_feature: _MISP_FEATURES_TYPING, labels: list):
         for label in (label for label in labels if label != 'Threat-Report'):

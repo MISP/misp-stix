@@ -514,6 +514,12 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_registration_date = {'type': 'datetime', 'object_relation': ''},
             x_misp_text = text_attribute
         )
+        self.__email_additional_header_fields_mapping = Mapping(
+            **{
+                'Reply-To': reply_to_attribute,
+                'X-Mailer': x_mailer_attribute
+            }
+        )
         self.__email_indicator_object_mapping = Mapping(
             **{
                 'additional_header_fields.reply_to': reply_to_attribute,
@@ -543,6 +549,24 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'x_misp_thread_index': thread_index_attribute,
                 'x_misp_user_agent': user_agent_attribute
             }
+        )
+        self.__email_object_mapping = Mapping(
+            body = email_body_attribute,
+            date = send_date_attribute,
+            message_id = message_id_attribute,
+            subject = subject_attribute,
+            x_misp_attachment = email_attachment_attribute,
+            x_misp_from_domain = from_domain_attribute,
+            x_misp_ip_src = ip_source_attribute,
+            x_misp_message_id = message_id_attribute,
+            x_misp_mime_boundary = mime_boundary_attribute,
+            x_misp_received_header_hostname = received_hostname_attribute,
+            x_misp_received_header_ip = received_ip_attribute,
+            x_misp_reply_to_display_name = reply_to_display_name_attribute,
+            x_misp_return_path = return_path_attribute,
+            x_misp_screenshot = screenshot_attribute,
+            x_misp_thread_index = thread_index_attribute,
+            x_misp_user_agent = user_agent_attribute
         )
         self.__employee_object_mapping = Mapping(
             name = {'type': 'full-name', 'object_relation': 'full-name'},
@@ -815,8 +839,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__domain_ip_object_mapping
 
     @property
+    def email_additional_header_fields_mapping(self) -> dict:
+        return self.__email_additional_header_fields_mapping
+
+    @property
     def email_indicator_object_mapping(self) -> dict:
         return self.__email_indicator_object_mapping
+
+    @property
+    def email_object_mapping(self) -> dict:
+        return self.__email_object_mapping
 
     @property
     def employee_object_mapping(self) -> dict:
