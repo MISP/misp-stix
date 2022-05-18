@@ -121,7 +121,7 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(ip_properties.address_value.value, ip['value'])
 
     def _check_email_properties(self, properties, related_objects, attributes):
-        from_, to_, cc1, cc2, reply_to, subject, attachment1, attachment2, x_mailer, user_agent, boundary, message_id = attributes
+        from_, from_dn, to_, to_dn, cc1, cc1_dn, cc2, cc2_dn, bcc, bcc_dn, reply_to, subject, attachment1, attachment2, x_mailer, user_agent, boundary, message_id = attributes
         header = properties.header
         self.assertEqual(header.from_.address_value.value, from_['value'])
         self.assertEqual(len(header.to), 1)
@@ -129,6 +129,8 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(len(header.cc), 2)
         self.assertEqual(header.cc[0].address_value.value, cc1['value'])
         self.assertEqual(header.cc[1].address_value.value, cc2['value'])
+        self.assertEqual(len(header.bcc), 1)
+        self.assertEqual(header.bcc[0].address_value.value, bcc['value'])
         self.assertEqual(header.reply_to.address_value.value, reply_to['value'])
         self.assertEqual(header.subject.value, subject['value'])
         self.assertEqual(header.x_mailer.value, x_mailer['value'])
@@ -142,6 +144,10 @@ class TestStix1Export(unittest.TestCase):
             self.assertEqual(attachment.object_reference, related_object.id_)
             self.assertEqual(related_object.relationship, 'Contains')
             self.assertEqual(related_object.properties.file_name.value, attribute['value'])
+        self._check_custom_properties(
+            (from_dn, to_dn, cc1_dn, cc2_dn, bcc_dn),
+            properties.custom_properties
+        )
 
     def _check_embedded_features(self, embedded_object, cluster, name, feature='title'):
         self.assertEqual(embedded_object.id_, f"{_ORGNAME_ID}:{name}-{cluster['uuid']}")

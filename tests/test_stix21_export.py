@@ -2504,12 +2504,18 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
     def test_event_with_email_indicator_object(self):
         event = get_event_with_email_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary, _message_id = (attribute['value'] for attribute in attributes)
-        cc1_, cc2_, from_, message_id_, reply_to_, subject_, to_, x_mailer_, attachment1_, content1, attachment2_, content2, user_agent_, boundary_ = pattern[1:-1].split(' AND ')
+        _from, _from_dn, _to, _to_dn, _cc1, _cc1_dn, _cc2, _cc2_dn, _bcc, _bcc_dn, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary, _message_id = (attribute['value'] for attribute in attributes)
+        to_, to_dn, cc1_, cc1_dn, cc2_, cc2_dn, bcc_, bcc_dn, from_, from_dn, message_id_, reply_to_, subject_, x_mailer_, attachment1_, content1, attachment2_, content2, user_agent_, boundary_ = pattern[1:-1].split(' AND ')
         self.assertEqual(from_, f"email-message:from_ref.value = '{_from}'")
-        self.assertEqual(to_, f"email-message:to_refs.value = '{_to}'")
-        self.assertEqual(cc1_, f"email-message:cc_refs.value = '{_cc1}'")
-        self.assertEqual(cc2_, f"email-message:cc_refs.value = '{_cc2}'")
+        self.assertEqual(from_dn, f"email-message:from_ref.display_name = '{_from_dn}'")
+        self.assertEqual(to_, f"email-message:to_refs[0].value = '{_to}'")
+        self.assertEqual(to_dn, f"email-message:to_refs[0].display_name = '{_to_dn}'")
+        self.assertEqual(cc1_, f"email-message:cc_refs[0].value = '{_cc1}'")
+        self.assertEqual(cc1_dn, f"email-message:cc_refs[0].display_name = '{_cc1_dn}'")
+        self.assertEqual(cc2_, f"email-message:cc_refs[1].value = '{_cc2}'")
+        self.assertEqual(cc2_dn, f"email-message:cc_refs[1].display_name = '{_cc2_dn}'")
+        self.assertEqual(bcc_, f"email-message:bcc_refs[0].value = '{_bcc}'")
+        self.assertEqual(bcc_dn, f"email-message:bcc_refs[0].display_name = '{_bcc_dn}'")
         self.assertEqual(message_id_, f"email-message:message_id = '{_message_id}'")
         self.assertEqual(
             reply_to_,
@@ -2547,10 +2553,10 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         event = get_event_with_email_object()
         misp_object = deepcopy(event['Event']['Object'][0])
         attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
-        _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary, _message_id = (attribute for attribute in attributes)
-        message, address1, address2, address3, address4, file1, file2 = observables
-        message_id, address1_id, address2_id, address3_id, address4_id, file1_id, file2_id = grouping_refs
-        message_ref, address1_ref, address2_ref, address3_ref, address4_ref, file1_ref, file2_ref = object_refs
+        _from, _from_dn, _to, _to_dn, _cc1, _cc1_dn, _cc2, _cc2_dn, _bcc, _bcc_dn, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary, _message_id = attributes
+        message, address1, address2, address3, address4, address5, file1, file2 = observables
+        message_id, address1_id, address2_id, address3_id, address4_id, address5_id, file1_id, file2_id = grouping_refs
+        message_ref, address1_ref, address2_ref, address3_ref, address4_ref, address5_ref, file1_ref, file2_ref = object_refs
         self._assert_multiple_equal(
             message.id,
             message_id,
@@ -2566,8 +2572,10 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(additional_header['X-Mailer'], _x_mailer['value'])
         self.assertEqual(message.x_misp_mime_boundary, _boundary['value'])
         self.assertEqual(message.x_misp_user_agent, _user_agent['value'])
+        self.assertEqual(message.from_ref, address1_ref)
         self.assertEqual(message.to_refs, [address2_ref])
         self.assertEqual(message.cc_refs, [address3_ref, address4_ref])
+        self.assertEqual(message.bcc_refs, [address5_ref])
         self._assert_multiple_equal(
             message.from_ref,
             address1.id,
@@ -2575,7 +2583,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             address1_ref,
             f"email-addr--{_from['uuid']}"
         )
-        self._check_email_address(address1, _from['value'])
+        self._check_email_address(address1, _from['value'], display_name=_from_dn['value'])
         self._assert_multiple_equal(
             message.to_refs[0],
             address2.id,
@@ -2583,7 +2591,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             address2_ref,
             f"email-addr--{_to['uuid']}"
         )
-        self._check_email_address(address2, _to['value'])
+        self._check_email_address(address2, _to['value'], display_name=_to_dn['value'])
         self._assert_multiple_equal(
             message.cc_refs[0],
             address3.id,
@@ -2591,7 +2599,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             address3_ref,
             f"email-addr--{_cc1['uuid']}"
         )
-        self._check_email_address(address3, _cc1['value'])
+        self._check_email_address(address3, _cc1['value'], display_name=_cc1_dn['value'])
         self._assert_multiple_equal(
             message.cc_refs[1],
             address4.id,
@@ -2599,7 +2607,15 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             address4_ref,
             f"email-addr--{_cc2['uuid']}"
         )
-        self._check_email_address(address4, _cc2['value'])
+        self._check_email_address(address4, _cc2['value'], display_name=_cc2_dn['value'])
+        self._assert_multiple_equal(
+            message.bcc_refs[0],
+            address5.id,
+            address5_id,
+            address5_ref,
+            f"email-addr--{_bcc['uuid']}"
+        )
+        self._check_email_address(address5, _bcc['value'], display_name=_bcc_dn['value'])
         body1, body2 = message.body_multipart
         self.assertEqual(
             body1['content_disposition'],
@@ -2629,24 +2645,22 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(file2.name, _attachment2['value'])
         self._populate_documentation(
             misp_object = misp_object,
-            observed_data = self.parser.stix_objects[-8:]
+            observed_data = self.parser.stix_objects[-9:]
         )
 
     def test_event_with_email_indicator_object_with_display_names(self):
         event = get_event_with_email_object_with_display_names()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _from, _from_name, _to1, _to1_name, _to2, _to2_name, _cc, _cc_name, _bcc, _bcc_name = (attribute['value'] for attribute in attributes)
-        bcc_, bcc_name_, cc_, cc_name_, from_, from_name_, to1_, to2_, to1_name_, to2_name_ = pattern[1:-1].split(' AND ')
-        self.assertEqual(bcc_, f"email-message:bcc_refs.value = '{_bcc}'")
-        self.assertEqual(bcc_name_, f"email-message:bcc_refs.display_name = '{_bcc_name}'")
-        self.assertEqual(cc_, f"email-message:cc_refs.value = '{_cc}'")
-        self.assertEqual(cc_name_, f"email-message:cc_refs.display_name = '{_cc_name}'")
+        _from, _from_name, _to, _to_name, _cc1, _cc2_name, _bcc, _bcc_name = (attribute['value'] for attribute in attributes)
+        to_, to_name_, cc1_, cc2_name_, bcc_, bcc_name_, from_, from_name_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(to_, f"email-message:to_refs[0].value = '{_to}'")
+        self.assertEqual(to_name_, f"email-message:to_refs[0].display_name = '{_to_name}'")
+        self.assertEqual(cc1_, f"email-message:cc_refs[0].value = '{_cc1}'")
+        self.assertEqual(cc2_name_, f"email-message:cc_refs[1].display_name = '{_cc2_name}'")
+        self.assertEqual(bcc_, f"email-message:bcc_refs[0].value = '{_bcc}'")
+        self.assertEqual(bcc_name_, f"email-message:bcc_refs[0].display_name = '{_bcc_name}'")
         self.assertEqual(from_, f"email-message:from_ref.value = '{_from}'")
         self.assertEqual(from_name_, f"email-message:from_ref.display_name = '{_from_name}'")
-        self.assertEqual(to1_, f"email-message:to_refs.value = '{_to1}'")
-        self.assertEqual(to2_, f"email-message:to_refs.value = '{_to2}'")
-        self.assertEqual(to1_name_, f"email-message:to_refs.display_name = '{_to1_name}'")
-        self.assertEqual(to2_name_, f"email-message:to_refs.display_name = '{_to2_name}'")
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],
             indicator = self.parser.stix_objects[-1],
@@ -2657,10 +2671,10 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         event = get_event_with_email_object_with_display_names()
         misp_object = deepcopy(event['Event']['Object'][0])
         attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
-        _from, _from_name, _to1, _to1_name, _to2, _to2_name, _cc, _cc_name, _bcc, _bcc_name = (attribute for attribute in attributes)
-        message, from_, to1_, to2_, cc_, bcc_ = observables
-        message_id, from_id, to1_id, to2_id, cc_id, bcc_id = grouping_refs
-        message_ref, from_ref, to1_ref, to2_ref, cc_ref, bcc_ref = object_refs
+        _from, _from_name, _to, _to_name, _cc1, _cc2_name, _bcc, _bcc_name = attributes
+        message, from_, to_, cc_, bcc_ = observables
+        message_id, from_id, to_id, cc_id, bcc_id = grouping_refs
+        message_ref, from_ref, to_ref, cc_ref, bcc_ref = object_refs
         self._assert_multiple_equal(
             message.id,
             message_id,
@@ -2679,28 +2693,21 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self._check_email_address(from_, _from['value'], display_name=_from_name['value'])
         self._assert_multiple_equal(
             message.to_refs[0],
-            to1_.id,
-            to1_id,
-            to1_ref,
-            f"email-addr--{_to1['uuid']}"
+            to_.id,
+            to_id,
+            to_ref,
+            f"email-addr--{_to['uuid']}"
         )
-        self._check_email_address(to1_, _to1['value'], display_name=_to1_name['value'])
-        self._assert_multiple_equal(
-            message.to_refs[1],
-            to2_.id,
-            to2_id,
-            to2_ref,
-            f"email-addr--{_to2['uuid']}"
-        )
-        self._check_email_address(to2_, _to2['value'], display_name=_to2_name['value'])
+        self._check_email_address(to_, _to['value'], display_name=_to_name['value'])
         self._assert_multiple_equal(
             message.cc_refs[0],
             cc_.id,
             cc_id,
             cc_ref,
-            f"email-addr--{_cc['uuid']}"
+            f"email-addr--{_cc1['uuid']}"
         )
-        self._check_email_address(cc_, _cc['value'], display_name=_cc_name['value'])
+        self._check_email_address(cc_, _cc1['value'])
+        self.assertEqual(message.x_misp_cc_display_name, _cc2_name['value'])
         self._assert_multiple_equal(
             message.bcc_refs[0],
             bcc_.id,

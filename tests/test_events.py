@@ -1448,28 +1448,64 @@ _TEST_EMAIL_OBJECT = {
     "timestamp": "1603642920",
     "Attribute": [
         {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "uuid": "f5ec3603-e3d0-42d7-a372-14c1c137699b",
             "type": "email-src",
             "object_relation": "from",
-            "value": "source@email.test"
+            "value": "donald.duck@disney.com"
         },
         {
-            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "uuid": "3766d98d-d162-44d4-bc48-9518a2e48898",
+            "type": "email-src-display-name",
+            "object_relation": "from-display-name",
+            "value": "Donald Duck"
+        },
+        {
+            "uuid": "aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
             "type": "email-dst",
             "object_relation": "to",
-            "value": "destination@email.test"
+            "value": "jdoe@random.org"
         },
         {
-            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-            "type": "email-dst",
-            "object_relation": "cc",
-            "value": "cc1@email.test"
+            "uuid": "3a93a3ef-fd04-4ce5-98f5-f53609b39b82",
+            "type": "email-dst-display-name",
+            "object_relation": "to-display-name",
+            "value": "John Doe"
         },
         {
-            "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "uuid": "1a43d189-e5f6-4087-98df-b2cbddec2cd6",
             "type": "email-dst",
             "object_relation": "cc",
-            "value": "cc2@email.test"
+            "value": "diana.prince@dc.us"
+        },
+        {
+            "uuid": "59fc0279-427c-45a2-b8a4-678e43c6f9ad",
+            "type": "email-dst-display-name",
+            "object_relation": "cc-display-name",
+            "value": "Diana Prince"
+        },
+        {
+            "uuid": "efde9a0a-a62a-42a8-b863-14a448e313c6",
+            "type": "email-dst",
+            "object_relation": "cc",
+            "value": "marie.curie@nobel.fr"
+        },
+        {
+            "uuid": "bf64f806-1660-4790-8f07-b116eb41b9bc",
+            "type": "email-dst-display-name",
+            "object_relation": "cc-display-name",
+            "value": "Marie Curie"
+        },
+        {
+            "uuid": "3b940996-f99b-4bda-b065-69b8957f688c",
+            "type": "email-dst",
+            "object_relation": "bcc",
+            "value": "jfk@gov.us"
+        },
+        {
+            "uuid": "b824e555-8609-4389-9790-71e7f2785e1b",
+            "type": "email-dst-display-name",
+            "object_relation": "bcc-display-name",
+            "value": "John Fitzgerald Kennedy"
         },
         {
             "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
@@ -1554,40 +1590,28 @@ _TEST_EMAIL_OBJECT_WITH_DISPLAY_NAMES = {
             "value": "John Doe"
         },
         {
-            "uuid": "3b940996-f99b-4bda-b065-69b8957f688c",
-            "type": "email-dst",
-            "object_relation": "to",
-            "value": "jfk@gov.us"
-        },
-        {
-            "uuid": "b824e555-8609-4389-9790-71e7f2785e1b",
-            "type": "email-dst-display-name",
-            "object_relation": "to-display-name",
-            "value": "John Fitzgerald Kennedy"
-        },
-        {
             "uuid": "1a43d189-e5f6-4087-98df-b2cbddec2cd6",
             "type": "email-dst",
             "object_relation": "cc",
             "value": "diana.prince@dc.us"
         },
         {
-            "uuid": "59fc0279-427c-45a2-b8a4-678e43c6f9ad",
-            "type": "email-dst-display-name",
-            "object_relation": "cc-display-name",
-            "value": "Diana Prince"
-        },
-        {
-            "uuid": "efde9a0a-a62a-42a8-b863-14a448e313c6",
-            "type": "email-dst",
-            "object_relation": "bcc",
-            "value": "marie.curie@nobel.fr"
-        },
-        {
             "uuid": "bf64f806-1660-4790-8f07-b116eb41b9bc",
             "type": "email-dst-display-name",
-            "object_relation": "bcc-display-name",
+            "object_relation": "cc-display-name",
             "value": "Marie Curie"
+        },
+        {
+            "uuid": "3b940996-f99b-4bda-b065-69b8957f688c",
+            "type": "email-dst",
+            "object_relation": "bcc",
+            "value": "jfk@gov.us"
+        },
+        {
+            "uuid": "b824e555-8609-4389-9790-71e7f2785e1b",
+            "type": "email-dst-display-name",
+            "object_relation": "bcc-display-name",
+            "value": "John Fitzgerald Kennedy"
         }
     ]
 }

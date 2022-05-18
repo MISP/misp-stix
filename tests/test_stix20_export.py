@@ -1676,12 +1676,18 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
     def test_event_with_email_indicator_object(self):
         event = get_event_with_email_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary, _message_id = (attribute['value'] for attribute in attributes)
-        cc1_, cc2_, from_, reply_to_, subject_, to_, x_mailer_, attachment1_, content1, attachment2_, content2, user_agent_, boundary_, message_id_ = pattern[1:-1].split(' AND ')
+        _from, _from_dn, _to, _to_dn, _cc1, _cc1_dn, _cc2, _cc2_dn, _bcc, _bcc_dn, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary, _message_id = (attribute['value'] for attribute in attributes)
+        to_, to_dn, cc1_, cc1_dn, cc2_, cc2_dn, bcc_, bcc_dn, from_, from_dn, reply_to_, subject_, x_mailer_, attachment1_, content1, attachment2_, content2, user_agent_, boundary_, message_id_ = pattern[1:-1].split(' AND ')
         self.assertEqual(from_, f"email-message:from_ref.value = '{_from}'")
-        self.assertEqual(to_, f"email-message:to_refs.value = '{_to}'")
-        self.assertEqual(cc1_, f"email-message:cc_refs.value = '{_cc1}'")
-        self.assertEqual(cc2_, f"email-message:cc_refs.value = '{_cc2}'")
+        self.assertEqual(from_dn, f"email-message:from_ref.display_name = '{_from_dn}'")
+        self.assertEqual(to_, f"email-message:to_refs[0].value = '{_to}'")
+        self.assertEqual(to_dn, f"email-message:to_refs[0].display_name = '{_to_dn}'")
+        self.assertEqual(cc1_, f"email-message:cc_refs[0].value = '{_cc1}'")
+        self.assertEqual(cc1_dn, f"email-message:cc_refs[0].display_name = '{_cc1_dn}'")
+        self.assertEqual(cc2_, f"email-message:cc_refs[1].value = '{_cc2}'")
+        self.assertEqual(cc2_dn, f"email-message:cc_refs[1].display_name = '{_cc2_dn}'")
+        self.assertEqual(bcc_, f"email-message:bcc_refs[0].value = '{_bcc}'")
+        self.assertEqual(bcc_dn, f"email-message:bcc_refs[0].display_name = '{_bcc_dn}'")
         self.assertEqual(
             reply_to_,
             f"email-message:additional_header_fields.reply_to = '{_reply_to}'"
@@ -1718,7 +1724,7 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
     def test_event_with_email_observable_object(self):
         event = get_event_with_email_object()
         attributes, observable_objects = self._run_observable_from_object_tests(event)
-        _from, _to, _cc1, _cc2, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary, _message_id = (attribute['value'] for attribute in attributes)
+        _from, _from_dn, _to, _to_dn, _cc1, _cc1_dn, _cc2, _cc2_dn, _bcc, _bcc_dn, _reply_to, _subject, _attachment1, _attachment2, _x_mailer, _user_agent, _boundary, _message_id = (attribute['value'] for attribute in attributes)
         message = observable_objects['0']
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, True)
@@ -1732,23 +1738,21 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         self.assertEqual(message.from_ref, '1')
         self.assertEqual(message.to_refs, ['2'])
         self.assertEqual(message.cc_refs, ['3', '4'])
+        self.assertEqual(message.bcc_refs, ['5'])
         body1, body2 = message.body_multipart
-        self.assertEqual(body1['body_raw_ref'], '5')
+        self.assertEqual(body1['body_raw_ref'], '6')
         self.assertEqual(body1['content_disposition'], f"attachment; filename='{_attachment1}'")
-        self.assertEqual(body2['body_raw_ref'], '6')
+        self.assertEqual(body2['body_raw_ref'], '7')
         self.assertEqual(body2['content_disposition'], f"attachment; filename='{_attachment2}'")
-        address1 = observable_objects['1']
-        self._check_email_address(address1, _from)
-        address2 = observable_objects['2']
-        self._check_email_address(address2, _to)
-        address3 = observable_objects['3']
-        self._check_email_address(address3, _cc1)
-        address4 = observable_objects['4']
-        self._check_email_address(address4, _cc2)
-        file1 = observable_objects['5']
+        self._check_email_address(observable_objects['1'], _from, display_name=_from_dn)
+        self._check_email_address(observable_objects['2'], _to, display_name=_to_dn)
+        self._check_email_address(observable_objects['3'], _cc1, display_name=_cc1_dn)
+        self._check_email_address(observable_objects['4'], _cc2, display_name=_cc2_dn)
+        self._check_email_address(observable_objects['5'], _bcc, display_name=_bcc_dn)
+        file1 = observable_objects['6']
         self.assertEqual(file1.type, 'file')
         self.assertEqual(file1.name, _attachment1)
-        file2 = observable_objects['6']
+        file2 = observable_objects['7']
         self.assertEqual(file2.type, 'file')
         self.assertEqual(file2.name, _attachment2)
         self._populate_documentation(
@@ -1759,47 +1763,42 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
     def test_event_with_email_indicator_object_with_display_names(self):
         event = get_event_with_email_object_with_display_names()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _from, _from_name, _to1, _to1_name, _to2, _to2_name, _cc, _cc_name, _bcc, _bcc_name = (attribute['value'] for attribute in attributes)
-        bcc_, bcc_name_, cc_, cc_name_, from_, from_name_, to1_, to2_, to1_name_, to2_name_ = pattern[1:-1].split(' AND ')
-        self.assertEqual(bcc_, f"email-message:bcc_refs.value = '{_bcc}'")
-        self.assertEqual(bcc_name_, f"email-message:bcc_refs.display_name = '{_bcc_name}'")
-        self.assertEqual(cc_, f"email-message:cc_refs.value = '{_cc}'")
-        self.assertEqual(cc_name_, f"email-message:cc_refs.display_name = '{_cc_name}'")
+        _from, _from_name, _to, _to_name, _cc1, _cc2_name, _bcc, _bcc_name = (attribute['value'] for attribute in attributes)
+        to_, to_name_, cc1_, cc2_name_, bcc_, bcc_name_, from_, from_name_ = pattern[1:-1].split(' AND ')
+        self.assertEqual(to_, f"email-message:to_refs[0].value = '{_to}'")
+        self.assertEqual(to_name_, f"email-message:to_refs[0].display_name = '{_to_name}'")
+        self.assertEqual(cc1_, f"email-message:cc_refs[0].value = '{_cc1}'")
+        self.assertEqual(cc2_name_, f"email-message:cc_refs[1].display_name = '{_cc2_name}'")
+        self.assertEqual(bcc_, f"email-message:bcc_refs[0].value = '{_bcc}'")
+        self.assertEqual(bcc_name_, f"email-message:bcc_refs[0].display_name = '{_bcc_name}'")
         self.assertEqual(from_, f"email-message:from_ref.value = '{_from}'")
         self.assertEqual(from_name_, f"email-message:from_ref.display_name = '{_from_name}'")
-        self.assertEqual(to1_, f"email-message:to_refs.value = '{_to1}'")
-        self.assertEqual(to2_, f"email-message:to_refs.value = '{_to2}'")
-        self.assertEqual(to1_name_, f"email-message:to_refs.display_name = '{_to1_name}'")
-        self.assertEqual(to2_name_, f"email-message:to_refs.display_name = '{_to2_name}'")
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],
-            indicator = self.parser.stix_objects[-1]
+            indicator = self.parser.stix_objects[-1],
+            name = 'email with display names'
         )
 
     def test_event_with_email_observable_object_with_display_names(self):
         event = get_event_with_email_object_with_display_names()
         attributes, observable_objects = self._run_observable_from_object_tests(event)
-        _from, _from_name, _to1, _to1_name, _to2, _to2_name, _cc, _cc_name, _bcc, _bcc_name = (attribute['value'] for attribute in attributes)
+        _from, _from_name, _to, _to_name, _cc1, _cc2_name, _bcc, _bcc_name = (attribute['value'] for attribute in attributes)
         message = observable_objects['0']
         self.assertEqual(message.type, 'email-message')
         self.assertEqual(message.is_multipart, False)
         self.assertEqual(message.from_ref, '1')
-        self.assertEqual(message.to_refs, ['2', '3'])
-        self.assertEqual(message.cc_refs, ['4'])
-        self.assertEqual(message.bcc_refs, ['5'])
-        from_ = observable_objects['1']
-        self._check_email_address(from_, _from, display_name=_from_name)
-        to1_ = observable_objects['2']
-        self._check_email_address(to1_, _to1, display_name=_to1_name)
-        to2_ = observable_objects['3']
-        self._check_email_address(to2_, _to2, display_name=_to2_name)
-        cc_ = observable_objects['4']
-        self._check_email_address(cc_, _cc, display_name=_cc_name)
-        bcc_ = observable_objects['5']
-        self._check_email_address(bcc_, _bcc, display_name=_bcc_name)
+        self.assertEqual(message.to_refs, ['2'])
+        self.assertEqual(message.cc_refs, ['3'])
+        self.assertEqual(message.bcc_refs, ['4'])
+        self._check_email_address(observable_objects['1'], _from, display_name=_from_name)
+        self._check_email_address(observable_objects['2'], _to, display_name=_to_name)
+        self._check_email_address(observable_objects['3'], _cc1)
+        self.assertEqual(message.x_misp_cc_display_name, _cc2_name)
+        self._check_email_address(observable_objects['4'], _bcc, display_name=_bcc_name)
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],
-            observed_data = self.parser.stix_objects[-1]
+            observed_data = self.parser.stix_objects[-1],
+            name = 'email with display names'
         )
 
     def test_event_with_employee_object(self):
