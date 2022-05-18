@@ -1023,22 +1023,6 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             return IPv6Address
         return IPv4Address
 
-    def _parse_email_display_names(self, attributes: dict, feature: str) -> dict:
-        display_feature = f'{feature}-display-name'
-        display_names = {}
-        if attributes.get(display_feature):
-            if len(attributes[feature]) == len(attributes[display_feature]) == 1:
-                display_names[attributes[feature][0]] = attributes.pop(display_feature)[0]
-                return display_names
-            for value in attributes[feature]:
-                index = self._get_matching_email_display_name(attributes[display_feature], value)
-                if index is not None:
-                    display_names[value] = attributes[display_feature].pop(index)
-                if not attributes[display_feature]:
-                    del attributes[display_feature]
-                    break
-        return display_names
-
     @staticmethod
     def _parse_image_attachment(attachment: Union[str, tuple]) -> Union[dict, None]:
         if not isinstance(attachment, tuple):

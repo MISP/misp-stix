@@ -1180,6 +1180,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 with_data=self._mapping.email_data_fields
             )
             pattern = []
+            for feature in ('to', 'cc', 'bcc'):
+                if attributes.get(feature):
+                    n = 0
+                    display_names = self._parse_email_display_names(attributes, feature)
+                    for value in attributes.pop(feature):
+                        pattern.append(f"{prefix}:{feature}_refs[{n}].value = '{value}'")
+                        if value in display_names:
+                            pattern.append(
+                                f"{prefix}:{feature}_refs[{n}].display_name = '{display_names[value]}'"
+                            )
+                        n += 1
+                    display_feature = f'{feature}-display-name'
+                    if attributes.get(display_feature):
+                        for display_name in attributes.pop(display_feature):
+                            pattern.append(
+                                f"{prefix}:{feature}_refs[{n}].display_name = '{display_name}'"
+                            )
+                            n += 1
             for key, feature in self._mapping.email_object_mapping.items():
                 if attributes.get(key):
                     for value in attributes.pop(key):
@@ -2808,17 +2826,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _get_matching_email_display_name(display_names: list, address: str) -> Optional[int]:
         # Trying first to get a perfect match in case of a very standard first name last name case
-        for index in range(len(display_names)):
-            display_name = display_names[index].lower().split(' ')
-            if all(name in address for name in display_name):
+        for index, name in enumerate(display_names):
+            display_name = name.lower().split(' ')
+            if all(value in address for value in display_name):
                 return index
         # Trying to get a potential match otherwise
         values = re.sub('[_.@-]', ' ', address.lower()).split(' ')
-        for index in range(len(display_names)):
-            display_name = display_names[index].lower()
+        for index, name in enumerate(display_names):
+            display_name = name.lower()
             if any(value in display_name for value in values):
                 return index
-            initials = ''.join(name[0] for name in display_name.split(' '))
+            initials = ''.join(value[0] for value in display_name.split(' '))
             if len(initials) > 1 and initials in address:
                 return index
         # If no match, then the remaining unmatched display names are just going to be exported as custom property
@@ -2892,6 +2910,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'data': data.replace('\\', '')
             }
         return value_to_parse
+
+    def _parse_email_display_names(self, attributes: dict, feature: str) -> dict:
+        display_feature = f'{feature}-display-name'
+        display_names = {}
+        if attributes.get(display_feature):
+            for value in attributes[feature]:
+                if isinstance(value, tuple):
+                    value = value[0]
+                index = self._get_matching_email_display_name(attributes[display_feature], value)
+                if index is not None:
+                    display_names[value] = attributes[display_feature].pop(index)
+                if not attributes[display_feature]:
+                    del attributes[display_feature]
+                    break
+        return display_names
 
     def _parse_galaxy_relationship(self, source_id: str, target_id: str, relationship_type: str, timestamp: datetime):
         self.__relationships.append(

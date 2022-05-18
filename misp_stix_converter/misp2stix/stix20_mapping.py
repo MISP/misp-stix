@@ -29,18 +29,12 @@ class Stix20Mapping(Stix2Mapping):
         )
         self.__email_object_mapping = Mapping(
             **{
-                'bcc': 'bcc_refs.value',
-                'bcc-display-name': 'bcc_refs.display_name',
-                'cc': 'cc_refs.value',
-                'cc-display-name': 'cc_refs.display_name',
                 'email-body': 'body',
                 'from': 'from_ref.value',
                 'from-display-name': 'from_ref.display_name',
                 'reply-to': 'additional_header_fields.reply_to',
                 'send-date': 'date',
                 'subject': 'subject',
-                'to': 'to_refs.value',
-                'to-display-name': 'to_refs.display_name',
                 'x-mailer': 'additional_header_fields.x_mailer'
             }
         )
