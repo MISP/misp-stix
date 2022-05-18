@@ -1675,7 +1675,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_user_account_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'user-account'
-            attributes = self._extract_multiple_object_attributes_with_data(
+            attributes = self._extract_multiple_object_attributes_with_data_escaped(
                 misp_object['Attribute'],
                 force_single = self._mapping.user_account_single_fields,
                 with_data = self._mapping.user_account_data_fields
