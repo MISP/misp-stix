@@ -1365,12 +1365,13 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
         event = self.parser.misp_event
         _, report, indicator = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
-        cc1, cc2, _from, reply_to, subject, dst, x_mailer, user_agent, mime, message_id, *attachments = misp_object.attributes
+        _to, to_dn, cc1, cc1_dn, cc2, cc2_dn, bcc, bcc_dn, _from, from_dn, reply_to, subject, x_mailer, user_agent, boundary, message_id, *attachments = misp_object.attributes
         email_pattern = self._get_parsed_email_pattern(self._check_indicator_object(misp_object, indicator))
         self._check_email_indicator_object(
             (
-                cc1, cc2, _from, message_id, reply_to, subject, dst, x_mailer,
-                user_agent, mime, *attachments
+                _to, to_dn, cc1, cc1_dn, cc2, cc2_dn, bcc, bcc_dn, _from, from_dn,
+                message_id, reply_to, subject, x_mailer, user_agent, boundary,
+                *attachments
             ),
             email_pattern
         )
