@@ -1139,6 +1139,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     key = 'value' if feature.split('.')[-1] == 'name' else 'data'
                     attachments[index][key] = value
                 continue
+            if '_refs[' in feature:
+                ref_type = feature.split('[')[0]
+                attribute = {'value': value}
+                attribute.update(mapping[ref_type][feature.split('.')[-1]])
+                misp_object.add_attribute(**attribute)
+                continue
             if feature in mapping:
                 attribute = {'value': value}
                 attribute.update(mapping[feature])

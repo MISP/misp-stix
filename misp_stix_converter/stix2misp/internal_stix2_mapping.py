@@ -524,18 +524,24 @@ class InternalSTIX2Mapping(STIX2Mapping):
             **{
                 'additional_header_fields.reply_to': reply_to_attribute,
                 'additional_header_fields.x_mailer': x_mailer_attribute,
-                'bcc_refs.display_name': bcc_display_name_attribute,
-                'bcc_refs.value': bcc_attribute,
+                'bcc_refs': {
+                    'display_name': bcc_display_name_attribute,
+                    'value': bcc_attribute
+                },
                 'body': email_body_attribute,
-                'cc_refs.display_name': cc_display_name_attribute,
-                'cc_refs.value': cc_attribute,
+                'cc_refs': {
+                    'display_name': cc_display_name_attribute,
+                    'value': cc_attribute
+                },
                 'date': send_date_attribute,
                 'from_ref.display_name': from_display_name_attribute,
                 'from_ref.value': from_attribute,
                 'message_id': message_id_attribute,
                 'subject': subject_attribute,
-                'to_refs.display_name': to_display_name_attribute,
-                'to_refs.value': to_attribute,
+                'to_refs': {
+                    'display_name': to_display_name_attribute,
+                    'value': to_attribute
+                },
                 'x_misp_attachment': email_attachment_attribute,
                 'x_misp_from_domain': from_domain_attribute,
                 'x_misp_ip_src': ip_source_attribute,
