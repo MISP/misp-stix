@@ -1380,6 +1380,26 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             indicator=indicator
         )
 
+    def test_stix20_bundle_with_email_observable_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_email_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        email = self._check_misp_event_features(event, report)[0]
+        observables = self._check_observed_data_object(email, observed_data)
+        message_id = self._check_email_observable_object(
+            email.attributes,
+            observables
+        )
+        self.assertEqual(message_id.type, 'email-message-id')
+        self.assertEqual(message_id.object_relation, 'message-id')
+        self.assertEqual(message_id.value, observables['0'].x_misp_message_id)
+        self._populate_documentation(
+            misp_object = json.loads(email.to_json()),
+            observed_data = observed_data
+        )
+
     def test_stix20_bundle_with_employee_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_employee_object()
         self.parser.load_stix_bundle(bundle)

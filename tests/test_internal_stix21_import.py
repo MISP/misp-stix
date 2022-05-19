@@ -1702,6 +1702,67 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             indicator = indicator
         )
 
+    def test_stix21_bundle_with_email_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_email_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od, message, addr1, addr2, addr3, addr4, addr5, file1, file2 = bundle.objects
+        email = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        _from, _from_dn, _to, _to_dn, cc1, cc1_dn, cc2, cc2_dn, bcc, bcc_dn, message_id, subject, boundary, user_agent, reply_to, x_mailer, *attachments = email.attributes
+        message_ref, addr1_ref, addr2_ref, addr3_ref, addr4_ref, addr5_ref, file1_ref, file2_ref = self._check_observed_data_object(email, od)
+        self._assert_multiple_equal(
+            email.uuid,
+            od.id.split('--')[1],
+            message.id.split('--')[1],
+            message_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            _from.uuid,
+            addr1.id.split('--')[1],
+            addr1_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            _to.uuid,
+            addr2.id.split('--')[1],
+            addr2_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            cc1.uuid,
+            addr3.id.split('--')[1],
+            addr3_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            cc2.uuid,
+            addr4.id.split('--')[1],
+            addr4_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            attachments[0].uuid,
+            file1.id.split('--')[1],
+            file1_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            attachments[1].uuid,
+            file2.id.split('--')[1],
+            file2_ref.split('--')[1]
+        )
+        message_id = self._check_email_observable_object(
+            (
+                _from, _from_dn, _to, _to_dn, cc1, cc1_dn, cc2, cc2_dn, bcc, bcc_dn,
+                subject, message_id, boundary, user_agent, reply_to, x_mailer,
+                *attachments
+            ),
+            {observable.id: observable for observable in bundle.objects[-8:]}
+        )
+        self.assertEqual(message_id.type, 'email-message-id')
+        self.assertEqual(message_id.object_relation, 'message-id')
+        self.assertEqual(message_id.value, message.message_id)
+        self._populate_documentation(
+            misp_object = json.loads(email.to_json()),
+            observed_data = [od, message, addr1, addr2, addr3, addr4, addr5, file1, file2]
+        )
+
     def test_stix21_bundle_with_employee_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_employee_object()
         self.parser.load_stix_bundle(bundle)
