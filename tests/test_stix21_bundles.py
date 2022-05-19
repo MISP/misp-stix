@@ -1366,7 +1366,7 @@ _EMAIL_OBSERVABLE_ATTRIBUTE = [
         "value": "address@email.test"
     }
 ]
-_EMAIL_OBSERVABLE_OBJECTS = [
+_EMAIL_OBSERVABLE_OBJECT = [
     {
         "type": "observed-data",
         "spec_version": "2.1",
@@ -1379,10 +1379,11 @@ _EMAIL_OBSERVABLE_OBJECTS = [
         "number_observed": 1,
         "object_refs": [
             "email-message--5e396622-2a54-4c8d-b61d-159da964451a",
-            "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "email-addr--518b4bcb-a86b-4783-9457-391d548b605b",
-            "email-addr--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-            "email-addr--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+            "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
+            "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
+            "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
+            "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6",
+            "email-addr--3b940996-f99b-4bda-b065-69b8957f688c",
             "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
             "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
         ],
@@ -1397,13 +1398,16 @@ _EMAIL_OBSERVABLE_OBJECTS = [
         "spec_version": "2.1",
         "id": "email-message--5e396622-2a54-4c8d-b61d-159da964451a",
         "is_multipart": True,
-        "from_ref": "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "from_ref": "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
         "to_refs": [
-            "email-addr--518b4bcb-a86b-4783-9457-391d548b605b"
+            "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46"
         ],
         "cc_refs": [
-            "email-addr--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-            "email-addr--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+            "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
+            "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6"
+        ],
+        "bcc_refs": [
+            "email-addr--3b940996-f99b-4bda-b065-69b8957f688c"
         ],
         "message_id": "25",
         "subject": "Email test subject",
@@ -1427,83 +1431,6 @@ _EMAIL_OBSERVABLE_OBJECTS = [
     {
         "type": "email-addr",
         "spec_version": "2.1",
-        "id": "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "value": "source@email.test"
-    },
-    {
-        "type": "email-addr",
-        "spec_version": "2.1",
-        "id": "email-addr--518b4bcb-a86b-4783-9457-391d548b605b",
-        "value": "destination@email.test"
-    },
-    {
-        "type": "email-addr",
-        "spec_version": "2.1",
-        "id": "email-addr--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-        "value": "cc1@email.test"
-    },
-    {
-        "type": "email-addr",
-        "spec_version": "2.1",
-        "id": "email-addr--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-        "value": "cc2@email.test"
-    },
-    {
-        "type": "file",
-        "spec_version": "2.1",
-        "id": "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
-        "name": "attachment1.file"
-    },
-    {
-        "type": "file",
-        "spec_version": "2.1",
-        "id": "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
-        "name": "attachment2.file"
-    },
-    {
-        "type": "observed-data",
-        "spec_version": "2.1",
-        "id": "observed-data--f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
-        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "first_observed": "2020-10-25T16:22:00Z",
-        "last_observed": "2020-10-25T16:22:00Z",
-        "number_observed": 1,
-        "object_refs": [
-            "email-message--f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
-            "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
-            "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
-            "email-addr--3b940996-f99b-4bda-b065-69b8957f688c",
-            "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
-            "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6"
-        ],
-        "labels": [
-            "misp:name=\"email\"",
-            "misp:meta-category=\"network\"",
-            "misp:to_ids=\"False\""
-        ]
-    },
-    {
-        "type": "email-message",
-        "spec_version": "2.1",
-        "id": "email-message--f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
-        "is_multipart": False,
-        "from_ref": "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
-        "to_refs": [
-            "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
-            "email-addr--3b940996-f99b-4bda-b065-69b8957f688c"
-        ],
-        "cc_refs": [
-            "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6"
-        ],
-        "bcc_refs": [
-            "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6"
-        ]
-    },
-    {
-        "type": "email-addr",
-        "spec_version": "2.1",
         "id": "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
         "value": "donald.duck@disney.com",
         "display_name": "Donald Duck"
@@ -1518,13 +1445,6 @@ _EMAIL_OBSERVABLE_OBJECTS = [
     {
         "type": "email-addr",
         "spec_version": "2.1",
-        "id": "email-addr--3b940996-f99b-4bda-b065-69b8957f688c",
-        "value": "jfk@gov.us",
-        "display_name": "John Fitzgerald Kennedy"
-    },
-    {
-        "type": "email-addr",
-        "spec_version": "2.1",
         "id": "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
         "value": "diana.prince@dc.us",
         "display_name": "Diana Prince"
@@ -1535,6 +1455,25 @@ _EMAIL_OBSERVABLE_OBJECTS = [
         "id": "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6",
         "value": "marie.curie@nobel.fr",
         "display_name": "Marie Curie"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--3b940996-f99b-4bda-b065-69b8957f688c",
+        "value": "jfk@gov.us",
+        "display_name": "John Fitzgerald Kennedy"
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
+        "name": "attachment1.file"
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a",
+        "name": "attachment2.file"
     }
 ]
 _EMAIL_REPLY_TO_INDICATOR_ATTRIBUTE = {
@@ -5139,8 +5078,8 @@ class TestSTIX21Bundles:
         return cls.__assemble_bundle(_EMAIL_INDICATOR_OBJECT)
 
     @classmethod
-    def get_bundle_with_email_observable_objects(cls):
-        return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_OBJECTS)
+    def get_bundle_with_email_observable_object(cls):
+        return cls.__assemble_bundle(*_EMAIL_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_employee_object(cls):
