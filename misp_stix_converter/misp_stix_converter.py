@@ -4,17 +4,20 @@
 import json
 import os
 import re
+import sys
 from .misp2stix.framing import stix1_attributes_framing, stix1_framing
 from .misp2stix.misp_to_stix1 import MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser
 from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
 from .misp2stix.stix1_mapping import NS_DICT, SCHEMALOC_DICT
+from .stix2misp.external_stix1_to_misp import ExternalSTIX1toMISPParser
 from .stix2misp.external_stix2_to_misp import ExternalSTIX2toMISPParser
+from .stix2misp.internal_stix1_to_misp import InternalSTIX1toMISPParser
 from .stix2misp.internal_stix2_to_misp import InternalSTIX2toMISPParser
 from collections import defaultdict
 from cybox.core.observable import Observables
 from mixbox import idgen
-from mixbox.namespaces import Namespace, register_namespace
+from mixbox.namespaces import Namespace, NamespaceNotFoundError, register_namespace
 from pathlib import Path
 from stix.core import Campaigns, CoursesOfAction, Indicators, ThreatActors, STIXHeader, STIXPackage
 from stix.core.ttps import TTPs
@@ -435,7 +438,7 @@ def stix_to_misp(filename):
         return event
     title = event.stix_header.title
     from_misp = (title is not None and all(feature in title for feature in ('Export from ', 'MISP')))
-    stix_parser = Stix1FromMISPImportParser() if from_misp else ExternalStix1ImportParser()
+    stix_parser = InternalSTIX1toMISPParser() if from_misp else ExternalSTIX1toMISPParser()
     stix_parser.load_event()
     stix_parser.build_misp_event(event)
     stix_parser.save_file()
@@ -666,7 +669,7 @@ def _write_header(package: STIXPackage, filename: str, namespace: str, org: str,
         with open(filename, 'wt', encoding='utf-8') as f:
             f.write(xml_package[:-21])
         return _xml_package[-21:]
-    json_package = paclage.to_json()
+    json_package = package.to_json()
     with open(filename, 'wt', encoding='utf-8') as f:
         f.wrtie(f'{json_package[:-1]}, "related_packages": {json.dumps({"related_packages": []})[:-2]}')
     return ']}}'

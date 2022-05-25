@@ -127,7 +127,7 @@ class MISPtoSTIXParser():
                 to_call = self._mapping.galaxy_types_mapping[galaxy_type]
                 getattr(self, to_call.format('parent'))(galaxy)
             else:
-                self.__warning[self._identifier].add(f'{galaxy_type} galaxy from event level not mapped.')
+                self.__warnings[self._identifier].add(f'{galaxy_type} galaxy from event level not mapped.')
 
     ################################################################################
     #                           COMMON UTILITY FUNCTIONS                           #
@@ -215,7 +215,7 @@ class MISPtoSTIXParser():
 
     def _pe_reference_warning(self, file_uuid: str):
         message = f"Unable to find the pe object related to the file object {file_uuid}."
-        self.__wargning[self._identifier].add(message)
+        self.__warnings[self._identifier].add(message)
 
     def _referenced_object_name_warning(self, object_name: str, referenced_uuid: str):
         message = f"Reference to a non existing {object_name} object with uuid: {referenced_uuid}."

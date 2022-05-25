@@ -386,8 +386,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 return True
         return False
 
-    @staticmethod
-    def _is_pattern_too_complex(pattern: str) -> bool:
+    def _is_pattern_too_complex(self, pattern: str) -> bool:
         if any(keyword in pattern for keyword in self._mapping.pattern_forbiden_relations):
             return True
         if all(keyword in pattern for keyword in (' AND ', ' OR ')):
