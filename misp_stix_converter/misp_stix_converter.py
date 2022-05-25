@@ -668,7 +668,7 @@ def _write_header(package: STIXPackage, filename: str, namespace: str, org: str,
         xml_package = package.to_xml(auto_namespace=False, ns_dict=namespaces, schemaloc_dict=SCHEMALOC_DICT).decode()
         with open(filename, 'wt', encoding='utf-8') as f:
             f.write(xml_package[:-21])
-        return _xml_package[-21:]
+        return xml_package[-21:]
     json_package = package.to_json()
     with open(filename, 'wt', encoding='utf-8') as f:
         f.wrtie(f'{json_package[:-1]}, "related_packages": {json.dumps({"related_packages": []})[:-2]}')
