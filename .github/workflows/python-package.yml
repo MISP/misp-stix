@@ -39,9 +39,9 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    - name: Test with nosetests
+    - name: Test with pytest
       run: |
-        poetry run mypy tests/test_stix*_export.py
+        poetry run pytest tests/test_stix*_export.py
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
