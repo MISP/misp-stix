@@ -337,7 +337,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_hash_attribute_observable(self, attribute: dict):
         hash_type = self._define_hash_type(attribute['type'])
-        file_args = {
+        file_args: dict[str, Union[bool, dict, str]] = {
             'id': f"file--{attribute['uuid']}",
             'hashes': {
                 hash_type: attribute['value']
@@ -672,7 +672,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         observable_objects, resolves_to_refs = self._parse_domainip_ip_attributes(attributes)
         if attributes.get('hostname'):
-            value, uuid = attributes.pop('hostname')
+            value, uuid = attributes['hostname']
             domain_args = {
                 'id': f'domain-name--{uuid}',
                 'value': value,
@@ -680,7 +680,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             }
             observable_objects.append(DomainName(**domain_args))
         if attributes.get('domain'):
-            for domain in attributes.get('domain'):
+            for domain in attributes['domain']:
                 value, uuid = domain
                 domain_args = {
                     'id': f'domain-name--{uuid}',
@@ -708,7 +708,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             with_data=self._mapping.email_data_fields
         )
         objects = []
-        email_message_args = defaultdict(dict)
+        email_message_args: defaultdict = defaultdict(dict)
         email_message_args['is_multipart'] = False
         if attributes.get('from'):
             display_names = self._parse_email_display_names(attributes, 'from')
@@ -777,8 +777,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             with_uuid=self._mapping.file_uuid_fields,
             with_data=self._mapping.file_data_fields
         )
-        objects = []
-        file_args = defaultdict(dict)
+        objects: list = []
+        file_args: defaultdict = defaultdict(dict)
         if attributes.get('path'):
             self._parse_directory_ref(
                 file_args,
@@ -934,8 +934,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 with_uuid=self._mapping.lnk_uuid_fields,
                 with_data=self._mapping.lnk_data_fields
             )
-            objects = []
-            file_args = {'id': f"file--{misp_object['uuid']}"}
+            objects: list = []
+            file_args: dict[str, Union[bool, datetime, str]] = {
+                'id': f"file--{misp_object['uuid']}"
+            }
             if attributes.get('fullpath'):
                 self._parse_directory_ref(
                     file_args,
@@ -1191,7 +1193,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     ################################################################################
 
     def _create_artifact(self, artifact_id: str, content: str, filename: Optional[str] = None, malware_sample: Optional[bool] = False) -> Artifact:
-        args = {'id': artifact_id, 'payload_bin': content}
+        args: dict[str, Union[bool, str]] = {'id': artifact_id, 'payload_bin': content}
         if filename is not None:
             args.update(
                 {
@@ -1343,8 +1345,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     ################################################################################
 
     def _parse_image_args(self, attributes: dict) -> Union[dict, None]:
-        if not any(feature in attributes for feature in ('attachment', 'url')):
-            return None
         if attributes.get('attachment'):
             attachment = self._select_single_feature(attributes, 'attachment')
             artifact_args = self._parse_image_attachment(attachment)
@@ -1362,6 +1362,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 ),
                 'url': url
             }
+        return None
 
     ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #

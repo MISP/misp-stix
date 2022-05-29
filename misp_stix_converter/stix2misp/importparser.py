@@ -6,6 +6,8 @@ import subprocess
 import traceback
 from .exceptions import (SynonymsResourceJSONError, UnavailableGalaxyResourcesError,
     UnavailableSynonymsResourceError)
+from .external_stix2_mapping import ExternalSTIX2Mapping
+from .internal_stix2_mapping import InternalSTIX2Mapping
 from collections import defaultdict
 from pathlib import Path
 from typing import Union
@@ -15,10 +17,11 @@ _ROOT_PATH = Path(__file__).parents[2].resolve()
 
 class STIXtoMISPParser:
     def __init__(self, synonyms_path: Union[None, str]):
+        self._identifier: str
         if synonyms_path is not None:
             self.__synonyms_path = Path(synonyms_path)
-        self.__errors = defaultdict(set)
-        self.__warnings = defaultdict(set)
+        self.__errors: defaultdict = defaultdict(set)
+        self.__warnings: defaultdict = defaultdict(set)
 
     @property
     def errors(self) -> dict:
@@ -33,7 +36,7 @@ class STIXtoMISPParser:
             return self.__synonyms_mapping
 
     @property
-    def warnings(self) -> set:
+    def warnings(self) -> defaultdict:
         return self.__warnings
 
     ################################################################################
@@ -102,6 +105,10 @@ class STIXtoMISPParser:
 
     def _unknown_attribute_type_warning(self, attribute_type: str):
         message = f"MISP attribute type not mapped: {attribute_type}"
+        self.__warnings[self._identifier].add(message)
+
+    def _unknown_marking_ref_warning(self, marking_ref: str):
+        message = f"Unknown marking ref: {marking_ref}"
         self.__warnings[self._identifier].add(message)
 
     def _unknown_object_name_warning(self, name: str):

@@ -1071,7 +1071,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_account_with_attachment_indicator(self, indicator: _INDICATOR_TYPING, name: str):
         misp_object = self._create_misp_object(name, indicator)
         mapping = getattr(self._mapping, f"{name.replace('-', '_')}_object_mapping")
-        attachments = defaultdict(dict)
+        attachments: defaultdict = defaultdict(dict)
         for pattern in indicator.pattern[1:-1].split(' AND '):
             key, value = self._extract_features_from_pattern(pattern)
             if key.startswith('x_misp_') and '.' in key:
@@ -1127,7 +1127,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_email_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('email', indicator)
         mapping = self._mapping.email_indicator_object_mapping
-        attachments = defaultdict(dict)
+        attachments: defaultdict = defaultdict(dict)
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
             if 'body_multipart[' in feature:
@@ -1210,7 +1210,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _object_from_user_account_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('user-account', indicator)
-        attachments = defaultdict(dict)
+        attachments: defaultdict = defaultdict(dict)
         mapping = self._mapping.user_account_object_mapping
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
@@ -1260,7 +1260,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     @staticmethod
     def _create_attribute_from_reference_v21(attribute_type: str, object_relation: str,
-                                             feature: str, reference) -> str:
+                                             feature: str, reference) -> dict:
         return {
             'uuid': reference.id.split('--')[1],
             'type': attribute_type,

@@ -286,7 +286,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_hash_attribute_observable(self, attribute: dict):
         hash_type = self._define_hash_type(attribute['type'])
-        file_args = {
+        file_args: dict[str, Union[bool, dict]] = {
             'hashes': {
                 hash_type: attribute['value']
             }
@@ -510,7 +510,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, observable_object)
 
     def _parse_domainip_ip_attributes(self, attributes: dict, index: int) -> tuple:
-        domain_args = {}
+        domain_args: dict[str, Union[dict, list, str]] = {}
         observable_object = {}
         if attributes.get('ip'):
             valid_refs = {}
@@ -529,8 +529,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             misp_object['Attribute'],
             with_data=self._mapping.email_data_fields
         )
-        observable_object = {}
-        email_message_args = defaultdict(dict)
+        observable_object: dict = {}
+        email_message_args: defaultdict = defaultdict(dict)
         email_message_args['is_multipart'] = False
         index = 1
         if attributes.get('from'):
@@ -604,7 +604,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             with_data=self._mapping.file_data_fields
         )
         observable_object = {}
-        file_args = defaultdict(dict)
+        file_args: defaultdict = defaultdict(dict)
         index = 1
         if attributes.get('path'):
             str_index = str(index)
@@ -658,7 +658,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         )
         protocols = {'tcp'}
         observable_object = {}
-        network_traffic_args = defaultdict(dict)
+        network_traffic_args: defaultdict = defaultdict(dict)
         index = 1
         for feature in ('ip-src', 'ip-dst', 'ip'):
             if attributes.get(feature):
@@ -695,7 +695,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 with_data=self._mapping.lnk_data_fields
             )
             observable_object = {}
-            file_args = {}
+            file_args: dict[str, Union[bool, dict, str]] = {}
             index = 1
             for feature in self._mapping.lnk_path_fields:
                 if attributes.get(feature):
@@ -734,7 +734,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_network_references(self, attributes: dict) -> tuple:
         index = 1
-        network_traffic_args = defaultdict(dict)
+        network_traffic_args: defaultdict = defaultdict(dict)
         observable_object = {}
         for feature in ('src', 'dst'):
             if attributes.get(f'ip-{feature}'):
@@ -780,11 +780,11 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             )
             observable_object = {}
             parent_attributes = self._extract_parent_process_attributes(attributes)
-            process_args = defaultdict(dict)
+            process_args: defaultdict = defaultdict(dict)
             index = 1
             if parent_attributes:
                 str_index = str(index)
-                parent_args = {}
+                parent_args: dict[str, Union[dict, str]] = {}
                 if parent_attributes.get('parent-image'):
                     index += 1
                     str_index2 = str(index)
@@ -857,7 +857,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     ################################################################################
 
     def _create_artifact(self, content: str, filename: Optional[str] = None, malware_sample: Optional[bool] = False) -> Artifact:
-        args = {'payload_bin': content}
+        args: dict[str, Union[bool, str]] = {'payload_bin': content}
         if filename is not None:
             args.update(
                 {
@@ -985,8 +985,6 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     ################################################################################
 
     def _parse_image_args(self, attributes: dict) -> Union[dict, None]:
-        if not any(feature in attributes for feature in ('attachment', 'url')):
-            return None
         if attributes.get('attachment'):
             attachment = attributes.pop('attachment')
             artifact_args = self._parse_image_attachment(attachment)
@@ -997,6 +995,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             attributes['attachment'] = attachment
         if attributes.get('url'):
             return {'url': attributes.pop('url')}
+        return None
 
     ################################################################################
     #                         PATTERNS CREATION FUNCTIONS.                         #

@@ -8,7 +8,9 @@ from .exceptions import (ObjectRefLoadingError, ObjectTypeLoadingError,
     UnavailableSynonymsResourceError, UndefinedIndicatorError,
     UndefinedSTIXObjectError, UndefinedObservableError, UnknownAttributeTypeError,
     UnknownObjectNameError, UnknownParsingFunctionError)
+from .external_stix2_mapping import ExternalSTIX2Mapping
 from .importparser import STIXtoMISPParser
+from .internal_stix2_mapping import InternalSTIX2Mapping
 from collections import defaultdict
 from datetime import datetime
 from pymisp import AbstractMISP, MISPEvent, MISPAttribute, MISPObject
@@ -60,6 +62,25 @@ class STIX2toMISPParser(STIXtoMISPParser):
         super().__init__(synonyms_path)
         self.__single_event = single_event
         self.__n_events = 0
+        self._mapping: Union[ExternalSTIX2Mapping, InternalSTIX2Mapping]
+
+        self._attack_pattern: dict
+        self._campaign: dict
+        self._course_of_action: dict
+        self._grouping: dict
+        self._identity: dict
+        self._intrusion_set: dict
+        self._location: dict
+        self._malware: dict
+        self._marking_definition: dict
+        self._note: dict
+        self._observable: dict
+        self._opinion: dict
+        self._relationship: dict
+        self._report: dict
+        self._threat_actor: dict
+        self._tool: dict
+        self._vulnerability: dict
 
     def load_stix_bundle(self, bundle: Union[Bundle_v20, Bundle_v21]):
         self._identifier = bundle.id
@@ -72,7 +93,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             try:
                 feature = self._mapping.stix_object_loading_mapping[object_type]
             except KeyError:
-                self._unable_to_load_stix_object_type_warning(object_type)
+                self._unable_to_load_stix_object_type_error(object_type)
                 continue
             try:
                 getattr(self, feature)(stix_object)

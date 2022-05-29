@@ -2,18 +2,24 @@
 #!/usr/bin/env python3
 
 import traceback
+from .stix20_mapping import Stix20Mapping
+from .stix21_mapping import Stix21Mapping
 from collections import defaultdict
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
 
-class MISPtoSTIXParser():
+class MISPtoSTIXParser:
     __published_fields = ('published', 'publish_timestamp')
     __PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
 
     def __init__(self):
-        self.__errors = defaultdict(list)
-        self.__warnings = defaultdict(set)
+        super().__init__()
+        self.__errors: defaultdict = defaultdict(list)
+        self.__warnings: defaultdict = defaultdict(set)
+        self._identifier: str
+        self._mapping: Union[Stix20Mapping, Stix21Mapping]
+        self._misp_event: dict
 
     @property
     def errors(self) -> dict:
@@ -89,8 +95,8 @@ class MISPtoSTIXParser():
         return {attribute['object_relation']: (attribute['value'], attribute['uuid']) for attribute in attributes}
 
     def _extract_object_attribute_tags_and_galaxies(self, misp_object: dict) -> tuple:
-        tags = set()
-        galaxies = {}
+        tags: set = set()
+        galaxies: dict = {}
         for attribute in misp_object['Attribute']:
             if attribute.get('Galaxy'):
                 for galaxy in attribute['Galaxy']:
@@ -108,7 +114,7 @@ class MISPtoSTIXParser():
 
     def _handle_event_tags_and_galaxies(self) -> tuple:
         if self._misp_event.get('Galaxy'):
-            tag_names = []
+            tag_names: list = []
             for galaxy in self._misp_event['Galaxy']:
                 galaxy_type = galaxy['type']
                 if galaxy_type in self._mapping.galaxy_types_mapping:
@@ -166,7 +172,7 @@ class MISPtoSTIXParser():
         return tuple(f'misp-galaxy:{galaxy["type"]}="{cluster["value"]}"' for cluster in galaxy["GalaxyCluster"])
 
     @staticmethod
-    def _select_single_feature(attributes: dict, feature: str) -> str:
+    def _select_single_feature(attributes: dict, feature: str) -> Union[str, tuple]:
         if isinstance(attributes[feature], list):
             if len(attributes[feature]) == 1:
                 return attributes.pop(feature)[0]

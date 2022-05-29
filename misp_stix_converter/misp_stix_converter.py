@@ -397,8 +397,7 @@ def misp_collection_to_stix2_1(output_filename: _files_type, *input_files: List[
     return 1
 
 
-def misp_to_stix1(*args: List[_files_type], namespace=_default_namespace, org=_default_org):
-    filename, return_format, version = args
+def misp_to_stix1(filename: _files_type, return_format: str, version: str, namespace=_default_namespace, org=_default_org):
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
     package = _create_stix_package(org, version)
@@ -675,7 +674,7 @@ def _write_header(package: STIXPackage, filename: str, namespace: str, org: str,
     return ']}}'
 
 
-def _write_raw_stix(package: STIXPackage, filename: str, namespace: str, org: str, return_format: str) -> bool:
+def _write_raw_stix(package: STIXPackage, filename: _files_type, namespace: str, org: str, return_format: str) -> bool:
     if return_format == 'xml':
         namespaces = namespaces = {namespace: org}
         namespaces.update(NS_DICT)

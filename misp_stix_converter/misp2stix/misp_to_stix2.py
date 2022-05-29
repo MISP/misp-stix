@@ -27,7 +27,7 @@ _stix_time_fields = {
 class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def __init__(self, interoperability: bool):
         super().__init__()
-        self.__ids = {}
+        self.__ids: dict = {}
         self.__interoperability = interoperability
         self._results_handling_function = '_append_SDO'
         self._id_parsing_function = {
@@ -35,7 +35,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'object': '_define_stix_object_id'
         }
 
-    def parse_json_content(self, filename: str):
+    def parse_json_content(self, filename: Union[Path, str]):
         with open(filename, 'rt', encoding='utf-8') as f:
             json_content = json.loads(f.read())
         if json_content.get('response'):
@@ -124,7 +124,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return self.__objects
 
     @property
-    def unique_ids(self) -> list:
+    def unique_ids(self) -> dict:
         return self.__ids
 
     ################################################################################
@@ -235,10 +235,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 relationship['target_ref'] = target_ref
             self._append_SDO(self._create_relationship(relationship))
 
-    def _handle_sightings(self, sightings: list, reference_id: str):
-        sightings = self._parse_sightings(sightings)
+    def _handle_sightings(self, sightings_list: list, reference_id: str):
+        sightings = self._parse_sightings(sightings_list)
         if 'sighting' in sightings:
-            sighting_args = defaultdict(int)
+            sighting_args: defaultdict = defaultdict(int)
             sighters_refs = set()
             for sighting in sightings['sighting']:
                 sighting_args['count'] += 1
@@ -278,7 +278,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     @staticmethod
     def _parse_sightings(sightings: list) -> dict:
-        parsed_sightings = defaultdict(list)
+        parsed_sightings: defaultdict = defaultdict(list)
         for sighting in sightings:
             sighting_type = sighting.get('type')
             if sighting_type == '0':
@@ -358,7 +358,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _handle_attribute_tags_and_galaxies(self, attribute: dict, object_id: str, timestamp: datetime) -> tuple:
         if attribute.get('Galaxy'):
-            tag_names = []
+            tag_names: list = []
             for galaxy in attribute['Galaxy']:
                 galaxy_type = galaxy['type']
                 if galaxy_type in self._mapping.galaxy_types_mapping:

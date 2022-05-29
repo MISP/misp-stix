@@ -359,7 +359,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #
     ################################################################################
 
-    def _create_attribute_dict(self, stix_object: _MISP_OBJECT_TYPING, feature: str) -> dict:
+    def _create_attribute_dict(self, stix_object: _MISP_OBJECT_TYPING) -> dict:
         attribute = {'uuid': stix_object.id.split('--')[-1]}
         attribute.update(self._parse_timeline(stix_object))
         if hasattr(stix_object, 'description') and stix_object.description:
@@ -373,11 +373,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     ################################################################################
 
     @staticmethod
-    def _extract_types_from_observable_objects(observable_objects: dict) -> tuple:
-        return sorted(tuple({observable.type for observable in observable_objects.values()}))
+    def _extract_types_from_observable_objects(observable_objects: dict) -> list:
+        return sorted({observable.type for observable in observable_objects.values()})
 
-    def _extract_types_from_observable_refs(self, observable_refs: list) -> tuple:
-        return sorted(tuple({self._observable[object_ref].type for object_ref in observable_refs}))
+    def _extract_types_from_observable_refs(self, observable_refs: list) -> list:
+        return sorted({self._observable[object_ref].type for object_ref in observable_refs})
 
     @staticmethod
     def _handle_object_forcing(attributes: list, object_forcing: tuple) -> bool:
