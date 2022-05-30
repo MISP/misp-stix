@@ -39,17 +39,17 @@ poetry install
 
 Tests for MISP format export as STIX 1.1.1 & 1.2:
 ```bash
-poetry run nosetests-3.4 --with-coverage --cover-package=tests --cover-tests tests/test_stix1_export.py
+poetry run pytest tests/test_stix1_export.py
 ```
 
 Tests for MISP format export as STIX 2.0:
 ```bash
-poetry run nosetests-3.4 --with-coverage --cover-package=tests --cover-tests tests/test_stix20_export.py
+poetry run pytest tests/test_stix20_export.py
 ```
 
 Tests for MISP format export as STIX 2.1:
 ```bash
-poetry run nosetests-3.4 --with-coverage --cover-package=tests --cover-tests tests/test_stix21_export.py
+poetry run pytest tests/test_stix21_export.py
 ```
 
 ## Usage
