@@ -6,8 +6,6 @@ import subprocess
 import traceback
 from .exceptions import (SynonymsResourceJSONError, UnavailableGalaxyResourcesError,
     UnavailableSynonymsResourceError)
-from .external_stix2_mapping import ExternalSTIX2Mapping
-from .internal_stix2_mapping import InternalSTIX2Mapping
 from collections import defaultdict
 from pathlib import Path
 from typing import Union
