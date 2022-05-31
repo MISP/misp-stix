@@ -1738,6 +1738,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             addr4_ref.split('--')[1]
         )
         self._assert_multiple_equal(
+            bcc.uuid,
+            addr5.id.split('--')[1],
+            addr5_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
             attachments[0].uuid,
             file1.id.split('--')[1],
             file1_ref.split('--')[1]
