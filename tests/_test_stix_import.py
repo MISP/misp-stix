@@ -451,6 +451,87 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             observable.x_misp_user_avatar['data']
         )
 
+    def _check_file_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 9)
+        md5, sha1, sha256, filename, encoding, size_in_bytes, _path, malware_sample, attachment = attributes
+        MD5, SHA1, SHA256, name, name_enc, size, path_ref, ms_payload, ms_filename, ms_md5, a_payload, a_filename = pattern
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, self._get_pattern_value(MD5))
+        self.assertEqual(sha1.type, 'sha1')
+        self.assertEqual(sha1.object_relation, 'sha1')
+        self.assertEqual(sha1.value, self._get_pattern_value(SHA1))
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, self._get_pattern_value(SHA256))
+        self.assertEqual(filename.type, 'filename')
+        self.assertEqual(filename.object_relation, 'filename')
+        self.assertEqual(filename.value, self._get_pattern_value(name))
+        self.assertEqual(encoding.type, 'text')
+        self.assertEqual(encoding.object_relation, 'file-encoding')
+        self.assertEqual(encoding.value, self._get_pattern_value(name_enc))
+        self.assertEqual(size_in_bytes.type, 'size-in-bytes')
+        self.assertEqual(size_in_bytes.object_relation, 'size-in-bytes')
+        self.assertEqual(size_in_bytes.value, self._get_pattern_value(size))
+        self.assertEqual(_path.type, 'text')
+        self.assertEqual(_path.object_relation, 'path')
+        self.assertEqual(_path.value, self._get_pattern_value(path_ref))
+        self.assertEqual(malware_sample.type, 'malware-sample')
+        self.assertEqual(malware_sample.object_relation, 'malware-sample')
+        filename_value = self._get_pattern_value(ms_filename)
+        md5_value = self._get_pattern_value(ms_md5)
+        self.assertEqual(malware_sample.value, f'{filename_value}|{md5_value}')
+        self.assertEqual(
+            self._get_data_value(malware_sample.data),
+            self._get_pattern_value(ms_payload)
+        )
+        self.assertEqual(attachment.type, 'attachment')
+        self.assertEqual(attachment.object_relation, 'attachment')
+        self.assertEqual(attachment.value, self._get_pattern_value(a_filename)[:-2])
+        self.assertEqual(
+            self._get_data_value(attachment.data),
+            self._get_pattern_value(a_payload)
+        )
+
+    def _check_file_observable_object(self, attributes, observables):
+        md5, sha1, sha256, filename, encoding, size_in_bytes, attachment, _path, malware_sample = attributes
+        file_object, directory, artifact = observables.values()
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, file_object.hashes['MD5'])
+        self.assertEqual(sha1.type, 'sha1')
+        self.assertEqual(sha1.object_relation, 'sha1')
+        self.assertEqual(sha1.value, file_object.hashes['SHA-1'])
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, file_object.hashes['SHA-256'])
+        self.assertEqual(filename.type, 'filename')
+        self.assertEqual(filename.object_relation, 'filename')
+        self.assertEqual(filename.value, file_object.name)
+        self.assertEqual(encoding.type, 'text')
+        self.assertEqual(encoding.object_relation, 'file-encoding')
+        self.assertEqual(encoding.value, file_object.name_enc)
+        self.assertEqual(size_in_bytes.type, 'size-in-bytes')
+        self.assertEqual(size_in_bytes.object_relation, 'size-in-bytes')
+        self.assertEqual(size_in_bytes.value, file_object.size)
+        self.assertEqual(attachment.type, 'attachment')
+        self.assertEqual(attachment.object_relation, 'attachment')
+        self.assertEqual(attachment.value, file_object.x_misp_attachment['value'])
+        self.assertEqual(
+            self._get_data_value(attachment.data),
+            file_object.x_misp_attachment['data']
+        )
+        self.assertEqual(_path.type, 'text')
+        self.assertEqual(_path.object_relation, 'path')
+        self.assertEqual(_path.value, directory.path)
+        self.assertEqual(malware_sample.type, 'malware-sample')
+        self.assertEqual(malware_sample.object_relation, 'malware-sample')
+        self.assertEqual(
+            malware_sample.value,
+            f"{artifact.x_misp_filename}|{artifact.hashes['MD5']}"
+        )
+        self.assertEqual(self._get_data_value(malware_sample.data), artifact.payload_bin)
+
     def _check_github_user_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 5)
         user_id, display_name, account_login, organisation, *image_pattern = pattern[1:-1].split(' AND ')[1:]
@@ -879,3 +960,14 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             identifier, value = pattern.split(' = ')
             email_pattern[identifier.split(':')[1]].append(value.strip("'"))
         return {key: value[0] if len(value) == 1 else value for key, value in email_pattern.items()}
+
+    @staticmethod
+    def _get_parsed_file_pattern(full_pattern):
+        file_pattern = []
+        for pattern in full_pattern[1:-1].split(' AND '):
+            if 'content_ref' not in pattern:
+                file_pattern.append(pattern)
+                continue
+            if any(feature in pattern for feature in ('payload_bin', 'filename', 'hashes')):
+                file_pattern.append(pattern)
+        return file_pattern

@@ -1708,6 +1708,88 @@ _EMPLOYEE_OBJECT = {
         "misp:to_ids=\"False\""
     ]
 }
+_FILE_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5e384ae7-672c-4250-9cda-3b4da964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "file"
+        }
+    ],
+    "labels": [
+        "misp:name=\"file\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_FILE_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--5e384ae7-672c-4250-9cda-3b4da964451a",
+            "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:name=\"file\"",
+            "misp:meta-category=\"file\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "hashes": {
+            "MD5": "8764605c6f388c89096b534d33565802",
+            "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+            "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+        },
+        "size": 35,
+        "name": "oui",
+        "name_enc": "UTF-8",
+        "parent_directory_ref": "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "x_misp_attachment": {
+            "value": "non",
+            "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+        }
+    },
+    {
+        "type": "directory",
+        "spec_version": "2.1",
+        "id": "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "path": "/var/www/MISP/app/files/scripts/tmp"
+    },
+    {
+        "type": "artifact",
+        "spec_version": "2.1",
+        "id": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "mime_type": "application/zip",
+        "hashes": {
+            "MD5": "8764605c6f388c89096b534d33565802"
+        },
+        "encryption_algorithm": "mime-type-indicated",
+        "decryption_key": "infected",
+        "x_misp_filename": "oui"
+    }
+]
 _FILENAME_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -5084,6 +5166,37 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_employee_object(cls):
         return cls.__assemble_bundle(_EMPLOYEE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_file_indicator_object(cls):
+        indicator = deepcopy(_FILE_INDICATOR_OBJECT)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            pattern = [
+                "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+                "file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86'",
+                "file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b'",
+                "file:name = 'oui'",
+                "file:name_enc = 'UTF-8'",
+                "file:size = '35'",
+                "file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp'",
+                f"(file:content_ref.payload_bin = '{b64encode(f.read()).decode()}'",
+                "file:content_ref.x_misp_filename = 'oui'",
+                "file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+                "file:content_ref.mime_type = 'application/zip'",
+                "file:content_ref.encryption_algorithm = 'mime-type-indicated'",
+                "file:content_ref.decryption_key = 'infected')",
+                "(file:content_ref.payload_bin = 'Tm9uLW1hbGljaW91cyBmaWxlCg=='",
+                "file:content_ref.x_misp_filename = 'non')"
+            ]
+        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(indicator)
+
+    @classmethod
+    def get_bundle_with_file_observable_object(cls):
+        observables = deepcopy(_FILE_OBSERVABLE_OBJECT)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            observables[-1]['payload_bin'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(*observables)
 
     @classmethod
     def get_bundle_with_geolocation_object(cls):

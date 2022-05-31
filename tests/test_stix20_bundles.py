@@ -1384,6 +1384,71 @@ _EMPLOYEE_OBJECT = {
     ],
     "x_misp_employee_type": "Supervisor"
 }
+_FILE_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5e384ae7-672c-4250-9cda-3b4da964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "file"
+        }
+    ],
+    "labels": [
+        "misp:name=\"file\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_FILE_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "file",
+            "hashes": {
+                "MD5": "8764605c6f388c89096b534d33565802",
+                "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+            },
+            "size": 35,
+            "name": "oui",
+            "name_enc": "UTF-8",
+            "parent_directory_ref": "1",
+            "content_ref": "2",
+            "x_misp_attachment": {
+                "value": "non",
+                "data": "Tm9uLW1hbGljaW91cyBmaWxlCg=="
+            }
+        },
+        "1": {
+            "type": "directory",
+            "path": "/var/www/MISP/app/files/scripts/tmp"
+        },
+        "2": {
+            "type": "artifact",
+            "mime_type": "application/zip",
+            "hashes": {
+                "MD5": "8764605c6f388c89096b534d33565802"
+            },
+            "x_misp_filename": "oui"
+        }
+    },
+    "labels": [
+        "misp:name=\"file\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _FILENAME_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -4176,6 +4241,35 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_employee_object(cls):
         return cls.__assemble_bundle(_EMPLOYEE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_file_indicator_object(cls):
+        indicator = deepcopy(_FILE_INDICATOR_OBJECT)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            pattern = [
+                "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+                "file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86'",
+                "file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b'",
+                "file:name = 'oui'",
+                "file:name_enc = 'UTF-8'",
+                "file:size = '35'",
+                "file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp'",
+                f"(file:content_ref.payload_bin = '{b64encode(f.read()).decode()}'",
+                "file:content_ref.x_misp_filename = 'oui'",
+                "file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+                "file:content_ref.mime_type = 'application/zip')",
+                "(file:content_ref.payload_bin = 'Tm9uLW1hbGljaW91cyBmaWxlCg=='",
+                "file:content_ref.x_misp_filename = 'non')"
+            ]
+        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(indicator)
+
+    @classmethod
+    def get_bundle_with_file_observable_object(cls):
+        observed_data = deepcopy(_FILE_OBSERVABLE_OBJECT)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            observed_data['objects']['2']['payload_bin'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(observed_data)
 
     @classmethod
     def get_bundle_with_legal_entity_object(cls):
