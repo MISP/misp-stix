@@ -398,35 +398,46 @@ class InternalSTIX2Mapping(STIX2Mapping):
         alias_attribute = {'type': 'text', 'object_relation': 'alias'}
         archive_attribute = {'type': 'link', 'object_relation': 'archive'}
         attachment_attribute = {'type': 'attachment', 'object_relation': 'attachment'}
+        authentihash_attribute = {'type': 'authentihash', 'object_relation': 'authentihash'}
         bcc_attribute = {'type': 'email-dst', 'object_relation': 'bcc'}
         bcc_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'bcc-display-name'}
         bio_attribute = {'type': 'text', 'object_relation': 'bio'}
         cc_attribute = {'type': 'email-dst', 'object_relation': 'cc'}
         cc_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'cc-display-name'}
+        certificate_attribute = {'type': 'x509-fingerprint-sha1', 'object_relation': 'certificate'}
         comment_attribute = {'type': 'text', 'object_relation': 'comment'}
+        compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
         description_attribute = {'type': 'text', 'object_relation': 'description'}
         email_attachment_attribute = {'type': 'email-attachment', 'object_relation': 'attachment'}
         email_body_attribute = {'type': 'email-body', 'object_relation': 'email-body'}
         email_header_attribute = {'type': 'email-header', 'object_relation': 'header'}
         eml_attribute = {'type': 'attachment', 'object_relation': 'eml'}
         employee_type_attribute = {'type': 'text', 'object_relation': 'employee-type'}
+        entropy_attribute = {'type': 'float', 'object_relation': 'entropy'}
+        file_encoding_attribute = {'type': 'text', 'object_relation': 'file-encoding'}
         filename_attribute = {'type': 'filename', 'object_relation': 'filename'}
         followers_attribute = {'type': 'text', 'object_relation': 'followers'}
         following_attribute = {'type': 'text', 'object_relation': 'following'}
+        fullpath_attribute = {'type': 'text', 'object_relation': 'fullpath'}
         from_attribute = {'type': 'email-src', 'object_relation': 'from'}
         from_display_name_attribute = {'type': 'email-src-display-name', 'object_relation': 'from-display-name'}
         from_domain_attribute = {'type': 'domain', 'object_relation': 'from-domain'}
         id_attribute = {'type': 'text', 'object_relation': 'id'}
+        imphash_attribute = {'type': 'imphash', 'object_relation': 'imphash'}
         ip_source_attribute = {'type': 'ip-src', 'object_relation': 'ip-src'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
         last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
+        md5_attribute = {'type': 'md5', 'object_relation': 'md5'}
         message_id_attribute = {'type': 'email-message-id', 'object_relation': 'message-id'}
         mime_boundary_attribute = {'type': 'email-mime-boundary', 'object_relation': 'mime-boundary'}
+        mime_type_attribute = {'type': 'mime-type', 'object_relation': 'mimetype'}
         msg_attribute = {'type': 'attachment', 'object_relation': 'msg'}
         name_attribute = {'type': 'text', 'object_relation': 'name'}
         password_attribute = {'type': 'text', 'object_relation': 'password'}
+        path_attribute = {'type': 'text', 'object_relation': 'path'}
+        pattern_in_file_attribute = {'type': 'pattern-in-file', 'object_relation': 'pattern-in-file'}
         received_hostname_attribute = {'type': 'hostname', 'object_relation': 'received-header-hostname'}
         received_ip_attribute = {'type': 'ip-src', 'object_relation': 'received-header-ip'}
         reply_to_attribute = {'type': 'email-reply-to', 'object_relation': 'reply-to'}
@@ -436,10 +447,23 @@ class InternalSTIX2Mapping(STIX2Mapping):
         screenshot_attribute = {'type': 'attachment', 'object_relation': 'screenshot'}
         script_attribute = {'type': 'text', 'object_relation': 'script'}
         send_date_attribute = {'type': 'datetime', 'object_relation': 'send-date'}
+        sha1_attribute = {'type': 'sha1', 'object_relation': 'sha1'}
+        sha224_attribute = {'type': 'sha224', 'object_relation': 'sha224'}
+        sha256_attribute = {'type': 'sha256', 'object_relation': 'sha256'}
+        sha3_224_attribute = {'type': 'sha3-224', 'object_relation': 'sha3-224'}
+        sha3_256_attribute = {'type': 'sha3-256', 'object_relation': 'sha3-256'}
+        sha3_384_attribute = {'type': 'sha3-384', 'object_relation': 'sha3-384'}
+        sha3_512_attribute = {'type': 'sha3-512', 'object_relation': 'sha3-512'}
+        sha384_attribute = {'type': 'sha384', 'object_relation': 'sha384'}
+        sha512_attribute = {'type': 'sha512', 'object_relation': 'sha512'}
+        size_in_bytes_attribute = {'type': 'size-in-bytes', 'object_relation': 'size-in-bytes'}
+        ssdeep_attribute = {'type': 'ssdeep', 'object_relation': 'ssdeep'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
         subject_attribute = {'type': 'email-subject', 'object_relation': 'subject'}
+        telfhash_attribute = {'type': 'telfhash', 'object_relation': 'telfhash'}
         text_attribute = {'type': 'text', 'object_relation': 'text'}
         thread_index_attribute = {'type': 'email-thread-index', 'object_relation': 'thread-index'}
+        tlsh_attribute = {'type': 'tlsh', 'object_relation': 'tlsh'}
         to_attribute = {'type': 'email-dst', 'object_relation': 'to'}
         to_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'to-display-name'}
         url_attribute = {'type': 'url', 'object_relation': 'url'}
@@ -448,6 +472,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         user_avatar_attribute = {'type': 'attachment', 'object_relation': 'user-avatar'}
         verified_attribute = {'type': 'text', 'object_relation': 'verified'}
         version_attribute = {'type': 'text', 'object_relation': 'version'}
+        vhash_attribute = {'type': 'vhash', 'object_relation': 'vhash'}
         x_mailer_attribute = {'type': 'email-x-mailer', 'object_relation': 'x-mailer'}
 
         # STIX TO MISP OBJECTS MAPPING
@@ -594,6 +619,74 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_link = link_attribute,
             x_misp_url = url_attribute,
             x_misp_user_avatar = user_avatar_attribute
+        )
+        self.__file_hashes_object_mapping = Mapping(
+            **{
+                'AUTHENTIHASH': authentihash_attribute,
+                'IMPHASH': imphash_attribute,
+                'MD5': md5_attribute,
+                'SHA-1': sha1_attribute,
+                'SHA224': sha224_attribute,
+                'SHA-256': sha256_attribute,
+                'SHA3224': sha3_224_attribute,
+                'SHA3-256': sha3_256_attribute,
+                'SHA3384': sha3_384_attribute,
+                'SHA3-512': sha3_512_attribute,
+                'SHA384': sha384_attribute,
+                'SHA-512': sha512_attribute,
+                'SSDEEP': ssdeep_attribute,
+                'TELFHASH': telfhash_attribute,
+                'TLSH': tlsh_attribute,
+                'VHASH': vhash_attribute
+            }
+        )
+        self.__file_indicator_object_mapping = Mapping(
+            **{
+                'hashes.AUTHENTIHASH': authentihash_attribute,
+                'hashes.IMPHASH': imphash_attribute,
+                'hashes.MD5': md5_attribute,
+                'hashes.SHA1': sha1_attribute,
+                'hashes.SHA224': sha224_attribute,
+                'hashes.SHA256': sha256_attribute,
+                'hashes.SHA3224': sha3_224_attribute,
+                'hashes.SHA3256': sha3_256_attribute,
+                'hashes.SHA3384': sha3_384_attribute,
+                'hashes.SHA3512': sha3_512_attribute,
+                'hashes.SHA384': sha384_attribute,
+                'hashes.SHA512': sha512_attribute,
+                'hashes.SSDEEP': ssdeep_attribute,
+                'hashes.TELFHASH': telfhash_attribute,
+                'hashes.TLSH': tlsh_attribute,
+                'hashes.VHASH': vhash_attribute,
+                'mime_type': mime_type_attribute,
+                'name': filename_attribute,
+                'name_enc': file_encoding_attribute,
+                'parent_directory_ref.path': path_attribute,
+                'size': size_in_bytes_attribute,
+                'x_misp_certificate': certificate_attribute,
+                'x_misp_compilation_timestamp': compilation_timestamp_attribute,
+                'x_misp_entropy': entropy_attribute,
+                'x_misp_fullpath': fullpath_attribute,
+                'x_misp_path': path_attribute,
+                'x_misp_pattern_in_file': pattern_in_file_attribute,
+                'x_misp_state': state_attribute,
+                'x_misp_text': text_attribute
+            }
+        )
+        self.__file_observable_object_mapping = Mapping(
+            mime_type = mime_type_attribute,
+            name = filename_attribute,
+            name_enc = file_encoding_attribute,
+            size = size_in_bytes_attribute,
+            x_misp_attachment = attachment_attribute,
+            x_misp_certificate = certificate_attribute,
+            x_misp_compilation_timestamp = compilation_timestamp_attribute,
+            x_misp_entropy = entropy_attribute,
+            x_misp_fullpath = fullpath_attribute,
+            x_misp_path = path_attribute,
+            x_misp_pattern_in_file = pattern_in_file_attribute,
+            x_misp_state = state_attribute,
+            x_misp_text = text_attribute
         )
         self.__github_user_object_mapping = Mapping(
             user_id = id_attribute,
@@ -863,6 +956,18 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def facebook_account_object_mapping(self) -> dict:
         return self.__facebook_account_object_mapping
+
+    @property
+    def file_hashes_object_mapping(self) -> dict:
+        return self.__file_hashes_object_mapping
+
+    @property
+    def file_indicator_object_mapping(self) -> dict:
+        return self.__file_indicator_object_mapping
+
+    @property
+    def file_observable_object_mapping(self) -> dict:
+        return self.__file_observable_object_mapping
 
     @property
     def galaxies_mapping(self) -> dict:

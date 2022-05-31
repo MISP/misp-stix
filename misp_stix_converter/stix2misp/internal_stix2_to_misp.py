@@ -897,6 +897,67 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_facebook_account_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_account_with_attachment_observable(observed_data, 'facebook-account', 'v21')
 
+    def _object_from_file_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('file', observed_data)
+        observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
+        for observable in observables.values():
+            if observable.type != 'file':
+                continue
+            if hasattr(observable, 'hashes'):
+                for hash_type, value in observable.hashes.items():
+                    if hash_type in self._mapping.file_hashes_object_mapping:
+                        attribute = {'value': value}
+                        attribute.update(self._mapping.file_hashes_object_mapping[hash_type])
+                        misp_object.add_attribute(**attribute)
+            for feature, mapping in self._mapping.file_observable_object_mapping.items():
+                if hasattr(observable, feature):
+                    self._populate_object_attributes_with_data(
+                        misp_object,
+                        mapping,
+                        getattr(observable, feature)
+                    )
+            if hasattr(observable, 'parent_directory_ref'):
+                directory = observables[observable.parent_directory_ref]
+                attribute = {
+                    'type': 'text',
+                    'object_relation': 'path',
+                    'value': directory.path
+                }
+                if hasattr(directory, 'id'):
+                    attribute['uuid'] = directory.id.split('--')[1]
+                misp_object.add_attribute(**attribute)
+            if hasattr(observable, 'content_ref'):
+                artifact = observables[observable.content_ref]
+                attribute = {
+                    'value': artifact.x_misp_filename,
+                    'data': artifact.payload_bin
+                }
+                if hasattr(artifact, 'hashes') and artifact.hashes.get('MD5') is not None:
+                    attribute.update(
+                        {
+                            'type': 'malware-sample',
+                            'object_relation': 'malware-sample',
+                            'value': f"{attribute['value']}|{artifact.hashes['MD5']}"
+                        }
+                    )
+                else:
+                    attribute.update(
+                        {
+                            'type': 'attachment',
+                            'object_relation': 'attachment'
+                        }
+                    )
+                if hasattr(artifact, 'id'):
+                    attribute['uuid'] = artifact.id.split('--')[1]
+                misp_object.add_attribute(**attribute)
+            self._add_misp_object(misp_object)
+
+    def _object_from_file_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_file_observable(observed_data, 'v20')
+
+    def _object_from_file_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_file_observable(observed_data, 'v21')
+
     def _object_from_github_user_observable_v20(self, observed_data: ObservedData_v20):
         self._object_from_account_with_attachment_observable(observed_data, 'github-user', 'v20')
 
@@ -1155,6 +1216,53 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
+    def _object_from_file_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('file', indicator)
+        mapping = self._mapping.file_indicator_object_mapping
+        attachment: dict
+        attachments: list = []
+        in_attachment: bool = False
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            if pattern.startswith('('):
+                attachment = {feature: value}
+                in_attachment = True
+                continue
+            if value.endswith("')"):
+                attachment[feature] = value[:-2]
+                attachments.append(attachment)
+                in_attachment = False
+                continue
+            if in_attachment:
+                attachment[feature] = value
+            else:
+                if feature in mapping:
+                    attribute = {'value': value}
+                    attribute.update(mapping[feature])
+                    misp_object.add_attribute(**attribute)
+        if attachments:
+            for attachment in attachments:
+                attribute = {'value': attachment['content_ref.x_misp_filename']}
+                if 'content_ref.payload_bin' in attachment:
+                    attribute['data'] = attachment['content_ref.payload_bin']
+                if 'content_ref.hashes.MD5' in attachment:
+                    attribute.update(
+                        {
+                            'type': 'malware-sample',
+                            'object_relation': 'malware-sample',
+                            'value': f"{attribute['value']}|{attachment['content_ref.hashes.MD5']}"
+                        }
+                    )
+                else:
+                    attribute.update(
+                        {
+                            'type': 'attachment',
+                            'object_relation': 'attachment'
+                        }
+                    )
+                misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
     def _object_from_facebook_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'facebook-account')
 
@@ -1347,7 +1455,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if isinstance(values, list):
             for value in values:
                 if isinstance(value, dict):
-                    attribute = deepcopy(value)
+                    attribute = deepcopy(value) if isinstance(values, dict) else {'value': values}
                     attribute.update(mapping)
                     misp_object.add_attribute(**attribute)
         else:
