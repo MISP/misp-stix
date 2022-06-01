@@ -634,6 +634,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'SHA3-512': sha3_512_attribute,
                 'SHA384': sha384_attribute,
                 'SHA-512': sha512_attribute,
+                'ssdeep': ssdeep_attribute,
                 'SSDEEP': ssdeep_attribute,
                 'TELFHASH': telfhash_attribute,
                 'TLSH': tlsh_attribute,
