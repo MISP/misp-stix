@@ -39,21 +39,21 @@ from stix2.v21.sdo import (AttackPattern as AttackPattern_v21, Campaign as Campa
     ThreatActor as ThreatActor_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
 from stix2.v21.sro import Relationship as Relationship_v21
-from typing import Union
+from typing import Optional, Union
 
-_MISP_OBJECT_TYPING = Union[
+_MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
+_OBSERVABLE_TYPES = Union[
+    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress, EmailMessage,
+    File, IPv4Address, IPv6Address, MACAddress, Mutex, NetworkTraffic, Process,
+    Software, URL, UserAccount, WindowsRegistryKey, X509Certificate
+]
+_SDO_TYPING = Union[
     Indicator_v20,
     Indicator_v21,
     ObservedData_v20,
     ObservedData_v21,
     Vulnerability_v20,
     Vulnerability_v21
-]
-_MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
-_OBSERVABLE_TYPES = Union[
-    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress, EmailMessage,
-    File, IPv4Address, IPv6Address, MACAddress, Mutex, NetworkTraffic, Process,
-    Software, URL, UserAccount, WindowsRegistryKey, X509Certificate
 ]
 
 
@@ -411,14 +411,15 @@ class STIX2toMISPParser(STIXtoMISPParser):
         self._handle_misp_event_tags(misp_event, stix_object)
         return misp_event
 
-    def _create_misp_object(self, name: str, stix_object: _MISP_OBJECT_TYPING) -> MISPObject:
+    def _create_misp_object(self, name: str, stix_object: Optional[_SDO_TYPING] = None) -> MISPObject:
         misp_object = MISPObject(
             name,
             misp_objects_path_custom=_MISP_OBJECTS_PATH,
             force_timestamps=True
         )
-        misp_object.uuid = stix_object.id.split('--')[-1]
-        misp_object.update(self._parse_timeline(stix_object))
+        if stix_object is not None:
+            misp_object.uuid = stix_object.id.split('--')[-1]
+            misp_object.update(self._parse_timeline(stix_object))
         return misp_object
 
     ################################################################################
@@ -449,7 +450,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 continue
             misp_feature.add_tag(marking_definition.name)
 
-    def _parse_timeline(self, stix_object: _MISP_OBJECT_TYPING) -> dict:
+    def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
         misp_object = {'timestamp': self._timestamp_from_date(stix_object.modified)}
         object_type = stix_object.type
         if object_type in self._mapping.timeline_mapping:
@@ -466,7 +467,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         return value.replace('\\\\', '\\')
 
     @staticmethod
-    def _skip_first_seen_last_seen(stix_object: _MISP_OBJECT_TYPING) -> bool:
+    def _skip_first_seen_last_seen(stix_object: _SDO_TYPING) -> bool:
         if stix_object.type != 'indicator':
             return stix_object.modified == stix_object.first_observed == stix_object.last_observed
         if stix_object.valid_from != stix_object.modified:

@@ -3,7 +3,7 @@
 
 from .. import Mapping
 from .external_stix2_mapping import ExternalSTIX2Mapping
-from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
+from .stix2_to_misp import STIX2toMISPParser, _SDO_TYPING
 from misp_stix_converter.stix2misp.exceptions import (UnknownParsingFunctionError,
     UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
 from pymisp import MISPObject
@@ -60,7 +60,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 
-    def _handle_import_case(self, stix_object: _MISP_OBJECT_TYPING, attributes: list, name: str, force_object: Optional[tuple]=None):
+    def _handle_import_case(self, stix_object: _SDO_TYPING, attributes: list, name: str, force_object: Optional[tuple]=None):
         """
         After we extracted attributes from a STIX object (Indicator pattern,
         Observable object, Vulnerability fields, etc.), we want to know if it is
@@ -359,7 +359,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #
     ################################################################################
 
-    def _create_attribute_dict(self, stix_object: _MISP_OBJECT_TYPING) -> dict:
+    def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = {'uuid': stix_object.id.split('--')[-1]}
         attribute.update(self._parse_timeline(stix_object))
         if hasattr(stix_object, 'description') and stix_object.description:

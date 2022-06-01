@@ -5,7 +5,7 @@ from .exceptions import (
     AttributeFromPatternParsingError, UndefinedSTIXObjectError,
     UndefinedIndicatorError, UndefinedObservableError, UnknownParsingFunctionError)
 from .internal_stix2_mapping import InternalSTIX2Mapping
-from .stix2_to_misp import STIX2toMISPParser, _MISP_OBJECT_TYPING
+from .stix2_to_misp import STIX2toMISPParser, _SDO_TYPING
 from collections import defaultdict
 from copy import deepcopy
 from pymisp import MISPAttribute, MISPEvent, MISPObject
@@ -161,7 +161,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_custom_object(self, custom_ref: str):
         custom_object = self._get_stix_object(custom_ref)
         name = custom_object.x_misp_name
-        misp_object = MISPObject(name)
+        misp_object = self._create_misp_object(name, custom_object)
         misp_object.category = custom_object.x_misp_meta_category
         misp_object.uuid = custom_object.id.split('--')[1]
         misp_object.timestamp = self._timestamp_from_date(custom_object.modified)
@@ -1347,7 +1347,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #
     ################################################################################
 
-    def _create_attribute_dict(self, stix_object: _MISP_OBJECT_TYPING) -> dict:
+    def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = self._attribute_from_labels(stix_object.labels)
         attribute['uuid'] = stix_object.id.split('--')[-1]
         attribute.update(self._parse_timeline(stix_object))
