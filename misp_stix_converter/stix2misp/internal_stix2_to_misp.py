@@ -8,13 +8,15 @@ from .internal_stix2_mapping import InternalSTIX2Mapping
 from .stix2_to_misp import STIX2toMISPParser, _SDO_TYPING
 from collections import defaultdict
 from copy import deepcopy
+from datetime import datetime
 from pymisp import MISPAttribute, MISPEvent, MISPObject
+from stix2.v20.observables import WindowsPEBinaryExt as WindowsExtension_v20
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
     CustomObject as CustomObject_v20, Identity as Identity_v20, Indicator as Indicator_v20,
     Malware as Malware_v20, ObservedData as ObservedData_v20, Tool as Tool_v20,
     Vulnerability as Vulnerability_v20)
-from stix2.v21.observables import DomainName
+from stix2.v21.observables import DomainName, WindowsPEBinaryExt as WindowsExtension_v21
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
     CustomObject as CustomObject_v21, Identity as Identity_v21, Indicator as Indicator_v21,
@@ -29,6 +31,10 @@ _attribute_additional_fields = (
     'to_ids',
     'uuid'
 )
+_EXTENSION_TYPING = Union[
+    WindowsExtension_v20,
+    WindowsExtension_v21
+]
 _INDICATOR_TYPING = Union[
     Indicator_v20,
     Indicator_v21
@@ -897,6 +903,42 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_facebook_account_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_account_with_attachment_observable(observed_data, 'facebook-account', 'v21')
 
+    def _object_from_file_extension_observable(self, extension: _EXTENSION_TYPING,
+                                               timestamp: datetime) -> str:
+        pe_object = self._create_misp_object('pe')
+        pe_object.timestamp = timestamp
+        if hasattr(extension, 'optional_header'):
+            pe_object.add_attribute(
+                **{
+                    'type': 'text',
+                    'object_relation': 'entrypoint-address',
+                    'value': extension.optional_header.address_of_entry_point
+                }
+            )
+        for feature, mapping in self._mapping.pe_object_mapping.items():
+            if hasattr(extension, feature):
+                attribute = {'value': getattr(extension, feature)}
+                attribute.update(mapping)
+                pe_object.add_attribute(**attribute)
+        if hasattr(extension, 'sections'):
+            for section in extension.sections:
+                section_object = self._create_misp_object('pe-section')
+                section_object.timestamp = timestamp
+                for feature, mapping in self._mapping.pe_section_object_mapping.items():
+                    if hasattr(section, feature):
+                        attribute = {'value': getattr(section, feature)}
+                        attribute.update(mapping)
+                        section_object.add_attribute(**attribute)
+                if hasattr(section, 'hashes'):
+                    for hash_type, hash_value in section.hashes.items():
+                        attribute = {'value': hash_value}
+                        attribute.update(self._mapping.file_hashes_object_mapping[hash_type])
+                        section_object.add_attribute(**attribute)
+                self._add_misp_object(section_object)
+                pe_object.add_reference(section_object.uuid, 'includes')
+        self._add_misp_object(pe_object)
+        return pe_object.uuid
+
     def _object_from_file_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('file', observed_data)
         observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
@@ -905,10 +947,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 continue
             if hasattr(observable, 'hashes'):
                 for hash_type, value in observable.hashes.items():
-                    if hash_type in self._mapping.file_hashes_object_mapping:
-                        attribute = {'value': value}
-                        attribute.update(self._mapping.file_hashes_object_mapping[hash_type])
-                        misp_object.add_attribute(**attribute)
+                    attribute = {'value': value}
+                    attribute.update(self._mapping.file_hashes_object_mapping[hash_type])
+                    misp_object.add_attribute(**attribute)
             for feature, mapping in self._mapping.file_observable_object_mapping.items():
                 if hasattr(observable, feature):
                     self._populate_object_attributes_with_data(
@@ -950,6 +991,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 if hasattr(artifact, 'id'):
                     attribute['uuid'] = artifact.id.split('--')[1]
                 misp_object.add_attribute(**attribute)
+            if hasattr(observable, 'extensions') and 'windows-pebinary-ext' in observable.extensions:
+                pe_uuid = self._object_from_file_extension_observable(
+                    observable.extensions['windows-pebinary-ext'],
+                    misp_object.timestamp
+                )
+                misp_object.add_reference(pe_uuid, 'includes')
             self._add_misp_object(misp_object)
 
     def _object_from_file_observable_v20(self, observed_data: ObservedData_v20):
@@ -1216,14 +1263,54 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
+    def _object_from_file_extension_pattern(self, extension: dict, timestamp: datetime) -> str:
+        pe_object = self._create_misp_object('pe')
+        pe_object.timestamp = timestamp
+
+        if 'address_of_entry_point' in extension['pe']:
+            pe_object.add_attribute(
+                **{
+                    'type': 'text',
+                    'object_relation': 'entrypoint-address',
+                    'value': extension['pe']['address_of_entry_point']
+                }
+            )
+        for feature, value in extension['pe'].items():
+            if feature in self._mapping.pe_object_mapping:
+                attribute = {'value': value}
+                attribute.update(self._mapping.pe_object_mapping[feature])
+                pe_object.add_attribute(**attribute)
+        for section in extension.get('sections').values():
+            section_object = self._create_misp_object('pe-section')
+            section_object.timestamp = timestamp
+            for feature, value in section.items():
+                attribute = {'value': value}
+                if feature in self._mapping.pe_section_object_mapping:
+                    attribute.update(self._mapping.pe_section_object_mapping[feature])
+                else:
+                    attribute.update(self._mapping.file_hashes_object_mapping[feature])
+                section_object.add_attribute(**attribute)
+            self._add_misp_object(section_object)
+            pe_object.add_reference(section_object.uuid, 'includes')
+        self._add_misp_object(pe_object)
+        return pe_object.uuid
+
     def _object_from_file_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('file', indicator)
         mapping = self._mapping.file_indicator_object_mapping
         attachment: dict
         attachments: list = []
+        extension: defaultdict = defaultdict(lambda: defaultdict(dict))
         in_attachment: bool = False
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
+            if "extensions.'windows-pebinary-ext'." in feature:
+                if '.sections[' in feature:
+                    parsed = feature.split('.')[2:]
+                    extension['sections'][parsed[0][-2]][parsed[-1]] = value
+                else:
+                    extension['pe'][feature.split('.')[-1]] = value
+                continue
             if pattern.startswith('('):
                 attachment = {feature: value}
                 in_attachment = True
@@ -1261,6 +1348,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                         }
                     )
                 misp_object.add_attribute(**attribute)
+        if extension:
+            pe_uuid = self._object_from_file_extension_pattern(
+                extension,
+                misp_object.timestamp
+            )
+            misp_object.add_reference(pe_uuid, 'includes')
         self._add_misp_object(misp_object)
 
     def _object_from_facebook_account_indicator(self, indicator: _INDICATOR_TYPING):

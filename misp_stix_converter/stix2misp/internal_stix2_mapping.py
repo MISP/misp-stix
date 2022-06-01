@@ -625,14 +625,17 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'AUTHENTIHASH': authentihash_attribute,
                 'IMPHASH': imphash_attribute,
                 'MD5': md5_attribute,
+                'SHA1': sha1_attribute,
                 'SHA-1': sha1_attribute,
                 'SHA224': sha224_attribute,
+                'SHA256': sha256_attribute,
                 'SHA-256': sha256_attribute,
                 'SHA3224': sha3_224_attribute,
                 'SHA3-256': sha3_256_attribute,
                 'SHA3384': sha3_384_attribute,
                 'SHA3-512': sha3_512_attribute,
                 'SHA384': sha384_attribute,
+                'SHA512': sha512_attribute,
                 'SHA-512': sha512_attribute,
                 'ssdeep': ssdeep_attribute,
                 'SSDEEP': ssdeep_attribute,
@@ -790,6 +793,40 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_profile_photo = {'type': 'attachment', 'object_relation': 'profile-photo'},
             x_misp_url = url_attribute,
             x_misp_verified = {'type': 'boolean', 'object_relation': 'verified'},
+        )
+        self.__pe_object_mapping = Mapping(
+            imphash = imphash_attribute,
+            number_of_sections = {'type': 'counter', 'object_relation': 'number-sections'},
+            pe_type = {'type': 'text', 'object_relation': 'type'},
+            x_misp_authentihash = authentihash_attribute,
+            x_misp_company_name = {'type': 'text', 'object_relation': 'company-name'},
+            x_misp_compilation_timestamp = compilation_timestamp_attribute,
+            x_misp_entrypoint_section_at_position = {
+                'type': 'text',
+                'object_relation': 'entrypoint-section-at-position'
+            },
+            x_misp_file_description = {'type': 'text', 'object_relation': 'file-description'},
+            x_misp_file_version = {'type': 'text', 'object_relation': 'file-version'},
+            x_misp_impfuzzy = {'type': 'impfuzzy', 'object_relation': 'impfuzzy'},
+            x_misp_internal_filename = {'type': 'filename', 'object_relation': 'internal-filename'},
+            x_misp_lang_id = {'type': 'text', 'object_relation': 'lang-id'},
+            x_misp_legal_copyright = {'type': 'text', 'object_relation': 'legal-copyright'},
+            x_misp_original_filename = {'type': 'filename', 'object_relation': 'original-filename'},
+            x_misp_pehash = {'type': 'pehash', 'object_relation': 'pehash'},
+            x_misp_product_name = {'type': 'text', 'object_relation': 'product-name'},
+            x_misp_product_version = {'type': 'text', 'object_relation': 'product-version'},
+            x_misp_richpe = {'type': 'md5', 'object_relation': 'richpe'},
+            x_misp_text = text_attribute
+        )
+        self.__pe_section_object_mapping = Mapping(
+            entropy = entropy_attribute,
+            name = name_attribute,
+            size = size_in_bytes_attribute,
+            x_misp_characteristic = {'type': 'text', 'object_relation': 'characteristic'},
+            x_misp_offset = {'type': 'hex', 'object_relation': 'offset'},
+            x_misp_text = text_attribute,
+            x_misp_virtual_address = {'type': 'hex', 'object_relation': 'virtual_address'},
+            x_misp_virtual_size = {'type': 'size-in-bytes', 'object_relation': 'virtual_size'}
         )
         self.__reddit_account_object_mapping = Mapping(
             user_id = account_id_attribute,
@@ -1021,6 +1058,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def parler_account_object_mapping(self) -> dict:
         return self.__parler_account_object_mapping
+
+    @property
+    def pe_object_mapping(self) -> dict:
+        return self.__pe_object_mapping
+
+    @property
+    def pe_section_object_mapping(self) -> dict:
+        return self.__pe_section_object_mapping
 
     @property
     def reddit_account_object_mapping(self) -> dict:
