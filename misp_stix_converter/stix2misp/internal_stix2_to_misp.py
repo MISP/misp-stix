@@ -906,7 +906,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_file_extension_observable(self, extension: _EXTENSION_TYPING,
                                                timestamp: datetime) -> str:
         pe_object = self._create_misp_object('pe')
-        pe_object.timestamp = timestamp
+        pe_object.timestamp = self._timestamp_from_date(timestamp)
         if hasattr(extension, 'optional_header'):
             pe_object.add_attribute(
                 **{
@@ -923,7 +923,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if hasattr(extension, 'sections'):
             for section in extension.sections:
                 section_object = self._create_misp_object('pe-section')
-                section_object.timestamp = timestamp
+                section_object.timestamp = self._timestamp_from_date(timestamp)
                 for feature, mapping in self._mapping.pe_section_object_mapping.items():
                     if hasattr(section, feature):
                         attribute = {'value': getattr(section, feature)}
@@ -994,7 +994,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             if hasattr(observable, 'extensions') and 'windows-pebinary-ext' in observable.extensions:
                 pe_uuid = self._object_from_file_extension_observable(
                     observable.extensions['windows-pebinary-ext'],
-                    misp_object.timestamp
+                    observed_data.modified
                 )
                 misp_object.add_reference(pe_uuid, 'includes')
             self._add_misp_object(misp_object)
@@ -1265,8 +1265,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _object_from_file_extension_pattern(self, extension: dict, timestamp: datetime) -> str:
         pe_object = self._create_misp_object('pe')
-        pe_object.timestamp = timestamp
-
+        pe_object.timestamp = self._timestamp_from_date(timestamp)
         if 'address_of_entry_point' in extension['pe']:
             pe_object.add_attribute(
                 **{
@@ -1282,7 +1281,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 pe_object.add_attribute(**attribute)
         for section in extension.get('sections').values():
             section_object = self._create_misp_object('pe-section')
-            section_object.timestamp = timestamp
+            section_object.timestamp = self._timestamp_from_date(timestamp)
             for feature, value in section.items():
                 attribute = {'value': value}
                 if feature in self._mapping.pe_section_object_mapping:
@@ -1351,7 +1350,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if extension:
             pe_uuid = self._object_from_file_extension_pattern(
                 extension,
-                misp_object.timestamp
+                indicator.modified
             )
             misp_object.add_reference(pe_uuid, 'includes')
         self._add_misp_object(misp_object)
@@ -1548,7 +1547,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if isinstance(values, list):
             for value in values:
                 if isinstance(value, dict):
-                    attribute = deepcopy(value) if isinstance(values, dict) else {'value': values}
+                    attribute = deepcopy(value) if isinstance(value, dict) else {'value': value}
                     attribute.update(mapping)
                     misp_object.add_attribute(**attribute)
         else:
