@@ -1782,6 +1782,80 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             identity = identity
         )
 
+    def test_stix21_bundle_with_file_and_pe_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_file_and_pe_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        section_object, pe_object, file_object = self._check_misp_event_features_from_grouping(event, grouping)
+        file_pattern, pe_pattern, section_pattern = self._get_parsed_file_and_pe_pattern(
+            self._check_indicator_object(file_object, indicator)
+        )
+        self.assertEqual(pe_object.name, 'pe')
+        self.assertEqual(
+            pe_object.timestamp,
+            self._timestamp_from_datetime(indicator.modified)
+        )
+        self.assertEqual(section_object.name, 'pe-section')
+        self.assertEqual(
+            section_object.timestamp,
+            self._timestamp_from_datetime(indicator.modified)
+        )
+        self._check_single_file_indicator_object(file_object.attributes, file_pattern)
+        self._check_pe_indicator_object(pe_object.attributes, pe_pattern)
+        self._check_pe_section_indicator_object(section_object.attributes, section_pattern)
+        self._populate_documentation(
+            misp_object = [
+                json.loads(file_object.to_json()),
+                json.loads(pe_object.to_json()),
+                json.loads(section_object.to_json())
+            ],
+            indicator = indicator,
+            name = 'File object with a Windows PE binary extension',
+            summary = 'File object with a Windows PE binary extension'
+        )
+
+    def test_stix21_bundle_with_file_and_pe_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_file_and_pe_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, observable = bundle.objects
+        section_object, pe_object, file_object = self._check_misp_event_features_from_grouping(event, grouping)
+        file_ref = self._check_observed_data_object(file_object, observed_data)[0]
+        self._assert_multiple_equal(
+            file_object.uuid,
+            observable.id.split('--')[1],
+            file_ref.split('--')[1]
+        )
+        self.assertEqual(pe_object.name, 'pe')
+        self.assertEqual(
+            pe_object.timestamp,
+            self._timestamp_from_datetime(observed_data.modified)
+        )
+        self.assertEqual(section_object.name, 'pe-section')
+        self.assertEqual(
+            section_object.timestamp,
+            self._timestamp_from_datetime(observed_data.modified)
+        )
+        self._check_file_and_pe_observable_object(
+            file_object.attributes,
+            pe_object.attributes,
+            section_object.attributes,
+            observable
+        )
+        self._populate_documentation(
+            misp_object = [
+                json.loads(file_object.to_json()),
+                json.loads(pe_object.to_json()),
+                json.loads(section_object.to_json())
+            ],
+            observed_data = [observed_data, observable],
+            name = 'File object with a Windows PE binary extension',
+            summary = 'File object with a Windows PE binary extension'
+        )
+
     def test_stix21_bundle_with_file_indicator_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_file_indicator_object()
         self.parser.load_stix_bundle(bundle)

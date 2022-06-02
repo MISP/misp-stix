@@ -1384,6 +1384,89 @@ _EMPLOYEE_OBJECT = {
     ],
     "x_misp_employee_type": "Supervisor"
 }
+_FILE_AND_PE_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5ac47782-e1b8-40b6-96b4-02510a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.SHA256 = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:x_misp_entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_compilation_timestamp = '2019-03-16T12:31:22' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'windows-pebinary-ext'.x_misp_file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'windows-pebinary-ext'.x_misp_lang_id = '080904B0' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.x_misp_product_version = 'Release 0.71' AND file:extensions.'windows-pebinary-ext'.x_misp_company_name = 'Simoe Tatham' AND file:extensions.'windows-pebinary-ext'.x_misp_legal_copyright = 'Copyright \u00a9 1997-2019 Simon Tatham.' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA1 = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA256 = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA512 = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "file"
+        }
+    ],
+    "labels": [
+        "misp:name=\"file\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_FILE_AND_PE_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--5ac47782-e1b8-40b6-96b4-02510a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "file",
+            "hashes": {
+                "MD5": "b2a5abfeef9e36964281a31e17b57c97",
+                "SHA-1": "5898fc860300e228dcd54c0b1045b5fa0dcda502",
+                "SHA-256": "3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8"
+            },
+            "size": 1234,
+            "name": "oui",
+            "extensions": {
+                "windows-pebinary-ext": {
+                    "pe_type": "exe",
+                    "imphash": "23ea835ab4b9017c74dfb023d2301c99",
+                    "number_of_sections": 8,
+                    "optional_header": {
+                        "address_of_entry_point": 5369222868
+                    },
+                    "sections": [
+                        {
+                            "name": ".rsrc",
+                            "size": 305152,
+                            "entropy": 7.836462238824369,
+                            "hashes": {
+                                "MD5": "8a2a5fc2ce56b3b04d58539a95390600",
+                                "SHA-1": "0aeb9def096e9f73e9460afe6f8783a32c7eabdf",
+                                "SHA-256": "c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b",
+                                "SHA-512": "98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f",
+                                "ssdeep": "6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK"
+                            }
+                        }
+                    ],
+                    "x_misp_company_name": "Simoe Tatham",
+                    "x_misp_compilation_timestamp": "2019-03-16T12:31:22",
+                    "x_misp_file_description": "SSH, Telnet and Rlogin client",
+                    "x_misp_file_version": "Release 0.71 (with embedded help)",
+                    "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
+                    "x_misp_internal_filename": "PuTTy",
+                    "x_misp_lang_id": "080904B0",
+                    "x_misp_legal_copyright": "Copyright \u00a9 1997-2019 Simon Tatham.",
+                    "x_misp_original_filename": "PuTTy",
+                    "x_misp_product_name": "PuTTy suite",
+                    "x_misp_product_version": "Release 0.71"
+                }
+            },
+            "x_misp_entropy": "1.234"
+        }
+    },
+    "labels": [
+        "misp:name=\"file\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _FILE_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--5e384ae7-672c-4250-9cda-3b4da964451a",
@@ -4241,6 +4324,14 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_employee_object(cls):
         return cls.__assemble_bundle(_EMPLOYEE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_file_and_pe_indicator_object(cls):
+        return cls.__assemble_bundle(_FILE_AND_PE_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_file_and_pe_observable_object(cls):
+        return cls.__assemble_bundle(_FILE_AND_PE_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_file_indicator_object(cls):

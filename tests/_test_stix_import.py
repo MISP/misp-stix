@@ -451,6 +451,107 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             observable.x_misp_user_avatar['data']
         )
 
+    def _check_file_and_pe_observable_object(self, file_attributes, pe_attributes, section_attributes, observable):
+        self.assertEqual(len(file_attributes), 6)
+        md5, sha1, sha256, filename, size, entropy = file_attributes
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, observable.hashes['MD5'])
+        self.assertEqual(sha1.type, 'sha1')
+        self.assertEqual(sha1.object_relation, 'sha1')
+        self.assertEqual(sha1.value, observable.hashes['SHA-1'])
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, observable.hashes['SHA-256'])
+        self.assertEqual(filename.type, 'filename')
+        self.assertEqual(filename.object_relation, 'filename')
+        self.assertEqual(filename.value, observable.name)
+        self.assertEqual(size.type, 'size-in-bytes')
+        self.assertEqual(size.object_relation, 'size-in-bytes')
+        self.assertEqual(size.value, observable.size)
+        self.assertEqual(entropy.type, 'float')
+        self.assertEqual(entropy.object_relation, 'entropy')
+        self.assertEqual(entropy.value, observable.x_misp_entropy)
+        self.assertEqual(len(pe_attributes), 15)
+        entrypoint, imphash, number, pe_type, company_name, compilation, description, file_version, impfuzzy, internal, lang_id, legal, original, name, product_version = pe_attributes
+        extension = observable.extensions['windows-pebinary-ext']
+        self.assertEqual(entrypoint.type, 'text')
+        self.assertEqual(entrypoint.object_relation, 'entrypoint-address')
+        self.assertEqual(entrypoint.value, extension.optional_header['address_of_entry_point'])
+        self.assertEqual(imphash.type, 'imphash')
+        self.assertEqual(imphash.object_relation, 'imphash')
+        self.assertEqual(imphash.value, extension.imphash)
+        self.assertEqual(number.type, 'counter')
+        self.assertEqual(number.object_relation, 'number-sections')
+        self.assertEqual(number.value, extension.number_of_sections)
+        self.assertEqual(pe_type.type, 'text')
+        self.assertEqual(pe_type.object_relation, 'type')
+        self.assertEqual(pe_type.value, extension.pe_type)
+        self.assertEqual(company_name.type, 'text')
+        self.assertEqual(company_name.object_relation, 'company-name')
+        self.assertEqual(company_name.value, extension.x_misp_company_name)
+        self.assertEqual(compilation.type, 'datetime')
+        self.assertEqual(compilation.object_relation, 'compilation-timestamp')
+        self.assertEqual(
+            self._datetime_to_str(compilation.value),
+            extension.x_misp_compilation_timestamp
+        )
+        self.assertEqual(description.type, 'text')
+        self.assertEqual(description.object_relation, 'file-description')
+        self.assertEqual(description.value, extension.x_misp_file_description)
+        self.assertEqual(file_version.type, 'text')
+        self.assertEqual(file_version.object_relation, 'file-version')
+        self.assertEqual(file_version.value, extension.x_misp_file_version)
+        self.assertEqual(impfuzzy.type, 'impfuzzy')
+        self.assertEqual(impfuzzy.object_relation, 'impfuzzy')
+        self.assertEqual(impfuzzy.value, extension.x_misp_impfuzzy)
+        self.assertEqual(internal.type, 'filename')
+        self.assertEqual(internal.object_relation, 'internal-filename')
+        self.assertEqual(internal.value, extension.x_misp_internal_filename)
+        self.assertEqual(lang_id.type, 'text')
+        self.assertEqual(lang_id.object_relation, 'lang-id')
+        self.assertEqual(lang_id.value, extension.x_misp_lang_id)
+        self.assertEqual(legal.type, 'text')
+        self.assertEqual(legal.object_relation, 'legal-copyright')
+        self.assertEqual(legal.value, extension.x_misp_legal_copyright)
+        self.assertEqual(original.type, 'filename')
+        self.assertEqual(original.object_relation, 'original-filename')
+        self.assertEqual(original.value, extension.x_misp_original_filename)
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'product-name')
+        self.assertEqual(name.value, extension.x_misp_product_name)
+        self.assertEqual(product_version.type, 'text')
+        self.assertEqual(product_version.object_relation, 'product-version')
+        self.assertEqual(product_version.value, extension.x_misp_product_version)
+        self.assertEqual(len(section_attributes), 8)
+        entropy, name, size, md5, sha1, sha256, sha512, ssdeep = section_attributes
+        section = extension.sections[0]
+        self.assertEqual(entropy.type, 'float')
+        self.assertEqual(entropy.object_relation, 'entropy')
+        self.assertEqual(entropy.value, section.entropy)
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, section.name)
+        self.assertEqual(size.type, 'size-in-bytes')
+        self.assertEqual(size.object_relation, 'size-in-bytes')
+        self.assertEqual(size.value, section.size)
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, section.hashes['MD5'])
+        self.assertEqual(sha1.type, 'sha1')
+        self.assertEqual(sha1.object_relation, 'sha1')
+        self.assertEqual(sha1.value, section.hashes['SHA-1'])
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, section.hashes['SHA-256'])
+        self.assertEqual(sha512.type, 'sha512')
+        self.assertEqual(sha512.object_relation, 'sha512')
+        self.assertEqual(sha512.value, section.hashes['SHA-512'])
+        self.assertEqual(ssdeep.type, 'ssdeep')
+        self.assertEqual(ssdeep.object_relation, 'ssdeep')
+        feature = 'SSDEEP' if 'SSDEEP' in section.hashes else 'ssdeep'
+        self.assertEqual(ssdeep.value, section.hashes[feature])
+
     def _check_file_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 9)
         md5, sha1, sha256, filename, encoding, size_in_bytes, _path, malware_sample, attachment = attributes
@@ -708,6 +809,88 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             observable.x_misp_profile_photo['data']
         )
 
+    def _check_pe_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 15)
+        entrypoint, imphash, number, pe_type, compilation, original, internal, description, file_version, lang_id, name, product_version, company, legal, impfuzzy = attributes
+        IMPHASH, _number, _pe_type, address, _compilation, _original, _internal, _description, _file_version, _lang_id, _name, _product_version, _company, _legal, _impfuzzy = pattern
+        self.assertEqual(entrypoint.type, 'text')
+        self.assertEqual(entrypoint.object_relation, 'entrypoint-address')
+        self.assertEqual(entrypoint.value, self._get_pattern_value(address))
+        self.assertEqual(imphash.type, 'imphash')
+        self.assertEqual(imphash.object_relation, 'imphash')
+        self.assertEqual(imphash.value, self._get_pattern_value(IMPHASH))
+        self.assertEqual(number.type, 'counter')
+        self.assertEqual(number.object_relation, 'number-sections')
+        self.assertEqual(number.value, self._get_pattern_value(_number))
+        self.assertEqual(pe_type.type, 'text')
+        self.assertEqual(pe_type.object_relation, 'type')
+        self.assertEqual(pe_type.value, self._get_pattern_value(_pe_type))
+        self.assertEqual(compilation.type, 'datetime')
+        self.assertEqual(compilation.object_relation, 'compilation-timestamp')
+        self.assertEqual(
+            self._datetime_to_str(compilation.value),
+            self._get_pattern_value(_compilation)
+        )
+        self.assertEqual(original.type, 'filename')
+        self.assertEqual(original.object_relation, 'original-filename')
+        self.assertEqual(original.value, self._get_pattern_value(_original))
+        self.assertEqual(internal.type, 'filename')
+        self.assertEqual(internal.object_relation, 'internal-filename')
+        self.assertEqual(internal.value, self._get_pattern_value(_internal))
+        self.assertEqual(description.type, 'text')
+        self.assertEqual(description.object_relation, 'file-description')
+        self.assertEqual(description.value, self._get_pattern_value(_description))
+        self.assertEqual(file_version.type, 'text')
+        self.assertEqual(file_version.object_relation, 'file-version')
+        self.assertEqual(file_version.value, self._get_pattern_value(_file_version))
+        self.assertEqual(lang_id.type, 'text')
+        self.assertEqual(lang_id.object_relation, 'lang-id')
+        self.assertEqual(lang_id.value, self._get_pattern_value(_lang_id))
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'product-name')
+        self.assertEqual(name.value, self._get_pattern_value(_name))
+        self.assertEqual(product_version.type, 'text')
+        self.assertEqual(product_version.object_relation, 'product-version')
+        self.assertEqual(product_version.value, self._get_pattern_value(_product_version))
+        self.assertEqual(company.type, 'text')
+        self.assertEqual(company.object_relation, 'company-name')
+        self.assertEqual(company.value, self._get_pattern_value(_company))
+        self.assertEqual(legal.type, 'text')
+        self.assertEqual(legal.object_relation, 'legal-copyright')
+        self.assertEqual(legal.value, self._get_pattern_value(_legal))
+        self.assertEqual(impfuzzy.type, 'impfuzzy')
+        self.assertEqual(impfuzzy.object_relation, 'impfuzzy')
+        self.assertEqual(impfuzzy.value, self._get_pattern_value(_impfuzzy))
+
+    def _check_pe_section_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 8)
+        entropy, name, size_in_bytes, md5, sha1, sha256, sha512, ssdeep = attributes
+        _entropy, _name, size, MD5, SHA1, SHA256, SHA512, SSDEEP = pattern
+        self.assertEqual(entropy.type, 'float')
+        self.assertEqual(entropy.object_relation, 'entropy')
+        self.assertEqual(entropy.value, self._get_pattern_value(_entropy))
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, self._get_pattern_value(_name))
+        self.assertEqual(size_in_bytes.type, 'size-in-bytes')
+        self.assertEqual(size_in_bytes.object_relation, 'size-in-bytes')
+        self.assertEqual(size_in_bytes.value, self._get_pattern_value(size))
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, self._get_pattern_value(MD5))
+        self.assertEqual(sha1.type, 'sha1')
+        self.assertEqual(sha1.object_relation, 'sha1')
+        self.assertEqual(sha1.value, self._get_pattern_value(SHA1))
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, self._get_pattern_value(SHA256))
+        self.assertEqual(sha512.type, 'sha512')
+        self.assertEqual(sha512.object_relation, 'sha512')
+        self.assertEqual(sha512.value, self._get_pattern_value(SHA512))
+        self.assertEqual(ssdeep.type, 'ssdeep')
+        self.assertEqual(ssdeep.object_relation, 'ssdeep')
+        self.assertEqual(ssdeep.value, self._get_pattern_value(SSDEEP))
+
     def _check_reddit_account_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)
         user_id, account_login, description, avatar_data, avatar_value = pattern[1:-1].split(' AND ')[1:]
@@ -768,6 +951,29 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             stix_object.x_misp_script_as_attachment['data']
         )
         return language, state
+
+    def _check_single_file_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 6)
+        md5, sha1, sha256, filename, size_in_bytes, entropy = attributes
+        MD5, SHA1, SHA256, name, size, x_misp_entropy = pattern
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, self._get_pattern_value(MD5))
+        self.assertEqual(sha1.type, 'sha1')
+        self.assertEqual(sha1.object_relation, 'sha1')
+        self.assertEqual(sha1.value, self._get_pattern_value(SHA1))
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, self._get_pattern_value(SHA256))
+        self.assertEqual(filename.type, 'filename')
+        self.assertEqual(filename.object_relation, 'filename')
+        self.assertEqual(filename.value, self._get_pattern_value(name))
+        self.assertEqual(size_in_bytes.type, 'size-in-bytes')
+        self.assertEqual(size_in_bytes.object_relation, 'size-in-bytes')
+        self.assertEqual(size_in_bytes.value, self._get_pattern_value(size))
+        self.assertEqual(entropy.type, 'float')
+        self.assertEqual(entropy.object_relation, 'entropy')
+        self.assertEqual(entropy.value, self._get_pattern_value(x_misp_entropy))
 
     def _check_telegram_account_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)
@@ -960,6 +1166,21 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             identifier, value = pattern.split(' = ')
             email_pattern[identifier.split(':')[1]].append(value.strip("'"))
         return {key: value[0] if len(value) == 1 else value for key, value in email_pattern.items()}
+
+    @staticmethod
+    def _get_parsed_file_and_pe_pattern(full_pattern):
+        file_pattern = []
+        pe_pattern = []
+        section_pattern = []
+        for pattern in full_pattern[1:-1].split(' AND '):
+            if ":extensions.'windows-pebinary-ext'." in pattern:
+                if '.sections[' in pattern:
+                    section_pattern.append(pattern)
+                else:
+                    pe_pattern.append(pattern)
+            else:
+                file_pattern.append(pattern)
+        return file_pattern, pe_pattern, section_pattern
 
     @staticmethod
     def _get_parsed_file_pattern(full_pattern):
