@@ -215,7 +215,7 @@ class ObjectsDocumentationUpdater(DocumentationUpdater):
             if isinstance(mapping['MISP'], list):
                 for misp_object in mapping['MISP']:
                     for attribute in misp_object['Attribute']:
-                        if 'data' in attribute and len(attribute['data']) > 51:
+                        if 'data' in attribute and attribute['data'] is not None and len(attribute['data']) > 51:
                             self._replace_data(attribute, name, mapping['STIX'])
             else:
                 for attribute in mapping['MISP']['Attribute']:
