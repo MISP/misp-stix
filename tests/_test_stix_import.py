@@ -84,9 +84,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
 
     def _check_indicator_object(self, misp_object, indicator):
         self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
-        self._assert_multiple_equal(
+        self.assertEqual(
             misp_object.timestamp,
-            self._timestamp_from_datetime(indicator.created),
             self._timestamp_from_datetime(indicator.modified)
         )
         self._check_object_labels(misp_object, indicator.labels, True)
