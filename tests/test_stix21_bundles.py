@@ -3638,6 +3638,66 @@ _HTTP_INDICATOR_ATTRIBUTES = [
         ]
     }
 ]
+_IMAGE_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--939b2f03-c487-4f62-a90e-cab7acfee294",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "file"
+        }
+    ],
+    "labels": [
+        "misp:name=\"image\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_IMAGE_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--939b2f03-c487-4f62-a90e-cab7acfee294",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--939b2f03-c487-4f62-a90e-cab7acfee294",
+            "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:name=\"image\"",
+            "misp:meta-category=\"file\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--939b2f03-c487-4f62-a90e-cab7acfee294",
+        "name": "STIX.png",
+        "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "x_misp_image_text": "STIX"
+    },
+    {
+        "type": "artifact",
+        "spec_version": "2.1",
+        "id": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "mime_type": "image/png",
+        "x_misp_filename": "STIX.png",
+        "x_misp_url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+    }
+]
 _IP_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
@@ -5301,6 +5361,28 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_geolocation_object(cls):
         return cls.__assemble_bundle(_GEOLOCATION_OBJECT)
+
+    @classmethod
+    def get_bundle_with_image_indicator_object(cls):
+        indicator = deepcopy(_IMAGE_INDICATOR_OBJECT)
+        with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
+            pattern = [
+                "file:name = 'STIX.png'",
+                f"file:content_ref.payload_bin = '{b64encode(f.read()).decode()}'",
+                "file:content_ref.mime_type = 'image/png'",
+                "file:content_ref.x_misp_filename = 'STIX.png'",
+                "file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png'",
+                "file:x_misp_image_text = 'STIX'"
+            ]
+        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(indicator)
+
+    @classmethod
+    def get_bundle_with_image_observable_object(cls):
+        observables = deepcopy(_IMAGE_OBSERVABLE_OBJECT)
+        with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
+            observables[-1]['payload_bin'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(*observables)
 
     @classmethod
     def get_bundle_with_legal_entity_object(cls):

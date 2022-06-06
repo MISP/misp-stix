@@ -2996,6 +2996,54 @@ _HTTP_INDICATOR_ATTRIBUTES = [
         ]
     }
 ]
+_IMAGE_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--939b2f03-c487-4f62-a90e-cab7acfee294",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "file"
+        }
+    ],
+    "labels": [
+        "misp:name=\"image\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_IMAGE_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--939b2f03-c487-4f62-a90e-cab7acfee294",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "file",
+            "name": "STIX.png",
+            "content_ref": "1",
+            "x_misp_image_text": "STIX"
+        },
+        "1": {
+            "type": "artifact",
+            "mime_type": "image/png",
+            "x_misp_filename": "STIX.png",
+            "x_misp_url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
+        }
+    },
+    "labels": [
+        "misp:name=\"image\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _IP_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
@@ -4360,6 +4408,28 @@ class TestSTIX20Bundles:
         observed_data = deepcopy(_FILE_OBSERVABLE_OBJECT)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             observed_data['objects']['2']['payload_bin'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(observed_data)
+
+    @classmethod
+    def get_bundle_with_image_indicator_object(cls):
+        indicator = deepcopy(_IMAGE_INDICATOR_OBJECT)
+        with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
+            pattern = [
+                "file:name = 'STIX.png'",
+                f"file:content_ref.payload_bin = '{b64encode(f.read()).decode()}'",
+                "file:content_ref.mime_type = 'image/png'",
+                "file:content_ref.x_misp_filename = 'STIX.png'",
+                "file:content_ref.url = 'https://oasis-open.github.io/cti-documentation/img/STIX.png'",
+                "file:x_misp_image_text = 'STIX'"
+            ]
+        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(indicator)
+
+    @classmethod
+    def get_bundle_with_image_observable_object(cls):
+        observed_data = deepcopy(_IMAGE_OBSERVABLE_OBJECT)
+        with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
+            observed_data['objects']['1']['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(observed_data)
 
     @classmethod
