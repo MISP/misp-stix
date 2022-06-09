@@ -765,8 +765,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__news_agency_object_mapping = Mapping(
             name = name_attribute,
             x_misp_alias = alias_attribute,
-            x_misp_archive = {'type': 'link', 'object_relation': 'archive'},
-            x_misp_url = {'type': 'url', 'object_relation': 'url'}
+            x_misp_archive = archive_attribute,
+            x_misp_url = url_attribute
         )
         self.__organization_contact_information_mapping = Mapping(
             **{
