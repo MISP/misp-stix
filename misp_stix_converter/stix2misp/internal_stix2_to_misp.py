@@ -1017,6 +1017,60 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_gitlab_user_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_standard_observable(observed_data, 'gitlab-user', 'v21')
 
+    def _object_from_image_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('image', observed_data)
+        observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
+        for observable in observables.values():
+            if observable.type == 'file':
+                if hasattr(observable, 'name'):
+                    misp_object.add_attribute(
+                        **{
+                            'type': 'filename',
+                            'object_relation': 'filename',
+                            'value': observable.name
+                        }
+                    )
+            elif observable.type == 'artifact':
+                if hasattr(observable, 'payload_bin'):
+                    misp_object.add_attribute(
+                        **{
+                            'type': 'attachment',
+                            'object_relation': 'attachment',
+                            'value': observable.x_misp_filename,
+                            'data': observable.payload_bin
+                        }
+                    )
+                    if hasattr(observable, 'x_misp_url'):
+                        misp_object.add_attribute(
+                            **{
+                                'type': 'url',
+                                'object_relation': 'url',
+                                'value': observable.x_misp_url
+                            }
+                        )
+                elif hasattr(observable, 'url'):
+                    misp_object.add_attribute(
+                        **{
+                            'type': 'url',
+                            'object_relation': 'url',
+                            'value': observable.url
+                        }
+                    )
+                for feature, mapping in self._mapping.image_observable_object_mapping.items():
+                    if hasattr(observable, feature):
+                        self._populate_object_attributes(
+                            misp_object,
+                            mapping,
+                            getattr(observable, feature)
+                        )
+        self._add_misp_object(misp_object)
+
+    def _object_from_image_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_image_observable(observed_data, 'v20')
+
+    def _object_from_image_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_image_observable(observed_data, 'v21')
+
     def _object_from_parler_account_observable_v20(self, observed_data: ObservedData_v20):
         self._object_from_account_with_attachment_observable(observed_data, 'parler-account', 'v20')
 
@@ -1363,6 +1417,26 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _object_from_gitlab_user_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_indicator(indicator, 'gitlab-user')
+
+    def _object_from_image_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('image', indicator)
+        mapping = self._mapping.image_indicator_object_mapping
+        attachment = {'type': 'attachment', 'object_relation': 'attachment'}
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            if 'payload_bin' in feature:
+                attachment['data'] = value
+                continue
+            if 'x_misp_filename' in feature:
+                attachment['value'] = value
+                continue
+            if feature in mapping:
+                attribute = {'value': value}
+                attribute.update(mapping[feature])
+                misp_object.add_attribute(**attribute)
+        if 'data' in attachment or 'value' in attachment:
+            misp_object.add_attribute(**attachment)
+        self._add_misp_object(misp_object)
 
     def _object_from_parler_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'parler-account')

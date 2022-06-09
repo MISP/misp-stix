@@ -423,6 +423,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         from_display_name_attribute = {'type': 'email-src-display-name', 'object_relation': 'from-display-name'}
         from_domain_attribute = {'type': 'domain', 'object_relation': 'from-domain'}
         id_attribute = {'type': 'text', 'object_relation': 'id'}
+        image_text_attribute = {'type': 'text', 'object_relation': 'image-text'}
         imphash_attribute = {'type': 'imphash', 'object_relation': 'imphash'}
         ip_source_attribute = {'type': 'ip-src', 'object_relation': 'ip-src'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
@@ -721,6 +722,23 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_state = {'type': 'text', 'object_relation': 'state'},
             x_misp_web_url = {'type': 'link', 'object_relation': 'web_url'}
         )
+        self.__image_indicator_object_mapping = Mapping(
+            **{
+                'name': filename_attribute,
+                'content_ref.url': url_attribute,
+                'content_ref.x_misp_archive': archive_attribute,
+                'content_ref.x_misp_image_text': image_text_attribute,
+                'content_ref.x_misp_link': link_attribute,
+                'content_ref.x_misp_url': url_attribute,
+                'content_ref.x_misp_username': username_attribute
+            }
+        )
+        self.__image_observable_object_mapping = Mapping(
+            x_misp_archive = archive_attribute,
+            x_misp_image_text = image_text_attribute,
+            x_misp_link = link_attribute,
+            x_misp_username = username_attribute
+        )
         self.__legal_entity_contact_information_mapping = Mapping(
             **{
                 'phone-number': {'type': 'phone-number'},
@@ -1018,6 +1036,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def gitlab_user_object_mapping(self) -> dict:
         return self.__gitlab_user_object_mapping
+
+    @property
+    def image_indicator_object_mapping(self) -> dict:
+        return self.__image_indicator_object_mapping
+
+    @property
+    def image_observable_object_mapping(self) -> dict:
+        return self.__image_observable_object_mapping
 
     @property
     def indicator_attributes_mapping(self) -> dict:
