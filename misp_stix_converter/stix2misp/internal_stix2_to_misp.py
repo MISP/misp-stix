@@ -1022,24 +1022,24 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
         for observable in observables.values():
             if observable.type == 'file':
-                if hasattr(observable, 'name'):
-                    misp_object.add_attribute(
-                        **{
-                            'type': 'filename',
-                            'object_relation': 'filename',
-                            'value': observable.name
-                        }
-                    )
+                for feature, mapping in self._mapping.image_observable_object_mapping.items():
+                    if hasattr(observable, feature):
+                        self._populate_object_attributes(
+                            misp_object,
+                            mapping,
+                            getattr(observable, feature)
+                        )
             elif observable.type == 'artifact':
                 if hasattr(observable, 'payload_bin'):
-                    misp_object.add_attribute(
-                        **{
-                            'type': 'attachment',
-                            'object_relation': 'attachment',
-                            'value': observable.x_misp_filename,
-                            'data': observable.payload_bin
-                        }
-                    )
+                    attribute = {
+                        'type': 'attachment',
+                        'object_relation': 'attachment',
+                        'value': observable.x_misp_filename,
+                        'data': observable.payload_bin
+                    }
+                    if hasattr(observable, 'id'):
+                        attribute['uuid'] = observable.id.split('--')[1]
+                    misp_object.add_attribute(**attribute)
                     if hasattr(observable, 'x_misp_url'):
                         misp_object.add_attribute(
                             **{
@@ -1049,20 +1049,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                             }
                         )
                 elif hasattr(observable, 'url'):
-                    misp_object.add_attribute(
-                        **{
-                            'type': 'url',
-                            'object_relation': 'url',
-                            'value': observable.url
-                        }
-                    )
-                for feature, mapping in self._mapping.image_observable_object_mapping.items():
-                    if hasattr(observable, feature):
-                        self._populate_object_attributes(
-                            misp_object,
-                            mapping,
-                            getattr(observable, feature)
-                        )
+                    attribute = {
+                        'type': 'url',
+                        'object_relation': 'url',
+                        'value': observable.url
+                    }
+                    if hasattr(observable, 'id'):
+                        attribute['uuid'] = observable.id.split('--')[1]
+                    misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
     def _object_from_image_observable_v20(self, observed_data: ObservedData_v20):

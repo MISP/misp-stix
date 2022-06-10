@@ -726,14 +726,15 @@ class InternalSTIX2Mapping(STIX2Mapping):
             **{
                 'name': filename_attribute,
                 'content_ref.url': url_attribute,
-                'content_ref.x_misp_archive': archive_attribute,
-                'content_ref.x_misp_image_text': image_text_attribute,
-                'content_ref.x_misp_link': link_attribute,
                 'content_ref.x_misp_url': url_attribute,
-                'content_ref.x_misp_username': username_attribute
+                'x_misp_archive': archive_attribute,
+                'x_misp_image_text': image_text_attribute,
+                'x_misp_link': link_attribute,
+                'x_misp_username': username_attribute
             }
         )
         self.__image_observable_object_mapping = Mapping(
+            name = filename_attribute,
             x_misp_archive = archive_attribute,
             x_misp_image_text = image_text_attribute,
             x_misp_link = link_attribute,
