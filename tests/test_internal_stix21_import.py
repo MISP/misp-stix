@@ -1929,6 +1929,51 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             location = location
         )
 
+    def test_stix21_bundle_with_image_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_image_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        self._check_image_indicator_object(misp_object.attributes, pattern)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_image_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_image_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, file_object, artifact = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        file_ref, artifact_ref = self._check_observed_data_object(misp_object, observed_data)
+        self._assert_multiple_equal(
+            misp_object.uuid,
+            file_object.id.split('--')[1],
+            file_ref.split('--')[1]
+        )
+        print(misp_object.to_json(indent=4))
+        self._assert_multiple_equal(
+            misp_object.attributes[-2].uuid,
+            artifact.id.split('--')[1],
+            artifact_ref.split('--')[1]
+        )
+        self._check_image_observable_object(
+            misp_object.attributes,
+            {
+                file_object.id: file_object,
+                artifact.id: artifact
+            }
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = [observed_data, file_object, artifact]
+        )
+
     def test_stix21_bundle_with_legal_entity_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_legal_entity_object()
         self.parser.load_stix_bundle(bundle)

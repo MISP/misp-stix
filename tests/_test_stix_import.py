@@ -707,6 +707,43 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(username.object_relation, 'username')
         self.assertEqual(username.value, observable.account_login)
 
+    def _check_image_indicator_object(self, attributes, pattern):
+        name, payload_bin, _, x_misp_filename, x_misp_url, x_misp_image_text = pattern[1:-1].split(' AND ')
+        filename, url, image_text, attachment = attributes
+        self.assertEqual(filename.type, 'filename')
+        self.assertEqual(filename.object_relation, 'filename')
+        self.assertEqual(filename.value, self._get_pattern_value(name))
+        self.assertEqual(url.type, 'url')
+        self.assertEqual(url.object_relation, 'url')
+        self.assertEqual(url.value, self._get_pattern_value(x_misp_url))
+        self.assertEqual(image_text.type, 'text')
+        self.assertEqual(image_text.object_relation, 'image-text')
+        self.assertEqual(image_text.value, self._get_pattern_value(x_misp_image_text))
+        self.assertEqual(attachment.type, 'attachment')
+        self.assertEqual(attachment.object_relation, 'attachment')
+        self.assertEqual(attachment.value, self._get_pattern_value(x_misp_filename))
+        self.assertEqual(
+            self._get_data_value(attachment.data),
+            self._get_pattern_value(payload_bin)
+        )
+
+    def _check_image_observable_object(self, attributes, observables):
+        file_object, artifact = observables.values()
+        filename, image_text, attachment, url = attributes
+        self.assertEqual(filename.type, 'filename')
+        self.assertEqual(filename.object_relation, 'filename')
+        self.assertEqual(filename.value, file_object.name)
+        self.assertEqual(image_text.type, 'text')
+        self.assertEqual(image_text.object_relation, 'image-text')
+        self.assertEqual(image_text.value, file_object.x_misp_image_text)
+        self.assertEqual(attachment.type, 'attachment')
+        self.assertEqual(attachment.object_relation, 'attachment')
+        self.assertEqual(attachment.value, artifact.x_misp_filename)
+        self.assertEqual(self._get_data_value(attachment.data), artifact.payload_bin)
+        self.assertEqual(url.type, 'url')
+        self.assertEqual(url.object_relation, 'url')
+        self.assertEqual(url.value, artifact.x_misp_url)
+
     def _check_legal_entity_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
         self.assertEqual(misp_object.name, 'legal-entity')
