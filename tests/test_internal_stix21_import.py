@@ -1956,7 +1956,6 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             file_object.id.split('--')[1],
             file_ref.split('--')[1]
         )
-        print(misp_object.to_json(indent=4))
         self._assert_multiple_equal(
             misp_object.attributes[-2].uuid,
             artifact.id.split('--')[1],
