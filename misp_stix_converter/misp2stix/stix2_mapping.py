@@ -563,7 +563,8 @@ class Stix2Mapping:
         )
         self.__ip_port_single_fields = (
             'first-seen',
-            'last-seen'
+            'last-seen',
+            'protocol'
         )
         self.__legal_entity_contact_info_fields = (
             'phone-number',
