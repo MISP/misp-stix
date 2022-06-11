@@ -594,6 +594,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
 
     def _check_file_observable_object(self, attributes, observables):
+        self.assertEqual(len(attributes), 9)
         md5, sha1, sha256, filename, encoding, size_in_bytes, attachment, _path, malware_sample = attributes
         file_object, directory, artifact = observables.values()
         self.assertEqual(md5.type, 'md5')
@@ -708,6 +709,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(username.value, observable.account_login)
 
     def _check_image_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 4)
         name, payload_bin, _, x_misp_filename, x_misp_url, x_misp_image_text = pattern[1:-1].split(' AND ')
         filename, url, image_text, attachment = attributes
         self.assertEqual(filename.type, 'filename')
@@ -728,6 +730,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
 
     def _check_image_observable_object(self, attributes, observables):
+        self.assertEqual(len(attributes), 4)
         file_object, artifact = observables.values()
         filename, image_text, attachment, url = attributes
         self.assertEqual(filename.type, 'filename')
