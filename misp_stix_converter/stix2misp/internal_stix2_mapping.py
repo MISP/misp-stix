@@ -408,6 +408,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         comment_attribute = {'type': 'text', 'object_relation': 'comment'}
         compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
         description_attribute = {'type': 'text', 'object_relation': 'description'}
+        domain_attribute = {'type': 'domain', 'object_relation': 'domain'}
+        dst_port_attribute = {'type': 'port', 'object_relation': 'dst-port'}
         email_attachment_attribute = {'type': 'email-attachment', 'object_relation': 'attachment'}
         email_body_attribute = {'type': 'email-body', 'object_relation': 'email-body'}
         email_header_attribute = {'type': 'email-header', 'object_relation': 'header'}
@@ -422,6 +424,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         from_attribute = {'type': 'email-src', 'object_relation': 'from'}
         from_display_name_attribute = {'type': 'email-src-display-name', 'object_relation': 'from-display-name'}
         from_domain_attribute = {'type': 'domain', 'object_relation': 'from-domain'}
+        hostname_attribute = {'type': 'hostname', 'object_relation': 'hostname'}
         id_attribute = {'type': 'text', 'object_relation': 'id'}
         image_text_attribute = {'type': 'text', 'object_relation': 'image-text'}
         imphash_attribute = {'type': 'imphash', 'object_relation': 'imphash'}
@@ -458,6 +461,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         sha384_attribute = {'type': 'sha384', 'object_relation': 'sha384'}
         sha512_attribute = {'type': 'sha512', 'object_relation': 'sha512'}
         size_in_bytes_attribute = {'type': 'size-in-bytes', 'object_relation': 'size-in-bytes'}
+        src_port_attribute = {'type': 'port', 'object_relation': 'src-port'}
         ssdeep_attribute = {'type': 'ssdeep', 'object_relation': 'ssdeep'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
         subject_attribute = {'type': 'email-subject', 'object_relation': 'subject'}
@@ -534,7 +538,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__domain_ip_object_mapping = Mapping(
             value = {'type': 'domain', 'object_relation': 'domain'},
             x_misp_first_seen = {'type': 'datetime', 'object_relation': ''},
-            x_misp_hostname = {'type': 'hostname', 'object_relation': 'hostname'},
+            x_misp_hostname = hostname_attribute,
             x_misp_last_seen = {'type': 'datetime', 'object_relation': ''},
             x_misp_port = {'type': 'port', 'object_relation': 'port'},
             x_misp_registration_date = {'type': 'datetime', 'object_relation': ''},
@@ -739,6 +743,18 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_image_text = image_text_attribute,
             x_misp_link = link_attribute,
             x_misp_username = username_attribute
+        )
+        self.__ip_port_object_mapping = Mapping(
+            dst_port = dst_port_attribute,
+            src_port = src_port_attribute,
+            start = {'type': 'datetime', 'object_relation': 'first-seen'},
+            end = {'type': 'datetime', 'object_relation': 'last-seen'},
+            x_misp_AS = {'type': 'AS', 'object_relation': 'AS'},
+            x_misp_country_code = {'type': 'text', 'object_relation': 'country-code'},
+            x_misp_domain = domain_attribute,
+            x_misp_hostname = hostname_attribute,
+            x_misp_ip = {'type': 'ip-dst', 'object_relation': 'ip'},
+            x_misp_text = text_attribute
         )
         self.__legal_entity_contact_information_mapping = Mapping(
             **{
@@ -1049,6 +1065,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def indicator_attributes_mapping(self) -> dict:
         return self.__indicator_attributes_mapping
+
+    @property
+    def ip_port_object_mapping(self) -> dict:
+        return self.__ip_port_object_mapping
 
     @property
     def legal_entity_contact_information_mapping(self) -> dict:
