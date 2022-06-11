@@ -2544,8 +2544,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             file_args.update(self._handle_observable_multiple_properties(attributes))
         return file_args
 
-    def _parse_ip_port_args(self, attributes: dict) -> dict:
+    def _parse_ip_port_args(self, attributes: dict, protocols: set) -> dict:
         args = {}
+        if 'protocol' in attributes:
+            protocols.add(attributes.pop('protocol'))
+        args['protocols'] = list(protocols) if protocols else ['tcp']
         for key, feature in self._mapping.ip_port_object_mapping['features'].items():
             if attributes.get(key):
                 args[feature] = self._select_single_feature(attributes, key)

@@ -887,7 +887,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             force_single=self._mapping.ip_port_single_fields,
             with_uuid=self._mapping.ip_port_uuid_fields
         )
-        protocols = {'tcp'}
+        protocols = set()
         network_traffic_args = {
             'id': getattr(self, self._id_parsing_function['object'])(
                 'network-traffic',
@@ -909,9 +909,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     protocols.add(address_type._type.split('-')[0])
                 else:
                     attributes[feature] = [value[0] for value in attributes.pop(feature)]
-        network_traffic_args['protocols'] = protocols
         if attributes:
-            network_traffic_args.update(self._parse_ip_port_args(attributes))
+            network_traffic_args.update(self._parse_ip_port_args(attributes, protocols))
+        else:
+            network_traffic_args['protocols'] = list(protocols) if protocols else ['tcp']
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         self._handle_object_observable(misp_object, objects)
 

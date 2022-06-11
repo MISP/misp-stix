@@ -656,7 +656,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             misp_object['Attribute'],
             force_single=self._mapping.ip_port_single_fields
         )
-        protocols = {'tcp'}
+        protocols = set()
         observable_object = {}
         network_traffic_args: defaultdict = defaultdict(dict)
         index = 1
@@ -673,9 +673,10 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 if ref_type == 'dst_ref':
                     break
                 index += 1
-        network_traffic_args['protocols'] = protocols
         if attributes:
-            network_traffic_args.update(self._parse_ip_port_args(attributes))
+            network_traffic_args.update(self._parse_ip_port_args(attributes, protocols))
+        else:
+            network_traffic_args['protocols'] = list(protocols) if protocols else ['tcp']
         observable_object['0'] = NetworkTraffic(**network_traffic_args)
         self._handle_object_observable(misp_object, observable_object)
 
