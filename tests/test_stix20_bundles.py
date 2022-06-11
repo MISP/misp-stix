@@ -3188,6 +3188,26 @@ _IP_PORT_INDICATOR_ATTRIBUTES = [
         ]
     }
 ]
+_IP_PORT_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[(network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '443' AND network-traffic:start = '2020-10-25T16:22:00Z']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"ip-port\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
 _IP_PORT_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "observed-data",
@@ -3246,6 +3266,37 @@ _IP_PORT_OBSERVABLE_ATTRIBUTES = [
         ]
     }
 ]
+_IP_PORT_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "network-traffic",
+            "start": "2020-10-25T16:22:00Z",
+            "dst_ref": "1",
+            "dst_port": 443,
+            "protocols": [
+                "ipv4"
+            ],
+            "x_misp_domain": "circl.lu"
+        },
+        "1": {
+            "type": "ipv4-addr",
+            "value": "149.13.33.14"
+        }
+    },
+    "labels": [
+        "misp:name=\"ip-port\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _LEGAL_ENTITY_OBJECT = {
     "type": "identity",
     "id": "identity--0d55ba1f-c3ff-4b91-8a09-8713576e178b",
@@ -4431,6 +4482,14 @@ class TestSTIX20Bundles:
         with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
             observed_data['objects']['1']['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(observed_data)
+
+    @classmethod
+    def get_bundle_with_ip_port_indicator_object(cls):
+        return cls.__assemble_bundle(_IP_PORT_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_ip_port_observable_object(cls):
+        return cls.__assemble_bundle(_IP_PORT_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_legal_entity_object(cls):

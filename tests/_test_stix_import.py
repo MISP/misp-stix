@@ -747,6 +747,43 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(url.object_relation, 'url')
         self.assertEqual(url.value, artifact.x_misp_url)
 
+    def _check_ip_port_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 4)
+        _, ip_ref, _, domain_ref, dst_port, start = pattern[1:-1].split(' AND ')
+        ip_dst, domain, port, first_seen = attributes
+        self.assertEqual(ip_dst.type, 'ip-dst')
+        self.assertEqual(ip_dst.object_relation, 'ip-dst')
+        self.assertEqual(ip_dst.value, self._get_pattern_value(ip_ref[:-1]))
+        self.assertEqual(domain.type, 'domain')
+        self.assertEqual(domain.object_relation, 'domain')
+        self.assertEqual(domain.value, self._get_pattern_value(domain_ref[:-1]))
+        self.assertEqual(port.type, 'port')
+        self.assertEqual(port.object_relation, 'dst-port')
+        self.assertEqual(port.value, self._get_pattern_value(dst_port))
+        self.assertEqual(first_seen.type, 'datetime')
+        self.assertEqual(first_seen.object_relation, 'first-seen')
+        self.assertEqual(
+            self._datetime_to_str(first_seen.value),
+            self._get_pattern_value(start)[:-1]
+        )
+
+    def _check_ip_port_observable_object(self, attributes, observables):
+        self.assertEqual(len(attributes), 4)
+        ip_dst, port, first_seen, domain = attributes
+        network_traffic, address = observables.values()
+        self.assertEqual(ip_dst.type, 'ip-dst')
+        self.assertEqual(ip_dst.object_relation, 'ip-dst')
+        self.assertEqual(ip_dst.value, address.value)
+        self.assertEqual(port.type, 'port')
+        self.assertEqual(port.object_relation, 'dst-port')
+        self.assertEqual(port.value, network_traffic.dst_port)
+        self.assertEqual(first_seen.type, 'datetime')
+        self.assertEqual(first_seen.object_relation, 'first-seen')
+        self.assertEqual(first_seen.value, network_traffic.start)
+        self.assertEqual(domain.type, 'domain')
+        self.assertEqual(domain.object_relation, 'domain')
+        self.assertEqual(domain.value, network_traffic.x_misp_domain)
+
     def _check_legal_entity_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
         self.assertEqual(misp_object.name, 'legal-entity')
