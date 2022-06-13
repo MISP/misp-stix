@@ -3320,6 +3320,69 @@ _LEGAL_ENTITY_OBJECT = {
         "value": "umbrella_logo"
     }
 }
+_LNK_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--153ef8d5-9182-45ec-bf1c-5819932b9ab7",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "file"
+        }
+    ],
+    "labels": [
+        "misp:name=\"lnk\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_LNK_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--153ef8d5-9182-45ec-bf1c-5819932b9ab7",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "file",
+            "hashes": {
+                "MD5": "8764605c6f388c89096b534d33565802",
+                "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+            },
+            "size": 35,
+            "name": "oui",
+            "parent_directory_ref": "1",
+            "content_ref": "2",
+            "x_misp_lnk_access_time": "2021-01-01T00:00:00",
+            "x_misp_lnk_creation_time": "2017-10-01T08:00:00",
+            "x_misp_lnk_modification_time": "2020-10-25T16:22:00"
+        },
+        "1": {
+            "type": "directory",
+            "path": "/var/www/MISP/app/files/scripts/tmp"
+        },
+        "2": {
+            "type": "artifact",
+            "mime_type": "application/zip",
+            "hashes": {
+                "MD5": "8764605c6f388c89096b534d33565802"
+            },
+            "x_misp_filename": "oui"
+        }
+    },
+    "labels": [
+        "misp:name=\"lnk\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _MAC_ADDRESS_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -4497,6 +4560,35 @@ class TestSTIX20Bundles:
         with open(_TESTFILES_PATH / 'umbrella_logo.png', 'rb') as f:
             identity['x_misp_logo']['data'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(identity)
+
+    @classmethod
+    def get_bundle_with_lnk_indicator_object(cls):
+        indicator = deepcopy(_LNK_INDICATOR_OBJECT)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            pattern = [
+                "file:name = 'oui'",
+                "file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp'",
+                "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+                "file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86'",
+                "file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b'",
+                f"(file:content_ref.payload_bin = '{b64encode(f.read()).decode()}'",
+                "file:content_ref.x_misp_filename = 'oui'",
+                "file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802'",
+                "file:content_ref.mime_type = 'application/zip')",
+                "file:size = '35'",
+                "file:x_misp_lnk_creation_time = '2017-10-01T08:00:00'",
+                "file:x_misp_lnk_modification_time = '2020-10-25T16:22:00'",
+                "file:x_misp_lnk_access_time = '2021-01-01T00:00:00'"
+            ]
+        indicator['pattern'] = f"[{' AND '.join(pattern)}]"
+        return cls.__assemble_bundle(indicator)
+
+    @classmethod
+    def get_bundle_with_lnk_observable_object(cls):
+        observed_data = deepcopy(_LNK_OBSERVABLE_OBJECT)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            observed_data['objects']['2']['payload_bin'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(observed_data)
 
     @classmethod
     def get_bundle_with_news_agency_object(cls):

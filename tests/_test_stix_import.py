@@ -804,6 +804,91 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(logo.value, identity.x_misp_logo['value'])
         self.assertEqual(self._get_data_value(logo.data), identity.x_misp_logo['data'])
 
+    def _check_lnk_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 10)
+        atime, ctime,  mtime, name, dir_ref, MD5, SHA1, SHA256, payload_bin, x_misp_filename, content_md5, size = pattern
+        filename, path, md5, sha1, sha256, size_in_bytes, creation_time, modification_time, access_time, malware_sample = attributes
+        self.assertEqual(filename.type, 'filename')
+        self.assertEqual(filename.object_relation, 'filename')
+        self.assertEqual(filename.value, self._get_pattern_value(name))
+        self.assertEqual(path.type, 'text')
+        self.assertEqual(path.object_relation, 'path')
+        self.assertEqual(path.value, self._get_pattern_value(dir_ref))
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, self._get_pattern_value(MD5))
+        self.assertEqual(sha1.type, 'sha1')
+        self.assertEqual(sha1.object_relation, 'sha1')
+        self.assertEqual(sha1.value, self._get_pattern_value(SHA1))
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, self._get_pattern_value(SHA256))
+        self.assertEqual(size_in_bytes.type, 'size-in-bytes')
+        self.assertEqual(size_in_bytes.object_relation, 'size-in-bytes')
+        self.assertEqual(size_in_bytes.value, self._get_pattern_value(size))
+        self.assertEqual(creation_time.type, 'datetime')
+        self.assertEqual(creation_time.object_relation, 'lnk-creation-time')
+        self.assertEqual(
+            self._datetime_to_str(creation_time.value),
+            self._get_pattern_value(ctime)
+        )
+        self.assertEqual(modification_time.type, 'datetime')
+        self.assertEqual(modification_time.object_relation, 'lnk-modification-time')
+        self.assertEqual(
+            self._datetime_to_str(modification_time.value),
+            self._get_pattern_value(mtime)
+        )
+        self.assertEqual(access_time.type, 'datetime')
+        self.assertEqual(access_time.object_relation, 'lnk-access-time')
+        self.assertEqual(
+            self._datetime_to_str(access_time.value),
+            self._get_pattern_value(atime)
+        )
+        self.assertEqual(malware_sample.type, 'malware-sample')
+        self.assertEqual(malware_sample.object_relation, 'malware-sample')
+        self.assertEqual(
+            malware_sample.value,
+            f'{self._get_pattern_value(x_misp_filename)}|{self._get_pattern_value(content_md5)}'
+        )
+        self.assertEqual(
+            self._get_data_value(malware_sample.data),
+            self._get_pattern_value(payload_bin)
+        )
+
+    def _check_lnk_observable_object(self, attributes, observables):
+        self.assertEqual(len(attributes), 10)
+        md5, sha1, sha256, filename, atime, ctime, mtime, size, path, malware_sample = attributes
+        file_object, directory, artifact = observables.values()
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, file_object.hashes['MD5'])
+        self.assertEqual(sha1.type, 'sha1')
+        self.assertEqual(sha1.object_relation, 'sha1')
+        self.assertEqual(sha1.value, file_object.hashes['SHA-1'])
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, file_object.hashes['SHA-256'])
+        self.assertEqual(filename.type, 'filename')
+        self.assertEqual(filename.object_relation, 'filename')
+        self.assertEqual(filename.value, file_object.name)
+        self.assertEqual(size.type, 'size-in-bytes')
+        self.assertEqual(size.object_relation, 'size-in-bytes')
+        self.assertEqual(size.value, file_object.size)
+        self.assertEqual(path.type, 'text')
+        self.assertEqual(path.object_relation, 'path')
+        self.assertEqual(path.value, directory.path)
+        self.assertEqual(malware_sample.type, 'malware-sample')
+        self.assertEqual(malware_sample.object_relation, 'malware-sample')
+        self.assertEqual(
+            malware_sample.value,
+            f"{artifact.x_misp_filename}|{artifact.hashes['MD5']}"
+        )
+        self.assertEqual(
+            self._get_data_value(malware_sample.data),
+            artifact.payload_bin
+        )
+        return atime, ctime, mtime
+
     def _check_news_agency_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
         self.assertEqual(misp_object.name, 'news-agency')

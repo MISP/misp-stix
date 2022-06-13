@@ -1580,6 +1580,59 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             identity = identity
         )
 
+    def test_stix20_bundle_with_lnk_indicator_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_lnk_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        name, dir_ref, MD5, SHA1, SHA256, payload_bin, x_misp_filename, content_md5, _, size, ctime, mtime, atime = self._check_indicator_object(misp_object, indicator)[1:-1].split(' AND ')
+        self._check_lnk_indicator_object(
+            misp_object.attributes,
+            (
+                atime, ctime,  mtime, name, dir_ref, MD5, SHA1, SHA256, payload_bin,
+                x_misp_filename, content_md5, size
+            )
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_lnk_observable_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_lnk_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observables = self._check_observed_data_object(misp_object, observed_data)
+        atime, ctime, mtime = self._check_lnk_observable_object(misp_object.attributes, observables)
+        file_object = observed_data.objects['0']
+        self.assertEqual(atime.type, 'datetime')
+        self.assertEqual(atime.object_relation, 'lnk-access-time')
+        self.assertEqual(
+            self._datetime_to_str(atime.value),
+            file_object.x_misp_lnk_access_time
+        )
+        self.assertEqual(ctime.type, 'datetime')
+        self.assertEqual(ctime.object_relation, 'lnk-creation-time')
+        self.assertEqual(
+            self._datetime_to_str(ctime.value),
+            file_object.x_misp_lnk_creation_time
+        )
+        self.assertEqual(mtime.type, 'datetime')
+        self.assertEqual(mtime.object_relation, 'lnk-modification-time')
+        self.assertEqual(
+            self._datetime_to_str(mtime.value),
+            file_object.x_misp_lnk_modification_time
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = observed_data
+        )
+
     def test_stix20_bundle_with_news_agency_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_news_agency_object()
         self.parser.load_stix_bundle(bundle)

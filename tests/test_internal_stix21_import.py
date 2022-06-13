@@ -2029,6 +2029,75 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             identity = identity
         )
 
+    def test_stix21_bundle_with_lnk_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_lnk_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        atime, ctime,  mtime, name, dir_ref, MD5, SHA1, SHA256, payload_bin, x_misp_filename, content_md5, _, _, _, size = self._check_indicator_object(misp_object, indicator)[1:-1].split(' AND ')
+        access_time, creation_time,  modification_time, filename, path, md5, sha1, sha256, size_in_bytes, malware_sample = misp_object.attributes
+        self._check_lnk_indicator_object(
+            (
+                filename, path, md5, sha1, sha256, size_in_bytes, creation_time,
+                modification_time, access_time, malware_sample
+            ),
+            (
+                atime, ctime,  mtime, name, dir_ref, MD5, SHA1, SHA256, payload_bin,
+                x_misp_filename, content_md5, size
+            )
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_lnk_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_lnk_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, file_object, directory, artifact = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        file_ref, directory_ref, artifact_ref = self._check_observed_data_object(misp_object, observed_data)
+        self._assert_multiple_equal(
+            misp_object.uuid,
+            file_object.id.split('--')[1],
+            file_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[-2].uuid,
+            directory.id.split('--')[1],
+            directory_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[-1].uuid,
+            artifact.id.split('--')[1],
+            artifact_ref.split('--')[1]
+        )
+        atime, ctime, mtime = self._check_lnk_observable_object(
+            misp_object.attributes,
+            {
+                file_object.id: file_object,
+                directory.id: directory,
+                artifact.id: artifact
+            }
+        )
+        self.assertEqual(atime.type, 'datetime')
+        self.assertEqual(atime.object_relation, 'lnk-access-time')
+        self.assertEqual(atime.value, file_object.atime)
+        self.assertEqual(ctime.type, 'datetime')
+        self.assertEqual(ctime.object_relation, 'lnk-creation-time')
+        self.assertEqual(ctime.value, file_object.ctime)
+        self.assertEqual(mtime.type, 'datetime')
+        self.assertEqual(mtime.object_relation, 'lnk-modification-time')
+        self.assertEqual(mtime.value, file_object.mtime)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = [observed_data, file_object, directory, artifact]
+        )
+
     def test_stix21_bundle_with_news_agency_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_news_agency_object()
         self.parser.load_stix_bundle(bundle)
