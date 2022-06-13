@@ -603,8 +603,8 @@ class Stix2Mapping:
             }
         )
         self.__lnk_path_fields = (
-            'fullpath',
-            'path'
+            'path',
+            'fullpath'
         )
         lnk_single_fields = (
             'lnk-access-time',

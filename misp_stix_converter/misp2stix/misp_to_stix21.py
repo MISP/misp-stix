@@ -939,24 +939,22 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             file_args: dict[str, Union[bool, datetime, str]] = {
                 'id': f"file--{misp_object['uuid']}"
             }
-            if attributes.get('fullpath'):
-                self._parse_directory_ref(
-                    file_args,
-                    objects,
-                    *self._select_single_feature(
-                        attributes,
-                        'fullpath'
-                    )
-                )
-                if attributes.get('path'):
-                    attributes['path'] = attributes.pop('path')[0]
-            elif attributes.get('path'):
+            if attributes.get('path'):
                 self._parse_directory_ref(
                     file_args,
                     objects,
                     *self._select_single_feature(
                         attributes,
                         'path'
+                    )
+                )
+            elif attributes.get('fullpath'):
+                self._parse_directory_ref(
+                    file_args,
+                    objects,
+                    *self._select_single_feature(
+                        attributes,
+                        'fullpath'
                     )
                 )
             if attributes.get('malware-sample'):
