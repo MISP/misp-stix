@@ -393,6 +393,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__objects_mapping = Mapping(**objects_mapping)
 
         # ATTRIBUTES DECLARATION
+        access_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-access-time'}
         account_id_attribute = {'type': 'text', 'object_relation': 'account-id'}
         account_name_attribute = {'type': 'text', 'object_relation': 'account-name'}
         alias_attribute = {'type': 'text', 'object_relation': 'alias'}
@@ -407,6 +408,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         certificate_attribute = {'type': 'x509-fingerprint-sha1', 'object_relation': 'certificate'}
         comment_attribute = {'type': 'text', 'object_relation': 'comment'}
         compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
+        creation_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-creation-time'}
         description_attribute = {'type': 'text', 'object_relation': 'description'}
         domain_attribute = {'type': 'domain', 'object_relation': 'domain'}
         dst_port_attribute = {'type': 'port', 'object_relation': 'dst-port'}
@@ -437,6 +439,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         message_id_attribute = {'type': 'email-message-id', 'object_relation': 'message-id'}
         mime_boundary_attribute = {'type': 'email-mime-boundary', 'object_relation': 'mime-boundary'}
         mime_type_attribute = {'type': 'mime-type', 'object_relation': 'mimetype'}
+        modification_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-modification-time'}
         msg_attribute = {'type': 'attachment', 'object_relation': 'msg'}
         name_attribute = {'type': 'text', 'object_relation': 'name'}
         password_attribute = {'type': 'text', 'object_relation': 'password'}
@@ -770,6 +773,54 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_legal_form = {'type': 'text', 'object_relation': 'legal-form'},
             x_misp_registration_number = {'type': 'text', 'object_relation': 'registration-number'}
         )
+        __lnk_indicator_object_mapping = {
+            'hashes.MD5': md5_attribute,
+            'hashes.SHA1': sha1_attribute,
+            'hashes.SHA224': sha224_attribute,
+            'hashes.SHA256': sha256_attribute,
+            'hashes.SHA384': sha384_attribute,
+            'hashes.SHA512': sha512_attribute,
+            'hashes.SSDEEP': ssdeep_attribute,
+            'hashes.TLSH': tlsh_attribute,
+            'parent_directory_ref.path': path_attribute
+        }
+        __lnk_object_mapping = Mapping(
+            name = filename_attribute,
+            atime = access_time_attribute,
+            x_misp_lnk_access_time = access_time_attribute,
+            ctime = creation_time_attribute,
+            x_misp_lnk_creation_time = creation_time_attribute,
+            mtime = modification_time_attribute,
+            x_misp_lnk_modification_time = modification_time_attribute,
+            size = size_in_bytes_attribute,
+            x_misp_fullpath = fullpath_attribute,
+            x_misp_path = path_attribute,
+            x_misp_birth_droid_file_identifier = {'type': 'text', 'object_relation': 'birth-droid-file-identifier'},
+            x_misp_birth_droid_volume_identifier = {'type': 'text', 'object_relation': 'birth-droid-volume-identifier'},
+            x_misp_droid_file_identifier = {'type': 'text', 'object_relation': 'droid-file-identifier'},
+            x_misp_droid_volume_identifier = {'type': 'text', 'object_relation': 'droid-volume-identifier'},
+            x_misp_entropy = entropy_attribute,
+            x_misp_lnk_command_line_arguments = {'type': 'text', 'object_relation': 'lnk-command-line-arguments'},
+            x_misp_lnk_description = {'type': 'text', 'object_relation': 'lnk-description'},
+            x_misp_lnk_drive_serial_number = {'type': 'text', 'object_relation': 'lnk-drive-serial-number'},
+            x_misp_lnk_drive_type = {'type': 'text', 'object_relation': 'lnk-drive-type'},
+            x_misp_lnk_file_attribute_flags = {'type': 'text', 'object_relation': 'lnk-file-attribute-flags'},
+            x_misp_lnk_file_size = {'type': 'size-in-bytes', 'object_relation': 'lnk-file-size'},
+            x_misp_lnk_hot_key_value = {'type': 'text', 'object_relation': 'lnk-hot-key-value'},
+            x_misp_lnk_icon_text = {'type': 'text', 'object_relation': 'lnk-icon-text'},
+            x_misp_lnk_local_path = {'type': 'text', 'object_relation': 'lnk-local-path'},
+            x_misp_lnk_relative_path = {'type': 'text', 'object_relation': 'lnk-relative-path'},
+            x_misp_lnk_show_window_value = {'type': 'text', 'object_relation': 'lnk-show-window-value'},
+            x_misp_lnk_volume_label = {'type': 'text', 'object_relation': 'lnk-volume-label'},
+            x_misp_lnk_working_directory = {'type': 'text', 'object_relation': 'lnk-working-directory'},
+            x_misp_machine_identifier = {'type': 'text', 'object_relation': 'machine-identifier'},
+            x_misp_pattern_in_file = pattern_in_file_attribute,
+            x_misp_state = state_attribute,
+            x_misp_text = text_attribute
+        )
+        __lnk_indicator_object_mapping.update(__lnk_object_mapping)
+        self.__lnk_indicator_object_mapping = Mapping(**__lnk_indicator_object_mapping)
+        self.__lnk_observable_object_mapping = __lnk_object_mapping
         self.__news_agency_contact_information_mapping = Mapping(
             **{
                 'address': {'type': 'text'},
@@ -1077,6 +1128,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def legal_entity_object_mapping(self) -> dict:
         return self.__legal_entity_object_mapping
+
+    @property
+    def lnk_indicator_object_mapping(self) -> dict:
+        return self.__lnk_indicator_object_mapping
+
+    @property
+    def lnk_observable_object_mapping(self) -> dict:
+        return self.__lnk_observable_object_mapping
 
     @property
     def news_agency_object_mapping(self) -> dict:

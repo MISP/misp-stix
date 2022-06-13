@@ -997,7 +997,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     observed_data.modified
                 )
                 misp_object.add_reference(pe_uuid, 'includes')
-            self._add_misp_object(misp_object)
+        self._add_misp_object(misp_object)
 
     def _object_from_file_observable_v20(self, observed_data: ObservedData_v20):
         self._object_from_file_observable(observed_data, 'v20')
@@ -1105,6 +1105,54 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _object_from_ip_port_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_ip_port_observable(observed_data, 'v21')
+
+    def _object_from_lnk_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('lnk', observed_data)
+        observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
+        for observable in observables.values():
+            if observable.type != 'file':
+                continue
+            if hasattr(observable, 'hashes'):
+                for hash_type, value in observable.hashes.items():
+                    attribute = {'value': value}
+                    attribute.update(self._mapping.file_hashes_object_mapping[hash_type])
+                    misp_object.add_attribute(**attribute)
+            for feature, mapping in self._mapping.lnk_observable_object_mapping.items():
+                if hasattr(observable, feature):
+                    self._populate_object_attributes_with_data(
+                        misp_object,
+                        mapping,
+                        getattr(observable, feature)
+                    )
+            if hasattr(observable, 'parent_directory_ref'):
+                directory = observables[observable.parent_directory_ref]
+                relation = 'fullpath' if hasattr(observable, 'name') and observable.name in directory.path else 'path'
+                attribute = {
+                    'type': 'text',
+                    'object_relation': relation,
+                    'value': directory.path
+                }
+                if hasattr(directory, 'id'):
+                    attribute['uuid'] = directory.id.split('--')[1]
+                misp_object.add_attribute(**attribute)
+            if hasattr(observable, 'content_ref'):
+                artifact = observables[observable.content_ref]
+                attribute = {
+                    'type': 'malware-sample',
+                    'object_relation': 'malware-sample',
+                    'value': f"{artifact.x_misp_filename}|{artifact.hashes['MD5']}",
+                    'data': artifact.payload_bin
+                }
+                if hasattr(artifact, 'id'):
+                    attribute['uuid'] = artifact.id.split('--')[1]
+                misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
+    def _object_from_lnk_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_lnk_observable(observed_data, 'v20')
+
+    def _object_from_lnk_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_lnk_observable(observed_data, 'v21')
 
     def _object_from_parler_account_observable_v20(self, observed_data: ObservedData_v20):
         self._object_from_account_with_attachment_observable(observed_data, 'parler-account', 'v20')
@@ -1498,6 +1546,30 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                         'value': value
                     }
                 )
+        self._add_misp_object(misp_object)
+
+    def _object_from_lnk_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('lnk', indicator)
+        mapping = self._mapping.lnk_indicator_object_mapping
+        attachment: dict = {}
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            if 'content_ref.' in feature:
+                attachment[feature.split('.')[-1]] = value
+                continue
+            if feature in mapping:
+                attribute = {'value': value}
+                attribute.update(mapping[feature])
+                misp_object.add_attribute(**attribute)
+        if attachment:
+            attribute = {
+                'type': 'malware-sample',
+                'object_relation': 'malware-sample',
+                'value': f"{attachment['x_misp_filename']}|{attachment['MD5']}"
+            }
+            if 'payload_bin' in attachment:
+                attribute['data'] = attachment['payload_bin']
+            misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
     def _object_from_parler_account_indicator(self, indicator: _INDICATOR_TYPING):
