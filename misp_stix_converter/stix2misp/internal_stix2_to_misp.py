@@ -1154,6 +1154,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_lnk_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_lnk_observable(observed_data, 'v21')
 
+    def _object_from_mutex_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_standard_observable(observed_data, 'mutex', 'v20')
+
+    def _object_from_mutex_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_standard_observable(observed_data, 'mutex', 'v21')
+
     def _object_from_parler_account_observable_v20(self, observed_data: ObservedData_v20):
         self._object_from_account_with_attachment_observable(observed_data, 'parler-account', 'v20')
 
@@ -1571,6 +1577,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute['data'] = attachment['payload_bin']
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
+
+    def _object_from_mutex_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_standard_pattern(indicator, 'mutex')
 
     def _object_from_parler_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'parler-account')

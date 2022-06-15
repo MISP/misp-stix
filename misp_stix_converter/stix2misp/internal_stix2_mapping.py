@@ -821,6 +821,11 @@ class InternalSTIX2Mapping(STIX2Mapping):
         __lnk_indicator_object_mapping.update(__lnk_object_mapping)
         self.__lnk_indicator_object_mapping = Mapping(**__lnk_indicator_object_mapping)
         self.__lnk_observable_object_mapping = __lnk_object_mapping
+        self.__mutex_object_mapping = Mapping(
+            name = name_attribute,
+            x_misp_description = description_attribute,
+            x_misp_operating_system = {'type': 'text', 'object_relation': 'operating-system'}
+        )
         self.__news_agency_contact_information_mapping = Mapping(
             **{
                 'address': {'type': 'text'},
@@ -1136,6 +1141,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def lnk_observable_object_mapping(self) -> dict:
         return self.__lnk_observable_object_mapping
+
+    @property
+    def mutex_object_mapping(self) -> dict:
+        return self.__mutex_object_mapping
 
     @property
     def news_agency_object_mapping(self) -> dict:
