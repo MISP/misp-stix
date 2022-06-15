@@ -3492,6 +3492,26 @@ _MUTEX_INDICATOR_ATTRIBUTE = {
         "misp:to_ids=\"True\""
     ]
 }
+_MUTEX_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--b0f55591-6a63-4fbd-a169-064e64738d95",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[mutex:name = 'MutexTest' AND mutex:x_misp_description = 'Test mutex on unix' AND mutex:x_misp_operating_system = 'Unix']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "misc"
+        }
+    ],
+    "labels": [
+        "misp:name=\"mutex\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"True\""
+    ]
+}
 _MUTEX_OBSERVABLE_ATTRIBUTE = {
     "type": "observed-data",
     "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -3510,6 +3530,29 @@ _MUTEX_OBSERVABLE_ATTRIBUTE = {
     "labels": [
         "misp:type=\"mutex\"",
         "misp:category=\"Artifacts dropped\""
+    ]
+}
+_MUTEX_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--b0f55591-6a63-4fbd-a169-064e64738d95",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "mutex",
+            "name": "MutexTest",
+            "x_misp_description": "Test mutex on unix",
+            "x_misp_operating_system": "Unix"
+        }
+    },
+    "labels": [
+        "misp:name=\"mutex\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
     ]
 }
 _NEWS_AGENCY_OBJECT = {
@@ -4589,6 +4632,14 @@ class TestSTIX20Bundles:
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             observed_data['objects']['2']['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(observed_data)
+
+    @classmethod
+    def get_bundle_with_mutex_indicator_object(cls):
+        return cls.__assemble_bundle(_MUTEX_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_mutex_observable_object(cls):
+        return cls.__assemble_bundle(_MUTEX_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_news_agency_object(cls):

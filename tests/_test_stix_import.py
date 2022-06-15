@@ -889,6 +889,33 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
         return atime, ctime, mtime
 
+    def _check_mutex_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 3)
+        name, description, operating_system = attributes
+        name_pattern, x_misp_description, x_misp_operating_system = pattern[1:-1].split(' AND ')
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, self._get_pattern_value(name_pattern))
+        self.assertEqual(description.type, 'text')
+        self.assertEqual(description.object_relation, 'description')
+        self.assertEqual(description.value, self._get_pattern_value(x_misp_description))
+        self.assertEqual(operating_system.type, 'text')
+        self.assertEqual(operating_system.object_relation, 'operating-system')
+        self.assertEqual(operating_system.value, self._get_pattern_value(x_misp_operating_system))
+
+    def _check_mutex_observable_object(self, attributes, mutex):
+        self.assertEqual(len(attributes), 3)
+        name, description, operating_system = attributes
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, mutex.name)
+        self.assertEqual(description.type, 'text')
+        self.assertEqual(description.object_relation, 'description')
+        self.assertEqual(description.value, mutex.x_misp_description)
+        self.assertEqual(operating_system.type, 'text')
+        self.assertEqual(operating_system.object_relation, 'operating-system')
+        self.assertEqual(operating_system.value, mutex.x_misp_operating_system)
+
     def _check_news_agency_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
         self.assertEqual(misp_object.name, 'news-agency')
