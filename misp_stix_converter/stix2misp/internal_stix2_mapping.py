@@ -830,6 +830,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_description = description_attribute,
             x_misp_operating_system = {'type': 'text', 'object_relation': 'operating-system'}
         )
+        self.__network_connection_object_mapping = Mapping(
+            dst_port = dst_port_attribute,
+            src_port = src_port_attribute,
+            start = {'type': 'datetime', 'object_relation': 'first-packet-seen'},
+            x_misp_community_id = {'type': 'community-id', 'object_relation': 'community-id'},
+            x_misp_hostname_dst = {'type': 'hostname', 'object_relation': 'hostname-dst'},
+            x_misp_hostname_src = {'type': 'hostname', 'object_relation': 'hostname-src'}
+        )
         self.__news_agency_contact_information_mapping = Mapping(
             **{
                 'address': {'type': 'text'},
@@ -1167,6 +1175,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def mutex_object_mapping(self) -> dict:
         return self.__mutex_object_mapping
+
+    @property
+    def network_connection_object_mapping(self) -> dict:
+        return self.__network_connection_object_mapping
 
     @property
     def news_agency_object_mapping(self) -> dict:

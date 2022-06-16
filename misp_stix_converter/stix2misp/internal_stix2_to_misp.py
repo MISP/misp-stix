@@ -1161,6 +1161,52 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_mutex_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_standard_observable(observed_data, 'mutex', 'v21')
 
+    def _object_from_network_connection_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('network-connection', observed_data)
+        observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
+        for observable in observables.values():
+            if observable.type == 'network-traffic':
+                for feature in ('src', 'dst'):
+                    if hasattr(observable, f'{feature}_ref'):
+                        reference = observables[getattr(observable, f'{feature}_ref')]
+                        attribute = {'value': reference.value}
+                        if reference.type == 'domain-name':
+                            attribute.update(
+                                {
+                                    'type': 'hostname',
+                                    'object_relation': f'hostname-{feature}'
+                                }
+                            )
+                            misp_object.add_attribute(**attribute)
+                            continue
+                        relation = f'ip-{feature}'
+                        attribute.update(
+                            {'type': relation, 'object_relation': relation}
+                        )
+                        misp_object.add_attribute(**attribute)
+                for feature, mapping in self._mapping.network_connection_object_mapping.items():
+                    if hasattr(observable, feature):
+                        attribute = {'value': getattr(observable, feature)}
+                        attribute.update(mapping)
+                        misp_object.add_attribute(**attribute)
+                for prot in observable.protocols:
+                    protocol = prot.upper()
+                    layer = self._mapping.connection_protocols[protocol]
+                    misp_object.add_attribute(
+                        **{
+                            'type': 'text',
+                            'object_relation': f'layer{layer}-protocol',
+                            'value': protocol
+                        }
+                    )
+                self._add_misp_object(misp_object)
+
+    def _object_from_network_connection_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_network_connection_observable(observed_data, 'v20')
+
+    def _object_from_network_connection_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_network_connection_observable(observed_data, 'v21')
+
     def _object_from_parler_account_observable_v20(self, observed_data: ObservedData_v20):
         self._object_from_account_with_attachment_observable(observed_data, 'parler-account', 'v20')
 
@@ -1588,6 +1634,35 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_mutex_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_standard_pattern(indicator, 'mutex')
 
+    def _object_from_network_connection_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('network-connection', indicator)
+        mapping = self._mapping.network_connection_object_mapping
+        reference: dict
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            if pattern.startswith('('):
+                reference = self._parse_network_reference(feature, value)
+                continue
+            if pattern.endswith(')'):
+                reference.update(self._parse_network_reference(feature, value[:-2]))
+                misp_object.add_attribute(**reference)
+                continue
+            if feature in mapping:
+                attribute = {'value': value}
+                attribute.update(mapping[feature])
+                misp_object.add_attribute(**attribute)
+            elif 'protocols' in feature:
+                protocol = value.upper()
+                layer = self._mapping.connection_protocols[protocol]
+                misp_object.add_attribute(
+                    **{
+                        'type': 'text',
+                        'object_relation': f'layer{layer}-protocol',
+                        'value': protocol
+                    }
+                )
+        self._add_misp_object(misp_object)
+
     def _object_from_parler_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'parler-account')
 
@@ -1761,6 +1836,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if feature.split('.')[1] == 'value':
             return {'value': value}
         relation = 'domain' if value == 'domain-name' else f"ip-{feature.split('_')[0]}"
+        return {'type': relation, 'object_relation': relation}
+
+    @staticmethod
+    def _parse_network_reference(feature: str, value: str) -> dict:
+        if feature.split('.')[1] == 'value':
+            return {'value': value}
+        if value == 'domain-name':
+            return {'type': 'hostname', 'object_relation': f"hostname-{feature.split('_')[0]}"}
+        relation = f"ip-{feature.split('_')[0]}"
         return {'type': relation, 'object_relation': relation}
 
     @staticmethod
