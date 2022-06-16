@@ -2001,6 +2001,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             network_ref.split('--')[1]
         )
         self._assert_multiple_equal(
+            misp_object.attributes[0].uuid,
             address.id.split('--')[1],
             address_ref.split('--')[1]
         )
