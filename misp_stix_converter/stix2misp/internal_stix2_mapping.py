@@ -544,11 +544,11 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__domain_ip_object_mapping = Mapping(
             value = {'type': 'domain', 'object_relation': 'domain'},
-            x_misp_first_seen = {'type': 'datetime', 'object_relation': ''},
+            x_misp_first_seen = first_seen_attribute,
             x_misp_hostname = hostname_attribute,
-            x_misp_last_seen = {'type': 'datetime', 'object_relation': ''},
+            x_misp_last_seen = last_seen_attribute,
             x_misp_port = port_attribute,
-            x_misp_registration_date = {'type': 'datetime', 'object_relation': ''},
+            x_misp_registration_date = {'type': 'datetime', 'object_relation': 'registration-date'},
             x_misp_text = text_attribute
         )
         self.__email_additional_header_fields_mapping = Mapping(
