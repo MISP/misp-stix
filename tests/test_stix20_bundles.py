@@ -3555,6 +3555,64 @@ _MUTEX_OBSERVABLE_OBJECT = {
         "misp:to_ids=\"False\""
     ]
 }
+_NETWORK_CONNECTION_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5afacc53-c0b0-4825-a6ee-03c80a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '8080' AND network-traffic:src_port = '8080' AND network-traffic:protocols[0] = 'ip' AND network-traffic:protocols[1] = 'tcp' AND network-traffic:protocols[2] = 'http']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"network-connection\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_NETWORK_CONNECTION_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--5afacc53-c0b0-4825-a6ee-03c80a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "network-traffic",
+            "src_ref": "1",
+            "dst_ref": "2",
+            "src_port": 8080,
+            "dst_port": 8080,
+            "protocols": [
+                "ip",
+                "tcp",
+                "http"
+            ],
+            "x_misp_hostname_dst": "circl.lu"
+        },
+        "1": {
+            "type": "ipv4-addr",
+            "value": "1.2.3.4"
+        },
+        "2": {
+            "type": "ipv4-addr",
+            "value": "5.6.7.8"
+        }
+    },
+    "labels": [
+        "misp:name=\"network-connection\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _NEWS_AGENCY_OBJECT = {
     "type": "identity",
     "id": "identity--d17e31ce-5a7a-4713-bdff-49d89548c259",
@@ -4685,6 +4743,14 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_mutex_observable_object(cls):
         return cls.__assemble_bundle(_MUTEX_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_network_connection_indicator_object(cls):
+        return cls.__assemble_bundle(_NETWORK_CONNECTION_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_network_connection_observable_object(cls):
+        return cls.__assemble_bundle(_NETWORK_CONNECTION_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_news_agency_object(cls):
