@@ -1074,13 +1074,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 for feature in ('src', 'dst'):
                     if hasattr(observable, f'{feature}_ref'):
                         address = observables[getattr(observable, f'{feature}_ref')]
-                        misp_object.add_attribute(
-                            **{
-                                'type': f'ip-{feature}',
-                                'object_relation': f'ip-{feature}',
-                                'value': address.value
-                            }
-                        )
+                        attribute = {
+                            'type': f'ip-{feature}',
+                            'object_relation': f'ip-{feature}',
+                            'value': address.value
+                        }
+                        if hasattr(address, 'id'):
+                            attribute['uuid'] = address.id.split('--')[1]
+                        misp_object.add_attribute(**attribute)
                         ip_protocols.add(address.type.split('-')[0])
                 for feature, mapping in self._mapping.ip_port_object_mapping.items():
                     if hasattr(observable, feature):
