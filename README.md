@@ -1,16 +1,16 @@
-**IMPORTANT NOTE**: This library requires **at least** python 3.6
+# MISP-STIX - Python library to handle the conversion between MISP standard and STIX
 
-# MISP-STIX-Converter - Python library to handle the conversion between MISP and STIX
+MISP-STIX-converter is a Python library (>=3.6) to handle all the conversions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
 
-MISP-STIX-Converter is a Python library to handle all the interactions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
+## Features
 
-MISP-STIX-Converter allows you to convert:
+- MISP standard format conversion to STIX 1.x (1.1.1 and 1.2)
+- MISP standard format conversion to STIX 2.0 (2.0 and 2.1)
+- Maps [MISP Objects](https://github.com/MISP/misp-objects) and [MISP galaxies](https://github.com/misp/misp-galaxy) with [respective semantically similar objects](https://github.com/MISP/misp-stix/tree/main/documentation)
+- STIX to MISP standard format
+- Provides an extendable library for mapping and facilitate extension
 
-- MISP -> STIX1 (1.1.1 & 1.2)
-- MISP -> STIX2 (2.0 & 2.1)
-- (WiP) STIX -> MISP
-
-This library is used by the MISP core software to perform STIX conversion and serving as a useful tool for anyone looking for a clean way of converting between the MISP standard format and various STIX versions (1.1.1, 1.2, 2.0, 2.1).
+This library is used by the [MISP core software](https://github.com/MISP/MISP) to perform STIX conversion and serving as a useful tool for anyone looking for a clean way of converting between the MISP standard format and various STIX versions (1.1.1, 1.2, 2.0, 2.1).
 
 A complete [documentation is available](/documentation/) including the mappings between the different formats.
 
@@ -18,7 +18,7 @@ A complete [documentation is available](/documentation/) including the mappings 
 
 **It is strongly recommended to use a virtual environment**
 
-If you want to know more about virtual environements, [python has you covered](https://docs.python.org/3/tutorial/venv.html)
+If you want to know more about virtual environments, [python has you covered](https://docs.python.org/3/tutorial/venv.html)
 
 From the current repository:
 ```
@@ -197,3 +197,20 @@ Those example files are showing the results of MISP format exported in the vario
 
 A specific documentation concerning the mapping between MISP and the various supported STIX versions is also provided in the [documentation](documentation/) directory.
 You can find there all the different cases illustrated with examples.
+
+# License
+
+misp-stix is released under a BSD 2-Clause "Simplified" License allow easy reuse with other libraries.
+
+~~~
+Copyright 2019-2022 Christian Studer
+Copyright 2019-2022 CIRCL - Computer Incident Response Center Luxembourg c/o "security made in Lëtzebuerg" (SMILE) g.i.e.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+~~~
