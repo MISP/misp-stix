@@ -1240,6 +1240,45 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             observable.x_misp_profile_image['data']
         )
 
+    def _check_url_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 5)
+        url, domain, host, ip, port = attributes
+        url_pattern, x_misp_domain, x_misp_host, x_misp_ip, x_misp_port = pattern[1:-1].split(' AND ')
+        self.assertEqual(url.type, 'url')
+        self.assertEqual(url.object_relation, 'url')
+        self.assertEqual(url.value, self._get_pattern_value(url_pattern))
+        self.assertEqual(domain.type, 'domain')
+        self.assertEqual(domain.object_relation, 'domain')
+        self.assertEqual(domain.value, self._get_pattern_value(x_misp_domain))
+        self.assertEqual(host.type, 'hostname')
+        self.assertEqual(host.object_relation, 'host')
+        self.assertEqual(host.value, self._get_pattern_value(x_misp_host))
+        self.assertEqual(ip.type, 'ip-dst')
+        self.assertEqual(ip.object_relation, 'ip')
+        self.assertEqual(ip.value, self._get_pattern_value(x_misp_ip))
+        self.assertEqual(port.type, 'port')
+        self.assertEqual(port.object_relation, 'port')
+        self.assertEqual(port.value, self._get_pattern_value(x_misp_port))
+
+    def _check_url_observable_object(self, attributes, URL):
+        self.assertEqual(len(attributes), 5)
+        url, domain, host, ip, port = attributes
+        self.assertEqual(url.type, 'url')
+        self.assertEqual(url.object_relation, 'url')
+        self.assertEqual(url.value, URL.value)
+        self.assertEqual(domain.type, 'domain')
+        self.assertEqual(domain.object_relation, 'domain')
+        self.assertEqual(domain.value, URL.x_misp_domain)
+        self.assertEqual(host.type, 'hostname')
+        self.assertEqual(host.object_relation, 'host')
+        self.assertEqual(host.value, URL.x_misp_host)
+        self.assertEqual(ip.type, 'ip-dst')
+        self.assertEqual(ip.object_relation, 'ip')
+        self.assertEqual(ip.value, URL.x_misp_ip)
+        self.assertEqual(port.type, 'port')
+        self.assertEqual(port.object_relation, 'port')
+        self.assertEqual(port.value, URL.x_misp_port)
+
     def _check_user_account_indicator_object(self, attributes, pattern_list):
         self.assertEqual(len(attributes), 11)
         account_p, display_p, credential, user_id_p, account_login, last_changed_p, groups1, groups2, gid, home_dir_p, user_avatar_data, user_avatar_value = pattern_list

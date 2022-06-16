@@ -4772,6 +4772,29 @@ _URL_INDICATOR_ATTRIBUTES = [
         ]
     }
 ]
+_URL_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5ac347ca-dac4-4562-9775-04120a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[url:value = 'https://www.circl.lu/team' AND url:x_misp_domain = 'circl.lu' AND url:x_misp_host = 'www.circl.lu' AND url:x_misp_ip = '149.13.33.14' AND url:x_misp_port = '443']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"url\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
 _URL_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "observed-data",
@@ -4844,6 +4867,37 @@ _URL_OBSERVABLE_ATTRIBUTES = [
         "spec_version": "2.1",
         "id": "url--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
         "value": "https://vm.misp-project.org/latest/"
+    }
+]
+_URL_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5ac347ca-dac4-4562-9775-04120a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "url--5ac347ca-dac4-4562-9775-04120a00020f"
+        ],
+        "labels": [
+            "misp:name=\"url\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "url",
+        "spec_version": "2.1",
+        "id": "url--5ac347ca-dac4-4562-9775-04120a00020f",
+        "value": "https://www.circl.lu/team",
+        "x_misp_domain": "circl.lu",
+        "x_misp_host": "www.circl.lu",
+        "x_misp_ip": "149.13.33.14",
+        "x_misp_port": "443"
     }
 ]
 _VULNERABILITY_ATTRIBUTE = {
@@ -5651,6 +5705,14 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_script_objects(cls):
         return cls.__assemble_bundle(*_SCRIPT_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_url_indicator_object(cls):
+        return cls.__assemble_bundle(_URL_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_url_observable_object(cls):
+        return cls.__assemble_bundle(*_URL_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_vulnerability_object(cls):
