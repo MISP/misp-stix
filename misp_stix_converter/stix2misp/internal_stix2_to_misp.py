@@ -1200,6 +1200,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_twitter_account_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_account_with_attachment_observable(observed_data, 'twitter-account', 'v21')
 
+    def _object_from_url_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_standard_observable(observed_data, 'url', 'v20')
+
+    def _object_from_url_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_standard_observable(observed_data, 'url', 'v21')
+
     def _object_from_user_account_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('user-account', observed_data)
         observable = getattr(self, f'_fetch_observables_{version}')(observed_data)
@@ -1624,6 +1630,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _object_from_twitter_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'twitter-account')
+
+    def _object_from_url_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_standard_pattern(indicator, 'url')
 
     def _object_from_user_account_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('user-account', indicator)

@@ -8,14 +8,16 @@ from .stix2_mapping import STIX2Mapping
 class InternalSTIX2Mapping(STIX2Mapping):
     def __init__(self):
         super().__init__()
+        first_seen_attribute = {'type': 'datetime', 'object_relation': 'first-seen'}
+        last_seen_attribute = {'type': 'datetime', 'object_relation': 'last-seen'}
         self._declare_mapping(
             updates = {
                 'location': {
                     'x_misp_altitude': {'type': 'float', 'object_relation': 'altitude'},
                     'x_misp_country': {'type': 'text', 'object_relation': 'country'},
                     'x_misp_epsg': {'type': 'text', 'object_relation': 'epsg'},
-                    'x_misp_first_seen': {'type': 'datetime', 'object_relation': 'first-seen'},
-                    'x_misp_last_seen': {'type': 'datetime', 'object_relation': 'last-seen'},
+                    'x_misp_first_seen': first_seen_attribute,
+                    'x_misp_last_seen': last_seen_attribute,
                     'x_misp_neighborhood': {'type': 'text', 'object_relation': 'neighborhood'},
                     'x_misp_spacial_reference': {
                         'type': 'text',
@@ -430,6 +432,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         id_attribute = {'type': 'text', 'object_relation': 'id'}
         image_text_attribute = {'type': 'text', 'object_relation': 'image-text'}
         imphash_attribute = {'type': 'imphash', 'object_relation': 'imphash'}
+        ip_attribute = {'type': 'ip-dst', 'object_relation': 'ip'}
         ip_source_attribute = {'type': 'ip-src', 'object_relation': 'ip-src'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
         last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
@@ -445,6 +448,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         password_attribute = {'type': 'text', 'object_relation': 'password'}
         path_attribute = {'type': 'text', 'object_relation': 'path'}
         pattern_in_file_attribute = {'type': 'pattern-in-file', 'object_relation': 'pattern-in-file'}
+        port_attribute = {'type': 'port', 'object_relation': 'port'}
         received_hostname_attribute = {'type': 'hostname', 'object_relation': 'received-header-hostname'}
         received_ip_attribute = {'type': 'ip-src', 'object_relation': 'received-header-ip'}
         reply_to_attribute = {'type': 'email-reply-to', 'object_relation': 'reply-to'}
@@ -489,9 +493,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
             name = description_attribute,
             x_misp_country = {'type': 'text', 'object_relation': 'country'},
             x_misp_export = {'type': 'text', 'object_relation': 'export'},
-            x_misp_first_seen = {'type': 'datetime', 'object_relation': 'first-seen'},
+            x_misp_first_seen = first_seen_attribute,
             x_misp_import = {'type': 'text', 'object_relation': 'import'},
-            x_misp_last_seen = {'type': 'datetime', 'object_relation': 'last-seen'},
+            x_misp_last_seen = last_seen_attribute,
             x_misp_mp_export = {'type': 'text', 'object_relation': 'mp-export'},
             x_misp_mp_import = {'type': 'text', 'object_relation': 'mp-import'},
             x_misp_subnet_announced = {'type': 'ip-src', 'object_relation': 'subnet-announced'}
@@ -543,7 +547,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_first_seen = {'type': 'datetime', 'object_relation': ''},
             x_misp_hostname = hostname_attribute,
             x_misp_last_seen = {'type': 'datetime', 'object_relation': ''},
-            x_misp_port = {'type': 'port', 'object_relation': 'port'},
+            x_misp_port = port_attribute,
             x_misp_registration_date = {'type': 'datetime', 'object_relation': ''},
             x_misp_text = text_attribute
         )
@@ -750,13 +754,13 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__ip_port_object_mapping = Mapping(
             dst_port = dst_port_attribute,
             src_port = src_port_attribute,
-            start = {'type': 'datetime', 'object_relation': 'first-seen'},
-            end = {'type': 'datetime', 'object_relation': 'last-seen'},
+            start = first_seen_attribute,
+            end = last_seen_attribute,
             x_misp_AS = {'type': 'AS', 'object_relation': 'AS'},
             x_misp_country_code = {'type': 'text', 'object_relation': 'country-code'},
             x_misp_domain = domain_attribute,
             x_misp_hostname = hostname_attribute,
-            x_misp_ip = {'type': 'ip-dst', 'object_relation': 'ip'},
+            x_misp_ip = ip_attribute,
             x_misp_text = text_attribute
         )
         self.__legal_entity_contact_information_mapping = Mapping(
@@ -989,6 +993,24 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_url = url_attribute,
             x_misp_verified = verified_attribute
         )
+        self.__url_object_mapping = Mapping(
+            value = url_attribute,
+            x_misp_credential = {'type': 'text', 'object_relation': 'credential'},
+            x_misp_domain = domain_attribute,
+            x_misp_domain_without_tld = {'type': 'text', 'object_relation': 'domain_without_tld'},
+            x_misp_first_seen = first_seen_attribute,
+            x_misp_fragment = {'type': 'text', 'object_relation': 'fragment'},
+            x_misp_host = {'type': 'hostname', 'object_relation': 'host'},
+            x_misp_ip = ip_attribute,
+            x_misp_last_seen = last_seen_attribute,
+            x_misp_port = port_attribute,
+            x_misp_query_string = {'type': 'text', 'object_relation': 'query_string'},
+            x_misp_resource_path = {'type': 'text', 'object_relation': 'resource_path'},
+            x_misp_scheme = {'type': 'text', 'object_relation': 'scheme'},
+            x_misp_subdomain = {'type': 'text', 'object_relation': 'subdomain'},
+            x_misp_text = text_attribute,
+            x_misp_tld = {'type': 'text', 'object_relation': 'tld'}
+        )
         self.__user_account_object_mapping = Mapping(
             account_login = username_attribute,
             account_type = {'type': 'text', 'object_relation': 'account-type'},
@@ -1205,6 +1227,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def twitter_account_object_mapping(self) -> dict:
         return self.__twitter_account_object_mapping
+
+    @property
+    def url_object_mapping(self) -> dict:
+        return self.__url_object_mapping
 
     @property
     def user_account_object_mapping(self) -> dict:
