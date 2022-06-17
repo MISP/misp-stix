@@ -1798,6 +1798,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 if attributes.get(key):
                     setattr(process_object.image_info, feature, attributes.pop(key))
                     setattr(getattr(process_object.image_info, feature), 'condition', 'Equals')
+        if attributes.get('hidden'):
+            hidden = attributes.pop('hidden')
+            process_object.is_hidden = False if hidden in ('False', 'false') else bool(hidden)
         if attributes:
             process_object.custom_properties = self._handle_custom_properties(attributes)
         observable = self._create_observable(process_object, misp_object['uuid'], 'Process')

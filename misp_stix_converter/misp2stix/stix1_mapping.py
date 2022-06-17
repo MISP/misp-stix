@@ -637,6 +637,7 @@ class Stix1Mapping:
         self.__process_single_fields = (
             'command-line',
             'creation-time',
+            'hidden',
             'image',
             'name',
             'parent-pid',
