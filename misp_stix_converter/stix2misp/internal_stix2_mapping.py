@@ -398,6 +398,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         access_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-access-time'}
         account_id_attribute = {'type': 'text', 'object_relation': 'account-id'}
         account_name_attribute = {'type': 'text', 'object_relation': 'account-name'}
+        address_family_attribute = {'type': 'text', 'object_relation': 'address-family'}
         alias_attribute = {'type': 'text', 'object_relation': 'alias'}
         archive_attribute = {'type': 'link', 'object_relation': 'archive'}
         attachment_attribute = {'type': 'attachment', 'object_relation': 'attachment'}
@@ -413,6 +414,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         creation_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-creation-time'}
         description_attribute = {'type': 'text', 'object_relation': 'description'}
         domain_attribute = {'type': 'domain', 'object_relation': 'domain'}
+        domain_family_attribute = {'type': 'text', 'object_relation': 'domain-family'}
         dst_port_attribute = {'type': 'port', 'object_relation': 'dst-port'}
         email_attachment_attribute = {'type': 'email-attachment', 'object_relation': 'attachment'}
         email_body_attribute = {'type': 'email-body', 'object_relation': 'email-body'}
@@ -429,6 +431,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         from_display_name_attribute = {'type': 'email-src-display-name', 'object_relation': 'from-display-name'}
         from_domain_attribute = {'type': 'domain', 'object_relation': 'from-domain'}
         hostname_attribute = {'type': 'hostname', 'object_relation': 'hostname'}
+        hostname_dst_attribute = {'type': 'hostname', 'object_relation': 'hostname-dst'}
+        hostname_src_attribute = {'type': 'hostname', 'object_relation': 'hostname-src'}
         id_attribute = {'type': 'text', 'object_relation': 'id'}
         image_text_attribute = {'type': 'text', 'object_relation': 'image-text'}
         imphash_attribute = {'type': 'imphash', 'object_relation': 'imphash'}
@@ -835,8 +839,23 @@ class InternalSTIX2Mapping(STIX2Mapping):
             src_port = src_port_attribute,
             start = {'type': 'datetime', 'object_relation': 'first-packet-seen'},
             x_misp_community_id = {'type': 'community-id', 'object_relation': 'community-id'},
-            x_misp_hostname_dst = {'type': 'hostname', 'object_relation': 'hostname-dst'},
-            x_misp_hostname_src = {'type': 'hostname', 'object_relation': 'hostname-src'}
+            x_misp_hostname_dst = hostname_dst_attribute,
+            x_misp_hostname_src = hostname_src_attribute
+        )
+        self.__network_socket_extension_mapping = Mapping(
+            address_family = address_family_attribute,
+            protocol_family = domain_family_attribute,
+            socket_type = {'type': 'text', 'object_relation': 'socket-type'}
+        )
+        self.__network_socket_object_mapping = Mapping(
+            dst_port = dst_port_attribute,
+            src_port = src_port_attribute,
+            x_misp_address_family = address_family_attribute,
+            x_misp_domain_family = domain_family_attribute,
+            x_misp_filename = filename_attribute,
+            x_misp_hostname_dst = hostname_dst_attribute,
+            x_misp_hostname_src = hostname_src_attribute,
+            x_misp_option = {'type': 'text', 'object_relation': 'option'}
         )
         self.__news_agency_contact_information_mapping = Mapping(
             **{
@@ -1179,6 +1198,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def network_connection_object_mapping(self) -> dict:
         return self.__network_connection_object_mapping
+
+    @property
+    def network_socket_extension_mapping(self) -> dict:
+        return self.__network_socket_extension_mapping
+
+    @property
+    def network_socket_object_mapping(self) -> dict:
+        return self.__network_socket_object_mapping
 
     @property
     def news_agency_object_mapping(self) -> dict:
