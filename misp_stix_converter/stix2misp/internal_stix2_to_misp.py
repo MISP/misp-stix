@@ -1170,6 +1170,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     if hasattr(observable, f'{feature}_ref'):
                         reference = observables[getattr(observable, f'{feature}_ref')]
                         attribute = {'value': reference.value}
+                        if hasattr(reference, 'id'):
+                            attribute['uuid'] = reference.id.split('--')[1]
                         if reference.type == 'domain-name':
                             attribute.update(
                                 {
