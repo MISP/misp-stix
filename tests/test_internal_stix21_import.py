@@ -2001,6 +2001,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             network_ref.split('--')[1]
         )
         self._assert_multiple_equal(
+            misp_object.attributes[0].uuid,
             address.id.split('--')[1],
             address_ref.split('--')[1]
         )
@@ -2131,6 +2132,117 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             observed_data = [observed_data, mutex]
         )
 
+    def test_stix21_bundle_with_network_connection_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_network_connection_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        self._check_network_connection_indicator_object(misp_object.attributes, pattern)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_network_connection_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_network_connection_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, network_traffic, address1, address2 = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        network_ref, address1_ref, address2_ref = self._check_observed_data_object(misp_object, observed_data)
+        self._assert_multiple_equal(
+            misp_object.uuid,
+            network_traffic.id.split('--')[1],
+            network_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[0].uuid,
+            address1.id.split('--')[1],
+            address1_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[1].uuid,
+            address2.id.split('--')[1],
+            address2_ref.split('--')[1]
+        )
+        self._check_network_connection_observable_object(
+            misp_object.attributes,
+            {
+                network_traffic.id: network_traffic,
+                address1.id: address1,
+                address2.id: address2
+            }
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = [observed_data, network_traffic, address1, address2]
+        )
+
+    def test_stix21_bundle_with_network_socket_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_network_socket_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        _, src_ref, _, dst_ref, _, *patterns = pattern[1:-1].split(' AND ')
+        self._check_network_socket_indicator_object(
+            misp_object.attributes,
+            (src_ref, dst_ref, *patterns)
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_network_socket_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_network_socket_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, network_traffic, address1, address2 = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        network_ref, address1_ref, address2_ref = self._check_observed_data_object(misp_object, observed_data)
+        self._assert_multiple_equal(
+            misp_object.uuid,
+            network_traffic.id.split('--')[1],
+            network_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[0].uuid,
+            address1.id.split('--')[1],
+            address1_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[1].uuid,
+            address2.id.split('--')[1],
+            address2_ref.split('--')[1]
+        )
+        ip_src, ip_dst, port_dst, port_src, domain_family, *attributes = misp_object.attributes
+        self._check_network_socket_observable_object(
+            (ip_src, ip_dst, port_dst, port_src, *attributes),
+            {
+                network_traffic.id: network_traffic,
+                address1.id: address1,
+                address2.id: address2
+            }
+        )
+        self.assertEqual(domain_family.type, 'text')
+        self.assertEqual(domain_family.object_relation, 'domain-family')
+        self.assertEqual(
+            domain_family.value,
+            network_traffic.x_misp_domain_family
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = [observed_data, network_traffic, address1, address2]
+        )
+
     def test_stix21_bundle_with_news_agency_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_news_agency_object()
         self.parser.load_stix_bundle(bundle)
@@ -2205,6 +2317,39 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             misp_object = json.loads(script_from_tool.to_json()),
             tool = tool,
             name = 'Script object where state is not "Malicious"'
+        )
+
+    def test_stix21_bundle_with_url_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_url_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        self._check_url_indicator_object(misp_object.attributes, pattern)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_url_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_url_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, url = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        url_ref = self._check_observed_data_object(misp_object, observed_data)[0]
+        self._assert_multiple_equal(
+            misp_object.uuid,
+            url.id.split('--')[1],
+            url_ref.split('--')[1]
+        )
+        self._check_url_observable_object(misp_object.attributes, url)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = [observed_data, url]
         )
 
     def test_stix21_bundle_with_vulnerability_object(self):

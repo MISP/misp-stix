@@ -3555,6 +3555,128 @@ _MUTEX_OBSERVABLE_OBJECT = {
         "misp:to_ids=\"False\""
     ]
 }
+_NETWORK_CONNECTION_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5afacc53-c0b0-4825-a6ee-03c80a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '8080' AND network-traffic:src_port = '8080' AND network-traffic:protocols[0] = 'ip' AND network-traffic:protocols[1] = 'tcp' AND network-traffic:protocols[2] = 'http']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"network-connection\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_NETWORK_CONNECTION_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--5afacc53-c0b0-4825-a6ee-03c80a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "network-traffic",
+            "src_ref": "1",
+            "dst_ref": "2",
+            "src_port": 8080,
+            "dst_port": 8080,
+            "protocols": [
+                "ip",
+                "tcp",
+                "http"
+            ],
+            "x_misp_hostname_dst": "circl.lu"
+        },
+        "1": {
+            "type": "ipv4-addr",
+            "value": "1.2.3.4"
+        },
+        "2": {
+            "type": "ipv4-addr",
+            "value": "5.6.7.8"
+        }
+    },
+    "labels": [
+        "misp:name=\"network-connection\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"False\""
+    ]
+}
+_NETWORK_SOCKET_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5afb3223-0988-4ef1-a920-02070a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '8080' AND network-traffic:src_port = '8080' AND network-traffic:protocols[0] = 'tcp' AND network-traffic:extensions.'socket-ext'.address_family = 'AF_INET' AND network-traffic:extensions.'socket-ext'.protocol_family = 'PF_INET' AND network-traffic:extensions.'socket-ext'.socket_type = 'SOCK_RAW' AND network-traffic:extensions.'socket-ext'.is_listening = true]",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"network-socket\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_NETWORK_SOCKET_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--5afb3223-0988-4ef1-a920-02070a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "network-traffic",
+            "src_ref": "1",
+            "dst_ref": "2",
+            "src_port": 8080,
+            "dst_port": 8080,
+            "protocols": [
+                "tcp"
+            ],
+            "extensions": {
+                "socket-ext": {
+                    "address_family": "AF_INET",
+                    "is_listening": True,
+                    "protocol_family": "PF_INET",
+                    "socket_type": "SOCK_RAW"
+                }
+            },
+            "x_misp_hostname_dst": "circl.lu"
+        },
+        "1": {
+            "type": "ipv4-addr",
+            "value": "1.2.3.4"
+        },
+        "2": {
+            "type": "ipv4-addr",
+            "value": "5.6.7.8"
+        }
+    },
+    "labels": [
+        "misp:name=\"network-socket\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _NEWS_AGENCY_OBJECT = {
     "type": "identity",
     "id": "identity--d17e31ce-5a7a-4713-bdff-49d89548c259",
@@ -3843,6 +3965,26 @@ _URL_INDICATOR_ATTRIBUTES = [
         ]
     }
 ]
+_URL_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5ac347ca-dac4-4562-9775-04120a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[url:value = 'https://www.circl.lu/team' AND url:x_misp_domain = 'circl.lu' AND url:x_misp_host = 'www.circl.lu' AND url:x_misp_ip = '149.13.33.14' AND url:x_misp_port = '443']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"url\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
 _URL_OBSERVABLE_ATTRIBUTES = [
     {
         "type": "observed-data",
@@ -3905,6 +4047,31 @@ _URL_OBSERVABLE_ATTRIBUTES = [
         ]
     }
 ]
+_URL_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--5ac347ca-dac4-4562-9775-04120a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "url",
+            "value": "https://www.circl.lu/team",
+            "x_misp_domain": "circl.lu",
+            "x_misp_host": "www.circl.lu",
+            "x_misp_ip": "149.13.33.14",
+            "x_misp_port": "443"
+        }
+    },
+    "labels": [
+        "misp:name=\"url\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _VULNERABILITY_ATTRIBUTE = {
     "type": "vulnerability",
     "id": "vulnerability--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -4642,6 +4809,22 @@ class TestSTIX20Bundles:
         return cls.__assemble_bundle(_MUTEX_OBSERVABLE_OBJECT)
 
     @classmethod
+    def get_bundle_with_network_connection_indicator_object(cls):
+        return cls.__assemble_bundle(_NETWORK_CONNECTION_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_network_connection_observable_object(cls):
+        return cls.__assemble_bundle(_NETWORK_CONNECTION_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_network_socket_indicator_object(cls):
+        return cls.__assemble_bundle(_NETWORK_SOCKET_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_network_socket_observable_object(cls):
+        return cls.__assemble_bundle(_NETWORK_SOCKET_OBSERVABLE_OBJECT)
+
+    @classmethod
     def get_bundle_with_news_agency_object(cls):
         identity = _NEWS_AGENCY_OBJECT
         with open(_TESTFILES_PATH / 'AFP_logo.png', 'rb') as f:
@@ -4655,6 +4838,14 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_script_objects(cls):
         return cls.__assemble_bundle(*_SCRIPT_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_url_indicator_object(cls):
+        return cls.__assemble_bundle(_URL_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_url_observable_object(cls):
+        return cls.__assemble_bundle(_URL_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_vulnerability_object(cls):

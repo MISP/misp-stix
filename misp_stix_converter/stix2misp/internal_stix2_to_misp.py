@@ -10,13 +10,17 @@ from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
 from pymisp import MISPAttribute, MISPEvent, MISPObject
-from stix2.v20.observables import WindowsPEBinaryExt as WindowsExtension_v20
+from stix2.v20.observables import (
+    NetworkTraffic as NetworkTraffic_v20,
+    WindowsPEBinaryExt as WindowsExtension_v20)
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
     CustomObject as CustomObject_v20, Identity as Identity_v20, Indicator as Indicator_v20,
     Malware as Malware_v20, ObservedData as ObservedData_v20, Tool as Tool_v20,
     Vulnerability as Vulnerability_v20)
-from stix2.v21.observables import DomainName, WindowsPEBinaryExt as WindowsExtension_v21
+from stix2.v21.observables import (
+    DomainName, NetworkTraffic as NetworkTraffic_v21,
+    WindowsPEBinaryExt as WindowsExtension_v21)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
     CustomObject as CustomObject_v21, Identity as Identity_v21, Indicator as Indicator_v21,
@@ -43,6 +47,10 @@ _MISP_FEATURES_TYPING = Union[
     MISPAttribute,
     MISPEvent,
     MISPObject
+]
+_NETWORK_TRAFFIC_TYPING = Union[
+    NetworkTraffic_v20,
+    NetworkTraffic_v21
 ]
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20,
@@ -1074,13 +1082,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 for feature in ('src', 'dst'):
                     if hasattr(observable, f'{feature}_ref'):
                         address = observables[getattr(observable, f'{feature}_ref')]
-                        misp_object.add_attribute(
-                            **{
-                                'type': f'ip-{feature}',
-                                'object_relation': f'ip-{feature}',
-                                'value': address.value
-                            }
-                        )
+                        attribute = {
+                            'type': f'ip-{feature}',
+                            'object_relation': f'ip-{feature}',
+                            'value': address.value
+                        }
+                        if hasattr(address, 'id'):
+                            attribute['uuid'] = address.id.split('--')[1]
+                        misp_object.add_attribute(**attribute)
                         ip_protocols.add(address.type.split('-')[0])
                 for feature, mapping in self._mapping.ip_port_object_mapping.items():
                     if hasattr(observable, feature):
@@ -1160,6 +1169,120 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_mutex_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_standard_observable(observed_data, 'mutex', 'v21')
 
+    def _object_from_network_connection_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
+        for observable_id, observable in observables.items():
+            if observable.type != 'network-traffic':
+                continue
+            misp_object = self._object_from_network_traffic_observable(
+                'network-connection',
+                observed_data,
+                observables,
+                observable_id
+            )
+            for prot in observable.protocols:
+                protocol = prot.upper()
+                layer = self._mapping.connection_protocols[protocol]
+                misp_object.add_attribute(
+                    **{
+                        'type': 'text',
+                        'object_relation': f'layer{layer}-protocol',
+                        'value': protocol
+                    }
+                )
+            self._add_misp_object(misp_object)
+
+    def _object_from_network_connection_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_network_connection_observable(observed_data, 'v20')
+
+    def _object_from_network_connection_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_network_connection_observable(observed_data, 'v21')
+
+    def _object_from_network_socket_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
+        for observable_id, observable in observables.items():
+            if observable.type != 'network-traffic':
+                continue
+            misp_object = self._object_from_network_traffic_observable(
+                'network-socket',
+                observed_data,
+                observables,
+                observable_id
+            )
+            for prot in observable.protocols:
+                protocol = prot.upper()
+                misp_object.add_attribute(
+                    **{
+                        'type': 'text',
+                        'object_relation': 'protocol',
+                        'value': protocol
+                    }
+                )
+            if hasattr(observable, 'extensions') and 'socket-ext' in observable.extensions:
+                socket_ext = observable.extensions['socket-ext']
+                for feature, mapping in self._mapping.network_socket_extension_mapping.items():
+                    if hasattr(socket_ext, feature):
+                        attribute = {'value': getattr(socket_ext, feature)}
+                        attribute.update(mapping)
+                        misp_object.add_attribute(**attribute)
+                if hasattr(socket_ext, 'is_listening') and socket_ext.is_listening:
+                    misp_object.add_attribute(
+                        **{
+                            'type': 'text',
+                            'object_relation': 'state',
+                            'value': 'listening'
+                        }
+                    )
+                elif hasattr(socket_ext, 'is_blocking') and socket_ext.is_blocking:
+                    misp_object.add_attribute(
+                        **{
+                            'type': 'text',
+                            'object_relation': 'state',
+                            'value': 'blocking'
+                        }
+                    )
+            self._add_misp_object(misp_object)
+
+    def _object_from_network_socket_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_network_socket_observable(observed_data, 'v20')
+
+    def _object_from_network_socket_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_network_socket_observable(observed_data, 'v21')
+
+    def _object_from_network_traffic_observable(self, name: str, observed_data: _OBSERVED_DATA_TYPING,
+                                                observables: dict, observable_id: str) -> MISPObject:
+        misp_object = self._create_misp_object(name, observed_data)
+        observable = observables[observable_id]
+        for feature in ('src', 'dst'):
+            if hasattr(observable, f'{feature}_ref'):
+                reference = observables[getattr(observable, f'{feature}_ref')]
+                attribute = {'value': reference.value}
+                if hasattr(reference, 'id'):
+                    attribute['uuid'] = reference.id.split('--')[1]
+                if reference.type == 'domain-name':
+                    attribute.update(
+                        {
+                            'type': 'hostname',
+                            'object_relation': f'hostname-{feature}'
+                        }
+                    )
+                    misp_object.add_attribute(**attribute)
+                    continue
+                relation = f'ip-{feature}'
+                attribute.update(
+                    {'type': relation, 'object_relation': relation}
+                )
+                misp_object.add_attribute(**attribute)
+        mapping_name = f"{name.replace('-', '_')}_object_mapping"
+        for feature, mapping in getattr(self._mapping, mapping_name).items():
+            if hasattr(observable, feature):
+                self._populate_object_attributes(
+                    misp_object,
+                    mapping,
+                    getattr(observable, feature)
+                )
+        return misp_object
+
     def _object_from_parler_account_observable_v20(self, observed_data: ObservedData_v20):
         self._object_from_account_with_attachment_observable(observed_data, 'parler-account', 'v20')
 
@@ -1199,6 +1322,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _object_from_twitter_account_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_account_with_attachment_observable(observed_data, 'twitter-account', 'v21')
+
+    def _object_from_url_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_standard_observable(observed_data, 'url', 'v20')
+
+    def _object_from_url_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_standard_observable(observed_data, 'url', 'v21')
 
     def _object_from_user_account_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('user-account', observed_data)
@@ -1581,6 +1710,34 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_mutex_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_standard_pattern(indicator, 'mutex')
 
+    def _object_from_network_connection_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_network_traffic_indicator('network-connection', indicator)
+
+    def _object_from_network_socket_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_network_traffic_indicator('network-socket', indicator)
+
+    def _object_from_network_traffic_indicator(self, name: str, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object(name, indicator)
+        name = name.replace('-', '_')
+        mapping = getattr(self._mapping, f'{name}_object_mapping')
+        reference: dict
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            if pattern.startswith('('):
+                reference = self._parse_network_reference(feature, value)
+                continue
+            if pattern.endswith(')'):
+                reference.update(self._parse_network_reference(feature, value[:-2]))
+                misp_object.add_attribute(**reference)
+                continue
+            if feature in mapping:
+                attribute = {'value': value}
+                attribute.update(mapping[feature])
+                misp_object.add_attribute(**attribute)
+            else:
+                getattr(self, f'_parse_{name}_pattern')(misp_object, feature, value)
+        self._add_misp_object(misp_object)
+
     def _object_from_parler_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'parler-account')
 
@@ -1625,6 +1782,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_twitter_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'twitter-account')
 
+    def _object_from_url_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_standard_pattern(indicator, 'url')
+
     def _object_from_user_account_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('user-account', indicator)
         attachments: defaultdict = defaultdict(dict)
@@ -1651,6 +1811,59 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute.update(mapping[feature])
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
+
+    @staticmethod
+    def _parse_ip_port_reference(feature: str, value: str) -> dict:
+        if feature.split('.')[1] == 'value':
+            return {'value': value}
+        relation = 'domain' if value == 'domain-name' else f"ip-{feature.split('_')[0]}"
+        return {'type': relation, 'object_relation': relation}
+
+    def _parse_network_connection_pattern(self, misp_object: MISPObject, feature: str, value: str):
+        if 'protocols' in feature:
+            protocol = value.upper()
+            layer = self._mapping.connection_protocols[protocol]
+            misp_object.add_attribute(
+                **{
+                    'type': 'text',
+                    'object_relation': f'layer{layer}-protocol',
+                    'value': protocol
+                }
+            )
+
+    @staticmethod
+    def _parse_network_reference(feature: str, value: str) -> dict:
+        if feature.split('.')[1] == 'value':
+            return {'value': value}
+        if value == 'domain-name':
+            return {'type': 'hostname', 'object_relation': f"hostname-{feature.split('_')[0]}"}
+        relation = f"ip-{feature.split('_')[0]}"
+        return {'type': relation, 'object_relation': relation}
+
+    def _parse_network_socket_pattern(self, misp_object: MISPObject, feature: str, value: str):
+        if 'protocols' in feature:
+            protocol = value.upper()
+            misp_object.add_attribute(
+                **{
+                    'type': 'text',
+                    'object_relation': 'protocol',
+                    'value': protocol
+                }
+            )
+        elif "extensions.'socket-ext'" in feature:
+            key = feature.split('.')[-1]
+            if key in self._mapping.network_socket_extension_mapping:
+                attribute = {'value': value}
+                attribute.update(self._mapping.network_socket_extension_mapping[key])
+                misp_object.add_attribute(**attribute)
+            elif value in ('True', 'true', True):
+                misp_object.add_attribute(
+                    **{
+                        'type': 'text',
+                        'object_relation': 'state',
+                        'value': key.split('_')[1]
+                    }
+                )
 
     ################################################################################
     #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #
@@ -1745,13 +1958,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             if hasattr(observable, feature):
                 return True
         return False
-
-    @staticmethod
-    def _parse_ip_port_reference(feature: str, value: str) -> dict:
-        if feature.split('.')[1] == 'value':
-            return {'value': value}
-        relation = 'domain' if value == 'domain-name' else f"ip-{feature.split('_')[0]}"
-        return {'type': relation, 'object_relation': relation}
 
     @staticmethod
     def _populate_object_attributes(misp_object: MISPObject, mapping: dict, values: Union[list, str]):
