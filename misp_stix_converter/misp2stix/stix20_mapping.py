@@ -88,6 +88,7 @@ class Stix20Mapping(Stix2Mapping):
                     'command-line': 'command_line',
                     'creation-time': 'created',
                     'current-directory': 'cwd',
+                    'hidden': 'is_hidden',
                     'name': 'name',
                     'pid': 'pid'
                 }
@@ -106,6 +107,7 @@ class Stix20Mapping(Stix2Mapping):
             'command-line',
             'creation-time',
             'current-directory',
+            'hidden',
             'image',
             'name',
             'parent-command-line',

@@ -173,6 +173,7 @@ class Stix21Mapping(Stix2Mapping):
                     'command-line': 'command_line',
                     'creation-time': 'created',
                     'current-directory': 'cwd',
+                    'hidden': 'is_hidden',
                     'pid': 'pid'
                 }
             ),
@@ -188,6 +189,7 @@ class Stix21Mapping(Stix2Mapping):
             'command-line',
             'creation-time',
             'current-directory',
+            'hidden',
             'image',
             'parent-command-line',
             'parent-image',
