@@ -2308,8 +2308,8 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
     def test_event_with_process_indicator_object(self):
         event = get_event_with_process_object_v2()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _pid, _child_pid, _parent_pid, _name, _image, _parent_image, _port, _command_line, _parent_name = (attribute['value'] for attribute in attributes)
-        name_, pid_, image_, command_line_, parent_image_, parent_pid_, parent_name_, child_pid_, port_ = pattern[1:-1].split(' AND ')
+        _pid, _child_pid, _parent_pid, _name, _image, _parent_image, _port, _hidden, _command_line, _parent_name = (attribute['value'] for attribute in attributes)
+        hidden_, name_, pid_, image_, command_line_, parent_image_, parent_pid_, parent_name_, child_pid_, port_ = pattern[1:-1].split(' AND ')
         self.assertEqual(name_, f"process:name = '{_name}'")
         self.assertEqual(pid_, f"process:pid = '{_pid}'")
         self.assertEqual(image_, f"process:binary_ref.name = '{_image}'")
@@ -2319,6 +2319,7 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         self.assertEqual(parent_name_, f"process:parent_ref.name = '{_parent_name}'")
         self.assertEqual(child_pid_, f"process:child_refs[0].pid = '{_child_pid}'")
         self.assertEqual(port_, f"process:x_misp_port = '{_port}'")
+        self.assertEqual(hidden_, f"process:is_hidden = '{_hidden}'")
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],
             indicator = self.parser.stix_objects[-1],
@@ -2328,11 +2329,12 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
     def test_event_with_process_observable_object(self):
         event = get_event_with_process_object_v2()
         attributes, observable_objects = self._run_observable_from_object_tests(event)
-        pid, child_pid, parent_pid, name, image, parent_image, port, command_line, parent_name = (attribute['value'] for attribute in attributes)
+        pid, child_pid, parent_pid, name, image, parent_image, port, _, command_line, parent_name = (attribute['value'] for attribute in attributes)
         process = observable_objects['0']
         self.assertEqual(process.type, 'process')
         self.assertEqual(process.pid, int(pid))
         self.assertEqual(process.name, name)
+        self.assertEqual(process.is_hidden, True)
         self.assertEqual(process.x_misp_port, port)
         self.assertEqual(process.parent_ref, '1')
         self.assertEqual(process.child_refs, ['3'])

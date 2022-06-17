@@ -3446,8 +3446,8 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
     def test_event_with_process_indicator_object(self):
         event = get_event_with_process_object_v2()
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _pid, _child_pid, _parent_pid, _name, _image, _parent_image, _port, _command_line, _parent_name = (attribute['value'] for attribute in attributes)
-        pid_, image_, command_line_, parent_image_, parent_pid_, parent_name_, child_pid_, name_, port_ = pattern[1:-1].split(' AND ')
+        _pid, _child_pid, _parent_pid, _name, _image, _parent_image, _port, _hidden, _command_line, _parent_name = (attribute['value'] for attribute in attributes)
+        hidden_, pid_, image_, command_line_, parent_image_, parent_pid_, parent_name_, child_pid_, name_, port_ = pattern[1:-1].split(' AND ')
         self.assertEqual(pid_, f"process:pid = '{_pid}'")
         self.assertEqual(image_, f"process:image_ref.name = '{_image}'")
         self.assertEqual(command_line_, f"process:parent_ref.command_line = '{_command_line}'")
@@ -3457,6 +3457,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(child_pid_, f"process:child_refs[0].pid = '{_child_pid}'")
         self.assertEqual(name_, f"process:x_misp_name = '{_name}'")
         self.assertEqual(port_, f"process:x_misp_port = '{_port}'")
+        self.assertEqual(hidden_, f"process:is_hidden = '{_hidden}'")
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],
             indicator = self.parser.stix_objects[-1],
@@ -3467,7 +3468,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         event = get_event_with_process_object_v2()
         misp_object = deepcopy(event['Event']['Object'][0])
         attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
-        pid, child_pid, parent_pid, name, image, parent_image, port, command_line, parent_name = (attribute for attribute in attributes)
+        pid, child_pid, parent_pid, name, image, parent_image, port, _, command_line, parent_name = (attribute for attribute in attributes)
         process, parent_image_object, parent_process, child_process, image_object = observables
         process_id, parent_image_id, parent_id, child_id, image_id = grouping_refs
         process_ref, parent_image_ref, parent_ref, child_ref, image_ref = object_refs
@@ -3479,6 +3480,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         )
         self.assertEqual(process.type, 'process')
         self.assertEqual(process.pid, int(pid['value']))
+        self.assertEqual(process.is_hidden, True)
         self.assertEqual(process.x_misp_name, name['value'])
         self.assertEqual(process.x_misp_port, port['value'])
         self._assert_multiple_equal(
