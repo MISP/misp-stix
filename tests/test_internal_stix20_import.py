@@ -1689,6 +1689,58 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             observed_data = observed_data
         )
 
+    def test_stix20_bundle_with_network_socket_indicator_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_network_socket_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        _, src_ref, _, dst_ref, _, domain_ref, dst_port, src_port, protocols, addressFamily, protocolFamily, socketType, is_listening = pattern[1:-1].split(' AND ')
+        ip_src, ip_dst, hostname, port_dst, port_src, protocol, address_family, domain_family, socket_type, listening = misp_object.attributes
+        self._check_network_socket_indicator_object(
+            (
+                ip_src, ip_dst, hostname, port_dst, port_src, protocol, address_family,
+                socket_type, listening, domain_family
+            ),
+            (
+                src_ref, dst_ref, domain_ref, dst_port, src_port, protocols, addressFamily,
+                socketType, is_listening, protocolFamily
+            )
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_network_socket_observable_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_network_socket_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observables = self._check_observed_data_object(misp_object, observed_data)
+        ip_src, ip_dst, port_dst, port_src, hostname, protocol, address_family, domain_family, socket_type, listening = misp_object.attributes
+        self._check_network_socket_observable_object(
+            (
+                ip_src, ip_dst, port_dst, port_src, hostname, protocol, address_family,
+                socket_type, listening
+            ),
+            observables
+        )
+        self.assertEqual(domain_family.type, 'text')
+        self.assertEqual(domain_family.object_relation, 'domain-family')
+        self.assertEqual(
+            domain_family.value,
+            observed_data.objects['0'].extensions['socket-ext'].protocol_family
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = observed_data
+        )
+
     def test_stix20_bundle_with_news_agency_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_news_agency_object()
         self.parser.load_stix_bundle(bundle)
