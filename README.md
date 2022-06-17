@@ -1,6 +1,7 @@
 # MISP-STIX - Python library to handle the conversion between MISP standard and STIX
 
-![](https://raw.githubusercontent.com/MISP/misp-stix/main/documentation/logos/misp-stix.png =125x125)
+![](https://raw.githubusercontent.com/MISP/misp-stix/main/documentation/logos/misp-stix.png | width=125)
+
 MISP-STIX-converter is a Python library (>=3.6) to handle all the conversions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
 
 ## Features
