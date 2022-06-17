@@ -2240,8 +2240,7 @@
                         "dst_ref": "1",
                         "dst_port": 443,
                         "protocols": [
-                            "ipv4",
-                            "tcp"
+                            "ipv4"
                         ],
                         "x_misp_domain": "circl.lu"
                     }
@@ -3288,6 +3287,11 @@
                     "value": "1234"
                 },
                 {
+                    "type": "boolean",
+                    "object_relation": "hidden",
+                    "value": "True"
+                },
+                {
                     "uuid": "d85eeb1a-f4a2-4b9f-a367-d84f9a7e6303",
                     "type": "text",
                     "object_relation": "parent-command-line",
@@ -3308,7 +3312,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[process:name = 'TestProcess' AND process:pid = '2510' AND process:binary_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.binary_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:x_misp_port = '1234']",
+                "pattern": "[process:is_hidden = 'True' AND process:name = 'TestProcess' AND process:pid = '2510' AND process:binary_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.binary_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:x_misp_port = '1234']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
@@ -3353,6 +3357,7 @@
                     },
                     "0": {
                         "type": "process",
+                        "is_hidden": true,
                         "pid": 2510,
                         "name": "TestProcess",
                         "binary_ref": "4",
