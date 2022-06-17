@@ -136,6 +136,11 @@ class STIX2Mapping:
         self.__yara_attribute = Mapping(**yara_attribute)
 
         # MISP OBJECTS MAPPING
+        self.__connection_protocols = {
+            "IP": "3", "ICMP": "3", "ARP": "3",
+            "TCP": "4", "UDP": "4",
+            "HTTP": "7", "HTTPS": "7", "FTP": "7"
+        }
         location_object_mapping = {
             'city': {'type': 'text', 'object_relation': 'city'},
             'country': {'type': 'text', 'object_relation': 'countrycode'},
@@ -171,6 +176,10 @@ class STIX2Mapping:
     @property
     def comment_attribute(self) -> dict:
         return self.__comment_attribute
+
+    @property
+    def connection_protocols(self) -> dict:
+        return self.__connection_protocols
 
     @property
     def description_attribute(self) -> dict:
