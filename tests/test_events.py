@@ -2201,6 +2201,11 @@ _TEST_PROCESS_OBJECT = {
             "type": "port",
             "object_relation": "port",
             "value": "1234"
+        },
+        {
+            "type": "boolean",
+            "object_relation": "hidden",
+            "value": "True"
         }
     ]
 }
