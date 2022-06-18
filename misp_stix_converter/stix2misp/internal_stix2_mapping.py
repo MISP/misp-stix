@@ -401,6 +401,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         address_family_attribute = {'type': 'text', 'object_relation': 'address-family'}
         alias_attribute = {'type': 'text', 'object_relation': 'alias'}
         archive_attribute = {'type': 'link', 'object_relation': 'archive'}
+        args_attribute = {'type': 'text', 'object_relation': 'args'}
         attachment_attribute = {'type': 'attachment', 'object_relation': 'attachment'}
         authentihash_attribute = {'type': 'authentihash', 'object_relation': 'authentihash'}
         bcc_attribute = {'type': 'email-dst', 'object_relation': 'bcc'}
@@ -409,9 +410,11 @@ class InternalSTIX2Mapping(STIX2Mapping):
         cc_attribute = {'type': 'email-dst', 'object_relation': 'cc'}
         cc_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'cc-display-name'}
         certificate_attribute = {'type': 'x509-fingerprint-sha1', 'object_relation': 'certificate'}
+        command_line_attribute = {'type': 'text', 'object_relation': 'command-line'}
         comment_attribute = {'type': 'text', 'object_relation': 'comment'}
         compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
-        creation_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-creation-time'}
+        creation_time_attribute = {'type': 'datetime', 'object_relation': 'creation-time'}
+        current_directory_attribute = {'type': 'text', 'object_relation': 'current-directory'}
         description_attribute = {'type': 'text', 'object_relation': 'description'}
         domain_attribute = {'type': 'domain', 'object_relation': 'domain'}
         domain_family_attribute = {'type': 'text', 'object_relation': 'domain-family'}
@@ -422,6 +425,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         eml_attribute = {'type': 'attachment', 'object_relation': 'eml'}
         employee_type_attribute = {'type': 'text', 'object_relation': 'employee-type'}
         entropy_attribute = {'type': 'float', 'object_relation': 'entropy'}
+        fake_process_name_attribute = {'type': 'boolean', 'object_relation': 'fake-process-name'}
         file_encoding_attribute = {'type': 'text', 'object_relation': 'file-encoding'}
         filename_attribute = {'type': 'filename', 'object_relation': 'filename'}
         followers_attribute = {'type': 'text', 'object_relation': 'followers'}
@@ -430,18 +434,23 @@ class InternalSTIX2Mapping(STIX2Mapping):
         from_attribute = {'type': 'email-src', 'object_relation': 'from'}
         from_display_name_attribute = {'type': 'email-src-display-name', 'object_relation': 'from-display-name'}
         from_domain_attribute = {'type': 'domain', 'object_relation': 'from-domain'}
+        guid_attribute = {'type': 'text', 'object_relation': 'guid'}
+        hidden_attribute = {'type': 'boolean', 'object_relation': 'hidden'}
         hostname_attribute = {'type': 'hostname', 'object_relation': 'hostname'}
         hostname_dst_attribute = {'type': 'hostname', 'object_relation': 'hostname-dst'}
         hostname_src_attribute = {'type': 'hostname', 'object_relation': 'hostname-src'}
         id_attribute = {'type': 'text', 'object_relation': 'id'}
+        image_attribute = {'type': 'filename', 'object_relation': 'image'}
         image_text_attribute = {'type': 'text', 'object_relation': 'image-text'}
         imphash_attribute = {'type': 'imphash', 'object_relation': 'imphash'}
+        integrity_level_attribute = {'type': 'text', 'object_relation': 'integrity-level'}
         ip_attribute = {'type': 'ip-dst', 'object_relation': 'ip'}
         ip_source_attribute = {'type': 'ip-src', 'object_relation': 'ip-src'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
         last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
+        lnk_creation_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-creation-time'}
         md5_attribute = {'type': 'md5', 'object_relation': 'md5'}
         message_id_attribute = {'type': 'email-message-id', 'object_relation': 'message-id'}
         mime_boundary_attribute = {'type': 'email-mime-boundary', 'object_relation': 'mime-boundary'}
@@ -449,10 +458,19 @@ class InternalSTIX2Mapping(STIX2Mapping):
         modification_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-modification-time'}
         msg_attribute = {'type': 'attachment', 'object_relation': 'msg'}
         name_attribute = {'type': 'text', 'object_relation': 'name'}
+        parent_command_line_attribute = {'type': 'text', 'object_relation': 'parent-command-line'}
+        parent_guid_attribute = {'type': 'text', 'object_relation': 'parent-guid'}
+        parent_image_attribute = {'type': 'filename', 'object_relation': 'parent-image'}
+        parent_pid_attribute = {'type': 'text', 'object_relation': 'parent-pid'}
+        parent_process_name_attribute = {'type': 'text', 'object_relation': 'parent-process-name'}
+        parent_process_path_attribute = {'type': 'text', 'object_relation': 'parent-process-path'}
         password_attribute = {'type': 'text', 'object_relation': 'password'}
         path_attribute = {'type': 'text', 'object_relation': 'path'}
         pattern_in_file_attribute = {'type': 'pattern-in-file', 'object_relation': 'pattern-in-file'}
+        pgid_attribute = {'type': 'text', 'object_relation': 'pgid'}
+        pid_attribute = {'type': 'text', 'object_relation': 'pid'}
         port_attribute = {'type': 'port', 'object_relation': 'port'}
+        process_state_attribute = {'type': 'process-state', 'object_relation': 'process-state'}
         received_hostname_attribute = {'type': 'hostname', 'object_relation': 'received-header-hostname'}
         received_ip_attribute = {'type': 'ip-src', 'object_relation': 'received-header-ip'}
         reply_to_attribute = {'type': 'email-reply-to', 'object_relation': 'reply-to'}
@@ -475,6 +493,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         src_port_attribute = {'type': 'port', 'object_relation': 'src-port'}
         ssdeep_attribute = {'type': 'ssdeep', 'object_relation': 'ssdeep'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
+        start_time_attribute = {'type': 'datetime', 'object_relation': 'start-time'}
         subject_attribute = {'type': 'email-subject', 'object_relation': 'subject'}
         telfhash_attribute = {'type': 'telfhash', 'object_relation': 'telfhash'}
         text_attribute = {'type': 'text', 'object_relation': 'text'}
@@ -486,6 +505,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         username_attribute = {'type': 'text', 'object_relation': 'username'}
         user_agent_attribute = {'type': 'text', 'object_relation': 'user-agent'}
         user_avatar_attribute = {'type': 'attachment', 'object_relation': 'user-avatar'}
+        user_creator_attribute = {'type': 'text', 'object_relation': 'user-creator'}
+        user_process_attribute = {'type': 'text', 'object_relation': 'user-process'}
         verified_attribute = {'type': 'text', 'object_relation': 'verified'}
         version_attribute = {'type': 'text', 'object_relation': 'version'}
         vhash_attribute = {'type': 'vhash', 'object_relation': 'vhash'}
@@ -796,8 +817,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
             name = filename_attribute,
             atime = access_time_attribute,
             x_misp_lnk_access_time = access_time_attribute,
-            ctime = creation_time_attribute,
-            x_misp_lnk_creation_time = creation_time_attribute,
+            ctime = lnk_creation_time_attribute,
+            x_misp_lnk_creation_time = lnk_creation_time_attribute,
             mtime = modification_time_attribute,
             x_misp_lnk_modification_time = modification_time_attribute,
             size = size_in_bytes_attribute,
@@ -896,6 +917,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
             },
             x_misp_VAT = {'type': 'text', 'object_relation': 'VAT'}
         )
+        self.__parent_process_object_mapping = Mapping(
+            command_line = parent_command_line_attribute,
+            name = parent_process_name_attribute,
+            x_misp_process_name = parent_process_name_attribute,
+            pid = parent_pid_attribute,
+            x_misp_guid = parent_guid_attribute,
+            x_misp_process_path = parent_process_path_attribute
+        )
         self.__parler_account_object_mapping = Mapping(
             user_id = account_id_attribute,
             account_login = account_name_attribute,
@@ -949,6 +978,60 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_text = text_attribute,
             x_misp_virtual_address = {'type': 'hex', 'object_relation': 'virtual_address'},
             x_misp_virtual_size = {'type': 'size-in-bytes', 'object_relation': 'virtual_size'}
+        )
+        self.__process_indicator_object_mapping = Mapping(
+            **{
+                'arguments': args_attribute,
+                'command_line': command_line_attribute,
+                'created': creation_time_attribute,
+                'created_time': creation_time_attribute,
+                'cwd': current_directory_attribute,
+                'is_hidden': hidden_attribute,
+                'name': name_attribute,
+                'binary_ref.name': image_attribute,
+                'image_ref.name': image_attribute,
+                'parent_ref.command_line': parent_command_line_attribute,
+                'parent_ref.name': parent_process_name_attribute,
+                'parent_ref.pid': parent_pid_attribute,
+                'parent_ref.binary_ref.name': parent_image_attribute,
+                'parent_ref.image_ref.name': parent_image_attribute,
+                'parent_ref.x_misp_guid': parent_guid_attribute,
+                'parent_ref.x_misp_process_name': parent_process_name_attribute,
+                'parent_ref.x_misp_process_path': parent_process_path_attribute,
+                'pid': pid_attribute,
+                'x_misp_args': args_attribute,
+                'x_misp_fake_process_name': fake_process_name_attribute,
+                'x_misp_guid': guid_attribute,
+                'x_misp_integrity_level': integrity_level_attribute,
+                'x_misp_name': name_attribute,
+                'x_misp_pgid': pgid_attribute,
+                'x_misp_port': port_attribute,
+                'x_misp_process_state': process_state_attribute,
+                'x_misp_start_time': start_time_attribute,
+                'x_misp_user_creator': user_creator_attribute,
+                'x_misp_user_process': user_process_attribute
+            }
+        )
+        self.__process_observable_object_mapping = Mapping(
+            arguments = args_attribute,
+            x_misp_args = args_attribute,
+            command_line = command_line_attribute,
+            created = creation_time_attribute,
+            created_time = creation_time_attribute,
+            cwd = current_directory_attribute,
+            is_hidden = hidden_attribute,
+            name = name_attribute,
+            x_misp_name = name_attribute,
+            pid = pid_attribute,
+            x_misp_fake_process_name = fake_process_name_attribute,
+            x_misp_guid = guid_attribute,
+            x_misp_integrity_level = integrity_level_attribute,
+            x_misp_pgid = pgid_attribute,
+            x_misp_port = port_attribute,
+            x_misp_process_state = process_state_attribute,
+            x_misp_start_time = start_time_attribute,
+            x_misp_user_creator = user_creator_attribute,
+            x_misp_user_process = user_process_attribute
         )
         self.__reddit_account_object_mapping = Mapping(
             user_id = account_id_attribute,
@@ -1232,6 +1315,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__organization_contact_information_mapping
 
     @property
+    def parent_process_object_mapping(self) -> dict:
+        return self.__parent_process_object_mapping
+
+    @property
     def parler_account_object_mapping(self) -> dict:
         return self.__parler_account_object_mapping
 
@@ -1242,6 +1329,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def pe_section_object_mapping(self) -> dict:
         return self.__pe_section_object_mapping
+
+    @property
+    def process_indicator_object_mapping(self) -> dict:
+        return self.__process_indicator_object_mapping
+
+    @property
+    def process_observable_object_mapping(self) -> dict:
+        return self.__process_observable_object_mapping
 
     @property
     def reddit_account_object_mapping(self) -> dict:

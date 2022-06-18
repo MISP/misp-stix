@@ -11,7 +11,7 @@ from copy import deepcopy
 from datetime import datetime
 from pymisp import MISPAttribute, MISPEvent, MISPObject
 from stix2.v20.observables import (
-    NetworkTraffic as NetworkTraffic_v20,
+    NetworkTraffic as NetworkTraffic_v20, Process as Process_v20,
     WindowsPEBinaryExt as WindowsExtension_v20)
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
@@ -19,7 +19,7 @@ from stix2.v20.sdo import (
     Malware as Malware_v20, ObservedData as ObservedData_v20, Tool as Tool_v20,
     Vulnerability as Vulnerability_v20)
 from stix2.v21.observables import (
-    DomainName, NetworkTraffic as NetworkTraffic_v21,
+    DomainName, NetworkTraffic as NetworkTraffic_v21, Process as Process_v21,
     WindowsPEBinaryExt as WindowsExtension_v21)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
@@ -55,6 +55,10 @@ _NETWORK_TRAFFIC_TYPING = Union[
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20,
     ObservedData_v21
+]
+_PROCESS_TYPING = Union[
+    Process_v20,
+    Process_v21
 ]
 
 
@@ -1289,6 +1293,83 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_parler_account_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_account_with_attachment_observable(observed_data, 'parler-account', 'v21')
 
+    def _object_from_process_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('process', observed_data)
+        observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
+        main_process = self._fetch_main_process(observables)
+        for feature, mapping in self._mapping.process_observable_object_mapping.items():
+            if hasattr(main_process, feature):
+                self._populate_object_attributes(
+                    misp_object,
+                    mapping,
+                    getattr(main_process, feature)
+                )
+        if hasattr(main_process, 'binary_ref'):
+            image = observables[main_process.binary_ref]
+            misp_object.add_attribute(
+                **{
+                    'type': 'filename',
+                    'object_relation': 'image',
+                    'value': image.name
+                }
+            )
+        elif hasattr(main_process, 'image_ref'):
+            image = observables[main_process.image_ref]
+            misp_object.add_attribute(
+                **{
+                    'uuid': image.id.split('--')[1],
+                    'type': 'filename',
+                    'object_relation': 'image',
+                    'value': image.name
+                }
+            )
+        if hasattr(main_process, 'child_refs'):
+            for child_ref in main_process.child_refs:
+                process = observables[child_ref]
+                attribute = {
+                    'type': 'text',
+                    'object_relation': 'child-pid',
+                    'value': process.pid
+                }
+                if hasattr(process, 'id'):
+                    attribute['uuid'] = process.id.split('--')[1]
+                misp_object.add_attribute(**attribute)
+        if hasattr(main_process, 'parent_ref'):
+            parent_process = observables[main_process.parent_ref]
+            for feature, mapping in self._mapping.parent_process_object_mapping.items():
+                if hasattr(parent_process, feature):
+                    attribute = {'value': getattr(parent_process, feature)}
+                    attribute.update(mapping)
+                    if feature == 'pid' and hasattr(parent_process, 'id'):
+                        attribute['uuid'] = parent_process.id.split('--')[1]
+                    misp_object.add_attribute(**attribute)
+            if hasattr(parent_process, 'binary_ref'):
+                image = observables[parent_process.binary_ref]
+                misp_object.add_attribute(
+                    **{
+                        'type': 'filename',
+                        'object_relation': 'parent-image',
+                        'value': image.name
+                    }
+                )
+            elif hasattr(parent_process, 'image_ref'):
+                image = observables[parent_process.image_ref]
+                misp_object.add_attribute(
+                    **{
+                        'uuid': image.id.split('--')[1],
+                        'type': 'filename',
+                        'object_relation': 'parent-image',
+                        'value': image.name
+                    }
+                )
+        self._add_misp_object(misp_object)
+
+    def _object_from_process_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_process_observable(observed_data, 'v20')
+
+    def _object_from_process_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_process_observable(observed_data, 'v21')
+
     def _object_from_reddit_account_observable_v20(self, observed_data: ObservedData_v20):
         self._object_from_account_with_attachment_observable(observed_data, 'reddit-account', 'v20')
 
@@ -1763,6 +1844,25 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
+    def _object_from_process_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('process', indicator)
+        mapping = self._mapping.process_indicator_object_mapping
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            if feature in mapping:
+                attribute = {'value': value}
+                attribute.update(mapping[feature])
+                misp_object.add_attribute(**attribute)
+            elif 'child_refs' in feature:
+                misp_object.add_attribute(
+                    **{
+                        'type': 'text',
+                        'object_relation': 'child-pid',
+                        'value': value
+                    }
+                )
+        self._add_misp_object(misp_object)
+
     def _object_from_reddit_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'reddit-account')
 
@@ -1924,6 +2024,19 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _extract_features_from_pattern(pattern: str) -> tuple:
         identifier, value = pattern.split(' = ')
         return identifier.split(':')[1], value.strip("'")
+
+    @staticmethod
+    def _fetch_main_process(observables: dict) -> _PROCESS_TYPING:
+        if tuple(observable.type for observable in observables.values()).count('process') == 1:
+            for observable in observables.values():
+                if observable.type == 'process':
+                    return observable
+        ref_features = ('child_refs', 'parent_ref')
+        for observable in observables.values():
+            if observable.type != 'process':
+                continue
+            if any(hasattr(observable, feature) for feature in ref_features):
+                return observable
 
     def _fetch_observables(self, object_refs: Union[list, str]):
         if isinstance(object_refs, str):
