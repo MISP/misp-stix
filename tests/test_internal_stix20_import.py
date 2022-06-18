@@ -1768,6 +1768,43 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             identity = identity
         )
 
+    def test_stix20_bundle_with_process_indicator_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_process_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        self._check_process_indicator_object(misp_object.attributes, pattern[1:-1].split(' AND '))
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_process_observable_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_process_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observables = self._check_observed_data_object(misp_object, observed_data)
+        name, parent_process_name = self._check_process_observable_object(
+            misp_object.attributes,
+            observables
+        )
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, observables['0'].name)
+        self.assertEqual(parent_process_name.type, 'text')
+        self.assertEqual(parent_process_name.object_relation, 'parent-process-name')
+        self.assertEqual(parent_process_name.value, observables['1'].name)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = observed_data
+        )
+
     def test_stix20_bundle_with_script_objects(self):
         bundle = TestSTIX20Bundles.get_bundle_with_script_objects()
         self.parser.load_stix_bundle(bundle)

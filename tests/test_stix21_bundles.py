@@ -4661,6 +4661,95 @@ _PORT_INDICATOR_ATTRIBUTE = {
         "misp:to_ids=\"True\""
     ]
 }
+_PROCESS_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--5e39776a-b284-40b3-8079-22fea964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[process:pid = '2510' AND process:image_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.image_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.x_misp_process_name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:is_hidden = 'True' AND process:x_misp_name = 'TestProcess' AND process:x_misp_port = '1234']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "misc"
+        }
+    ],
+    "labels": [
+        "misp:name=\"process\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_PROCESS_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5e39776a-b284-40b3-8079-22fea964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "process--5e39776a-b284-40b3-8079-22fea964451a",
+            "file--d01ef2c6-3154-4f8a-a3dc-9de1f34dd5d0",
+            "process--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "process--518b4bcb-a86b-4783-9457-391d548b605b",
+            "file--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
+        ],
+        "labels": [
+            "misp:name=\"process\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "process",
+        "spec_version": "2.1",
+        "id": "process--5e39776a-b284-40b3-8079-22fea964451a",
+        "pid": 2510,
+        "image_ref": "file--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "parent_ref": "process--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "child_refs": [
+            "process--518b4bcb-a86b-4783-9457-391d548b605b"
+        ],
+        "is_hidden": True,
+        "x_misp_name": "TestProcess",
+        "x_misp_port": "1234"
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--d01ef2c6-3154-4f8a-a3dc-9de1f34dd5d0",
+        "name": "parent_process.exe"
+    },
+    {
+        "type": "process",
+        "spec_version": "2.1",
+        "id": "process--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "pid": 2107,
+        "command_line": "grep -nrG iglocska /home/viktor/friends.txt",
+        "image_ref": "file--d01ef2c6-3154-4f8a-a3dc-9de1f34dd5d0",
+        "x_misp_process_name": "Friends_From_H"
+    },
+    {
+        "type": "process",
+        "spec_version": "2.1",
+        "id": "process--518b4bcb-a86b-4783-9457-391d548b605b",
+        "pid": 1401
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "name": "test_process.exe"
+    }
+]
 _REGKEY_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -5869,6 +5958,14 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_patterning_language_objects(cls):
         return cls.__assemble_bundle(*_PATTERNING_LANGUAGE_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_process_indicator_object(cls):
+        return cls.__assemble_bundle(_PROCESS_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_process_observable_object(cls):
+        return cls.__assemble_bundle(*_PROCESS_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_script_objects(cls):

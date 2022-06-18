@@ -3734,6 +3734,74 @@ _PORT_INDICATOR_ATTRIBUTE = {
         "misp:to_ids=\"True\""
     ]
 }
+_PROCESS_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5e39776a-b284-40b3-8079-22fea964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[process:name = 'TestProcess' AND process:pid = '2510' AND process:binary_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.binary_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:is_hidden = 'True' AND process:x_misp_port = '1234']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "misc"
+        }
+    ],
+    "labels": [
+        "misp:name=\"process\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_PROCESS_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--5e39776a-b284-40b3-8079-22fea964451a",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "process",
+            "pid": 2510,
+            "name": "TestProcess",
+            "binary_ref": "4",
+            "parent_ref": "1",
+            "child_refs": [
+                "3"
+            ],
+            "is_hidden": True,
+            "x_misp_port": "1234"
+        },
+        "1": {
+            "type": "process",
+            "pid": 2107,
+            "name": "Friends_From_H",
+            "command_line": "grep -nrG iglocska /home/viktor/friends.txt",
+            "binary_ref": "2"
+        },
+        "2": {
+            "type": "file",
+            "name": "parent_process.exe"
+        },
+        "3": {
+            "type": "process",
+            "pid": 1401
+        },
+        "4": {
+            "type": "file",
+            "name": "test_process.exe"
+        }
+    },
+    "labels": [
+        "misp:name=\"process\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _REGKEY_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -4834,6 +4902,14 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_organization_object(cls):
         return cls.__assemble_bundle(_ORGANIZATION_OBJECT)
+
+    @classmethod
+    def get_bundle_with_process_indicator_object(cls):
+        return cls.__assemble_bundle(_PROCESS_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_process_observable_object(cls):
+        return cls.__assemble_bundle(_PROCESS_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_script_objects(cls):

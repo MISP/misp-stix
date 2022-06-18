@@ -2256,6 +2256,20 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             identity = identity
         )
 
+    def test_stix21_bundle_with_organization_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_organization_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, identity = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        role = self._check_organization_object(misp_object, identity)
+        self.assertEqual(identity.roles, [role.value])
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            identity = identity
+        )
+
     def test_stix21_bundle_with_patterning_language_objects(self):
         bundle = TestSTIX21Bundles.get_bundle_with_patterning_language_objects()
         self.parser.load_stix_bundle(bundle)
@@ -2278,18 +2292,90 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             indicator = yara_indicator
         )
 
-    def test_stix21_bundle_with_organization_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_organization_object()
+    def test_stix21_bundle_with_process_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_process_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, identity = bundle.objects
+        _, grouping, indicator = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
-        role = self._check_organization_object(misp_object, identity)
-        self.assertEqual(identity.roles, [role.value])
+        pattern = self._check_indicator_object(misp_object, indicator)
+        pid, image, parent_command_line, parent_image, parent_pid, parent_name, child_pid, hidden, name, port = misp_object.attributes
+        _pid, _image, _parent_command_line, _parent_image, _parent_pid, _parent_name, _child_pid, is_hidden, _name, _port = pattern[1:-1].split(' AND ')
+        self._check_process_indicator_object(
+            (
+                name, pid, image, parent_command_line, parent_image, parent_pid,
+                parent_name, child_pid, hidden, port
+            ),
+            (
+                _name, _pid, _image, _parent_command_line, _parent_image, _parent_pid,
+                _parent_name, _child_pid, is_hidden, _port
+            )
+        )
         self._populate_documentation(
             misp_object = json.loads(misp_object.to_json()),
-            identity = identity
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_process_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_process_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, process, parent_image, parent_process, child_process, image = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        process_ref, parent_image_ref, parent_ref, child_ref, image_ref = self._check_observed_data_object(misp_object, observed_data)
+        self._assert_multiple_equal(
+            misp_object.uuid,
+            process.id.split('--')[1],
+            process_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[-2].uuid,
+            parent_process.id.split('--')[1],
+            parent_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[-1].uuid,
+            parent_image.id.split('--')[1],
+            parent_image_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[5].uuid,
+            child_process.id.split('--')[1],
+            child_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[4].uuid,
+            image.id.split('--')[1],
+            image_ref.split('--')[1]
+        )
+        name, parent_process_name = self._check_process_observable_object(
+            misp_object.attributes,
+            {
+                process.id: process,
+                parent_process.id: parent_process,
+                parent_image.id: parent_image,
+                child_process.id: child_process,
+                image.id: image
+            }
+        )
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, process.x_misp_name)
+        self.assertEqual(parent_process_name.type, 'text')
+        self.assertEqual(parent_process_name.object_relation, 'parent-process-name')
+        self.assertEqual(parent_process_name.value, parent_process.x_misp_process_name)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = [
+                observed_data,
+                process,
+                parent_image,
+                parent_process,
+                child_process,
+                image
+            ]
         )
 
     def test_stix21_bundle_with_script_objects(self):
