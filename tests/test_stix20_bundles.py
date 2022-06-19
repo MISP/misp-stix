@@ -3802,6 +3802,56 @@ _PROCESS_OBSERVABLE_OBJECT = {
         "misp:to_ids=\"False\""
     ]
 }
+_REGISTRY_KEY_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5ac3379c-3e74-44ba-9160-04120a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:x_misp_hive = 'hklm' AND windows-registry-key:x_misp_last_modified = '2020-10-25T16:22:00']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "file"
+        }
+    ],
+    "labels": [
+        "misp:name=\"registry-key\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_REGISTRY_KEY_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--5ac3379c-3e74-44ba-9160-04120a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "windows-registry-key",
+            "key": "hkey_local_machine\\system\\bar\\foo",
+            "values": [
+                {
+                    "name": "RegistryName",
+                    "data": "%DATA%\\qwertyuiop",
+                    "data_type": "REG_SZ"
+                }
+            ],
+            "x_misp_hive": "hklm",
+            "x_misp_last_modified": "2020-10-25T16:22:00"
+        }
+    },
+    "labels": [
+        "misp:name=\"registry-key\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _REGKEY_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -4910,6 +4960,14 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_process_observable_object(cls):
         return cls.__assemble_bundle(_PROCESS_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_registry_key_indicator_object(cls):
+        return cls.__assemble_bundle(_REGISTRY_KEY_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_registry_key_observable_object(cls):
+        return cls.__assemble_bundle(_REGISTRY_KEY_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_script_objects(cls):

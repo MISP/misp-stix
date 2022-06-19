@@ -2378,6 +2378,50 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             ]
         )
 
+    def test_stix21_bundle_with_registry_key_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_registry_key_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        key, last_modified, *attributes = misp_object.attributes
+        _key, modified_time, *patterns = pattern[1:-1].split(' AND ')
+        self._check_registry_key_indicator_object(
+            (key, *attributes, last_modified),
+            (_key, *patterns, modified_time)
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_registry_key_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_registry_key_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, registry_key = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        registry_key_ref = self._check_observed_data_object(misp_object, observed_data)[0]
+        self._assert_multiple_equal(
+            misp_object.uuid,
+            registry_key.id.split('--')[1],
+            registry_key_ref.split('--')[1]
+        )
+        modified_time = self._check_registry_key_observable_object(
+            misp_object.attributes,
+            registry_key
+        )
+        self.assertEqual(modified_time.type, 'datetime')
+        self.assertEqual(modified_time.object_relation, 'last-modified')
+        self.assertEqual(modified_time.value, registry_key.modified_time)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = [observed_data, registry_key]
+        )
+
     def test_stix21_bundle_with_script_objects(self):
         bundle = TestSTIX21Bundles.get_bundle_with_script_objects()
         self.parser.load_stix_bundle(bundle)

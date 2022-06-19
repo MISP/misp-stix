@@ -1311,6 +1311,53 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(description_attribute.object_relation, 'description')
         self.assertEqual(description_attribute.value, observable.x_misp_description)
 
+    def _check_registry_key_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 6)
+        key, data, data_type, name, hive, last_modified = attributes
+        _key, _data, _data_type, _name, _hive, modified_time = pattern
+        self.assertEqual(key.type, 'regkey')
+        self.assertEqual(key.object_relation, 'key')
+        self.assertEqual(key.value, self._get_pattern_value(_key))
+        self.assertEqual(data.type, 'text')
+        self.assertEqual(data.object_relation, 'data')
+        self.assertEqual(data.value, self._get_pattern_value(_data))
+        self.assertEqual(data_type.type, 'text')
+        self.assertEqual(data_type.object_relation, 'data-type')
+        self.assertEqual(data_type.value, self._get_pattern_value(_data_type))
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, self._get_pattern_value(_name))
+        self.assertEqual(hive.type, 'text')
+        self.assertEqual(hive.object_relation, 'hive')
+        self.assertEqual(hive.value, self._get_pattern_value(_hive))
+        self.assertEqual(last_modified.type, 'datetime')
+        self.assertEqual(last_modified.object_relation, 'last-modified')
+        self.assertEqual(
+            self._datetime_to_str(last_modified.value),
+            self._get_pattern_value(modified_time)
+        )
+
+    def _check_registry_key_observable_object(self, attributes, observable):
+        self.assertEqual(len(attributes), 6)
+        data, data_type, name, key, modified_time, hive = attributes
+        values = observable['values'][0]
+        self.assertEqual(data.type, 'text')
+        self.assertEqual(data.object_relation, 'data')
+        self.assertEqual(data.value, values.data)
+        self.assertEqual(data_type.type, 'text')
+        self.assertEqual(data_type.object_relation, 'data-type')
+        self.assertEqual(data_type.value, values.data_type)
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, values.name)
+        self.assertEqual(key.type, 'regkey')
+        self.assertEqual(key.object_relation, 'key')
+        self.assertEqual(key.value, observable.key)
+        self.assertEqual(hive.type, 'text')
+        self.assertEqual(hive.object_relation, 'hive')
+        self.assertEqual(hive.value, observable.x_misp_hive)
+        return modified_time
+
     def _check_script_object(self, misp_object, stix_object):
         self.assertEqual(misp_object.uuid, stix_object.id.split('--')[1])
         self.assertEqual(misp_object.name, 'script')
