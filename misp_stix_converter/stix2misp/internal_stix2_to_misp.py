@@ -1376,6 +1376,29 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_reddit_account_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_account_with_attachment_observable(observed_data, 'reddit-account', 'v21')
 
+    def _object_from_registry_key_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('registry-key', observed_data)
+        observable = getattr(self, f'_fetch_observables_{version}')(observed_data)
+        if 'values' in observable:
+            values = observable['values'][0]
+            for feature, mapping in self._mapping.registry_key_values_mapping.items():
+                if hasattr(values, feature):
+                    attribute = {'value': getattr(values, feature)}
+                    attribute.update(mapping)
+                    misp_object.add_attribute(**attribute)
+        for feature, mapping in self._mapping.registry_key_object_mapping.items():
+            if hasattr(observable, feature):
+                attribute = {'value': getattr(observable, feature)}
+                attribute.update(mapping)
+                misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
+    def _object_from_registry_key_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_registry_key_observable(observed_data, 'v20')
+
+    def _object_from_registry_key_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_registry_key_observable(observed_data, 'v21')
+
     def _object_from_standard_observable(self, observed_data: _OBSERVED_DATA_TYPING,
                                          name: str, version: str):
         misp_object = self._create_misp_object(name, observed_data)
@@ -1865,6 +1888,24 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _object_from_reddit_account_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_with_attachment_indicator(indicator, 'reddit-account')
+
+    def _object_from_registry_key_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('registry-key', indicator)
+        mapping = self._mapping.registry_key_object_mapping
+        values_mapping = self._mapping.registry_key_values_mapping
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            if feature in mapping:
+                attribute = {'value': value}
+                attribute.update(mapping[feature])
+                misp_object.add_attribute(**attribute)
+            elif 'values[0].' in feature:
+                key = feature.split('.')[-1]
+                if key in values_mapping:
+                    attribute = {'value': value}
+                    attribute.update(values_mapping[key])
+                    misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
 
     def _object_from_standard_pattern(self, indicator: _INDICATOR_TYPING, name: str):
         misp_object = self._create_misp_object(name, indicator)

@@ -448,6 +448,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         ip_source_attribute = {'type': 'ip-src', 'object_relation': 'ip-src'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
         last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
+        last_modified_attribute = {'type': 'datetime', 'object_relation': 'last-modified'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
         lnk_creation_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-creation-time'}
@@ -1046,6 +1047,18 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_trophies = {'type': '', 'object_relation': 'trophies'},
             x_misp_url = url_attribute
         )
+        self.__registry_key_object_mapping = Mapping(
+            key = {'type': 'regkey', 'object_relation': 'key'},
+            modified_time = last_modified_attribute,
+            x_misp_last_modified = last_modified_attribute,
+            x_misp_hive = {'type': 'text', 'object_relation': 'hive'},
+            x_misp_root_keys = {'type': 'text', 'object_relation': 'root-keys'}
+        )
+        self.__registry_key_values_mapping = Mapping(
+            data = {'type': 'text', 'object_relation': 'data'},
+            data_type = {'type': 'text', 'object_relation': 'data-type'},
+            name = {'type': 'text', 'object_relation': 'name'}
+        )
         self.__script_from_malware_object_mapping = Mapping(
             name = filename_attribute,
             description = comment_attribute,
@@ -1341,6 +1354,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def reddit_account_object_mapping(self) -> dict:
         return self.__reddit_account_object_mapping
+
+    @property
+    def registry_key_object_mapping(self) -> dict:
+        return self.__registry_key_object_mapping
+
+    @property
+    def registry_key_values_mapping(self) -> dict:
+        return self.__registry_key_values_mapping
 
     @property
     def script_from_malware_object_mapping(self) -> dict:
