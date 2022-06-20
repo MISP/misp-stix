@@ -2494,3 +2494,28 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             misp_object = json.loads(misp_object.to_json()),
             vulnerability = vulnerability
         )
+
+    def test_stix21_bundle_with_x509_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_x509_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        self._check_x509_indicator_object(misp_object.attributes, pattern)
+
+    def test_stix21_bundle_with_x509_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_x509_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, x509 = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        x509_ref = self._check_observed_data_object(misp_object, observed_data)[0]
+        self._assert_multiple_equal(
+            misp_object.uuid,
+            x509.id.split('--')[1],
+            x509_ref.split('--')[1]
+        )
+        self._check_x509_observable_object(misp_object.attributes, x509)

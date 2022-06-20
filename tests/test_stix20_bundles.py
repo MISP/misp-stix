@@ -4373,6 +4373,61 @@ _X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES = [
         ]
     }
 ]
+_X509_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--5ac3444e-145c-4749-8467-02550a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00' AND x509-certificate:x_misp_pem = 'RawCertificateInPEMFormat']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"x509\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_X509_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--5ac3444e-145c-4749-8467-02550a00020f",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "x509-certificate",
+            "hashes": {
+                "MD5": "b2a5abfeef9e36964281a31e17b57c97",
+                "SHA-1": "5898fc860300e228dcd54c0b1045b5fa0dcda502"
+            },
+            "version": "1",
+            "serial_number": "1234567890",
+            "signature_algorithm": "SHA1_WITH_RSA_ENCRYPTION",
+            "issuer": "Issuer Name",
+            "validity_not_before": "2020-01-01T00:00:00Z",
+            "validity_not_after": "2021-01-01T00:00:00Z",
+            "subject": "CertificateSubject",
+            "subject_public_key_algorithm": "PublicKeyAlgorithm",
+            "subject_public_key_modulus": "C5",
+            "subject_public_key_exponent": 2,
+            "x_misp_pem": "RawCertificateInPEMFormat"
+        }
+    },
+    "labels": [
+        "misp:name=\"x509\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 
 
 class TestSTIX20Bundles:
@@ -4984,3 +5039,11 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_vulnerability_object(cls):
         return cls.__assemble_bundle(_VULNERABILITY_OBJECT)
+
+    @classmethod
+    def get_bundle_with_x509_indicator_object(cls):
+        return cls.__assemble_bundle(_X509_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_x509_observable_object(cls):
+        return cls.__assemble_bundle(_X509_OBSERVABLE_OBJECT)
