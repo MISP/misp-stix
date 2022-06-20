@@ -1774,8 +1774,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
             pattern = []
             if attributes.get('self_signed'):
-                self_signed = 'true' if bool(int(attributes.pop('self_signed'))) else 'false'
-                pattern.append(f"{prefix}:is_self_signed = '{self_signed}'")
+                pattern.append(f"{prefix}:is_self_signed = '{attributes.pop('self_signed')}'")
             for feature in self._mapping.x509_hash_fields:
                 if attributes.get(feature):
                     hash_type = self._define_hash_type(feature.split('-')[-1])
@@ -2696,7 +2695,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         )
         x509_args = defaultdict(dict)
         if attributes.get('self_signed'):
-            x509_args['is_self_signed'] = bool(int(attributes.pop('self_signed')))
+            x509_args['is_self_signed'] = attributes.pop('self_signed')
         for feature in self._mapping.x509_hash_fields:
             if attributes.get(feature):
                 hash_type = self._define_hash_type(feature.split('-')[-1])
