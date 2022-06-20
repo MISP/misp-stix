@@ -422,6 +422,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         email_attachment_attribute = {'type': 'email-attachment', 'object_relation': 'attachment'}
         email_body_attribute = {'type': 'email-body', 'object_relation': 'email-body'}
         email_header_attribute = {'type': 'email-header', 'object_relation': 'header'}
+        email_subject_attribute = {'type': 'email-subject', 'object_relation': 'subject'}
         eml_attribute = {'type': 'attachment', 'object_relation': 'eml'}
         employee_type_attribute = {'type': 'text', 'object_relation': 'employee-type'}
         entropy_attribute = {'type': 'float', 'object_relation': 'entropy'}
@@ -446,6 +447,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
         integrity_level_attribute = {'type': 'text', 'object_relation': 'integrity-level'}
         ip_attribute = {'type': 'ip-dst', 'object_relation': 'ip'}
         ip_source_attribute = {'type': 'ip-src', 'object_relation': 'ip-src'}
+        is_ca_attribute = {'type': 'boolean', 'object_relation': 'is_ca'}
+        is_self_signed_attribute = {'type': 'boolean', 'object_relation': 'self_signed'}
+        issuer_attribute = {'type': 'text', 'object_relation': 'issuer'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
         last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
         last_modified_attribute = {'type': 'datetime', 'object_relation': 'last-modified'}
@@ -468,10 +472,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
         password_attribute = {'type': 'text', 'object_relation': 'password'}
         path_attribute = {'type': 'text', 'object_relation': 'path'}
         pattern_in_file_attribute = {'type': 'pattern-in-file', 'object_relation': 'pattern-in-file'}
+        pem_attribute = {'type': 'text', 'object_relation': 'pem'}
         pgid_attribute = {'type': 'text', 'object_relation': 'pgid'}
         pid_attribute = {'type': 'text', 'object_relation': 'pid'}
         port_attribute = {'type': 'port', 'object_relation': 'port'}
         process_state_attribute = {'type': 'process-state', 'object_relation': 'process-state'}
+        pubkey_info_algorithm_attribute = {'type': 'text', 'object_relation': 'pubkey-info-algorithm'}
+        pubkey_info_exponent_attribute = {'type': 'text', 'object_relation': 'pubkey-info-exponent'}
+        pubkey_info_modulus_attribute = {'type': 'text', 'object_relation': 'pubkey-info-modulus'}
+        pubkey_info_size_attribute = {'type': 'text', 'object_relation': 'pubkey-info-size'}
+        raw_base64_attribute = {'type': 'text', 'object_relation': 'raw-base64'}
         received_hostname_attribute = {'type': 'hostname', 'object_relation': 'received-header-hostname'}
         received_ip_attribute = {'type': 'ip-src', 'object_relation': 'received-header-ip'}
         reply_to_attribute = {'type': 'email-reply-to', 'object_relation': 'reply-to'}
@@ -481,6 +491,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         screenshot_attribute = {'type': 'attachment', 'object_relation': 'screenshot'}
         script_attribute = {'type': 'text', 'object_relation': 'script'}
         send_date_attribute = {'type': 'datetime', 'object_relation': 'send-date'}
+        serial_number_attribute = {'type': 'text', 'object_relation': 'serial-number'}
         sha1_attribute = {'type': 'sha1', 'object_relation': 'sha1'}
         sha224_attribute = {'type': 'sha224', 'object_relation': 'sha224'}
         sha256_attribute = {'type': 'sha256', 'object_relation': 'sha256'}
@@ -490,12 +501,13 @@ class InternalSTIX2Mapping(STIX2Mapping):
         sha3_512_attribute = {'type': 'sha3-512', 'object_relation': 'sha3-512'}
         sha384_attribute = {'type': 'sha384', 'object_relation': 'sha384'}
         sha512_attribute = {'type': 'sha512', 'object_relation': 'sha512'}
+        signature_algorithm_attribute = {'type': 'text', 'object_relation': 'signature_algorithm'}
         size_in_bytes_attribute = {'type': 'size-in-bytes', 'object_relation': 'size-in-bytes'}
         src_port_attribute = {'type': 'port', 'object_relation': 'src-port'}
         ssdeep_attribute = {'type': 'ssdeep', 'object_relation': 'ssdeep'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
         start_time_attribute = {'type': 'datetime', 'object_relation': 'start-time'}
-        subject_attribute = {'type': 'email-subject', 'object_relation': 'subject'}
+        subject_attribute = {'type': 'text', 'object_relation': 'subject'}
         telfhash_attribute = {'type': 'telfhash', 'object_relation': 'telfhash'}
         text_attribute = {'type': 'text', 'object_relation': 'text'}
         thread_index_attribute = {'type': 'email-thread-index', 'object_relation': 'thread-index'}
@@ -508,6 +520,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         user_avatar_attribute = {'type': 'attachment', 'object_relation': 'user-avatar'}
         user_creator_attribute = {'type': 'text', 'object_relation': 'user-creator'}
         user_process_attribute = {'type': 'text', 'object_relation': 'user-process'}
+        validity_not_after_attribute = {'type': 'datetime', 'object_relation': 'validity-not-after'}
+        validity_not_before_attribute = {'type': 'datetime', 'object_relation': 'validity-not-before'}
         verified_attribute = {'type': 'text', 'object_relation': 'verified'}
         version_attribute = {'type': 'text', 'object_relation': 'version'}
         vhash_attribute = {'type': 'vhash', 'object_relation': 'vhash'}
@@ -600,7 +614,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'from_ref.display_name': from_display_name_attribute,
                 'from_ref.value': from_attribute,
                 'message_id': message_id_attribute,
-                'subject': subject_attribute,
+                'subject': email_subject_attribute,
                 'to_refs': {
                     'display_name': to_display_name_attribute,
                     'value': to_attribute
@@ -623,7 +637,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             body = email_body_attribute,
             date = send_date_attribute,
             message_id = message_id_attribute,
-            subject = subject_attribute,
+            subject = email_subject_attribute,
             x_misp_attachment = email_attachment_attribute,
             x_misp_from_domain = from_domain_attribute,
             x_misp_ip_src = ip_source_attribute,
@@ -1175,6 +1189,56 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'object_relation': 'vulnerable-configuration'
             }
         )
+        self.__x509_indicator_object_mapping = Mapping(
+            **{
+                'hashes.MD5': {'type': 'x509-fingerprint-md5', 'object_relation': 'x509-fingerprint-md5'},
+                'hashes.SHA1': {'type': 'x509-fingerprint-sha1', 'object_relation': 'x509-fingerprint-sha1'},
+                'hashes.SHA256': {'type': 'x509-fingerprint-sha256', 'object_relation': 'x509-fingerprint-sha256'},
+                'is_self_signed': is_self_signed_attribute,
+                'issuer': issuer_attribute,
+                'serial_number': serial_number_attribute,
+                'signature_algorithm': signature_algorithm_attribute,
+                'subject': subject_attribute,
+                'subject_public_key_algorithm': pubkey_info_algorithm_attribute,
+                'subject_public_key_exponent': pubkey_info_exponent_attribute,
+                'subject_public_key_modulus': pubkey_info_modulus_attribute,
+                'validity_not_after': validity_not_after_attribute,
+                'validity_not_before': validity_not_before_attribute,
+                'version': version_attribute,
+                'x_misp_is_ca': is_ca_attribute,
+                'x_misp_pem': pem_attribute,
+                'x_misp_pubkey_info_size': pubkey_info_size_attribute,
+                'x_misp_raw_base64': raw_base64_attribute,
+                'x_misp_text': text_attribute
+            }
+        )
+        self.__x509_observable_object_mapping = Mapping(
+            is_self_signed = is_self_signed_attribute,
+            issuer = issuer_attribute,
+            serial_number = serial_number_attribute,
+            signature_algorithm = signature_algorithm_attribute,
+            subject = subject_attribute,
+            subject_public_key_algorithm = pubkey_info_algorithm_attribute,
+            subject_public_key_exponent = pubkey_info_exponent_attribute,
+            subject_public_key_modulus = pubkey_info_modulus_attribute,
+            validity_not_after = validity_not_after_attribute,
+            validity_not_before = validity_not_before_attribute,
+            version = version_attribute,
+            x_misp_is_ca = is_ca_attribute,
+            x_misp_pem = pem_attribute,
+            x_misp_pubkey_info_size = pubkey_info_size_attribute,
+            x_misp_raw_base64 = raw_base64_attribute,
+            x_misp_text = text_attribute
+        )
+        self.__x509_subject_alternative_name_mapping = Mapping(
+            **{
+                'DNS name': {'type': 'hostname', 'object_relation': 'dns_names'},
+                'email': {'type': 'email-dst', 'object_relation': 'email'},
+                'IP': ip_attribute,
+                'RID': {'type': 'text', 'object_relation': 'rid'},
+                'URI': {'type': 'uri', 'object_relation': 'uri'}
+            }
+        )
         self.__yara_object_mapping = Mapping(
             pattern = {'type': 'yara', 'object_relation': 'yara'},
             description = comment_attribute,
@@ -1398,6 +1462,18 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def vulnerability_object_mapping(self) -> dict:
         return self.__vulnerability_object_mapping
+
+    @property
+    def x509_indicator_object_mapping(self) -> dict:
+        return self.__x509_indicator_object_mapping
+
+    @property
+    def x509_observable_object_mapping(self) -> dict:
+        return self.__x509_observable_object_mapping
+
+    @property
+    def x509_subject_alternative_name_mapping(self) -> dict:
+        return self.__x509_subject_alternative_name_mapping
 
     @property
     def yara_object_mapping(self) -> dict:

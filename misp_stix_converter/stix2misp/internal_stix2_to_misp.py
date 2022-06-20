@@ -1467,6 +1467,39 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_user_account_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_user_account_observable(observed_data, 'v21')
 
+    def _object_from_x509_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('x509', observed_data)
+        observable = getattr(self, f'_fetch_observables_{version}')(observed_data)
+        if hasattr(observable, 'hashes'):
+            for key, value in observable.hashes.items():
+                hash_type = key.replace('-', '').lower()
+                misp_object.add_attribute(
+                    **{
+                        'type': f'x509-fingerprint-{hash_type}',
+                        'object_relation': f'x509-fingerprint-{hash_type}',
+                        'value': value
+                    }
+                )
+        for feature, mapping in self._mapping.x509_observable_object_mapping.items():
+            if hasattr(observable, feature):
+                attribute = {'value': getattr(observable, feature)}
+                attribute.update(mapping)
+                misp_object.add_attribute(**attribute)
+        if hasattr(observable, 'x509_v3_extensions'):
+            subject_mapping = self._mapping.x509_subject_alternative_name_mapping
+            for values in observable.x509_v3_extensions.subject_alternative_name.split(','):
+                key, val = values.split('=')
+                attribute = {'value': val}
+                attribute.update(subject_mapping[key])
+                misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
+    def _object_from_x509_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_x509_observable(observed_data, 'v20')
+
+    def _object_from_x509_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_x509_observable(observed_data, 'v21')
+
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
     ################################################################################
@@ -1951,6 +1984,24 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             for feature, attribute in attachments.items():
                 attribute.update(mapping[feature])
                 misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
+    def _object_from_x509_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('x509', indicator)
+        mapping = self._mapping.x509_indicator_object_mapping
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            if feature in mapping:
+                attribute = {'value': value}
+                attribute.update(mapping[feature])
+                misp_object.add_attribute(**attribute)
+            elif 'subject_alternative_name' in feature:
+                subject_mapping = self._mapping.x509_subject_alternative_name_mapping
+                for values in value.split(','):
+                    key, val = values.split('=')
+                    attribute = {'value': val}
+                    attribute.update(subject_mapping[key])
+                    misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
     @staticmethod
