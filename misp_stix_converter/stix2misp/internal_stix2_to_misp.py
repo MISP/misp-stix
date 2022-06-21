@@ -236,6 +236,21 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except Exception as exception:
             self._malware_error(malware.id, exception)
 
+    def _parse_note(self, note_ref: str):
+        note = self._get_stix_object(note_ref)
+        misp_object = self._create_misp_object('annotation', note)
+        for feature, mapping in self._mapping.annotation_object_mapping.items():
+            if hasattr(note, feature):
+                self._populate_object_attributes_with_data(
+                    misp_object,
+                    mapping,
+                    getattr(note, feature)
+                )
+        if hasattr(note, 'object_refs'):
+            for object_ref in note.object_refs:
+                misp_object.add_reference(object_ref.split('--')[1], 'annotates')
+        self._add_misp_object(misp_object)
+
     def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
         feature = self._handle_observable_object_mapping(observed_data.labels, observed_data.id)
         try:

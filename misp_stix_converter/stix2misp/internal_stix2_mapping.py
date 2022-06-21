@@ -431,6 +431,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         filename_attribute = {'type': 'filename', 'object_relation': 'filename'}
         followers_attribute = {'type': 'text', 'object_relation': 'followers'}
         following_attribute = {'type': 'text', 'object_relation': 'following'}
+        format_attribute = {'type': 'text', 'object_relation': 'format'}
         fullpath_attribute = {'type': 'text', 'object_relation': 'fullpath'}
         from_attribute = {'type': 'email-src', 'object_relation': 'from'}
         from_display_name_attribute = {'type': 'email-src-display-name', 'object_relation': 'from-display-name'}
@@ -514,6 +515,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         tlsh_attribute = {'type': 'tlsh', 'object_relation': 'tlsh'}
         to_attribute = {'type': 'email-dst', 'object_relation': 'to'}
         to_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'to-display-name'}
+        type_attribute = {'type': 'text', 'object_relation': 'type'}
         url_attribute = {'type': 'url', 'object_relation': 'url'}
         username_attribute = {'type': 'text', 'object_relation': 'username'}
         user_agent_attribute = {'type': 'text', 'object_relation': 'user-agent'}
@@ -534,6 +536,15 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_certificate = {'type': 'sha1', 'object_relation': 'certificate'},
             x_misp_domain = domain_attribute,
             x_misp_sha256 = sha256_attribute
+        )
+        self.__annotation_object_mapping = Mapping(
+            content = text_attribute,
+            x_misp_attachment = attachment_attribute,
+            x_misp_creation_date = {'type': 'datetime', 'object_relation': 'creation-date'},
+            x_misp_format = format_attribute,
+            x_misp_modification_data = {'type': 'datetime', 'object_relation': 'modification-date'},
+            x_misp_ref = {'type': 'link', 'object_relation': 'ref'},
+            x_misp_type = type_attribute
         )
         self.__asn_object_mapping = Mapping(
             number = {'type': 'AS', 'object_relation': 'asn'},
@@ -562,7 +573,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_impact = {'type': 'text', 'object_relation': 'impact'},
             x_misp_objective = {'type': 'text', 'object_relation': 'objective'},
             x_misp_stage = {'type': 'text', 'object_relation': 'stage'},
-            x_misp_type = {'type': 'text', 'object_relation': 'type'}
+            x_misp_type = type_attribute
         )
         self.__cpe_asset_object_mapping = Mapping(
             cpe = {'type': 'cpe', 'object_relation': 'cpe'},
@@ -583,11 +594,11 @@ class InternalSTIX2Mapping(STIX2Mapping):
             user_id = username_attribute,
             credential = password_attribute,
             x_misp_password = password_attribute,
-            x_misp_format = {'type': 'text', 'object_relation': 'format'},
+            x_misp_format = format_attribute,
             x_misp_notification = {'type': 'text', 'object_relation': 'notification'},
             x_misp_origin = {'type': 'text', 'object_relation': 'origin'},
             x_misp_text = text_attribute,
-            x_misp_type = {'type': 'text', 'object_relation': 'type'},
+            x_misp_type = type_attribute
         )
         self.__domain_ip_object_mapping = Mapping(
             value = {'type': 'domain', 'object_relation': 'domain'},
@@ -970,7 +981,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__pe_object_mapping = Mapping(
             imphash = imphash_attribute,
             number_of_sections = {'type': 'counter', 'object_relation': 'number-sections'},
-            pe_type = {'type': 'text', 'object_relation': 'type'},
+            pe_type = type_attribute,
             x_misp_authentihash = authentihash_attribute,
             x_misp_company_name = {'type': 'text', 'object_relation': 'company-name'},
             x_misp_compilation_timestamp = compilation_timestamp_attribute,
@@ -1257,6 +1268,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def android_app_object_mapping(self) -> dict:
         return self.__android_app_object_mapping
+
+    @property
+    def annotation_object_mapping(self) -> dict:
+        return self.__annotation_object_mapping
 
     @property
     def asn_object_mapping(self) -> dict:
