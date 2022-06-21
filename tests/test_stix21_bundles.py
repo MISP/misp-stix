@@ -452,6 +452,58 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
         }
     }
 ]
+_ANDROID_APP_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--02782ed5-b27f-4abc-8bae-efebe13a46dd",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[software:name = 'Facebook' AND software:x_misp_certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:x_misp_domain = 'facebook.com']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "file"
+        }
+    ],
+    "labels": [
+        "misp:name=\"android-app\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_ANDROID_APP_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--02782ed5-b27f-4abc-8bae-efebe13a46dd",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "software--02782ed5-b27f-4abc-8bae-efebe13a46dd"
+        ],
+        "labels": [
+            "misp:name=\"android-app\"",
+            "misp:meta-category=\"file\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "software",
+        "spec_version": "2.1",
+        "id": "software--02782ed5-b27f-4abc-8bae-efebe13a46dd",
+        "name": "Facebook",
+        "x_misp_certificate": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
+        "x_misp_domain": "facebook.com"
+    }
+]
 _AS_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -5879,6 +5931,14 @@ class TestSTIX21Bundles:
         for observable, feature in zip(observables[1::2], features):
             observable[feature]['data'] = data
         return cls.__assemble_bundle(*observables)
+
+    @classmethod
+    def get_bundle_with_android_app_indicator_object(cls):
+        return cls.__assemble_bundle(_ANDROID_APP_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_android_app_observable_object(cls):
+        return cls.__assemble_bundle(*_ANDROID_APP_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_asn_indicator_object(cls):

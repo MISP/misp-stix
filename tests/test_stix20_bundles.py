@@ -396,6 +396,49 @@ _ACCOUNT_WITH_ATTACHMENT_OBSERVABLE_OBJECTS = [
         ]
     }
 ]
+_ANDROID_APP_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--02782ed5-b27f-4abc-8bae-efebe13a46dd",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[software:name = 'Facebook' AND software:x_misp_certificate = 'c3a94cdf5ad4d71fd60c16ba8801529c78e7398f' AND software:x_misp_domain = 'facebook.com']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "file"
+        }
+    ],
+    "labels": [
+        "misp:name=\"android-app\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_ANDROID_APP_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--02782ed5-b27f-4abc-8bae-efebe13a46dd",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "software",
+            "name": "Facebook",
+            "x_misp_certificate": "c3a94cdf5ad4d71fd60c16ba8801529c78e7398f",
+            "x_misp_domain": "facebook.com"
+        }
+    },
+    "labels": [
+        "misp:name=\"android-app\"",
+        "misp:meta-category=\"file\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _AS_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -4817,6 +4860,14 @@ class TestSTIX20Bundles:
         for observed_data, feature in zip(observables, features):
             observed_data['objects']['0'][feature]['data'] = data
         return cls.__assemble_bundle(*observables)
+
+    @classmethod
+    def get_bundle_with_android_app_indicator_object(cls):
+        return cls.__assemble_bundle(_ANDROID_APP_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_android_app_observable_object(cls):
+        return cls.__assemble_bundle(_ANDROID_APP_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_asn_indicator_object(cls):

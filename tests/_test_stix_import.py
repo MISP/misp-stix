@@ -110,6 +110,32 @@ class TestInternalSTIX2Import(TestSTIX2Import):
     #                       MISP OBJECTS CHECKING FUNCTIONS.                       #
     ################################################################################
 
+    def _check_android_app_indicator_object(self, attributes, pattern):
+        self.assertEqual(len(attributes), 3)
+        name, certificate, domain = attributes
+        _name, _certificate, _domain = pattern[1:-1].split(' AND ')
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, self._get_pattern_value(_name))
+        self.assertEqual(certificate.type, 'sha1')
+        self.assertEqual(certificate.object_relation, 'certificate')
+        self.assertEqual(certificate.value, self._get_pattern_value(_certificate))
+        self.assertEqual(domain.type, 'domain')
+        self.assertEqual(domain.object_relation, 'domain')
+        self.assertEqual(domain.value, self._get_pattern_value(_domain))
+
+    def _check_android_app_observable_object(self, attributes, observable):
+        name, certificate, domain = attributes
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, observable.name)
+        self.assertEqual(certificate.type, 'sha1')
+        self.assertEqual(certificate.object_relation, 'certificate')
+        self.assertEqual(certificate.value, observable.x_misp_certificate)
+        self.assertEqual(domain.type, 'domain')
+        self.assertEqual(domain.object_relation, 'domain')
+        self.assertEqual(domain.value, observable.x_misp_domain)
+
     def _check_asn_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)
         number, name, *subnets = pattern[1:-1].split(' AND ')

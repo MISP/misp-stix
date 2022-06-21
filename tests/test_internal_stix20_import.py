@@ -1181,6 +1181,34 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             observed_data = user_od
         )
 
+    def test_stix20_bundle_with_android_app_indicator_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_android_app_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        self._check_android_app_indicator_object(misp_object.attributes, pattern)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix20_bundle_with_android_app_observable_object(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_android_app_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        observable = self._check_observed_data_object(misp_object, observed_data)['0']
+        self._check_android_app_observable_object(misp_object.attributes, observable)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = observed_data
+        )
+
     def test_stix20_bundle_with_asn_indicator_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_asn_indicator_object()
         self.parser.load_stix_bundle(bundle)
