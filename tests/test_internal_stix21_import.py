@@ -1508,6 +1508,51 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             observed_data = [observed_data, observable]
         )
 
+    def test_stix21_bundle_with_annotation_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_annotation_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, note, observed_data, _, _, indicator = bundle.objects
+        note_object, ip_port_object, attribute = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(note_object.uuid, note.id.split('--')[1])
+        self.assertEqual(note_object.name, 'annotation')
+        content, attachment, note_type = note_object.attributes
+        self.assertEqual(content.type, 'text')
+        self.assertEqual(content.object_relation, 'text')
+        self.assertEqual(content.value, note.content)
+        self.assertEqual(attachment.type, 'attachment')
+        self.assertEqual(attachment.object_relation, 'attachment')
+        self.assertEqual(attachment.value, note.x_misp_attachment['value'])
+        self.assertEqual(
+            self._get_data_value(attachment.data),
+            note.x_misp_attachment['data']
+        )
+        self.assertEqual(note_type.type, 'text')
+        self.assertEqual(note_type.object_relation, 'type')
+        self.assertEqual(note_type.value, note.x_misp_type)
+        self.assertEqual(len(note_object.references), 2)
+        ip_port_ref, attribute_ref = note_object.references
+        self._assert_multiple_equal(
+            ip_port_ref.referenced_uuid,
+            ip_port_object.uuid,
+            observed_data.id.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            attribute_ref.referenced_uuid,
+            attribute.uuid,
+            indicator.id.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            ip_port_ref.relationship_type,
+            attribute_ref.relationship_type,
+            'annotates'
+        )
+        self._populate_documentation(
+            misp_object = json.loads(note_object.to_json()),
+            note = note
+        )
+
     def test_stix21_bundle_with_asn_indicator_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_asn_indicator_object()
         self.parser.load_stix_bundle(bundle)

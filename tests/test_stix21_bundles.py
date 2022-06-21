@@ -504,6 +504,92 @@ _ANDROID_APP_OBSERVABLE_OBJECT = [
         "x_misp_domain": "facebook.com"
     }
 ]
+_ANNOTATION_OBJECT = [
+    {
+        "type": "note",
+        "spec_version": "2.1",
+        "id": "note--eb6592bb-675c-48f3-9272-157141196b93",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "content": "Google public DNS",
+        "object_refs": [
+            "observed-data--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+            "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:name=\"annotation\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ],
+        "x_misp_attachment": {
+            "value": "annotation.attachment",
+            "data": "OC44LjguOCBpcyB0aGUgR29vZ2xlIFB1YmxpYyBETlMgSVAgYWRkcmVzc2VzIChJUHY0KS4K"
+        },
+        "x_misp_type": "Executive Summary"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "network-traffic--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+            "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+        "labels": [
+            "misp:name=\"ip-port\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+        "start": "2020-10-25T16:22:00Z",
+        "dst_ref": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "dst_port": 443,
+        "protocols": [
+            "ipv4"
+        ],
+        "x_misp_domain": "google.com"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "value": "8.8.8.8"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '8.8.8.8']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"ip-dst\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    }
+]
 _AS_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -5939,6 +6025,10 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_android_app_observable_object(cls):
         return cls.__assemble_bundle(*_ANDROID_APP_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_annotation_object(cls):
+        return cls.__assemble_bundle(*_ANNOTATION_OBJECT)
 
     @classmethod
     def get_bundle_with_asn_indicator_object(cls):
