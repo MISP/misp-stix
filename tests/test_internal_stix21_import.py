@@ -2537,6 +2537,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
         pattern = self._check_indicator_object(misp_object, indicator)
         self._check_x509_indicator_object(misp_object.attributes, pattern)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
 
     def test_stix21_bundle_with_x509_observable_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_x509_observable_object()
@@ -2552,3 +2556,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             x509_ref.split('--')[1]
         )
         self._check_x509_observable_object(misp_object.attributes, x509)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = [observed_data, x509]
+        )
