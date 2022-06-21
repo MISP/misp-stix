@@ -528,6 +528,13 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_mailer_attribute = {'type': 'email-x-mailer', 'object_relation': 'x-mailer'}
 
         # STIX TO MISP OBJECTS MAPPING
+        self.__android_app_object_mapping = Mapping(
+            name = name_attribute,
+            x_misp_appid = {'type': 'text', 'object_relation': 'appid'},
+            x_misp_certificate = {'type': 'sha1', 'object_relation': 'certificate'},
+            x_misp_domain = domain_attribute,
+            x_misp_sha256 = sha256_attribute
+        )
         self.__asn_object_mapping = Mapping(
             number = {'type': 'AS', 'object_relation': 'asn'},
             name = description_attribute,
@@ -1246,6 +1253,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_context = {'type': 'text', 'object_relation': 'context'},
             x_misp_yara_rule_name = {'type': 'text', 'object_relation': 'yara-rule-name'}
         )
+
+    @property
+    def android_app_object_mapping(self) -> dict:
+        return self.__android_app_object_mapping
 
     @property
     def asn_object_mapping(self) -> dict:

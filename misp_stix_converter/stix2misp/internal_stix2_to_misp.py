@@ -729,6 +729,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     )
         self._add_misp_object(misp_object)
 
+    def _object_from_android_app_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_standard_observable(observed_data, 'android-app', 'v20')
+
+    def _object_from_android_app_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_standard_observable(observed_data, 'android-app', 'v21')
+
     def _object_from_asn_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('asn', observed_data)
         observable = getattr(self, f'_fetch_observables_{version}')(observed_data)
@@ -1604,6 +1610,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute.update(mapping[feature])
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
+
+    def _object_from_android_app_indicator(self, indicator: _INDICATOR_TYPING):
+        self._object_from_standard_pattern(indicator, 'android-app')
 
     def _object_from_asn_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('asn', indicator)
