@@ -8,8 +8,6 @@ from datetime import datetime
 
 
 class TestSTIX2(unittest.TestCase):
-    _attributes = defaultdict(lambda: defaultdict(dict))
-    _objects = defaultdict(lambda: defaultdict(dict))
 
     def _assert_multiple_equal(self, reference, *elements):
         for element in elements:
@@ -37,6 +35,8 @@ class TestSTIX2(unittest.TestCase):
 
 
 class TestSTIX20(TestSTIX2):
+    _attributes_v20 = defaultdict(lambda: defaultdict(dict))
+    _objects_v20 = defaultdict(lambda: defaultdict(dict))
     __hash_types_mapping = {
         'sha1': 'SHA-1',
         'SHA-1': 'sha1',
@@ -61,27 +61,29 @@ class TestSTIX20(TestSTIX2):
 
     def _populate_attributes_documentation(self, attribute, **kwargs):
         attribute_type = attribute['type']
-        if 'MISP' not in self._attributes[attribute_type]:
-            self._attributes[attribute_type]['MISP'] = self._sanitize_documentation(attribute)
+        if 'MISP' not in self._attributes_v20[attribute_type]:
+            self._attributes_v20[attribute_type]['MISP'] = self._sanitize_documentation(attribute)
         for object_type, stix_object in kwargs.items():
             documented = json.loads(stix_object.serialize())
             feature = object_type.replace('_', ' ').title()
-            self._attributes[attribute_type]['STIX'][feature] = documented
+            self._attributes_v20[attribute_type]['STIX'][feature] = documented
 
     def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
         if name is None:
             name = misp_object['name']
-        if 'MISP' not in self._objects[name]:
-            self._objects[name]['MISP'] = self._sanitize_documentation(misp_object)
+        if 'MISP' not in self._objects_v20[name]:
+            self._objects_v20[name]['MISP'] = self._sanitize_documentation(misp_object)
         if summary is not None:
-            self._objects['summary'][name] = summary
+            self._objects_v20['summary'][name] = summary
         for object_type, stix_object in kwargs.items():
             documented = json.loads(stix_object.serialize())
             feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
-            self._objects[name]['STIX'][feature] = documented
+            self._objects_v20[name]['STIX'][feature] = documented
 
 
 class TestSTIX21(TestSTIX2):
+    _attributes_v21 = defaultdict(lambda: defaultdict(dict))
+    _objects_v21 = defaultdict(lambda: defaultdict(dict))
     __hash_types_mapping = {
         'sha1': 'SHA-1',
         'SHA-1': 'sha1',
@@ -126,28 +128,28 @@ class TestSTIX21(TestSTIX2):
 
     def _populate_attributes_documentation(self, attribute, **kwargs):
         feature = attribute['type']
-        if 'MISP' not in self._attributes[feature]:
-            self._attributes[feature]['MISP'] = self._sanitize_documentation(attribute)
+        if 'MISP' not in self._attributes_v21[feature]:
+            self._attributes_v21[feature]['MISP'] = self._sanitize_documentation(attribute)
         if 'observed_data' in kwargs:
             documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
-            self._attributes[feature]['STIX']['Observed Data'] = documented
+            self._attributes_v21[feature]['STIX']['Observed Data'] = documented
         else:
             for object_type, stix_object in kwargs.items():
                 documented = json.loads(stix_object.serialize())
-                self._attributes[feature]['STIX'][object_type.capitalize()] = documented
+                self._attributes_v21[feature]['STIX'][object_type.capitalize()] = documented
 
     def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
         if name is None:
             name = misp_object['name']
-        if 'MISP' not in self._objects[name]:
-            self._objects[name]['MISP'] = self._sanitize_documentation(misp_object)
+        if 'MISP' not in self._objects_v21[name]:
+            self._objects_v21[name]['MISP'] = self._sanitize_documentation(misp_object)
         if summary is not None:
-            self._objects['summary'][name] = summary
+            self._objects_v21['summary'][name] = summary
         if 'observed_data' in kwargs:
             documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
-            self._objects[name]['STIX']['Observed Data'] = documented
+            self._objects_v21[name]['STIX']['Observed Data'] = documented
         else:
             for object_type, stix_object in kwargs.items():
                 documented = json.loads(stix_object.serialize())
                 feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
-                self._objects[name]['STIX'][feature] = documented
+                self._objects_v21[name]['STIX'][feature] = documented

@@ -15,9 +15,15 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
 
     @classmethod
     def tearDownClass(self):
-        attributes_documentation = AttributesDocumentationUpdater('misp_attributes_to_stix21', self._attributes)
+        attributes_documentation = AttributesDocumentationUpdater(
+            'misp_attributes_to_stix21',
+            self._attributes_v21
+        )
         attributes_documentation.check_mapping('stix21')
-        objects_documentation = ObjectsDocumentationUpdater('misp_objects_to_stix21', self._objects)
+        objects_documentation = ObjectsDocumentationUpdater(
+            'misp_objects_to_stix21',
+            self._objects_v21
+        )
         objects_documentation.check_mapping('stix21')
 
     ################################################################################
