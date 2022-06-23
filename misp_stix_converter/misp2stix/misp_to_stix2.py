@@ -2326,7 +2326,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     @staticmethod
     def _create_galaxy_labels(galaxy_name: str, cluster: dict) -> list:
-        labels = [f'misp:name="{galaxy_name}"']
+        labels = [
+            f'misp:galaxy-name="{galaxy_name}"',
+            f'misp:galaxy-type="{cluster["type"]}"'
+        ]
         if cluster.get('tag_name'):
             labels.append(cluster['tag_name'])
         return labels
