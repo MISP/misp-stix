@@ -215,7 +215,8 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(stix_object.modified, timestamp)
         self.assertEqual(stix_object.name, cluster['value'])
         self.assertEqual(stix_object.description, f"{galaxy['description']} | {cluster['description']}")
-        self.assertEqual(stix_object.labels[0], f'misp:name="{galaxy["name"]}"')
+        self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
+        self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
         if killchain:
             self.assertEqual(stix_object.kill_chain_phases[0]['phase_name'], cluster['type'])
         if synonyms:
