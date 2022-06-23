@@ -185,6 +185,16 @@ class AttributesDocumentationUpdater(DocumentationUpdater):
         self._declare_mapping(attributes_mapping)
 
 
+class GalaxiesDocumentationUpdater(DocumentationUpdater):
+    def __init__(self, filename, galaxies_mapping):
+        super().__init__(filename)
+        self._load_galaxies_mapping(galaxies_mapping)
+
+    def _load_galaxies_mapping(self, galaxies_mapping):
+        self._declare_summary(galaxies_mapping.pop('summary', {}))
+        self._declare_mapping(galaxies_mapping)
+
+
 class ObjectsDocumentationUpdater(DocumentationUpdater):
     __data_replacement = {
         'annotation': '_replace_annotation_data',

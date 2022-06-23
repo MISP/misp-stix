@@ -4,7 +4,9 @@
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX21Parser, misp_collection_to_stix2_1, misp_to_stix2_1
 from .test_events import *
-from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
+from .update_documentation import (
+    AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
+    ObjectsDocumentationUpdater)
 from ._test_stix import TestSTIX21
 from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export
 
@@ -25,6 +27,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             self._objects_v21
         )
         objects_documentation.check_mapping('stix21')
+        galaxies_documentation = GalaxiesDocumentationUpdater(
+            'misp_galaxies_to_stix21',
+            self._galaxies_v21
+        )
+        galaxies_documentation.check_mapping('stix21')
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
@@ -3945,6 +3952,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(attack_pattern.type, 'attack-pattern')
         self.assertEqual(attack_pattern.id, f"attack-pattern--{galaxy['GalaxyCluster'][0]['uuid']}")
         self._check_galaxy_features(attack_pattern, galaxy, timestamp, True, False)
+        self._populate_documentation(
+            galaxy = galaxy,
+            attack_pattern = attack_pattern,
+            summary = 'mitre-attack-pattern, mitre-enterprise-attack-attack-pattern, mitre-mobile-attack-attack-pattern, mitre-pre-attack-attack-pattern'
+        )
 
     def test_event_with_course_of_action_galaxy(self):
         event = get_event_with_course_of_action_galaxy()
@@ -3957,6 +3969,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             f"course-of-action--{galaxy['GalaxyCluster'][0]['uuid']}"
         )
         self._check_galaxy_features(course_of_action, galaxy, timestamp, False, False)
+        self._populate_documentation(
+            galaxy = galaxy,
+            course_of_action = course_of_action,
+            summary = 'mitre-course-of-action, mitre-enterprise-attack-course-of-action, mitre-mobile-attack-course-of-action'
+        )
 
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()
@@ -3966,6 +3983,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(intrusion_set.type, 'intrusion-set')
         self.assertEqual(intrusion_set.id, f"intrusion-set--{galaxy['GalaxyCluster'][0]['uuid']}")
         self._check_galaxy_features(intrusion_set, galaxy, timestamp, False, True)
+        self._populate_documentation(
+            galaxy = galaxy,
+            intrusion_set = intrusion_set,
+            summary = 'mitre-enterprise-attack-intrusion-set, mitre-intrusion-set, mitre-mobile-attack-intrusion-set, mitre-pre-attack-intrusion-set'
+        )
 
     def test_event_with_malware_galaxy(self):
         event = get_event_with_malware_galaxy()
@@ -3975,6 +3997,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(malware.type, 'malware')
         self.assertEqual(malware.id, f"malware--{galaxy['GalaxyCluster'][0]['uuid']}")
         self._check_galaxy_features(malware, galaxy, timestamp, True, True)
+        self._populate_documentation(
+            galaxy = galaxy,
+            malware = malware,
+            summary = 'android, backdoor, banker, malpedia, mitre-enterprise-attack-malware, mitre-malware, mitre-mobile-attack-malware, ransomware, stealer'
+        )
 
     def test_event_with_threat_actor_galaxy(self):
         event = get_event_with_threat_actor_galaxy()
@@ -3984,6 +4011,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(threat_actor.type, 'threat-actor')
         self.assertEqual(threat_actor.id, f"threat-actor--{galaxy['GalaxyCluster'][0]['uuid']}")
         self._check_galaxy_features(threat_actor, galaxy, timestamp, False, True)
+        self._populate_documentation(
+            galaxy = galaxy,
+            threat_actor = threat_actor,
+            summary = 'microsoft-activity-group, threat-actor'
+        )
 
     def test_event_with_tool_galaxy(self):
         event = get_event_with_tool_galaxy()
@@ -3993,6 +4025,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(tool.type, 'tool')
         self.assertEqual(tool.id, f"tool--{galaxy['GalaxyCluster'][0]['uuid']}")
         self._check_galaxy_features(tool, galaxy, timestamp, True, True)
+        self._populate_documentation(
+            galaxy = galaxy,
+            tool = tool,
+            summary = 'botnet, exploit-kit, mitre-enterprise-attack-tool, mitre-mobile-attack-tool, mitre-tool, rat, tds, tool'
+        )
 
     def test_event_with_vulnerability_galaxy(self):
         event = get_event_with_vulnerability_galaxy()
@@ -4002,6 +4039,11 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.id, f"vulnerability--{galaxy['GalaxyCluster'][0]['uuid']}")
         self._check_galaxy_features(vulnerability, galaxy, timestamp, False, False)
+        self._populate_documentation(
+            galaxy = galaxy,
+            vulnerability = vulnerability,
+            summary = 'branded-vulnerability'
+        )
 
     def test_attribute_with_attack_pattern_galaxy(self):
         attribute = get_indicator_attribute_with_galaxy()

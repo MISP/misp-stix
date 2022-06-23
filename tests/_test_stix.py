@@ -17,11 +17,13 @@ class TestSTIX2(unittest.TestCase):
     def _datetime_to_str(datetime_value):
         return datetime.strftime(datetime_value, '%Y-%m-%dT%H:%M:%S')
 
-    def _populate_documentation(self, attribute = None, misp_object = None, **kwargs):
+    def _populate_documentation(self, attribute = None, misp_object = None, galaxy = None, **kwargs):
         if attribute is not None:
             self._populate_attributes_documentation(attribute, **kwargs)
         elif misp_object is not None:
             self._populate_objects_documentation(misp_object, **kwargs)
+        elif galaxy is not None:
+            self._populate_galaxies_documentation(galaxy, **kwargs)
 
     def _sanitize_documentation(self, documentation):
         if isinstance(documentation, list):
@@ -37,6 +39,7 @@ class TestSTIX2(unittest.TestCase):
 class TestSTIX20(TestSTIX2):
     _attributes_v20 = defaultdict(lambda: defaultdict(dict))
     _objects_v20 = defaultdict(lambda: defaultdict(dict))
+    _galaxies_v20 = defaultdict(lambda: defaultdict(dict))
     __hash_types_mapping = {
         'sha1': 'SHA-1',
         'SHA-1': 'sha1',
@@ -68,6 +71,18 @@ class TestSTIX20(TestSTIX2):
             feature = object_type.replace('_', ' ').title()
             self._attributes_v20[attribute_type]['STIX'][feature] = documented
 
+    def _populate_galaxies_documentation(self, galaxy, name=None, summary=None, **kwargs):
+        if name is None:
+            name = galaxy['name']
+        if 'MISP' not in self._galaxies_v20[name]:
+            self._galaxies_v20[name]['MISP'] = galaxy
+        if summary is not None:
+            self._galaxies_v20['summary'][name] = summary
+        for object_type, stix_object in kwargs.items():
+            documented = json.loads(stix_object.serialize())
+            feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
+            self._galaxies_v20[name]['STIX'][feature] = documented
+
     def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
         if name is None:
             name = misp_object['name']
@@ -84,6 +99,7 @@ class TestSTIX20(TestSTIX2):
 class TestSTIX21(TestSTIX2):
     _attributes_v21 = defaultdict(lambda: defaultdict(dict))
     _objects_v21 = defaultdict(lambda: defaultdict(dict))
+    _galaxies_v21 = defaultdict(lambda: defaultdict(dict))
     __hash_types_mapping = {
         'sha1': 'SHA-1',
         'SHA-1': 'sha1',
@@ -137,6 +153,18 @@ class TestSTIX21(TestSTIX2):
             for object_type, stix_object in kwargs.items():
                 documented = json.loads(stix_object.serialize())
                 self._attributes_v21[feature]['STIX'][object_type.capitalize()] = documented
+
+    def _populate_galaxies_documentation(self, galaxy, name=None, summary=None, **kwargs):
+        if name is None:
+            name = galaxy['name']
+        if 'MISP' not in self._galaxies_v21[name]:
+            self._galaxies_v21[name]['MISP'] = galaxy
+        if summary is not None:
+            self._galaxies_v21['summary'][name] = summary
+        for object_type, stix_object in kwargs.items():
+            documented = json.loads(stix_object.serialize())
+            feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
+            self._galaxies_v21[name]['STIX'][feature] = documented
 
     def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
         if name is None:
