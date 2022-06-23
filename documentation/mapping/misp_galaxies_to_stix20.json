@@ -55,7 +55,8 @@
                     }
                 ],
                 "labels": [
-                    "misp:name=\"Attack Pattern\""
+                    "misp:galaxy-name=\"Attack Pattern\"",
+                    "misp:galaxy-type=\"mitre-attack-pattern\""
                 ],
                 "external_references": [
                     {
@@ -110,7 +111,8 @@
                 "name": "Ghost",
                 "description": "List of known vulnerabilities and exploits | The GHOST vulnerability is a serious weakness in the Linux glibc library.",
                 "labels": [
-                    "misp:name=\"Branded Vulnerability\""
+                    "misp:galaxy-name=\"Branded Vulnerability\"",
+                    "misp:galaxy-type=\"branded-vulnerability\""
                 ],
                 "external_references": [
                     {
@@ -154,7 +156,8 @@
                 "name": "Automated Exfiltration Mitigation - T1020",
                 "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
                 "labels": [
-                    "misp:name=\"Course of Action\""
+                    "misp:galaxy-name=\"Course of Action\"",
+                    "misp:galaxy-type=\"mitre-course-of-action\""
                 ]
             }
         }
@@ -203,7 +206,8 @@
                     "APT16"
                 ],
                 "labels": [
-                    "misp:name=\"Intrusion Set\""
+                    "misp:galaxy-name=\"Intrusion Set\"",
+                    "misp:galaxy-type=\"mitre-intrusion-set\""
                 ]
             }
         }
@@ -258,7 +262,8 @@
                     }
                 ],
                 "labels": [
-                    "misp:name=\"Malware\""
+                    "misp:galaxy-name=\"Malware\"",
+                    "misp:galaxy-type=\"mitre-malware\""
                 ]
             }
         }
@@ -310,7 +315,8 @@
                     "Ghambar"
                 ],
                 "labels": [
-                    "misp:name=\"Threat Actor\""
+                    "misp:galaxy-name=\"Threat Actor\"",
+                    "misp:galaxy-type=\"threat-actor\""
                 ]
             }
         }
@@ -365,7 +371,8 @@
                     }
                 ],
                 "labels": [
-                    "misp:name=\"Tool\""
+                    "misp:galaxy-name=\"Tool\"",
+                    "misp:galaxy-type=\"mitre-tool\""
                 ]
             }
         }
