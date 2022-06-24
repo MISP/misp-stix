@@ -751,6 +751,31 @@ _ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
         "payload_bin": "ZWNobyAiREFOR0VST1VTIE1BTFdBUkUiIAoK"
     }
 ]
+_ATTACK_PATTERN_GALAXY = {
+    "type": "attack-pattern",
+    "spec_version": "2.1",
+    "id": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Access Token Manipulation - T1134",
+    "description": "ATT&CK Tactic | Windows uses access tokens to determine the ownership of a running process.",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "mitre-attack-pattern"
+        }
+    ],
+    "labels": [
+        "misp:galaxy-name=\"Attack Pattern\"",
+        "misp:galaxy-type=\"mitre-attack-pattern\""
+    ],
+    "external_references": [
+        {
+            "source_name": "capec",
+            "external_id": "CAPEC-633"
+        }
+    ]
+}
 _ATTACK_PATTERN_OBJECT = {
     "type": "attack-pattern",
     "spec_version": "2.1",
@@ -795,6 +820,19 @@ _CAMPAIGN_NAME_ATTRIBUTE = {
     "labels": [
         "misp:type=\"campaign-name\"",
         "misp:category=\"Attribution\""
+    ]
+}
+_COURSE_OF_ACTION_GALAXY = {
+    "type": "course-of-action",
+    "spec_version": "2.1",
+    "id": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Automated Exfiltration Mitigation - T1020",
+    "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+    "labels": [
+        "misp:galaxy-name=\"Course of Action\"",
+        "misp:galaxy-type=\"mitre-course-of-action\""
     ]
 }
 _COURSE_OF_ACTION_OBJECT = {
@@ -3836,6 +3874,22 @@ _IMAGE_OBSERVABLE_OBJECT = [
         "x_misp_url": "https://oasis-open.github.io/cti-documentation/img/STIX.png"
     }
 ]
+_INTRUSION_SET_GALAXY = {
+    "type": "intrusion-set",
+    "spec_version": "2.1",
+    "id": "intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "APT16 - G0023",
+    "description": "Name of ATT&CK Group | APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
+    "aliases": [
+        "APT16"
+    ],
+    "labels": [
+        "misp:galaxy-name=\"Intrusion Set\"",
+        "misp:galaxy-type=\"mitre-intrusion-set\""
+    ]
+}
 _IP_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
@@ -4294,6 +4348,29 @@ _MAC_ADDRESS_OBSERVABLE_ATTRIBUTE = [
         "value": "12:34:56:78:90:ab"
     }
 ]
+_MALWARE_GALAXY = {
+    "type": "malware",
+    "spec_version": "2.1",
+    "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "BISCUIT - S0017",
+    "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+    "is_family": True,
+    "aliases": [
+        "BISCUIT"
+    ],
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "mitre-malware"
+        }
+    ],
+    "labels": [
+        "misp:galaxy-name=\"Malware\"",
+        "misp:galaxy-type=\"mitre-malware\""
+    ]
+}
 _MALWARE_SAMPLE_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -5136,6 +5213,44 @@ _SIZE_IN_BYTES_INDICATOR_ATTRIBUTE = {
         "misp:to_ids=\"True\""
     ]
 }
+_THREAT_ACTOR_GALAXY = {
+    "type": "threat-actor",
+    "spec_version": "2.1",
+    "id": "threat-actor--11e17436-6ede-4733-8547-4ce0254ea19e",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Cutting Kitten",
+    "description": "Threat actors are characteristics of malicious actors. | These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
+    "aliases": [
+        "Ghambar"
+    ],
+    "labels": [
+        "misp:galaxy-name=\"Threat Actor\"",
+        "misp:galaxy-type=\"threat-actor\""
+    ]
+}
+_TOOL_GALAXY = {
+    "type": "tool",
+    "spec_version": "2.1",
+    "id": "tool--bba595da-b73a-4354-aa6c-224d4de7cb4e",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "cmd - S0106",
+    "description": "Name of ATT&CK software | cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
+    "aliases": [
+        "cmd.exe"
+    ],
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "mitre-tool"
+        }
+    ],
+    "labels": [
+        "misp:galaxy-name=\"Tool\"",
+        "misp:galaxy-type=\"mitre-tool\""
+    ]
+}
 _URL_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
@@ -5355,6 +5470,25 @@ _VULNERABILITY_ATTRIBUTE = {
         {
             "source_name": "cve",
             "external_id": "CVE-2017-11774"
+        }
+    ]
+}
+_VULNERABILITY_GALAXY = {
+    "type": "vulnerability",
+    "spec_version": "2.1",
+    "id": "vulnerability--a1640081-aa8d-4070-84b2-d23e2ae82799",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Ghost",
+    "description": "List of known vulnerabilities and exploits | The GHOST vulnerability is a serious weakness in the Linux glibc library.",
+    "labels": [
+        "misp:galaxy-name=\"Branded Vulnerability\"",
+        "misp:galaxy-type=\"branded-vulnerability\""
+    ],
+    "external_references": [
+        {
+            "source_name": "cve",
+            "external_id": "CVE-2015-0235"
         }
     ]
 }
@@ -5921,6 +6055,38 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_x509_fingerprint_observable_attributes(cls):
         return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES)
+
+    ################################################################################
+    #                               GALAXIES SAMPLES                               #
+    ################################################################################
+
+    @classmethod
+    def get_bundle_with_attack_pattern_galaxy(cls):
+        return cls.__assemble_bundle(_ATTACK_PATTERN_GALAXY)
+
+    @classmethod
+    def get_bundle_with_course_of_action_galaxy(cls):
+        return cls.__assemble_bundle(_COURSE_OF_ACTION_GALAXY)
+
+    @classmethod
+    def get_bundle_with_intrusion_set_galaxy(cls):
+        return cls.__assemble_bundle(_INTRUSION_SET_GALAXY)
+
+    @classmethod
+    def get_bundle_with_malware_galaxy(cls):
+        return cls.__assemble_bundle(_MALWARE_GALAXY)
+
+    @classmethod
+    def get_bundle_with_threat_actor_galaxy(cls):
+        return cls.__assemble_bundle(_THREAT_ACTOR_GALAXY)
+
+    @classmethod
+    def get_bundle_with_tool_galaxy(cls):
+        return cls.__assemble_bundle(_TOOL_GALAXY)
+
+    @classmethod
+    def get_bundle_with_vulnerability_galaxy(cls):
+        return cls.__assemble_bundle(_VULNERABILITY_GALAXY)
 
     ################################################################################
     #                             MISP OBJECTS SAMPLES                             #

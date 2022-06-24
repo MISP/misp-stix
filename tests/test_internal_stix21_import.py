@@ -1292,6 +1292,94 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             )
 
     ################################################################################
+    #                          MISP GALAXIES IMPORT TESTS                          #
+    ################################################################################
+
+    def test_stix21_bundle_with_attack_pattern_galaxy(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_attack_pattern_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, attack_pattern = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(
+            event.tags[1].name,
+            f'misp-galaxy:mitre-attack-pattern="{attack_pattern.name}"'
+        )
+
+    def test_stix21_bundle_with_course_of_action_galaxy(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_course_of_action_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, course_of_action = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(
+            event.tags[1].name,
+            f'misp-galaxy:mitre-course-of-action="{course_of_action.name}"'
+        )
+
+    def test_stix21_bundle_with_intrusion_set_galaxy(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_intrusion_set_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, intrusion_set = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(
+            event.tags[1].name,
+            f'misp-galaxy:mitre-intrusion-set="{intrusion_set.name}"'
+        )
+
+    def test_stix21_bundle_with_malware_galaxy(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_malware_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, malware = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(
+            event.tags[1].name,
+            f'misp-galaxy:mitre-malware="{malware.name}"'
+        )
+
+    def test_stix21_bundle_with_threat_actor_galaxy(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_threat_actor_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, threat_actor = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(
+            event.tags[1].name,
+            f'misp-galaxy:threat-actor="{threat_actor.name}"'
+        )
+
+    def test_stix21_bundle_with_tool_galaxy(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_tool_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, tool = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(
+            event.tags[1].name,
+            f'misp-galaxy:mitre-tool="{tool.name}"'
+        )
+
+    def test_stix21_bundle_with_vulnerability_galaxy(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_vulnerability_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, vulnerability = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(
+            event.tags[1].name,
+            f'misp-galaxy:branded-vulnerability="{vulnerability.name}"'
+        )
+
+    ################################################################################
     #                          MISP OBJECTS IMPORT TESTS.                          #
     ################################################################################
 
