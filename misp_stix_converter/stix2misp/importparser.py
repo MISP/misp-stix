@@ -90,6 +90,11 @@ class STIXtoMISPParser:
         message = f"Error with the Indicator object with id {indicator_id}: {tb}"
         self.__errors[self._identifier].add(message)
 
+    def _intrusion_set_error(self, intrusion_set_id: str, exception: Exception):
+        tb = self._parse_traceback(exception)
+        message = f"Error with the Intrusion Set object with id {intrusion_set_id}: {tb}"
+        self.__errors[self._identifier].add(message)
+
     def _malware_error(self, malware_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         message = f"Error with the Malware object with id {malware_id}: {tb}"
@@ -112,6 +117,11 @@ class STIXtoMISPParser:
     def _parse_traceback(exception: Exception) -> str:
         tb = ''.join(traceback.format_tb(exception.__traceback__))
         return f'{tb}{exception.__str__()}'
+
+    def _threat_actor_error(self, threat_actor_id: str, exception: Exception):
+        tb = self._parse_traceback(exception)
+        message = f"Error with the Threat Actor object with id {threat_actor_id}: {tb}"
+        self.__errors[self._identifier].add(message)
 
     def _tool_error(self, tool_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
