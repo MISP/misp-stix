@@ -113,6 +113,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return self.__identity_id
 
     @property
+    def interoperability(self) -> bool:
+        return self.__interoperability
+
+    @property
     def object_refs(self) -> list:
         return self.__object_refs
 
@@ -2011,7 +2015,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if object_id in self.unique_ids:
             object_refs.append(self.unique_ids[object_id])
             return True
-        if self.__interoperability:
+        if self.interoperability:
             object_type = self._mapping.cluster_to_stix_object[cluster['type']]
             value = cluster['value']
             try:
