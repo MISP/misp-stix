@@ -13,12 +13,12 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
     def tearDownClass(self):
         attributes_documentation = AttributesDocumentationUpdater(
             'stix21_to_misp_attributes',
-            self._attributes
+            self._attributes_v21
         )
         attributes_documentation.check_mapping('stix21')
         objects_documentation = ObjectsDocumentationUpdater(
             'stix21_to_misp_objects',
-            self._objects
+            self._objects_v21
         )
         objects_documentation.check_mapping('stix21')
 
