@@ -136,6 +136,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 self._handle_object_refs(grouping.object_refs)
         else:
             self._parse_bundle_with_no_report()
+        for galaxy in self._galaxies.values():
+            if not galaxy['used']:
+                for tag_name in galaxy['tag_names']:
+                    self.misp_event.add_tag(tag_name)
 
     @property
     def misp_event(self) -> Union[MISPEvent, dict]:

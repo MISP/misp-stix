@@ -8,14 +8,39 @@ from .exceptions import (SynonymsResourceJSONError, UnavailableGalaxyResourcesEr
     UnavailableSynonymsResourceError)
 from collections import defaultdict
 from pathlib import Path
+from stix2.v20.sdo import(
+    AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
+    IntrusionSet as IntrusionSet_v20, Malware as Malware_v20, Tool as Tool_v20,
+    ThreatActor as ThreatActor_v20, Vulnerability as Vulnerability_v20)
+from stix2.v21.sdo import(
+    AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
+    IntrusionSet as IntrusionSet_v21, Malware as Malware_v21, Tool as Tool_v21,
+    ThreatActor as ThreatActor_v21, Vulnerability as Vulnerability_v21)
 from typing import Union
 
+_GALAXY_OBJECTS_TYPING = Union[
+    AttackPattern_v20,
+    AttackPattern_v21,
+    CourseOfAction_v20,
+    CourseOfAction_v21,
+    IntrusionSet_v20,
+    IntrusionSet_v21,
+    Malware_v20,
+    Malware_v21,
+    ThreatActor_v20,
+    ThreatActor_v21,
+    Tool_v20,
+    Tool_v21,
+    Vulnerability_v20,
+    Vulnerability_v21
+]
 _ROOT_PATH = Path(__file__).parents[2].resolve()
 
 
 class STIXtoMISPParser:
     def __init__(self, synonyms_path: Union[None, str]):
         self._identifier: str
+        self._galaxies: dict = {}
         if synonyms_path is not None:
             self.__synonyms_path = Path(synonyms_path)
         self.__errors: defaultdict = defaultdict(set)
@@ -134,6 +159,26 @@ class STIXtoMISPParser:
         tb = self._parse_traceback(exception)
         message = f"Error with the Vulnerability object with id {vulnerability_id}: {tb}"
         self.__errors[self._identifier].add(message)
+
+    ################################################################################
+    #                   STIX OBJECTS TO GALAXY PARSING FUNCTIONS                   #
+    ################################################################################
+
+    def _check_existing_galaxy_name(self, galaxy_name) -> list:
+        if galaxy_name in self.synonyms_mapping:
+            return self.synonyms_mapping[galaxy_name]
+        for name, tag_names in self.synonyms_mapping.items():
+            if galaxy_name in name:
+                return tag_names
+
+    def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
+        tag_names = self._check_existing_galaxy_name(stix_object.name)
+        if tag_names is None:
+            tag_names = [f'misp-galaxy:{stix_object.type}="{stix_object.name}"']
+        self._galaxies[stix_object.id] = {
+            'tag_names': tag_names,
+            'used': False
+        }
 
     ################################################################################
     #           SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING FUNCTIONS.           #

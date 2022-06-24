@@ -274,7 +274,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             )
         )
         self.__observable_attributes_mapping = Mapping(**observable_attributes_mapping)
-        galaxies_mapping = {'branded-vulnerability': '_galaxy_from_attack_pattern'}
+        galaxies_mapping = {'branded-vulnerability': '_parse_vulnerability_galaxy'}
         galaxies_mapping.update(
             dict.fromkeys(
                 (
@@ -283,7 +283,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'mitre-mobile-attack-attack-pattern',
                     'mitre-pre-attack-attack-pattern'
                 ),
-                '_galaxy_from_attack_pattern'
+                '_parse_attack_pattern_galaxy'
             )
         )
         galaxies_mapping.update(
@@ -293,7 +293,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'mitre-enterprise-attack-course-of-action',
                     'mitre-mobile-attack-course-of-action'
                 ),
-                '_galaxy_from_course_of_action'
+                '_parse_course_of_action_galaxy'
             )
         )
         galaxies_mapping.update(
@@ -304,7 +304,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'mitre-mobile-attack-intrusion-set',
                     'mitre-pre-attack-intrusion-set'
                 ),
-                '_galaxy_from_intrusion_set'
+                '_parse_intrusion_set_galaxy'
             )
         )
         galaxies_mapping.update(
@@ -320,7 +320,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'mitre-enterprise-attack-malware',
                     'mitre-mobile-attack-malware'
                 ),
-                '_galaxy_from_malware'
+                '_parse_malware_galaxy'
             )
         ),
         galaxies_mapping.update(
@@ -329,7 +329,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'threat-actor',
                     'microsoft-activity-group'
                 ),
-                '_galaxy_from_threat_actor'
+                '_parse_threat_actor_galaxy'
             )
         )
         galaxies_mapping.update(
@@ -344,7 +344,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'mitre-enterprise-attack-tool',
                     'mitre-mobile-attack-tool'
                 ),
-                '_galaxy_from_tool'
+                '_parse_tool_galaxy'
             )
         )
         self.__galaxies_mapping = Mapping(**galaxies_mapping)

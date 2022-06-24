@@ -16,16 +16,16 @@ from stix2.v20.observables import (
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
     CustomObject as CustomObject_v20, Identity as Identity_v20, Indicator as Indicator_v20,
-    Malware as Malware_v20, ObservedData as ObservedData_v20, Tool as Tool_v20,
-    Vulnerability as Vulnerability_v20)
+    IntrusionSet as IntrusionSet_v20, Malware as Malware_v20, ObservedData as ObservedData_v20,
+    ThreatActor as ThreatActor_v20, Tool as Tool_v20, Vulnerability as Vulnerability_v20)
 from stix2.v21.observables import (
     DomainName, NetworkTraffic as NetworkTraffic_v21, Process as Process_v21,
     WindowsPEBinaryExt as WindowsExtension_v21)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
     CustomObject as CustomObject_v21, Identity as Identity_v21, Indicator as Indicator_v21,
-    Malware as Malware_v21, Note, ObservedData as ObservedData_v21, Tool as Tool_v21,
-    Vulnerability as Vulnerability_v21)
+    IntrusionSet as IntrusionSet_v21, Malware as Malware_v21, Note, ObservedData as ObservedData_v21,
+    ThreatActor as ThreatActor_v21, Tool as Tool_v21, Vulnerability as Vulnerability_v21)
 from typing import Optional, Union
 
 _attribute_additional_fields = (
@@ -35,10 +35,27 @@ _attribute_additional_fields = (
     'to_ids',
     'uuid'
 )
+_ATTACK_PATTERN_TYPING = Union[
+    AttackPattern_v20,
+    AttackPattern_v21
+]
+_COURSE_OF_ACTION_TYPING = Union[
+    CourseOfAction_v20,
+    CourseOfAction_v21
+]
 _EXTENSION_TYPING = Union[
     WindowsExtension_v20,
     WindowsExtension_v21
 ]
+_GALAXY_TYPES = (
+    'attack-pattern',
+    'course-of-action',
+    'intrusion-set',
+    'malware',
+    'threat-actor',
+    'tool',
+    'vulnerability'
+)
 _INDICATOR_TYPING = Union[
     Indicator_v20,
     Indicator_v21
@@ -59,6 +76,10 @@ _OBSERVED_DATA_TYPING = Union[
 _PROCESS_TYPING = Union[
     Process_v20,
     Process_v21
+]
+_VULNERABILITY_TYPING = Union[
+    Vulnerability_v20,
+    Vulnerability_v21
 ]
 
 
@@ -115,14 +136,16 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _handle_object_mapping(self, labels: list, object_id: str) -> str:
         parsed_labels = {key: value.strip('"') for key, value in (label.split('=') for label in labels)}
-        if any(label.startswith('misp-galaxy:') for label in parsed_labels):
-            for label in parsed_labels:
-                if label.startswith('misp-galaxy:'):
-                    return self._mapping.galaxies_mapping[label.split(':')[1]]
-        elif 'misp:name' in parsed_labels:
+        if 'misp:galaxy-type' in parsed_labels:
+            for key, value in parsed_labels.items():
+                if key.startswith('misp:galaxy-type'):
+                    return self._mapping.galaxies_mapping[value]
+        if 'misp:name' in parsed_labels:
             return self._mapping.objects_mapping[parsed_labels['misp:name']]
-        elif 'misp:type' in parsed_labels:
+        if 'misp:type' in parsed_labels:
             return self._mapping.attributes_mapping[parsed_labels['misp:type']]
+        if object_id.split('--')[0] in _GALAXY_TYPES:
+            return '_parse_galaxy'
         raise UndefinedSTIXObjectError(object_id)
 
     def _handle_observable_object_mapping(self, labels: list, object_id: str) -> str:
@@ -215,6 +238,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except Exception as exception:
             self._indicator_error(indicator.id, exception)
 
+    def _parse_intrusion_set(self, intrusion_set_ref: str):
+        intrusion_set = self._get_stix_object(intrusion_set_ref)
+        feature = self._handle_object_mapping(intrusion_set.labels, intrusion_set.id)
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        try:
+            parser(intrusion_set)
+        except Exception as exception:
+            self._intrusion_set_error(intrusion_set.id, exception)
+
     def _parse_location(self, location_ref: str):
         location = self._get_stix_object(location_ref)
         misp_object = self._parse_location_object(location)
@@ -273,6 +308,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except Exception as exception:
             self._observed_data_error(observed_data.id, exception)
 
+    def _parse_threat_actor(self, threat_actor_ref: str):
+        threat_actor = self._get_stix_object(threat_actor_ref)
+        feature = self._handle_object_mapping(threat_actor.labels, threat_actor.id)
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        try:
+            parser(threat_actor)
+        except Exception as exception:
+            self._threat_actor_error(threat_actor.id, exception)
+
     def _parse_tool(self, tool_ref: str):
         tool = self._get_stix_object(tool_ref)
         feature = self._handle_object_mapping(tool.labels, tool.id)
@@ -301,7 +348,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     #                 STIX Domain Objects (SDOs) PARSING FUNCTIONS                 #
     ################################################################################
 
-    def _parse_attack_pattern_object(self, attack_pattern: Union[AttackPattern_v20, AttackPattern_v21]):
+    def _parse_attack_pattern_galaxy(self, attack_pattern: _ATTACK_PATTERN_TYPING):
+        galaxy_type = attack_pattern.labels[1].split('=')[1].strip('"')
+        self._galaxies[attack_pattern.id] = {
+            'tag_names': [f'misp-galaxy:{galaxy_type}="{attack_pattern.name}"'],
+            'used': False
+        }
+
+    def _parse_attack_pattern_object(self, attack_pattern: _ATTACK_PATTERN_TYPING):
         misp_object = self._create_misp_object('attack-pattern', attack_pattern)
         for key, mapping in self._mapping.attack_pattern_object_mapping.items():
             if hasattr(attack_pattern, key):
@@ -328,7 +382,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             'value': reference['url']
         }
 
-    def _parse_course_of_action_object(self, course_of_action: Union[CourseOfAction_v20, CourseOfAction_v21]):
+    def _parse_course_of_action_galaxy(self, course_of_action: _COURSE_OF_ACTION_TYPING):
+        galaxy_type = course_of_action.labels[1].split('=')[1].strip('"')
+        self._galaxies[course_of_action.id] = {
+            'tag_names': [f'misp-galaxy:{galaxy_type}="{course_of_action.name}"'],
+            'used': False
+        }
+
+    def _parse_course_of_action_object(self, course_of_action: _COURSE_OF_ACTION_TYPING):
         misp_object = self._create_misp_object('course-of-action', course_of_action)
         for key, mapping in self._mapping.course_of_action_object_mapping.items():
             if hasattr(course_of_action, key):
@@ -380,6 +441,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
         return misp_object
 
+    def _parse_intrusion_set_galaxy(self, intrusion_set: Union[IntrusionSet_v20, IntrusionSet_v21]):
+        galaxy_type = intrusion_set.labels[1].split('=')[1].strip('"')
+        self._galaxies[intrusion_set.id] = {
+            'tag_names': [f'misp-galaxy:{galaxy_type}="{intrusion_set.name}"'],
+            'used': False
+        }
+
     def _parse_legal_entity_object(self, identity: Union[Identity_v20, Identity_v21]):
         misp_object = self._parse_identity_object(identity, 'legal-entity')
         if hasattr(identity, 'x_misp_logo'):
@@ -390,6 +458,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute['value'] = identity.x_misp_logo
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
+
+    def _parse_malware_galaxy(self, malware: Union[Malware_v20, Malware_v21]):
+        galaxy_type = malware.labels[1].split('=')[1].strip('"')
+        self._galaxies[malware.id] = {
+            'tag_names': [f'misp-galaxy:{galaxy_type}="{malware.name}"'],
+            'used': False
+        }
 
     def _parse_news_agency_object(self, identity: Union[Identity_v20, Identity_v21]):
         misp_object = self._parse_identity_object(identity, 'news-agency')
@@ -425,12 +500,33 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
-    def _parse_vulnerability_attribute(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
+    def _parse_threat_actor_galaxy(self, threat_actor: Union[ThreatActor_v20, ThreatActor_v21]):
+        galaxy_type = threat_actor.labels[1].split('=')[1].strip('"')
+        self._galaxies[threat_actor.id] = {
+            'tag_names': [f'misp-galaxy:{galaxy_type}="{threat_actor.name}"'],
+            'used': False
+        }
+
+    def _parse_tool_galaxy(self, tool: Union[Tool_v20, Tool_v21]):
+        galaxy_type = tool.labels[1].split('=')[1].strip('"')
+        self._galaxies[tool.id] = {
+            'tag_names': [f'misp-galaxy:{galaxy_type}="{tool.name}"'],
+            'used': False
+        }
+
+    def _parse_vulnerability_attribute(self, vulnerability: _VULNERABILITY_TYPING):
         attribute = self._create_attribute_dict(vulnerability)
         attribute['value'] = vulnerability.name
         self._add_misp_attribute(attribute)
 
-    def _parse_vulnerability_object(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
+    def _parse_vulnerability_galaxy(self, vulnerability: _VULNERABILITY_TYPING):
+        galaxy_type = vulnerability.labels[1].split('=')[1].strip('"')
+        self._galaxies[vulnerability.id] = {
+            'tag_names': [f'misp-galaxy:{galaxy_type}="{vulnerability.name}"'],
+            'used': False
+        }
+
+    def _parse_vulnerability_object(self, vulnerability: _VULNERABILITY_TYPING):
         misp_object = self._create_misp_object('vulnerability', vulnerability)
         for reference in vulnerability.external_references:
             if reference['source_name'] in ('cve', 'vulnerability'):
