@@ -86,7 +86,6 @@ class STIX2Mapping:
                 'marking-definition': '_parse_marking_definition',
                 'note': '_parse_note',
                 'observed-data': '_parse_observed_data',
-                'relationship': '_parse_relationship',
                 'report': '_parse_report',
                 'sighting': '_parse_sighting',
                 'threat-actor': '_parse_threat_actor',

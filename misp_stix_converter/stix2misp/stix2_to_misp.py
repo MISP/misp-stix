@@ -136,6 +136,28 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 self._handle_object_refs(grouping.object_refs)
         else:
             self._parse_bundle_with_no_report()
+        if hasattr(self, '_relationship'):
+            for attribute in self.misp_event.attributes:
+                if attribute.uuid in self._relationship:
+                    for relationship in self._relationship[attribute.uuid]:
+                        referenced_uuid = relationship['referenced_uuid']
+                        if referenced_uuid in self._galaxies:
+                            for tag_name in self._galaxies[referenced_uuid]['tag_names']:
+                                attribute.add_tag(tag_name)
+                            self._galaxies[referenced_uuid]['used'] = True
+            for misp_object in self.misp_event.objects:
+                if misp_object.uuid in self._relationship:
+                    for relationship in self._relationship[misp_object.uuid]:
+                        referenced_uuid = relationship['referenced_uuid']
+                        if referenced_uuid in self._galaxies:
+                            for tag_name in self._galaxies[referenced_uuid]['tag_names']:
+                                misp_object.add_tag(tag_name)
+                            self._galaxies[referenced_uuid]['used'] = True
+                        else:
+                            misp_object.add_reference(
+                                referenced_uuid,
+                                relationship['relationship_type']
+                            )
         for galaxy in self._galaxies.values():
             if not galaxy['used']:
                 for tag_name in galaxy['tag_names']:
@@ -254,10 +276,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
             'relationship_type': relationship.relationship_type
         }
         try:
-            self._relationship[relationship.source_ref].append(reference)
+            self._relationship[relationship.source_ref.split('--')[1]].append(reference)
         except AttributeError:
             self._relationship = defaultdict(list)
-            self._relationship[relationship.source_ref].append(reference)
+            self._relationship[relationship.source_ref.split('--')[1]].append(reference)
 
 
     def _load_report(self, report: Union[Report_v20, Report_v21]):
@@ -316,7 +338,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
             object_type = object_ref.split('--')[0]
-            if object_type in self._mapping.observable_object_types:
+            if object_type in self._mapping.observable_object_types or object_type == 'relationship':
                 continue
             try:
                 feature = self._mapping.stix_to_misp_mapping[object_type]
