@@ -809,6 +809,113 @@ _ATTACK_PATTERN_OBJECT = {
     ],
     "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
 }
+_ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
+    {
+        "type": "attack-pattern",
+        "spec_version": "2.1",
+        "id": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Access Token Manipulation - T1134",
+        "description": "ATT&CK Tactic | Windows uses access tokens to determine the ownership of a running process.",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "mitre-attack-pattern"
+            }
+        ],
+        "labels": [
+            "misp:galaxy-name=\"Attack Pattern\"",
+            "misp:galaxy-type=\"mitre-attack-pattern\""
+        ],
+        "external_references": [
+            {
+                "source_name": "capec",
+                "external_id": "CAPEC-633"
+            }
+        ]
+    },
+    {
+        "type": "course-of-action",
+        "spec_version": "2.1",
+        "id": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Automated Exfiltration Mitigation - T1020",
+        "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+        "labels": [
+            "misp:galaxy-name=\"Course of Action\"",
+            "misp:galaxy-type=\"mitre-course-of-action\""
+        ]
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Domain test attribute",
+        "pattern": "[domain-name:value = 'circl.lu']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"domain\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "malware",
+        "spec_version": "2.1",
+        "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "BISCUIT - S0017",
+        "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+        "is_family": True,
+        "aliases": [
+            "BISCUIT"
+        ],
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "mitre-malware"
+            }
+        ],
+        "labels": [
+            "misp:galaxy-name=\"Malware\"",
+            "misp:galaxy-type=\"mitre-malware\""
+        ]
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--74caa0d0-9366-4f19-94ec-1ec52a9e042e",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "indicates",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--88c41265-5fe6-4514-86a4-9f3034db4397",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "has",
+        "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "target_ref": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294"
+    }
+]
 _CAMPAIGN_NAME_ATTRIBUTE = {
     "type": "campaign",
     "spec_version": "2.1",
@@ -5909,6 +6016,10 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_filename_observable_attribute(cls):
         return cls.__assemble_bundle(*_FILENAME_OBSERVABLE_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_galaxy_embedded_in_attribute(cls):
+        return cls.__assemble_bundle(*_ATTRIBUTE_WITH_EMBEDDED_GALAXY)
 
     @classmethod
     def get_bundle_with_github_username_indicator_attribute(cls):

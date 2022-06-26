@@ -1319,6 +1319,26 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             f'misp-galaxy:mitre-course-of-action="{course_of_action.name}"'
         )
 
+    def test_stix21_bundle_with_galaxy_embedded_in_attribute(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_galaxy_embedded_in_attribute()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, attack_pattern, course_of_action, _, malware, _, _ = bundle.objects
+        attribute = self._check_misp_event_features(event, report)[0]
+        self.assertEqual(
+            attribute.tags[0].name,
+            f'misp-galaxy:mitre-attack-pattern="{attack_pattern.name}"'
+        )
+        self.assertEqual(
+            attribute.tags[1].name,
+            f'misp-galaxy:mitre-course-of-action="{course_of_action.name}"'
+        )
+        self.assertEqual(
+            event.tags[1].name,
+            f'misp-galaxy:mitre-malware="{malware.name}"'
+        )
+
     def test_stix21_bundle_with_intrusion_set_galaxy(self):
         bundle = TestSTIX21Bundles.get_bundle_with_intrusion_set_galaxy()
         self.parser.load_stix_bundle(bundle)
