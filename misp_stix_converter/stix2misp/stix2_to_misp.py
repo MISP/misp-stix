@@ -155,7 +155,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                             self._galaxies[referenced_uuid]['used'] = True
                         else:
                             misp_object.add_reference(
-                                referenced_uuid,
+                                referenced_uuid.split('--')[1],
                                 relationship['relationship_type']
                             )
         for galaxy in self._galaxies.values():
