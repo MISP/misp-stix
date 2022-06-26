@@ -3903,6 +3903,216 @@ _NEWS_AGENCY_OBJECT = {
     },
     "x_misp_link": "https://www.afp.com/"
 }
+_OBJECTS_WITH_REFERENCES = [
+    {
+        "type": "attack-pattern",
+        "id": "attack-pattern--7205da54-70de-4fa7-9b34-e14e63fe6787",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Buffer Overflow in Local Command-Line Utilities",
+        "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "vulnerability"
+            }
+        ],
+        "labels": [
+            "misp:name=\"attack-pattern\"",
+            "misp:meta-category=\"vulnerability\"",
+            "misp:to_ids=\"False\""
+        ],
+        "external_references": [
+            {
+                "source_name": "capec",
+                "external_id": "CAPEC-9"
+            }
+        ],
+        "x_misp_prerequisites": "The target hosst exposes a command-line utility to the user. The command-line utility exposed by the target host has a buffer overflow vulnerability that can be exploited.",
+        "x_misp_related_weakness": [
+            "CWE-118",
+            "CWE-120"
+        ],
+        "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "autonomous-system",
+                "number": 66642,
+                "name": "AS name",
+                "x_misp_subnet_announced": [
+                    "1.2.3.4",
+                    "8.8.8.8"
+                ]
+            }
+        },
+        "labels": [
+            "misp:name=\"asn\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "x-misp-object",
+        "id": "x-misp-object--6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "misp:name=\"btc-wallet\"",
+            "misp:meta-category=\"financial\""
+        ],
+        "x_misp_attributes": [
+            {
+                "type": "btc",
+                "object_relation": "wallet-address",
+                "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+                "to_ids": True
+            },
+            {
+                "type": "float",
+                "object_relation": "balance_BTC",
+                "value": "2.25036953"
+            },
+            {
+                "type": "float",
+                "object_relation": "BTC_received",
+                "value": "3.35036953"
+            },
+            {
+                "type": "float",
+                "object_relation": "BTC_sent",
+                "value": "1.1"
+            }
+        ],
+        "x_misp_meta_category": "financial",
+        "x_misp_name": "btc-wallet"
+    },
+    {
+        "type": "course-of-action",
+        "id": "course-of-action--5d514ff9-ac30-4fb5-b9e7-3eb4a964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Block traffic to PIVY C2 Server (10.10.10.10)",
+        "description": "Block communication between the PIVY agents and the C2 Server",
+        "labels": [
+            "misp:name=\"course-of-action\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"False\""
+        ],
+        "x_misp_cost": "Low",
+        "x_misp_efficacy": "High",
+        "x_misp_impact": "Low",
+        "x_misp_objective": "Block communication between the PIVY agents and the C2 Server",
+        "x_misp_stage": "Response",
+        "x_misp_type": "Perimeter Blocking"
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[(network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:dst_port = '443' AND network-traffic:start = '2020-10-25T16:22:00Z']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "network"
+            }
+        ],
+        "labels": [
+            "misp:name=\"ip-port\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "vulnerability",
+        "id": "vulnerability--651a981f-6f59-4609-b735-e57efb9d44df",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "CVE-2021-29921",
+        "description": "In Python before 3.9.5, the ipaddress library mishandles leading zero characters in the octets of an IP address string.",
+        "labels": [
+            "misp:name=\"vulnerability\"",
+            "misp:meta-category=\"vulnerability\"",
+            "misp:to_ids=\"False\""
+        ],
+        "external_references": [
+            {
+                "source_name": "cve",
+                "external_id": "CVE-2021-29921"
+            }
+        ]
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--a950cb91-1a8a-4c3a-ad73-3e2e38a39070",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "threatens",
+        "source_ref": "attack-pattern--7205da54-70de-4fa7-9b34-e14e63fe6787",
+        "target_ref": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f"
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--0a2a52f1-cc81-4701-976a-d8d90a480f62",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "includes",
+        "source_ref": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "target_ref": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f"
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--b0c193d5-014f-485a-aa14-46b99bf73dfa",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "connected-to",
+        "source_ref": "x-misp-object--6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
+        "target_ref": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f"
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--622267a8-7f94-4a1b-836c-a8efff91594b",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "protects-against",
+        "source_ref": "course-of-action--5d514ff9-ac30-4fb5-b9e7-3eb4a964451a",
+        "target_ref": "vulnerability--651a981f-6f59-4609-b735-e57efb9d44df"
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--eaf6e0e5-176d-4642-b9f1-b68b81ed88bd",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "protected-with",
+        "source_ref": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f",
+        "target_ref": "course-of-action--5d514ff9-ac30-4fb5-b9e7-3eb4a964451a"
+    },
+    {
+        "type": "relationship",
+        "id": "relationship--0bc85c04-f47e-4f72-823e-d7592dba31c4",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "affects",
+        "source_ref": "vulnerability--651a981f-6f59-4609-b735-e57efb9d44df",
+        "target_ref": "indicator--5ac47edc-31e4-4402-a7b6-040d0a00020f"
+    }
+]
 _ORGANIZATION_OBJECT = {
     "type": "identity",
     "id": "identity--fe85995c-189d-4c20-9d0e-dfc03e72000b",
@@ -5305,6 +5515,10 @@ class TestSTIX20Bundles:
         with open(_TESTFILES_PATH / 'AFP_logo.png', 'rb') as f:
             identity['x_misp_attachment']['data'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(identity)
+
+    @classmethod
+    def get_bundle_with_object_references(cls):
+        return cls.__assemble_bundle(*_OBJECTS_WITH_REFERENCES)
 
     @classmethod
     def get_bundle_with_organization_object(cls):

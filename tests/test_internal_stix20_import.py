@@ -1890,6 +1890,38 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             identity = identity
         )
 
+    def test_stix20_bundle_with_object_references(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_object_references()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, *_ = bundle.objects
+        attack_pattern, autonomous_system, btc, course_of_action, ip_port, vulnerability = self._check_misp_event_features(event, report)
+        attack_pattern_references = attack_pattern.references
+        self.assertEqual(len(attack_pattern_references), 1)
+        self.assertEqual(attack_pattern_references[0].referenced_uuid, ip_port.uuid)
+        self.assertEqual(attack_pattern_references[0].relationship_type, 'threatens')
+        autonomous_system_references = autonomous_system.references
+        self.assertEqual(len(autonomous_system_references), 1)
+        self.assertEqual(autonomous_system_references[0].referenced_uuid, ip_port.uuid)
+        self.assertEqual(autonomous_system_references[0].relationship_type, 'includes')
+        btc_references = btc.references
+        self.assertEqual(len(btc_references), 1)
+        self.assertEqual(btc_references[0].referenced_uuid, ip_port.uuid)
+        self.assertEqual(btc_references[0].relationship_type, 'connected-to')
+        course_of_action_references = course_of_action.references
+        self.assertEqual(len(course_of_action_references), 1)
+        self.assertEqual(course_of_action_references[0].referenced_uuid, vulnerability.uuid)
+        self.assertEqual(course_of_action_references[0].relationship_type, 'protects-against')
+        ip_port_references = ip_port.references
+        self.assertEqual(len(ip_port_references), 1)
+        self.assertEqual(ip_port_references[0].referenced_uuid, course_of_action.uuid)
+        self.assertEqual(ip_port_references[0].relationship_type, 'protected-with')
+        vulnerability_references = vulnerability.references
+        self.assertEqual(len(vulnerability_references), 1)
+        self.assertEqual(vulnerability_references[0].referenced_uuid, ip_port.uuid)
+        self.assertEqual(vulnerability_references[0].relationship_type, 'affects')
+
     def test_stix20_bundle_with_organization_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_organization_object()
         self.parser.load_stix_bundle(bundle)
