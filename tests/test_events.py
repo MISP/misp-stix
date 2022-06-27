@@ -2859,7 +2859,7 @@ _EMAIL_X_MAILER_ATTRIBUTE = {
 }
 
 _HTTP_METHOD_ATTRIBUTE = {
-    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "uuid": "d94bdd2c-3603-4044-8b70-20090e7526ad",
     "type": "http-method",
     "category": "Network activity",
     "value": "POST",
@@ -2905,7 +2905,7 @@ _OBSERVABLE_ATTRIBUTE = {
 }
 
 _PORT_ATTRIBUTE = {
-    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "uuid": "1af096a0-efa1-4331-9300-a6b5eb4df2e6",
     "type": "port",
     "category": "Network activity",
     "value": "8443",
@@ -2914,7 +2914,7 @@ _PORT_ATTRIBUTE = {
 }
 
 _SIZE_IN_BYTES_ATTRIBUTE = {
-    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "uuid": "8be8065b-ca71-4210-976e-2804665a502d",
     "type": "size-in-bytes",
     "value": "1234",
     "category": "Other",
@@ -2923,7 +2923,7 @@ _SIZE_IN_BYTES_ATTRIBUTE = {
 }
 
 _USER_AGENT_ATTRIBUTE = {
-    "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+    "uuid": "f0b5b638-81b4-4509-bd40-1e114955caf4",
     "type": "user-agent",
     "category": "Network activity",
     "value": "Mozilla Firefox",
