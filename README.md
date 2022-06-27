@@ -7,7 +7,7 @@
 [![Github Actions](https://github.com/MISP/misp-stix/workflows/misp-stix/badge.svg)](https://github.com/MISP/misp-stix/actions?query=workflow%3Amisp-stix)
 [![License](https://img.shields.io/github/license/MISP/misp-stix.svg)](#License)
 
-MISP-STIX-converter is a Python library (>=3.6) to handle all the conversions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
+MISP-STIX-converter is a Python library (>=3.7) to handle all the conversions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
 
 ## Features
 
