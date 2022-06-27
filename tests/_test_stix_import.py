@@ -72,6 +72,15 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self._check_attribute_labels(attribute, campaign.labels)
         self.assertEqual(attribute.value, campaign.name)
 
+    def _check_custom_attribute(self, attribute, custom_attribute):
+        self.assertEqual(attribute.uuid, custom_attribute.id.split('--')[1])
+        self.assertEqual(attribute.type, custom_attribute.x_misp_type)
+        self.assertEqual(attribute.category, custom_attribute.x_misp_category)
+        self.assertEqual(attribute.value, custom_attribute.x_misp_value)
+        self.assertEqual(attribute.timestamp, custom_attribute.modified)
+        if hasattr(custom_attribute, 'x_misp_comment'):
+            self.assertEqual(attribute.comment, custom_attribute.x_misp_comment)
+
     def _check_indicator_attribute(self, attribute, indicator):
         self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
         self._assert_multiple_equal(
