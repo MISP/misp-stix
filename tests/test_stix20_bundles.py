@@ -860,6 +860,97 @@ _CREDENTIAL_OBSERVABLE_OBJECT = {
         "misp:to_ids=\"False\""
     ]
 }
+_CUSTOM_ATTRIBUTES = [
+    {
+        "type": "x-misp-attribute",
+        "id": "x-misp-attribute--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "misp:type=\"btc\"",
+            "misp:category=\"Financial fraud\"",
+            "misp:to_ids=\"True\""
+        ],
+        "x_misp_category": "Financial fraud",
+        "x_misp_comment": "Btc test attribute",
+        "x_misp_type": "btc",
+        "x_misp_value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE"
+    },
+    {
+        "type": "x-misp-attribute",
+        "id": "x-misp-attribute--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "misp:type=\"iban\"",
+            "misp:category=\"Financial fraud\"",
+            "misp:to_ids=\"True\""
+        ],
+        "x_misp_category": "Financial fraud",
+        "x_misp_comment": "IBAN test attribute",
+        "x_misp_type": "iban",
+        "x_misp_value": "LU1234567890ABCDEF1234567890"
+    },
+    {
+        "type": "x-misp-attribute",
+        "id": "x-misp-attribute--d94bdd2c-3603-4044-8b70-20090e7526ad",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "misp:type=\"http-method\"",
+            "misp:category=\"Network activity\""
+        ],
+        "x_misp_category": "Network activity",
+        "x_misp_type": "http-method",
+        "x_misp_value": "POST"
+    },
+    {
+        "type": "x-misp-attribute",
+        "id": "x-misp-attribute--1af096a0-efa1-4331-9300-a6b5eb4df2e6",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "misp:type=\"port\"",
+            "misp:category=\"Network activity\""
+        ],
+        "x_misp_category": "Network activity",
+        "x_misp_type": "port",
+        "x_misp_value": "8443"
+    },
+    {
+        "type": "x-misp-attribute",
+        "id": "x-misp-attribute--8be8065b-ca71-4210-976e-2804665a502d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "misp:type=\"size-in-bytes\"",
+            "misp:category=\"Other\""
+        ],
+        "x_misp_category": "Other",
+        "x_misp_type": "size-in-bytes",
+        "x_misp_value": "1234"
+    },
+    {
+        "type": "x-misp-attribute",
+        "id": "x-misp-attribute--f0b5b638-81b4-4509-bd40-1e114955caf4",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "misp:type=\"user-agent\"",
+            "misp:category=\"Network activity\""
+        ],
+        "x_misp_category": "Network activity",
+        "x_misp_comment": "User-agent test attribute",
+        "x_misp_type": "user-agent",
+        "x_misp_value": "Mozilla Firefox"
+    }
+]
 _DOMAIN_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -4958,6 +5049,10 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_campaign_name_attribute(cls):
         return cls.__assemble_bundle(_CAMPAIGN_NAME_ATTRIBUTE)
+
+    @classmethod
+    def get_bundle_with_custom_attributes(cls):
+        return cls.__assemble_bundle(*_CUSTOM_ATTRIBUTES)
 
     @classmethod
     def get_bundle_with_domain_indicator_attribute(cls):

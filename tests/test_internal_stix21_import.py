@@ -172,6 +172,23 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             campaign = campaign
         )
 
+    def test_stix21_bundle_with_custom_attributes(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_custom_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, *custom_attributes = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), len(custom_attributes))
+        for attribute, custom_attribute in zip(attributes, custom_attributes):
+            self.assertEqual(attribute.uuid, custom_attribute.id.split('--')[1])
+            self.assertEqual(attribute.type, custom_attribute.x_misp_type)
+            self.assertEqual(attribute.category, custom_attribute.x_misp_category)
+            self.assertEqual(attribute.value, custom_attribute.x_misp_value)
+            self.assertEqual(attribute.timestamp, custom_attribute.modified)
+            if hasattr(custom_attribute, 'x_misp_comment'):
+                self.assertEqual(attribute.comment, custom_attribute.x_misp_comment)
+
     def test_stix21_bundle_with_domain_ip_indicator_attribute(self):
         bundle = TestSTIX21Bundles.get_bundle_with_domain_ip_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
