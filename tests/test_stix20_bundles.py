@@ -951,6 +951,185 @@ _CUSTOM_ATTRIBUTES = [
         "x_misp_value": "Mozilla Firefox"
     }
 ]
+_CUSTOM_OBJECTS = [
+    {
+        "type": "x-misp-object",
+        "id": "x-misp-object--695e7924-2518-4054-9cea-f82853d37410",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "misp:name=\"bank-account\"",
+            "misp:meta-category=\"financial\""
+        ],
+        "x_misp_attributes": [
+            {
+                "type": "iban",
+                "object_relation": "iban",
+                "value": "LU1234567890ABCDEF1234567890",
+                "to_ids": True,
+                "uuid": "8acaad62-227a-4988-96e7-4586847421a2"
+            },
+            {
+                "type": "bic",
+                "object_relation": "swift",
+                "value": "CTBKLUPP",
+                "uuid": "c53382a1-cf4b-4901-a890-1611dbcc7101"
+            },
+            {
+                "type": "bank-account-nr",
+                "object_relation": "account",
+                "value": "1234567890",
+                "uuid": "c7c9f782-582f-4218-af79-e7901237e468"
+            },
+            {
+                "type": "text",
+                "object_relation": "institution-name",
+                "value": "Central Bank",
+                "uuid": "c206e7b4-7333-40a3-bf02-9647d32f9df2"
+            },
+            {
+                "type": "text",
+                "object_relation": "account-name",
+                "value": "John Smith's bank account",
+                "uuid": "f388d5e6-e4eb-401d-8ea4-efdd519659a1"
+            },
+            {
+                "type": "text",
+                "object_relation": "beneficiary",
+                "value": "John Smith",
+                "uuid": "c1ea07c0-a855-4c47-9df2-4acc0d3c4e63"
+            },
+            {
+                "type": "text",
+                "object_relation": "currency-code",
+                "value": "EUR",
+                "uuid": "5421d979-9af5-45ae-8c81-5005a4d7fc55"
+            }
+        ],
+        "x_misp_meta_category": "financial",
+        "x_misp_name": "bank-account"
+    },
+    {
+        "type": "x-misp-object",
+        "id": "x-misp-object--6f7509f1-f324-4acc-bf06-bbe726ab8fc7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "misp:name=\"btc-wallet\"",
+            "misp:meta-category=\"financial\""
+        ],
+        "x_misp_attributes": [
+            {
+                "type": "btc",
+                "object_relation": "wallet-address",
+                "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
+                "to_ids": True,
+                "uuid": "b25b2538-36e3-4418-a42a-440eed163ffa"
+            },
+            {
+                "type": "float",
+                "object_relation": "balance_BTC",
+                "value": "2.25036953",
+                "uuid": "dd142f6f-d8a0-4143-92b3-3b50e7cb1c51"
+            },
+            {
+                "type": "float",
+                "object_relation": "BTC_received",
+                "value": "3.35036953",
+                "uuid": "7fd93652-5713-4390-bd15-94ec77e9c6d1"
+            },
+            {
+                "type": "float",
+                "object_relation": "BTC_sent",
+                "value": "1.1",
+                "uuid": "c5c0532c-2a63-4f40-86a7-df27914a177e"
+            }
+        ],
+        "x_misp_meta_category": "financial",
+        "x_misp_name": "btc-wallet"
+    },
+    {
+        "type": "x-misp-object",
+        "id": "x-misp-object--868037d5-d804-4f1d-8016-f296361f9c68",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "misp:name=\"person\"",
+            "misp:meta-category=\"misc\""
+        ],
+        "x_misp_attributes": [
+            {
+                "type": "first-name",
+                "object_relation": "first-name",
+                "value": "John",
+                "uuid": "37c42710-aaf7-4f10-956b-f8eb7adffb81"
+            },
+            {
+                "type": "last-name",
+                "object_relation": "last-name",
+                "value": "Smith",
+                "uuid": "05583483-4d7f-496a-aa1b-279d484b5966"
+            },
+            {
+                "type": "nationality",
+                "object_relation": "nationality",
+                "value": "USA",
+                "uuid": "a4e174fc-f341-432f-beb3-27b99ec22541"
+            },
+            {
+                "type": "passport-number",
+                "object_relation": "passport-number",
+                "value": "ABA9875413",
+                "uuid": "f6f12b78-5f96-4c64-9462-2e881d70cd4a"
+            },
+            {
+                "type": "phone-number",
+                "object_relation": "phone-number",
+                "value": "0123456789",
+                "uuid": "6c0a87f4-54a3-401a-a37f-13b2996d4d37"
+            }
+        ],
+        "x_misp_meta_category": "misc",
+        "x_misp_name": "person"
+    },
+    {
+        "type": "x-misp-object",
+        "id": "x-misp-object--3e76898a-fcb1-485b-ac24-d450fe8c54bc",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "misp:name=\"report\"",
+            "misp:meta-category=\"misc\""
+        ],
+        "x_misp_attributes": [
+            {
+                "type": "text",
+                "object_relation": "summary",
+                "value": "It is compromised",
+                "uuid": "11798cf8-1f53-448d-b424-e0bd7402492c"
+            },
+            {
+                "type": "text",
+                "object_relation": "type",
+                "value": "Report",
+                "uuid": "84a5575e-bbe4-4a55-a75d-c4a91b0d1e23"
+            },
+            {
+                "type": "attachment",
+                "value": "report.md",
+                "object_relation": "report-file",
+                "data": "VGhyZWF0IFJlcG9ydAoKSXQgaXMgY29tcHJvbWlzZWQK",
+                "uuid": "5742717c-7689-4440-af20-3cb44edb45cf"
+            }
+        ],
+        "x_misp_meta_category": "misc",
+        "x_misp_name": "report"
+    }
+]
 _DOMAIN_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -5456,6 +5635,10 @@ class TestSTIX20Bundles:
     @classmethod
     def get_bundle_with_credential_observable_object(cls):
         return cls.__assemble_bundle(_CREDENTIAL_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_custom_objects(cls):
+        return cls.__assemble_bundle(*_CUSTOM_OBJECTS)
 
     @classmethod
     def get_bundle_with_domain_ip_indicator_object(cls):

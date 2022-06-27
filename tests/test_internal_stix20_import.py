@@ -1449,6 +1449,16 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             observed_data = observed_data
         )
 
+    def test_stix20_bundle_with_custom_objects(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_custom_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, *custom_objects = bundle.objects
+        misp_objects = self._check_misp_event_features(event, report)
+        for misp_object, custom_object in zip(misp_objects, custom_objects):
+            self._check_custom_object(misp_object, custom_object)
+
     def test_stix20_bundle_with_domain_ip_indicator_object(self):
         bundle = TestSTIX20Bundles.get_bundle_with_domain_ip_indicator_object()
         self.parser.load_stix_bundle(bundle)

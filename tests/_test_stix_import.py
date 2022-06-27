@@ -293,6 +293,34 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             )
         return password
 
+    def _check_custom_object(self, misp_object, custom_object):
+        self.assertEqual(misp_object.uuid, custom_object.id.split('--')[1])
+        self.assertEqual(misp_object.name, custom_object.x_misp_name)
+        self.assertEqual(
+            getattr(misp_object, 'meta-category'),
+            custom_object.x_misp_meta_category
+        )
+        self.assertEqual(
+            misp_object.timestamp,
+            self._timestamp_from_datetime(custom_object.modified)
+        )
+        self.assertEqual(len(misp_object.attributes), len(custom_object.x_misp_attributes))
+        for attribute, custom_attribute in zip(misp_object.attributes, custom_object.x_misp_attributes):
+            self.assertEqual(attribute.type, custom_attribute['type'])
+            self.assertEqual(attribute.object_relation, custom_attribute['object_relation'])
+            self.assertEqual(attribute.value, custom_attribute['value'])
+            for feature in ('uuid', 'to_ids', 'comment'):
+                if feature in custom_attribute:
+                    self.assertEqual(
+                        getattr(attribute, feature),
+                        custom_attribute[feature]
+                    )
+            if 'data' in custom_attribute:
+                self.assertEqual(
+                    self._get_data_value(attribute.data),
+                    custom_attribute['data']
+                )
+
     def _check_domain_ip_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)
         domain_pattern, hostname_pattern, resolves_to_ref, port_pattern = pattern[1:-1].split(' AND ')
