@@ -9,7 +9,7 @@ body:
         Please read the [FAQ](https://www.circl.lu/doc/misp/faq/) before opening an issue.
 
         If you would like to report a bug, please fill the template bellow:
-  - type: textarea
+  - type: input
     id: usage
     attributes:
       label: MISP-STIX usage
@@ -38,7 +38,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: What version of MISP are you running?
+      description: What version of MISP (alternatively misp-stix) are you running?
       placeholder: "2.4.151"
     validations:
       required: true
