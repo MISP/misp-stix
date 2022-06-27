@@ -1,54 +1,35 @@
-name: Bug Report
-description: Create a report to help us improve
-title: "Bug: "
-labels: ["bug", "potential-bug", "needs triage"]
+name: Support Request
+description: Support requests for MISP
+title: "Support: "
+labels: ["support", "needs triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        Please read the [FAQ](https://www.circl.lu/doc/misp/faq/) before opening an issue.
+        ## Please consider the following notes
+        Bug reports and feature requests can be filed as an issue on github: https://github.com/MISP/MISP/issues
 
-        If you would like to report a bug, please fill the template bellow:
-  - type: input
-    id: usage
-    attributes:
-      label: MISP-STIX usage
-      description: Please describe how do you use the library
-      placeholder: Within MISP core, standalone python script, CLI ?
+        The documentation for MISP-STIX can be found here: https://misp.github.io/misp-stix/
+
+        Nevertheless you can of course file a Support request as an issue. Please be as precise as possible and fill the template as detailed as possible too.
+        If you would like to ask for support, please fill the template bellow:
   - type: textarea
-    id: expected-behavior
+    id: support-questions
     attributes:
-      label: Expected behavior
-    validations:
-      required: true
-  - type: textarea
-    id: actual-behavior
-    attributes:
-      label: Actual behavior
-    validations:
-      required: true
-  - type: textarea
-    id: steps-to-reproduce
-    attributes:
-      label: Steps to reproduce
-      description: Please be as thorough as possible.
+      label: Support Questions
     validations:
       required: true
   - type: input
-    id: version
+    id: misp-version
     attributes:
-      label: Version
-      description: What version of MISP (alternatively misp-stix) are you running?
+      label: MISP version
+      description: What version of MISP are you running?
       placeholder: "2.4.159"
-    validations:
-      required: true
   - type: input
     id: python-version
     attributes:
       label: Python version
       placeholder: "3.10, 3.9, 3.8, ..."
-    validations:
-      required: true
   - type: textarea
     id: logs
     attributes:
