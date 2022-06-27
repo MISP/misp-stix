@@ -1186,37 +1186,44 @@ _TEST_BANK_ACCOUNT_OBJECT = {
     "timestamp": "1603642920",
     "Attribute": [
         {
+            "uuid": "8acaad62-227a-4988-96e7-4586847421a2",
             "type": "iban",
             "object_relation": "iban",
             "value": "LU1234567890ABCDEF1234567890",
             "to_ids": True
         },
         {
+            "uuid": "c53382a1-cf4b-4901-a890-1611dbcc7101",
             "type": "bic",
             "object_relation": "swift",
             "value": "CTBKLUPP"
         },
         {
+            "uuid": "c7c9f782-582f-4218-af79-e7901237e468",
             "type": "bank-account-nr",
             "object_relation": "account",
             "value": "1234567890"
         },
         {
+            "uuid": "c206e7b4-7333-40a3-bf02-9647d32f9df2",
             "type": "text",
             "object_relation": "institution-name",
             "value": "Central Bank"
         },
         {
+            "uuid": "f388d5e6-e4eb-401d-8ea4-efdd519659a1",
             "type": "text",
             "object_relation": "account-name",
             "value": "John Smith's bank account"
         },
         {
+            "uuid": "c1ea07c0-a855-4c47-9df2-4acc0d3c4e63",
             "type": "text",
             "object_relation": "beneficiary",
             "value": "John Smith"
         },
         {
+            "uuid": "5421d979-9af5-45ae-8c81-5005a4d7fc55",
             "type": "text",
             "object_relation": "currency-code",
             "value": "EUR"
@@ -1232,22 +1239,26 @@ _TEST_BTC_WALLET_OBJECT = {
     "timestamp": "1603642920",
     "Attribute": [
         {
+            "uuid": "b25b2538-36e3-4418-a42a-440eed163ffa",
             "type": "btc",
             "object_relation": "wallet-address",
             "value": "1E38kt7ryhbRXUzbam6iQ6sd93VHUUdjEE",
             "to_ids": True
         },
         {
+            "uuid": "dd142f6f-d8a0-4143-92b3-3b50e7cb1c51",
             "type": "float",
             "object_relation": "balance_BTC",
             "value": "2.25036953"
         },
         {
+            "uuid": "7fd93652-5713-4390-bd15-94ec77e9c6d1",
             "type": "float",
             "object_relation": "BTC_received",
             "value": "3.35036953"
         },
         {
+            "uuid": "c5c0532c-2a63-4f40-86a7-df27914a177e",
             "type": "float",
             "object_relation": "BTC_sent",
             "value": "1.1"
@@ -2126,26 +2137,31 @@ _TEST_PERSON_OBJECT = {
     "timestamp": "1603642920",
     "Attribute": [
         {
+            "uuid": "37c42710-aaf7-4f10-956b-f8eb7adffb81",
             "type": "first-name",
             "object_relation": "first-name",
             "value": "John"
         },
         {
+            "uuid": "05583483-4d7f-496a-aa1b-279d484b5966",
             "type": "last-name",
             "object_relation": "last-name",
             "value": "Smith"
         },
         {
+            "uuid": "a4e174fc-f341-432f-beb3-27b99ec22541",
             "type": "nationality",
             "object_relation": "nationality",
             "value": "USA"
         },
         {
+            "uuid": "f6f12b78-5f96-4c64-9462-2e881d70cd4a",
             "type": "passport-number",
             "object_relation": "passport-number",
             "value": "ABA9875413"
         },
         {
+            "uuid": "6c0a87f4-54a3-401a-a37f-13b2996d4d37",
             "type": "phone-number",
             "object_relation": "phone-number",
             "value": "0123456789"
@@ -2258,16 +2274,19 @@ _TEST_REPORT_OBJECT = {
     "timestamp": "1603642920",
     "Attribute": [
         {
+            "uuid": "11798cf8-1f53-448d-b424-e0bd7402492c",
             "type": "text",
             "object_relation": "summary",
             "value": "It is compromised"
         },
         {
+            "uuid": "84a5575e-bbe4-4a55-a75d-c4a91b0d1e23",
             "type": "text",
             "object_relation": "type",
             "value": "Report"
         },
         {
+            "uuid": "5742717c-7689-4440-af20-3cb44edb45cf",
             "type": "attachment",
             "object_relation": "report-file(s)",
             "value": "report.md",
