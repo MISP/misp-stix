@@ -20,8 +20,8 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
 
 
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, single_event: Optional[bool]=False, synonyms_path: Optional[str]=None):
-        super().__init__(single_event, synonyms_path)
+    def __init__(self, synonyms_path: Optional[str]=None):
+        super().__init__(synonyms_path)
         self._mapping = ExternalSTIX2Mapping()
 
     ################################################################################

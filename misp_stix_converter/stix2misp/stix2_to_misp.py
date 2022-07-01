@@ -58,10 +58,8 @@ _SDO_TYPING = Union[
 
 
 class STIX2toMISPParser(STIXtoMISPParser):
-    def __init__(self, single_event: bool, synonyms_path: Union[None, str]):
+    def __init__(self, synonyms_path: Union[None, str]):
         super().__init__(synonyms_path)
-        self.__single_event = single_event
-        self.__n_events = 0
         self._mapping: Union[ExternalSTIX2Mapping, InternalSTIX2Mapping]
 
         self._attack_pattern: dict
@@ -101,7 +99,8 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 sys.exit(exception)
         self.__n_report = 2 if n_report >= 2 else n_report
 
-    def parse_stix_bundle(self):
+    def parse_stix_bundle(self, single_event: Optional[bool] = False):
+        self.__single_event = single_event
         try:
             feature = self._mapping.bundle_to_misp_mapping[str(self.__n_report)]
         except AttributeError:
