@@ -55,7 +55,7 @@ class TestSTIX2Import(TestSTIX2):
 
 class TestInternalSTIX2Import(TestSTIX2Import):
     def setUp(self):
-        self.parser = InternalSTIX2toMISPParser(False)
+        self.parser = InternalSTIX2toMISPParser()
 
     ################################################################################
     #                      MISP ATTRIBUTES CHECKING FUNCTIONS                      #
