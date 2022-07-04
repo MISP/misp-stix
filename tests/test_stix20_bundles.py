@@ -5172,36 +5172,38 @@ class TestSTIX20Bundles:
     __bundle = {
         "type": "bundle",
         "id": "bundle--314e4210-e41a-4952-9f3c-135d7d577112",
-        "spec_version": "2.0",
-        "objects": [
-            {
-                "type": "identity",
-                "id": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-                "created": "2020-10-25T16:22:00.000Z",
-                "modified": "2020-10-25T16:22:00.000Z",
-                "name": "MISP-Project",
-                "identity_class": "organization"
-            },
-            {
-                "type": "report",
-                "id": "report--a6ef17d6-91cb-4a05-b10b-2f045daf874c",
-                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-                "created": "2020-10-25T16:22:00.000Z",
-                "modified": "2020-10-25T16:22:00.000Z",
-                "name": "MISP-STIX-Converter test event",
-                "published": "2020-10-25T16:22:00Z",
-                "labels": [
-                    "Threat-Report",
-                    "misp:tool=\"MISP-STIX-Converter\""
-                ]
-            }
+        "spec_version": "2.0"
+    }
+    __identity = {
+        "type": "identity",
+        "id": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "MISP-Project",
+        "identity_class": "organization"
+    }
+    __report = {
+        "type": "report",
+        "id": "report--a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "MISP-STIX-Converter test event",
+        "published": "2020-10-25T16:22:00Z",
+        "labels": [
+            "Threat-Report",
+            "misp:tool=\"MISP-STIX-Converter\""
         ]
     }
 
     @classmethod
     def __assemble_bundle(cls, *stix_objects):
         bundle = deepcopy(cls.__bundle)
-        bundle['objects'].extend(stix_objects)
+        bundle['objects'] = [
+            deepcopy(cls.__identity),
+            deepcopy(cls.__report),
+            *stix_objects
+        ]
         bundle['objects'][1]['object_refs'] = [stix_object['id'] for stix_object in stix_objects]
         return dict_to_stix2(bundle, allow_custom=True)
 
