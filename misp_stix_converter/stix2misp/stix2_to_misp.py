@@ -219,6 +219,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             self._identity = {identity.id: data_to_load}
 
+    def _load_indicator(self, indicator: Union[Indicator_v20, Indicator_v21]):
+        try:
+            self._indicator[indicator.id] = indicator
+        except AttributeError:
+            self._indicator = {indicator.id: indicator}
+
     def _load_intrusion_set(self, intrusion_set: Union[IntrusionSet_v20, IntrusionSet_v21]):
         data_to_load = self._build_data_to_load(intrusion_set)
         try:
@@ -262,6 +268,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._observable[observable.id] = observable
         except AttributeError:
             self._observable = {observable.id: observable}
+
+    def _load_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
+        try:
+            self._observed_data[observed_data.id] = observed_data
+        except AttributeError:
+            self._observed_data = {observed_data.id: observed_data}
 
     def _load_opinion(self, opinion: Opinion):
         try:

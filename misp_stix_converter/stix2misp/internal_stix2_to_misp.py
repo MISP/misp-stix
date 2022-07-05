@@ -104,24 +104,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except AttributeError:
             self._custom_object = {custom_object.id: custom_object}
 
-    def _load_indicator(self, indicator: Union[Indicator_v20, Indicator_v21]):
-        try:
-            self._indicator[indicator.id] = indicator
-        except AttributeError:
-            self._indicator = {indicator.id: indicator}
-
-    def _load_note(self, note: Note):
-        try:
-            self._note[note.id] = note
-        except AttributeError:
-            self._note = {note.id: note}
-
-    def _load_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
-        try:
-            self._observed_data[observed_data.id] = observed_data
-        except AttributeError:
-            self._observed_data = {observed_data.id: observed_data}
-
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
