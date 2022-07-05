@@ -205,7 +205,6 @@ class STIXtoMISPParser:
     def __generate_synonyms_mapping(self):
         data_path = _ROOT_PATH / 'data' / 'misp-galaxy' / 'clusters'
         if not data_path.exists():
-
             raise UnavailableGalaxyResourcesError(data_path)
         synonyms_mapping = defaultdict(list)
         for filename in data_path.glob('*.json'):

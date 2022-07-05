@@ -275,7 +275,6 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._relationship = defaultdict(list)
             self._relationship[relationship.source_ref.split('--')[1]].append(reference)
 
-
     def _load_report(self, report: Union[Report_v20, Report_v21]):
         try:
             self._report[report.id] = report
