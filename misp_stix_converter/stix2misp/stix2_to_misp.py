@@ -150,6 +150,13 @@ class STIX2toMISPParser(STIXtoMISPParser):
         return self.__misp_event
 
     @property
+    def misp_events(self) -> Union[list, MISPEvent]:
+        try:
+            return self.__misp_events
+        except AttributeError:
+            return self.__misp_event
+
+    @property
     def single_event(self) -> bool:
         return self.__single_event
 
@@ -405,14 +412,24 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 self._parse_relationships()
             self._parse_galaxies()
         else:
+            events = []
             if hasattr(self, '_report') and self._report is not None:
                 for report in self._report.values():
                     self.__misp_event = self._misp_event_from_report(report)
                     self._handle_object_refs(report.object_refs)
+                    if hasattr(self, '_relationship'):
+                        self._parse_relationships()
+                    self._parse_galaxies()
+                    events.append(self.misp_event)
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self.__misp_event = self._misp_event_from_grouping(grouping)
                     self._handle_object_refs(grouping.object_refs)
+                    if hasattr(self, '_relationship'):
+                        self._parse_relationships()
+                    self._parse_galaxies()
+                    events.append(self.misp_event)
+            self.__misp_events = events
 
     def _parse_bundle_with_no_report(self):
         self.__misp_event = self._create_generic_event()
