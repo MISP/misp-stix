@@ -195,16 +195,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._add_misp_object(misp_object)
 
     def _parse_identity(self, identity_ref: str):
-        identity = self._get_stix_object(identity_ref)
-        feature = self._handle_object_mapping(identity.labels, identity.id)
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(identity)
-        except Exception as exception:
-            self._identity_error(identity.id, exception)
+        if identity_ref not in self._creators:
+            identity = self._get_stix_object(identity_ref)
+            feature = self._handle_object_mapping(identity.labels, identity.id)
+            try:
+                parser = getattr(self, feature)
+            except AttributeError:
+                raise UnknownParsingFunctionError(feature)
+            try:
+                parser(identity)
+            except Exception as exception:
+                self._identity_error(identity.id, exception)
 
     def _parse_indicator(self, indicator_ref: str):
         indicator = self._get_stix_object(indicator_ref)

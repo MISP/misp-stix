@@ -66,3 +66,7 @@ class UnknownPatternMappingError(STIXtoMISPError):
 
 class UnknownPatternTypeError(STIXtoMISPError):
     pass
+
+
+class UnknownStixObjectTypeError(STIXtoMISPError):
+    pass
