@@ -274,80 +274,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
             )
         )
         self.__observable_attributes_mapping = Mapping(**observable_attributes_mapping)
-        galaxies_mapping = {'branded-vulnerability': '_parse_vulnerability_galaxy'}
-        galaxies_mapping.update(
-            dict.fromkeys(
-                (
-                    'mitre-attack-pattern',
-                    'mitre-enterprise-attack-attack-pattern',
-                    'mitre-mobile-attack-attack-pattern',
-                    'mitre-pre-attack-attack-pattern'
-                ),
-                '_parse_attack_pattern_galaxy'
-            )
-        )
-        galaxies_mapping.update(
-            dict.fromkeys(
-                (
-                    'mitre-course-of-action',
-                    'mitre-enterprise-attack-course-of-action',
-                    'mitre-mobile-attack-course-of-action'
-                ),
-                '_parse_course_of_action_galaxy'
-            )
-        )
-        galaxies_mapping.update(
-            dict.fromkeys(
-                (
-                    'mitre-enterprise-attack-intrusion-set',
-                    'mitre-intrusion-set',
-                    'mitre-mobile-attack-intrusion-set',
-                    'mitre-pre-attack-intrusion-set'
-                ),
-                '_parse_intrusion_set_galaxy'
-            )
-        )
-        galaxies_mapping.update(
-            dict.fromkeys(
-                (
-                    'android',
-                    'banker',
-                    'stealer',
-                    'backdoor',
-                    'ransomware',
-                    'mitre-malware',
-                    'malpedia',
-                    'mitre-enterprise-attack-malware',
-                    'mitre-mobile-attack-malware'
-                ),
-                '_parse_malware_galaxy'
-            )
-        ),
-        galaxies_mapping.update(
-            dict.fromkeys(
-                (
-                    'threat-actor',
-                    'microsoft-activity-group'
-                ),
-                '_parse_threat_actor_galaxy'
-            )
-        )
-        galaxies_mapping.update(
-            dict.fromkeys(
-                (
-                    'botnet',
-                    'rat',
-                    'exploit-kit',
-                    'tds',
-                    'tool',
-                    'mitre-tool',
-                    'mitre-enterprise-attack-tool',
-                    'mitre-mobile-attack-tool'
-                ),
-                '_parse_tool_galaxy'
-            )
-        )
-        self.__galaxies_mapping = Mapping(**galaxies_mapping)
         objects_mapping = {
             'android-app': '_object_from_android_app',
             'asn': '_object_from_asn',
@@ -1332,10 +1258,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def file_observable_object_mapping(self) -> dict:
         return self.__file_observable_object_mapping
-
-    @property
-    def galaxies_mapping(self) -> dict:
-        return self.__galaxies_mapping
 
     @property
     def github_user_object_mapping(self) -> dict:

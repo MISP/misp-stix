@@ -182,13 +182,16 @@ class STIXtoMISPParser:
                 return tag_names
 
     def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
-        tag_names = self._check_existing_galaxy_name(stix_object.name)
-        if tag_names is None:
-            tag_names = [f'misp-galaxy:{stix_object.type}="{stix_object.name}"']
-        self._galaxies[stix_object.id] = {
-            'tag_names': tag_names,
-            'used': False
-        }
+        if stix_object.id in self._galaxies:
+            self._galaxies[stix_object.id]['used'][self.misp_event.uuid] = False
+        else:
+            tag_names = self._check_existing_galaxy_name(stix_object.name)
+            if tag_names is None:
+                tag_names = [f'misp-galaxy:{stix_object.type}="{stix_object.name}"']
+            self._galaxies[stix_object.id] = {
+                'tag_names': tag_names,
+                'used': {self.misp_event.uuid: False}
+            }
 
     ################################################################################
     #           SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING FUNCTIONS.           #

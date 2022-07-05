@@ -447,7 +447,9 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _parse_galaxies(self):
         for galaxy in self._galaxies.values():
-            if not galaxy['used']:
+            if self.misp_event.uuid not in galaxy['used']:
+                continue
+            if not galaxy['used'][self.misp_event.uuid]:
                 for tag_name in galaxy['tag_names']:
                     self.misp_event.add_tag(tag_name)
 
@@ -483,7 +485,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                     if referenced_uuid in self._galaxies:
                         for tag_name in self._galaxies[referenced_uuid]['tag_names']:
                             attribute.add_tag(tag_name)
-                        self._galaxies[referenced_uuid]['used'] = True
+                        self._galaxies[referenced_uuid]['used'][self.misp_event.uuid] = True
         for misp_object in self.misp_event.objects:
             if misp_object.uuid in self._relationship:
                 for relationship in self._relationship[misp_object.uuid]:
@@ -491,7 +493,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                     if referenced_uuid in self._galaxies:
                         for tag_name in self._galaxies[referenced_uuid]['tag_names']:
                             misp_object.add_tag(tag_name)
-                        self._galaxies[referenced_uuid]['used'] = True
+                        self._galaxies[referenced_uuid]['used'][self.misp_event.uuid] = True
                     else:
                         misp_object.add_reference(
                             referenced_uuid.split('--')[1],
