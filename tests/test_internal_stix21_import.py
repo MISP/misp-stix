@@ -1303,6 +1303,51 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             )
 
     ################################################################################
+    #                           MISP EVENTS IMPORT TESTS                           #
+    ################################################################################
+
+    def test_stix21_bundle_with_mutliple_reports_as_multiple_events(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_multiple_reports()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        _, grouping1, od1, _, od2, _, grouping2, indicator1, indicator2, malware, relation1, relation2 = bundle.objects
+        self._check_events_from_bundle_with_multiple_reports(
+            (
+                grouping1, od1, od2, grouping2, indicator2, indicator1, malware,
+                relation1, relation2
+            )
+        )
+
+    def test_stix21_bundle_with_multiple_reports_as_single_event(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_multiple_reports()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(single_event = True)
+        _, _, od1, _, od2, _, _, indicator1, indicator2, malware, relation1, relation2 = bundle.objects
+        self._check_single_event_from_bundle_with_multiple_reports(
+            (od1, od2, indicator2, indicator1, malware, relation1, relation2),
+            bundle.id
+        )
+
+    def test_stix21_bundle_with_no_report(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_no_report()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        _, od1, _, od2, _, indicator1, indicator2, malware, relation1, relation2 = bundle.objects
+        self._check_event_from_bundle_with_no_report(
+            (od1, od2, indicator1, indicator2, malware, relation1, relation2),
+            bundle.id
+        )
+
+    def test_stix21_bundle_with_single_report(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_single_report()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        _, grouping, od1, _, od2, _, indicator1, indicator2, malware, relation1, relation2 = bundle.objects
+        self._check_event_from_bundle_with_single_report(
+            (grouping, od1, od2, indicator1, indicator2, malware, relation1, relation2)
+        )
+
+    ################################################################################
     #                          MISP GALAXIES IMPORT TESTS                          #
     ################################################################################
 

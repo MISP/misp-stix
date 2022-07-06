@@ -916,6 +916,340 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "target_ref": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294"
     }
 ]
+_BUNDLE_WITH_MULTIPLE_REPORTS = [
+    {
+        "name": "MISP-STIX-Converter test event with autonomous systems",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "Threat-Report",
+            "misp:tool=\"MISP-STIX-Converter\""
+        ],
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "id": "grouping--e2e6a6ea-f69b-4d93-8564-f51d67cafe51",
+        "type": "grouping",
+        "context": "suspicious-activity",
+        "object_refs": [
+            "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
+            "autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f",
+            "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+            "autonomous-system--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+            "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
+            "relationship--a950cb91-1a8a-4c3a-ad73-3e2e38a39070"
+        ],
+        "spec_version": "2.1"
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f"
+        ],
+        "labels": [
+            "misp:name=\"asn\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "autonomous-system",
+        "spec_version": "2.1",
+        "id": "autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "number": 66642,
+        "name": "AS name",
+        "x_misp_subnet_announced": [
+            "1.2.3.4",
+            "8.8.8.8"
+        ]
+    },
+    {
+        "id": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+        "type": "observed-data",
+        "labels": [
+            "misp:type=\"AS\"",
+            "misp:category=\"Network activity\""
+        ],
+        "number_observed": 1,
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "object_refs": [
+            "autonomous-system--2972c3a2-dda3-4de7-aca1-e96cf7ce5544"
+        ],
+        "spec_version": "2.1"
+    },
+    {
+        "id": "autonomous-system--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+        "number": 66642,
+        "type": "autonomous-system",
+        "spec_version": "2.1"
+    },
+    {
+        "name": "MISP-STIX-Converter test event with domains",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "labels": [
+            "Threat-Report",
+            "misp:tool=\"MISP-STIX-Converter\""
+        ],
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "id": "grouping--d402185f-c129-4f65-8678-43edb2cee1cf",
+        "type": "grouping",
+        "context": "suspicious-activity",
+        "object_refs": [
+            "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
+            "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+            "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
+            "relationship--0a2a52f1-cc81-4701-976a-d8d90a480f62"
+        ],
+        "spec_version": "2.1"
+    },
+    {
+        "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+        "type": "indicator",
+        "labels": [
+            "misp:type=\"domain\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ],
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "pattern": "[domain-name:value = 'circl.lu']",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "description": "Domain test attribute",
+        "spec_version": "2.1",
+        "pattern_type": "stix",
+        "pattern_version": "2.1"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:x_misp_port = '8443']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "network"
+            }
+        ],
+        "labels": [
+            "misp:name=\"domain-ip\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "malware",
+        "spec_version": "2.1",
+        "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "BISCUIT - S0017",
+        "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+        "is_family": True,
+        "aliases": [
+            "BISCUIT"
+        ],
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "mitre-malware"
+            }
+        ],
+        "labels": [
+            "misp:galaxy-name=\"Malware\"",
+            "misp:galaxy-type=\"mitre-malware\""
+        ]
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--a950cb91-1a8a-4c3a-ad73-3e2e38a39070",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "describes",
+        "source_ref": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "target_ref": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--0a2a52f1-cc81-4701-976a-d8d90a480f62",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "describes",
+        "source_ref": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
+        "target_ref": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb"
+    }
+]
+_BUNDLE_WITH_NO_REPORT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f"
+        ],
+        "labels": [
+            "misp:name=\"asn\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "autonomous-system",
+        "spec_version": "2.1",
+        "id": "autonomous-system--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "number": 66642,
+        "name": "AS name",
+        "x_misp_subnet_announced": [
+            "1.2.3.4",
+            "8.8.8.8"
+        ]
+    },
+    {
+        "id": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+        "type": "observed-data",
+        "labels": [
+            "misp:type=\"AS\"",
+            "misp:category=\"Network activity\""
+        ],
+        "number_observed": 1,
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "object_refs": [
+            "autonomous-system--2972c3a2-dda3-4de7-aca1-e96cf7ce5544"
+        ],
+        "spec_version": "2.1"
+    },
+    {
+        "id": "autonomous-system--2972c3a2-dda3-4de7-aca1-e96cf7ce5544",
+        "number": 66642,
+        "type": "autonomous-system",
+        "spec_version": "2.1"
+    },
+    {
+        "id": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb",
+        "type": "indicator",
+        "labels": [
+            "misp:type=\"domain\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ],
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "pattern": "[domain-name:value = 'circl.lu']",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "description": "Domain test attribute",
+        "spec_version": "2.1",
+        "pattern_type": "stix",
+        "pattern_version": "2.1"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
+        "id": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "pattern": "[domain-name:value = 'circl.lu' AND domain-name:x_misp_hostname = 'circl.lu' AND domain-name:resolves_to_refs[*].value = '149.13.33.14' AND domain-name:x_misp_port = '8443']",
+        "pattern_type": "stix",
+        "pattern_version": "2.1",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "network"
+            }
+        ],
+        "labels": [
+            "misp:name=\"domain-ip\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "malware",
+        "spec_version": "2.1",
+        "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "BISCUIT - S0017",
+        "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+        "is_family": True,
+        "aliases": [
+            "BISCUIT"
+        ],
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "mitre-malware"
+            }
+        ],
+        "labels": [
+            "misp:galaxy-name=\"Malware\"",
+            "misp:galaxy-type=\"mitre-malware\""
+        ]
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--a950cb91-1a8a-4c3a-ad73-3e2e38a39070",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "describes",
+        "source_ref": "observed-data--5b23c82b-6508-4bdc-b580-045b0a00020f",
+        "target_ref": "observed-data--2972c3a2-dda3-4de7-aca1-e96cf7ce5544"
+    },
+    {
+        "type": "relationship",
+        "spec_version": "2.1",
+        "id": "relationship--0a2a52f1-cc81-4701-976a-d8d90a480f62",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "relationship_type": "describes",
+        "source_ref": "indicator--dc624447-684a-488f-9e16-f78f717d8efd",
+        "target_ref": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb"
+    }
+]
 _CAMPAIGN_NAME_ATTRIBUTE = {
     "type": "campaign",
     "spec_version": "2.1",
@@ -6679,6 +7013,32 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_x509_fingerprint_observable_attributes(cls):
         return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES)
+
+    ################################################################################
+    #                                EVENTS SAMPLES                                #
+    ################################################################################
+
+    @classmethod
+    def get_bundle_with_multiple_reports(cls):
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [
+            cls.__identity,
+            *_BUNDLE_WITH_MULTIPLE_REPORTS
+        ]
+        return dict_to_stix2(bundle, allow_custom = True)
+
+    @classmethod
+    def get_bundle_with_no_report(cls):
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [
+            cls.__identity,
+            *_BUNDLE_WITH_NO_REPORT
+        ]
+        return dict_to_stix2(bundle, allow_custom = True)
+
+    @classmethod
+    def get_bundle_with_single_report(cls):
+        return cls.__assemble_bundle(*_BUNDLE_WITH_NO_REPORT)
 
     ################################################################################
     #                               GALAXIES SAMPLES                               #

@@ -1041,6 +1041,38 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
             )
 
     ################################################################################
+    #                           MISP EVENTS IMPORT TESTS                           #
+    ################################################################################
+
+    def test_stix20_bundle_with_mutliple_reports_as_multiple_events(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_multiple_reports()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_events_from_bundle_with_multiple_reports(bundle.objects[1:])
+
+    def test_stix20_bundle_with_multiple_reports_as_single_event(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_multiple_reports()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle(single_event = True)
+        _, _, od1, od2, _, indicator1, indicator2, malware, relation1, relation2 = bundle.objects
+        self._check_single_event_from_bundle_with_multiple_reports(
+            (od1, od2, indicator1, indicator2, malware, relation1, relation2),
+            bundle.id
+        )
+
+    def test_stix20_bundle_with_no_report(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_no_report()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_event_from_bundle_with_no_report(bundle.objects[1:], bundle.id)
+
+    def test_stix20_bundle_with_single_report(self):
+        bundle = TestSTIX20Bundles.get_bundle_with_single_report()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        self._check_event_from_bundle_with_single_report(bundle.objects[1:])
+
+    ################################################################################
     #                          MISP GALAXIES IMPORT TESTS                          #
     ################################################################################
 
