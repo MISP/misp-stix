@@ -450,10 +450,10 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         sightings1 = attribute1['Sighting']
         sightings2 = attribute2['Sighting']
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(12)
+        stix_objects = self._check_bundle_features(13)
         self._check_spec_versions(stix_objects)
-        identity, identity1, identity2, identity3, grouping, *stix_objects = stix_objects
-        identities = (identity1, identity2, identity3)
+        identity, identity1, identity2, identity3, identity4, grouping, *stix_objects = stix_objects
+        identities = (identity1, identity2, identity3, identity4)
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         args = (
@@ -465,8 +465,8 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             self.assertEqual(stix_object.id, object_ref)
         self._check_identities_from_sighting(
             identities,
-            tuple(f"identity--{sighting['Organisation']['uuid']}" for sighting in sightings1[:3]),
-            tuple(sighting['Organisation']['name'] for sighting in sightings2[:3])
+            tuple(f"identity--{sighting['Organisation']['uuid']}" for sighting in sightings1),
+            tuple(sighting['Organisation']['name'] for sighting in sightings2)
         )
         identity_ids = tuple(identity.id for identity in identities)
         observed_data, _, sighting1, opinion1, indicator, sighting2, opinion2 = stix_objects
@@ -487,8 +487,8 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(opinion1.type, 'opinion')
         self.assertEqual(opinion1.object_refs, [observed_data.id])
         self.assertEqual(len(opinion1.authors), 2)
-        self.assertIn(sightings1[3]['Organisation']['name'], opinion1.authors)
         self.assertIn(sightings1[2]['Organisation']['name'], opinion1.authors)
+        self.assertIn(sightings1[3]['Organisation']['name'], opinion1.authors)
         self.assertEqual(opinion1.explanation, "False positive Sighting")
         self.assertEqual(opinion1.opinion, "strongly-disagree")
         self.assertEqual(sighting2.type, 'sighting')

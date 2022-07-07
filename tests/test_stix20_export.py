@@ -301,8 +301,8 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         sightings1 = attribute1['Sighting']
         sightings2 = attribute2['Sighting']
         self.parser.parse_misp_event(event)
-        identity, identity1, identity2, identity3, report, *stix_objects = self.parser.stix_objects
-        identities = (identity1, identity2, identity3)
+        identity, identity1, identity2, identity3, identity4, report, *stix_objects = self.parser.stix_objects
+        identities = (identity1, identity2, identity3, identity4)
         timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_refs = self._check_report_features(report, event['Event'], identity_id, timestamp)
@@ -310,8 +310,8 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
             self.assertEqual(stix_object.id, object_ref)
         self._check_identities_from_sighting(
             identities,
-            tuple(f"identity--{sighting['Organisation']['uuid']}" for sighting in sightings1[:3]),
-            tuple(sighting['Organisation']['name'] for sighting in sightings2[:3])
+            tuple(f"identity--{sighting['Organisation']['uuid']}" for sighting in sightings1),
+            tuple(sighting['Organisation']['name'] for sighting in sightings2)
         )
         identity_ids = tuple(identity.id for identity in identities)
         observed_data, sighting1, opinion1, indicator, sighting2, opinion2 = stix_objects
@@ -332,8 +332,8 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
         self.assertEqual(opinion1.type, 'x-misp-opinion')
         self.assertEqual(opinion1.object_ref, observed_data.id)
         self.assertEqual(len(opinion1.x_misp_authors), 2)
-        self.assertIn(sightings1[3]['Organisation']['name'], opinion1.x_misp_authors)
         self.assertIn(sightings1[2]['Organisation']['name'], opinion1.x_misp_authors)
+        self.assertIn(sightings1[3]['Organisation']['name'], opinion1.x_misp_authors)
         self.assertEqual(opinion1.x_misp_explanation, "False positive Sighting")
         self.assertEqual(opinion1.x_misp_opinion, "strongly-disagree")
         self.assertEqual(sighting2.type, 'sighting')
