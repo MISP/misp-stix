@@ -269,15 +269,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _handle_sighting_identity(self, uuid: str, name: str) -> str:
         identity_id = f'identity--{uuid}'
         if identity_id not in self.unique_ids:
-            identity_args = {
-                'id': identity_id,
-                'name': name,
-                'identity_class': 'organization'
-            }
-            identity = self._create_identity(identity_args)
-            self.__objects.insert(self.__index, identity)
-            self.__index += 1
-            self.__ids[identity_id] = identity_id
+            self._handle_identity(identity_id, name)
         return identity_id
 
     @staticmethod
@@ -290,9 +282,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 continue
             if sighting_type == '1':
                 if sighting.get('Organisation'):
-                    parsed_sightings['opinion'].append(sighting['Organisation']['name'])
-        if 'opinion' in parsed_sightings:
-            parsed_sightings['opinion'] = set(parsed_sightings.pop('opinion'))
+                    parsed_sightings['opinion'].append(sighting['Organisation'])
         return parsed_sightings
 
     ################################################################################
@@ -2374,6 +2364,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if to_ids is not None:
             labels.append(f'misp:to_ids="{to_ids}"')
         return labels
+
+    def _handle_identity(self, identity_id: str, name: str):
+        identity_args = {
+            'id': identity_id,
+            'name': name,
+            'identity_class': 'organization'
+        }
+        identity = self._create_identity(identity_args)
+        self.__objects.insert(self.__index, identity)
+        self.__index += 1
+        self.unique_ids[identity_id] = identity_id
 
     def _parse_contact_information(self, attributes: dict, name: str) -> list:
         contact_information = []

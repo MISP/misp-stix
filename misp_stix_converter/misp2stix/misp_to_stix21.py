@@ -139,13 +139,17 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _handle_opinion_object(self, authors: set, reference_id: str):
         opinion_args = {
-            'authors': list(authors),
+            'authors': [author['name'] for author in authors],
             'explanation': 'False positive Sighting',
             'opinion': 'strongly-disagree',
             'type': 'opinion',
             'object_refs': [reference_id]
         }
         getattr(self, self._results_handling_function)(Opinion(**opinion_args))
+        for author in authors:
+            identity_id = f"identity--{author['uuid']}"
+            if identity_id not in self.unique_ids:
+                self._handle_identity(identity_id, author['name'])
 
     def _handle_unpublished_report(self, report_args: dict) -> Grouping:
         grouping_id = f"grouping--{self._misp_event['uuid']}"

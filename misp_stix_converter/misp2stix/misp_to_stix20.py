@@ -122,11 +122,15 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _handle_opinion_object(self, authors: set, reference_id: str):
         opinion_args = {
             'object_ref': reference_id,
-            'x_misp_authors': list(authors),
+            'x_misp_authors': [author['name'] for author in authors],
             'x_misp_explanation': 'False positive Sighting',
             'x_misp_opinion': 'strongly-disagree'
         }
         getattr(self, self._results_handling_function)(CustomOpinion(**opinion_args))
+        for author in authors:
+            identity_id = f"identity--{author['uuid']}"
+            if identity_id not in self.unique_ids:
+                self._handle_identity(identity_id, author['name'])
 
     def _handle_unpublished_report(self, report_args: dict) -> Report:
         report_id = f"report--{self._misp_event['uuid']}"
