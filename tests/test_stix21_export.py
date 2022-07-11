@@ -450,7 +450,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         sightings1 = attribute1['Sighting']
         sightings2 = attribute2['Sighting']
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(13)
+        stix_objects = self._check_bundle_features(15)
         self._check_spec_versions(stix_objects)
         identity, identity1, identity2, identity3, identity4, grouping, *stix_objects = stix_objects
         identities = (identity1, identity2, identity3, identity4)
@@ -468,22 +468,25 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             tuple(f"identity--{sighting['Organisation']['uuid']}" for sighting in sightings1),
             tuple(sighting['Organisation']['name'] for sighting in sightings2)
         )
-        identity_ids = tuple(identity.id for identity in identities)
-        observed_data, _, sighting1, opinion1, indicator, sighting2, opinion2 = stix_objects
+        observed_data, _, sighting1, sighting2, opinion1, indicator, sighting3, sighting4, opinion2 = stix_objects
         self.assertEqual(sighting1.type, 'sighting')
-        self.assertEqual(
+        self._assert_multiple_equal(
             sighting1.first_seen,
+            sighting1.last_seen,
             self._datetime_from_timestamp(sightings1[0]['date_sighting'])
         )
-        self.assertEqual(
-            sighting1.last_seen,
+        self.assertEqual(sighting1.count, 1)
+        self.assertEqual(sighting1.sighting_of_ref, observed_data.id)
+        self.assertEqual(sighting1.where_sighted_refs, [identity1.id])
+        self.assertEqual(sighting2.type, 'sighting')
+        self._assert_multiple_equal(
+            sighting2.first_seen,
+            sighting2.last_seen,
             self._datetime_from_timestamp(sightings1[1]['date_sighting'])
         )
-        self.assertEqual(sighting1.count, 2)
-        self.assertEqual(sighting1.sighting_of_ref, observed_data.id)
-        self.assertEqual(len(sighting1.where_sighted_refs), 2)
-        for where_sighted_ref in sighting1.where_sighted_refs:
-            self.assertIn(where_sighted_ref, identity_ids)
+        self.assertEqual(sighting2.count, 1)
+        self.assertEqual(sighting2.sighting_of_ref, observed_data.id)
+        self.assertEqual(sighting2.where_sighted_refs, [identity2.id])
         self.assertEqual(opinion1.type, 'opinion')
         self.assertEqual(opinion1.object_refs, [observed_data.id])
         self.assertEqual(len(opinion1.authors), 2)
@@ -491,20 +494,24 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertIn(sightings1[3]['Organisation']['name'], opinion1.authors)
         self.assertEqual(opinion1.explanation, "False positive Sighting")
         self.assertEqual(opinion1.opinion, "strongly-disagree")
-        self.assertEqual(sighting2.type, 'sighting')
-        self.assertEqual(
-            sighting2.first_seen,
+        self.assertEqual(sighting3.type, 'sighting')
+        self._assert_multiple_equal(
+            sighting3.first_seen,
+            sighting3.last_seen,
             self._datetime_from_timestamp(sightings2[0]['date_sighting'])
         )
-        self.assertEqual(
-            sighting2.last_seen,
+        self.assertEqual(sighting3.count, 1)
+        self.assertEqual(sighting3.sighting_of_ref, indicator.id)
+        self.assertEqual(sighting3.where_sighted_refs, [identity1.id])
+        self.assertEqual(sighting4.type, 'sighting')
+        self._assert_multiple_equal(
+            sighting4.first_seen,
+            sighting4.last_seen,
             self._datetime_from_timestamp(sightings2[2]['date_sighting'])
         )
-        self.assertEqual(sighting2.count, 2)
-        self.assertEqual(sighting2.sighting_of_ref, indicator.id)
-        self.assertEqual(len(sighting2.where_sighted_refs), 2)
-        for where_sighted_ref in sighting2.where_sighted_refs:
-            self.assertIn(where_sighted_ref, identity_ids)
+        self.assertEqual(sighting4.count, 1)
+        self.assertEqual(sighting4.sighting_of_ref, indicator.id)
+        self.assertEqual(sighting4.where_sighted_refs, [identity3.id])
         self.assertEqual(opinion2.type, 'opinion')
         self.assertEqual(opinion2.object_refs, [indicator.id])
         self.assertEqual(len(opinion2.authors), 2)
