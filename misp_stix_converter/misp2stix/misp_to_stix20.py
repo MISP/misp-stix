@@ -77,9 +77,12 @@ class CustomNote:
 @CustomObject(
     'x-misp-opinion',
     [
-        ('x_misp_authors', ListProperty(StringProperty)),
+        ('id', IDProperty('x-misp-opinion')),
+        ('x_misp_author', StringProperty()),
+        ('x_misp_author_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),
         ('x_misp_explanation', StringProperty()),
         ('x_misp_opinion', StringProperty(required=True)),
+        ('x_misp_source', StringProperty()),
         ('object_ref', ReferenceProperty(
             valid_types=['campaign', 'indicator', 'observed-data', 'vulnerability', 'x-misp-attribute'],
             spec_version='2.0'
@@ -119,18 +122,33 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         }
         self._append_SDO(CustomNote(**custom_args))
 
-    def _handle_opinion_object(self, authors: set, reference_id: str):
+    def _handle_opinion_object(self, sighting: dict, reference_id: str):
         opinion_args = {
+            'id': f"x-misp-opinion--{sighting['uuid']}",
             'object_ref': reference_id,
-            'x_misp_authors': [author['name'] for author in authors],
             'x_misp_explanation': 'False positive Sighting',
             'x_misp_opinion': 'strongly-disagree'
         }
+        if sighting.get('date_sighting', ''):
+            date_sighting = self._datetime_from_timestamp(sighting['date_sighting'])
+            opinion_args.update(
+                {
+                    'created': date_sighting,
+                    'modified': date_sighting
+                }
+            )
+        if sighting.get('Organisation', {}):
+            name = sighting['Organisation']['name']
+            opinion_args.update(
+                {
+                    'x_misp_author': name,
+                    'x_misp_author_ref': self._handle_sighting_identity(
+                        sighting['Organisation']['uuid'], name)
+                }
+            )
+        if sighting.get('source', ''):
+            opinion_args['x-misp-source'] = sighting['source']
         getattr(self, self._results_handling_function)(CustomOpinion(**opinion_args))
-        for author in authors:
-            identity_id = f"identity--{author['uuid']}"
-            if identity_id not in self.unique_ids:
-                self._handle_identity(identity_id, author['name'])
 
     def _handle_unpublished_report(self, report_args: dict) -> Report:
         report_id = f"report--{self._misp_event['uuid']}"

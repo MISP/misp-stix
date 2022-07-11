@@ -239,65 +239,41 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 relationship['target_ref'] = target_ref
             self._append_SDO(self._create_relationship(relationship))
 
-    def _handle_sightings(self, sightings_list: list, reference_id: str):
-        sightings = self._parse_sightings(sightings_list)
-        if 'sighting' in sightings:
-            for sighter_ref, sighting_args in sightings['sighting'].items():
-                sighting_args.update(
-                    {
-                        'first_seen': self._datetime_from_timestamp(sighting_args.pop('first_seen')),
-                        'last_seen': self._datetime_from_timestamp(sighting_args.pop('last_seen')),
-                        'sighting_of_ref': reference_id,
-                        'type': 'sighting',
-                        'where_sighted_refs': [self._handle_sighting_identity(*sighter_ref)],
-                        'allow_custom': True
-                    }
-                )
-                if len(sighting_args['x_misp_date_sighting']) <= 2:
-                    del sighting_args['x_misp_date_sighting']
+    def _handle_sightings(self, sightings: list, reference_id: str):
+        for sighting in sightings:
+            sighting_type = sighting.get('type')
+            if sighting_type == '0':
+                sighting_args = {
+                    'id': f"sighting--{sighting['uuid']}",
+                    'type': 'sighting',
+                    'sighting_of_ref': reference_id
+                }
+                if sighting.get('date_sighting', ''):
+                    date_sighting = self._datetime_from_timestamp(sighting['date_sighting'])
+                    sighting_args.update(
+                        {
+                            'created': date_sighting,
+                            'modified': date_sighting
+                        }
+                    )
+                if sighting.get('Organisation', {}):
+                    sighting_args['where_sighted_refs'] = [
+                        self._handle_sighting_identity(
+                            sighting['Organisation']['uuid'],
+                            sighting['Organisation']['name']
+                        )
+                    ]
+                if sighting.get('source', ''):
+                    sighting_args['description'] = sighting['source']
                 getattr(self, self._results_handling_function)(self._create_sighting(sighting_args))
-        if 'opinion' in sightings:
-            self._handle_opinion_object(sightings['opinion'], reference_id)
+            elif sighting_type == '1':
+                self._handle_opinion_object(sighting, reference_id)
 
     def _handle_sighting_identity(self, uuid: str, name: str) -> str:
         identity_id = f'identity--{uuid}'
         if identity_id not in self.unique_ids:
             self._handle_identity(identity_id, name)
         return identity_id
-
-    def _parse_sightings(self, sightings: list) -> dict:
-        parsed_sightings: defaultdict = defaultdict(list)
-        for sighting in sightings:
-            sighting_type = sighting.get('type')
-            if sighting_type == '0':
-                parsed_sightings.default_factory = lambda: defaultdict(list)
-                identifier = (sighting['Organisation']['uuid'], sighting['Organisation']['name'])
-                if identifier not in parsed_sightings['sighting']:
-                    sighting_args = defaultdict(list)
-                    sighting_args.update(
-                        {
-                            'count': 0,
-                            'first_seen': float('inf'),
-                            'last_seen': 0
-                        }
-                    )
-                    parsed_sightings['sighting'][identifier] = sighting_args
-                if 'date_sighting' in sighting:
-                    date_sighting = int(sighting['date_sighting'])
-                    parsed_sightings['sighting'][identifier]['x_misp_date_sighting'].append(
-                        self._datetime_from_timestamp(date_sighting)
-                    )
-                    if date_sighting < parsed_sightings['sighting'][identifier]['first_seen']:
-                        parsed_sightings['sighting'][identifier]['first_seen'] = date_sighting
-                    if date_sighting > parsed_sightings['sighting'][identifier]['last_seen']:
-                        parsed_sightings['sighting'][identifier]['last_seen'] = date_sighting
-                parsed_sightings['sighting'][identifier]['count'] += 1
-                continue
-            if sighting_type == '1':
-                if sighting.get('Organisation'):
-                    parsed_sightings.default_factory = list
-                    parsed_sightings['opinion'].append(sighting['Organisation'])
-        return parsed_sightings
 
     ################################################################################
     #                         ATTRIBUTES PARSING FUNCTIONS                         #
