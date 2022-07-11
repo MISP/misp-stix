@@ -2318,6 +2318,7 @@ _TEST_SIGHTINGS = [
         "value": "AS174",
         "Sighting": [
             {
+                "uuid": "5125aa81-ab95-4cdf-83f9-3c467207307d",
                 "date_sighting": "1603642925",
                 "type": "0",
                 "Organisation": {
@@ -2326,6 +2327,7 @@ _TEST_SIGHTINGS = [
                 }
             },
             {
+                "uuid": "b5b53917-1556-4476-97eb-52e179e3393e",
                 "date_sighting": "1603642950",
                 "type": "0",
                 "Organisation": {
@@ -2334,6 +2336,7 @@ _TEST_SIGHTINGS = [
                 }
             },
             {
+                "uuid": "ec85cc8c-205f-4b19-8f96-73ef80d24d13",
                 "date_sighting": "1603642930",
                 "type": "1",
                 "Organisation": {
@@ -2342,6 +2345,7 @@ _TEST_SIGHTINGS = [
                 }
             },
             {
+                "uuid": "7ea813e5-6dd5-4241-83a7-37fb56da2d78",
                 "date_sighting": "1603642940",
                 "type": "1",
                 "Organisation": {
@@ -2361,6 +2365,7 @@ _TEST_SIGHTINGS = [
         "to_ids": True,
         "Sighting": [
             {
+                "uuid": "5533d0db-b952-4609-b82d-59017f2454fc",
                 "date_sighting": "1603642925",
                 "type": "0",
                 "Organisation": {
@@ -2369,6 +2374,7 @@ _TEST_SIGHTINGS = [
                 }
             },
             {
+                "uuid": "c7d12059-6a07-4423-a82a-f3bceaae33c8",
                 "date_sighting": "1603642950",
                 "type": "1",
                 "Organisation": {
@@ -2377,6 +2383,7 @@ _TEST_SIGHTINGS = [
                 }
             },
             {
+                "uuid": "ec0c6809-9ccb-4201-bc47-d5ffc5ecaa88",
                 "date_sighting": "1603642940",
                 "type": "0",
                 "Organisation": {
@@ -2385,6 +2392,7 @@ _TEST_SIGHTINGS = [
                 }
             },
             {
+                "uuid": "3ab7497e-39f5-4a0a-b797-dc08bf80631d",
                 "date_sighting": "1603642930",
                 "type": "1",
                 "Organisation": {
