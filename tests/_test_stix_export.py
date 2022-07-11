@@ -434,6 +434,17 @@ class TestSTIX2Export(TestSTIX2):
         )
         return report.object_refs
 
+    def _check_sighting_features(self, stix_sighting, misp_sighting, object_id, identity_id):
+        self.assertEqual(stix_sighting.type, 'sighting')
+        self.assertEqual(stix_sighting.id, f"sighting--{misp_sighting['uuid']}")
+        self._assert_multiple_equal(
+            stix_sighting.created,
+            stix_sighting.modified,
+            self._datetime_from_timestamp(misp_sighting['date_sighting'])
+        )
+        self.assertEqual(stix_sighting.sighting_of_ref, object_id)
+        self.assertEqual(stix_sighting.where_sighted_refs, [identity_id])
+
     @staticmethod
     def _datetime_from_timestamp(timestamp):
         return datetime.utcfromtimestamp(int(timestamp))
