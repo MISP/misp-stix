@@ -242,27 +242,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _handle_sightings(self, sightings_list: list, reference_id: str):
         sightings = self._parse_sightings(sightings_list)
         if 'sighting' in sightings:
-            sighting_args: defaultdict = defaultdict(int)
-            sighters_refs = set()
-            for sighting in sightings['sighting']:
-                sighting_args['count'] += 1
-                date_sighting = int(sighting.get('date_sighting', 0))
-                if date_sighting < sighting_args.get('first_seen', float('inf')):
-                    sighting_args['first_seen'] = date_sighting
-                if date_sighting > sighting_args.get('last_seen', 0):
-                    sighting_args['last_seen'] = date_sighting
-                if sighting.get('Organisation'):
-                    sighters_refs.add((sighting['Organisation']['uuid'], sighting['Organisation']['name']))
-            sighting_args.update(
-                {
-                    'first_seen': self._datetime_from_timestamp(sighting_args.pop('first_seen')),
-                    'last_seen': self._datetime_from_timestamp(sighting_args.pop('last_seen')),
-                    'sighting_of_ref': reference_id,
-                    'type': 'sighting',
-                    'where_sighted_refs': [self._handle_sighting_identity(*sighter_ref) for sighter_ref in sighters_refs]
-                }
-            )
-            getattr(self, self._results_handling_function)(self._create_sighting(sighting_args))
+            for sighter_ref, sighting_args in sightings['sighting'].items():
+                sighting_args.update(
+                    {
+                        'first_seen': self._datetime_from_timestamp(sighting_args.pop('first_seen')),
+                        'last_seen': self._datetime_from_timestamp(sighting_args.pop('last_seen')),
+                        'sighting_of_ref': reference_id,
+                        'type': 'sighting',
+                        'where_sighted_refs': [self._handle_sighting_identity(*sighter_ref)],
+                        'allow_custom': True
+                    }
+                )
+                if len(sighting_args['x_misp_date_sighting']) <= 2:
+                    del sighting_args['x_misp_date_sighting']
+                getattr(self, self._results_handling_function)(self._create_sighting(sighting_args))
         if 'opinion' in sightings:
             self._handle_opinion_object(sightings['opinion'], reference_id)
 
@@ -272,16 +265,37 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_identity(identity_id, name)
         return identity_id
 
-    @staticmethod
-    def _parse_sightings(sightings: list) -> dict:
+    def _parse_sightings(self, sightings: list) -> dict:
         parsed_sightings: defaultdict = defaultdict(list)
         for sighting in sightings:
             sighting_type = sighting.get('type')
             if sighting_type == '0':
-                parsed_sightings['sighting'].append(sighting)
+                parsed_sightings.default_factory = lambda: defaultdict(list)
+                identifier = (sighting['Organisation']['uuid'], sighting['Organisation']['name'])
+                if identifier not in parsed_sightings['sighting']:
+                    sighting_args = defaultdict(list)
+                    sighting_args.update(
+                        {
+                            'count': 0,
+                            'first_seen': float('inf'),
+                            'last_seen': 0
+                        }
+                    )
+                    parsed_sightings['sighting'][identifier] = sighting_args
+                if 'date_sighting' in sighting:
+                    date_sighting = int(sighting['date_sighting'])
+                    parsed_sightings['sighting'][identifier]['x_misp_date_sighting'].append(
+                        self._datetime_from_timestamp(date_sighting)
+                    )
+                    if date_sighting < parsed_sightings['sighting'][identifier]['first_seen']:
+                        parsed_sightings['sighting'][identifier]['first_seen'] = date_sighting
+                    if date_sighting > parsed_sightings['sighting'][identifier]['last_seen']:
+                        parsed_sightings['sighting'][identifier]['last_seen'] = date_sighting
+                parsed_sightings['sighting'][identifier]['count'] += 1
                 continue
             if sighting_type == '1':
                 if sighting.get('Organisation'):
+                    parsed_sightings.default_factory = list
                     parsed_sightings['opinion'].append(sighting['Organisation'])
         return parsed_sightings
 
