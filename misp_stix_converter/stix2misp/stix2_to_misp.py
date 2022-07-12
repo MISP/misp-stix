@@ -478,7 +478,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._parse_observed_data_v20(observed_data)
 
     ################################################################################
-    #                         STIX SROs PARSING FUNCTIONS.                         #
+    #                 RELATIONSHIPS & SIGHTINGS PARSING FUNCTIONS.                 #
     ################################################################################
 
     def _parse_attribute_relationships(self, attribute: MISPAttribute):
