@@ -1009,6 +1009,190 @@ _BUNDLE_WITH_NO_REPORT = [
         "target_ref": "indicator--4bb235a7-7d25-4aef-802f-2c6b45c5eceb"
     }
 ]
+_BUNDLE_WITH_SIGHTINGS = [
+    {
+        "type": "identity",
+        "id": "identity--55f6ea5e-2c60-40e5-964f-47a8950d210f",
+        "created": "2022-07-11T14:26:18.805Z",
+        "modified": "2022-07-11T14:26:18.805Z",
+        "name": "CIRCL",
+        "identity_class": "organization"
+    },
+    {
+        "type": "identity",
+        "id": "identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183",
+        "created": "2022-07-11T14:26:18.805Z",
+        "modified": "2022-07-11T14:26:18.805Z",
+        "name": "E-Corp",
+        "identity_class": "organization"
+    },
+    {
+        "type": "identity",
+        "id": "identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90",
+        "created": "2022-07-11T14:26:18.805Z",
+        "modified": "2022-07-11T14:26:18.805Z",
+        "name": "Oscorp Industries",
+        "identity_class": "organization"
+    },
+    {
+        "type": "identity",
+        "id": "identity--91050751-c1c9-4944-a522-db6390cec15b",
+        "created": "2022-07-11T14:26:18.806Z",
+        "modified": "2022-07-11T14:26:18.806Z",
+        "name": "Umbrella Corporation",
+        "identity_class": "organization"
+    },
+    {
+        "type": "report",
+        "id": "report--a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "MISP-STIX-Converter test event",
+        "published": "2020-10-25T16:22:00Z",
+        "object_refs": [
+            "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "sighting--5125aa81-ab95-4cdf-83f9-3c467207307d",
+            "sighting--b5b53917-1556-4476-97eb-52e179e3393e",
+            "x-misp-opinion--ec85cc8c-205f-4b19-8f96-73ef80d24d13",
+            "x-misp-opinion--7ea813e5-6dd5-4241-83a7-37fb56da2d78",
+            "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+            "sighting--5533d0db-b952-4609-b82d-59017f2454fc",
+            "x-misp-opinion--c7d12059-6a07-4423-a82a-f3bceaae33c8",
+            "sighting--ec0c6809-9ccb-4201-bc47-d5ffc5ecaa88",
+            "x-misp-opinion--3ab7497e-39f5-4a0a-b797-dc08bf80631d"
+        ],
+        "labels": [
+            "Threat-Report",
+            "misp:tool=\"MISP-STIX-Converter\""
+        ]
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "autonomous-system",
+                "number": 174
+            }
+        },
+        "labels": [
+            "misp:type=\"AS\"",
+            "misp:category=\"Network activity\""
+        ]
+    },
+    {
+        "type": "sighting",
+        "id": "sighting--5125aa81-ab95-4cdf-83f9-3c467207307d",
+        "created": "2020-10-25T16:22:05.000Z",
+        "modified": "2020-10-25T16:22:05.000Z",
+        "sighting_of_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "where_sighted_refs": [
+            "identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"
+        ]
+    },
+    {
+        "type": "sighting",
+        "id": "sighting--b5b53917-1556-4476-97eb-52e179e3393e",
+        "created": "2020-10-25T16:22:30.000Z",
+        "modified": "2020-10-25T16:22:30.000Z",
+        "sighting_of_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "where_sighted_refs": [
+            "identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183"
+        ]
+    },
+    {
+        "type": "x-misp-opinion",
+        "id": "x-misp-opinion--ec85cc8c-205f-4b19-8f96-73ef80d24d13",
+        "created": "2020-10-25T16:22:10.000Z",
+        "modified": "2020-10-25T16:22:10.000Z",
+        "object_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "x_misp_author": "Oscorp Industries",
+        "x_misp_author_ref": "identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90",
+        "x_misp_explanation": "False positive Sighting",
+        "x_misp_opinion": "strongly-disagree"
+    },
+    {
+        "type": "x-misp-opinion",
+        "id": "x-misp-opinion--7ea813e5-6dd5-4241-83a7-37fb56da2d78",
+        "created": "2020-10-25T16:22:20.000Z",
+        "modified": "2020-10-25T16:22:20.000Z",
+        "object_ref": "observed-data--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "x_misp_author": "Umbrella Corporation",
+        "x_misp_author_ref": "identity--91050751-c1c9-4944-a522-db6390cec15b",
+        "x_misp_explanation": "False positive Sighting",
+        "x_misp_opinion": "strongly-disagree"
+    },
+    {
+        "type": "indicator",
+        "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "description": "Domain test attribute",
+        "pattern": "[domain-name:value = 'circl.lu']",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "Network activity"
+            }
+        ],
+        "labels": [
+            "misp:type=\"domain\"",
+            "misp:category=\"Network activity\"",
+            "misp:to_ids=\"True\""
+        ]
+    },
+    {
+        "type": "sighting",
+        "id": "sighting--5533d0db-b952-4609-b82d-59017f2454fc",
+        "created": "2020-10-25T16:22:05.000Z",
+        "modified": "2020-10-25T16:22:05.000Z",
+        "sighting_of_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "where_sighted_refs": [
+            "identity--55f6ea5e-2c60-40e5-964f-47a8950d210f"
+        ]
+    },
+    {
+        "type": "x-misp-opinion",
+        "id": "x-misp-opinion--c7d12059-6a07-4423-a82a-f3bceaae33c8",
+        "created": "2020-10-25T16:22:30.000Z",
+        "modified": "2020-10-25T16:22:30.000Z",
+        "object_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "x_misp_author": "E-Corp",
+        "x_misp_author_ref": "identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183",
+        "x_misp_explanation": "False positive Sighting",
+        "x_misp_opinion": "strongly-disagree"
+    },
+    {
+        "type": "sighting",
+        "id": "sighting--ec0c6809-9ccb-4201-bc47-d5ffc5ecaa88",
+        "created": "2020-10-25T16:22:20.000Z",
+        "modified": "2020-10-25T16:22:20.000Z",
+        "sighting_of_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "where_sighted_refs": [
+            "identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90"
+        ]
+    },
+    {
+        "type": "x-misp-opinion",
+        "id": "x-misp-opinion--3ab7497e-39f5-4a0a-b797-dc08bf80631d",
+        "created": "2020-10-25T16:22:10.000Z",
+        "modified": "2020-10-25T16:22:10.000Z",
+        "object_ref": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+        "x_misp_author": "Umbrella Corporation",
+        "x_misp_author_ref": "identity--91050751-c1c9-4944-a522-db6390cec15b",
+        "x_misp_explanation": "False positive Sighting",
+        "x_misp_opinion": "strongly-disagree"
+    }
+]
 _CAMPAIGN_NAME_ATTRIBUTE = {
     "type": "campaign",
     "id": "campaign--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
@@ -5778,6 +5962,15 @@ class TestSTIX20Bundles:
         bundle['objects'] = [
             cls.__identity,
             *_BUNDLE_WITH_NO_REPORT
+        ]
+        return dict_to_stix2(bundle, allow_custom = True)
+
+    @classmethod
+    def get_bundle_with_sightings(cls):
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [
+            cls.__identity,
+            *_BUNDLE_WITH_SIGHTINGS
         ]
         return dict_to_stix2(bundle, allow_custom = True)
 

@@ -1338,6 +1338,34 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             bundle.id
         )
 
+    def test_stix21_bundle_with_sightings(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_sightings()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, identity1, identity2, identity3, identity4, report, *stix_objects = bundle.objects
+        identities = (identity1, identity2, identity3, identity4)
+        self.assertEqual(event.uuid, report.id.split('--')[1])
+        self.assertEqual(len(event.attributes), 2)
+        AS, domain  = event.attributes
+        observed_data, _, sighting1, sighting2, opinion1, opinion2, indicator, sighting3, opinion3, sighting4, opinion4 = stix_objects
+        self.assertEqual(AS.uuid, observed_data.id.split('--')[1])
+        self.assertEqual(len(AS.sightings), 4)
+        stix_objects = (sighting1, sighting2, opinion1, opinion2)
+        for sighting, stix_object, identity in zip(AS.sightings, stix_objects, identities):
+            self.assertEqual(sighting.date_sighting, self._timestamp_from_datetime(stix_object.modified))
+            self.assertEqual(sighting.type, '0' if stix_object.type == 'sighting' else '1')
+            self.assertEqual(sighting.Organisation['uuid'], identity.id.split('--')[1])
+            self.assertEqual(sighting.Organisation['name'], identity.name)
+        self.assertEqual(domain.uuid, indicator.id.split('--')[1])
+        self.assertEqual(len(domain.sightings), 4)
+        stix_objects = (sighting3, opinion3, sighting4, opinion4)
+        for sighting, stix_object, identity in zip(domain.sightings, stix_objects, identities):
+            self.assertEqual(sighting.date_sighting, self._timestamp_from_datetime(stix_object.modified))
+            self.assertEqual(sighting.type, '0' if stix_object.type == 'sighting' else '1')
+            self.assertEqual(sighting.Organisation['uuid'], identity.id.split('--')[1])
+            self.assertEqual(sighting.Organisation['name'], identity.name)
+
     def test_stix21_bundle_with_single_report(self):
         bundle = TestSTIX21Bundles.get_bundle_with_single_report()
         self.parser.load_stix_bundle(bundle)
