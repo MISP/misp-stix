@@ -9,7 +9,7 @@ from .stix2_to_misp import STIX2toMISPParser, _SDO_TYPING
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from pymisp import MISPAttribute, MISPEvent, MISPObject
+from pymisp import MISPAttribute, MISPEvent, MISPObject, MISPSighting
 from stix2.v20.observables import (
     NetworkTraffic as NetworkTraffic_v20, Process as Process_v20,
     WindowsPEBinaryExt as WindowsExtension_v20)
@@ -18,14 +18,16 @@ from stix2.v20.sdo import (
     CustomObject as CustomObject_v20, Identity as Identity_v20, Indicator as Indicator_v20,
     IntrusionSet as IntrusionSet_v20, Malware as Malware_v20, ObservedData as ObservedData_v20,
     ThreatActor as ThreatActor_v20, Tool as Tool_v20, Vulnerability as Vulnerability_v20)
+from stix2.v20.sro import Sighting as Sighting_v20
 from stix2.v21.observables import (
     DomainName, NetworkTraffic as NetworkTraffic_v21, Process as Process_v21,
     WindowsPEBinaryExt as WindowsExtension_v21)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
     CustomObject as CustomObject_v21, Identity as Identity_v21, Indicator as Indicator_v21,
-    IntrusionSet as IntrusionSet_v21, Malware as Malware_v21, Note, ObservedData as ObservedData_v21,
-    ThreatActor as ThreatActor_v21, Tool as Tool_v21, Vulnerability as Vulnerability_v21)
+    IntrusionSet as IntrusionSet_v21, Malware as Malware_v21, ObservedData as ObservedData_v21,
+    Opinion, ThreatActor as ThreatActor_v21, Tool as Tool_v21, Vulnerability as Vulnerability_v21)
+from stix2.v21.sro import Sighting as Sighting_v21
 from typing import Optional, Union
 
 _attribute_additional_fields = (
@@ -42,6 +44,10 @@ _ATTACK_PATTERN_TYPING = Union[
 _COURSE_OF_ACTION_TYPING = Union[
     CourseOfAction_v20,
     CourseOfAction_v21
+]
+_CUSTOM_TYPING = Union[
+    CustomObject_v20,
+    CustomObject_v21
 ]
 _EXTENSION_TYPING = Union[
     WindowsExtension_v20,
@@ -93,6 +99,10 @@ _PROCESS_TYPING = Union[
     Process_v20,
     Process_v21
 ]
+_SIGHTING_TYPING = Union[
+    Sighting_v20,
+    Sighting_v21
+]
 _VULNERABILITY_TYPING = Union[
     Vulnerability_v20,
     Vulnerability_v21
@@ -108,17 +118,79 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     #                        STIX OBJECTS LOADING FUNCTIONS                        #
     ################################################################################
 
-    def _load_custom_attribute(self, custom_attribute: Union[CustomObject_v20, CustomObject_v21]):
+    def _load_custom_attribute(self, custom_attribute: _CUSTOM_TYPING):
         try:
             self._custom_attribute[custom_attribute.id] = custom_attribute
         except AttributeError:
             self._custom_attribute = {custom_attribute.id: custom_attribute}
 
-    def _load_custom_object(self, custom_object: Union[CustomObject_v20, CustomObject_v21]):
+    def _load_custom_object(self, custom_object: _CUSTOM_TYPING):
         try:
             self._custom_object[custom_object.id] = custom_object
         except AttributeError:
             self._custom_object = {custom_object.id: custom_object}
+
+    def _load_custom_opinion(self, custom_object: CustomObject_v20):
+        sighting = MISPSighting()
+        sighting_args = {
+            'date_sighting': self._timestamp_from_date(custom_object.modified),
+            'type': '1'
+        }
+        if hasattr(custom_object, 'x_misp_source'):
+            sighting_args['source'] = custom_object.x_misp_source
+        if hasattr(custom_object, 'x_misp_author'):
+            sighting_args['Organisation'] = {
+                'uuid': custom_object.x_misp_author_ref.split('--')[1],
+                'name': custom_object.x_misp_author
+            }
+        sighting.from_dict(**sighting_args)
+        try:
+            self._sighting[custom_object.object_ref.split('--')[1]].append(sighting)
+        except AttributeError:
+            self._sighting = defaultdict(list)
+            self._sighting[custom_object.object_ref.split('--')[1]].append(sighting)
+
+    def _load_opinion(self, opinion: Opinion):
+        sighting = MISPSighting()
+        sighting_args = {
+            'date_sighting': self._timestamp_from_date(opinion.modified),
+            'type': '1'
+        }
+        if hasattr(opinion, 'x_misp_source'):
+            sighting_args['source'] = opinion.x_misp_source
+        if hasattr(opinion, 'x_misp_author_ref'):
+            identity = self._identity[opinion.x_misp_author_ref]['stix_object']
+            sighting_args['Organisation'] = {
+                'uuid': identity.id.split('--')[1],
+                'name': identity.name
+            }
+        sighting.from_dict(**sighting_args)
+        try:
+            self._sighting[opinion.object_refs[0].split('--')[1]].append(sighting)
+        except AttributeError:
+            self._sighting = defaultdict(list)
+            self._sighting[opinion.object_refs[0].split('--')[1]].append(sighting)
+
+    def _load_sighting(self, sighting: _SIGHTING_TYPING):
+        misp_sighting = MISPSighting()
+        sighting_args = {
+            'date_sighting': self._timestamp_from_date(sighting.modified),
+            'type': '0'
+        }
+        if hasattr(sighting, 'description'):
+            sighting_args['source'] = sighting.description
+        if hasattr(sighting, 'where_sighted_refs'):
+            identity = self._identity[sighting.where_sighted_refs[0]]['stix_object']
+            sighting_args['Organisation'] = {
+                'uuid': identity.id.split('--')[1],
+                'name': identity.name
+            }
+        misp_sighting.from_dict(**sighting_args)
+        try:
+            self._sighting[sighting.sighting_of_ref.split('--')[1]].append(misp_sighting)
+        except AttributeError:
+            self._sighting = defaultdict(list)
+            self._sighting[sighting.sighting_of_ref.split('--')[1]].append(misp_sighting)
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #

@@ -265,12 +265,6 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             self._observed_data = {observed_data.id: observed_data}
 
-    def _load_opinion(self, opinion: Opinion):
-        try:
-            self._opinion[opinion.id] = opinion
-        except AttributeError:
-            self._opinion = {opinion.id: opinion}
-
     def _load_relationship(self, relationship: Union[Relationship_v20, Relationship_v21]):
         reference = {
             'referenced_uuid': relationship.target_ref,
@@ -287,12 +281,6 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._report[report.id] = report
         except AttributeError:
             self._report = {report.id: report}
-
-    def _load_sighting(self, sighting):
-        try:
-            self._sighting[sighting.id] = sighting
-        except AttributeError:
-            self._sighting = {sighting.id: sighting}
 
     def _load_threat_actor(self, threat_actor: Union[ThreatActor_v20, ThreatActor_v21]):
         data_to_load = self._build_data_to_load(threat_actor)
@@ -338,7 +326,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
             object_type = object_ref.split('--')[0]
-            if object_type in self._mapping.observable_object_types or object_type == 'relationship':
+            if object_type in self._mapping.object_type_refs_to_skip:
                 continue
             try:
                 self._handle_object(object_type, object_ref)
@@ -408,8 +396,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self._handle_object_refs(grouping.object_refs)
-            if hasattr(self, '_relationship'):
-                self._parse_relationships()
+            self._parse_SROs()
             self._parse_galaxies()
         else:
             events = []
@@ -417,16 +404,14 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 for report in self._report.values():
                     self.__misp_event = self._misp_event_from_report(report)
                     self._handle_object_refs(report.object_refs)
-                    if hasattr(self, '_relationship'):
-                        self._parse_relationships()
+                    self._parse_SROs()
                     self._parse_galaxies()
                     events.append(self.misp_event)
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self.__misp_event = self._misp_event_from_grouping(grouping)
                     self._handle_object_refs(grouping.object_refs)
-                    if hasattr(self, '_relationship'):
-                        self._parse_relationships()
+                    self._parse_SROs()
                     self._parse_galaxies()
                     events.append(self.misp_event)
             self.__misp_events = events
@@ -443,8 +428,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                         self._unknown_stix_object_type_error(error)
                     except UnknownParsingFunctionError as error:
                         self._unknown_parsing_function_error(error)
-        if hasattr(self, '_relationship'):
-            self._parse_relationships()
+        self._parse_SROs()
         self._parse_galaxies()
 
     def _parse_bundle_with_single_report(self):
@@ -458,8 +442,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 self._handle_object_refs(grouping.object_refs)
         else:
             self._parse_bundle_with_no_report()
-        if hasattr(self, '_relationship'):
-            self._parse_relationships()
+        self._parse_SROs()
         self._parse_galaxies()
 
     def _parse_galaxies(self):
@@ -494,28 +477,76 @@ class STIX2toMISPParser(STIXtoMISPParser):
         else:
             self._parse_observed_data_v20(observed_data)
 
+    ################################################################################
+    #                         STIX SROs PARSING FUNCTIONS.                         #
+    ################################################################################
+
+    def _parse_attribute_relationships(self, attribute: MISPAttribute):
+        for relationship in self._relationship[attribute.uuid]:
+            referenced_uuid = relationship['referenced_uuid']
+            if referenced_uuid in self._galaxies:
+                for tag_name in self._galaxies[referenced_uuid]['tag_names']:
+                    attribute.add_tag(tag_name)
+                self._galaxies[referenced_uuid]['used'][self.misp_event.uuid] = True
+
+    def _parse_attribute_sightings(self, attribute: MISPAttribute):
+        for sighting in self._sighting[attribute.uuid]:
+            attribute.add_sighting(sighting)
+
+    def _parse_object_relationships(self, misp_object: MISPObject):
+        for relationship in self._relationship[misp_object.uuid]:
+            referenced_uuid = relationship['referenced_uuid']
+            if referenced_uuid in self._galaxies:
+                for tag_name in self._galaxies[referenced_uuid]['tag_names']:
+                    misp_object.add_tag(tag_name)
+                self._galaxies[referenced_uuid]['used'][self.misp_event.uuid] = True
+            else:
+                misp_object.add_reference(
+                    referenced_uuid.split('--')[1],
+                    relationship['relationship_type']
+                )
+
+    def _parse_object_sightings(self, misp_object: MISPObject):
+        for sighting in self._sighting[misp_object.uuid]:
+            for attribute in misp_object.attributes:
+                attribute.add_sighting(sighting)
+
     def _parse_relationships(self):
         for attribute in self.misp_event.attributes:
             if attribute.uuid in self._relationship:
-                for relationship in self._relationship[attribute.uuid]:
-                    referenced_uuid = relationship['referenced_uuid']
-                    if referenced_uuid in self._galaxies:
-                        for tag_name in self._galaxies[referenced_uuid]['tag_names']:
-                            attribute.add_tag(tag_name)
-                        self._galaxies[referenced_uuid]['used'][self.misp_event.uuid] = True
+                self._parse_attribute_relationships(attribute)
         for misp_object in self.misp_event.objects:
             if misp_object.uuid in self._relationship:
-                for relationship in self._relationship[misp_object.uuid]:
-                    referenced_uuid = relationship['referenced_uuid']
-                    if referenced_uuid in self._galaxies:
-                        for tag_name in self._galaxies[referenced_uuid]['tag_names']:
-                            misp_object.add_tag(tag_name)
-                        self._galaxies[referenced_uuid]['used'][self.misp_event.uuid] = True
-                    else:
-                        misp_object.add_reference(
-                            referenced_uuid.split('--')[1],
-                            relationship['relationship_type']
-                        )
+                self._parse_object_relationships(misp_object)
+
+    def _parse_relationships_and_sightings(self):
+        for attribute in self.misp_event.attributes:
+            if attribute.uuid in self._relationship:
+                self._parse_attribute_relationships(attribute)
+            if attribute.uuid in self._sighting:
+                self._parse_attribute_sightings(attribute)
+        for misp_object in self.misp_event.objects:
+            if misp_object.uuid in self._relationship:
+                self._parse_object_relationships(misp_object)
+            if misp_object.uuid in self._sighting:
+                self._parse_object_sightings(misp_object)
+
+    def _parse_sightings(self):
+        for attribute in self.misp_event.attributes:
+            if attribute.uuid in self._sighting:
+                self._parse_attribute_sightings(attribute)
+        for misp_object in self.misp_event.objects:
+            if misp_object.uuid in self._sighting:
+                self._parse_object_sightings(misp_object)
+
+    def _parse_SROs(self):
+        if hasattr(self, '_relationship'):
+            if hasattr(self, '_sighting'):
+                self._parse_relationships_and_sightings()
+            else:
+                self._parse_relationships()
+        elif hasattr(self, '_sighting'):
+            self._parse_sightings()
 
     ################################################################################
     #                       MISP FEATURES CREATION FUNCTIONS                       #

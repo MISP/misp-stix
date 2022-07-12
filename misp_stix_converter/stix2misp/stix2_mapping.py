@@ -42,6 +42,8 @@ class STIX2Mapping:
         )
 
     def _declare_mapping(self, updates: Optional[dict]={}):
+        SROs = ('opinion', 'relationship', 'sighting', 'x-misp-opinion')
+        self.__object_type_refs_to_skip = self.observable_object_types + SROs
         stix_object_loading_mapping = {
             'attack-pattern': '_load_attack_pattern',
             'campaign': '_load_campaign',
@@ -63,7 +65,8 @@ class STIX2Mapping:
             'tool': '_load_tool',
             'vulnerability': '_load_vulnerability',
             'x-misp-attribute': '_load_custom_attribute',
-            'x-misp-object': '_load_custom_object'
+            'x-misp-object': '_load_custom_object',
+            'x-misp-opinion': '_load_custom_opinion'
         }
         stix_object_loading_mapping.update(
             dict.fromkeys(
@@ -187,6 +190,10 @@ class STIX2Mapping:
     @property
     def location_object_mapping(self) -> dict:
         return self.__location_object_mapping
+
+    @property
+    def object_type_refs_to_skip(self) -> tuple:
+        return self.__object_type_refs_to_skip
 
     @property
     def observable_object_types(self) -> tuple:
