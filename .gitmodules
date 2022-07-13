@@ -1,6 +1,6 @@
 [submodule "data/cti"]
-    path = data/cti
+	path = misp_stix_converter/data/cti
     url = https://github.com/mitre/cti
 [submodule "data/misp-galaxy"]
-    path = data/misp-galaxy
+	path = misp_stix_converter/data/misp-galaxy
     url = https://github.com/MISP/misp-galaxy
