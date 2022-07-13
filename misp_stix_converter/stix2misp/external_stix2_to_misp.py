@@ -196,7 +196,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         :param location_ref: The Location object id used to find the corresponding
             STIX object
         """
-        location = self._get_stix2_object(location_ref)
+        location = self._get_stix_object(location_ref)
         misp_object = self._parse_location_object(location)
         self._add_misp_object(misp_object)
 
@@ -387,7 +387,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         return False
 
     def _is_pattern_too_complex(self, pattern: str) -> bool:
-        if any(keyword in pattern for keyword in self._mapping.pattern_forbiden_relations):
+        if any(keyword in pattern for keyword in self._mapping.pattern_forbidden_relations):
             return True
         if all(keyword in pattern for keyword in (' AND ', ' OR ')):
             return True

@@ -498,7 +498,8 @@ class STIX2toMISPParser(STIXtoMISPParser):
             referenced_uuid = relationship['referenced_uuid']
             if referenced_uuid in self._galaxies:
                 for tag_name in self._galaxies[referenced_uuid]['tag_names']:
-                    misp_object.add_tag(tag_name)
+                    for attribute in misp_object.attributes:
+                        attribute.add_tag(tag_name)
                 self._galaxies[referenced_uuid]['used'][self.misp_event.uuid] = True
             else:
                 misp_object.add_reference(

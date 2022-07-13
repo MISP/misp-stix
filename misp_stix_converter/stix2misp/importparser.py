@@ -152,8 +152,8 @@ class STIXtoMISPParser:
         message = f"Unknown STIX parsing function name: {feature}"
         self.__errors[self._identifier].add(message)
 
-    def _unknown_pattern_mapping_warning(self, indicator_id: str, observable_types: tuple):
-        types = f"containing the following types: {', '.join(observable_types)}"
+    def _unknown_pattern_mapping_warning(self, indicator_id: str, observable_types: Exception):
+        types = f"containing the following types: {', '.join(observable_types.message.split('_'))}"
         message = f"Unable to map pattern from the indicator with id {indicator_id}, {types}"
         self.__warnings[self._identifier].add(message)
 
@@ -201,9 +201,12 @@ class STIXtoMISPParser:
         fingerprint_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.fingerprint'
         if not fingerprint_path.exists():
             return False
+        latest_fingerprint = self.__get_misp_galaxy_fingerprint()
+        if latest_fingerprint is None:
+            return False
         with open(fingerprint_path, 'rt', encoding='utf-8') as f:
             fingerprint = f.read()
-        return fingerprint == self.__get_misp_galaxy_fingerprint()
+        return fingerprint == latest_fingerprint
 
     def __generate_synonyms_mapping(self):
         data_path = _ROOT_PATH / 'data' / 'misp-galaxy' / 'clusters'
@@ -223,9 +226,11 @@ class STIXtoMISPParser:
                         synonyms_mapping[synonym].append(tag_name)
         with open(self.__synonyms_path, 'wt', encoding='utf-8') as f:
             f.write(json.dumps(synonyms_mapping))
-        fingerprint_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.fingerprint'
-        with open(fingerprint_path, 'rt', encoding='utf-8') as f:
-            f.write(self.__get_misp_galaxy_fingerprint())
+        latest_fingerprint = self.__get_misp_galaxy_fingerprint()
+        if latest_fingerprint is not None:
+            fingerprint_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.fingerprint'
+            with open(fingerprint_path, 'wt', encoding='utf-8') as f:
+                f.write(latest_fingerprint)
 
     @staticmethod
     def __get_misp_galaxy_fingerprint():
@@ -240,7 +245,10 @@ class STIXtoMISPParser:
             stdout=subprocess.PIPE
         )
         stdout = status.communicate()[0]
-        return stdout.decode().split(' ')[1]
+        try:
+            return stdout.decode().split(' ')[1]
+        except IndexError:
+            return None
 
     def __get_synonyms_mapping(self):
         if not hasattr(self, '__synonyms_path'):
