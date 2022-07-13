@@ -34,7 +34,7 @@ _GALAXY_OBJECTS_TYPING = Union[
     Vulnerability_v20,
     Vulnerability_v21
 ]
-_ROOT_PATH = Path(__file__).parents[2].resolve()
+_ROOT_PATH = Path(__file__).parents[1].resolve()
 
 
 class STIXtoMISPParser:
@@ -198,7 +198,7 @@ class STIXtoMISPParser:
     ################################################################################
 
     def __galaxies_up_to_date(self) -> bool:
-        fingerprint_path = _ROOT_PATH / 'tmp' / 'synonymsToTagNames.fingerprint'
+        fingerprint_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.fingerprint'
         if not fingerprint_path.exists():
             return False
         with open(fingerprint_path, 'rt', encoding='utf-8') as f:
@@ -223,7 +223,7 @@ class STIXtoMISPParser:
                         synonyms_mapping[synonym].append(tag_name)
         with open(self.__synonyms_path, 'wt', encoding='utf-8') as f:
             f.write(json.dumps(synonyms_mapping))
-        fingerprint_path = _ROOT_PATH / 'tmp' / 'synonymsToTagNames.fingerprint'
+        fingerprint_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.fingerprint'
         with open(fingerprint_path, 'rt', encoding='utf-8') as f:
             f.write(self.__get_misp_galaxy_fingerprint())
 
@@ -244,7 +244,7 @@ class STIXtoMISPParser:
 
     def __get_synonyms_mapping(self):
         if not hasattr(self, '__synonyms_path'):
-            self.__synonyms_path = _ROOT_PATH / 'tmp' / 'synonymsToTagNames.json'
+            self.__synonyms_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.json'
             if not self.__synonyms_path.exists() or not self.__galaxies_up_to_date():
                 self.__generate_synonyms_mapping()
         else:
