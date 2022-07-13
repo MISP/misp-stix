@@ -155,7 +155,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             return '_create_stix_pattern_object'
         observable_types = self._extract_types_from_pattern(indicator.pattern)
         try:
-            return self.mapping.pattern_mapping[observable_types]
+            return self._mapping.pattern_mapping[observable_types]
         except KeyError:
             raise UnknownPatternMappingError(observable_types)
 
