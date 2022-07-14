@@ -104,7 +104,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
         self.__stix_version = bundle.spec_version if hasattr(bundle, 'spec_version') else '2.1'
         n_report = 0
         for stix_object in bundle.objects:
-            object_type = stix_object.type
+            try:
+                object_type = stix_object.type
+            except AttributeError:
+                object_type = stix_object['type']
             if object_type in ('grouping', 'report'):
                 n_report += 1
             try:
@@ -117,7 +120,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             try:
                 getattr(self, feature)(stix_object)
             except AttributeError as exception:
-                sys.exit(exception)
+                self._critical_error(exception)
         self.__n_report = 2 if n_report >= 2 else n_report
 
     def parse_stix_bundle(self, single_event: Optional[bool] = False):
@@ -133,7 +136,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             UnavailableGalaxyResourcesError,
             UnavailableSynonymsResourceError
         ) as error:
-            sys.exit(error)
+            self._critical_error(error)
 
     def parse_stix_content(self, filename: str):
         try:
@@ -146,7 +149,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         self.parse_stix_bundle()
 
     @property
-    def misp_event(self) -> Union[MISPEvent, dict]:
+    def misp_event(self) -> MISPEvent:
         return self.__misp_event
 
     @property
@@ -226,7 +229,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
         try:
             self._location[location.id] = location
         except AttributeError:
-            self._location = {location.id: location}
+            try:
+                self._location = {location.id: location}
+            except AttributeError:
+                self._location = {location['id']: location}
 
     def _load_malware(self, malware: Union[Malware_v20, Malware_v21]):
         data_to_load = self._build_data_to_load(malware)
@@ -582,7 +588,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
             force_timestamps=True
         )
         if stix_object is not None:
-            misp_object.uuid = stix_object.id.split('--')[-1]
+            try:
+                misp_object.uuid = stix_object.id.split('--')[-1]
+            except AttributeError:
+                misp_object.uuid = stix_object['id'].split('--')[1]
             misp_object.update(self._parse_timeline(stix_object))
         return misp_object
 

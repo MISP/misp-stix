@@ -80,6 +80,10 @@ class STIXtoMISPParser:
         message = f"Error with the Course of Action object with id {course_of_action_id}: {tb}"
         self.__errors[self._identifier].add(message)
 
+    def _critical_error(self, exception: Exception):
+        message = f'The Following exception was raised: {exception}'
+        self.__errors[self._identifier].add(message)
+
     def _identity_error(self, identity_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         message = f"Error with the Identity object with id {identity_id}: {tb}"
