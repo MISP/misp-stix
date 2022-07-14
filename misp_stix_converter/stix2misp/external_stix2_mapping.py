@@ -199,10 +199,26 @@ class ExternalSTIX2Mapping(STIX2Mapping):
         self.__pattern_mapping = Mapping(**pattern_mapping)
 
         # MISP OBJECTS MAPPING
+        self.__attack_pattern_object_mapping = Mapping(
+            name = self.name_attribute,
+            description = self.summary_attribute
+        )
+        self.__course_of_action_object_mapping = Mapping(
+            name = self.name_attribute,
+            description = self.description_attribute
+        )
         self.__vulnerability_object_mapping = Mapping(
             name = self.summary_attribute,
             description = self.description_attribute
         )
+
+    @property
+    def attack_pattern_object_mapping(self) -> dict:
+        return self.__attack_pattern_object_mapping
+
+    @property
+    def course_of_action_object_mapping(self) -> dict:
+        return self.__course_of_action_object_mapping
 
     @property
     def observable_mapping(self) -> dict:

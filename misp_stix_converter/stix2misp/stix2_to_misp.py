@@ -18,12 +18,10 @@ from stix2.parsing import parse as stix2_parser
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
 from stix2.v20.sdo import (AttackPattern as AttackPattern_v20, Campaign as Campaign_v20,
-    CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
-    Identity as Identity_v20, Indicator as Indicator_v20,
-    IntrusionSet as IntrusionSet_v20, Malware as Malware_v20,
-    ObservedData as ObservedData_v20, Report as Report_v20,
-    ThreatActor as ThreatActor_v20, Tool as Tool_v20,
-    Vulnerability as Vulnerability_v20)
+    CourseOfAction as CourseOfAction_v20, Identity as Identity_v20,
+    Indicator as Indicator_v20, IntrusionSet as IntrusionSet_v20, Malware as Malware_v20,
+    ObservedData as ObservedData_v20, Report as Report_v20, ThreatActor as ThreatActor_v20,
+    Tool as Tool_v20, Vulnerability as Vulnerability_v20)
 from stix2.v20.sro import Relationship as Relationship_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v21.common import MarkingDefinition as MarkingDefinition_v21
@@ -32,12 +30,10 @@ from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, Domain
     NetworkTraffic, Process, Software, URL, UserAccount, WindowsRegistryKey,
     X509Certificate)
 from stix2.v21.sdo import (AttackPattern as AttackPattern_v21, Campaign as Campaign_v21,
-    CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21, Grouping,
-    Identity as Identity_v21, Indicator as Indicator_v21,
-    IntrusionSet as IntrusionSet_v21, Location, Malware as Malware_v21,
-    ObservedData as ObservedData_v21, Note, Opinion, Report as Report_v21,
-    ThreatActor as ThreatActor_v21, Tool as Tool_v21,
-    Vulnerability as Vulnerability_v21)
+    CourseOfAction as CourseOfAction_v21, Grouping, Identity as Identity_v21,
+    Indicator as Indicator_v21, IntrusionSet as IntrusionSet_v21, Location,
+    Malware as Malware_v21, ObservedData as ObservedData_v21, Note, Report as Report_v21,
+    ThreatActor as ThreatActor_v21, Tool as Tool_v21, Vulnerability as Vulnerability_v21)
 from stix2.v21.sro import Relationship as Relationship_v21
 from typing import Optional, Union
 
@@ -63,11 +59,44 @@ _OBSERVABLE_TYPES = Union[
     File, IPv4Address, IPv6Address, MACAddress, Mutex, NetworkTraffic, Process,
     Software, URL, UserAccount, WindowsRegistryKey, X509Certificate
 ]
+_ATTACK_PATTERN_TYPING = Union[
+    AttackPattern_v20,
+    AttackPattern_v21
+]
+_COURSE_OF_ACTION_TYPING = Union[
+    CourseOfAction_v20,
+    CourseOfAction_v21
+]
+_GALAXY_OBJECTS_TYPING = Union[
+    AttackPattern_v20,
+    AttackPattern_v21,
+    CourseOfAction_v20,
+    CourseOfAction_v21,
+    IntrusionSet_v20,
+    IntrusionSet_v21,
+    Malware_v20,
+    Malware_v21,
+    ThreatActor_v20,
+    ThreatActor_v21,
+    Tool_v20,
+    Tool_v21,
+    Vulnerability_v20,
+    Vulnerability_v21
+]
+_MISP_FEATURES_TYPING = Union[
+    MISPAttribute,
+    MISPEvent,
+    MISPObject
+]
 _SDO_TYPING = Union[
     Indicator_v20,
     Indicator_v21,
     ObservedData_v20,
     ObservedData_v21,
+    Vulnerability_v20,
+    Vulnerability_v21
+]
+_VULNERABILITY_TYPING = Union[
     Vulnerability_v20,
     Vulnerability_v21
 ]
@@ -606,10 +635,30 @@ class STIX2toMISPParser(STIXtoMISPParser):
             return False
 
     @staticmethod
+    def _fetch_tags_from_labels(misp_feature: _MISP_FEATURES_TYPING, labels: list):
+        for label in (label for label in labels if label.lower() != 'threat-report'):
+            misp_feature.add_tag(label)
+
+    @staticmethod
     def _parse_AS_value(number: Union[int, str]) -> str:
         if isinstance(number, int) or not number.startswith('AS'):
             return f'AS{number}'
         return number
+
+    @staticmethod
+    def _parse_attack_pattern_reference(reference: dict) -> Union[dict, None]:
+        if reference.source_name == 'capec':
+            return {
+                'type': 'text',
+                'object_relation': 'id',
+                'value': reference.external_id.split('-')[1]
+            }
+        if reference.source_name in ('link', 'url'):
+            return {
+                'type': 'link',
+                'object_relation': 'references',
+                'value': reference.url
+            }
 
     def _parse_markings(self, misp_feature: Union[MISPAttribute, MISPObject], marking_refs: list):
         for marking_ref in marking_refs:

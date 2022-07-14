@@ -102,7 +102,7 @@ class STIX2Mapping:
         # ATTRIBUTES MAPPING DECLARATION
         comment_attribute = {'type': 'comment', 'object_relation': 'comment'}
         snort_attribute = {'type': 'snort', 'object_relation': 'suricata'}
-        version_attribute = {'type': 'text', 'object_realtion': 'version'}
+        version_attribute = {'type': 'text', 'object_relation': 'version'}
         yara_attribute = {'type': 'yara', 'object_relation': 'yara'}
 
         # SINGLE ATTRIBUTES MAPPING
@@ -112,13 +112,8 @@ class STIX2Mapping:
                 'object_relation': 'accuracy_radius'
             }
         )
-        self.__comment_attribute = Mapping(**comment_attribute)
-        self.__description_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'description'
-            }
-        )
+        self.__description_attribute = {'type': 'text', 'object_relation': 'description'}
+        self.__name_attribute = {'type': 'text', 'object_relation': 'name'}
         self.__references_attribute = Mapping(
             **{
                 'type': 'link',
@@ -128,7 +123,7 @@ class STIX2Mapping:
         self.__sigma_attribute = Mapping(**{'type': 'sigma'})
         self.__snort_attribute = Mapping(**snort_attribute)
         self.__summary_attribute = Mapping(**{'type': 'text', 'object_relation': 'summary'})
-        self.__version_attribute = Mapping(**version_attribute)
+        self.__version_attribute = version_attribute
         self.__vulnerability_attribute = Mapping(
             **{
                 'type': 'vulnerability',
@@ -176,10 +171,6 @@ class STIX2Mapping:
         return self.__bundle_to_misp_mapping
 
     @property
-    def comment_attribute(self) -> dict:
-        return self.__comment_attribute
-
-    @property
     def connection_protocols(self) -> dict:
         return self.__connection_protocols
 
@@ -190,6 +181,10 @@ class STIX2Mapping:
     @property
     def location_object_mapping(self) -> dict:
         return self.__location_object_mapping
+
+    @property
+    def name_attribute(self) -> dict:
+        return self.__name_attribute
 
     @property
     def object_type_refs_to_skip(self) -> tuple:

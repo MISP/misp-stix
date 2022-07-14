@@ -1,32 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .exceptions import (
-    AttributeFromPatternParsingError, UndefinedSTIXObjectError,
+from .exceptions import (AttributeFromPatternParsingError, UndefinedSTIXObjectError,
     UndefinedIndicatorError, UndefinedObservableError, UnknownParsingFunctionError)
 from .internal_stix2_mapping import InternalSTIX2Mapping
-from .stix2_to_misp import STIX2toMISPParser, _SDO_TYPING
+from .stix2_to_misp import (
+    STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
+    _GALAXY_OBJECTS_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from pymisp import MISPAttribute, MISPEvent, MISPObject, MISPSighting
+from pymisp import MISPObject, MISPSighting
 from stix2.v20.observables import (
-    NetworkTraffic as NetworkTraffic_v20, Process as Process_v20,
-    WindowsPEBinaryExt as WindowsExtension_v20)
-from stix2.v20.sdo import (
-    AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
-    CustomObject as CustomObject_v20, Identity as Identity_v20, Indicator as Indicator_v20,
-    IntrusionSet as IntrusionSet_v20, Malware as Malware_v20, ObservedData as ObservedData_v20,
-    ThreatActor as ThreatActor_v20, Tool as Tool_v20, Vulnerability as Vulnerability_v20)
+    Process as Process_v20, WindowsPEBinaryExt as WindowsExtension_v20)
+from stix2.v20.sdo import (CustomObject as CustomObject_v20, Identity as Identity_v20,
+    Indicator as Indicator_v20, Malware as Malware_v20, ObservedData as ObservedData_v20,
+    Tool as Tool_v20)
 from stix2.v20.sro import Sighting as Sighting_v20
 from stix2.v21.observables import (
-    DomainName, NetworkTraffic as NetworkTraffic_v21, Process as Process_v21,
-    WindowsPEBinaryExt as WindowsExtension_v21)
-from stix2.v21.sdo import (
-    AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
-    CustomObject as CustomObject_v21, Identity as Identity_v21, Indicator as Indicator_v21,
-    IntrusionSet as IntrusionSet_v21, Malware as Malware_v21, ObservedData as ObservedData_v21,
-    Opinion, ThreatActor as ThreatActor_v21, Tool as Tool_v21, Vulnerability as Vulnerability_v21)
+    DomainName, Process as Process_v21, WindowsPEBinaryExt as WindowsExtension_v21)
+from stix2.v21.sdo import (CustomObject as CustomObject_v21, Identity as Identity_v21,
+    Indicator as Indicator_v21, Malware as Malware_v21, ObservedData as ObservedData_v21,
+    Opinion, Tool as Tool_v21)
 from stix2.v21.sro import Sighting as Sighting_v21
 from typing import Optional, Union
 
@@ -37,14 +32,6 @@ _attribute_additional_fields = (
     'to_ids',
     'uuid'
 )
-_ATTACK_PATTERN_TYPING = Union[
-    AttackPattern_v20,
-    AttackPattern_v21
-]
-_COURSE_OF_ACTION_TYPING = Union[
-    CourseOfAction_v20,
-    CourseOfAction_v21
-]
 _CUSTOM_TYPING = Union[
     CustomObject_v20,
     CustomObject_v21
@@ -62,34 +49,9 @@ _GALAXY_TYPES = (
     'tool',
     'vulnerability'
 )
-_GALAXY_TYPING = Union[
-    AttackPattern_v20,
-    AttackPattern_v21,
-    CourseOfAction_v20,
-    CourseOfAction_v21,
-    IntrusionSet_v20,
-    IntrusionSet_v21,
-    Malware_v20,
-    Malware_v21,
-    ThreatActor_v20,
-    ThreatActor_v21,
-    Tool_v20,
-    Tool_v21,
-    Vulnerability_v20,
-    Vulnerability_v21
-]
 _INDICATOR_TYPING = Union[
     Indicator_v20,
     Indicator_v21
-]
-_MISP_FEATURES_TYPING = Union[
-    MISPAttribute,
-    MISPEvent,
-    MISPObject
-]
-_NETWORK_TRAFFIC_TYPING = Union[
-    NetworkTraffic_v20,
-    NetworkTraffic_v21
 ]
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20,
@@ -102,10 +64,6 @@ _PROCESS_TYPING = Union[
 _SIGHTING_TYPING = Union[
     Sighting_v20,
     Sighting_v21
-]
-_VULNERABILITY_TYPING = Union[
-    Vulnerability_v20,
-    Vulnerability_v21
 ]
 
 
@@ -431,19 +389,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**self._parse_attack_pattern_reference(reference))
         self._add_misp_object(misp_object)
 
-    def _parse_attack_pattern_reference(self, reference: dict) -> dict:
-        if reference['source_name'] == 'capec':
-            return {
-                'type': 'text',
-                'object_relation': 'id',
-                'value': reference['external_id'].split('-')[1]
-            }
-        return {
-            'type': 'link',
-            'object_relation': 'references',
-            'value': reference['url']
-        }
-
     def _parse_course_of_action_object(self, course_of_action: _COURSE_OF_ACTION_TYPING):
         misp_object = self._create_misp_object('course-of-action', course_of_action)
         for key, mapping in self._mapping.course_of_action_object_mapping.items():
@@ -496,7 +441,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
         return misp_object
 
-    def _parse_internal_galaxy(self, stix_object: _GALAXY_TYPING):
+    def _parse_internal_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
         if stix_object.id in self._galaxies:
             self._galaxies[stix_object.id]['used'][self.misp_event.uuid] = False
         else:
@@ -2302,10 +2247,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _fetch_observables_with_id_v21(self, observed_data: ObservedData_v21) -> dict:
         return {ref: self._observable[ref] for ref in observed_data.object_refs}
-
-    def _fetch_tags_from_labels(self, misp_feature: _MISP_FEATURES_TYPING, labels: list):
-        for label in (label for label in labels if label != 'Threat-Report'):
-            misp_feature.add_tag(label)
 
     def _has_domain_custom_fields(self, observable: DomainName) -> bool:
         for feature in self._mapping.domain_ip_object_mapping:

@@ -341,7 +341,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
         compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
         creation_time_attribute = {'type': 'datetime', 'object_relation': 'creation-time'}
         current_directory_attribute = {'type': 'text', 'object_relation': 'current-directory'}
-        description_attribute = {'type': 'text', 'object_relation': 'description'}
         domain_attribute = {'type': 'domain', 'object_relation': 'domain'}
         domain_family_attribute = {'type': 'text', 'object_relation': 'domain-family'}
         dst_port_attribute = {'type': 'port', 'object_relation': 'dst-port'}
@@ -389,7 +388,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
         mime_type_attribute = {'type': 'mime-type', 'object_relation': 'mimetype'}
         modification_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-modification-time'}
         msg_attribute = {'type': 'attachment', 'object_relation': 'msg'}
-        name_attribute = {'type': 'text', 'object_relation': 'name'}
         parent_command_line_attribute = {'type': 'text', 'object_relation': 'parent-command-line'}
         parent_guid_attribute = {'type': 'text', 'object_relation': 'parent-guid'}
         parent_image_attribute = {'type': 'filename', 'object_relation': 'parent-image'}
@@ -451,13 +449,12 @@ class InternalSTIX2Mapping(STIX2Mapping):
         validity_not_after_attribute = {'type': 'datetime', 'object_relation': 'validity-not-after'}
         validity_not_before_attribute = {'type': 'datetime', 'object_relation': 'validity-not-before'}
         verified_attribute = {'type': 'text', 'object_relation': 'verified'}
-        version_attribute = {'type': 'text', 'object_relation': 'version'}
         vhash_attribute = {'type': 'vhash', 'object_relation': 'vhash'}
         x_mailer_attribute = {'type': 'email-x-mailer', 'object_relation': 'x-mailer'}
 
         # STIX TO MISP OBJECTS MAPPING
         self.__android_app_object_mapping = Mapping(
-            name = name_attribute,
+            name = self.name_attribute,
             x_misp_appid = {'type': 'text', 'object_relation': 'appid'},
             x_misp_certificate = {'type': 'sha1', 'object_relation': 'certificate'},
             x_misp_domain = domain_attribute,
@@ -474,7 +471,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__asn_object_mapping = Mapping(
             number = {'type': 'AS', 'object_relation': 'asn'},
-            name = description_attribute,
+            name = self.description_attribute,
             x_misp_country = {'type': 'text', 'object_relation': 'country'},
             x_misp_export = {'type': 'text', 'object_relation': 'export'},
             x_misp_first_seen = first_seen_attribute,
@@ -485,15 +482,15 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_subnet_announced = {'type': 'ip-src', 'object_relation': 'subnet-announced'}
         )
         self.__attack_pattern_object_mapping = Mapping(
-            description = {'type': 'text', 'object_relation': 'summary'},
-            name = name_attribute,
+            description = self.summary_attribute,
+            name = self.name_attribute,
             x_misp_prerequisites = {'type': 'text', 'object_relation': 'prerequisites'},
             x_misp_related_weakness = {'type': 'weakness', 'object_relation': 'related-weakness'},
             x_misp_solutions = {'type': 'text', 'object_relation': 'solutions'}
         )
         self.__course_of_action_object_mapping = Mapping(
-            name = name_attribute,
-            description = description_attribute,
+            name = self.name_attribute,
+            description = self.description_attribute,
             x_misp_cost = {'type': 'text', 'object_relation': 'cost'},
             x_misp_efficacy = {'type': 'text', 'object_relation': 'efficacy'},
             x_misp_impact = {'type': 'text', 'object_relation': 'impact'},
@@ -507,7 +504,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             name = {'type': 'text', 'object_relation': 'product'},
             vendor = {'type': 'text', 'object_relation': 'vendor'},
             version = {'type': 'text', 'object_relation': 'version'},
-            x_misp_description = description_attribute,
+            x_misp_description = self.description_attribute,
             x_misp_other = {'type': 'text', 'object_relation': 'other'},
             x_misp_part = {'type': 'text', 'object_relation': 'part'},
             x_misp_product = {'type': 'text', 'object_relation': 'product'},
@@ -611,7 +608,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             account_login = account_name_attribute,
             x_misp_archive = archive_attribute,
             x_misp_attachment = attachment_attribute,
-            x_misp_description = description_attribute,
+            x_misp_description = self.description_attribute,
             x_misp_link = link_attribute,
             x_misp_url = url_attribute,
             x_misp_user_avatar = user_avatar_attribute
@@ -711,7 +708,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__gitlab_user_object_mapping = Mapping(
             user_id = id_attribute,
-            display_name = name_attribute,
+            display_name = self.name_attribute,
             account_login = username_attribute,
             x_misp_avatar_url = {'type': 'link', 'object_relation': 'avatar_url'},
             x_misp_state = {'type': 'text', 'object_relation': 'state'},
@@ -754,7 +751,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             }
         )
         self.__legal_entity_object_mapping = Mapping(
-            name = name_attribute,
+            name = self.name_attribute,
             description = text_attribute,
             sectors = {'type': 'text', 'object_relation': 'business'},
             x_misp_commercial_name = {'type': 'text', 'object_relation': 'commercial-name'},
@@ -810,8 +807,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__lnk_indicator_object_mapping = Mapping(**__lnk_indicator_object_mapping)
         self.__lnk_observable_object_mapping = __lnk_object_mapping
         self.__mutex_object_mapping = Mapping(
-            name = name_attribute,
-            x_misp_description = description_attribute,
+            name = self.name_attribute,
+            x_misp_description = self.description_attribute,
             x_misp_operating_system = {'type': 'text', 'object_relation': 'operating-system'}
         )
         self.__network_connection_object_mapping = Mapping(
@@ -847,7 +844,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             }
         )
         self.__news_agency_object_mapping = Mapping(
-            name = name_attribute,
+            name = self.name_attribute,
             x_misp_alias = alias_attribute,
             x_misp_archive = archive_attribute,
             x_misp_url = url_attribute
@@ -861,8 +858,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
             }
         )
         self.__organization_object_mapping = Mapping(
-            name = name_attribute,
-            description = description_attribute,
+            name = self.name_attribute,
+            description = self.description_attribute,
             roles = role_attribute,
             x_misp_role = role_attribute,
             x_misp_alias = alias_attribute,
@@ -930,7 +927,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__pe_section_object_mapping = Mapping(
             entropy = entropy_attribute,
-            name = name_attribute,
+            name = self.name_attribute,
             size = size_in_bytes_attribute,
             x_misp_characteristic = {'type': 'text', 'object_relation': 'characteristic'},
             x_misp_offset = {'type': 'hex', 'object_relation': 'offset'},
@@ -946,7 +943,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'created_time': creation_time_attribute,
                 'cwd': current_directory_attribute,
                 'is_hidden': hidden_attribute,
-                'name': name_attribute,
+                'name': self.name_attribute,
                 'binary_ref.name': image_attribute,
                 'image_ref.name': image_attribute,
                 'parent_ref.command_line': parent_command_line_attribute,
@@ -962,7 +959,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'x_misp_fake_process_name': fake_process_name_attribute,
                 'x_misp_guid': guid_attribute,
                 'x_misp_integrity_level': integrity_level_attribute,
-                'x_misp_name': name_attribute,
+                'x_misp_name': self.name_attribute,
                 'x_misp_pgid': pgid_attribute,
                 'x_misp_port': port_attribute,
                 'x_misp_process_state': process_state_attribute,
@@ -979,8 +976,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
             created_time = creation_time_attribute,
             cwd = current_directory_attribute,
             is_hidden = hidden_attribute,
-            name = name_attribute,
-            x_misp_name = name_attribute,
+            name = self.name_attribute,
+            x_misp_name = self.name_attribute,
             pid = pid_attribute,
             x_misp_fake_process_name = fake_process_name_attribute,
             x_misp_guid = guid_attribute,
@@ -999,7 +996,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_account_avatar_url = {'type': 'url', 'object_relation': 'account-avatar-url'},
             x_misp_archive = archive_attribute,
             x_misp_attachment = attachment_attribute,
-            x_misp_description = description_attribute,
+            x_misp_description = self.description_attribute,
             x_misp_link = link_attribute,
             x_misp_moderator_of = {'type': '', 'object_relation': 'moderator-of'},
             x_misp_trophies = {'type': '', 'object_relation': 'trophies'},
@@ -1032,9 +1029,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_state = state_attribute
         )
         self.__suricata_object_mapping = Mapping(
-            pattern = {'type': 'snort', 'object_relation': 'suricata'},
+            pattern = self.snort_attribute,
             description = comment_attribute,
-            pattern_version = version_attribute
+            pattern_version = self.version_attribute
         )
         self.__telegram_account_object_mapping = Mapping(
             user_id = id_attribute,
@@ -1046,12 +1043,12 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__twitter_account_object_mapping = Mapping(
             user_id = id_attribute,
-            account_login = name_attribute,
+            account_login = self.name_attribute,
             display_name = {'type': 'text', 'object_relation': 'displayed-name'},
             x_misp_archive = archive_attribute,
             x_misp_attachment = attachment_attribute,
             x_misp_bio = bio_attribute,
-            x_misp_description = description_attribute,
+            x_misp_description = self.description_attribute,
             x_misp_embedded_link = {'type': 'url', 'object_relation': 'embedded-link'},
             x_misp_embedded_safe_link = {'type': 'link', 'object_relation': 'embedded-safe-link'},
             x_misp_followers = followers_attribute,
@@ -1103,7 +1100,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             is_privileged = {'type': 'boolean', 'object_relation': 'privileged'},
             is_service_account = {'type': 'boolean', 'object_relation': 'is_service_account'},
             user_id = {'type': 'text', 'object_relation': 'user-id'},
-            x_misp_description = description_attribute,
+            x_misp_description = self.description_attribute,
             x_misp_link = link_attribute,
             x_misp_user_avatar = user_avatar_attribute,
             account_created = {'type': 'datetime', 'object_relation': 'created'},
@@ -1120,14 +1117,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
             shell = {'type': 'text', 'object_relation': 'shell'}
         )
         self.__vulnerability_object_mapping = Mapping(
-            description = description_attribute,
+            description = self.description_attribute,
             x_misp_created = {'type': 'datetime', 'object_relation': 'created'},
             x_misp_credit = {'type': 'text', 'object_relation': 'credit'},
             x_misp_cvss_score = {'type': 'float', 'object_relation': 'cvss-score'},
             x_misp_modified = {'type': 'datetime', 'object_relation': 'modified'},
             x_misp_published = {'type': 'datetime', 'object_relation': 'published'},
             x_misp_state = {'type': 'text', 'object_relation': 'state'},
-            x_misp_summary = {'type': 'text', 'object_relation': 'summary'},
+            x_misp_summary = self.summary_attribute,
             x_misp_vulnerable_configuration = {
                 'type': 'cpe',
                 'object_relation': 'vulnerable-configuration'
@@ -1148,7 +1145,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'subject_public_key_modulus': pubkey_info_modulus_attribute,
                 'validity_not_after': validity_not_after_attribute,
                 'validity_not_before': validity_not_before_attribute,
-                'version': version_attribute,
+                'version': self.version_attribute,
                 'x_misp_is_ca': is_ca_attribute,
                 'x_misp_pem': pem_attribute,
                 'x_misp_pubkey_info_size': pubkey_info_size_attribute,
@@ -1167,7 +1164,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             subject_public_key_modulus = pubkey_info_modulus_attribute,
             validity_not_after = validity_not_after_attribute,
             validity_not_before = validity_not_before_attribute,
-            version = version_attribute,
+            version = self.version_attribute,
             x_misp_is_ca = is_ca_attribute,
             x_misp_pem = pem_attribute,
             x_misp_pubkey_info_size = pubkey_info_size_attribute,
@@ -1184,9 +1181,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
             }
         )
         self.__yara_object_mapping = Mapping(
-            pattern = {'type': 'yara', 'object_relation': 'yara'},
+            pattern = self.yara_attribute,
             description = comment_attribute,
-            pattern_version = version_attribute,
+            pattern_version = self.version_attribute,
             x_misp_context = {'type': 'text', 'object_relation': 'context'},
             x_misp_yara_rule_name = {'type': 'text', 'object_relation': 'yara-rule-name'}
         )

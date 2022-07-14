@@ -18,22 +18,6 @@ from stix2.v21.sdo import(
     ThreatActor as ThreatActor_v21, Vulnerability as Vulnerability_v21)
 from typing import Union
 
-_GALAXY_OBJECTS_TYPING = Union[
-    AttackPattern_v20,
-    AttackPattern_v21,
-    CourseOfAction_v20,
-    CourseOfAction_v21,
-    IntrusionSet_v20,
-    IntrusionSet_v21,
-    Malware_v20,
-    Malware_v21,
-    ThreatActor_v20,
-    ThreatActor_v21,
-    Tool_v20,
-    Tool_v21,
-    Vulnerability_v20,
-    Vulnerability_v21
-]
 _ROOT_PATH = Path(__file__).parents[1].resolve()
 
 
@@ -173,29 +157,6 @@ class STIXtoMISPParser:
         tb = self._parse_traceback(exception)
         message = f"Error with the Vulnerability object with id {vulnerability_id}: {tb}"
         self.__errors[self._identifier].add(message)
-
-    ################################################################################
-    #                   STIX OBJECTS TO GALAXY PARSING FUNCTIONS                   #
-    ################################################################################
-
-    def _check_existing_galaxy_name(self, galaxy_name) -> list:
-        if galaxy_name in self.synonyms_mapping:
-            return self.synonyms_mapping[galaxy_name]
-        for name, tag_names in self.synonyms_mapping.items():
-            if galaxy_name in name:
-                return tag_names
-
-    def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
-        if stix_object.id in self._galaxies:
-            self._galaxies[stix_object.id]['used'][self.misp_event.uuid] = False
-        else:
-            tag_names = self._check_existing_galaxy_name(stix_object.name)
-            if tag_names is None:
-                tag_names = [f'misp-galaxy:{stix_object.type}="{stix_object.name}"']
-            self._galaxies[stix_object.id] = {
-                'tag_names': tag_names,
-                'used': {self.misp_event.uuid: False}
-            }
 
     ################################################################################
     #           SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING FUNCTIONS.           #
