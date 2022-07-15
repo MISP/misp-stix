@@ -34,6 +34,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'attribute': '_define_stix_object_id',
             'object': '_define_stix_object_id'
         }
+        self._markings = {}
 
     def parse_json_content(self, filename: Union[Path, str]):
         with open(filename, 'rt', encoding='utf-8') as f:
@@ -72,7 +73,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._resolve_attribute(attribute)
         if self._markings:
             for marking in self._markings.values():
-                self.__objects.append(marking)
+                if not marking['used']:
+                    self.__objects.append(marking['marking'])
+                    marking['used'] = True
         if self.__relationships:
             self._handle_relationships()
 
@@ -85,7 +88,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             misp_event = misp_event['Event']
         self._misp_event = misp_event
         self._identifier = self._misp_event['uuid']
-        self._markings = {}
         self.__object_refs = []
         self.__relationships = []
         self._set_identity()
@@ -162,7 +164,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_relationships()
         if self._markings:
             for marking in self._markings.values():
-                self.__objects.append(marking)
+                if not marking['used']:
+                    self.__objects.append(marking['marking'])
+                    marking['used'] = True
         if self._is_published():
             report_id = f"report--{self._misp_event['uuid']}"
             if not self.__object_refs:
@@ -216,13 +220,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         marking_ids = []
         for marking in markings:
             if marking in self._markings:
-                marking_ids.append(self._markings[marking]['id'])
+                marking_ids.append(self._markings[marking]['marking'].id)
                 continue
             if self._is_tlp_tag(marking):
                 marking_definition = deepcopy(self._mapping.tlp_markings[marking])
                 marking_id = marking_definition.id
                 if marking_id not in self.unique_ids:
-                    self._markings[marking] = marking_definition
+                    self._markings[marking] = {
+                        'marking': marking_definition,
+                        'used': False
+                    }
                     self.__ids[marking_id] = marking_id
                 marking_ids.append(marking_id)
                 continue
