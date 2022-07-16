@@ -354,10 +354,9 @@ def misp_event_collection_to_stix1(
 def misp_collection_to_stix2_0(output_filename: _files_type, *input_files: List[_files_type], in_memory: bool=False):
     parser = MISPtoSTIX20Parser()
     if in_memory or len(input_files) == 1:
-        objects = []
         for filename in input_files:
             parser.parse_json_content(filename)
-            objects.extend(parser.stix_objects)
+        objects = parser.stix_objects
         with open(output_filename, 'wt', encoding='utf-8') as f:
             f.write(json.dumps(Bundle_v20(objects), cls=STIXJSONEncoder, indent=4))
         return 1
@@ -366,7 +365,7 @@ def misp_collection_to_stix2_0(output_filename: _files_type, *input_files: List[
     for filename in input_files[:-1]:
         parser.parse_json_content(filename)
         with open(output_filename, 'at', encoding='utf-8') as f:
-            f.write(f'{json.dumps([parser.stix_objects], cls=STIXJSONEncoder, indent=4)[8:-8]},\n')
+            f.write(f'{json.dumps([parser.fetch_stix_objects], cls=STIXJSONEncoder, indent=4)[8:-8]},\n')
     parser.parse_json_content(input_files[-1])
     with open(output_filename, 'at', encoding='utf-8') as f:
         footer = '    ]\n}'
@@ -377,10 +376,9 @@ def misp_collection_to_stix2_0(output_filename: _files_type, *input_files: List[
 def misp_collection_to_stix2_1(output_filename: _files_type, *input_files: List[_files_type], in_memory: bool=False):
     parser = MISPtoSTIX21Parser()
     if in_memory or len(input_files) == 1:
-        objects = []
         for filename in input_files:
             parser.parse_json_content(filename)
-            objects.extend(parser.stix_objects)
+        objects = parser.stix_objects
         with open(output_filename, 'wt', encoding='utf-8') as f:
             f.write(json.dumps(Bundle_v21(objects), cls=STIXJSONEncoder, indent=4))
         return 1
@@ -389,7 +387,7 @@ def misp_collection_to_stix2_1(output_filename: _files_type, *input_files: List[
     for filename in input_files[:-1]:
         parser.parse_json_content(filename)
         with open(output_filename, 'at', encoding='utf-8') as f:
-            f.write(f'{json.dumps([parser.stix_objects], cls=STIXJSONEncoder, indent=4)[8:-8]},\n')
+            f.write(f'{json.dumps([parser.fetch_stix_objects], cls=STIXJSONEncoder, indent=4)[8:-8]},\n')
     parser.parse_json_content(input_files[-1])
     with open(output_filename, 'at', encoding='utf-8') as f:
         footer = '    ]\n}'

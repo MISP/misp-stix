@@ -28,8 +28,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def __init__(self, interoperability: bool):
         super().__init__()
         self.__ids: dict = {}
+        self.__index = 0
+        self.__initiated = False
         self.__interoperability = interoperability
-        self._results_handling_function = '_append_SDO'
         self._id_parsing_function = {
             'attribute': '_define_stix_object_id',
             'object': '_define_stix_object_id'
@@ -42,7 +43,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if json_content.get('response'):
             json_content = json_content['response']
             if isinstance(json_content, list):
-                self._events_parsing_init()
+                if not self.__initiated:
+                    self._initiate_events_parsing()
                 for event in json_content:
                     self._parse_misp_event(event)
                     self.__index = len(self.__objects)
@@ -53,18 +55,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def parse_misp_attributes(self, attributes: dict):
         self._results_handling_function = '_append_SDO_without_refs'
-        if hasattr(self, '_identifier') and self._identifier != 'attributes collection':
-            self.__ids = {}
         self._identifier = 'attributes collection'
-        self._markings = {}
-        self.__objects = []
-        self.__relationships = []
-        self.__object_refs = []
-        self.__identity_id = self._mapping.misp_identity_args['id']
-        if self.__identity_id not in self.unique_ids:
-            identity = self._create_identity(self._mapping.misp_identity_args)
-            self.__objects.append(identity)
-            self.__ids[self.__identity_id] = self.__identity_id
+        if not self.__initiated:
+            self._initiate_attributes_parsing()
         if 'Attribute' in attributes:
             if 'Galaxy' in attributes:
                 self._parse_event_galaxies(attributes['Galaxy'])
@@ -80,7 +73,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_relationships()
 
     def parse_misp_event(self, misp_event: dict):
-        self._events_parsing_init()
+        if not self.__initiated:
+            self._initiate_events_parsing()
         self._parse_misp_event(misp_event)
 
     def _parse_misp_event(self, misp_event: dict):
@@ -98,17 +92,47 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _define_stix_object_id(self, feature: str, misp_object: dict) -> str:
         return f"{feature}--{misp_object['uuid']}"
 
-    def _events_parsing_init(self):
-        self.__index = 0
+    def _initiate_attributes_parsing(self):
         self.__objects = []
-        if hasattr(self, '_identifier') and self._identifier == 'attributes collection':
-            self.__ids = {}
+        self.__object_refs = []
+        self.__relationships = []
+        self.__identity_id = self._mapping.misp_identity_args['id']
+        if self.__identity_id not in self.unique_ids:
+            identity = self._create_identity(self._mapping.misp_identity_args)
+            self._append_SDO_and_handle_index(identity)
+            self.__ids[self.__identity_id] = self.__identity_id
+        self.__initiated = True
+
+    def _initiate_events_parsing(self):
+        self.__objects = []
         if not hasattr(self._mapping, 'objects_mapping'):
             self._mapping.declare_objects_mapping()
+        self.__initiated = True
 
     @property
     def bundle(self) -> Union[Bundle_v20, Bundle_v21]:
+        """
+        Returns a STIX Bundle with the STIX objects converted from MISP.
+        Every variable used so far to store objects, IDs, references and so on must
+        be then re-initialised so the next MISP content that is converted does not
+        concern the Bundle that is generated here.
+        """
+        self.__ids = {}
+        self.__initiated = False
+        self._markings = {}
+        self.__index = 0
         return self._create_bundle()
+
+    @property
+    def fetch_stix_objects(self) -> list:
+        """
+        Fetch the list of STIX objects to be handled outside of this class (like to
+        add them in a STIX Bundle).
+        Variables like the ones containind STIX objects, references and so on are
+        re-initialised, but the list of unique IDs for instance remains the same.
+        """
+        self.__initiated = False
+        return self.__objects
 
     @property
     def identity_id(self) -> str:
@@ -127,6 +151,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     @property
     def stix_objects(self) -> list:
+        """
+        Simply returns the list of STIX objects.
+        All variables containing the IDs, STIX objects, references and so on remain
+        the same and are not re-initialised.
+        """
         return self.__objects
 
     @property
@@ -2408,8 +2437,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         orgc = self._misp_event['Orgc']
         orgc_id = orgc['uuid']
         self.__identity_id = f"identity--{orgc_id}"
-        if orgc_id not in self.unique_ids:
-            self.__ids[orgc_id] = self.__identity_id
+        if self.__identity_id not in self.unique_ids:
+            self.__ids[self.__identity_id] = self.__identity_id
             identity = self._create_identity_object(orgc['name'])
             self.__objects.append(identity)
             self.__index += 1
