@@ -38,6 +38,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._markings = {}
 
     def parse_json_content(self, filename: Union[Path, str]):
+        self._results_handling_function = '_append_SDO'
         with open(filename, 'rt', encoding='utf-8') as f:
             json_content = json.loads(f.read())
         if json_content.get('response'):
@@ -73,6 +74,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self._handle_relationships()
 
     def parse_misp_event(self, misp_event: dict):
+        self._results_handling_function = '_append_SDO'
         if not self.__initiated:
             self._initiate_events_parsing()
         self._parse_misp_event(misp_event)
@@ -99,7 +101,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self.__identity_id = self._mapping.misp_identity_args['id']
         if self.__identity_id not in self.unique_ids:
             identity = self._create_identity(self._mapping.misp_identity_args)
-            self._append_SDO_and_handle_index(identity)
+            self.__objects.append(identity)
             self.__ids[self.__identity_id] = self.__identity_id
         self.__initiated = True
 
