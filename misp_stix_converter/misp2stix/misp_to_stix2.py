@@ -54,6 +54,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self.parse_misp_event(json_content)
 
+    def parse_misp_attribute(self, attribute: dict):
+        self._results_handling_function = '_append_SDO_without_refs'
+        self._identifier = 'attribute feed'
+        if not self.__initiated:
+            self._initiate_feed_parsing()
+        self.__identity_id = self._handle_identity_from_feed(attribute.get('Event', {}))
+        if 'Attribute' in attribute:
+            attribute = attribute['Attribute']
+        self._resolve_attribute(attribute)
+
     def parse_misp_attributes(self, attributes: dict):
         self._results_handling_function = '_append_SDO_without_refs'
         self._identifier = 'attributes collection'
@@ -94,21 +104,47 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _define_stix_object_id(self, feature: str, misp_object: dict) -> str:
         return f"{feature}--{misp_object['uuid']}"
 
+    def _handle_default_identity(self) -> str:
+        identity_id = self._mapping.misp_identity_args['id']
+        if identity_id not in self.unique_ids:
+            identity = self._create_identity(self._mapping.misp_identity_args)
+            self.__objects.append(identity)
+            self.__ids[identity_id] = identity_id
+        return identity_id
+
+    def _handle_identity_from_feed(self, event: dict) -> str:
+        if 'Orgc' in event:
+            identity_id = f"identity--{event['Orgc']['uuid']}"
+            if identity_id not in self.unique_ids:
+                identity_args = {
+                    'type': 'identity',
+                    'id': identity_id,
+                    'name': event['Orgc']['name'],
+                    'identity_class': 'organization'
+                }
+                identity = self._create_identity(identity_args)
+                self.__objects.append(identity)
+                self.__ids[identity_id] = identity_id
+            return identity_id
+        return self._handle_default_identity()
+
     def _initiate_attributes_parsing(self):
         self.__objects = []
         self.__object_refs = []
         self.__relationships = []
-        self.__identity_id = self._mapping.misp_identity_args['id']
-        if self.__identity_id not in self.unique_ids:
-            identity = self._create_identity(self._mapping.misp_identity_args)
-            self.__objects.append(identity)
-            self.__ids[self.__identity_id] = self.__identity_id
+        self.__identity_id = self._handle_default_identity()
         self.__initiated = True
 
     def _initiate_events_parsing(self):
         self.__objects = []
         self.__index = 0
         if not hasattr(self._mapping, 'objects_mapping'):
+            self._mapping.declare_objects_mapping()
+        self.__initiated = True
+
+    def _initiate_feed_parsing(self, initiate_objects: Optional[bool] = False):
+        self.__objects = []
+        if initiate_objects and not hasattr(self,_mapping, 'objects_mapping'):
             self._mapping.declare_objects_mapping()
         self.__initiated = True
 
