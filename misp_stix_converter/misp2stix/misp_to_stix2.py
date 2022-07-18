@@ -107,6 +107,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _initiate_events_parsing(self):
         self.__objects = []
+        self.__index = 0
         if not hasattr(self._mapping, 'objects_mapping'):
             self._mapping.declare_objects_mapping()
         self.__initiated = True
