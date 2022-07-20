@@ -4140,7 +4140,7 @@ class TestSTIX21ExportInteroperability(TestSTIX2Export, TestSTIX21):
         self.assertEqual(tool.external_references[0].external_id, reference)
 
 
-class TestCollectionStix21Export(TestCollectionSTIX2Export):
+class TestCollectionSTIX21Export(TestCollectionSTIX2Export):
     def test_attributes_collection(self):
         name = 'test_attributes_collection'
         to_test_name = f'{name}.json.out'
@@ -4167,3 +4167,34 @@ class TestCollectionStix21Export(TestCollectionSTIX2Export):
         name = 'test_events_collection_1.json'
         self.assertEqual(misp_to_stix2_1(self._current_path / name), 1)
         self._check_stix2_results_export(f'{name}.out', 'test_event_stix21.json')
+
+
+class TestFeedSTIX21Export(TestSTIX2Export):
+    def setUp(self):
+        self.parser = MISPtoSTIX21Parser()
+
+    def test_attributes_feed(self):
+        attributes = get_attributes_feed()
+        for attribute in attributes[:2]:
+            self.parser.parse_misp_attribute(attribute)
+        bundle = self.parser.bundle
+        self.assertEqual(len(bundle.objects), 3)
+        identity1, indicator1, indicator2 = bundle.objects
+        for attribute in attributes[2:]:
+            self.parser.parse_misp_attribute(attribute)
+        bundle = self.parser.bundle
+        self.assertEqual(len(bundle.objects), 3)
+        identity2, indicator3, indicator4 = bundle.objects
+        self._assert_multiple_equal(
+            f"identity--{attributes[2]['Event']['Orgc']['uuid']}",
+            identity1.id,
+            identity2.id
+        )
+        self._assert_multiple_equal(
+            attributes[3]['Event']['Orgc']['name'],
+            identity1.name,
+            identity2.name
+        )
+        indicators = (indicator1, indicator2, indicator3, indicator4)
+        for attribute, indicator in zip(attributes, indicators):
+            self.assertEqual(indicator.id, f"indicator--{attribute['Attribute']['uuid']}")
