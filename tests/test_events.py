@@ -4943,3 +4943,90 @@ def get_hash_attributes():
             'uuid': 'e9f3dab7-1c2d-43ca-8bf7-d49214ca81a6'
         }
     }
+
+################################################################################
+#                              FEED TEST SAMPLES.                              #
+################################################################################
+
+def get_attributes_feed():
+    return [
+        {
+            "Attribute": {
+                "category": "Network activity",
+                "type": "ip-src",
+                "to_ids": True,
+                "uuid": "7a8932ed-aef2-4e49-84aa-a5499df161ad",
+                "timestamp": "1657805146",
+                "value": "1.1.1.1"
+            },
+            "Event": {
+                "uuid": "a6ef17d6-91cb-4a05-b10b-2f045daf874c","info": "MISP-STIX-Converter test event",
+                "date": "2020-10-25",
+                "timestamp": "1603642920",
+                "Orgc": {
+                    "name": "MISP-Project",
+                    "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
+                }
+            },
+        },
+        {
+            "Attribute": {
+                "category": "Network activity",
+                "type": "ip-src",
+                "to_ids": True,
+                "uuid": "ed07dc1a-6a47-4eb5-910a-9a18407c4217",
+                "timestamp": "1657805146",
+                "value": "8.8.8.8"
+            },
+            "Event": {
+                "uuid": "a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+                "info": "MISP-STIX-Converter test event",
+                "date": "2020-10-25",
+                "timestamp": "1603642920",
+                "Orgc": {
+                    "name": "MISP-Project",
+                    "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
+                }
+            },
+        },
+        {
+            "Attribute": {
+                "category": "Network activity",
+                "type": "ip-src",
+                "to_ids": True,
+                "uuid": "14c5e9f3-e959-4359-925c-013bbb04d2b3",
+                "timestamp": "1657805146",
+                "value": "1.2.3.4"
+            },
+            "Event": {
+                "uuid": "a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+                "info": "MISP-STIX-Converter test event",
+                "date": "2020-10-25",
+                "timestamp": "1603642920",
+                "Orgc": {
+                    "name": "MISP-Project",
+                    "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
+                }
+            },
+        },
+        {
+            "Attribute": {
+                "category": "Network activity",
+                "type": "ip-src",
+                "to_ids": True,
+                "uuid": "23a320d1-3cfd-46e6-8cdb-0f71088560f5",
+                "timestamp": "1657805146",
+                "value": "5.6.7.8"
+            },
+            "Event": {
+                "uuid": "a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+                "info": "MISP-STIX-Converter test event",
+                "date": "2020-10-25",
+                "timestamp": "1603642920",
+                "Orgc": {
+                    "name": "MISP-Project",
+                    "uuid": "a0c22599-9e58-4da4-96ac-7051603fa951"
+                }
+            }
+        }
+    ]
