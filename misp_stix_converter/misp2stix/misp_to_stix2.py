@@ -149,7 +149,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _initiate_feed_parsing(self, initiate_objects: Optional[bool] = False):
         self.__objects = []
-        if initiate_objects and not hasattr(self,_mapping, 'objects_mapping'):
+        if initiate_objects and not hasattr(self._mapping, 'objects_mapping'):
             self._mapping.declare_objects_mapping()
         self.__initiated = True
 
