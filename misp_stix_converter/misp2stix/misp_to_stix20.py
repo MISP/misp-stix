@@ -4,6 +4,7 @@
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix20_mapping import Stix20Mapping
 from collections import defaultdict
+from copy import deepcopy
 from datetime import datetime
 from stix2.properties import (DictionaryProperty, IDProperty, ListProperty,
                               ReferenceProperty, StringProperty, TimestampProperty)
@@ -121,6 +122,27 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             'interoperability': True
         }
         self._append_SDO(CustomNote(**custom_args))
+
+    def _handle_markings(self, object_args: dict, markings: tuple):
+        marking_ids = []
+        for marking in markings:
+            if marking in self._markings:
+                marking_ids.append(self._markings[marking]['marking'].id)
+                continue
+            if self._is_tlp_tag(marking):
+                marking_definition = deepcopy(self._mapping.tlp_markings[marking])
+                marking_id = marking_definition.id
+                if marking_id not in self.unique_ids:
+                    self._markings[marking] = {
+                        'marking': marking_definition,
+                        'used': False
+                    }
+                    self.__ids[marking_id] = marking_id
+                marking_ids.append(marking_id)
+                continue
+            object_args['labels'].append(marking)
+        if marking_ids:
+            object_args['object_marking_refs'] = marking_ids
 
     def _handle_opinion_object(self, sighting: dict, reference_id: str):
         opinion_args = {

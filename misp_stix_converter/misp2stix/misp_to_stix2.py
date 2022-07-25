@@ -6,7 +6,6 @@ import os
 import re
 from .exportparser import MISPtoSTIXParser
 from collections import defaultdict
-from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from stix2.properties import ListProperty, StringProperty
@@ -288,27 +287,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _get_object_ids(self, name: str, object_type: str) -> Generator[None, None, str]:
         return (stix_object['id'] for stix_object in self._galaxies_catalog[name][object_type])
-
-    def _handle_markings(self, object_args: dict, markings: tuple):
-        marking_ids = []
-        for marking in markings:
-            if marking in self._markings:
-                marking_ids.append(self._markings[marking]['marking'].id)
-                continue
-            if self._is_tlp_tag(marking):
-                marking_definition = deepcopy(self._mapping.tlp_markings[marking])
-                marking_id = marking_definition.id
-                if marking_id not in self.unique_ids:
-                    self._markings[marking] = {
-                        'marking': marking_definition,
-                        'used': False
-                    }
-                    self.__ids[marking_id] = marking_id
-                marking_ids.append(marking_id)
-                continue
-            object_args['labels'].append(marking)
-        if marking_ids:
-            object_args['object_marking_refs'] = marking_ids
 
     def _handle_relationships(self):
         for relationship in self.__relationships:

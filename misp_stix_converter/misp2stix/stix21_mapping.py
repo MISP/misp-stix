@@ -23,6 +23,13 @@ class Stix21Mapping(Stix2Mapping):
             )
         )
         self._declare_attributes_mapping(updates=v21_specific_attributes)
+        self.__confidence_tags = {
+            'misp:confidence-level="completely-confident"': 100,
+            'misp:confidence-level="usually-confident"': 75,
+            'misp:confidence-level="fairly-confident"': 50,
+            'misp:confidence-level="rarely-confident"': 25,
+            'misp:confidence-level="unconfident"': 0
+        }
         artifact_values = {
             "mime_type": "application/zip",
             "encryption_algorithm": "mime-type-indicated",
@@ -251,6 +258,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def annotation_single_fields(self) -> tuple:
         return self.__annotation_single_fields
+
+    @property
+    def confidence_tags(self) -> dict:
+        return self.__confidence_tags
 
     @property
     def credential_object_mapping(self) -> dict:
