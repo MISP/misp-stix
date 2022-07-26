@@ -155,7 +155,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                         'marking': marking_definition,
                         'used': False
                     }
-                    self.__ids[marking_id] = marking_id
+                    self.unique_ids[marking_id] = marking_id
                 marking_ids.append(marking_id)
                 continue
             object_args['labels'].append(marking)
