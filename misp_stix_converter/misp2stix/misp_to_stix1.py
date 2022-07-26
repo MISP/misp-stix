@@ -239,7 +239,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
                 sorted_tags[feature].append(tag)
             if confidence_tags:
                 campaign.confidence = Confidence(
-                    value = confidence_tags.pop(min(confidence_tags))['confidence'],
+                    value = confidence_tags[min(confidence_tags)]['confidence'],
                     timestamp = timestamp
                 )
                 for confidence_tag in confidence_tags.values():
