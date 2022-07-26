@@ -115,6 +115,32 @@ SCHEMALOC_DICT = Mapping(
 
 class Stix1Mapping:
     def __init__(self):
+        self.__confidence_mapping = {
+            'misp:confidence-level="completely-confident"': {
+                'score': 100,
+                'stix_value': 'High'
+            },
+            'misp:confidence-level="usually-confident"': {
+                'score': 75,
+                'stix_value': 'High'
+            },
+            'misp:confidence-level="fairly-confident"': {
+                'score': 50,
+                'stix_value': 'Medium'
+            },
+            'misp:confidence-level="rarely-confident"': {
+                'score': 25,
+                'stix_value': 'Low'
+            },
+            'misp:confidence-level="unconfident"': {
+                'score': 0,
+                'stix_value': 'None'
+            },
+            'misp:confidence-level="confidence-cannot-be-evaluated"': {
+                'score': 200,
+                'stix_value': 'Unknown'
+            }
+        }
         self.__confidence_description = "Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none"
         self.__confidence_value = "High"
         _hash_type_attributes = {
@@ -749,6 +775,10 @@ class Stix1Mapping:
     @property
     def attribute_types_mapping(self) -> dict:
         return self.__attribute_types_mapping
+
+    @property
+    def confidence_mapping(self) -> dict:
+        return self.__confidence_mapping
 
     @property
     def confidence_description(self) -> str:

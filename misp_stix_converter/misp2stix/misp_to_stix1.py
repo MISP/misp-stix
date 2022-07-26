@@ -118,6 +118,37 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         indicator.add_observable(observable)
         return indicator
 
+    def _handle_attribute_indicator_tags(self, attribute: dict, indicator: Indicator, timestamp: datetime) -> Confidence:
+        tags = self._handle_attribute_tags_and_galaxies(attribute, indicator)
+        if tags:
+            sorted_tags = defaultdict(list)
+            confidence_tags = {}
+            for tag in tags:
+                if tag in self._mapping.confidence_tags:
+                    confidence = self._mapping.confidence_mapping[tag]
+                    confidence_tags[confidence['score']] = {
+                        'tag': tag,
+                        'confidence': confidence['stix_value']
+                    }
+                    continue
+                feature = 'tlp_tags' if self._is_tlp_tag(tag) else 'simple_tags'
+                sorted_tags[feature].append(tag)
+            if confidence_tags:
+                confidence = Confidence(
+                    value = confidence_tags[min(confidence_tags)]['confidence'],
+                    timestamp = timestamp
+                )
+                for confidence_tag in confidence_tags.values():
+                    sorted_tags['simple_tags'].append(confidence_tag['tag'])
+                indicator.handling = self._create_handling(sorted_tags)
+                return confidence
+            indicator.handling = self._create_handling(sorted_tags)
+        return Confidence(
+            value = self._mapping.confidence_value,
+            description = self._mapping.confidence_description,
+            timestamp = timestamp
+        )
+
     def _handle_attribute_tags_and_galaxies(self, attribute: dict, indicator: Indicator) -> tuple:
         if attribute.get('Galaxy'):
             tag_names = []
@@ -194,7 +225,26 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         campaign.names = names
         tags = self._handle_non_indicator_attribute_tags_and_galaxies(attribute, campaign)
         if tags:
-            campaign.handling = self._set_handling(tags)
+            sorted_tags = defaultdict(list)
+            confidence_tags = {}
+            for tag in tags:
+                if tag in self._mapping.confidence_tags:
+                    confidence = self._mapping.confidence_mapping[tag]
+                    confidence_tags[confidence['score']] = {
+                        'tag': tag,
+                        'confidence': confidence['stix_value']
+                    }
+                    continue
+                feature = 'tlp_tags' if self._is_tlp_tag(tag) else 'simple_tags'
+                sorted_tags[feature].append(tag)
+            if confidence_tags:
+                campaign.confidence = Confidence(
+                    value = confidence_tags.pop(min(confidence_tags))['confidence'],
+                    timestamp = timestamp
+                )
+                for confidence_tag in confidence_tags.values():
+                    sorted_tags['simple_tags'].append(confidence_tag['tag'])
+            campaign.handling = self._create_handling(tags)
         self._stix_package.add_campaign(campaign)
 
     def _parse_custom_attribute(self, attribute: dict):
@@ -798,16 +848,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         indicator.producer = self._producer
         indicator.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
         indicator.description = attribute['comment'] if attribute.get('comment') else indicator.title
-        indicator.confidence = Confidence(
-            value=self._mapping.confidence_value,
-            description=self._mapping.confidence_description,
-            timestamp=timestamp
-        )
         indicator.add_indicator_type(self._set_indicator_type(attribute['type']))
         indicator.add_valid_time_position(ValidTime())
-        tags = self._handle_attribute_tags_and_galaxies(attribute, indicator)
-        if tags:
-            indicator.handling = self._set_handling(tags)
+        indicator.confidence = self._handle_attribute_indicator_tags(attribute, indicator, timestamp)
         return indicator
 
     @staticmethod
@@ -980,18 +1023,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         for tag in tags:
             feature = 'tlp_tags' if self._is_tlp_tag(tag) else 'simple_tags'
             sorted_tags[feature].append(tag)
-        handling = Marking()
-        marking_specification = MarkingSpecification()
-        if 'tlp_tags' in sorted_tags:
-            tlp_marking = TLPMarkingStructure()
-            tlp_marking.color = self._set_color(self._fetch_colors(sorted_tags['tlp_tags']))
-            marking_specification.marking_structures.append(tlp_marking)
-        for tag in sorted_tags['simple_tags']:
-            simple_marking = SimpleMarkingStructure()
-            simple_marking.statement = tag
-            marking_specification.marking_structures.append(simple_marking)
-        handling.add_marking(marking_specification)
-        return handling
+        return self._create_handling(sorted_tags)
 
     def _set_indicator_type(self, attribute_type: str) -> str:
         if attribute_type in self._mapping.misp_indicator_type:
@@ -1010,6 +1042,20 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
+
+    def _create_handling(self, sorted_tags: dict) -> Marking:
+        handling = Marking()
+        marking_specification = MarkingSpecification()
+        if 'tlp_tags' in sorted_tags:
+            tlp_marking = TLPMarkingStructure()
+            tlp_marking.color = self._set_color(self._fetch_colors(sorted_tags['tlp_tags']))
+            marking_specification.marking_structures.append(tlp_marking)
+        for tag in sorted_tags['simple_tags']:
+            simple_marking = SimpleMarkingStructure()
+            simple_marking.statement = tag
+            marking_specification.marking_structures.append(simple_marking)
+        handling.add_marking(marking_specification)
+        return handling
 
     @staticmethod
     def _from_datetime_to_str(date):
