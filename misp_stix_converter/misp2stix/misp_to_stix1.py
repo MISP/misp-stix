@@ -116,10 +116,6 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _handle_attribute_indicator(self, attribute: dict, observable: Observable) -> Indicator:
         indicator = self._create_indicator_from_attribute(attribute)
         indicator.add_observable(observable)
-        related_indicator = RelatedIndicator(
-            indicator,
-            relationship=attribute['category']
-        )
         return indicator
 
     def _handle_attribute_tags_and_galaxies(self, attribute: dict, indicator: Indicator) -> tuple:
