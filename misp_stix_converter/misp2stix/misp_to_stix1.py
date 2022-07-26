@@ -1050,10 +1050,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
             tlp_marking = TLPMarkingStructure()
             tlp_marking.color = self._set_color(self._fetch_colors(sorted_tags['tlp_tags']))
             marking_specification.marking_structures.append(tlp_marking)
-        for tag in sorted_tags['simple_tags']:
-            simple_marking = SimpleMarkingStructure()
-            simple_marking.statement = tag
-            marking_specification.marking_structures.append(simple_marking)
+        if 'simple_tags' in sorted_tags:
+            for tag in sorted_tags['simple_tags']:
+                simple_marking = SimpleMarkingStructure()
+                simple_marking.statement = tag
+                marking_specification.marking_structures.append(simple_marking)
         handling.add_marking(marking_specification)
         return handling
 
