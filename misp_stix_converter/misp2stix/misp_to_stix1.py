@@ -1351,12 +1351,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _handle_misp_object_with_context(self, misp_object: dict, observable: Observable):
         indicator = self._create_indicator_from_object(misp_object)
-        indicator.add_indicator_type(self._set_indicator_type(misp_object['name']))
-        indicator.add_valid_time_position(ValidTime())
         indicator.add_observable(observable)
-        tags = self._handle_object_tags_and_galaxies(misp_object, indicator)
-        if tags:
-            indicator.handling = self._set_handling(tags)
         related_indicator = RelatedIndicator(
             indicator,
             relationship=misp_object.get('meta-category')
@@ -1374,6 +1369,22 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     tag_names.update(self._quick_fetch_tag_names(galaxy))
             return tuple(tag for tag in tags if tag not in tag_names)
         return tuple(tags)
+
+    def _handle_object_indicator_tags(self, misp_object: dict, indicator: Indicator, timestamp: datetime) -> Confidence:
+        tags = self._handle_object_tags_and_galaxies(misp_object, indicator)
+        if tags:
+            sorted_tags, confidence_tags = self._sort_tags(tags)
+            indicator.handling = self._create_handling(sorted_tags)
+            if confidence_tags:
+                return Confidence(
+                    value = confidence_tags[min(confidence_tags)],
+                    timestamp = timestamp
+                )
+        return Confidence(
+            value=self._mapping.confidence_value,
+            description=self._mapping.confidence_description,
+            timestamp=timestamp
+        )
 
     def _handle_object_tags_and_galaxies(self, misp_object: dict, indicator: Indicator) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
@@ -2187,11 +2198,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         indicator.title = f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
         if any(misp_object.get(feature) for feature in ('comment', 'description')):
             indicator.description = misp_object['comment'] if misp_object.get('comment') else misp_object['description']
-        indicator.confidence = Confidence(
-            value=self._mapping.confidence_value,
-            description=self._mapping.confidence_description,
-            timestamp=timestamp
-        )
+        indicator.add_indicator_type(self._set_indicator_type(misp_object['name']))
+        indicator.add_valid_time_position(ValidTime())
+        indicator.confidence = self._handle_object_indicator_tags(misp_object, indicator, timestamp)
         return indicator
 
     @staticmethod
