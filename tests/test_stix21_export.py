@@ -56,8 +56,8 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             self.parser._mapping.confidence_tags[misp_object['Attribute'][2]['Tag'][0]['name']]
         )
         self.assertEqual(
-            stix_object.labels[-2:],
-            [attribute['Tag'][0]['name'] for attribute in misp_object['Attribute'][1:3]]
+            set(stix_object.labels[-2:]),
+            set(attribute['Tag'][0]['name'] for attribute in misp_object['Attribute'][1:3])
         )
 
     def _check_opinion_features(self, opinion, sighting, object_id):
