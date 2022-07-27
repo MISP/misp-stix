@@ -140,11 +140,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _handle_markings(self, object_args: dict, markings: tuple):
         marking_ids = []
-        confidence_tags = {}
+        confidence_score = []
         for marking in markings:
-            if marking in self._mapping.confidence_tags:
-                confidence_tags[self._mapping.confidence_tags[marking]] = marking
-                continue
             if marking in self._markings:
                 marking_ids.append(self._markings[marking]['marking'].id)
                 continue
@@ -159,10 +156,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     self.unique_ids[marking_id] = marking_id
                 marking_ids.append(marking_id)
                 continue
+            if marking in self._mapping.confidence_tags:
+                confidence_score.append(self._mapping.confidence_tags[marking])
             object_args['labels'].append(marking)
-        if confidence_tags:
-            object_args['confidence'] = min(confidence_tags)
-            object_args['labels'].extend(confidence_tags.values())
+        if confidence_score:
+            object_args['confidence'] = min(confidence_score)
         if marking_ids:
             object_args['object_marking_refs'] = marking_ids
 
