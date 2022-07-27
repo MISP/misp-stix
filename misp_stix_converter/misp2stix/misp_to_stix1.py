@@ -70,7 +70,7 @@ from stix.ttp.attack_pattern import AttackPattern
 from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
 from stix.ttp.victim_targeting import VictimTargeting
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 from uuid import uuid5, UUID
 
 _FILE_SINGLE_ATTRIBUTES = (
@@ -121,28 +121,13 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _handle_attribute_indicator_tags(self, attribute: dict, indicator: Indicator, timestamp: datetime) -> Confidence:
         tags = self._handle_attribute_tags_and_galaxies(attribute, indicator)
         if tags:
-            sorted_tags = defaultdict(list)
-            confidence_tags = {}
-            for tag in tags:
-                if tag in self._mapping.confidence_tags:
-                    confidence = self._mapping.confidence_mapping[tag]
-                    confidence_tags[confidence['score']] = {
-                        'tag': tag,
-                        'confidence': confidence['stix_value']
-                    }
-                    continue
-                feature = 'tlp_tags' if self._is_tlp_tag(tag) else 'simple_tags'
-                sorted_tags[feature].append(tag)
+            sorted_tags, confidence_tags = self._sort_tags(tags)
+            indicator.handling = self._create_handling(sorted_tags)
             if confidence_tags:
-                confidence = Confidence(
-                    value = confidence_tags[min(confidence_tags)]['confidence'],
+                return Confidence(
+                    value = confidence_tags[min(confidence_tags)],
                     timestamp = timestamp
                 )
-                for confidence_tag in confidence_tags.values():
-                    sorted_tags['simple_tags'].append(confidence_tag['tag'])
-                indicator.handling = self._create_handling(sorted_tags)
-                return confidence
-            indicator.handling = self._create_handling(sorted_tags)
         return Confidence(
             value = self._mapping.confidence_value,
             description = self._mapping.confidence_description,
@@ -225,26 +210,13 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         campaign.names = names
         tags = self._handle_non_indicator_attribute_tags_and_galaxies(attribute, campaign)
         if tags:
-            sorted_tags = defaultdict(list)
-            confidence_tags = {}
-            for tag in tags:
-                if tag in self._mapping.confidence_tags:
-                    confidence = self._mapping.confidence_mapping[tag]
-                    confidence_tags[confidence['score']] = {
-                        'tag': tag,
-                        'confidence': confidence['stix_value']
-                    }
-                    continue
-                feature = 'tlp_tags' if self._is_tlp_tag(tag) else 'simple_tags'
-                sorted_tags[feature].append(tag)
+            sorted_tags, confidence_tags = self._sort_tags(tags)
             if confidence_tags:
                 campaign.confidence = Confidence(
-                    value = confidence_tags[min(confidence_tags)]['confidence'],
+                    value = confidence_tags[min(confidence_tags)],
                     timestamp = timestamp
                 )
-                for confidence_tag in confidence_tags.values():
-                    sorted_tags['simple_tags'].append(confidence_tag['tag'])
-            campaign.handling = self._create_handling(tags)
+            campaign.handling = self._create_handling(sorted_tags)
         self._stix_package.add_campaign(campaign)
 
     def _parse_custom_attribute(self, attribute: dict):
@@ -1061,6 +1033,19 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     @staticmethod
     def _from_datetime_to_str(date):
         return date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+    def _sort_tags(self, tags: list) -> Tuple[dict, dict]:
+        sorted_tags = defaultdict(list)
+        confidence_tags = {}
+        for tag in tags:
+            if tag in self._mapping.confidence_mapping:
+                confidence = self._mapping.confidence_mapping[tag]
+                confidence_tags[confidence['score']] = confidence['stix_value']
+                sorted_tags['simple_tags'].append(tag)
+            else:
+                feature = 'tlp_tags' if self._is_tlp_tag(tag) else 'simple_tags'
+                sorted_tags[feature].append(tag)
+        return sorted_tags, confidence_tags
 
 
 class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
