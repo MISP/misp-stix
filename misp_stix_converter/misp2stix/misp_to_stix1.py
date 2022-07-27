@@ -1160,36 +1160,43 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     ################################################################################
 
     def _create_incident(self) -> Incident:
+        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
         incident_id = f"{self._orgname_id}:Incident-{self._misp_event['uuid']}"
         incident = Incident(
-            id_=incident_id,
-            title=self._misp_event['info'],
-            timestamp=self._datetime_from_timestamp(self._misp_event['timestamp'])
+            id_ = incident_id,
+            title = self._misp_event['info'],
+            timestamp = timestamp
         )
         incident_time = Time()
         incident_time.incident_discovery = self._misp_event['date']
         if self._is_published():
             incident_time.incident_reported = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
         incident.time = incident_time
+        if self._misp_event.get('id'):
+            external_id = ExternalID(value=self._misp_event['id'], source='MISP Event')
+            incident.add_external_id(external_id)
+        if self._misp_event.get('analysis'):
+            status = self._mapping.status_mapping[self._misp_event['analysis']]
+            incident.status = IncidentStatus(status)
+        source = self._set_information_source()
+        incident.information_source = self._create_information_source(source)
+        incident.reporter = self._producer
         return incident
 
     def _generate_stix_objects(self):
+        tags = self._handle_event_tags_and_galaxies()
+        if tags:
+            sorted_tags, confidence_tags = self._sort_tags(tags)
+            if confidence_tags:
+                self._incident.confidence = Confidence(
+                    value = confidence_tags[min(confidence_tags)],
+                    timestamp = self._incident.timestamp
+                )
+            self._incident.handling = self._create_handling(sorted_tags)
         if self._misp_event.get('threat_level_id'):
             threat_level = self._mapping.threat_level_mapping[self._misp_event['threat_level_id']]
             self._add_journal_entry(f'Event Threat Level: {threat_level}')
         self._add_journal_entry('MISP Tag: misp:tool="MISP-STIX-Converter"')
-        tags = self._handle_event_tags_and_galaxies()
-        if tags:
-            self._incident.handling = self._set_handling(tags)
-        if self._misp_event.get('id'):
-            external_id = ExternalID(value=self._misp_event['id'], source='MISP Event')
-            self._incident.add_external_id(external_id)
-        if self._misp_event.get('analysis'):
-            status = self._mapping.status_mapping[self._misp_event['analysis']]
-            self._incident.status = IncidentStatus(status)
-        source = self._set_information_source()
-        self._incident.information_source = self._create_information_source(source)
-        self._incident.reporter = self._producer
         if self._misp_event.get('Attribute'):
             for attribute in self._misp_event['Attribute']:
                 self._resolve_attribute(attribute)
