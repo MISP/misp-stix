@@ -2704,6 +2704,42 @@ _TEST_X509_OBJECT = {
     ]
 }
 
+_CAMPAIGN_NAME_ATTRIBUTE = {
+    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "type": "campaign-name",
+    "category": "Attribution",
+    "value": "MartyMcFly",
+    "timestamp": "1603642920",
+    "to_ids": False
+}
+
+_INDICATOR_ATTRIBUTE = {
+    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "type": "domain",
+    "category": "Network activity",
+    "value": "circl.lu",
+    "timestamp": "1603642920",
+    "comment": "Domain test attribute",
+    "to_ids": True
+}
+
+_NON_INDICATOR_ATTRIBUTE = {
+    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "type": "vulnerability",
+    "category": "External analysis",
+    "value": "CVE-2017-11774",
+    "timestamp": "1603642920",
+    "comment": "Vulnerability test attribute"
+}
+
+_OBSERVABLE_ATTRIBUTE = {
+    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+    "type": "AS",
+    "category": "Network activity",
+    "timestamp": "1603642920",
+    "value": "AS174"
+}
+
 ################################################################################
 #                               BASE EVENT TESTS                               #
 ################################################################################
@@ -2712,13 +2748,24 @@ def get_base_event():
     return deepcopy(_BASE_EVENT)
 
 
-def get_published_event():
-    base_event = deepcopy(_BASE_EVENT)
-    base_event['Event']['date'] = '2020-10-25'
-    base_event['Event']['timestamp'] = '1603642920'
-    base_event['Event']['published'] = True
-    base_event['Event']['publish_timestamp'] = "1603642920"
-    return base_event
+def get_event_with_attribute_confidence_tags():
+    tags = [
+        {'name': 'tlp:white'},
+        {"name": 'misp:confidence-level="completely-confident"'},
+        {"name": 'misp:confidence-level="fairly-confident"'}
+    ]
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Tag'] = deepcopy(tags)
+    attributes = [
+        deepcopy(_INDICATOR_ATTRIBUTE),
+        deepcopy(_CAMPAIGN_NAME_ATTRIBUTE),
+        deepcopy(_NON_INDICATOR_ATTRIBUTE),
+        deepcopy(_OBSERVABLE_ATTRIBUTE)
+    ]
+    for attribute in attributes:
+        attribute['Tag'] = deepcopy(tags)
+    event['Event']['Attribute'] = attributes
+    return event
 
 
 def get_event_with_escaped_values_v20():
@@ -2745,6 +2792,28 @@ def get_event_with_escaped_values_v21():
     return event
 
 
+def get_event_with_object_confidence_tags():
+    tags = [
+        {'name': 'tlp:white'},
+        {'name': 'misp:confidence-level="confidence-cannot-be-evaluated"'},
+        {'name': 'misp:confidence-level="usually-confident"'}
+    ]
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Tag'] = deepcopy(tags)
+    ip_port_object = deepcopy(_TEST_IP_PORT_OBJECT)
+    ip_port_object['Attribute'][0]['to_ids'] = True
+    misp_objects = [
+        ip_port_object,
+        deepcopy(_TEST_COURSE_OF_ACTION_OBJECT),
+        deepcopy(_TEST_ASN_OBJECT)
+    ]
+    for misp_object in misp_objects:
+        for attribute, tag in zip(misp_object['Attribute'][:3], tags):
+            attribute['Tag'] = [tag]
+    event['Event']['Object'] = misp_objects
+    return event
+
+
 def get_event_with_tags():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Tag'] = [
@@ -2757,6 +2826,15 @@ def get_event_with_tags():
         deepcopy(_TEST_ATTACK_PATTERN_GALAXY)
     ]
     return event
+
+
+def get_published_event():
+    base_event = deepcopy(_BASE_EVENT)
+    base_event['Event']['date'] = '2020-10-25'
+    base_event['Event']['timestamp'] = '1603642920'
+    base_event['Event']['published'] = True
+    base_event['Event']['publish_timestamp'] = "1603642920"
+    return base_event
 
 
 ################################################################################
@@ -2904,33 +2982,6 @@ _IBAN_ATTRIBUTE = {
     "to_ids": True
 }
 
-_INDICATOR_ATTRIBUTE = {
-    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "type": "domain",
-    "category": "Network activity",
-    "value": "circl.lu",
-    "timestamp": "1603642920",
-    "comment": "Domain test attribute",
-    "to_ids": True
-}
-
-_NON_INDICATOR_ATTRIBUTE = {
-    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "type": "vulnerability",
-    "category": "External analysis",
-    "value": "CVE-2017-11774",
-    "timestamp": "1603642920",
-    "comment": "Vulnerability test attribute"
-}
-
-_OBSERVABLE_ATTRIBUTE = {
-    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-    "type": "AS",
-    "category": "Network activity",
-    "timestamp": "1603642920",
-    "value": "AS174"
-}
-
 _PORT_ATTRIBUTE = {
     "uuid": "1af096a0-efa1-4331-9300-a6b5eb4df2e6",
     "type": "port",
@@ -3033,14 +3084,7 @@ def get_event_with_attachment_attribute():
 def get_event_with_campaign_name_attribute():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [
-        {
-            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-            "type": "campaign-name",
-            "category": "Attribution",
-            "value": "MartyMcFly",
-            "timestamp": "1603642920",
-            "to_ids": False
-        }
+        deepcopy(_CAMPAIGN_NAME_ATTRIBUTE)
     ]
     return event
 

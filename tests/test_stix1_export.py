@@ -550,6 +550,12 @@ class TestStix1Export(unittest.TestCase):
         return int(dtime.replace(tzinfo=timezone.utc).timestamp())
 
     @staticmethod
+    def _parse_tag(tag_name):
+        if tag_name.startswith('tlp:'):
+            return tag_name.split(':')[1].upper()
+        return tag_name
+
+    @staticmethod
     def _remove_ids_flags(event):
         for misp_object in event['Event']['Object']:
             for attribute in misp_object['Attribute']:
@@ -736,6 +742,88 @@ class TestStix1Export(unittest.TestCase):
         self.assertEqual(incident.information_source.identity.name, _DEFAULT_ORGNAME)
         self.assertEqual(incident.reporter.identity.name, _DEFAULT_ORGNAME)
 
+    def _test_event_with_attribute_confidence_tags(self):
+        event = get_event_with_attribute_confidence_tags()
+        domain, campaign_name, vulnerability, _ = event['Event']['Attribute']
+        self.parser.parse_misp_event(event)
+        incident = self.parser.stix_package.incidents[0]
+        self.assertEqual(incident.confidence.value, 'Medium')
+        marking = incident.handling[0]
+        self.assertEqual(len(marking.marking_structures), 3)
+        self.assertEqual(
+            tuple(self._parse_tag(tag['name']) for tag in event['Event']['Tag']),
+            tuple(self._get_marking_value(marking) for marking in marking.marking_structures)
+        )
+        campaign = self.parser.stix_package.campaigns[0]
+        self.assertEqual(campaign.confidence.value, 'Medium')
+        campaign_marking = campaign.handling[0]
+        self.assertEqual(len(campaign_marking.marking_structures), 3)
+        self.assertEqual(
+            tuple(self._parse_tag(tag['name']) for tag in campaign_name['Tag']),
+            tuple(self._get_marking_value(marking) for marking in campaign_marking.marking_structures)
+        )
+        indicator = incident.related_indicators.indicator[0].item
+        self.assertEqual(indicator.confidence.value, 'Medium')
+        indicator_marking = indicator.handling[0]
+        self.assertEqual(len(indicator_marking.marking_structures), 3)
+        self.assertEqual(
+            tuple(self._parse_tag(tag['name']) for tag in domain['Tag']),
+            tuple(self._get_marking_value(marking) for marking in indicator_marking.marking_structures)
+        )
+        observable = incident.related_observables.observable[0].item
+        self.assertFalse(hasattr(observable, 'confidence'))
+        self.assertFalse(hasattr(observable, 'handling'))
+        ttp = self.parser.stix_package.ttps.ttp[0]
+        self.assertFalse(hasattr(ttp, 'confidence'))
+        vulnerability_marking = ttp.handling[0]
+        self.assertEqual(len(vulnerability_marking.marking_structures), 3)
+        self.assertEqual(
+            tuple(self._parse_tag(tag['name']) for tag in vulnerability['Tag']),
+            tuple(self._get_marking_value(marking) for marking in vulnerability_marking.marking_structures)
+        )
+
+    def _test_event_with_object_confidence_tags(self):
+        event = get_event_with_object_confidence_tags()
+        ip_port, course_of_action, _ = event['Event']['Object']
+        self.parser.parse_misp_event(event)
+        incident = self.parser.stix_package.incidents[0]
+        self.assertEqual(incident.confidence.value, 'High')
+        marking = incident.handling[0]
+        self.assertEqual(len(marking.marking_structures), 3)
+        self.assertEqual(
+            tuple(self._parse_tag(tag['name']) for tag in event['Event']['Tag']),
+            tuple(self._get_marking_value(marking) for marking in marking.marking_structures)
+        )
+        indicator = incident.related_indicators.indicator[0].item
+        self.assertEqual(indicator.confidence.value, 'High')
+        indicator_marking = indicator.handling[0]
+        self.assertEqual(len(indicator_marking.marking_structures), 3)
+        self.assertEqual(
+            set(self._parse_tag(attr['Tag'][0]['name']) for attr in ip_port['Attribute'][:3]),
+            set(self._get_marking_value(marking) for marking in indicator_marking.marking_structures)
+        )
+        coa = self.parser.stix_package.courses_of_action[0]
+        self.assertFalse(hasattr(coa, 'confidence'))
+        coa_marking = coa.handling[0]
+        self.assertEqual(len(coa_marking.marking_structures), 3)
+        self.assertEqual(
+            set(self._parse_tag(attr['Tag'][0]['name']) for attr in course_of_action['Attribute'][:3]),
+            set(self._get_marking_value(marking) for marking in coa_marking.marking_structures)
+        )
+        observable = incident.related_observables.observable[0].item
+        self.assertFalse(hasattr(observable, 'confidence'))
+        self.assertFalse(hasattr(observable, 'handling'))
+
+    def _test_event_with_tags(self):
+        event = get_event_with_tags()
+        self.parser.parse_misp_event(event)
+        marking = self.parser.stix_package.incidents[0].handling[0]
+        self.assertEqual(len(marking.marking_structures), 3)
+        markings = tuple(self._get_marking_value(marking) for marking in marking.marking_structures)
+        self.assertIn('WHITE', markings)
+        self.assertIn('misp:tool="misp2stix"', markings)
+        self.assertIn('misp-galaxy:mitre-attack-pattern="Code Signing - T1116"', markings)
+
     def _test_published_event(self):
         event = get_published_event()
         self.parser.parse_misp_event(event)
@@ -752,16 +840,6 @@ class TestStix1Export(unittest.TestCase):
             self._get_utc_timestamp(incident.time.incident_reported.value),
             int(event['Event']['publish_timestamp'])
         )
-
-    def _test_event_with_tags(self):
-        event = get_event_with_tags()
-        self.parser.parse_misp_event(event)
-        marking = self.parser.stix_package.incidents[0].handling[0]
-        self.assertEqual(len(marking.marking_structures), 3)
-        markings = tuple(self._get_marking_value(marking) for marking in marking.marking_structures)
-        self.assertIn('WHITE', markings)
-        self.assertIn('misp:tool="misp2stix"', markings)
-        self.assertIn('misp-galaxy:mitre-attack-pattern="Code Signing - T1116"', markings)
 
     ################################################################################
     #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
@@ -2038,11 +2116,17 @@ class TestStix11Export(TestStix1Export):
     def test_base_event(self):
         self._test_base_event('1.1.1')
 
-    def test_published_event(self):
-        self._test_published_event()
+    def test_event_with_attribute_confidence_tags(self):
+        self._test_event_with_attribute_confidence_tags()
+
+    def test_event_with_object_confidence_tags(self):
+        self._test_event_with_object_confidence_tags()
 
     def test_event_with_tags(self):
         self._test_event_with_tags()
+
+    def test_published_event(self):
+        self._test_published_event()
 
     ################################################################################
     #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
@@ -2344,11 +2428,17 @@ class TestStix12Export(TestStix1Export):
     def test_base_event(self):
         self._test_base_event('1.2')
 
-    def test_published_event(self):
-        self._test_published_event()
+    def test_event_with_attribute_confidence_tags(self):
+        self._test_event_with_attribute_confidence_tags()
+
+    def test_event_with_object_confidence_tags(self):
+        self._test_event_with_object_confidence_tags()
 
     def test_event_with_tags(self):
         self._test_event_with_tags()
+
+    def test_published_event(self):
+        self._test_published_event()
 
     ################################################################################
     #                        SINGLE ATTRIBUTES EXPORT TESTS                        #
