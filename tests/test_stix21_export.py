@@ -37,11 +37,28 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
 
+    def _check_attribute_confidence_tags(self, stix_object, attribute):
+        self.assertEqual(
+            stix_object.confidence,
+            self.parser._mapping.confidence_tags[attribute['Tag'][-1]['name']]
+        )
+        self.assertEqual(stix_object.labels[-2:], [tag['name'] for tag in attribute['Tag'][1:]])
+
     def _check_bundle_features(self, length):
         bundle = self.parser.bundle
         self.assertEqual(bundle.type, 'bundle')
         self.assertEqual(len(bundle.objects), length)
         return bundle.objects
+
+    def _check_object_confidence_tags(self, stix_object, misp_object):
+        self.assertEqual(
+            stix_object.confidence,
+            self.parser._mapping.confidence_tags[misp_object['Attribute'][2]['Tag'][0]['name']]
+        )
+        self.assertEqual(
+            set(stix_object.labels[-2:]),
+            set(attribute['Tag'][0]['name'] for attribute in misp_object['Attribute'][1:3])
+        )
 
     def _check_opinion_features(self, opinion, sighting, object_id):
         self.assertEqual(opinion.type, 'opinion')
@@ -400,20 +417,35 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         )
         self.assertEqual(note.object_refs, [grouping.id])
 
-    def test_published_event(self):
-        event = get_published_event()
-        orgc = event['Event']['Orgc']
+    def test_event_with_attribute_confidence_tags(self):
+        event = get_event_with_attribute_confidence_tags()
+        tlp_tag, *confidence_tags = event['Event']['Tag']
+        domain, campaign_name, vulnerability_attribute, AS = event['Event']['Attribute']
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(3)
+        stix_objects = self._check_bundle_features(8)
         self._check_spec_versions(stix_objects)
-        identity, report, _ = stix_objects
-        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        identity_id = self._check_identity_features(identity, orgc, timestamp)
-        self._check_report_features(report, event['Event'], identity_id, timestamp)
+        _, grouping, indicator, campaign, vulnerability, observed_data, _, marking = stix_objects
         self.assertEqual(
-            report.published,
-            self._datetime_from_timestamp(event['Event']['publish_timestamp'])
+            grouping.confidence,
+            self.parser._mapping.confidence_tags[confidence_tags[1]['name']]
         )
+        self.assertEqual(grouping.labels[-2:], [tag['name'] for tag in confidence_tags])
+        self._assert_multiple_equal(
+            [marking.id],
+            grouping.object_marking_refs,
+            indicator.object_marking_refs,
+            campaign.object_marking_refs,
+            vulnerability.object_marking_refs,
+            observed_data.object_marking_refs
+        )
+        self.assertEqual(
+            f'{marking.definition_type}:{marking.definition[marking.definition_type]}',
+            tlp_tag['name']
+        )
+        self._check_attribute_confidence_tags(indicator, domain)
+        self._check_attribute_confidence_tags(campaign, campaign_name)
+        self._check_attribute_confidence_tags(vulnerability, vulnerability_attribute)
+        self._check_attribute_confidence_tags(observed_data, AS)
 
     def test_event_with_escaped_characters(self):
         event = get_event_with_escaped_values_v21()
@@ -460,6 +492,34 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         object_ids = {ip_src.id, observed_data.id, domain_ip.id}
         self.assertEqual(set(object_refs), object_ids)
 
+    def test_event_with_object_confidence_tags(self):
+        event = get_event_with_object_confidence_tags()
+        tlp_tag, *confidence_tags = event['Event']['Tag']
+        ip_port, course_of_action, asn = event['Event']['Object']
+        self.parser.parse_misp_event(event)
+        stix_objects = self._check_bundle_features(7)
+        self._check_spec_versions(stix_objects)
+        _, grouping, indicator, coa, observed_data, _, marking = stix_objects
+        self._assert_multiple_equal(
+            grouping.confidence,
+            self.parser._mapping.confidence_tags[confidence_tags[1]['name']]
+        )
+        self.assertEqual(grouping.labels[-2:], [tag['name'] for tag in confidence_tags])
+        self._assert_multiple_equal(
+            [marking.id],
+            grouping.object_marking_refs,
+            indicator.object_marking_refs,
+            coa.object_marking_refs,
+            observed_data.object_marking_refs
+        )
+        self.assertEqual(
+            f'{marking.definition_type}:{marking.definition[marking.definition_type]}',
+            tlp_tag['name']
+        )
+        self._check_object_confidence_tags(indicator, ip_port)
+        self._check_object_confidence_tags(coa, course_of_action)
+        self._check_object_confidence_tags(observed_data, asn)
+
     def test_event_with_sightings(self):
         event = get_event_with_sightings()
         orgc = event['Event']['Orgc']
@@ -498,7 +558,6 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             observed_data.id,
             identity2.id
         )
-        print(self.parser.bundle.serialize(indent=4))
         self._check_opinion_features(
             opinion1,
             sightings1[2],
@@ -540,6 +599,21 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         _, _, _, marking = stix_objects
         self.assertEqual(marking.definition_type, 'tlp')
         self.assertEqual(marking.definition['tlp'], 'white')
+
+    def test_published_event(self):
+        event = get_published_event()
+        orgc = event['Event']['Orgc']
+        self.parser.parse_misp_event(event)
+        stix_objects = self._check_bundle_features(3)
+        self._check_spec_versions(stix_objects)
+        identity, report, _ = stix_objects
+        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        self._check_report_features(report, event['Event'], identity_id, timestamp)
+        self.assertEqual(
+            report.published,
+            self._datetime_from_timestamp(event['Event']['publish_timestamp'])
+        )
 
     ################################################################################
     #                        SINGLE ATTRIBUTES EXPORT TESTS                        #

@@ -70,7 +70,7 @@ from stix.ttp.attack_pattern import AttackPattern
 from stix.ttp.malware_instance import MalwareInstance
 from stix.ttp.resource import Resource, Tools
 from stix.ttp.victim_targeting import VictimTargeting
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 from uuid import uuid5, UUID
 
 _FILE_SINGLE_ATTRIBUTES = (
@@ -116,11 +116,23 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     def _handle_attribute_indicator(self, attribute: dict, observable: Observable) -> Indicator:
         indicator = self._create_indicator_from_attribute(attribute)
         indicator.add_observable(observable)
-        related_indicator = RelatedIndicator(
-            indicator,
-            relationship=attribute['category']
-        )
         return indicator
+
+    def _handle_attribute_indicator_tags(self, attribute: dict, indicator: Indicator, timestamp: datetime) -> Confidence:
+        tags = self._handle_attribute_tags_and_galaxies(attribute, indicator)
+        if tags:
+            sorted_tags, confidence_tags = self._sort_tags(tags)
+            indicator.handling = self._create_handling(sorted_tags)
+            if confidence_tags:
+                return Confidence(
+                    value = confidence_tags[min(confidence_tags)],
+                    timestamp = timestamp
+                )
+        return Confidence(
+            value = self._mapping.confidence_value,
+            description = self._mapping.confidence_description,
+            timestamp = timestamp
+        )
 
     def _handle_attribute_tags_and_galaxies(self, attribute: dict, indicator: Indicator) -> tuple:
         if attribute.get('Galaxy'):
@@ -198,7 +210,13 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         campaign.names = names
         tags = self._handle_non_indicator_attribute_tags_and_galaxies(attribute, campaign)
         if tags:
-            campaign.handling = self._set_handling(tags)
+            sorted_tags, confidence_tags = self._sort_tags(tags)
+            if confidence_tags:
+                campaign.confidence = Confidence(
+                    value = confidence_tags[min(confidence_tags)],
+                    timestamp = timestamp
+                )
+            campaign.handling = self._create_handling(sorted_tags)
         self._stix_package.add_campaign(campaign)
 
     def _parse_custom_attribute(self, attribute: dict):
@@ -802,16 +820,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         indicator.producer = self._producer
         indicator.title = f"{attribute['category']}: {attribute['value']} (MISP Attribute)"
         indicator.description = attribute['comment'] if attribute.get('comment') else indicator.title
-        indicator.confidence = Confidence(
-            value=self._mapping.confidence_value,
-            description=self._mapping.confidence_description,
-            timestamp=timestamp
-        )
         indicator.add_indicator_type(self._set_indicator_type(attribute['type']))
         indicator.add_valid_time_position(ValidTime())
-        tags = self._handle_attribute_tags_and_galaxies(attribute, indicator)
-        if tags:
-            indicator.handling = self._set_handling(tags)
+        indicator.confidence = self._handle_attribute_indicator_tags(attribute, indicator, timestamp)
         return indicator
 
     @staticmethod
@@ -984,18 +995,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         for tag in tags:
             feature = 'tlp_tags' if self._is_tlp_tag(tag) else 'simple_tags'
             sorted_tags[feature].append(tag)
-        handling = Marking()
-        marking_specification = MarkingSpecification()
-        if 'tlp_tags' in sorted_tags:
-            tlp_marking = TLPMarkingStructure()
-            tlp_marking.color = self._set_color(self._fetch_colors(sorted_tags['tlp_tags']))
-            marking_specification.marking_structures.append(tlp_marking)
-        for tag in sorted_tags['simple_tags']:
-            simple_marking = SimpleMarkingStructure()
-            simple_marking.statement = tag
-            marking_specification.marking_structures.append(simple_marking)
-        handling.add_marking(marking_specification)
-        return handling
+        return self._create_handling(sorted_tags)
 
     def _set_indicator_type(self, attribute_type: str) -> str:
         if attribute_type in self._mapping.misp_indicator_type:
@@ -1015,9 +1015,37 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
 
+    def _create_handling(self, sorted_tags: dict) -> Marking:
+        handling = Marking()
+        marking_specification = MarkingSpecification()
+        if 'tlp_tags' in sorted_tags:
+            tlp_marking = TLPMarkingStructure()
+            tlp_marking.color = self._set_color(self._fetch_colors(sorted_tags['tlp_tags']))
+            marking_specification.marking_structures.append(tlp_marking)
+        if 'simple_tags' in sorted_tags:
+            for tag in sorted_tags['simple_tags']:
+                simple_marking = SimpleMarkingStructure()
+                simple_marking.statement = tag
+                marking_specification.marking_structures.append(simple_marking)
+        handling.add_marking(marking_specification)
+        return handling
+
     @staticmethod
     def _from_datetime_to_str(date):
         return date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+
+    def _sort_tags(self, tags: list) -> Tuple[dict, dict]:
+        sorted_tags = defaultdict(list)
+        confidence_tags = {}
+        for tag in tags:
+            if tag in self._mapping.confidence_mapping:
+                confidence = self._mapping.confidence_mapping[tag]
+                confidence_tags[confidence['score']] = confidence['stix_value']
+                sorted_tags['simple_tags'].append(tag)
+            else:
+                feature = 'tlp_tags' if self._is_tlp_tag(tag) else 'simple_tags'
+                sorted_tags[feature].append(tag)
+        return sorted_tags, confidence_tags
 
 
 class MISPtoSTIX1AttributesParser(MISPtoSTIX1Parser):
@@ -1132,36 +1160,43 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     ################################################################################
 
     def _create_incident(self) -> Incident:
+        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
         incident_id = f"{self._orgname_id}:Incident-{self._misp_event['uuid']}"
         incident = Incident(
-            id_=incident_id,
-            title=self._misp_event['info'],
-            timestamp=self._datetime_from_timestamp(self._misp_event['timestamp'])
+            id_ = incident_id,
+            title = self._misp_event['info'],
+            timestamp = timestamp
         )
         incident_time = Time()
         incident_time.incident_discovery = self._misp_event['date']
         if self._is_published():
             incident_time.incident_reported = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
         incident.time = incident_time
+        if self._misp_event.get('id'):
+            external_id = ExternalID(value=self._misp_event['id'], source='MISP Event')
+            incident.add_external_id(external_id)
+        if self._misp_event.get('analysis'):
+            status = self._mapping.status_mapping[self._misp_event['analysis']]
+            incident.status = IncidentStatus(status)
+        source = self._set_information_source()
+        incident.information_source = self._create_information_source(source)
+        incident.reporter = self._producer
         return incident
 
     def _generate_stix_objects(self):
+        tags = self._handle_event_tags_and_galaxies()
+        if tags:
+            sorted_tags, confidence_tags = self._sort_tags(tags)
+            if confidence_tags:
+                self._incident.confidence = Confidence(
+                    value = confidence_tags[min(confidence_tags)],
+                    timestamp = self._incident.timestamp
+                )
+            self._incident.handling = self._create_handling(sorted_tags)
         if self._misp_event.get('threat_level_id'):
             threat_level = self._mapping.threat_level_mapping[self._misp_event['threat_level_id']]
             self._add_journal_entry(f'Event Threat Level: {threat_level}')
         self._add_journal_entry('MISP Tag: misp:tool="MISP-STIX-Converter"')
-        tags = self._handle_event_tags_and_galaxies()
-        if tags:
-            self._incident.handling = self._set_handling(tags)
-        if self._misp_event.get('id'):
-            external_id = ExternalID(value=self._misp_event['id'], source='MISP Event')
-            self._incident.add_external_id(external_id)
-        if self._misp_event.get('analysis'):
-            status = self._mapping.status_mapping[self._misp_event['analysis']]
-            self._incident.status = IncidentStatus(status)
-        source = self._set_information_source()
-        self._incident.information_source = self._create_information_source(source)
-        self._incident.reporter = self._producer
         if self._misp_event.get('Attribute'):
             for attribute in self._misp_event['Attribute']:
                 self._resolve_attribute(attribute)
@@ -1316,12 +1351,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
 
     def _handle_misp_object_with_context(self, misp_object: dict, observable: Observable):
         indicator = self._create_indicator_from_object(misp_object)
-        indicator.add_indicator_type(self._set_indicator_type(misp_object['name']))
-        indicator.add_valid_time_position(ValidTime())
         indicator.add_observable(observable)
-        tags = self._handle_object_tags_and_galaxies(misp_object, indicator)
-        if tags:
-            indicator.handling = self._set_handling(tags)
         related_indicator = RelatedIndicator(
             indicator,
             relationship=misp_object.get('meta-category')
@@ -1339,6 +1369,22 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     tag_names.update(self._quick_fetch_tag_names(galaxy))
             return tuple(tag for tag in tags if tag not in tag_names)
         return tuple(tags)
+
+    def _handle_object_indicator_tags(self, misp_object: dict, indicator: Indicator, timestamp: datetime) -> Confidence:
+        tags = self._handle_object_tags_and_galaxies(misp_object, indicator)
+        if tags:
+            sorted_tags, confidence_tags = self._sort_tags(tags)
+            indicator.handling = self._create_handling(sorted_tags)
+            if confidence_tags:
+                return Confidence(
+                    value = confidence_tags[min(confidence_tags)],
+                    timestamp = timestamp
+                )
+        return Confidence(
+            value=self._mapping.confidence_value,
+            description=self._mapping.confidence_description,
+            timestamp=timestamp
+        )
 
     def _handle_object_tags_and_galaxies(self, misp_object: dict, indicator: Indicator) -> tuple:
         tags, galaxies = self._extract_object_attribute_tags_and_galaxies(misp_object)
@@ -2152,11 +2198,9 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         indicator.title = f"{misp_object.get('meta-category')}: {misp_object['name']} (MISP Object)"
         if any(misp_object.get(feature) for feature in ('comment', 'description')):
             indicator.description = misp_object['comment'] if misp_object.get('comment') else misp_object['description']
-        indicator.confidence = Confidence(
-            value=self._mapping.confidence_value,
-            description=self._mapping.confidence_description,
-            timestamp=timestamp
-        )
+        indicator.add_indicator_type(self._set_indicator_type(misp_object['name']))
+        indicator.add_valid_time_position(ValidTime())
+        indicator.confidence = self._handle_object_indicator_tags(misp_object, indicator, timestamp)
         return indicator
 
     @staticmethod
