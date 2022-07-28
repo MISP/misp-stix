@@ -7,15 +7,23 @@ from .stix2_to_misp import (STIX2toMISPParser, _ATTACK_PATTERN_TYPING,
     _COURSE_OF_ACTION_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from misp_stix_converter.stix2misp.exceptions import (UnknownParsingFunctionError,
     UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
-from stix2.v20.sdo import (CustomObject as CustomObject_v20, Indicator as Indicator_v20,
-    ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
-from stix2.v21.sdo import (CustomObject as CustomObject_v21, Indicator as Indicator_v21,
-    Note, ObservedData as ObservedData_v21, Vulnerability as Vulnerability_v21)
+from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
+    CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
+    Indicator as Indicator_v20, ObservedData as ObservedData_v20,
+    Vulnerability as Vulnerability_v20)
+from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
+    CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21,
+    Indicator as Indicator_v21, Note, ObservedData as ObservedData_v21,
+    Vulnerability as Vulnerability_v21)
 from typing import Optional, Union
 
 _OBSERVABLE_OBJECTS_TYPING = Union[
-    Vulnerability_v20, # Vulnerability object are obviously not Observable objects but
-    Vulnerability_v21  # they're parsed at some point the same way Observable objects are
+    AttackPattern_v20,
+    AttackPattern_v21,  # Attack Pattern,
+    CourseOfAction_v20, # Course of Action,
+    CourseOfAction_v21, # & Vulnerability objects are obviously not Observable objects
+    Vulnerability_v20,  # but they're parsed at some point the same wayObservable objects are
+    Vulnerability_v21
 ]
 
 
