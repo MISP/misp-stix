@@ -10,14 +10,15 @@ from datetime import datetime
 from stix2.properties import (DictionaryProperty, IDProperty, ListProperty,
                               ReferenceProperty, StringProperty, TimestampProperty)
 from stix2.v21.bundle import Bundle
-from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, DomainName,
-    EmailAddress, EmailMessage, EmailMIMEComponent, File, IPv4Address, IPv6Address,
-    MACAddress, Mutex, NetworkTraffic, Process, Software, URL, UserAccount,
-    WindowsPEBinaryExt, WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType,
-    X509Certificate)
+from stix2.v21.observables import (
+    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress, EmailMessage,
+    EmailMIMEComponent, File, IPv4Address, IPv6Address, MACAddress, Mutex,
+    NetworkTraffic, Process, Software, URL, UserAccount, WindowsPEBinaryExt,
+    WindowsPESection, WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
 from stix2.v21.sdo import (AttackPattern, Campaign, CourseOfAction, CustomObject,
-    Grouping, Identity, Indicator, IntrusionSet, Location, Malware, Note,
-    ObservedData, Opinion, Report, ThreatActor, Tool, Vulnerability)
+                           Grouping, Identity, Indicator, IntrusionSet, Location,
+                           Malware, Note, ObservedData, Opinion, Report, ThreatActor,
+                           Tool, Vulnerability)
 from stix2.v21.sro import Relationship, Sighting
 from stix2.v21.vocab import HASHING_ALGORITHM
 from typing import Optional, Union
@@ -1329,7 +1330,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_intrusion_set(intrusion_set_args: dict) -> IntrusionSet:
         return IntrusionSet(**intrusion_set_args)
 
-    def _create_malware(self, malware_args: dict, cluster: Optional[dict]=None) -> Malware:
+    def _create_malware(self, malware_args: dict, cluster: Optional[dict] = None) -> Malware:
         if cluster is not None:
             malware_args.update(
                 {
@@ -1369,7 +1370,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_threat_actor(threat_actor_args: dict) -> ThreatActor:
         return ThreatActor(**threat_actor_args)
 
-    def _create_tool(self, tool_args: dict, cluster: Optional[dict]=None) -> Tool:
+    def _create_tool(self, tool_args: dict, cluster: Optional[dict] = None) -> Tool:
         if cluster is not None:
             tool_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
             if cluster.get('meta', {}).get('synonyms'):

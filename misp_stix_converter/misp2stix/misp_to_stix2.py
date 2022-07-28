@@ -952,7 +952,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         parent_attributes = {'_'.join(key.split('-')[1:]): values for key, values in attributes.items()}
         return self._handle_observable_multiple_properties(parent_attributes)
 
-    def _handle_pattern_multiple_properties(self, attributes: dict, prefix: str, separator: Optional[str]=':') -> list:
+    def _handle_pattern_multiple_properties(self, attributes: dict, prefix: str, separator: Optional[str] = ':') -> list:
         pattern = []
         for key, values in attributes.items():
             key = key.replace('-', '_')
@@ -963,7 +963,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 pattern.append(f"{prefix}{separator}x_misp_{key} = '{value}'")
         return pattern
 
-    def _handle_pattern_properties(self, attributes: dict, prefix: str, separator: Optional[str]=':') -> list:
+    def _handle_pattern_properties(self, attributes: dict, prefix: str,
+                                   separator: Optional[str] = ':') -> list:
         pattern = []
         for key, value in attributes.items():
             pattern.append(f"{prefix}{separator}x_misp_{key.replace('-', '_')} = '{value}'")
@@ -1081,7 +1082,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             misp_object,
             attack_pattern_args,
             'attack-pattern',
-            killchain = True
+            killchain=True
         )
 
     def _parse_attack_pattern_reference(self, feature: str, value: str) -> dict:
@@ -1570,7 +1571,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             identity_args.update(self._handle_observable_multiple_properties(attributes))
         self._append_SDO(self._create_identity(identity_args))
 
-    def _parse_pe_extensions_observable(self, pe_object: dict, uuids: Optional[list]=None) -> dict:
+    def _parse_pe_extensions_observable(self, pe_object: dict, uuids: Optional[list] = None) -> dict:
         custom = False
         attributes = self._extract_multiple_object_attributes_escaped(
             pe_object['Attribute'],
@@ -1608,7 +1609,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 extension['sections'].append(self._create_windowsPESection(section))
         return self._create_PE_extension(extension), custom
 
-    def _parse_pe_extensions_pattern(self, pe_object: dict, uuids: Optional[list]=None) -> list:
+    def _parse_pe_extensions_pattern(self, pe_object: dict, uuids: Optional[list] = None) -> list:
         prefix = "file:extensions.'windows-pebinary-ext'"
         attributes = self._extract_multiple_object_attributes_escaped(
             pe_object['Attribute'],
@@ -1707,8 +1708,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_script_object(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes_with_data(
             misp_object['Attribute'],
-            force_single = self._mapping.script_single_fields,
-            with_data = self._mapping.script_data_fields
+            force_single=self._mapping.script_single_fields,
+            with_data=self._mapping.script_data_fields
         )
         object_type = 'malware' if 'state' in attributes and 'Malicious' in attributes['state'] else 'tool'
         object_args = {}
@@ -1737,8 +1738,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             prefix = 'user-account'
             attributes = self._extract_multiple_object_attributes_with_data_escaped(
                 misp_object['Attribute'],
-                force_single = self._mapping.user_account_single_fields,
-                with_data = self._mapping.user_account_data_fields
+                force_single=self._mapping.user_account_single_fields,
+                with_data=self._mapping.user_account_data_fields
             )
             pattern = []
             for data_type in ('features', 'timeline'):
@@ -2719,8 +2720,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_user_account_args(self, attributes: dict) -> dict:
         attributes = self._extract_multiple_object_attributes_with_data(
             attributes,
-            force_single = self._mapping.user_account_single_fields,
-            with_data = self._mapping.user_account_data_fields
+            force_single=self._mapping.user_account_single_fields,
+            with_data=self._mapping.user_account_data_fields
         )
         user_account_args = {}
         for key, feature in self._mapping.user_account_object_mapping['features'].items():
@@ -2803,7 +2804,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_filename_pattern(name: str) -> str:
         return f"file:name = '{name}'"
 
-    def _create_hash_pattern(self, hash_type: str, value: str, prefix: Optional[str]='file:hashes') -> str:
+    def _create_hash_pattern(self, hash_type: str, value: str,
+                             prefix: Optional[str] = 'file:hashes') -> str:
         value = value.strip('"').strip("'").strip('\\')
         return f"{prefix}.{self._define_hash_type(hash_type)} = '{value}'"
 
@@ -2950,7 +2952,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return time_fields
 
     def _handle_value_for_pattern(self, attribute_value: str) -> str:
-        #return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
+        # return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
         sanitized = self._sanitize_registry_key_value(attribute_value)
         return sanitized.replace("'", "\\'").replace('"', '\\\\"')
 
