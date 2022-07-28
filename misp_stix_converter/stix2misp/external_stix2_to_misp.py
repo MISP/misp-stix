@@ -7,6 +7,7 @@ from .stix2_to_misp import (STIX2toMISPParser, _ATTACK_PATTERN_TYPING,
     _COURSE_OF_ACTION_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from misp_stix_converter.stix2misp.exceptions import (UnknownParsingFunctionError,
     UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
+from pymisp import MISPAttribute, MISPObject
 from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
     CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
     Indicator as Indicator_v20, ObservedData as ObservedData_v20,
@@ -87,11 +88,17 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object = self._create_misp_object(name, stix_object)
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
-            self._add_misp_object(misp_object)
+            self._add_misp_object(
+                misp_object,
+                confidence = getattr(stix_object, 'confidence', None)
+            )
         else:
             attribute = self._create_attribute_dict(stix_object)
             attribute.update(attributes[0])
-            self._add_misp_attribute(attribute)
+            self._add_misp_attribute(
+                attribute,
+                confidence = getattr(stix_object, 'confidence', None)
+            )
 
     def _handle_observable_mapping(self, observed_data: ObservedData_v21) -> str:
         """
@@ -211,7 +218,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object = self._create_misp_object('attack-pattern', attack_pattern)
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
-            self._add_misp_object(misp_object)
+            self._add_misp_object(
+                misp_object,
+                confidence = getattr(attack_pattern, 'confidence', None)
+            )
         else:
             self._galaxies[attack_pattern.id] = {
                 'tag_names': [f'misp-galaxy:attack-pattern="{attack_pattern.name}"'],
@@ -257,7 +267,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object = self._create_misp_object('course-of-action', course_of_action)
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
-            self._add_misp_object(misp_object)
+            self._add_misp_object(
+                misp_object,
+                confidence = getattr(course_of_action, 'confidence', None)
+            )
         else:
             self._galaxies[course_of_action.id] = {
                 'tag_names': [f'misp-galaxy:course-of-action="{course_of_action.name}"'],
@@ -325,7 +338,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         """
         location = self._get_stix_object(location_ref)
         misp_object = self._parse_location_object(location)
-        self._add_misp_object(misp_object)
+        self._add_misp_object(
+            misp_object,
+            confidence = getattr(location, 'confidence', None)
+        )
 
     def _parse_malware(self, malware_ref: str):
         """
@@ -538,13 +554,19 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute = self._create_attribute_dict(indicator)
         attribute['value'] = indicator.pattern
         attribute.update(self._mapping.sigma_attribute)
-        self._add_misp_attribute(attribute)
+        self._add_misp_attribute(
+            attribute,
+            confidence = getattr(indicator, 'confidence', None)
+        )
 
     def _parse_snort_pattern(self, indicator: Indicator_v21):
         attribute = self._create_attribute_dict(indicator)
         attribute['value'] = indicator.pattern
         attribute.update(self._mapping.snort_attribute)
-        self._add_misp_attribute(attribute)
+        self._add_misp_attribute(
+            attribute,
+            confidence = getattr(indicator, 'confidence', None)
+        )
 
     def _parse_suricata_pattern(self, indicator: Indicator_v21):
         misp_object = self._create_misp_object('suricata', indicator)
@@ -553,7 +575,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_attribute = {'value': getattr(indicator, feature)}
                 misp_attribute.update(attribute)
                 misp_object.add_attribute(**misp_attribute)
-        self._add_misp_object(misp_object)
+        self._add_misp_object(
+            misp_object,
+            confidence = getattr(indicator, 'confidence', None)
+        )
 
     def _parse_yara_pattern(self, indicator: Indicator_v21):
         if hasattr(indicator, 'pattern_version'):
@@ -563,16 +588,36 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     misp_attribute = {'value': getattr(indicator, feature)}
                     misp_attribute.update(attribute)
                     misp_object.add_attribute(**misp_attribute)
-            self._add_misp_object(misp_object)
+            self._add_misp_object(
+                misp_object,
+                confidence = getattr(indicator, 'confidence', None)
+            )
         else:
             attribute = self._create_attribute_dict(indicator)
             attribute['value'] = indicator.pattern
             attribute.update(self._mapping.yara_attribute)
-            self._add_misp_attribute(attribute)
+            self._add_misp_attribute(
+                attribute,
+                confidence = getattr(indicator, 'confidence', None)
+            )
 
     ################################################################################
     #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #
     ################################################################################
+
+    def _add_misp_attribute(self, attribute: dict, confidence: Optional[int] = None):
+        misp_attribute = MISPAttribute()
+        misp_attribute.from_dict(**attribute)
+        if confidence is not None:
+            misp_attribute.add_tag(self._parse_confidence_level(confidence))
+        self.misp_event.add_attribute(**misp_attribute)
+
+    def _add_misp_object(self, misp_object: MISPObject, confidence: Optional[int] = None):
+        if confidence is not None:
+            confidence_tag = self._parse_confidence_level(confidence)
+            for attribute in misp_object.attributes:
+                attribute.add_tag(confidence_tag)
+        self.misp_event.add_object(misp_object)
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = {'uuid': stix_object.id.split('--')[-1]}
@@ -614,3 +659,15 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if all(keyword in pattern for keyword in (' AND ', ' OR ')):
             return True
         return False
+
+    @staticmethod
+    def _parse_confidence_level(confidence_level: int) -> str:
+        if confidence_level == 100:
+            return 'misp:confidence-level="completely-confident"'
+        if confidence_level >= 75:
+            return 'misp:confidence-level="usually-confident"'
+        if confidence_level >= 50:
+            return 'misp:confidence-level="fairly-confident"'
+        if confidence_level >= 25:
+            return 'misp:confidence-level="rarely-confident"'
+        return 'misp:confidence-level="unconfident"'

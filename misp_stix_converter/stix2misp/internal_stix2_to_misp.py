@@ -10,7 +10,7 @@ from .stix2_to_misp import (
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from pymisp import MISPObject, MISPSighting
+from pymisp import MISPAttribute, MISPObject, MISPSighting
 from stix2.v20.observables import (
     Process as Process_v20, WindowsPEBinaryExt as WindowsExtension_v20)
 from stix2.v20.sdo import (CustomObject as CustomObject_v20, Identity as Identity_v20,
@@ -2156,6 +2156,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     ################################################################################
     #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #
     ################################################################################
+
+    def _add_misp_attribute(self, attribute: dict):
+        misp_attribute = MISPAttribute()
+        misp_attribute.from_dict(**attribute)
+        self.misp_event.add_attribute(**misp_attribute)
+
+    def _add_misp_object(self, misp_object: MISPObject):
+        self.misp_event.add_object(misp_object)
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = self._attribute_from_labels(stix_object.labels)

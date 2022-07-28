@@ -588,14 +588,6 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                       MISP FEATURES CREATION FUNCTIONS                       #
     ################################################################################
 
-    def _add_misp_attribute(self, attribute: dict):
-        misp_attribute = MISPAttribute()
-        misp_attribute.from_dict(**attribute)
-        self.misp_event.add_attribute(**misp_attribute)
-
-    def _add_misp_object(self, misp_object: MISPObject):
-        self.misp_event.add_object(misp_object)
-
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
         misp_event.uuid = self._identifier.split('--')[1]
