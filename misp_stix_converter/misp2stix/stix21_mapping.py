@@ -117,6 +117,11 @@ class Stix21Mapping(Stix2Mapping):
             text = 'description',
             zipcode = 'postal_code'
         )
+        self.__http_request_uuid_fields = (
+            'ip-src',
+            'ip-dst',
+            'host'
+        )
         self.__ip_port_uuid_fields = (
             'ip',
             'ip-dst',
@@ -290,6 +295,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def geolocation_object_mapping(self) -> dict:
         return self.__geolocation_object_mapping
+
+    @property
+    def http_request_uuid_fields(self) -> tuple:
+        return self.__http_request_uuid_fields
 
     @property
     def ip_port_uuid_fields(self) -> tuple:

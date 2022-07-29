@@ -905,6 +905,41 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             location_args.update(self._handle_observable_properties(attributes))
         self._append_SDO(Location(**location_args))
 
+    def _parse_http_request_object_observable(self, misp_object: dict):
+        attributes = self._extract_object_attributes_with_multiple_and_uuid(
+            misp_object['Attribute'],
+            force_single=self._mapping.http_request_single_fields,
+            with_uuid=self._mapping.http_request_uuid_fields
+        )
+        network_traffic_args = {
+            'id': getattr(self, self._id_parsing_function['object'])(
+                'network-traffic',
+                misp_object
+            )
+        }
+        objects = []
+        for feature in ('ip-src', 'ip-dst'):
+            if attributes.get(feature):
+                ip_value, uuid = attributes.pop(feature)
+                address_type = self._get_address_type(ip_value)
+                address_id = f'{address_type._type}--{uuid}'
+                objects.append(address_type(id=address_id, value=ip_value))
+                ref_type = 'src_ref' if feature == 'ip-src' else 'dst_ref'
+                network_traffic_args[ref_type] = address_id
+        if attributes.get('host'):
+            value, uuid = attributes.pop('host')
+            domain_id = f'domain-name--{uuid}'
+            domain_args = {'id': domain_id, 'value': value}
+            if 'dst_ref' in network_traffic_args:
+                domain_args['resolves_to_refs'] = [network_traffic_args['dst_ref']]
+            else:
+                network_traffic_args['dst_ref'] = domain_id
+            objects.append(DomainName(**domain_args))
+        if attributes:
+            network_traffic_args.update(self._parse_http_request_args(attributes))
+        objects.insert(0, NetworkTraffic(**network_traffic_args))
+        self._handle_object_observable(misp_object, objects)
+
     def _parse_image_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
             misp_object['Attribute'],

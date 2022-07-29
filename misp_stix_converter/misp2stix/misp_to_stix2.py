@@ -1345,6 +1345,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
         return pattern
 
+    def _parse_http_request_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'network-traffic'
+            attributes = self._extract_multiple_object_attributes_escaped(
+                misp_object['Attribute'],
+                force_single=self._mapping.http_request_single_fields
+            )
+            patterns = []
+            for key, feature in self._mapping.http_request_object_mapping['references'].items():
+                if attributes.get(key):
+                    value = attributes.pop(key)
+                    pattern = feature.format(self._define_address_type(value)) if 'ip-' in key else feature
+                    patterns.append(f"({prefix}:{pattern} = '{value}')")
+            extension = "extensions.'http-request-ext'"
+            for key, feature in self._mapping.http_request_object_mapping['request_extension'].items():
+                if attributes.get(key):
+                    patterns.append(f"{prefix}:{extension}.{feature} = '{attributes.pop(key)}'")
+            extension = f"{extension}.request_header"
+            for key, feature in self._mapping.http_request_object_mapping['request_header'].items():
+                if attributes.get(key):
+                    for value in attributes.pop(key):
+                        patterns.append(f"{prefix}:{extension}.'{feature}' = '{value}'")
+            if attributes:
+                patterns.extend(
+                    self._handle_pattern_multiple_properties(
+                        attributes,
+                        'network-traffic'
+                    )
+                )
+            self._handle_object_indicator(misp_object, patterns)
+        else:
+            self._parse_http_request_object_observable(misp_object)
+
     def _parse_image_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             attributes = self._extract_multiple_object_attributes_with_data_escaped(
@@ -2599,6 +2632,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             file_args.update(self._handle_observable_multiple_properties(attributes))
         return file_args
+
+    def _parse_http_request_args(self, attributes: dict) -> dict:
+        args = {'protocols': ['tcp', 'http']}
+        extension = defaultdict(dict)
+        for key, feature in self._mapping.http_request_object_mapping['request_extension'].items():
+            if attributes.get(key) and feature not in extension:
+                extension[feature] = attributes.pop(key)
+        for key, feature in self._mapping.http_request_object_mapping['request_header'].items():
+            if attributes.get(key):
+                extension['request_header'][feature] = self._select_single_feature(attributes, key)
+        if extension:
+            args['extensions'] = {'http-request-ext': extension}
+        if attributes:
+            args.update(self._handle_observable_multiple_properties(attributes))
+        return args
 
     def _parse_ip_port_args(self, attributes: dict, protocols: set) -> dict:
         args = {}

@@ -672,6 +672,44 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             file_args.update(self._parse_file_args(attributes))
         return file_args, observable_object
 
+    def _parse_http_request_object_observable(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=self._mapping.http_request_single_fields
+        )
+        observable_object = {}
+        network_traffic_args: defaultdict = defaultdict(dict)
+        index = 1
+        for feature in ('ip-src', 'ip-dst'):
+            if attributes.get(feature):
+                str_index = str(index)
+                ip_value = attributes.pop(feature)
+                address_object = self._get_address_type(ip_value)(value=ip_value)
+                observable_object[str_index] = address_object
+                network_traffic_args['_valid_refs'][str_index] = address_object._type
+                ref_type = 'src_ref' if feature == 'ip-src' else 'dst_ref'
+                network_traffic_args[ref_type] = str_index
+                index += 1
+        if attributes.get('host'):
+            str_index = str(index)
+            domain_args = {'value': attributes.pop('host')}
+            if 'dst_ref' in network_traffic_args:
+                reference = network_traffic_args['dst_ref']
+                domain_args.update(
+                    {
+                        'resolves_to_refs': [reference],
+                        '_valid_refs': {reference: observable_object[reference]._type}
+                    }
+                )
+            else:
+                network_traffic_args['_valid_refs'][str_index] = 'domain-name'
+                network_traffic_args['dst_ref'] = str_index
+            observable_object[str_index] = DomainName(**domain_args)
+        if attributes:
+            network_traffic_args.update(self._parse_http_request_args(attributes))
+        observable_object['0'] = NetworkTraffic(**network_traffic_args)
+        self._handle_object_observable(misp_object, observable_object)
+
     def _parse_image_object_observable(self, misp_object: dict):
         attributes = self._extract_multiple_object_attributes_with_data(
             misp_object['Attribute'],

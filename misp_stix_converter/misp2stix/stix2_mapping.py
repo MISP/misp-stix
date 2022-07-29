@@ -335,6 +335,7 @@ class Stix2Mapping:
             'file': '_parse_file_object',
             'github-user': '_parse_account_object_with_attachment',
             'gitlab-user': '_parse_account_object',
+            'http-request': '_parse_http_request_object',
             'image': '_parse_image_object',
             'ip-port': '_parse_ip_port_object',
             'legal-entity': '_parse_legal_entity_object',
@@ -528,6 +529,37 @@ class Stix2Mapping:
             'name',
             'username'
         )
+        self.__http_request_object_mapping = Mapping(
+            references = {
+                'host': "dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value",
+                'ip-src': "src_ref.type = '{}' AND network-traffic:src_ref.value",
+                'ip-dst': "dst_ref.type = '{}' AND network-traffic:dst_ref.value"
+            },
+            request_extension = {
+                'method': 'request_method',
+                'uri': 'request_value',
+                'url': 'request_value'
+            },
+            request_header = {
+                'content-type': 'Content-Type',
+                'cookie': 'Cookie',
+                'referer': 'Referer',
+                'user-agent': 'User-Agent'
+            }
+        )
+        self.__http_request_single_fields = (
+            'basicauth-password',
+            'basicauth-user',
+            'host',
+            'ip-dst',
+            'ip-src',
+            'method',
+            'proxy-password',
+            'proxy-user',
+            'text',
+            'uri',
+            'url'
+        )
         self.__image_data_fields = (
             'attachment',
         )
@@ -545,7 +577,7 @@ class Stix2Mapping:
                 **{
                     'ip': "dst_ref.type = '{}' AND network-traffic:dst_ref.value",
                     'ip-src': "src_ref.type = '{}' AND network-traffic:src_ref.value",
-                    'ip-dst': "dst_ref.type = '{}' AND network-traffic:dst_ref.value",
+                    'ip-dst': "dst_ref.type = '{}' AND network-traffic:dst_ref.value"
                 }
             ),
             domain_features = Mapping(
@@ -993,6 +1025,14 @@ class Stix2Mapping:
     @property
     def hash_attribute_types(self) -> tuple:
         return self.__hash_attribute_types
+
+    @property
+    def http_request_object_mapping(self) -> dict:
+        return self.__http_request_object_mapping
+
+    @property
+    def http_request_single_fields(self) -> tuple:
+        return self.__http_request_single_fields
 
     @property
     def image_data_fields(self) -> tuple:
