@@ -531,9 +531,9 @@ class Stix2Mapping:
         )
         self.__http_request_object_mapping = Mapping(
             references = {
-                'host': "dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value",
                 'ip-src': "src_ref.type = '{}' AND network-traffic:src_ref.value",
-                'ip-dst': "dst_ref.type = '{}' AND network-traffic:dst_ref.value"
+                'ip-dst': "dst_ref.type = '{}' AND network-traffic:dst_ref.value",
+                'host': "dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value"
             },
             request_extension = {
                 'method': 'request_method',
