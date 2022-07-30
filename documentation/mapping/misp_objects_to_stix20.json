@@ -2079,6 +2079,134 @@
             }
         }
     },
+    "http-request": {
+        "MISP": {
+            "name": "http-request",
+            "meta-category": "network",
+            "description": "A single HTTP request header",
+            "uuid": "cfdb71ed-889f-4646-a388-43d936e1e3b9",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                    "type": "ip-src",
+                    "object_relation": "ip-src",
+                    "value": "8.8.8.8"
+                },
+                {
+                    "uuid": "d6f0e3b7-fa5d-4443-aea7-7b60b343bde7",
+                    "type": "ip-dst",
+                    "object_relation": "ip-dst",
+                    "value": "149.13.33.14"
+                },
+                {
+                    "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+                    "type": "hostname",
+                    "object_relation": "host",
+                    "value": "circl.lu"
+                },
+                {
+                    "type": "http-method",
+                    "object_relation": "method",
+                    "value": "POST"
+                },
+                {
+                    "type": "user-agent",
+                    "object_relation": "user-agent",
+                    "value": "Mozilla Firefox"
+                },
+                {
+                    "type": "uri",
+                    "object_relation": "uri",
+                    "value": "/projects/internships/"
+                },
+                {
+                    "type": "url",
+                    "object_relation": "url",
+                    "value": "http://circl.lu/projects/internships/"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "content-type",
+                    "value": "JSON"
+                }
+            ]
+        },
+        "STIX": {
+            "Indicator": {
+                "type": "indicator",
+                "id": "indicator--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '8.8.8.8') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:extensions.'http-request-ext'.request_method = 'POST' AND network-traffic:extensions.'http-request-ext'.request_value = '/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_value = 'http://circl.lu/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_header.'Content-Type' = 'JSON' AND network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = 'Mozilla Firefox']",
+                "valid_from": "2020-10-25T16:22:00Z",
+                "kill_chain_phases": [
+                    {
+                        "kill_chain_name": "misp-category",
+                        "phase_name": "network"
+                    }
+                ],
+                "labels": [
+                    "misp:name=\"http-request\"",
+                    "misp:meta-category=\"network\"",
+                    "misp:to_ids=\"True\""
+                ]
+            },
+            "Observed Data": {
+                "type": "observed-data",
+                "id": "observed-data--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "first_observed": "2020-10-25T16:22:00Z",
+                "last_observed": "2020-10-25T16:22:00Z",
+                "number_observed": 1,
+                "objects": {
+                    "1": {
+                        "type": "ipv4-addr",
+                        "value": "8.8.8.8"
+                    },
+                    "2": {
+                        "type": "ipv4-addr",
+                        "value": "149.13.33.14"
+                    },
+                    "3": {
+                        "type": "domain-name",
+                        "value": "circl.lu",
+                        "resolves_to_refs": [
+                            "2"
+                        ]
+                    },
+                    "0": {
+                        "type": "network-traffic",
+                        "src_ref": "1",
+                        "dst_ref": "2",
+                        "protocols": [
+                            "tcp",
+                            "http"
+                        ],
+                        "extensions": {
+                            "http-request-ext": {
+                                "request_method": "POST",
+                                "request_value": "/projects/internships/",
+                                "request_header": {
+                                    "Content-Type": "JSON",
+                                    "User-Agent": "Mozilla Firefox"
+                                }
+                            }
+                        },
+                        "x_misp_url": "http://circl.lu/projects/internships/"
+                    }
+                },
+                "labels": [
+                    "misp:name=\"http-request\"",
+                    "misp:meta-category=\"network\"",
+                    "misp:to_ids=\"False\""
+                ]
+            }
+        }
+    },
     "image": {
         "MISP": {
             "name": "image",
