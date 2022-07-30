@@ -3028,6 +3028,88 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(location.x_misp_altitude, altitude)
         self._populate_documentation(misp_object=misp_object, location=location)
 
+    def test_event_with_http_request_indicator_object(self):
+        event = get_event_with_http_request_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        ip_src, ip_dst, host, http_method, agent, uri, url, content = (attribute['value'] for attribute in attributes)
+        src_type, src_value, dst_type, dst_value, host_type, host_value, method, req_value1, req_value2, content_type, user_agent = pattern[1:-1].split(' AND ')
+        prefix = 'network-traffic'
+        self.assertEqual(src_type, f"({prefix}:src_ref.type = 'ipv4-addr'")
+        self.assertEqual(src_value, f"{prefix}:src_ref.value = '{ip_src}')")
+        self.assertEqual(dst_type, f"({prefix}:dst_ref.type = 'ipv4-addr'")
+        self.assertEqual(dst_value, f"{prefix}:dst_ref.value = '{ip_dst}')")
+        self.assertEqual(host_type, f"({prefix}:dst_ref.type = 'domain-name'")
+        self.assertEqual(host_value, f"{prefix}:dst_ref.value = '{host}')")
+        feature = "extensions.'http-request-ext'"
+        self.assertEqual(method, f"{prefix}:{feature}.request_method = '{http_method}'")
+        self.assertEqual(req_value1, f"{prefix}:{feature}.request_value = '{uri}'")
+        self.assertEqual(req_value2, f"{prefix}:{feature}.request_value = '{url}'")
+        self.assertEqual(
+            content_type,
+            f"{prefix}:{feature}.request_header.'Content-Type' = '{content}'"
+        )
+        self.assertEqual(
+            user_agent,
+            f"{prefix}:{feature}.request_header.'User-Agent' = '{agent}'"
+        )
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_http_request_observable_object(self):
+        event = get_event_with_http_request_object()
+        misp_object = deepcopy(event['Event']['Object'][0])
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        ip_src, ip_dst, host, method, user_agent, uri, url, content = (attribute for attribute in attributes)
+        network_traffic, src_address, dst_address, domain_name = observables
+        network_traffic_id, src_address_id, dst_address_id, domain_name_id = grouping_refs
+        network_traffic_ref, src_address_ref, dst_address_ref, domain_name_ref = object_refs
+        self.assertEqual(network_traffic.type, 'network-traffic')
+        self._assert_multiple_equal(
+            network_traffic.id,
+            network_traffic_id,
+            network_traffic_ref,
+            f"network-traffic--{misp_object['uuid']}"
+        )
+        extension = network_traffic.extensions['http-request-ext']
+        self.assertEqual(extension.request_method, method['value'])
+        self.assertEqual(extension.request_value, uri['value'])
+        self.assertEqual(extension.request_header['Content-Type'], content['value'])
+        self.assertEqual(extension.request_header['User-Agent'], user_agent['value'])
+        self.assertEqual(network_traffic.x_misp_url, url['value'])
+        self.assertEqual(src_address.type, 'ipv4-addr')
+        self._assert_multiple_equal(
+            src_address.id,
+            src_address_id,
+            src_address_ref,
+            network_traffic.src_ref,
+            f"ipv4-addr--{ip_src['uuid']}"
+        )
+        self.assertEqual(src_address.value, ip_src['value'])
+        self.assertEqual(dst_address.type, 'ipv4-addr')
+        self._assert_multiple_equal(
+            dst_address.id,
+            dst_address_id,
+            dst_address_ref,
+            network_traffic.dst_ref,
+            domain_name.resolves_to_refs[0],
+            f"ipv4-addr--{ip_dst['uuid']}"
+        )
+        self.assertEqual(dst_address.value, ip_dst['value'])
+        self.assertEqual(domain_name.type, 'domain-name')
+        self._assert_multiple_equal(
+            domain_name.id,
+            domain_name_id,
+            domain_name_ref,
+            f"domain-name--{host['uuid']}"
+        )
+        self.assertEqual(domain_name.value, host['value'])
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-5:]
+        )
+
     def test_event_with_image_indicator_object(self):
         event = get_event_with_image_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)

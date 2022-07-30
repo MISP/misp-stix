@@ -1961,6 +1961,64 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
             summary = 'File Object (potential references to Artifact & Directory Objects)'
         )
 
+    def test_event_with_http_request_indicator_object(self):
+        event = get_event_with_http_request_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        ip_src, ip_dst, host, http_method, agent, uri, url, content = (attribute['value'] for attribute in attributes)
+        src_type, src_value, dst_type, dst_value, host_type, host_value, method, req_value1, req_value2, content_type, user_agent = pattern[1:-1].split(' AND ')
+        prefix = 'network-traffic'
+        self.assertEqual(src_type, f"({prefix}:src_ref.type = 'ipv4-addr'")
+        self.assertEqual(src_value, f"{prefix}:src_ref.value = '{ip_src}')")
+        self.assertEqual(dst_type, f"({prefix}:dst_ref.type = 'ipv4-addr'")
+        self.assertEqual(dst_value, f"{prefix}:dst_ref.value = '{ip_dst}')")
+        self.assertEqual(host_type, f"({prefix}:dst_ref.type = 'domain-name'")
+        self.assertEqual(host_value, f"{prefix}:dst_ref.value = '{host}')")
+        feature = "extensions.'http-request-ext'"
+        self.assertEqual(method, f"{prefix}:{feature}.request_method = '{http_method}'")
+        self.assertEqual(req_value1, f"{prefix}:{feature}.request_value = '{uri}'")
+        self.assertEqual(req_value2, f"{prefix}:{feature}.request_value = '{url}'")
+        self.assertEqual(
+            content_type,
+            f"{prefix}:{feature}.request_header.'Content-Type' = '{content}'"
+        )
+        self.assertEqual(
+            user_agent,
+            f"{prefix}:{feature}.request_header.'User-Agent' = '{agent}'"
+        )
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_http_request_observable_object(self):
+        event = get_event_with_http_request_object()
+        attributes, observable_objects = self._run_observable_from_object_tests(event)
+        ip_src, ip_dst, host, method, user_agent, uri, url, content = (attribute['value'] for attribute in attributes)
+        network_traffic = observable_objects['0']
+        src_address = observable_objects['1']
+        dst_address = observable_objects['2']
+        domain_name = observable_objects['3']
+        self.assertEqual(network_traffic.type, 'network-traffic')
+        extension = network_traffic.extensions['http-request-ext']
+        self.assertEqual(extension.request_method, method)
+        self.assertEqual(extension.request_value, uri)
+        self.assertEqual(extension.request_header['Content-Type'], content)
+        self.assertEqual(extension.request_header['User-Agent'], user_agent)
+        self.assertEqual(network_traffic.x_misp_url, url)
+        self.assertEqual(network_traffic.src_ref, '1')
+        self.assertEqual(network_traffic.dst_ref, '2')
+        self.assertEqual(src_address.type, 'ipv4-addr')
+        self.assertEqual(src_address.value, ip_src)
+        self.assertEqual(dst_address.type, 'ipv4-addr')
+        self.assertEqual(dst_address.value, ip_dst)
+        self.assertEqual(domain_name.type, 'domain-name')
+        self.assertEqual(domain_name.value, host)
+        self.assertEqual(domain_name.resolves_to_refs, ['2'])
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
+
     def test_event_with_image_indicator_object(self):
         event = get_event_with_image_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)

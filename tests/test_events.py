@@ -1796,6 +1796,59 @@ _TEST_GEOLOCATION_OBJECT = {
     ]
 }
 
+_TEST_HTTP_REQUEST_OBJECT = {
+    "name": "http-request",
+    "meta-category": "network",
+    "description": "A single HTTP request header",
+    "uuid": "cfdb71ed-889f-4646-a388-43d936e1e3b9",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "ip-src",
+            "object_relation": "ip-src",
+            "value": "8.8.8.8"
+        },
+        {
+            "uuid": "d6f0e3b7-fa5d-4443-aea7-7b60b343bde7",
+            "type": "ip-dst",
+            "object_relation": "ip-dst",
+            "value": "149.13.33.14"
+        },
+        {
+            "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "type": "hostname",
+            "object_relation": "host",
+            "value": "circl.lu"
+        },
+        {
+            "type": "http-method",
+            "object_relation": "method",
+            "value": "POST"
+        },
+        {
+            "type": "user-agent",
+            "object_relation": "user-agent",
+            "value": "Mozilla Firefox"
+        },
+        {
+            "type": "uri",
+            "object_relation": "uri",
+            "value": "/projects/internships/"
+        },
+        {
+            "type": "url",
+            "object_relation": "url",
+            "value": "http://circl.lu/projects/internships/"
+        },
+        {
+            "type": "text",
+            "object_relation": "content-type",
+            "value": "JSON"
+        }
+    ]
+}
+
 _TEST_IP_PORT_OBJECT = {
     "name": "ip-port",
     "meta-category": "network",
@@ -4217,6 +4270,14 @@ def get_event_with_geolocation_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_GEOLOCATION_OBJECT)
+    ]
+    return event
+
+
+def get_event_with_http_request_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        _TEST_HTTP_REQUEST_OBJECT
     ]
     return event
 
