@@ -935,8 +935,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             else:
                 network_traffic_args['dst_ref'] = domain_id
             objects.append(DomainName(**domain_args))
-        if attributes:
-            network_traffic_args.update(self._parse_http_request_args(attributes))
+        network_traffic_args.update(self._parse_http_request_args(attributes))
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         self._handle_object_observable(misp_object, objects)
 

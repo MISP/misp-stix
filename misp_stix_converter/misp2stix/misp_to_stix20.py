@@ -705,8 +705,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 network_traffic_args['_valid_refs'][str_index] = 'domain-name'
                 network_traffic_args['dst_ref'] = str_index
             observable_object[str_index] = DomainName(**domain_args)
-        if attributes:
-            network_traffic_args.update(self._parse_http_request_args(attributes))
+        network_traffic_args.update(self._parse_http_request_args(attributes))
         observable_object['0'] = NetworkTraffic(**network_traffic_args)
         self._handle_object_observable(misp_object, observable_object)
 
