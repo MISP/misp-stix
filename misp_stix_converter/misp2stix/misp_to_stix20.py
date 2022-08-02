@@ -806,6 +806,38 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         mutex_args = self._parse_mutex_args(misp_object['Attribute'])
         self._handle_object_observable(misp_object, {'0': Mutex(**mutex_args)})
 
+    def _parse_netflow_object_observable(self, misp_object: dict):
+        attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
+        observable_object = {}
+        network_traffic_args: defaultdict = defaultdict(dict)
+        index = 1
+        for ref_type in ('src', 'dst'):
+            if attributes.get(f'ip-{ref_type}'):
+                str_index = str(index)
+                ip_value = attributes.pop(f'ip-{ref_type}')
+                address_args = {'value': ip_value}
+                if attributes.get(f'{ref_type}-as'):
+                    index += 1
+                    as_index = str(index)
+                    address_args.update(
+                        {
+                            '_valid_refs': {as_index: 'autonomous-system'},
+                            'belongs_to_refs': [as_index]
+                        }
+                    )
+                    observable_object[as_index] = AutonomousSystem(
+                        number=self._parse_AS_value(attributes.pop(f'{ref_type}-as'))
+                    )
+                address_object = self._get_address_type(ip_value)(**address_args)
+                observable_object[str_index] = address_object
+                network_traffic_args['_valid_refs'][str_index] = address_object._type
+                network_traffic_args[f'{ref_type}_ref'] = str_index
+                index += 1
+        network_traffic_args.update(self._parse_netflow_args(attributes))
+        observable_object['0'] = NetworkTraffic(**network_traffic_args)
+        self._handle_object_observable(misp_object, observable_object)
+
+
     def _parse_network_connection_object_observable(self, misp_object: dict):
         attributes = self._extract_object_attributes(misp_object['Attribute'])
         network_traffic_args, observable_object = self._parse_network_references(attributes)

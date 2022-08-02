@@ -139,6 +139,12 @@ class Stix21Mapping(Stix2Mapping):
             'malware-sample',
             'path'
         )
+        self.__netflow_uuid_fields = (
+            'dst-as',
+            'ip-dst',
+            'ip-src',
+            'src-as'
+        )
         self.__network_socket_mapping = Mapping(
             features = Mapping(
                 **{
@@ -319,6 +325,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def malware_sample_additional_pattern_values(self) -> str:
         return self.__malware_sample_additional_pattern_values
+
+    @property
+    def netflow_uuid_fields(self) -> tuple:
+        return self.__netflow_uuid_fields
 
     @property
     def network_socket_mapping(self) -> dict:

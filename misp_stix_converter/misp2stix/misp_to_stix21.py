@@ -1070,6 +1070,49 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         mutex_args['id'] = getattr(self, self._id_parsing_function['object'])('mutex', misp_object)
         self._handle_object_observable(misp_object, [Mutex(**mutex_args)])
 
+    def _parse_netflow_object_observable(self, misp_object: dict):
+        attributes = self._extract_object_attributes_with_uuid(
+            misp_object['Attribute'],
+            with_uuid=self._mapping.netflow_uuid_fields
+        )
+        network_traffic_args = {
+            'id': getattr(self, self._id_parsing_function['object'])(
+                'network-traffic',
+                misp_object
+            )
+        }
+        objects = []
+        for ref_type in ('src', 'dst'):
+            if attributes.get(f'ip-{ref_type}'):
+                ip_value, uuid = attributes.pop(f'ip-{ref_type}')
+                address_type = self._get_address_type(ip_value)
+                address_id = f'{address_type._type}--{uuid}'
+                if attributes.get(f'{ref_type}-as'):
+                    as_value, uuid = attributes.pop(f'{ref_type}-as')
+                    as_id = f'autonomous-system--{uuid}'
+                    objects.extend(
+                        (
+                            address_type(
+                                id=address_id,
+                                value=ip_value,
+                                belongs_to_refs=[as_id]
+                            ),
+                            AutonomousSystem(
+                                id=as_id,
+                                number=self._parse_AS_value(as_value)
+                            )
+                        )
+
+                    )
+                else:
+                    objects.append(address_type(id=address_id, value=ip_value))
+                network_traffic_args[f'{ref_type}_ref'] = address_id
+            elif attributes.get(f'{ref_type}-as'):
+                attributes[f'{ref_type}-as'] = attributes.pop(f'{ref_type}-as')[0]
+        network_traffic_args.update(self._parse_netflow_args(attributes))
+        objects.insert(0, NetworkTraffic(**network_traffic_args))
+        self._handle_object_observable(misp_object, objects)
+
     def _parse_network_connection_object_observable(self, misp_object: dict):
         attributes = self._extract_object_attributes_with_uuid(
             misp_object['Attribute'],

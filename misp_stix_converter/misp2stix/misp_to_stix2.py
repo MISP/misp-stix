@@ -1507,6 +1507,41 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         else:
             self._parse_mutex_object_observable(misp_object)
 
+    def _parse_netflow_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'network-traffic'
+            attributes = self._extract_object_attributes_escaped(misp_object['Attribute'])
+            pattern = []
+            for ref_type in ('src', 'dst'):
+                reference = []
+                feature = f'{prefix}:{ref_type}_ref'
+                if attributes.get(f'ip-{ref_type}'):
+                    ip_value = attributes.pop(f'ip-{ref_type}')
+                    reference.extend(
+                        (
+                            f"{feature}.type = '{self._define_address_type(ip_value)}'",
+                            f"{feature}.value = '{ip_value}'"
+                        )
+                    )
+                if attributes.get(f'{ref_type}-as'):
+                    value = self._parse_AS_value(attributes.pop(f'{ref_type}-as'))
+                    reference.append(f"{feature}.belongs_to_refs[0].number = '{value}'")
+                if reference:
+                    pattern.append(f"({' AND '.join(reference)})")
+            if attributes.get('protocol'):
+                pattern.append(f"{prefix}:protocols[0] = '{attributes.pop('protocol')}'")
+            for key, feature in self._mapping.netflow_object_mapping['features'].items():
+                if attributes.get(key):
+                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            for key, feature in self._mapping.netflow_object_mapping['extensions'].items():
+                if attributes.get(key):
+                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            if attributes:
+                pattern.extend(self._handle_pattern_properties(attributes, 'network-traffic'))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_netflow_object_observable(misp_object)
+
     def _parse_network_connection_object(self, misp_object: dict):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'
@@ -2688,6 +2723,36 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             mutex_args.update(self._handle_observable_properties(attributes))
         return mutex_args
+
+    def _parse_netflow_args(self, attributes: dict) -> dict:
+        args = self._parse_netflow_protocol(attributes)
+        for key, feature in self._mapping.netflow_object_mapping['features'].items():
+            if attributes.get(key):
+                args[feature] = attributes.pop(key)
+        if attributes:
+            args.update(self._handle_observable_properties(attributes))
+        return args
+
+    @staticmethod
+    def _parse_netflow_protocol(attributes: dict) -> dict:
+        protocols = set()
+        extensions = defaultdict(dict)
+        if attributes.get('icmp-type'):
+            extensions['icmp-ext']['icmp_tpye_hex'] = attributes.pop('icmp-type')
+            protocols.add('icmp')
+        if attributes.get('tcp-flags'):
+            extensions['tcp-ext']['src_flags_hex'] = attributes.pop('tcp-flags')
+            protocols.add('tcp')
+        if attributes.get('protocol'):
+            protocols.add(attributes.pop('protocol').lower())
+        if extensions:
+            return {
+                'extensions': extensions,
+                'protocols': list(protocols)
+            }
+        if protocols:
+            return {'protocols': list(protocols)}
+        return {'protocols': ['ip']}
 
     def _parse_network_connection_args(self, attributes: dict) -> dict:
         network_traffic_args = {}

@@ -341,6 +341,7 @@ class Stix2Mapping:
             'legal-entity': '_parse_legal_entity_object',
             'lnk': '_parse_lnk_object',
             'mutex': '_parse_mutex_object',
+            'netflow': '_parse_netflow_object',
             'network-connection': '_parse_network_connection_object',
             'network-socket': '_parse_network_socket_object',
             'news-agency': '_parse_news_agency_object',
@@ -646,6 +647,20 @@ class Stix2Mapping:
             'size-in-bytes'
         )
         self.__lnk_single_fields = self.__lnk_hash_types + lnk_single_fields
+        self.__netflow_object_mapping = Mapping(
+            features = {
+                'src-port': 'src_port',
+                'dst-port': 'dst_port',
+                'byte-count': 'src_byte_count',
+                'first-seen': 'start',
+                'last-seen': 'end',
+                'packet-count': 'src_packets'
+            },
+            extensions = {
+                'icmp-type': "extensions.'icmp-ext'.icmp_type_hex",
+                'tcp-flags': "extensions.'tcp-ext'.src_flags_hex"
+            }
+        )
         self.__network_connection_mapping = Mapping(
             features = Mapping(
                 **{
@@ -736,7 +751,6 @@ class Stix2Mapping:
             'account-avatar',
             'attachment'
         )
-
         self.__reddit_account_object_mapping = Mapping(
             **{
                 'account-id': 'user_id',
@@ -747,7 +761,6 @@ class Stix2Mapping:
             'account-id',
             'account-name'
         )
-
         self.__registry_key_mapping = Mapping(
             **{
                 'data-type': 'data_type',
@@ -1093,6 +1106,10 @@ class Stix2Mapping:
     @property
     def misp_identity_args(self) -> dict:
         return self.__misp_identity_args
+
+    @property
+    def netflow_object_mapping(self) -> dict:
+        return self.__netflow_object_mapping
 
     @property
     def network_connection_mapping(self) -> dict:
