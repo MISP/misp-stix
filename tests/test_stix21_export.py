@@ -3061,7 +3061,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         event = get_event_with_http_request_object()
         misp_object = deepcopy(event['Event']['Object'][0])
         attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
-        ip_src, ip_dst, host, method, user_agent, uri, url, content = (attribute for attribute in attributes)
+        ip_src, ip_dst, host, method, user_agent, uri, url, content = attributes
         network_traffic, src_address, dst_address, domain_name = observables
         network_traffic_id, src_address_id, dst_address_id, domain_name_id = grouping_refs
         network_traffic_ref, src_address_ref, dst_address_ref, domain_name_ref = object_refs
@@ -3131,7 +3131,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         event = get_event_with_image_object()
         misp_object = deepcopy(event['Event']['Object'][0])
         attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
-        attachment, filename, url, text = (attribute for attribute in attributes)
+        attachment, filename, url, text = attributes
         file, artifact = observables
         file_id, artifact_id = grouping_refs
         file_ref, artifact_ref = object_refs
@@ -3186,7 +3186,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         event = get_event_with_ip_port_object()
         misp_object = deepcopy(event['Event']['Object'][0])
         attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
-        ip, port, domain, first_seen = (attribute for attribute in attributes)
+        ip, port, domain, first_seen = attributes
         network_traffic_id, address_id = grouping_refs
         network_traffic_ref, address_ref = object_refs
         network_traffic, address_object = observables
@@ -3361,6 +3361,95 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
             observed_data = self.parser.stix_objects[-2:]
         )
 
+    def test_event_with_netflow_indicator_object(self):
+        event = get_event_with_netflow_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        ip_src, ip_dst, src_as, dst_as, src_port, dst_port, protocol, first_seen, tcp_flags = (attribute['value'] for attribute in attributes)
+        src_type, src_value, _src_as, dst_type, dst_value, _dst_as, _protocol, _src_port, _dst_port, start, tcp_ext = pattern[1:-1].split(' AND ')
+        prefix = 'network-traffic'
+        self.assertEqual(src_type, f"({prefix}:src_ref.type = 'ipv4-addr'")
+        self.assertEqual(src_value, f"{prefix}:src_ref.value = '{ip_src}'")
+        self.assertEqual(_src_as, f"{prefix}:src_ref.belongs_to_refs[0].number = '{self._parse_AS_value(src_as)}')")
+        self.assertEqual(dst_type, f"({prefix}:dst_ref.type = 'ipv4-addr'")
+        self.assertEqual(dst_value, f"{prefix}:dst_ref.value = '{ip_dst}'")
+        self.assertEqual(_dst_as, f"{prefix}:dst_ref.belongs_to_refs[0].number = '{self._parse_AS_value(dst_as)}')")
+        self.assertEqual(_protocol, f"{prefix}:protocols[0] = '{protocol}'")
+        self.assertEqual(_src_port, f"{prefix}:src_port = '{src_port}'")
+        self.assertEqual(_dst_port, f"{prefix}:dst_port = '{dst_port}'")
+        self.assertEqual(start, f"{prefix}:start = '{first_seen}'")
+        self.assertEqual(tcp_ext, f"{prefix}:extensions.'tcp-ext'.src_flags_hex = '{tcp_flags}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_netflow_observable_object(self):
+        event = get_event_with_netflow_object()
+        misp_object = deepcopy(event['Event']['Object'][0])
+        attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
+        ip_src, ip_dst, src_as, dst_as, src_port, dst_port, protocol, first_seen, tcp_flags = attributes
+        network_traffic, src_address, src_autonomous_system, dst_address, dst_autonomous_system = observables
+        network_traffic_id, src_address_id, src_autonomous_system_id, dst_address_id, dst_autonomous_system_id = grouping_refs
+        network_traffic_ref, src_address_ref, src_autonomous_system_ref, dst_address_ref, dst_autonomous_system_ref = object_refs
+        self.assertEqual(network_traffic.type, 'network-traffic')
+        self._assert_multiple_equal(
+            network_traffic.id,
+            network_traffic_id,
+            network_traffic_ref,
+            f"network-traffic--{misp_object['uuid']}"
+        )
+        self.assertEqual(network_traffic.start.strftime('%Y-%m-%dT%H:%M:%SZ'), first_seen['value'])
+        self.assertEqual(network_traffic.src_port, int(src_port['value']))
+        self.assertEqual(network_traffic.dst_port, int(dst_port['value']))
+        self.assertEqual(set(network_traffic.protocols), {protocol['value'].lower(), 'tcp'})
+        self.assertEqual(network_traffic.extensions['tcp-ext'].src_flags_hex, tcp_flags['value'])
+        self._assert_multiple_equal(
+            src_address.type,
+            dst_address.type,
+            'ipv4-addr'
+        )
+        self._assert_multiple_equal(
+            src_autonomous_system.type,
+            dst_autonomous_system.type,
+            'autonomous-system'
+        )
+        self._assert_multiple_equal(
+            network_traffic.src_ref,
+            src_address.id,
+            src_address_id,
+            src_address_ref,
+            f"ipv4-addr--{ip_src['uuid']}"
+        )
+        self.assertEqual(src_address.value, ip_src['value'])
+        self._assert_multiple_equal(
+            src_address.belongs_to_refs[0],
+            src_autonomous_system.id,
+            src_autonomous_system_id,
+            src_autonomous_system_ref,
+            f"autonomous-system--{src_as['uuid']}"
+        )
+        self.assertEqual(src_autonomous_system.number, self._parse_AS_value(src_as['value']))
+        self._assert_multiple_equal(
+            network_traffic.dst_ref,
+            dst_address.id,
+            dst_address_id,
+            dst_address_ref,
+            f"ipv4-addr--{ip_dst['uuid']}"
+        )
+        self.assertEqual(dst_address.value, ip_dst['value'])
+        self._assert_multiple_equal(
+            dst_address.belongs_to_refs[0],
+            dst_autonomous_system.id,
+            dst_autonomous_system_id,
+            dst_autonomous_system_ref,
+            f"autonomous-system--{dst_as['uuid']}"
+        )
+        self.assertEqual(dst_autonomous_system.number, self._parse_AS_value(dst_as['value']))
+        self._populate_documentation(
+            misp_object = misp_object,
+            observed_data = self.parser.stix_objects[-6:]
+        )
+
     def test_event_with_network_connection_indicator_object(self):
         event = get_event_with_network_connection_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
@@ -3390,7 +3479,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         event = get_event_with_network_connection_object()
         misp_object = deepcopy(event['Event']['Object'][0])
         attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
-        ip_src, ip_dst, src_port, dst_port, hostname, layer3, layer4, layer7 = (attribute for attribute in attributes)
+        ip_src, ip_dst, src_port, dst_port, hostname, layer3, layer4, layer7 = attributes
         network_traffic, address1, address2 = observables
         network_traffic_id, address1_id, address2_id = grouping_refs
         network_traffic_ref, address1_ref, address2_ref = object_refs

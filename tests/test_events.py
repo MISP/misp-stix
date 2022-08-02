@@ -1908,6 +1908,65 @@ _TEST_MUTEX_OBJECT = {
     ]
 }
 
+_TEST_NETFLOW_OBJECT = {
+    "name": "netflow",
+    "meta-category": "network",
+    "description": "Netflow object describes an network object based on the Netflowv5/v9 minimal definition",
+    "uuid": "419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "type": "ip-src",
+            "object_relation": "ip-src",
+            "value": "1.2.3.4"
+        },
+        {
+            "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+            "type": "ip-dst",
+            "object_relation": "ip-dst",
+            "value": "5.6.7.8"
+        },
+        {
+            "uuid": "53a12da9-4b66-4809-b0b4-e9de3172e7a0",
+            "type": "AS",
+            "object_relation": "src-as",
+            "value": "AS1234"
+        },
+        {
+            "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+            "type": "AS",
+            "object_relation": "dst-as",
+            "value": "AS5678"
+        },
+        {
+            "type": "port",
+            "object_relation": "src-port",
+            "value": "80"
+        },
+        {
+            "type": "port",
+            "object_relation": "dst-port",
+            "value": "8080"
+        },
+        {
+            "type": "text",
+            "object_relation": "protocol",
+            "value": "IP"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "first-seen",
+            "value": "2020-10-25T16:22:00Z"
+        },
+        {
+            "type": "text",
+            "object_relation": "tcp-flags",
+            "value": "00000002"
+        }
+    ]
+}
+
 _TEST_NETWORK_CONNECTION_OBJECT = {
     "name": "network-connection",
     "meta-category": "network",
@@ -4457,6 +4516,14 @@ def get_event_with_mutex_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         deepcopy(_TEST_MUTEX_OBJECT)
+    ]
+    return event
+
+
+def get_event_with_netflow_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_NETFLOW_OBJECT)
     ]
     return event
 

@@ -2201,6 +2201,66 @@ class TestSTIX20Export(TestSTIX2Export, TestSTIX20):
             observed_data = self.parser.stix_objects[-1]
         )
 
+    def test_event_with_netflow_indicator_object(self):
+        event = get_event_with_netflow_object()
+        attributes, pattern = self._run_indicator_from_object_tests(event)
+        ip_src, ip_dst, src_as, dst_as, src_port, dst_port, protocol, first_seen, tcp_flags = (attribute['value'] for attribute in attributes)
+        src_type, src_value, _src_as, dst_type, dst_value, _dst_as, _protocol, _src_port, _dst_port, start, tcp_ext = pattern[1:-1].split(' AND ')
+        prefix = 'network-traffic'
+        self.assertEqual(src_type, f"({prefix}:src_ref.type = 'ipv4-addr'")
+        self.assertEqual(src_value, f"{prefix}:src_ref.value = '{ip_src}'")
+        self.assertEqual(_src_as, f"{prefix}:src_ref.belongs_to_refs[0].number = '{self._parse_AS_value(src_as)}')")
+        self.assertEqual(dst_type, f"({prefix}:dst_ref.type = 'ipv4-addr'")
+        self.assertEqual(dst_value, f"{prefix}:dst_ref.value = '{ip_dst}'")
+        self.assertEqual(_dst_as, f"{prefix}:dst_ref.belongs_to_refs[0].number = '{self._parse_AS_value(dst_as)}')")
+        self.assertEqual(_protocol, f"{prefix}:protocols[0] = '{protocol}'")
+        self.assertEqual(_src_port, f"{prefix}:src_port = '{src_port}'")
+        self.assertEqual(_dst_port, f"{prefix}:dst_port = '{dst_port}'")
+        self.assertEqual(start, f"{prefix}:start = '{first_seen}'")
+        self.assertEqual(tcp_ext, f"{prefix}:extensions.'tcp-ext'.src_flags_hex = '{tcp_flags}'")
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            indicator = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_netflow_observable_object(self):
+        event = get_event_with_netflow_object()
+        attributes, observable_object = self._run_observable_from_object_tests(event)
+        ip_src, ip_dst, src_as, dst_as, src_port, dst_port, protocol, first_seen, tcp_flags = (attribute['value'] for attribute in attributes)
+        network_traffic = observable_object['0']
+        src_address = observable_object['1']
+        src_autonomous_system = observable_object['2']
+        dst_address = observable_object['3']
+        dst_autonomous_system = observable_object['4']
+        self.assertEqual(network_traffic.type, 'network-traffic')
+        self.assertEqual(network_traffic.start.strftime('%Y-%m-%dT%H:%M:%SZ'), first_seen)
+        self.assertEqual(network_traffic.src_port, int(src_port))
+        self.assertEqual(network_traffic.dst_port, int(dst_port))
+        self.assertEqual(set(network_traffic.protocols), {protocol.lower(), 'tcp'})
+        self.assertEqual(network_traffic.extensions['tcp-ext'].src_flags_hex, tcp_flags)
+        self.assertEqual(network_traffic.src_ref, '1')
+        self.assertEqual(network_traffic.dst_ref, '3')
+        self._assert_multiple_equal(
+            src_address.type,
+            dst_address.type,
+            'ipv4-addr'
+        )
+        self._assert_multiple_equal(
+            src_autonomous_system.type,
+            dst_autonomous_system.type,
+            'autonomous-system'
+        )
+        self.assertEqual(src_address.value, ip_src)
+        self.assertEqual(src_address.belongs_to_refs, ['2'])
+        self.assertEqual(src_autonomous_system.number, self._parse_AS_value(src_as))
+        self.assertEqual(dst_address.value, ip_dst)
+        self.assertEqual(dst_address.belongs_to_refs, ['4'])
+        self.assertEqual(dst_autonomous_system.number, self._parse_AS_value(dst_as))
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            observed_data = self.parser.stix_objects[-1]
+        )
+
     def test_event_with_network_connection_indicator_object(self):
         event = get_event_with_network_connection_object()
         attributes, pattern = self._run_indicator_from_object_tests(event)
