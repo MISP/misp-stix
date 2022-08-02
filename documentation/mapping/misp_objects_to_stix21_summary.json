@@ -26,6 +26,7 @@
     "legal-entity": "**Identity**",
     "lnk": "Artifact & Directory & File Objects",
     "mutex": "Mutex Object",
+    "netflow": "Autonomous System & IPv4/IPv6 Address & Network Traffic Objects",
     "network-connection": "Network Traffic, IPv4/IPv6 Address & Domain Name Objects",
     "network-socket": "Network Traffic with a socket extension, IPv4/IPv6 Address & Domain Name Objects",
     "news-agency": "**Identity**",
