@@ -2209,6 +2209,62 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
             location = location
         )
 
+    def test_stix21_bundle_with_http_request_indicator_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_http_request_indicator_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        pattern = self._check_indicator_object(misp_object, indicator)
+        self._check_http_request_indicator_object(misp_object.attributes, pattern)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            indicator = indicator
+        )
+
+    def test_stix21_bundle_with_http_request_observable_object(self):
+        bundle = TestSTIX21Bundles.get_bundle_with_http_request_observable_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, network_traffic, address1, address2, domain_name = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        network_traffic_ref, address1_ref, address2_ref, domain_name_ref = self._check_observed_data_object(misp_object, observed_data)
+        self._assert_multiple_equal(
+            misp_object.uuid,
+            network_traffic.id.split('--')[1],
+            network_traffic_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[0].uuid,
+            address1.id.split('--')[1],
+            address1_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[1].uuid,
+            address2.id.split('--')[1],
+            address2_ref.split('--')[1]
+        )
+        self._assert_multiple_equal(
+            misp_object.attributes[-1].uuid,
+            domain_name.id.split('--')[1],
+            domain_name_ref.split('--')[1]
+        )
+        self._check_http_request_observable_object(
+            misp_object.attributes,
+            {
+                network_traffic.id: network_traffic,
+                address1.id: address1,
+                address2.id: address2,
+                domain_name.id: domain_name
+            }
+        )
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            observed_data = [observed_data, network_traffic, address1, address2, domain_name]
+        )
+
     def test_stix21_bundle_with_image_indicator_object(self):
         bundle = TestSTIX21Bundles.get_bundle_with_image_indicator_object()
         self.parser.load_stix_bundle(bundle)

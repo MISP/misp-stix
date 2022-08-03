@@ -3912,6 +3912,78 @@ _HTTP_INDICATOR_ATTRIBUTES = [
         ]
     }
 ]
+_HTTP_REQUEST_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "id": "indicator--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '8.8.8.8') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:extensions.'http-request-ext'.request_method = 'POST' AND network-traffic:extensions.'http-request-ext'.request_value = '/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_value = 'http://circl.lu/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_header.'Content-Type' = 'JSON' AND network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = 'Mozilla Firefox']",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"http-request\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_HTTP_REQUEST_OBSERVABLE_OBJECT = {
+    "type": "observed-data",
+    "id": "observed-data--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "first_observed": "2020-10-25T16:22:00Z",
+    "last_observed": "2020-10-25T16:22:00Z",
+    "number_observed": 1,
+    "objects": {
+        "0": {
+            "type": "network-traffic",
+            "src_ref": "1",
+            "dst_ref": "2",
+            "protocols": [
+                "tcp",
+                "http"
+            ],
+            "extensions": {
+                "http-request-ext": {
+                    "request_method": "POST",
+                    "request_value": "/projects/internships/",
+                    "request_header": {
+                        "Content-Type": "JSON",
+                        "User-Agent": "Mozilla Firefox"
+                    }
+                }
+            },
+            "x_misp_url": "http://circl.lu/projects/internships/"
+        },
+        "1": {
+            "type": "ipv4-addr",
+            "value": "8.8.8.8"
+        },
+        "2": {
+            "type": "ipv4-addr",
+            "value": "149.13.33.14"
+        },
+        "3": {
+            "type": "domain-name",
+            "value": "circl.lu",
+            "resolves_to_refs": [
+                "2"
+            ]
+        }
+    },
+    "labels": [
+        "misp:name=\"http-request\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _IMAGE_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--939b2f03-c487-4f62-a90e-cab7acfee294",
@@ -6205,6 +6277,14 @@ class TestSTIX20Bundles:
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             observed_data['objects']['2']['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(observed_data)
+
+    @classmethod
+    def get_bundle_with_http_request_indicator_object(cls):
+        return cls.__assemble_bundle(_HTTP_REQUEST_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_http_request_observable_object(cls):
+        return cls.__assemble_bundle(_HTTP_REQUEST_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_image_indicator_object(cls):

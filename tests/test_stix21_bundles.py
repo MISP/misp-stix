@@ -4756,6 +4756,96 @@ _HTTP_INDICATOR_ATTRIBUTES = [
         ]
     }
 ]
+_HTTP_REQUEST_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '8.8.8.8') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:extensions.'http-request-ext'.request_method = 'POST' AND network-traffic:extensions.'http-request-ext'.request_value = '/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_value = 'http://circl.lu/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_header.'Content-Type' = 'JSON' AND network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = 'Mozilla Firefox']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"http-request\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_HTTP_REQUEST_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "network-traffic--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+            "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "ipv4-addr--d6f0e3b7-fa5d-4443-aea7-7b60b343bde7",
+            "domain-name--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+        ],
+        "labels": [
+            "misp:name=\"http-request\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+        "src_ref": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "dst_ref": "ipv4-addr--d6f0e3b7-fa5d-4443-aea7-7b60b343bde7",
+        "protocols": [
+            "tcp",
+            "http"
+        ],
+        "extensions": {
+            "http-request-ext": {
+                "request_method": "POST",
+                "request_value": "/projects/internships/",
+                "request_header": {
+                    "Content-Type": "JSON",
+                    "User-Agent": "Mozilla Firefox"
+                }
+            }
+        },
+        "x_misp_url": "http://circl.lu/projects/internships/"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "value": "8.8.8.8"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--d6f0e3b7-fa5d-4443-aea7-7b60b343bde7",
+        "value": "149.13.33.14"
+    },
+    {
+        "type": "domain-name",
+        "spec_version": "2.1",
+        "id": "domain-name--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "value": "circl.lu",
+        "resolves_to_refs": [
+            "ipv4-addr--d6f0e3b7-fa5d-4443-aea7-7b60b343bde7"
+        ]
+    }
+]
 _IMAGE_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -7508,6 +7598,14 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_geolocation_object(cls):
         return cls.__assemble_bundle(_GEOLOCATION_OBJECT)
+
+    @classmethod
+    def get_bundle_with_http_request_indicator_object(cls):
+        return cls.__assemble_bundle(_HTTP_REQUEST_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_http_request_observable_object(cls):
+        return cls.__assemble_bundle(*_HTTP_REQUEST_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_image_indicator_object(cls):
