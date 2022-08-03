@@ -1529,7 +1529,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 if reference:
                     pattern.append(f"({' AND '.join(reference)})")
             if attributes.get('protocol'):
-                pattern.append(f"{prefix}:protocols[0] = '{attributes.pop('protocol')}'")
+                pattern.append(f"{prefix}:protocols[0] = '{attributes.pop('protocol').lower()}'")
             for key, feature in self._mapping.netflow_object_mapping['features'].items():
                 if attributes.get(key):
                     pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
