@@ -652,8 +652,8 @@ class Stix2Mapping:
                 'src-port': 'src_port',
                 'dst-port': 'dst_port',
                 'byte-count': 'src_byte_count',
-                'first-seen': 'start',
-                'last-seen': 'end',
+                'first-packet-seen': 'start',
+                'last-packet-seen': 'end',
                 'packet-count': 'src_packets'
             },
             extensions = {
