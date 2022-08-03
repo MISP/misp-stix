@@ -3373,7 +3373,7 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
         self.assertEqual(dst_type, f"({prefix}:dst_ref.type = 'ipv4-addr'")
         self.assertEqual(dst_value, f"{prefix}:dst_ref.value = '{ip_dst}'")
         self.assertEqual(_dst_as, f"{prefix}:dst_ref.belongs_to_refs[0].number = '{self._parse_AS_value(dst_as)}')")
-        self.assertEqual(_protocol, f"{prefix}:protocols[0] = '{protocol}'")
+        self.assertEqual(_protocol, f"{prefix}:protocols[0] = '{protocol.lower()}'")
         self.assertEqual(_src_port, f"{prefix}:src_port = '{src_port}'")
         self.assertEqual(_dst_port, f"{prefix}:dst_port = '{dst_port}'")
         self.assertEqual(start, f"{prefix}:start = '{first_seen}'")
