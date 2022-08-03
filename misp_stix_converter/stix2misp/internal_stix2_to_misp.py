@@ -1122,6 +1122,63 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_gitlab_user_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_standard_observable(observed_data, 'gitlab-user', 'v21')
 
+    def _object_from_http_request_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('http-request', observed_data)
+        observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
+        for observable in observables.values():
+            if observable.type == 'network-traffic':
+                for feature in ('src', 'dst'):
+                    if hasattr(observable, f'{feature}_ref'):
+                        address = observables[getattr(observable, f'{feature}_ref')]
+                        attribute = {
+                            'type': f'ip-{feature}',
+                            'object_relation': f'ip-{feature}',
+                            'value': address.value
+                        }
+                        if hasattr(address, 'id'):
+                            attribute['uuid'] = address.id.split('--')[1]
+                        misp_object.add_attribute(**attribute)
+                for feature, mapping in self._mapping.http_request_object_mapping.items():
+                    if hasattr(observable, feature):
+                        self._populate_object_attributes(
+                            misp_object,
+                            mapping,
+                            getattr(observable, feature)
+                        )
+                if hasattr(observable, 'extensions') and observable.extensions.get('http-request-ext'):
+                    extension = observable.extensions['http-request-ext']
+                    for feature, mapping in self._mapping.http_request_extension_mapping.items():
+                        if hasattr(extension, feature):
+                            self._populate_object_attributes(
+                                misp_object,
+                                mapping,
+                                getattr(extension, feature)
+                            )
+                    if hasattr(extension, 'request_header'):
+                        for feature, mapping in self._mapping.http_request_header_mapping.items():
+                            if extension.request_header.get(feature):
+                                self._populate_object_attributes(
+                                    misp_object,
+                                    mapping,
+                                    extension.request_header[feature]
+                                )
+            elif observable.type == 'domain-name':
+                attribute = {
+                    'type': 'hostname',
+                    'object_relation': 'host',
+                    'value': observable.value
+                }
+                if hasattr(observable, 'id'):
+                    attribute['uuid'] = observable.id.split('--')[1]
+                misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
+    def _object_from_http_request_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_http_request_observable(observed_data, 'v20')
+
+    def _object_from_http_request_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_http_request_observable(observed_data, 'v21')
+
     def _object_from_image_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         misp_object = self._create_misp_object('image', observed_data)
         observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
@@ -1869,6 +1926,38 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_gitlab_user_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_account_indicator(indicator, 'gitlab-user')
 
+    def _object_from_http_request_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('http-request', indicator)
+        mapping = self._mapping.http_request_pattern_object_mapping
+        reference: dict
+        request_values = []
+        request_value = "extensions.'http-request-ext'.request_value"
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            if pattern.startswith('('):
+                reference = self._parse_http_request_reference(feature, value)
+                continue
+            if pattern.endswith(')'):
+                reference.update(self._parse_http_request_reference(feature, value))
+                misp_object.add_attribute(**reference)
+                continue
+            if feature == request_value:
+                request_values.append(value)
+            if feature in mapping:
+                attribute = {'value': value}
+                attribute.update(mapping[feature])
+                misp_object.add_attribute(**attribute)
+        if request_values:
+            if len(request_values) == 1:
+                attribute = {'value': request_values[0]}
+                attribute.update(self._mapping.uri_attribute)
+                misp_object.add_attribute(**attribute)
+            else:
+                value1, value2 = request_values
+                args = (value1, value2) if value1 in value2 else (value2, value1)
+                self._parse_http_request_values(misp_object, *args)
+        self._add_misp_object(misp_object)
+
     def _object_from_image_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('image', indicator)
         mapping = self._mapping.image_indicator_object_mapping
@@ -2099,6 +2188,23 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     attribute.update(subject_mapping[key])
                     misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
+
+    @staticmethod
+    def _parse_http_request_reference(feature: str, value: str) -> dict:
+        if feature.split('.')[1] == 'value':
+            return {'value': value}
+        if value == 'domain-name':
+            return {'type': 'hostname', 'object_relation': 'host'}
+        relation = f"ip-{feature.split('_')[0]}"
+        return {'type': relation, 'object_relation': relation}
+
+    def _parse_http_request_values(self, misp_object: MISPObject, uri: str, url: str):
+        uri_attribute = {'value': uri}
+        uri_attribute.update(self._mapping.uri_attribute)
+        misp_object.add_attribute(**uri_attribute)
+        url_attribute = {'value': url}
+        url_attribute.update(self._mapping.url_attribute)
+        misp_object.add_attribute(**url_attribute)
 
     @staticmethod
     def _parse_ip_port_reference(feature: str, value: str) -> dict:

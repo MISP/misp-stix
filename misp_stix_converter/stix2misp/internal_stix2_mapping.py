@@ -288,6 +288,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'file': '_object_from_file',
             'github-user': '_object_from_github_user',
             'gitlab-user': '_object_from_gitlab_user',
+            'http-request': '_object_from_http_request',
             'image': '_object_from_image',
             'ip-port': '_object_from_ip_port',
             'legal-entity': '_parse_legal_entity_object',
@@ -330,6 +331,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         args_attribute = {'type': 'text', 'object_relation': 'args'}
         attachment_attribute = {'type': 'attachment', 'object_relation': 'attachment'}
         authentihash_attribute = {'type': 'authentihash', 'object_relation': 'authentihash'}
+        basicauth_password_attribute = {'type': 'text', 'object_relation': 'basicauth-password'}
+        basicauth_user_attribute = {'type': 'text', 'object_relation': 'basicauth-user'}
         bcc_attribute = {'type': 'email-dst', 'object_relation': 'bcc'}
         bcc_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'bcc-display-name'}
         bio_attribute = {'type': 'text', 'object_relation': 'bio'}
@@ -339,6 +342,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         command_line_attribute = {'type': 'text', 'object_relation': 'command-line'}
         comment_attribute = {'type': 'text', 'object_relation': 'comment'}
         compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
+        content_type_attribute = {'type': 'other', 'object_relation': 'content-type'}
+        cookie_attribute = {'type': 'text', 'object_relation': 'cookie'}
         creation_time_attribute = {'type': 'datetime', 'object_relation': 'creation-time'}
         current_directory_attribute = {'type': 'text', 'object_relation': 'current-directory'}
         domain_attribute = {'type': 'domain', 'object_relation': 'domain'}
@@ -362,6 +367,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         from_display_name_attribute = {'type': 'email-src-display-name', 'object_relation': 'from-display-name'}
         from_domain_attribute = {'type': 'domain', 'object_relation': 'from-domain'}
         guid_attribute = {'type': 'text', 'object_relation': 'guid'}
+        header_attribute = {'type': 'text', 'object_relation': 'header'}
         hidden_attribute = {'type': 'boolean', 'object_relation': 'hidden'}
         hostname_attribute = {'type': 'hostname', 'object_relation': 'hostname'}
         hostname_dst_attribute = {'type': 'hostname', 'object_relation': 'hostname-dst'}
@@ -384,6 +390,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         lnk_creation_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-creation-time'}
         md5_attribute = {'type': 'md5', 'object_relation': 'md5'}
         message_id_attribute = {'type': 'email-message-id', 'object_relation': 'message-id'}
+        method_attribute = {'type': 'http-method', 'object_relation': 'method'}
         mime_boundary_attribute = {'type': 'email-mime-boundary', 'object_relation': 'mime-boundary'}
         mime_type_attribute = {'type': 'mime-type', 'object_relation': 'mimetype'}
         modification_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-modification-time'}
@@ -402,6 +409,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         pid_attribute = {'type': 'text', 'object_relation': 'pid'}
         port_attribute = {'type': 'port', 'object_relation': 'port'}
         process_state_attribute = {'type': 'process-state', 'object_relation': 'process-state'}
+        proxy_password_attribute = {'type': 'text', 'object_relation': 'proxy-password'}
+        proxy_user_attribute = {'type': 'text', 'object_relation': 'proxy-user'}
         pubkey_info_algorithm_attribute = {'type': 'text', 'object_relation': 'pubkey-info-algorithm'}
         pubkey_info_exponent_attribute = {'type': 'text', 'object_relation': 'pubkey-info-exponent'}
         pubkey_info_modulus_attribute = {'type': 'text', 'object_relation': 'pubkey-info-modulus'}
@@ -409,6 +418,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         raw_base64_attribute = {'type': 'text', 'object_relation': 'raw-base64'}
         received_hostname_attribute = {'type': 'hostname', 'object_relation': 'received-header-hostname'}
         received_ip_attribute = {'type': 'ip-src', 'object_relation': 'received-header-ip'}
+        referer_attribute = {'type': 'other', 'object_relation': 'referer'}
         reply_to_attribute = {'type': 'email-reply-to', 'object_relation': 'reply-to'}
         reply_to_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'reply-to-display-name'}
         return_path_attribute = {'type': 'email-src', 'object_relation': 'return-path'}
@@ -440,7 +450,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
         to_attribute = {'type': 'email-dst', 'object_relation': 'to'}
         to_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'to-display-name'}
         type_attribute = {'type': 'text', 'object_relation': 'type'}
-        url_attribute = {'type': 'url', 'object_relation': 'url'}
         username_attribute = {'type': 'text', 'object_relation': 'username'}
         user_agent_attribute = {'type': 'text', 'object_relation': 'user-agent'}
         user_avatar_attribute = {'type': 'attachment', 'object_relation': 'user-avatar'}
@@ -451,6 +460,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         verified_attribute = {'type': 'text', 'object_relation': 'verified'}
         vhash_attribute = {'type': 'vhash', 'object_relation': 'vhash'}
         x_mailer_attribute = {'type': 'email-x-mailer', 'object_relation': 'x-mailer'}
+        self.__uri_attribute = {'type': 'uri', 'object_relation': 'uri'}
+        self.__url_attribute = {'type': 'url', 'object_relation': 'url'}
 
         # STIX TO MISP OBJECTS MAPPING
         self.__android_app_object_mapping = Mapping(
@@ -610,7 +621,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_attachment = attachment_attribute,
             x_misp_description = self.description_attribute,
             x_misp_link = link_attribute,
-            x_misp_url = url_attribute,
+            x_misp_url = self.url_attribute,
             x_misp_user_avatar = user_avatar_attribute
         )
         self.__file_hashes_object_mapping = Mapping(
@@ -714,11 +725,48 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_state = {'type': 'text', 'object_relation': 'state'},
             x_misp_web_url = {'type': 'link', 'object_relation': 'web_url'}
         )
+        self.__http_request_extension_mapping = Mapping(
+            request_method = method_attribute,
+            request_value = self.uri_attribute
+        )
+        self.__http_request_header_mapping = Mapping(
+            **{
+                'Content-Type': content_type_attribute,
+                'Cookie': cookie_attribute,
+                'Referer': referer_attribute,
+                'User-Agent': user_agent_attribute
+            }
+        )
+        self.__http_request_object_mapping = Mapping(
+            x_misp_basicauth_password = basicauth_password_attribute,
+            x_misp_basicauth_user = basicauth_user_attribute,
+            x_misp_header = header_attribute,
+            x_misp_proxy_password = proxy_password_attribute,
+            x_misp_proxy_user = proxy_user_attribute,
+            x_misp_text = text_attribute,
+            x_misp_url = self.url_attribute
+        )
+        http_ext = "extensions.'http-request-ext'"
+        self.__http_request_pattern_object_mapping = Mapping(
+            **{
+                f"{http_ext}.request_method": method_attribute,
+                f"{http_ext}.request_header.'Content-Type'": content_type_attribute,
+                f"{http_ext}.request_header.'Cookie'": cookie_attribute,
+                f"{http_ext}.request_header.'Referer'": referer_attribute,
+                f"{http_ext}.request_header.'User-Agent'": user_agent_attribute,
+                'x_misp_basicauth_password': basicauth_password_attribute,
+                'x_misp_basicauth_user': basicauth_user_attribute,
+                'x_misp_header': header_attribute,
+                'x_misp_proxy_password': proxy_password_attribute,
+                'x_misp_proxy_user': proxy_user_attribute,
+                'x_misp_text': text_attribute,
+            }
+        )
         self.__image_indicator_object_mapping = Mapping(
             **{
                 'name': filename_attribute,
-                'content_ref.url': url_attribute,
-                'content_ref.x_misp_url': url_attribute,
+                'content_ref.url': self.url_attribute,
+                'content_ref.x_misp_url': self.url_attribute,
                 'x_misp_archive': archive_attribute,
                 'x_misp_image_text': image_text_attribute,
                 'x_misp_link': link_attribute,
@@ -847,7 +895,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             name = self.name_attribute,
             x_misp_alias = alias_attribute,
             x_misp_archive = archive_attribute,
-            x_misp_url = url_attribute
+            x_misp_url = self.url_attribute
         )
         self.__organization_contact_information_mapping = Mapping(
             **{
@@ -898,7 +946,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_link = link_attribute,
             x_misp_posts = {'type': 'text', 'object_relation': 'posts'},
             x_misp_profile_photo = {'type': 'attachment', 'object_relation': 'profile-photo'},
-            x_misp_url = url_attribute,
+            x_misp_url = self.url_attribute,
             x_misp_verified = {'type': 'boolean', 'object_relation': 'verified'},
         )
         self.__pe_object_mapping = Mapping(
@@ -1000,7 +1048,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_link = link_attribute,
             x_misp_moderator_of = {'type': '', 'object_relation': 'moderator-of'},
             x_misp_trophies = {'type': '', 'object_relation': 'trophies'},
-            x_misp_url = url_attribute
+            x_misp_url = self.url_attribute
         )
         self.__registry_key_object_mapping = Mapping(
             key = {'type': 'regkey', 'object_relation': 'key'},
@@ -1068,11 +1116,11 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_tweets = {'type': 'text', 'object_relation': 'tweets'},
             x_misp_twitter_followers = {'type': 'text', 'object_relation': 'twitter-followers'},
             x_misp_twitter_following = {'type': 'text', 'object_relation': 'twitter-following'},
-            x_misp_url = url_attribute,
+            x_misp_url = self.url_attribute,
             x_misp_verified = verified_attribute
         )
         self.__url_object_mapping = Mapping(
-            value = url_attribute,
+            value = self.url_attribute,
             x_misp_credential = {'type': 'text', 'object_relation': 'credential'},
             x_misp_domain = domain_attribute,
             x_misp_domain_without_tld = {'type': 'text', 'object_relation': 'domain_without_tld'},
@@ -1177,7 +1225,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'email': {'type': 'email-dst', 'object_relation': 'email'},
                 'IP': ip_attribute,
                 'RID': {'type': 'text', 'object_relation': 'rid'},
-                'URI': {'type': 'uri', 'object_relation': 'uri'}
+                'URI': self.uri_attribute
             }
         )
         self.__yara_object_mapping = Mapping(
@@ -1263,6 +1311,22 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def gitlab_user_object_mapping(self) -> dict:
         return self.__gitlab_user_object_mapping
+
+    @property
+    def http_request_extension_mapping(self) -> dict:
+        return self.__http_request_extension_mapping
+
+    @property
+    def http_request_header_mapping(self) -> dict:
+        return self.__http_request_header_mapping
+
+    @property
+    def http_request_object_mapping(self) -> dict:
+        return self.__http_request_object_mapping
+
+    @property
+    def http_request_pattern_object_mapping(self) -> dict:
+        return self.__http_request_pattern_object_mapping
 
     @property
     def image_indicator_object_mapping(self) -> dict:
@@ -1391,6 +1455,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def twitter_account_object_mapping(self) -> dict:
         return self.__twitter_account_object_mapping
+
+    @property
+    def uri_attribute(self) -> dict:
+        return self.__uri_attribute
+
+    @property
+    def url_attribute(self) -> dict:
+        return self.__url_attribute
 
     @property
     def url_object_mapping(self) -> dict:
