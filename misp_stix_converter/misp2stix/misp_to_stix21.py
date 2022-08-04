@@ -1250,6 +1250,32 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             pattern.append(f"{prefix}:modified_time = '{modified}'")
         return pattern
 
+    def _parse_sigma_object(self, misp_object: dict):
+        indicator_args = {}
+        custom_fields = defaultdict(list)
+        for attribute in misp_object['Attribute']:
+            relation = attribute['object_relation']
+            value = attribute['value']
+            if relation == 'reference':
+                reference = {
+                    'source_name': 'url',
+                    'url': value
+                }
+                if attribute.get('comment'):
+                    reference['description'] = attribute['comment']
+                indicator_args['external_references'] = [reference]
+                continue
+            if relation in self._mapping.sigma_object_mapping:
+                if relation == 'sigma':
+                    value = self._handle_value_for_pattern(attribute['value'])
+                    indicator_args['pattern_type'] = attribute['type']
+                indicator_args[self._mapping.sigma_object_mapping[relation]] = value
+            else:
+                custom_fields[f'x_misp_{relation}'].append(attribute['value'])
+        if custom_fields:
+            indicator_args.update({key: value[0] if len(value) == 1 else value for key, value in custom_fields.items()})
+        self._handle_patterning_object_indicator(misp_object, indicator_args)
+
     def _parse_suricata_object(self, misp_object: dict):
         indicator_args = {}
         for attribute in misp_object['Attribute']:

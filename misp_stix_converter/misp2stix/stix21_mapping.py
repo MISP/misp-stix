@@ -51,6 +51,7 @@ class Stix21Mapping(Stix2Mapping):
         v21_specific_objects = {
             'annotation': '_populate_objects_to_parse',
             'geolocation': '_parse_geolocation_object',
+            'sigma': '_parse_sigma_object',
             'suricata': '_parse_suricata_object',
             'yara': '_parse_yara_object'
         }
@@ -221,6 +222,13 @@ class Stix21Mapping(Stix2Mapping):
             'parent-image',
             'parent-pid'
         )
+        self.__sigma_object_mapping = Mapping(
+            **{
+                'comment': 'description',
+                'sigma': 'pattern',
+                'sigma-rule-name': 'name'
+            }
+        )
         self.__suricata_object_mapping = Mapping(
             comment = 'description',
             suricata = 'pattern',
@@ -364,6 +372,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def process_uuid_fields(self) -> tuple:
         return self.__process_uuid_fields
+
+    @property
+    def sigma_object_mapping(self) -> dict:
+        return self.__sigma_object_mapping
 
     @property
     def suricata_object_mapping(self) -> dict:
