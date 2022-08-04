@@ -2104,13 +2104,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
             if 'src_ref.' in feature or 'dst_ref.' in feature:
-                if pattern.endswith(')'):
+                if pattern.startswith('('):
+                    reference = defaultdict(dict)
+                elif pattern.endswith(')'):
                     self._parse_netflow_reference(reference, feature, value[:-2])
                     for attribute in reference.values():
                         misp_object.add_attribute(**attribute)
                     continue
-                if pattern.startswith('('):
-                    reference = defaultdict(dict)
                 self._parse_netflow_reference(reference, feature, value)
                 continue
             attribute = {'value': value.upper() if 'protocols' in feature else value}
