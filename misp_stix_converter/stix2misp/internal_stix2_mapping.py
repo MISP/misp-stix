@@ -294,6 +294,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'legal-entity': '_parse_legal_entity_object',
             'lnk': '_object_from_lnk',
             'mutex': '_object_from_mutex',
+            'netflow': '_object_from_netflow',
             'network-connection': '_object_from_network_connection',
             'network-socket': '_object_from_network_socket',
             'news-agency': '_parse_news_agency_object',
@@ -336,16 +337,19 @@ class InternalSTIX2Mapping(STIX2Mapping):
         bcc_attribute = {'type': 'email-dst', 'object_relation': 'bcc'}
         bcc_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'bcc-display-name'}
         bio_attribute = {'type': 'text', 'object_relation': 'bio'}
+        byte_count_attribute = {'type': 'counter', 'object_relation': 'byte-count'}
         cc_attribute = {'type': 'email-dst', 'object_relation': 'cc'}
         cc_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'cc-display-name'}
         certificate_attribute = {'type': 'x509-fingerprint-sha1', 'object_relation': 'certificate'}
         command_line_attribute = {'type': 'text', 'object_relation': 'command-line'}
         comment_attribute = {'type': 'text', 'object_relation': 'comment'}
+        community_id_attribute = {'type': 'community-id', 'object_relation': 'community-id'}
         compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
         content_type_attribute = {'type': 'other', 'object_relation': 'content-type'}
         cookie_attribute = {'type': 'text', 'object_relation': 'cookie'}
         creation_time_attribute = {'type': 'datetime', 'object_relation': 'creation-time'}
         current_directory_attribute = {'type': 'text', 'object_relation': 'current-directory'}
+        direction_attribute = {'type': 'text', 'object_relation': 'direction'}
         domain_attribute = {'type': 'domain', 'object_relation': 'domain'}
         domain_family_attribute = {'type': 'text', 'object_relation': 'domain-family'}
         dst_port_attribute = {'type': 'port', 'object_relation': 'dst-port'}
@@ -359,6 +363,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         fake_process_name_attribute = {'type': 'boolean', 'object_relation': 'fake-process-name'}
         file_encoding_attribute = {'type': 'text', 'object_relation': 'file-encoding'}
         filename_attribute = {'type': 'filename', 'object_relation': 'filename'}
+        first_packet_seen_attribute = {'type': 'datetime', 'object_relation': 'first-packet-seen'}
+        flow_count_attribute = {'type': 'counter', 'object_relation': 'flow-count'}
         followers_attribute = {'type': 'text', 'object_relation': 'followers'}
         following_attribute = {'type': 'text', 'object_relation': 'following'}
         format_attribute = {'type': 'text', 'object_relation': 'format'}
@@ -378,13 +384,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
         imphash_attribute = {'type': 'imphash', 'object_relation': 'imphash'}
         integrity_level_attribute = {'type': 'text', 'object_relation': 'integrity-level'}
         ip_attribute = {'type': 'ip-dst', 'object_relation': 'ip'}
+        ip_protocol_number_attribute = {'type': '', 'object_relation': 'ip-protocol-number'}
         ip_source_attribute = {'type': 'ip-src', 'object_relation': 'ip-src'}
+        ip_version_attribute = {'type': 'counter', 'object_relation': 'ip_version'}
         is_ca_attribute = {'type': 'boolean', 'object_relation': 'is_ca'}
         is_self_signed_attribute = {'type': 'boolean', 'object_relation': 'self_signed'}
         issuer_attribute = {'type': 'text', 'object_relation': 'issuer'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
         last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
         last_modified_attribute = {'type': 'datetime', 'object_relation': 'last-modified'}
+        last_packet_seen_attribute = {'type': 'datetime', 'object_relation': 'last-packet-seen'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
         lnk_creation_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-creation-time'}
@@ -395,6 +404,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         mime_type_attribute = {'type': 'mime-type', 'object_relation': 'mimetype'}
         modification_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-modification-time'}
         msg_attribute = {'type': 'attachment', 'object_relation': 'msg'}
+        packet_count_attribute = {'type': 'counter', 'object_relation': 'packet-count'}
         parent_command_line_attribute = {'type': 'text', 'object_relation': 'parent-command-line'}
         parent_guid_attribute = {'type': 'text', 'object_relation': 'parent-guid'}
         parent_image_attribute = {'type': 'filename', 'object_relation': 'parent-image'}
@@ -460,6 +470,11 @@ class InternalSTIX2Mapping(STIX2Mapping):
         verified_attribute = {'type': 'text', 'object_relation': 'verified'}
         vhash_attribute = {'type': 'vhash', 'object_relation': 'vhash'}
         x_mailer_attribute = {'type': 'email-x-mailer', 'object_relation': 'x-mailer'}
+        self.__dst_as_attribute = {'type': 'AS', 'object_relation': 'dst-as'}
+        self.__icmp_type_attribute = {'type': 'text', 'object_relation': 'icmp-type'}
+        self.__protocol_attribute = {'type': 'text', 'object_relation': 'protocol'}
+        self.__src_as_attribute = {'type': 'AS', 'object_relation': 'src-as'}
+        self.__tcp_flags_attribute = {'type': 'text', 'object_relation': 'tcp-flags'}
         self.__uri_attribute = {'type': 'uri', 'object_relation': 'uri'}
         self.__url_attribute = {'type': 'url', 'object_relation': 'url'}
 
@@ -859,11 +874,42 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_description = self.description_attribute,
             x_misp_operating_system = {'type': 'text', 'object_relation': 'operating-system'}
         )
+        self.__netflow_object_mapping = Mapping(
+            dst_port = dst_port_attribute,
+            src_port = src_port_attribute,
+            start = first_packet_seen_attribute,
+            end = last_packet_seen_attribute,
+            src_byte_count = byte_count_attribute,
+            src_packets = packet_count_attribute,
+            x_misp_community_id = community_id_attribute,
+            x_misp_direction = direction_attribute,
+            x_misp_flow_count = flow_count_attribute,
+            x_misp_ip_protocol_number = ip_protocol_number_attribute,
+            x_misp_ip_version = ip_version_attribute
+        )
+        self.__netflow_pattern_object_mapping = Mapping(
+            **{
+                'dst_port': dst_port_attribute,
+                'src_port': src_port_attribute,
+                'start': first_packet_seen_attribute,
+                'end': last_packet_seen_attribute,
+                'src_byte_count': byte_count_attribute,
+                'src_packets': packet_count_attribute,
+                'protocols[0]': self.protocol_attribute,
+                "extensions.'icmp-ext'.icmp_type_hex": self.icmp_type_attribute,
+                "extensions.'tcp-ext'.src_flags_hex": self.tcp_flags_attribute,
+                'x_misp_community_id': community_id_attribute,
+                'x_misp_direction': direction_attribute,
+                'x_misp_flow_count': flow_count_attribute,
+                'x_misp_ip_protocol_number': ip_protocol_number_attribute,
+                'x_misp_ip_version': ip_version_attribute
+            }
+        )
         self.__network_connection_object_mapping = Mapping(
             dst_port = dst_port_attribute,
             src_port = src_port_attribute,
             start = {'type': 'datetime', 'object_relation': 'first-packet-seen'},
-            x_misp_community_id = {'type': 'community-id', 'object_relation': 'community-id'},
+            x_misp_community_id = community_id_attribute,
             x_misp_hostname_dst = hostname_dst_attribute,
             x_misp_hostname_src = hostname_src_attribute
         )
@@ -1273,6 +1319,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__domain_ip_object_mapping
 
     @property
+    def dst_as_attribute(self) -> dict:
+        return self.__dst_as_attribute
+
+    @property
     def email_additional_header_fields_mapping(self) -> dict:
         return self.__email_additional_header_fields_mapping
 
@@ -1329,6 +1379,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__http_request_pattern_object_mapping
 
     @property
+    def icmp_type_attribute(self) -> dict:
+        return self.__icmp_type_attribute
+
+    @property
     def image_indicator_object_mapping(self) -> dict:
         return self.__image_indicator_object_mapping
 
@@ -1363,6 +1417,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def mutex_object_mapping(self) -> dict:
         return self.__mutex_object_mapping
+
+    @property
+    def netflow_object_mapping(self) -> dict:
+        return self.__netflow_object_mapping
+
+    @property
+    def netflow_pattern_object_mapping(self) -> dict:
+        return self.__netflow_pattern_object_mapping
 
     @property
     def network_connection_object_mapping(self) -> dict:
@@ -1425,6 +1487,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__process_observable_object_mapping
 
     @property
+    def protocol_attribute(self) -> dict:
+        return self.__protocol_attribute
+
+    @property
     def reddit_account_object_mapping(self) -> dict:
         return self.__reddit_account_object_mapping
 
@@ -1445,8 +1511,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__script_from_tool_object_mapping
 
     @property
+    def src_as_attribute(self) -> dict:
+        return self.__src_as_attribute
+
+    @property
     def suricata_object_mapping(self) -> dict:
         return self.__suricata_object_mapping
+
+    @property
+    def tcp_flags_attribute(self) -> dict:
+        return self.__tcp_flags_attribute
 
     @property
     def telegram_account_object_mapping(self) -> dict:

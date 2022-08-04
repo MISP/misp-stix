@@ -1323,6 +1323,71 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_mutex_observable_v21(self, observed_data: ObservedData_v21):
         self._object_from_standard_observable(observed_data, 'mutex', 'v21')
 
+    def _object_from_netflow_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
+        misp_object = self._create_misp_object('netflow', observed_data)
+        observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
+        for observable in observables.values():
+            if observable.type != 'network-traffic':
+                continue
+            for feature in ('src', 'dst'):
+                if hasattr(observable, f'{feature}_ref'):
+                    address = observables[getattr(observable, f'{feature}_ref')]
+                    attribute = {
+                        'type': f'ip-{feature}',
+                        'object_relation': f'ip-{feature}',
+                        'value': address.value
+                    }
+                    if hasattr(address, 'id'):
+                        attribute['uuid'] = address.id.split('--')[1]
+                    misp_object.add_attribute(**attribute)
+                    if hasattr(address, 'belongs_to_refs'):
+                        for as_reference in getattr(address, 'belongs_to_refs'):
+                            autonomous_system = observables[as_reference]
+                            attribute = {'value': f'AS{autonomous_system.number}'}
+                            attribute.update(getattr(self._mapping, f'{feature}_as_attribute'))
+                            if hasattr(autonomous_system, 'id'):
+                                attribute['uuid'] = autonomous_system.id.split('--')[1]
+                            misp_object.add_attribute(**attribute)
+            for feature, mapping in self._mapping.netflow_object_mapping.items():
+                if hasattr(observable, feature):
+                    self._populate_object_attributes(
+                        misp_object,
+                        mapping,
+                        getattr(observable, feature)
+                    )
+            protocols = {protocol: False for protocol in observable.protocols}
+            if hasattr(observable, 'extensions'):
+                if observable.extensions.get('tcp-ext'):
+                    attribute = {'value': observable.extensions['tcp-ext'].src_flags_hex}
+                    attribute.update(self._mapping.tcp_flags_attribute)
+                    misp_object.add_attribute(**attribute)
+                    if 'tcp' in protocols:
+                        protocols['tcp'] = True
+                if observable.extensions.get('icmp-ext'):
+                    attribute = {'value': observable.extensions['icmp-ext'].icmp_type_hex}
+                    attribute.update(self._mapping.icmp_type_attribute)
+                    misp_object.add_attribute(**attribute)
+                    if 'icmp' in protocols:
+                        protocols['icmp'] = True
+            for protocol, present in protocols.items():
+                if not present:
+                    attribute = {'value': protocol.upper()}
+                    attribute.update(self._mapping.protocol_attribute)
+                    misp_object.add_attribute(**attribute)
+                    break
+            else:
+                if len(protocols) == 1:
+                    attribute = {'value': list(protocols.keys())[0].upper()}
+                    attribute.update(self._mapping.protocol_attribute)
+                    misp_object.add_attribute(**attribute)
+            self._add_misp_object(misp_object)
+
+    def _object_from_netflow_observable_v20(self, observed_data: ObservedData_v20):
+        self._object_from_netflow_observable(observed_data, 'v20')
+
+    def _object_from_netflow_observable_v21(self, observed_data: ObservedData_v21):
+        self._object_from_netflow_observable(observed_data, 'v21')
+
     def _object_from_network_connection_observable(self, observed_data: _OBSERVED_DATA_TYPING, version: str):
         observables = getattr(self, f'_fetch_observables_with_id_{version}')(observed_data)
         for observable_id, observable in observables.items():
@@ -2032,6 +2097,27 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_mutex_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_standard_pattern(indicator, 'mutex')
 
+    def _object_from_netflow_indicator(self, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('netflow', indicator)
+        mapping = self._mapping.netflow_pattern_object_mapping
+        reference: dict
+        for pattern in indicator.pattern[1:-1].split(' AND '):
+            feature, value = self._extract_features_from_pattern(pattern)
+            if 'src_ref.' in feature or 'dst_ref.' in feature:
+                if pattern.endswith(')'):
+                    self._parse_netflow_reference(reference, feature, value[:-2])
+                    for attribute in reference.values():
+                        misp_object.add_attribute(**attribute)
+                    continue
+                if pattern.startswith('('):
+                    reference = defaultdict(dict)
+                self._parse_netflow_reference(reference, feature, value)
+                continue
+            attribute = {'value': value.upper() if 'protocols' in feature else value}
+            attribute.update(mapping[feature])
+            misp_object.add_attribute(**attribute)
+        self._add_misp_object(misp_object)
+
     def _object_from_network_connection_indicator(self, indicator: _INDICATOR_TYPING):
         self._object_from_network_traffic_indicator('network-connection', indicator)
 
@@ -2212,6 +2298,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             return {'value': value}
         relation = 'domain' if value == 'domain-name' else f"ip-{feature.split('_')[0]}"
         return {'type': relation, 'object_relation': relation}
+
+    def _parse_netflow_reference(self, reference: dict, feature: str, value: str):
+        ref_type = feature.split('_')[0]
+        if '_ref.type' in feature:
+            relation = f'ip-{ref_type}'
+            reference[relation].update({'type': relation, 'object_relation': relation})
+        elif '_ref.value' in feature:
+            reference[f'ip-{ref_type}']['value'] = value
+        else:
+            attribute = {'value': value}
+            attribute.update(getattr(self._mapping, f'{ref_type}_as_attribute'))
+            reference[f'{ref_type}-as'] = attribute
 
     def _parse_network_connection_pattern(self, misp_object: MISPObject, feature: str, value: str):
         if 'protocols' in feature:
