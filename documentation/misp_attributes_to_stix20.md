@@ -2958,7 +2958,7 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "uuid": "d94bdd2c-3603-4044-8b70-20090e7526ad",
         "type": "http-method",
         "category": "Network activity",
         "value": "POST",
@@ -2970,7 +2970,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--d94bdd2c-3603-4044-8b70-20090e7526ad",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -3934,7 +3934,7 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "uuid": "1af096a0-efa1-4331-9300-a6b5eb4df2e6",
         "type": "port",
         "category": "Network activity",
         "value": "8443",
@@ -3946,7 +3946,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--1af096a0-efa1-4331-9300-a6b5eb4df2e6",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -4997,7 +4997,7 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "uuid": "8be8065b-ca71-4210-976e-2804665a502d",
         "type": "size-in-bytes",
         "value": "1234",
         "category": "Other",
@@ -5009,7 +5009,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+          "id": "indicator--8be8065b-ca71-4210-976e-2804665a502d",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
@@ -5417,7 +5417,7 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
-        "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+        "uuid": "f0b5b638-81b4-4509-bd40-1e114955caf4",
         "type": "user-agent",
         "category": "Network activity",
         "value": "Mozilla Firefox",
@@ -5430,7 +5430,7 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
-          "id": "indicator--518b4bcb-a86b-4783-9457-391d548b605b",
+          "id": "indicator--f0b5b638-81b4-4509-bd40-1e114955caf4",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",

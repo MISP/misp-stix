@@ -337,18 +337,21 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | cpe-asset | Software Object |
 | credential | User Account Object |
 | domain-ip | Domain Name & IPv4/IPv6 Address Objects |
-| email | Email Address & Email Message Objects |
+| email | Email Address & Email Message & File Objects |
+| email with display names | Email Address & Email Message Objects |
 | employee | **Identity** |
 | facebook-account | User Account Object |
 | file | File Object (potential references to Artifact & Directory Objects) |
 | file with references to pe & pe-section(s) | File Object with a Windows PE binary extension |
 | github-user | User Account Object |
 | gitlab-user | User Account Object |
+| http-request | Domain Name & IPv4/IPv6 Address & Network Traffic Objects |
 | image | Artifact & File Objects |
 | ip-port | IPv4/IPv6 Address & Network Traffic Objects |
 | legal-entity | **Identity** |
 | lnk | Artifact & Directory & File Objects |
 | mutex | Mutex Object |
+| netflow | Autonomous System & IPv4/IPv6 Address & Network Traffic Objects |
 | network-connection | Network Traffic, IPv4/IPv6 Address & Domain Name Objects |
 | network-socket | Network Traffic with a socket extension, IPv4/IPv6 Address & Domain Name Objects |
 | news-agency | **Identity** |
@@ -447,7 +450,7 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | filename\|sha3-512 | File Object |
 | filename\|sha384 | File Object |
 | filename\|sha512 | File Object |
-| filename\|sha512/224 | File Object (pattern) / Custom Object |
+| filename\|sha512/224 | File Object |
 | filename\|sha512/256 | File Object |
 | filename\|ssdeep | File Object |
 | filename\|tlsh | File Object |
@@ -479,7 +482,7 @@ When another object type is mentioned in bold, it means the corresponding attrib
 | sha3-512 | File Object |
 | sha384 | File Object |
 | sha512 | File Object |
-| sha512/224 | File Object (pattern) / Custom Object |
+| sha512/224 | File Object |
 | sha512/256 | File Object |
 | sigma | **Indicator** |
 | size-in-bytes | File Object (pattern) / Custom Object |
@@ -519,7 +522,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | domain-ip | Domain Name & IPv4/IPv6 Address Objects |
 | domain-ip with the perfect domain & ip matching | A tuple of IPv4/IPv6 Address & Network Objects for each associated domain & ip |
 | email | Email Address & Email Message & File Objects |
-| email with display names | Email Address & Email Message Objects |
+| email with display names | Email Address & Email Message & Observed Data Objects |
 | employee | **Identity** |
 | facebook-account | User Account Object |
 | file | File Object (potential references to Artifact & Directory Objects) |
@@ -528,11 +531,13 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | geolocation | **Location** |
 | github-user | User Account Object |
 | gitlab-user | User Account Object |
+| http-request | Domain Name & IPv4/IPv6 Address & Network Traffic Objects |
 | image | Artifact & File Objects |
 | ip-port | IPv4/IPv6 Address & Network Traffic Objects |
 | legal-entity | **Identity** |
 | lnk | Artifact & Directory & File Objects |
 | mutex | Mutex Object |
+| netflow | Autonomous System & IPv4/IPv6 Address & Network Traffic Objects |
 | network-connection | Network Traffic, IPv4/IPv6 Address & Domain Name Objects |
 | network-socket | Network Traffic with a socket extension, IPv4/IPv6 Address & Domain Name Objects |
 | news-agency | **Identity** |

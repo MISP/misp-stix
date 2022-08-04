@@ -17,6 +17,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
         "GalaxyCluster": [
             {
                 "uuid": "dcaa092b-7de9-4a21-977f-7fcb77e89c48",
+                "type": "mitre-attack-pattern",
                 "value": "Access Token Manipulation - T1134",
                 "description": "Windows uses access tokens to determine the ownership of a running process.",
                 "meta": {
@@ -51,7 +52,31 @@ Since not all the fields of the galaxies and their clusters are exported into ST
                 "source_name": "capec",
                 "external_id": "CAPEC-633"
             }
-        ]
+        ],
+        "Attack Pattern": {
+            "type": "attack-pattern",
+            "id": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "Access Token Manipulation - T1134",
+            "description": "ATT&CK Tactic | Windows uses access tokens to determine the ownership of a running process.",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "mitre-attack-pattern"
+                }
+            ],
+            "labels": [
+                "misp:galaxy-name=\"Attack Pattern\"",
+                "misp:galaxy-type=\"mitre-attack-pattern\""
+            ],
+            "external_references": [
+                {
+                    "source_name": "capec",
+                    "external_id": "CAPEC-633"
+                }
+            ]
+        }
     }
     ```
 
@@ -66,6 +91,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
         "GalaxyCluster": [
             {
                 "uuid": "a1640081-aa8d-4070-84b2-d23e2ae82799",
+                "type": "branded-vulnerability",
                 "value": "Ghost",
                 "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
                 "meta": {
@@ -94,7 +120,25 @@ Since not all the fields of the galaxies and their clusters are exported into ST
                 "source_name": "cve",
                 "external_id": "CVE-2015-0235"
             }
-        ]
+        ],
+        "Vulnerability": {
+            "type": "vulnerability",
+            "id": "vulnerability--a1640081-aa8d-4070-84b2-d23e2ae82799",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "Ghost",
+            "description": "List of known vulnerabilities and exploits | The GHOST vulnerability is a serious weakness in the Linux glibc library.",
+            "labels": [
+                "misp:galaxy-name=\"Branded Vulnerability\"",
+                "misp:galaxy-type=\"branded-vulnerability\""
+            ],
+            "external_references": [
+                {
+                    "source_name": "cve",
+                    "external_id": "CVE-2015-0235"
+                }
+            ]
+        }
     }
     ```
 
@@ -109,6 +153,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
         "GalaxyCluster": [
             {
                 "uuid": "2497ac92-e751-4391-82c6-1b86e34d0294",
+                "type": "mitre-course-of-action",
                 "value": "Automated Exfiltration Mitigation - T1020",
                 "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network"
             }
@@ -126,7 +171,19 @@ Since not all the fields of the galaxies and their clusters are exported into ST
         "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
         "labels": [
             "misp:name=\"Course of Action\""
-        ]
+        ],
+        "Course of Action": {
+            "type": "course-of-action",
+            "id": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "Automated Exfiltration Mitigation - T1020",
+            "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+            "labels": [
+                "misp:galaxy-name=\"Course of Action\"",
+                "misp:galaxy-type=\"mitre-course-of-action\""
+            ]
+        }
     }
     ```
 
@@ -134,22 +191,19 @@ Since not all the fields of the galaxies and their clusters are exported into ST
   - MISP
     ```json
     {
-        "uuid": "698774c7-8022-42c4-917f-8d6e4f06ada3",
-        "name": "Threat Actor",
-        "type": "threat-actor",
-        "description": "Threat actors are characteristics of malicious actors.",
+        "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
+        "name": "Intrusion Set",
+        "type": "mitre-intrusion-set",
+        "description": "Name of ATT&CK Group",
         "GalaxyCluster": [
             {
-                "uuid": "11e17436-6ede-4733-8547-4ce0254ea19e",
-                "type": "threat-actor",
-                "value": "Cutting Kitten",
-                "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
+                "uuid": "d6e88e18-81e8-4709-82d8-973095da1e70",
+                "type": "mitre-intrusion-set",
+                "value": "APT16 - G0023",
+                "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
                 "meta": {
-                    "cfr-type-of-incident": [
-                        "Denial of service"
-                    ],
                     "synonyms": [
-                        "Ghambar"
+                        "APT16"
                     ]
                 }
             }
@@ -170,7 +224,22 @@ Since not all the fields of the galaxies and their clusters are exported into ST
         ],
         "labels": [
             "misp:name=\"Intrusion Set\""
-        ]
+        ],
+        "Intrusion Set": {
+            "type": "intrusion-set",
+            "id": "intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "APT16 - G0023",
+            "description": "Name of ATT&CK Group | APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
+            "aliases": [
+                "APT16"
+            ],
+            "labels": [
+                "misp:galaxy-name=\"Intrusion Set\"",
+                "misp:galaxy-type=\"mitre-intrusion-set\""
+            ]
+        }
     }
     ```
 
@@ -185,6 +254,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
         "GalaxyCluster": [
             {
                 "uuid": "b8eb28e4-48a6-40ae-951a-328714f75eda",
+                "type": "mitre-malware",
                 "value": "BISCUIT - S0017",
                 "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
                 "meta": {
@@ -213,7 +283,25 @@ Since not all the fields of the galaxies and their clusters are exported into ST
         ],
         "labels": [
             "misp:name=\"Malware\""
-        ]
+        ],
+        "Malware": {
+            "type": "malware",
+            "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "BISCUIT - S0017",
+            "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "mitre-malware"
+                }
+            ],
+            "labels": [
+                "misp:galaxy-name=\"Malware\"",
+                "misp:galaxy-type=\"mitre-malware\""
+            ]
+        }
     }
     ```
 
@@ -228,6 +316,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
         "GalaxyCluster": [
             {
                 "uuid": "11e17436-6ede-4733-8547-4ce0254ea19e",
+                "type": "threat-actor",
                 "value": "Cutting Kitten",
                 "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
                 "meta": {
@@ -256,7 +345,22 @@ Since not all the fields of the galaxies and their clusters are exported into ST
         ],
         "labels": [
             "misp:name=\"Threat Actor\""
-        ]
+        ],
+        "Threat Actor": {
+            "type": "threat-actor",
+            "id": "threat-actor--11e17436-6ede-4733-8547-4ce0254ea19e",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "Cutting Kitten",
+            "description": "Threat actors are characteristics of malicious actors. | These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
+            "aliases": [
+                "Ghambar"
+            ],
+            "labels": [
+                "misp:galaxy-name=\"Threat Actor\"",
+                "misp:galaxy-type=\"threat-actor\""
+            ]
+        }
     }
     ```
 
@@ -271,8 +375,14 @@ Since not all the fields of the galaxies and their clusters are exported into ST
         "GalaxyCluster": [
             {
                 "uuid": "bba595da-b73a-4354-aa6c-224d4de7cb4e",
+                "type": "mitre-tool",
                 "value": "cmd - S0106",
-                "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities."
+                "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
+                "meta": {
+                    "synonyms": [
+                        "cmd.exe"
+                    ]
+                }
             }
         ]
     }
@@ -294,7 +404,25 @@ Since not all the fields of the galaxies and their clusters are exported into ST
         ],
         "labels": [
             "misp:name=\"Tool\""
-        ]
+        ],
+        "Tool": {
+            "type": "tool",
+            "id": "tool--bba595da-b73a-4354-aa6c-224d4de7cb4e",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "cmd - S0106",
+            "description": "Name of ATT&CK software | cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "misp-category",
+                    "phase_name": "mitre-tool"
+                }
+            ],
+            "labels": [
+                "misp:galaxy-name=\"Tool\"",
+                "misp:galaxy-type=\"mitre-tool\""
+            ]
+        }
     }
     ```
 

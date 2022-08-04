@@ -1017,28 +1017,64 @@ For the rest of this documentation, we will then, in order to keep the content c
         "timestamp": "1603642920",
         "Attribute": [
             {
-                "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "uuid": "f5ec3603-e3d0-42d7-a372-14c1c137699b",
                 "type": "email-src",
                 "object_relation": "from",
-                "value": "source@email.test"
+                "value": "donald.duck@disney.com"
             },
             {
-                "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+                "uuid": "3766d98d-d162-44d4-bc48-9518a2e48898",
+                "type": "email-src-display-name",
+                "object_relation": "from-display-name",
+                "value": "Donald Duck"
+            },
+            {
+                "uuid": "aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
                 "type": "email-dst",
                 "object_relation": "to",
-                "value": "destination@email.test"
+                "value": "jdoe@random.org"
             },
             {
-                "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-                "type": "email-dst",
-                "object_relation": "cc",
-                "value": "cc1@email.test"
+                "uuid": "3a93a3ef-fd04-4ce5-98f5-f53609b39b82",
+                "type": "email-dst-display-name",
+                "object_relation": "to-display-name",
+                "value": "John Doe"
             },
             {
-                "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                "uuid": "1a43d189-e5f6-4087-98df-b2cbddec2cd6",
                 "type": "email-dst",
                 "object_relation": "cc",
-                "value": "cc2@email.test"
+                "value": "diana.prince@dc.us"
+            },
+            {
+                "uuid": "59fc0279-427c-45a2-b8a4-678e43c6f9ad",
+                "type": "email-dst-display-name",
+                "object_relation": "cc-display-name",
+                "value": "Diana Prince"
+            },
+            {
+                "uuid": "efde9a0a-a62a-42a8-b863-14a448e313c6",
+                "type": "email-dst",
+                "object_relation": "cc",
+                "value": "marie.curie@nobel.fr"
+            },
+            {
+                "uuid": "bf64f806-1660-4790-8f07-b116eb41b9bc",
+                "type": "email-dst-display-name",
+                "object_relation": "cc-display-name",
+                "value": "Marie Curie"
+            },
+            {
+                "uuid": "3b940996-f99b-4bda-b065-69b8957f688c",
+                "type": "email-dst",
+                "object_relation": "bcc",
+                "value": "jfk@gov.us"
+            },
+            {
+                "uuid": "b824e555-8609-4389-9790-71e7f2785e1b",
+                "type": "email-dst-display-name",
+                "object_relation": "bcc-display-name",
+                "value": "John Fitzgerald Kennedy"
             },
             {
                 "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
@@ -1101,7 +1137,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[email-message:cc_refs.value = 'cc1@email.test' AND email-message:cc_refs.value = 'cc2@email.test' AND email-message:from_ref.value = 'source@email.test' AND email-message:message_id = '25' AND email-message:additional_header_fields.reply_to = 'reply-to@email.test' AND email-message:subject = 'Email test subject' AND email-message:to_refs.value = 'destination@email.test' AND email-message:additional_header_fields.x_mailer = 'x-mailer-test' AND email-message:body_multipart[0].body_raw_ref.name = 'attachment1.file' AND email-message:body_multipart[1].body_raw_ref.name = 'attachment2.file' AND email-message:x_misp_user_agent = 'Test user agent' AND email-message:x_misp_mime_boundary = 'Test mime boundary']",
+          "pattern": "[email-message:to_refs[0].value = 'jdoe@random.org' AND email-message:to_refs[0].display_name = 'John Doe' AND email-message:cc_refs[0].value = 'diana.prince@dc.us' AND email-message:cc_refs[0].display_name = 'Diana Prince' AND email-message:cc_refs[1].value = 'marie.curie@nobel.fr' AND email-message:cc_refs[1].display_name = 'Marie Curie' AND email-message:bcc_refs[0].value = 'jfk@gov.us' AND email-message:bcc_refs[0].display_name = 'John Fitzgerald Kennedy' AND email-message:from_ref.value = 'donald.duck@disney.com' AND email-message:from_ref.display_name = 'Donald Duck' AND email-message:message_id = '25' AND email-message:additional_header_fields.reply_to = 'reply-to@email.test' AND email-message:subject = 'Email test subject' AND email-message:additional_header_fields.x_mailer = 'x-mailer-test' AND email-message:body_multipart[0].body_raw_ref.name = 'attachment1.file' AND email-message:body_multipart[0].content_disposition = 'attachment' AND email-message:body_multipart[1].body_raw_ref.name = 'attachment2.file' AND email-message:body_multipart[1].content_disposition = 'attachment' AND email-message:x_misp_user_agent = 'Test user agent' AND email-message:x_misp_mime_boundary = 'Test mime boundary']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
           "valid_from": "2020-10-25T16:22:00Z",
@@ -1133,10 +1169,11 @@ For the rest of this documentation, we will then, in order to keep the content c
               "number_observed": 1,
               "object_refs": [
                   "email-message--5e396622-2a54-4c8d-b61d-159da964451a",
-                  "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-                  "email-addr--518b4bcb-a86b-4783-9457-391d548b605b",
-                  "email-addr--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-                  "email-addr--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                  "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
+                  "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
+                  "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
+                  "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6",
+                  "email-addr--3b940996-f99b-4bda-b065-69b8957f688c",
                   "file--2007ec09-8137-4a71-a3ce-6ef967bebacf",
                   "file--2d35a390-ccdd-4d6b-a36d-513b05e3682a"
               ],
@@ -1151,13 +1188,16 @@ For the rest of this documentation, we will then, in order to keep the content c
               "spec_version": "2.1",
               "id": "email-message--5e396622-2a54-4c8d-b61d-159da964451a",
               "is_multipart": true,
-              "from_ref": "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+              "from_ref": "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
               "to_refs": [
-                  "email-addr--518b4bcb-a86b-4783-9457-391d548b605b"
+                  "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46"
               ],
               "cc_refs": [
-                  "email-addr--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-                  "email-addr--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f"
+                  "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
+                  "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6"
+              ],
+              "bcc_refs": [
+                  "email-addr--3b940996-f99b-4bda-b065-69b8957f688c"
               ],
               "message_id": "25",
               "subject": "Email test subject",
@@ -1181,26 +1221,37 @@ For the rest of this documentation, we will then, in order to keep the content c
           {
               "type": "email-addr",
               "spec_version": "2.1",
-              "id": "email-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-              "value": "source@email.test"
+              "id": "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
+              "value": "donald.duck@disney.com",
+              "display_name": "Donald Duck"
           },
           {
               "type": "email-addr",
               "spec_version": "2.1",
-              "id": "email-addr--518b4bcb-a86b-4783-9457-391d548b605b",
-              "value": "destination@email.test"
+              "id": "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
+              "value": "jdoe@random.org",
+              "display_name": "John Doe"
           },
           {
               "type": "email-addr",
               "spec_version": "2.1",
-              "id": "email-addr--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-              "value": "cc1@email.test"
+              "id": "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
+              "value": "diana.prince@dc.us",
+              "display_name": "Diana Prince"
           },
           {
               "type": "email-addr",
               "spec_version": "2.1",
-              "id": "email-addr--94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
-              "value": "cc2@email.test"
+              "id": "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6",
+              "value": "marie.curie@nobel.fr",
+              "display_name": "Marie Curie"
+          },
+          {
+              "type": "email-addr",
+              "spec_version": "2.1",
+              "id": "email-addr--3b940996-f99b-4bda-b065-69b8957f688c",
+              "value": "jfk@gov.us",
+              "display_name": "John Fitzgerald Kennedy"
           },
           {
               "type": "file",
@@ -1252,40 +1303,28 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "value": "John Doe"
             },
             {
-                "uuid": "3b940996-f99b-4bda-b065-69b8957f688c",
-                "type": "email-dst",
-                "object_relation": "to",
-                "value": "jfk@gov.us"
-            },
-            {
-                "uuid": "b824e555-8609-4389-9790-71e7f2785e1b",
-                "type": "email-dst-display-name",
-                "object_relation": "to-display-name",
-                "value": "John Fitzgerald Kennedy"
-            },
-            {
                 "uuid": "1a43d189-e5f6-4087-98df-b2cbddec2cd6",
                 "type": "email-dst",
                 "object_relation": "cc",
                 "value": "diana.prince@dc.us"
             },
             {
-                "uuid": "59fc0279-427c-45a2-b8a4-678e43c6f9ad",
-                "type": "email-dst-display-name",
-                "object_relation": "cc-display-name",
-                "value": "Diana Prince"
-            },
-            {
-                "uuid": "efde9a0a-a62a-42a8-b863-14a448e313c6",
-                "type": "email-dst",
-                "object_relation": "bcc",
-                "value": "marie.curie@nobel.fr"
-            },
-            {
                 "uuid": "bf64f806-1660-4790-8f07-b116eb41b9bc",
                 "type": "email-dst-display-name",
-                "object_relation": "bcc-display-name",
+                "object_relation": "cc-display-name",
                 "value": "Marie Curie"
+            },
+            {
+                "uuid": "3b940996-f99b-4bda-b065-69b8957f688c",
+                "type": "email-dst",
+                "object_relation": "bcc",
+                "value": "jfk@gov.us"
+            },
+            {
+                "uuid": "b824e555-8609-4389-9790-71e7f2785e1b",
+                "type": "email-dst-display-name",
+                "object_relation": "bcc-display-name",
+                "value": "John Fitzgerald Kennedy"
             }
         ]
     }
@@ -1300,7 +1339,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[email-message:bcc_refs.value = 'marie.curie@nobel.fr' AND email-message:bcc_refs.display_name = 'Marie Curie' AND email-message:cc_refs.value = 'diana.prince@dc.us' AND email-message:cc_refs.display_name = 'Diana Prince' AND email-message:from_ref.value = 'donald.duck@disney.com' AND email-message:from_ref.display_name = 'Donald Duck' AND email-message:to_refs.value = 'jdoe@random.org' AND email-message:to_refs.value = 'jfk@gov.us' AND email-message:to_refs.display_name = 'John Doe' AND email-message:to_refs.display_name = 'John Fitzgerald Kennedy']",
+          "pattern": "[email-message:to_refs[0].value = 'jdoe@random.org' AND email-message:to_refs[0].display_name = 'John Doe' AND email-message:cc_refs[0].value = 'diana.prince@dc.us' AND email-message:cc_refs[1].display_name = 'Marie Curie' AND email-message:bcc_refs[0].value = 'jfk@gov.us' AND email-message:bcc_refs[0].display_name = 'John Fitzgerald Kennedy' AND email-message:from_ref.value = 'donald.duck@disney.com' AND email-message:from_ref.display_name = 'Donald Duck']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
           "valid_from": "2020-10-25T16:22:00Z",
@@ -1321,6 +1360,28 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       [
           {
+              "type": "grouping",
+              "spec_version": "2.1",
+              "id": "grouping--a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+              "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+              "created": "2020-10-25T16:22:00.000Z",
+              "modified": "2020-10-25T16:22:00.000Z",
+              "name": "MISP-STIX-Converter test event",
+              "context": "suspicious-activity",
+              "object_refs": [
+                  "observed-data--f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
+                  "email-message--f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
+                  "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
+                  "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
+                  "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
+                  "email-addr--3b940996-f99b-4bda-b065-69b8957f688c"
+              ],
+              "labels": [
+                  "Threat-Report",
+                  "misp:tool=\"MISP-STIX-Converter\""
+              ]
+          },
+          {
               "type": "observed-data",
               "spec_version": "2.1",
               "id": "observed-data--f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
@@ -1334,9 +1395,8 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "email-message--f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
                   "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
                   "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
-                  "email-addr--3b940996-f99b-4bda-b065-69b8957f688c",
                   "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
-                  "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6"
+                  "email-addr--3b940996-f99b-4bda-b065-69b8957f688c"
               ],
               "labels": [
                   "misp:name=\"email\"",
@@ -1351,15 +1411,15 @@ For the rest of this documentation, we will then, in order to keep the content c
               "is_multipart": false,
               "from_ref": "email-addr--f5ec3603-e3d0-42d7-a372-14c1c137699b",
               "to_refs": [
-                  "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
-                  "email-addr--3b940996-f99b-4bda-b065-69b8957f688c"
+                  "email-addr--aebfd1b3-24bc-4da5-8e74-32cb669b8e46"
               ],
               "cc_refs": [
                   "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6"
               ],
               "bcc_refs": [
-                  "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6"
-              ]
+                  "email-addr--3b940996-f99b-4bda-b065-69b8957f688c"
+              ],
+              "x_misp_cc_display_name": "Marie Curie"
           },
           {
               "type": "email-addr",
@@ -1378,23 +1438,15 @@ For the rest of this documentation, we will then, in order to keep the content c
           {
               "type": "email-addr",
               "spec_version": "2.1",
+              "id": "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
+              "value": "diana.prince@dc.us"
+          },
+          {
+              "type": "email-addr",
+              "spec_version": "2.1",
               "id": "email-addr--3b940996-f99b-4bda-b065-69b8957f688c",
               "value": "jfk@gov.us",
               "display_name": "John Fitzgerald Kennedy"
-          },
-          {
-              "type": "email-addr",
-              "spec_version": "2.1",
-              "id": "email-addr--1a43d189-e5f6-4087-98df-b2cbddec2cd6",
-              "value": "diana.prince@dc.us",
-              "display_name": "Diana Prince"
-          },
-          {
-              "type": "email-addr",
-              "spec_version": "2.1",
-              "id": "email-addr--efde9a0a-a62a-42a8-b863-14a448e313c6",
-              "value": "marie.curie@nobel.fr",
-              "display_name": "Marie Curie"
           }
       ]
       ```
@@ -2301,6 +2353,160 @@ For the rest of this documentation, we will then, in order to keep the content c
       ]
       ```
 
+- http-request
+  - MISP
+    ```json
+    {
+        "name": "http-request",
+        "meta-category": "network",
+        "description": "A single HTTP request header",
+        "uuid": "cfdb71ed-889f-4646-a388-43d936e1e3b9",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "type": "ip-src",
+                "object_relation": "ip-src",
+                "value": "8.8.8.8"
+            },
+            {
+                "uuid": "d6f0e3b7-fa5d-4443-aea7-7b60b343bde7",
+                "type": "ip-dst",
+                "object_relation": "ip-dst",
+                "value": "149.13.33.14"
+            },
+            {
+                "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+                "type": "hostname",
+                "object_relation": "host",
+                "value": "circl.lu"
+            },
+            {
+                "type": "http-method",
+                "object_relation": "method",
+                "value": "POST"
+            },
+            {
+                "type": "user-agent",
+                "object_relation": "user-agent",
+                "value": "Mozilla Firefox"
+            },
+            {
+                "type": "uri",
+                "object_relation": "uri",
+                "value": "/projects/internships/"
+            },
+            {
+                "type": "url",
+                "object_relation": "url",
+                "value": "http://circl.lu/projects/internships/"
+            },
+            {
+                "type": "text",
+                "object_relation": "content-type",
+                "value": "JSON"
+            }
+        ]
+    }
+    ```
+  - STIX
+    - Observed Data
+      ```json
+      [
+          {
+              "type": "observed-data",
+              "spec_version": "2.1",
+              "id": "observed-data--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+              "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+              "created": "2020-10-25T16:22:00.000Z",
+              "modified": "2020-10-25T16:22:00.000Z",
+              "first_observed": "2020-10-25T16:22:00Z",
+              "last_observed": "2020-10-25T16:22:00Z",
+              "number_observed": 1,
+              "object_refs": [
+                  "network-traffic--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+                  "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                  "ipv4-addr--d6f0e3b7-fa5d-4443-aea7-7b60b343bde7",
+                  "domain-name--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+              ],
+              "labels": [
+                  "misp:name=\"http-request\"",
+                  "misp:meta-category=\"network\"",
+                  "misp:to_ids=\"False\""
+              ]
+          },
+          {
+              "type": "network-traffic",
+              "spec_version": "2.1",
+              "id": "network-traffic--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+              "src_ref": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+              "dst_ref": "ipv4-addr--d6f0e3b7-fa5d-4443-aea7-7b60b343bde7",
+              "protocols": [
+                  "tcp",
+                  "http"
+              ],
+              "extensions": {
+                  "http-request-ext": {
+                      "request_method": "POST",
+                      "request_value": "/projects/internships/",
+                      "request_header": {
+                          "Content-Type": "JSON",
+                          "User-Agent": "Mozilla Firefox"
+                      }
+                  }
+              },
+              "x_misp_url": "http://circl.lu/projects/internships/"
+          },
+          {
+              "type": "ipv4-addr",
+              "spec_version": "2.1",
+              "id": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+              "value": "8.8.8.8"
+          },
+          {
+              "type": "ipv4-addr",
+              "spec_version": "2.1",
+              "id": "ipv4-addr--d6f0e3b7-fa5d-4443-aea7-7b60b343bde7",
+              "value": "149.13.33.14"
+          },
+          {
+              "type": "domain-name",
+              "spec_version": "2.1",
+              "id": "domain-name--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+              "value": "circl.lu",
+              "resolves_to_refs": [
+                  "ipv4-addr--d6f0e3b7-fa5d-4443-aea7-7b60b343bde7"
+              ]
+          }
+      ]
+      ```
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "spec_version": "2.1",
+          "id": "indicator--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '8.8.8.8') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:extensions.'http-request-ext'.request_method = 'POST' AND network-traffic:extensions.'http-request-ext'.request_value = '/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_value = 'http://circl.lu/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_header.'Content-Type' = 'JSON' AND network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = 'Mozilla Firefox']",
+          "pattern_type": "stix",
+          "pattern_version": "2.1",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "network"
+              }
+          ],
+          "labels": [
+              "misp:name=\"http-request\"",
+              "misp:meta-category=\"network\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+
 - image
   - MISP
     ```json
@@ -2502,7 +2708,6 @@ For the rest of this documentation, we will then, in order to keep the content c
               "dst_ref": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
               "dst_port": 443,
               "protocols": [
-                  "tcp",
                   "ipv4"
               ],
               "x_misp_domain": "circl.lu"
@@ -2835,6 +3040,173 @@ For the rest of this documentation, we will then, in order to keep the content c
               "name": "MutexTest",
               "x_misp_description": "Test mutex on unix",
               "x_misp_operating_system": "Unix"
+          }
+      ]
+      ```
+
+- netflow
+  - MISP
+    ```json
+    {
+        "name": "netflow",
+        "meta-category": "network",
+        "description": "Netflow object describes an network object based on the Netflowv5/v9 minimal definition",
+        "uuid": "419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "type": "ip-src",
+                "object_relation": "ip-src",
+                "value": "1.2.3.4"
+            },
+            {
+                "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+                "type": "ip-dst",
+                "object_relation": "ip-dst",
+                "value": "5.6.7.8"
+            },
+            {
+                "uuid": "53a12da9-4b66-4809-b0b4-e9de3172e7a0",
+                "type": "AS",
+                "object_relation": "src-as",
+                "value": "AS1234"
+            },
+            {
+                "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+                "type": "AS",
+                "object_relation": "dst-as",
+                "value": "AS5678"
+            },
+            {
+                "type": "port",
+                "object_relation": "src-port",
+                "value": "80"
+            },
+            {
+                "type": "port",
+                "object_relation": "dst-port",
+                "value": "8080"
+            },
+            {
+                "type": "text",
+                "object_relation": "protocol",
+                "value": "IP"
+            },
+            {
+                "type": "datetime",
+                "object_relation": "first-packet-seen",
+                "value": "2020-10-25T16:22:00Z"
+            },
+            {
+                "type": "text",
+                "object_relation": "tcp-flags",
+                "value": "00000002"
+            }
+        ]
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "spec_version": "2.1",
+          "id": "indicator--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:src_ref.belongs_to_refs[0].number = '1234') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_ref.belongs_to_refs[0].number = '5678') AND network-traffic:protocols[0] = 'ip' AND network-traffic:src_port = '80' AND network-traffic:dst_port = '8080' AND network-traffic:start = '2020-10-25T16:22:00Z' AND network-traffic:extensions.'tcp-ext'.src_flags_hex = '00000002']",
+          "pattern_type": "stix",
+          "pattern_version": "2.1",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "network"
+              }
+          ],
+          "labels": [
+              "misp:name=\"netflow\"",
+              "misp:meta-category=\"network\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      [
+          {
+              "type": "observed-data",
+              "spec_version": "2.1",
+              "id": "observed-data--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+              "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+              "created": "2020-10-25T16:22:00.000Z",
+              "modified": "2020-10-25T16:22:00.000Z",
+              "first_observed": "2020-10-25T16:22:00Z",
+              "last_observed": "2020-10-25T16:22:00Z",
+              "number_observed": 1,
+              "object_refs": [
+                  "network-traffic--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+                  "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                  "autonomous-system--53a12da9-4b66-4809-b0b4-e9de3172e7a0",
+                  "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+                  "autonomous-system--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
+              ],
+              "labels": [
+                  "misp:name=\"netflow\"",
+                  "misp:meta-category=\"network\"",
+                  "misp:to_ids=\"False\""
+              ]
+          },
+          {
+              "type": "network-traffic",
+              "spec_version": "2.1",
+              "id": "network-traffic--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+              "start": "2020-10-25T16:22:00Z",
+              "src_ref": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+              "dst_ref": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+              "src_port": 80,
+              "dst_port": 8080,
+              "protocols": [
+                  "tcp",
+                  "ip"
+              ],
+              "extensions": {
+                  "tcp-ext": {
+                      "src_flags_hex": "00000002"
+                  }
+              }
+          },
+          {
+              "type": "ipv4-addr",
+              "spec_version": "2.1",
+              "id": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+              "value": "1.2.3.4",
+              "belongs_to_refs": [
+                  "autonomous-system--53a12da9-4b66-4809-b0b4-e9de3172e7a0"
+              ]
+          },
+          {
+              "type": "autonomous-system",
+              "spec_version": "2.1",
+              "id": "autonomous-system--53a12da9-4b66-4809-b0b4-e9de3172e7a0",
+              "number": 1234
+          },
+          {
+              "type": "ipv4-addr",
+              "spec_version": "2.1",
+              "id": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+              "value": "5.6.7.8",
+              "belongs_to_refs": [
+                  "autonomous-system--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
+              ]
+          },
+          {
+              "type": "autonomous-system",
+              "spec_version": "2.1",
+              "id": "autonomous-system--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+              "number": 5678
           }
       ]
       ```
@@ -3694,6 +4066,11 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "value": "1234"
             },
             {
+                "type": "boolean",
+                "object_relation": "hidden",
+                "value": "True"
+            },
+            {
                 "uuid": "d85eeb1a-f4a2-4b9f-a367-d84f9a7e6303",
                 "type": "text",
                 "object_relation": "parent-command-line",
@@ -3718,7 +4095,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[process:pid = '2510' AND process:image_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.image_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.x_misp_process_name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:x_misp_name = 'TestProcess' AND process:x_misp_port = '1234']",
+          "pattern": "[process:is_hidden = 'True' AND process:pid = '2510' AND process:image_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.image_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.x_misp_process_name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:x_misp_name = 'TestProcess' AND process:x_misp_port = '1234']",
           "pattern_type": "stix",
           "pattern_version": "2.1",
           "valid_from": "2020-10-25T16:22:00Z",
@@ -3765,6 +4142,7 @@ For the rest of this documentation, we will then, in order to keep the content c
               "type": "process",
               "spec_version": "2.1",
               "id": "process--5e39776a-b284-40b3-8079-22fea964451a",
+              "is_hidden": true,
               "pid": 2510,
               "image_ref": "file--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
               "parent_ref": "process--34cb1a7c-55ec-412a-8684-ba4a88d83a45",

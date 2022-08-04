@@ -815,28 +815,64 @@ For the rest of this documentation, we will then, in order to keep the content c
         "timestamp": "1603642920",
         "Attribute": [
             {
-                "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "uuid": "f5ec3603-e3d0-42d7-a372-14c1c137699b",
                 "type": "email-src",
                 "object_relation": "from",
-                "value": "source@email.test"
+                "value": "donald.duck@disney.com"
             },
             {
-                "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+                "uuid": "3766d98d-d162-44d4-bc48-9518a2e48898",
+                "type": "email-src-display-name",
+                "object_relation": "from-display-name",
+                "value": "Donald Duck"
+            },
+            {
+                "uuid": "aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
                 "type": "email-dst",
                 "object_relation": "to",
-                "value": "destination@email.test"
+                "value": "jdoe@random.org"
             },
             {
-                "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
-                "type": "email-dst",
-                "object_relation": "cc",
-                "value": "cc1@email.test"
+                "uuid": "3a93a3ef-fd04-4ce5-98f5-f53609b39b82",
+                "type": "email-dst-display-name",
+                "object_relation": "to-display-name",
+                "value": "John Doe"
             },
             {
-                "uuid": "94a2b00f-bec3-4f8a-bea4-e4ccf0de776f",
+                "uuid": "1a43d189-e5f6-4087-98df-b2cbddec2cd6",
                 "type": "email-dst",
                 "object_relation": "cc",
-                "value": "cc2@email.test"
+                "value": "diana.prince@dc.us"
+            },
+            {
+                "uuid": "59fc0279-427c-45a2-b8a4-678e43c6f9ad",
+                "type": "email-dst-display-name",
+                "object_relation": "cc-display-name",
+                "value": "Diana Prince"
+            },
+            {
+                "uuid": "efde9a0a-a62a-42a8-b863-14a448e313c6",
+                "type": "email-dst",
+                "object_relation": "cc",
+                "value": "marie.curie@nobel.fr"
+            },
+            {
+                "uuid": "bf64f806-1660-4790-8f07-b116eb41b9bc",
+                "type": "email-dst-display-name",
+                "object_relation": "cc-display-name",
+                "value": "Marie Curie"
+            },
+            {
+                "uuid": "3b940996-f99b-4bda-b065-69b8957f688c",
+                "type": "email-dst",
+                "object_relation": "bcc",
+                "value": "jfk@gov.us"
+            },
+            {
+                "uuid": "b824e555-8609-4389-9790-71e7f2785e1b",
+                "type": "email-dst-display-name",
+                "object_relation": "bcc-display-name",
+                "value": "John Fitzgerald Kennedy"
             },
             {
                 "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
@@ -894,11 +930,183 @@ For the rest of this documentation, we will then, in order to keep the content c
       ```json
       {
           "type": "indicator",
+          "id": "indicator--5e396622-2a54-4c8d-b61d-159da964451a",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "pattern": "[email-message:to_refs[0].value = 'jdoe@random.org' AND email-message:to_refs[0].display_name = 'John Doe' AND email-message:cc_refs[0].value = 'diana.prince@dc.us' AND email-message:cc_refs[0].display_name = 'Diana Prince' AND email-message:cc_refs[1].value = 'marie.curie@nobel.fr' AND email-message:cc_refs[1].display_name = 'Marie Curie' AND email-message:bcc_refs[0].value = 'jfk@gov.us' AND email-message:bcc_refs[0].display_name = 'John Fitzgerald Kennedy' AND email-message:from_ref.value = 'donald.duck@disney.com' AND email-message:from_ref.display_name = 'Donald Duck' AND email-message:additional_header_fields.reply_to = 'reply-to@email.test' AND email-message:subject = 'Email test subject' AND email-message:additional_header_fields.x_mailer = 'x-mailer-test' AND email-message:body_multipart[0].body_raw_ref.name = 'attachment1.file' AND email-message:body_multipart[0].content_disposition = 'attachment' AND email-message:body_multipart[1].body_raw_ref.name = 'attachment2.file' AND email-message:body_multipart[1].content_disposition = 'attachment' AND email-message:x_misp_user_agent = 'Test user agent' AND email-message:x_misp_mime_boundary = 'Test mime boundary' AND email-message:x_misp_message_id = '25']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "network"
+              }
+          ],
+          "labels": [
+              "misp:name=\"email\"",
+              "misp:meta-category=\"network\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--5e396622-2a54-4c8d-b61d-159da964451a",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "1": {
+                  "type": "email-addr",
+                  "value": "donald.duck@disney.com",
+                  "display_name": "Donald Duck"
+              },
+              "2": {
+                  "type": "email-addr",
+                  "value": "jdoe@random.org",
+                  "display_name": "John Doe"
+              },
+              "3": {
+                  "type": "email-addr",
+                  "value": "diana.prince@dc.us",
+                  "display_name": "Diana Prince"
+              },
+              "4": {
+                  "type": "email-addr",
+                  "value": "marie.curie@nobel.fr",
+                  "display_name": "Marie Curie"
+              },
+              "5": {
+                  "type": "email-addr",
+                  "value": "jfk@gov.us",
+                  "display_name": "John Fitzgerald Kennedy"
+              },
+              "6": {
+                  "type": "file",
+                  "name": "attachment1.file"
+              },
+              "7": {
+                  "type": "file",
+                  "name": "attachment2.file"
+              },
+              "0": {
+                  "type": "email-message",
+                  "is_multipart": true,
+                  "from_ref": "1",
+                  "to_refs": [
+                      "2"
+                  ],
+                  "cc_refs": [
+                      "3",
+                      "4"
+                  ],
+                  "bcc_refs": [
+                      "5"
+                  ],
+                  "subject": "Email test subject",
+                  "additional_header_fields": {
+                      "Reply-To": "reply-to@email.test",
+                      "X-Mailer": "x-mailer-test"
+                  },
+                  "body_multipart": [
+                      {
+                          "body_raw_ref": "6",
+                          "content_disposition": "attachment; filename='attachment1.file'"
+                      },
+                      {
+                          "body_raw_ref": "7",
+                          "content_disposition": "attachment; filename='attachment2.file'"
+                      }
+                  ],
+                  "x_misp_message_id": "25",
+                  "x_misp_mime_boundary": "Test mime boundary",
+                  "x_misp_user_agent": "Test user agent"
+              }
+          },
+          "labels": [
+              "misp:name=\"email\"",
+              "misp:meta-category=\"network\"",
+              "misp:to_ids=\"False\""
+          ]
+      }
+      ```
+
+- email with display names
+  - MISP
+    ```json
+    {
+        "name": "email",
+        "meta-category": "network",
+        "description": "Email object describing an email with meta-information",
+        "uuid": "f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "uuid": "f5ec3603-e3d0-42d7-a372-14c1c137699b",
+                "type": "email-src",
+                "object_relation": "from",
+                "value": "donald.duck@disney.com"
+            },
+            {
+                "uuid": "3766d98d-d162-44d4-bc48-9518a2e48898",
+                "type": "email-src-display-name",
+                "object_relation": "from-display-name",
+                "value": "Donald Duck"
+            },
+            {
+                "uuid": "aebfd1b3-24bc-4da5-8e74-32cb669b8e46",
+                "type": "email-dst",
+                "object_relation": "to",
+                "value": "jdoe@random.org"
+            },
+            {
+                "uuid": "3a93a3ef-fd04-4ce5-98f5-f53609b39b82",
+                "type": "email-dst-display-name",
+                "object_relation": "to-display-name",
+                "value": "John Doe"
+            },
+            {
+                "uuid": "1a43d189-e5f6-4087-98df-b2cbddec2cd6",
+                "type": "email-dst",
+                "object_relation": "cc",
+                "value": "diana.prince@dc.us"
+            },
+            {
+                "uuid": "bf64f806-1660-4790-8f07-b116eb41b9bc",
+                "type": "email-dst-display-name",
+                "object_relation": "cc-display-name",
+                "value": "Marie Curie"
+            },
+            {
+                "uuid": "3b940996-f99b-4bda-b065-69b8957f688c",
+                "type": "email-dst",
+                "object_relation": "bcc",
+                "value": "jfk@gov.us"
+            },
+            {
+                "uuid": "b824e555-8609-4389-9790-71e7f2785e1b",
+                "type": "email-dst-display-name",
+                "object_relation": "bcc-display-name",
+                "value": "John Fitzgerald Kennedy"
+            }
+        ]
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
           "id": "indicator--f8fa460c-9e7a-4870-bf46-fed2da3a64f8",
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[email-message:bcc_refs.value = 'marie.curie@nobel.fr' AND email-message:bcc_refs.display_name = 'Marie Curie' AND email-message:cc_refs.value = 'diana.prince@dc.us' AND email-message:cc_refs.display_name = 'Diana Prince' AND email-message:from_ref.value = 'donald.duck@disney.com' AND email-message:from_ref.display_name = 'Donald Duck' AND email-message:to_refs.value = 'jdoe@random.org' AND email-message:to_refs.value = 'jfk@gov.us' AND email-message:to_refs.display_name = 'John Doe' AND email-message:to_refs.display_name = 'John Fitzgerald Kennedy']",
+          "pattern": "[email-message:to_refs[0].value = 'jdoe@random.org' AND email-message:to_refs[0].display_name = 'John Doe' AND email-message:cc_refs[0].value = 'diana.prince@dc.us' AND email-message:cc_refs[1].display_name = 'Marie Curie' AND email-message:bcc_refs[0].value = 'jfk@gov.us' AND email-message:bcc_refs[0].display_name = 'John Fitzgerald Kennedy' AND email-message:from_ref.value = 'donald.duck@disney.com' AND email-message:from_ref.display_name = 'Donald Duck']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -937,33 +1145,27 @@ For the rest of this documentation, we will then, in order to keep the content c
               },
               "3": {
                   "type": "email-addr",
-                  "value": "jfk@gov.us",
-                  "display_name": "John Fitzgerald Kennedy"
+                  "value": "diana.prince@dc.us"
               },
               "4": {
                   "type": "email-addr",
-                  "value": "diana.prince@dc.us",
-                  "display_name": "Diana Prince"
-              },
-              "5": {
-                  "type": "email-addr",
-                  "value": "marie.curie@nobel.fr",
-                  "display_name": "Marie Curie"
+                  "value": "jfk@gov.us",
+                  "display_name": "John Fitzgerald Kennedy"
               },
               "0": {
                   "type": "email-message",
                   "is_multipart": false,
                   "from_ref": "1",
                   "to_refs": [
-                      "2",
-                      "3"
+                      "2"
                   ],
                   "cc_refs": [
-                      "4"
+                      "3"
                   ],
                   "bcc_refs": [
-                      "5"
-                  ]
+                      "4"
+                  ],
+                  "x_misp_cc_display_name": "Marie Curie"
               }
           },
           "labels": [
@@ -2020,6 +2222,142 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
 
+- http-request
+  - MISP
+    ```json
+    {
+        "name": "http-request",
+        "meta-category": "network",
+        "description": "A single HTTP request header",
+        "uuid": "cfdb71ed-889f-4646-a388-43d936e1e3b9",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "type": "ip-src",
+                "object_relation": "ip-src",
+                "value": "8.8.8.8"
+            },
+            {
+                "uuid": "d6f0e3b7-fa5d-4443-aea7-7b60b343bde7",
+                "type": "ip-dst",
+                "object_relation": "ip-dst",
+                "value": "149.13.33.14"
+            },
+            {
+                "uuid": "34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+                "type": "hostname",
+                "object_relation": "host",
+                "value": "circl.lu"
+            },
+            {
+                "type": "http-method",
+                "object_relation": "method",
+                "value": "POST"
+            },
+            {
+                "type": "user-agent",
+                "object_relation": "user-agent",
+                "value": "Mozilla Firefox"
+            },
+            {
+                "type": "uri",
+                "object_relation": "uri",
+                "value": "/projects/internships/"
+            },
+            {
+                "type": "url",
+                "object_relation": "url",
+                "value": "http://circl.lu/projects/internships/"
+            },
+            {
+                "type": "text",
+                "object_relation": "content-type",
+                "value": "JSON"
+            }
+        ]
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '8.8.8.8') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '149.13.33.14') AND (network-traffic:dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value = 'circl.lu') AND network-traffic:extensions.'http-request-ext'.request_method = 'POST' AND network-traffic:extensions.'http-request-ext'.request_value = '/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_value = 'http://circl.lu/projects/internships/' AND network-traffic:extensions.'http-request-ext'.request_header.'Content-Type' = 'JSON' AND network-traffic:extensions.'http-request-ext'.request_header.'User-Agent' = 'Mozilla Firefox']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "network"
+              }
+          ],
+          "labels": [
+              "misp:name=\"http-request\"",
+              "misp:meta-category=\"network\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--cfdb71ed-889f-4646-a388-43d936e1e3b9",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "1": {
+                  "type": "ipv4-addr",
+                  "value": "8.8.8.8"
+              },
+              "2": {
+                  "type": "ipv4-addr",
+                  "value": "149.13.33.14"
+              },
+              "3": {
+                  "type": "domain-name",
+                  "value": "circl.lu",
+                  "resolves_to_refs": [
+                      "2"
+                  ]
+              },
+              "0": {
+                  "type": "network-traffic",
+                  "src_ref": "1",
+                  "dst_ref": "2",
+                  "protocols": [
+                      "tcp",
+                      "http"
+                  ],
+                  "extensions": {
+                      "http-request-ext": {
+                          "request_method": "POST",
+                          "request_value": "/projects/internships/",
+                          "request_header": {
+                              "Content-Type": "JSON",
+                              "User-Agent": "Mozilla Firefox"
+                          }
+                      }
+                  },
+                  "x_misp_url": "http://circl.lu/projects/internships/"
+              }
+          },
+          "labels": [
+              "misp:name=\"http-request\"",
+              "misp:meta-category=\"network\"",
+              "misp:to_ids=\"False\""
+          ]
+      }
+      ```
+
 - image
   - MISP
     ```json
@@ -2197,8 +2535,7 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "dst_ref": "1",
                   "dst_port": 443,
                   "protocols": [
-                      "ipv4",
-                      "tcp"
+                      "ipv4"
                   ],
                   "x_misp_domain": "circl.lu"
               }
@@ -2502,6 +2839,152 @@ For the rest of this documentation, we will then, in order to keep the content c
           "labels": [
               "misp:name=\"mutex\"",
               "misp:meta-category=\"misc\"",
+              "misp:to_ids=\"False\""
+          ]
+      }
+      ```
+
+- netflow
+  - MISP
+    ```json
+    {
+        "name": "netflow",
+        "meta-category": "network",
+        "description": "Netflow object describes an network object based on the Netflowv5/v9 minimal definition",
+        "uuid": "419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "uuid": "91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+                "type": "ip-src",
+                "object_relation": "ip-src",
+                "value": "1.2.3.4"
+            },
+            {
+                "uuid": "518b4bcb-a86b-4783-9457-391d548b605b",
+                "type": "ip-dst",
+                "object_relation": "ip-dst",
+                "value": "5.6.7.8"
+            },
+            {
+                "uuid": "53a12da9-4b66-4809-b0b4-e9de3172e7a0",
+                "type": "AS",
+                "object_relation": "src-as",
+                "value": "AS1234"
+            },
+            {
+                "uuid": "f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+                "type": "AS",
+                "object_relation": "dst-as",
+                "value": "AS5678"
+            },
+            {
+                "type": "port",
+                "object_relation": "src-port",
+                "value": "80"
+            },
+            {
+                "type": "port",
+                "object_relation": "dst-port",
+                "value": "8080"
+            },
+            {
+                "type": "text",
+                "object_relation": "protocol",
+                "value": "IP"
+            },
+            {
+                "type": "datetime",
+                "object_relation": "first-packet-seen",
+                "value": "2020-10-25T16:22:00Z"
+            },
+            {
+                "type": "text",
+                "object_relation": "tcp-flags",
+                "value": "00000002"
+            }
+        ]
+    }
+    ```
+  - STIX
+    - Indicator
+      ```json
+      {
+          "type": "indicator",
+          "id": "indicator--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:src_ref.belongs_to_refs[0].number = '1234') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_ref.belongs_to_refs[0].number = '5678') AND network-traffic:protocols[0] = 'ip' AND network-traffic:src_port = '80' AND network-traffic:dst_port = '8080' AND network-traffic:start = '2020-10-25T16:22:00Z' AND network-traffic:extensions.'tcp-ext'.src_flags_hex = '00000002']",
+          "valid_from": "2020-10-25T16:22:00Z",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "misp-category",
+                  "phase_name": "network"
+              }
+          ],
+          "labels": [
+              "misp:name=\"netflow\"",
+              "misp:meta-category=\"network\"",
+              "misp:to_ids=\"True\""
+          ]
+      }
+      ```
+    - Observed Data
+      ```json
+      {
+          "type": "observed-data",
+          "id": "observed-data--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "first_observed": "2020-10-25T16:22:00Z",
+          "last_observed": "2020-10-25T16:22:00Z",
+          "number_observed": 1,
+          "objects": {
+              "2": {
+                  "type": "autonomous-system",
+                  "number": 1234
+              },
+              "1": {
+                  "type": "ipv4-addr",
+                  "value": "1.2.3.4",
+                  "belongs_to_refs": [
+                      "2"
+                  ]
+              },
+              "4": {
+                  "type": "autonomous-system",
+                  "number": 5678
+              },
+              "3": {
+                  "type": "ipv4-addr",
+                  "value": "5.6.7.8",
+                  "belongs_to_refs": [
+                      "4"
+                  ]
+              },
+              "0": {
+                  "type": "network-traffic",
+                  "start": "2020-10-25T16:22:00Z",
+                  "src_ref": "1",
+                  "dst_ref": "3",
+                  "src_port": 80,
+                  "dst_port": 8080,
+                  "protocols": [
+                      "tcp",
+                      "ip"
+                  ],
+                  "extensions": {
+                      "tcp-ext": {
+                          "src_flags_hex": "00000002"
+                      }
+                  }
+              }
+          },
+          "labels": [
+              "misp:name=\"netflow\"",
+              "misp:meta-category=\"network\"",
               "misp:to_ids=\"False\""
           ]
       }
@@ -3310,6 +3793,11 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "value": "1234"
             },
             {
+                "type": "boolean",
+                "object_relation": "hidden",
+                "value": "True"
+            },
+            {
                 "uuid": "d85eeb1a-f4a2-4b9f-a367-d84f9a7e6303",
                 "type": "text",
                 "object_relation": "parent-command-line",
@@ -3333,7 +3821,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[process:name = 'TestProcess' AND process:pid = '2510' AND process:binary_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.binary_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:x_misp_port = '1234']",
+          "pattern": "[process:is_hidden = 'True' AND process:name = 'TestProcess' AND process:pid = '2510' AND process:binary_ref.name = 'test_process.exe' AND process:parent_ref.command_line = 'grep -nrG iglocska /home/viktor/friends.txt' AND process:parent_ref.binary_ref.name = 'parent_process.exe' AND process:parent_ref.pid = '2107' AND process:parent_ref.name = 'Friends_From_H' AND process:child_refs[0].pid = '1401' AND process:x_misp_port = '1234']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -3381,6 +3869,7 @@ For the rest of this documentation, we will then, in order to keep the content c
               },
               "0": {
                   "type": "process",
+                  "is_hidden": true,
                   "pid": 2510,
                   "name": "TestProcess",
                   "binary_ref": "4",
