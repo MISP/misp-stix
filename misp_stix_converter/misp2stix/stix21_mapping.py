@@ -257,9 +257,12 @@ class Stix21Mapping(Stix2Mapping):
             )
         )
         self.__yara_object_mapping = Mapping(
-            comment = 'description',
-            version = 'pattern_version',
-            yara = 'pattern'
+            **{
+                'comment': 'description',
+                'version': 'pattern_version',
+                'yara': 'pattern',
+                'yara-rule-name': 'name'
+            }
         )
 
     @property
