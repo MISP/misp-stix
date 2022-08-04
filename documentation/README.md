@@ -549,6 +549,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | process | Process Objects (potential reference to File Objects) |
 | reddit-account | User Account Object |
 | registry-key | Windows Registry Key Object |
+| sigma | **Indicator** |
 | suricata | **Indicator** |
 | telegram-account | User Account Object |
 | twitter-account | User Account Object |
