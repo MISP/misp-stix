@@ -1956,7 +1956,7 @@ _TEST_NETFLOW_OBJECT = {
         },
         {
             "type": "datetime",
-            "object_relation": "first-seen",
+            "object_relation": "first-packet-seen",
             "value": "2020-10-25T16:22:00Z"
         },
         {
