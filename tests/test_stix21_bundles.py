@@ -5567,6 +5567,103 @@ _MUTEX_OBSERVABLE_OBJECT = [
         "x_misp_operating_system": "Unix"
     }
 ]
+_NETFLOW_INDICATOR_OBJECT = {
+    "type": "indicator",
+    "spec_version": "2.1",
+    "id": "indicator--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "pattern": "[(network-traffic:src_ref.type = 'ipv4-addr' AND network-traffic:src_ref.value = '1.2.3.4' AND network-traffic:src_ref.belongs_to_refs[0].number = '1234') AND (network-traffic:dst_ref.type = 'ipv4-addr' AND network-traffic:dst_ref.value = '5.6.7.8' AND network-traffic:dst_ref.belongs_to_refs[0].number = '5678') AND network-traffic:protocols[0] = 'ip' AND network-traffic:src_port = '80' AND network-traffic:dst_port = '8080' AND network-traffic:start = '2020-10-25T16:22:00Z' AND network-traffic:extensions.'tcp-ext'.src_flags_hex = '00000002']",
+    "pattern_type": "stix",
+    "pattern_version": "2.1",
+    "valid_from": "2020-10-25T16:22:00Z",
+    "kill_chain_phases": [
+        {
+            "kill_chain_name": "misp-category",
+            "phase_name": "network"
+        }
+    ],
+    "labels": [
+        "misp:name=\"netflow\"",
+        "misp:meta-category=\"network\"",
+        "misp:to_ids=\"True\""
+    ]
+}
+_NETFLOW_OBSERVABLE_OBJECT = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "network-traffic--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+            "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "autonomous-system--53a12da9-4b66-4809-b0b4-e9de3172e7a0",
+            "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+            "autonomous-system--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
+        ],
+        "labels": [
+            "misp:name=\"netflow\"",
+            "misp:meta-category=\"network\"",
+            "misp:to_ids=\"False\""
+        ]
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--419eb5a9-d232-4aa1-864e-2f4d7270a8f9",
+        "start": "2020-10-25T16:22:00Z",
+        "src_ref": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "dst_ref": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+        "src_port": 80,
+        "dst_port": 8080,
+        "protocols": [
+            "ip",
+            "tcp"
+        ],
+        "extensions": {
+            "tcp-ext": {
+                "src_flags_hex": "00000002"
+            }
+        }
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "value": "1.2.3.4",
+        "belongs_to_refs": [
+            "autonomous-system--53a12da9-4b66-4809-b0b4-e9de3172e7a0"
+        ]
+    },
+    {
+        "type": "autonomous-system",
+        "spec_version": "2.1",
+        "id": "autonomous-system--53a12da9-4b66-4809-b0b4-e9de3172e7a0",
+        "number": 1234
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--518b4bcb-a86b-4783-9457-391d548b605b",
+        "value": "5.6.7.8",
+        "belongs_to_refs": [
+            "autonomous-system--f2259650-bc33-4b64-a3a8-a324aa7ea6bb"
+        ]
+    },
+    {
+        "type": "autonomous-system",
+        "spec_version": "2.1",
+        "id": "autonomous-system--f2259650-bc33-4b64-a3a8-a324aa7ea6bb",
+        "number": 5678
+    }
+]
 _NETWORK_CONNECTION_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -7682,6 +7779,14 @@ class TestSTIX21Bundles:
     @classmethod
     def get_bundle_with_mutex_observable_object(cls):
         return cls.__assemble_bundle(*_MUTEX_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_netflow_indicator_object(cls):
+        return cls.__assemble_bundle(_NETFLOW_INDICATOR_OBJECT)
+
+    @classmethod
+    def get_bundle_with_netflow_observable_object(cls):
+        return cls.__assemble_bundle(*_NETFLOW_OBSERVABLE_OBJECT)
 
     @classmethod
     def get_bundle_with_network_connection_indicator_object(cls):
