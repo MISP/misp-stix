@@ -4736,6 +4736,40 @@ def get_event_with_patterning_language_objects():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
         {
+            "uuid": "c8c418e3-b61c-4d40-a1fc-b10cec6585d7",
+            "meta-category": "misc",
+            "description": "An object describing a Sigma rule (or a Sigma rule name).",
+            "name": "sigma",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "sigma",
+                    "object_relation": "sigma",
+                    "value": "title: Ps.exe Renamed SysInternals Tool description: Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A report reference: https://www.us-cert.gov/ncas/alerts/TA17-293A author: Florian Roth date: 2017/10/22 logsource: product: windows service: sysmon detection: selection: EventID: 1 CommandLine: 'ps.exe -accepteula' condition: selection falsepositives: - Renamed SysInternals tool level: high"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "context",
+                    "value": "disk"
+                },
+                {
+                    "type": "link",
+                    "object_relation": "reference",
+                    "value": "https://www.us-cert.gov/ncas/alerts/TA17-293A"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "sigma-rule-name",
+                    "value": "Ps.exe"
+                },
+                {
+                    "type": "comment",
+                    "object_relation": "comment",
+                    "value": "Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A"
+                }
+            ]
+        },
+        {
             "uuid": "efc15547-4fe9-4188-aa71-b688e1bfa59c",
             "meta-category": "network",
             "description": "An object describing a suricata rule",

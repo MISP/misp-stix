@@ -3671,29 +3671,40 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
     def test_event_with_patterning_language_objects(self):
         event = get_event_with_patterning_language_objects()
         orgc = event['Event']['Orgc']
-        objects = event['Event']['Object']
+        sigma, suricata, yara = event['Event']['Object']
         self.parser.parse_misp_event(event)
         stix_objects = self.parser.stix_objects
         self._check_spec_versions(stix_objects)
-        identity, grouping, *indicators = stix_objects
+        identity, grouping, sigma_indicator, suricata_indicator, yara_indicator = stix_objects
         identity_id = self._check_identity_features(
             identity,
             orgc,
             self._datetime_from_timestamp(event['Event']['timestamp'])
         )
-        object_refs = self._check_grouping_features(grouping, event['Event'], identity_id)
-        for indicator, misp_object, object_ref in zip(indicators, objects, object_refs):
-            rule, version, comment, attribute = misp_object['Attribute']
-            self._check_object_indicator_features(indicator, misp_object, identity_id, object_ref)
-            self.assertEqual(indicator.pattern, rule['value'].replace('"', '\\\\"'))
-            self.assertEqual(indicator.pattern_type, rule['type'])
-            self.assertEqual(indicator.pattern_version, version['value'])
-            self.assertEqual(indicator.description, comment['value'])
-            if misp_object['name'] == 'suricata':
-                self.assertEqual(indicator.external_references[0].url, attribute['value'])
-            else:
-                self.assertEqual(indicator.x_misp_yara_rule_name, attribute['value'])
-            self._populate_documentation(misp_object=misp_object, indicator=indicator)
+        sigma_ref, suricata_ref, yara_ref = self._check_grouping_features(grouping, event['Event'], identity_id)
+        self._check_object_indicator_features(sigma_indicator, sigma, identity_id, sigma_ref)
+        rule, context, reference, name, comment = sigma['Attribute']
+        self.assertEqual(sigma_indicator.pattern, rule['value'].replace("'", "\\'"))
+        self.assertEqual(sigma_indicator.pattern_type, rule['type'])
+        self.assertEqual(sigma_indicator.external_references[0].url, reference['value'])
+        self.assertEqual(sigma_indicator.x_misp_context, context['value'])
+        self._populate_documentation(misp_object=sigma, indicator=sigma_indicator)
+        self._check_object_indicator_features(suricata_indicator, suricata, identity_id, suricata_ref)
+        rule, version, comment, ref = suricata['Attribute']
+        self.assertEqual(suricata_indicator.pattern, rule['value'].replace('"', '\\\\"'))
+        self.assertEqual(suricata_indicator.pattern_type, rule['type'])
+        self.assertEqual(suricata_indicator.pattern_version, version['value'])
+        self.assertEqual(suricata_indicator.description, comment['value'])
+        self.assertEqual(suricata_indicator.external_references[0].url, ref['value'])
+        self._populate_documentation(misp_object=suricata, indicator=suricata_indicator)
+        self._check_object_indicator_features(yara_indicator, yara, identity_id, yara_ref)
+        rule, version, comment, name = yara['Attribute']
+        self.assertEqual(yara_indicator.pattern, rule['value'].replace('"', '\\\\"'))
+        self.assertEqual(yara_indicator.pattern_type, rule['type'])
+        self.assertEqual(yara_indicator.pattern_version, version['value'])
+        self.assertEqual(yara_indicator.description, comment['value'])
+        self.assertEqual(yara_indicator.name, name['value'])
+        self._populate_documentation(misp_object=yara, indicator=yara_indicator)
 
     def test_event_with_pe_and_section_indicator_objects(self):
         event = get_event_with_pe_objects()
