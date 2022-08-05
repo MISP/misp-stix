@@ -551,13 +551,43 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._add_misp_object(misp_object)
 
     def _parse_sigma_pattern(self, indicator: Indicator_v21):
-        attribute = self._create_attribute_dict(indicator)
-        attribute['value'] = indicator.pattern
-        attribute.update(self._mapping.sigma_attribute)
-        self._add_misp_attribute(
-            attribute,
-            confidence = getattr(indicator, 'confidence', None)
-        )
+        if hasattr(indicator, 'name') or hasattr(indicator, 'external_references'):
+            attributes = []
+            for feature, mapping in self._mapping.sigma_object_mapping.items():
+                if hasattr(indicator, feature):
+                    attribute = {'value': getattr(indicator, feature)}
+                    attribute.update(mapping)
+                    attributes.append(attribute)
+            if hasattr(indicator, 'external_references'):
+                for reference in indicator.external_references:
+                    if not hasattr(reference, 'url'):
+                        continue
+                    attribute = {'value': reference.url}
+                    attribute.update(self._mapping.sigma_reference_attribute)
+                    if hasattr(reference, 'description'):
+                        attribute['comment'] = reference.description
+                    attributes.append(attribute)
+            if len(attributes) == 1 and attributes[0]['type'] == 'sigma':
+                self._add_misp_attribute(
+                    attributes[0],
+                    confidence = getattr(indicator, 'confidence', None)
+                )
+            else:
+                misp_object = self._create_misp_object('sigma', indicator)
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
+                self._add_misp_object(
+                    misp_object,
+                    confidence = getattr(indicator, 'confidence', None)
+                )
+        else:
+            attribute = self._create_attribute_dict(indicator)
+            attribute['value'] = indicator.pattern
+            attribute.update(self._mapping.sigma_attribute)
+            self._add_misp_attribute(
+                attribute,
+                confidence = getattr(indicator, 'confidence', None)
+            )
 
     def _parse_snort_pattern(self, indicator: Indicator_v21):
         attribute = self._create_attribute_dict(indicator)
@@ -570,11 +600,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_suricata_pattern(self, indicator: Indicator_v21):
         misp_object = self._create_misp_object('suricata', indicator)
-        for feature, attribute in self._mapping.suricata_object_mapping.items():
+        for feature, mapping in self._mapping.suricata_object_mapping.items():
             if hasattr(indicator, feature):
-                misp_attribute = {'value': getattr(indicator, feature)}
-                misp_attribute.update(attribute)
-                misp_object.add_attribute(**misp_attribute)
+                attribute = {'value': getattr(indicator, feature)}
+                attribute.update(mapping)
+                misp_object.add_attribute(**attribute)
         self._add_misp_object(
             misp_object,
             confidence = getattr(indicator, 'confidence', None)
@@ -583,11 +613,20 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_yara_pattern(self, indicator: Indicator_v21):
         if hasattr(indicator, 'pattern_version'):
             misp_object = self._create_misp_object('yara', indicator)
-            for feature, attribute in self._mapping.yara_object_mapping.items():
+            for feature, mapping in self._mapping.yara_object_mapping.items():
                 if hasattr(indicator, feature):
-                    misp_attribute = {'value': getattr(indicator, feature)}
-                    misp_attribute.update(attribute)
-                    misp_object.add_attribute(**misp_attribute)
+                    attribute = {'value': getattr(indicator, feature)}
+                    attribute.update(mapping)
+                    misp_object.add_attribute(**attribute)
+            if hasattr(indicator, 'external_references'):
+                for reference in indicator.external_references:
+                    if not hasattr(reference, 'url'):
+                        continue
+                    attribute = {'value': reference.url}
+                    attribute.update(self._mapping.yara_reference_attribute)
+                    if hasattr(reference, 'description'):
+                        attribute['comment'] = reference.description
+                    misp_object.add_attribute(**attribute)
             self._add_misp_object(
                 misp_object,
                 confidence = getattr(indicator, 'confidence', None)

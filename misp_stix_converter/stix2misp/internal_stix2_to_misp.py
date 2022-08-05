@@ -2159,13 +2159,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     mapping,
                     getattr(indicator, key)
                 )
-        if hasattr(indicator, 'external_references') and name == 'suricata':
+        if hasattr(indicator, 'external_references') and name in ('sigma', 'suricata'):
             for reference in indicator.external_references:
-                attribute = {
-                    'type': 'link',
-                    'object_relation': 'ref',
-                    'value': reference.url
-                }
+                attribute = {'value': reference.url}
+                attribute.update(getattr(self._mapping, f'{name}_reference_attribute'))
                 if hasattr(reference, 'description'):
                     attribute['comment'] = reference.description
                 misp_object.add_attribute(**attribute)

@@ -207,9 +207,20 @@ class ExternalSTIX2Mapping(STIX2Mapping):
             name = self.name_attribute,
             description = self.description_attribute
         )
+        self.__sigma_object_mapping = Mapping(
+            pattern = self.sigma_attribute,
+            description = self.comment_attribute,
+            name = self.sigma_rule_name_attribute
+        )
         self.__vulnerability_object_mapping = Mapping(
             name = self.summary_attribute,
             description = self.description_attribute
+        )
+        self.__yara_object_mapping = Mapping(
+            pattern = self.yara_attribute,
+            description = self.comment_attribute,
+            name = self.yara_rule_name_attribute,
+            pattern_version = self.version_attribute
         )
 
     @property
@@ -233,5 +244,13 @@ class ExternalSTIX2Mapping(STIX2Mapping):
         return self.__pattern_mapping
 
     @property
+    def sigma_object_mapping(self) -> dict:
+        return self.__sigma_object_mapping
+
+    @property
     def vulnerability_object_mapping(self) -> dict:
         return self.__vulnerability_object_mapping
+
+    @property
+    def yara_object_mapping(self) -> dict:
+        return self.__yara_object_mapping

@@ -101,6 +101,7 @@ class STIX2Mapping:
 
         # ATTRIBUTES MAPPING DECLARATION
         comment_attribute = {'type': 'comment', 'object_relation': 'comment'}
+        sigma_attribute = {'type': 'sigma', 'object_relation': 'sigma'}
         snort_attribute = {'type': 'snort', 'object_relation': 'suricata'}
         version_attribute = {'type': 'text', 'object_relation': 'version'}
         yara_attribute = {'type': 'yara', 'object_relation': 'yara'}
@@ -112,6 +113,7 @@ class STIX2Mapping:
                 'object_relation': 'accuracy_radius'
             }
         )
+        self.__comment_attribute = Mapping(**comment_attribute)
         self.__description_attribute = {'type': 'text', 'object_relation': 'description'}
         self.__name_attribute = {'type': 'text', 'object_relation': 'name'}
         self.__references_attribute = Mapping(
@@ -120,10 +122,28 @@ class STIX2Mapping:
                 'object_relation': 'references'
             }
         )
-        self.__sigma_attribute = Mapping(**{'type': 'sigma'})
+        self.__sigma_attribute = Mapping(**sigma_attribute)
+        self.__sigma_reference_attribute = Mapping(
+            **{
+                'type': 'link',
+                'object_relation': 'reference'
+            }
+        )
+        self.__sigma_rule_name_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'sigma-rule-name'
+            }
+        )
         self.__snort_attribute = Mapping(**snort_attribute)
         self.__summary_attribute = Mapping(**{'type': 'text', 'object_relation': 'summary'})
-        self.__version_attribute = version_attribute
+        self.__suricata_reference_attribute = Mapping(
+            **{
+                'type': 'link',
+                'object_relation': 'ref'
+            }
+        )
+        self.__version_attribute = Mapping(**version_attribute)
         self.__vulnerability_attribute = Mapping(
             **{
                 'type': 'vulnerability',
@@ -131,6 +151,7 @@ class STIX2Mapping:
             }
         )
         self.__yara_attribute = Mapping(**yara_attribute)
+        self.__yara_rule_name_attribute = Mapping(**{'type': 'text', 'object_relation': 'yara-rule-name'})
 
         # MISP OBJECTS MAPPING
         self.__connection_protocols = {
@@ -152,13 +173,8 @@ class STIX2Mapping:
             location_object_mapping.update(updates['location'])
         self.__location_object_mapping = Mapping(**location_object_mapping)
         self.__suricata_object_mapping = Mapping(
-            description = comment_attribute,
             pattern = snort_attribute,
-            pattern_version = version_attribute
-        )
-        self.__yara_object_mapping = Mapping(
             description = comment_attribute,
-            pattern = yara_attribute,
             pattern_version = version_attribute
         )
 
@@ -169,6 +185,10 @@ class STIX2Mapping:
     @property
     def bundle_to_misp_mapping(self) -> dict:
         return self.__bundle_to_misp_mapping
+
+    @property
+    def comment_attribute(self) -> dict:
+        return self.__comment_attribute
 
     @property
     def connection_protocols(self) -> dict:
@@ -199,6 +219,14 @@ class STIX2Mapping:
         return self.__sigma_attribute
 
     @property
+    def sigma_reference_attribute(self) -> dict:
+        return self.__sigma_reference_attribute
+
+    @property
+    def sigma_rule_name_attribute(self) -> dict:
+        return self.__sigma_rule_name_attribute
+
+    @property
     def snort_attribute(self) -> dict:
         return self.__snort_attribute
 
@@ -217,6 +245,10 @@ class STIX2Mapping:
     @property
     def suricata_object_mapping(self) -> dict:
         return self.__suricata_object_mapping
+
+    @property
+    def suricata_reference_attribute(self) -> dict:
+        return self.__suricata_reference_attribute
 
     @property
     def timeline_mapping(self) -> dict:
@@ -239,5 +271,5 @@ class STIX2Mapping:
         return self.__yara_attribute
 
     @property
-    def yara_object_mapping(self) -> dict:
-        return self.__yara_object_mapping
+    def yara_rule_name_attribute(self) -> dict:
+        return self.__yara_rule_name_attribute

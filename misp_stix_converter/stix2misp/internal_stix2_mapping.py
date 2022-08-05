@@ -314,6 +314,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         objects_mapping.update(
             dict.fromkeys(
                 (
+                    'sigma',
                     'suricata',
                     'yara'
                 ),
@@ -342,7 +343,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         cc_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'cc-display-name'}
         certificate_attribute = {'type': 'x509-fingerprint-sha1', 'object_relation': 'certificate'}
         command_line_attribute = {'type': 'text', 'object_relation': 'command-line'}
-        comment_attribute = {'type': 'text', 'object_relation': 'comment'}
+        comment_text_attribute = {'type': 'text', 'object_relation': 'comment'}
         community_id_attribute = {'type': 'community-id', 'object_relation': 'community-id'}
         compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
         content_type_attribute = {'type': 'other', 'object_relation': 'content-type'}
@@ -1110,22 +1111,23 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__script_from_malware_object_mapping = Mapping(
             name = filename_attribute,
-            description = comment_attribute,
+            description = comment_text_attribute,
             implementation_languages = language_attribute,
             x_misp_script = script_attribute,
             x_misp_state = state_attribute
         )
         self.__script_from_tool_object_mapping = Mapping(
             name = filename_attribute,
-            description = comment_attribute,
+            description = comment_text_attribute,
             x_misp_language = language_attribute,
             x_misp_script = script_attribute,
             x_misp_state = state_attribute
         )
-        self.__suricata_object_mapping = Mapping(
-            pattern = self.snort_attribute,
-            description = comment_attribute,
-            pattern_version = self.version_attribute
+        self.__sigma_object_mapping = Mapping(
+            pattern = self.sigma_attribute,
+            description = self.comment_attribute,
+            name = self.sigma_rule_name_attribute,
+            x_misp_context = {'type': 'text', 'object_relation': 'context'}
         )
         self.__telegram_account_object_mapping = Mapping(
             user_id = id_attribute,
@@ -1276,10 +1278,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__yara_object_mapping = Mapping(
             pattern = self.yara_attribute,
-            description = comment_attribute,
+            description = self.comment_attribute,
+            name = self.yara_rule_name_attribute,
             pattern_version = self.version_attribute,
-            x_misp_context = {'type': 'text', 'object_relation': 'context'},
-            x_misp_yara_rule_name = {'type': 'text', 'object_relation': 'yara-rule-name'}
+            x_misp_context = {'type': 'text', 'object_relation': 'context'}
         )
 
     @property
@@ -1511,12 +1513,12 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return self.__script_from_tool_object_mapping
 
     @property
-    def src_as_attribute(self) -> dict:
-        return self.__src_as_attribute
+    def sigma_object_mapping(self) -> dict:
+        return self.__sigma_object_mapping
 
     @property
-    def suricata_object_mapping(self) -> dict:
-        return self.__suricata_object_mapping
+    def src_as_attribute(self) -> dict:
+        return self.__src_as_attribute
 
     @property
     def tcp_flags_attribute(self) -> dict:
