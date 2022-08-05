@@ -59,25 +59,6 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         self.assertEqual(attribute.value, indicator.pattern)
 
     ################################################################################
-    #                       MISP OBJECTS CHECKING FUNCTIONS.                       #
-    ################################################################################
-
-    def _check_patterning_language_object(self, misp_object, indicator):
-        self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
-        self._assert_multiple_equal(
-            misp_object.timestamp,
-            self._timestamp_from_datetime(indicator.created),
-            self._timestamp_from_datetime(indicator.modified)
-        )
-        self._check_object_labels(misp_object, indicator.labels, True)
-        pattern, comment, version, attribute = misp_object.attributes
-        self.assertEqual(pattern.value, indicator.pattern)
-        self.assertEqual(pattern.type, indicator.pattern_type)
-        self.assertEqual(comment.value, indicator.description)
-        self.assertEqual(version.value, indicator.pattern_version)
-        return attribute
-
-    ################################################################################
     #                         MISP ATTRIBUTES IMPORT TESTS                         #
     ################################################################################
 
@@ -2705,18 +2686,59 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21):
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, suricata_indicator, yara_indicator = bundle.objects
-        suricata, yara = self._check_misp_event_features_from_grouping(event, grouping)
+        _, grouping, sigma_indicator, suricata_indicator, yara_indicator = bundle.objects
+        sigma, suricata, yara = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(sigma.name, sigma_indicator.pattern_type)
+        self.assertEqual(sigma.uuid, sigma_indicator.id.split('--')[1])
+        self._assert_multiple_equal(
+            sigma.timestamp,
+            self._timestamp_from_datetime(sigma_indicator.created),
+            self._timestamp_from_datetime(sigma_indicator.modified)
+        )
+        self._check_object_labels(sigma, sigma_indicator.labels, True)
+        pattern, comment, name, context, reference = sigma.attributes
+        self.assertEqual(pattern.value, sigma_indicator.pattern)
+        self.assertEqual(pattern.type, sigma_indicator.pattern_type)
+        self.assertEqual(comment.value, sigma_indicator.description)
+        self.assertEqual(name.value, sigma_indicator.name)
+        self.assertEqual(context.value, sigma_indicator.x_misp_context)
+        self.assertEqual(reference.value, sigma_indicator.external_references[0].url)
+        self._populate_documentation(
+            misp_object = json.loads(sigma.to_json()),
+            indicator = sigma_indicator
+        )
         self.assertEqual(suricata.name, 'suricata')
-        attribute = self._check_patterning_language_object(suricata, suricata_indicator)
-        self.assertEqual(attribute.value, suricata_indicator.external_references[0].url)
+        self.assertEqual(suricata.uuid, suricata_indicator.id.split('--')[1])
+        self._assert_multiple_equal(
+            suricata.timestamp,
+            self._timestamp_from_datetime(suricata_indicator.created),
+            self._timestamp_from_datetime(suricata_indicator.modified)
+        )
+        self._check_object_labels(suricata, suricata_indicator.labels, True)
+        pattern, comment, version, ref = suricata.attributes
+        self.assertEqual(pattern.value, suricata_indicator.pattern)
+        self.assertEqual(pattern.type, suricata_indicator.pattern_type)
+        self.assertEqual(comment.value, suricata_indicator.description)
+        self.assertEqual(version.value, suricata_indicator.pattern_version)
+        self.assertEqual(ref.value, suricata_indicator.external_references[0].url)
         self._populate_documentation(
             misp_object = json.loads(suricata.to_json()),
             indicator = suricata_indicator
         )
         self.assertEqual(yara.name, yara_indicator.pattern_type)
-        attribute = self._check_patterning_language_object(yara, yara_indicator)
-        self.assertEqual(attribute.value, yara_indicator.x_misp_yara_rule_name)
+        self.assertEqual(yara.uuid, yara_indicator.id.split('--')[1])
+        self._assert_multiple_equal(
+            yara.timestamp,
+            self._timestamp_from_datetime(yara_indicator.created),
+            self._timestamp_from_datetime(yara_indicator.modified)
+        )
+        self._check_object_labels(yara, yara_indicator.labels, True)
+        pattern, comment, name, version = yara.attributes
+        self.assertEqual(pattern.value, yara_indicator.pattern)
+        self.assertEqual(pattern.type, yara_indicator.pattern_type)
+        self.assertEqual(comment.value, yara_indicator.description)
+        self.assertEqual(name.value, yara_indicator.name)
+        self.assertEqual(version.value, yara_indicator.pattern_version)
         self._populate_documentation(
             misp_object = json.loads(yara.to_json()),
             indicator = yara_indicator

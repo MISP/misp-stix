@@ -6156,6 +6156,37 @@ _PATTERNING_LANGUAGE_OBJECTS = [
     {
         "type": "indicator",
         "spec_version": "2.1",
+        "id": "indicator--c8c418e3-b61c-4d40-a1fc-b10cec6585d7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Ps.exe",
+        "description": "Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A",
+        "pattern": "title: Ps.exe Renamed SysInternals Tool description: Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A report reference: https://www.us-cert.gov/ncas/alerts/TA17-293A author: Florian Roth date: 2017/10/22 logsource: product: windows service: sysmon detection: selection: EventID: 1 CommandLine: \\'ps.exe -accepteula\\' condition: selection falsepositives: - Renamed SysInternals tool level: high",
+        "pattern_type": "sigma",
+        "valid_from": "2020-10-25T16:22:00Z",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "misp-category",
+                "phase_name": "misc"
+            }
+        ],
+        "labels": [
+            "misp:name=\"sigma\"",
+            "misp:meta-category=\"misc\"",
+            "misp:to_ids=\"True\""
+        ],
+        "external_references": [
+            {
+                "source_name": "url",
+                "url": "https://www.us-cert.gov/ncas/alerts/TA17-293A"
+            }
+        ],
+        "x_misp_context": "disk"
+    },
+    {
+        "type": "indicator",
+        "spec_version": "2.1",
         "id": "indicator--efc15547-4fe9-4188-aa71-b688e1bfa59c",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
@@ -6190,6 +6221,7 @@ _PATTERNING_LANGUAGE_OBJECTS = [
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Ultimate rule",
         "description": "To rule them all",
         "pattern": "rule torcryptomining { meta: description = \\\\\"Tor miner - broken UPX magic string\\\\\" strings: $upx_erase = {(00 FF 99 41|DF DD 30 33)} condition: $upx_erase at 236 }",
         "pattern_type": "yara",
@@ -6205,8 +6237,7 @@ _PATTERNING_LANGUAGE_OBJECTS = [
             "misp:name=\"yara\"",
             "misp:meta-category=\"misc\"",
             "misp:to_ids=\"True\""
-        ],
-        "x_misp_yara_rule_name": "Ultimate rule"
+        ]
     }
 ]
 _PORT_INDICATOR_ATTRIBUTE = {
