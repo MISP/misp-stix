@@ -4,6 +4,7 @@
 import json
 import os
 import unittest
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from stix.core import STIXPackage
@@ -455,6 +456,14 @@ class TestSTIX2Export(TestSTIX2):
             return int(value[2:])
         return int(value)
 
+    def _populate_documentation(self, attribute = None, misp_object = None, galaxy = None, **kwargs):
+        if attribute is not None:
+            self._populate_attributes_documentation(attribute, **kwargs)
+        elif misp_object is not None:
+            self._populate_objects_documentation(misp_object, **kwargs)
+        elif galaxy is not None:
+            self._populate_galaxies_documentation(galaxy, **kwargs)
+
     @staticmethod
     def _reassemble_pattern(pattern):
         reassembled = []
@@ -535,6 +544,16 @@ class TestSTIX2Export(TestSTIX2):
                 if attribute.get(feature):
                     self.assertEqual(custom_attribute[feature], attribute[feature])
 
+    def _sanitize_documentation(self, documentation):
+        if isinstance(documentation, list):
+            return [self._sanitize_documentation(value) for value in documentation]
+        sanitized = {}
+        for key, value in documentation.items():
+            if key == 'to_ids':
+                continue
+            sanitized[key] = self._sanitize_documentation(value) if isinstance(value, (dict, list)) else value
+        return sanitized
+
     def _sanitize_pattern_value(self, value):
         sanitized = self._sanitize_registry_key_value(value)
         return sanitized.replace("'", "\\'").replace('"', '\\\\"')
@@ -554,3 +573,88 @@ class TestSTIX2Export(TestSTIX2):
             if value.endswith(character):
                 return self._sanitize_value(value[:-1])
         return value
+
+
+class TestSTIX20Export(TestSTIX2Export):
+    _attributes_v20 = defaultdict(lambda: defaultdict(dict))
+    _objects_v20 = defaultdict(lambda: defaultdict(dict))
+    _galaxies_v20 = defaultdict(lambda: defaultdict(dict))
+
+    def _populate_attributes_documentation(self, attribute, **kwargs):
+        attribute_type = attribute['type']
+        if 'MISP' not in self._attributes_v20[attribute_type]:
+            self._attributes_v20[attribute_type]['MISP'] = self._sanitize_documentation(attribute)
+        for object_type, stix_object in kwargs.items():
+            documented = json.loads(stix_object.serialize())
+            feature = object_type.replace('_', ' ').title()
+            self._attributes_v20[attribute_type]['STIX'][feature] = documented
+
+    def _populate_galaxies_documentation(self, galaxy, name=None, summary=None, **kwargs):
+        if name is None:
+            name = galaxy['name']
+        if 'MISP' not in self._galaxies_v20[name]:
+            self._galaxies_v20[name]['MISP'] = galaxy
+        if summary is not None:
+            self._galaxies_v20['summary'][name] = summary
+        for object_type, stix_object in kwargs.items():
+            documented = json.loads(stix_object.serialize())
+            feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
+            self._galaxies_v20[name]['STIX'][feature] = documented
+
+    def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
+        if name is None:
+            name = misp_object['name']
+        if 'MISP' not in self._objects_v20[name]:
+            self._objects_v20[name]['MISP'] = self._sanitize_documentation(misp_object)
+        if summary is not None:
+            self._objects_v20['summary'][name] = summary
+        for object_type, stix_object in kwargs.items():
+            documented = json.loads(stix_object.serialize())
+            feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
+            self._objects_v20[name]['STIX'][feature] = documented
+
+
+class TestSTIX21Export(TestSTIX2Export):
+    _attributes_v21 = defaultdict(lambda: defaultdict(dict))
+    _objects_v21 = defaultdict(lambda: defaultdict(dict))
+    _galaxies_v21 = defaultdict(lambda: defaultdict(dict))
+
+    def _populate_attributes_documentation(self, attribute, **kwargs):
+        feature = attribute['type']
+        if 'MISP' not in self._attributes_v21[feature]:
+            self._attributes_v21[feature]['MISP'] = self._sanitize_documentation(attribute)
+        if 'observed_data' in kwargs:
+            documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
+            self._attributes_v21[feature]['STIX']['Observed Data'] = documented
+        else:
+            for object_type, stix_object in kwargs.items():
+                documented = json.loads(stix_object.serialize())
+                self._attributes_v21[feature]['STIX'][object_type.capitalize()] = documented
+
+    def _populate_galaxies_documentation(self, galaxy, name=None, summary=None, **kwargs):
+        if name is None:
+            name = galaxy['name']
+        if 'MISP' not in self._galaxies_v21[name]:
+            self._galaxies_v21[name]['MISP'] = galaxy
+        if summary is not None:
+            self._galaxies_v21['summary'][name] = summary
+        for object_type, stix_object in kwargs.items():
+            documented = json.loads(stix_object.serialize())
+            feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
+            self._galaxies_v21[name]['STIX'][feature] = documented
+
+    def _populate_objects_documentation(self, misp_object, name=None, summary=None, **kwargs):
+        if name is None:
+            name = misp_object['name']
+        if 'MISP' not in self._objects_v21[name]:
+            self._objects_v21[name]['MISP'] = self._sanitize_documentation(misp_object)
+        if summary is not None:
+            self._objects_v21['summary'][name] = summary
+        if 'observed_data' in kwargs:
+            documented = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
+            self._objects_v21[name]['STIX']['Observed Data'] = documented
+        else:
+            for object_type, stix_object in kwargs.items():
+                documented = json.loads(stix_object.serialize())
+                feature = 'Course of Action' if object_type == 'course_of_action' else object_type.replace('_', ' ').title()
+                self._objects_v21[name]['STIX'][feature] = documented

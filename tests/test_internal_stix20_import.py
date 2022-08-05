@@ -5,22 +5,24 @@ import json
 from .test_stix20_bundles import TestSTIX20Bundles
 from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
 from ._test_stix import TestSTIX20
-from ._test_stix_import import TestInternalSTIX2Import
+from ._test_stix_import import TestInternalSTIX2Import, TestSTIX20Import
 
 
-class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20):
+class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Import):
     @classmethod
     def tearDownClass(self):
         attributes_documentation = AttributesDocumentationUpdater(
             'stix20_to_misp_attributes',
-            self._attributes_v20
+            self._attributes_v20,
+            'import'
         )
-        attributes_documentation.check_mapping('stix20')
+        attributes_documentation.check_import_mapping('stix20')
         objects_documentation = ObjectsDocumentationUpdater(
             'stix20_to_misp_objects',
-            self._objects_v20
+            self._objects_v20,
+            'import'
         )
-        objects_documentation.check_mapping('stix20')
+        objects_documentation.check_import_mapping('stix20')
 
     ################################################################################
     #                      MISP ATTRIBUTES CHECKING FUNCTIONS                      #

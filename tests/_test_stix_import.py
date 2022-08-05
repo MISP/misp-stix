@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 from base64 import b64encode
 from collections import defaultdict
 from misp_stix_converter import InternalSTIX2toMISPParser
@@ -48,9 +49,222 @@ class TestSTIX2Import(TestSTIX2):
     def _get_pattern_value(pattern):
         return pattern.split(' = ')[1].strip("'")
 
+    def _populate_documentation(self, **kwargs):
+        if 'indicator' in kwargs:
+            self._populate_indicator_documentation(**kwargs)
+        elif 'observed_data' in kwargs:
+            self._populate_observed_data_documentation(**kwargs)
+        elif 'attack_pattern' in kwargs:
+            self._populate_attack_pattern_documentation(**kwargs)
+        elif 'course_of_action' in kwargs:
+            self._populate_course_of_action_documentation(**kwargs)
+        elif 'identity' in kwargs:
+            self._populate_identity_documentation(**kwargs)
+        elif 'location' in kwargs:
+            self._populate_location_documentation(**kwargs)
+        elif 'vulnerability' in kwargs:
+            self._populate_vulnerability_documentation(**kwargs)
+        elif 'malware' in kwargs:
+            self._populate_malware_documentation(**kwargs)
+        elif 'tool' in kwargs:
+            self._populate_tool_documentation(**kwargs)
+        elif 'campaign' in kwargs:
+            self._populate_campaign_documentation(**kwargs)
+        elif 'note' in kwargs:
+            self._populate_note_documentation(**kwargs)
+
     @staticmethod
     def _timestamp_from_datetime(datetime_value):
         return int(datetime_value.timestamp())
+
+
+class TestSTIX20Import(TestSTIX2Import):
+    _attributes_v20 = defaultdict(dict)
+    _objects_v20 = defaultdict(dict)
+    _galaxies_v20 = defaultdict(dict)
+
+    def _populate_attack_pattern_documentation(self, **kwargs):
+        if 'misp_object' in kwargs:
+            self._objects_v20['attack-pattern']['Attack Pattern'] = {
+                'MISP': kwargs['misp_object'],
+                'STIX': json.loads(kwargs['attack_pattern'].serialize())
+            }
+
+    def _populate_campaign_documentation(self, **kwargs):
+        self._attributes_v20['campaign-name']['Campaign'] = {
+            'MISP': kwargs['attribute'],
+            'STIX': json.loads(kwargs['campaign'].serialize())
+        }
+
+    def _populate_course_of_action_documentation(self, **kwargs):
+        if 'misp_object' in kwargs:
+            self._objects_v20['course-of-action']['Course of Action'] = {
+                'MISP': kwargs['misp_object'],
+                'STIX': json.loads(kwargs['course_of_action'].serialize())
+            }
+
+    def _populate_identity_documentation(self, **kwargs):
+        self._objects_v20[kwargs['misp_object']['name']]['Identity'] = {
+            'MISP': kwargs['misp_object'],
+            'STIX': json.loads(kwargs['identity'].serialize())
+        }
+
+    def _populate_indicator_documentation(self, **kwargs):
+        if 'attribute' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['attribute']['type']
+            self._attributes_v20[name]['Indicator'] = {
+                'MISP': kwargs['attribute'],
+                'STIX': json.loads(kwargs['indicator'].serialize())
+            }
+        elif 'misp_object' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['misp_object']['name']
+            self._objects_v20[name]['Indicator'] = {
+                'MISP': kwargs['misp_object'],
+                'STIX': json.loads(kwargs['indicator'].serialize())
+            }
+            if 'summary' in kwargs:
+                self._objects_v20['summary'][name] = kwargs['summary']
+
+    def _populate_malware_documentation(self, **kwargs):
+        self._objects_v20[kwargs['name']]['Malware'] = {
+            'MISP': kwargs['misp_object'],
+            'STIX': json.loads(kwargs['malware'].serialize())
+        }
+
+    def _populate_observed_data_documentation(self, **kwargs):
+        if 'attribute' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['attribute']['type']
+            self._attributes_v20[name]['Observed Data'] = {
+                'MISP': kwargs['attribute'],
+                'STIX': json.loads(kwargs['observed_data'].serialize())
+            }
+        elif 'misp_object' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['misp_object']['name']
+            self._objects_v20[name]['Observed Data'] = {
+                'MISP': kwargs['misp_object'],
+                'STIX': json.loads(kwargs['observed_data'].serialize())
+            }
+            if 'summary' in kwargs:
+                self._objects_v20['summary'][name] = kwargs['summary']
+
+    def _populate_tool_documentation(self, **kwargs):
+        self._objects_v20[kwargs['name']]['Tool'] = {
+            'MISP': kwargs['misp_object'],
+            'STIX': json.loads(kwargs['tool'].serialize())
+        }
+
+    def _populate_vulnerability_documentation(self, **kwargs):
+        if 'attribute' in kwargs:
+            self._attributes_v20[kwargs['attribute']['type']]['Vulnerability'] = {
+                'MISP': kwargs['attribute'],
+                'STIX': json.loads(kwargs['vulnerability'].serialize())
+            }
+        elif 'misp_object' in kwargs:
+            self._objects_v20[kwargs['misp_object']['name']]['Vulnerability'] = {
+                'MISP': kwargs['misp_object'],
+                'STIX': json.loads(kwargs['vulnerability'].serialize())
+            }
+
+
+class TestSTIX21Import(TestSTIX2Import):
+    _attributes_v21 = defaultdict(dict)
+    _objects_v21 = defaultdict(dict)
+    _galaxies_v21 = defaultdict(dict)
+
+    def _populate_attack_pattern_documentation(self, **kwargs):
+        if 'misp_object' in kwargs:
+            self._objects_v21['attack-pattern']['Attack Pattern'] = {
+                'MISP': kwargs['misp_object'],
+                'STIX': json.loads(kwargs['attack_pattern'].serialize())
+            }
+
+    def _populate_campaign_documentation(self, **kwargs):
+        self._attributes_v21['campaign-name']['Campaign'] = {
+            'MISP': kwargs['attribute'],
+            'STIX': json.loads(kwargs['campaign'].serialize())
+        }
+
+    def _populate_course_of_action_documentation(self, **kwargs):
+        if 'misp_object' in kwargs:
+            self._objects_v21['course-of-action']['Course of Action'] = {
+                'MISP': kwargs['misp_object'],
+                'STIX': json.loads(kwargs['course_of_action'].serialize())
+            }
+
+    def _populate_identity_documentation(self, **kwargs):
+        self._objects_v21[kwargs['misp_object']['name']]['Identity'] = {
+            'MISP': kwargs['misp_object'],
+            'STIX': json.loads(kwargs['identity'].serialize())
+        }
+
+    def _populate_indicator_documentation(self, **kwargs):
+        if 'attribute' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['attribute']['type']
+            self._attributes_v21[name]['Indicator'] = {
+                'MISP': kwargs['attribute'],
+                'STIX': json.loads(kwargs['indicator'].serialize())
+            }
+        elif 'misp_object' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['misp_object']['name']
+            self._objects_v21[name]['Indicator'] = {
+                'MISP': kwargs['misp_object'],
+                'STIX': json.loads(kwargs['indicator'].serialize())
+            }
+            if 'summary' in kwargs:
+                self._objects_v21['summary'][name] = kwargs['summary']
+
+    def _populate_location_documentation(self, **kwargs):
+        self._objects_v21['geolocation']['Location'] = {
+            'MISP': kwargs['misp_object'],
+            'STIX': json.loads(kwargs['location'].serialize())
+        }
+
+    def _populate_malware_documentation(self, **kwargs):
+        self._objects_v21[kwargs['name']]['Malware'] = {
+            'MISP': kwargs['misp_object'],
+            'STIX': json.loads(kwargs['malware'].serialize())
+        }
+
+    def _populate_note_documentation(self, **kwargs):
+        self._objects_v21['annotation']['Note'] = {
+            'MISP': kwargs['misp_object'],
+            'STIX': json.loads(kwargs['note'].serialize())
+        }
+
+    def _populate_observed_data_documentation(self, **kwargs):
+        observables = [json.loads(observable.serialize()) for observable in kwargs['observed_data']]
+        if 'attribute' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['attribute']['type']
+            self._attributes_v21[name]['Observed Data'] = {
+                'MISP': kwargs['attribute'],
+                'STIX': observables
+            }
+        elif 'misp_object' in kwargs:
+            name = kwargs['name'] if 'name' in kwargs else kwargs['misp_object']['name']
+            self._objects_v21[name]['Observed Data'] = {
+                'MISP': kwargs['misp_object'],
+                'STIX': observables
+            }
+            if 'summary' in kwargs:
+                self._objects_v21['summary'][name] = kwargs['summary']
+
+    def _populate_tool_documentation(self, **kwargs):
+        self._objects_v21[kwargs['name']]['Tool'] = {
+            'MISP': kwargs['misp_object'],
+            'STIX': json.loads(kwargs['tool'].serialize())
+        }
+
+    def _populate_vulnerability_documentation(self, **kwargs):
+        if 'attribute' in kwargs:
+            self._attributes_v21[kwargs['attribute']['type']]['Vulnerability'] = {
+                'MISP': kwargs['attribute'],
+                'STIX': json.loads(kwargs['vulnerability'].serialize())
+            }
+        elif 'misp_object' in kwargs:
+            self._objects_v21[kwargs['misp_object']['name']]['Vulnerability'] = {
+                'MISP': kwargs['misp_object'],
+                'STIX': json.loads(kwargs['vulnerability'].serialize())
+            }
 
 
 class TestInternalSTIX2Import(TestSTIX2Import):

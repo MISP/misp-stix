@@ -8,10 +8,10 @@ from .update_documentation import (
     AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
     ObjectsDocumentationUpdater)
 from ._test_stix import TestSTIX21
-from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export
+from ._test_stix_export import TestCollectionSTIX2Export, TestSTIX2Export, TestSTIX21Export
 
 
-class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
+class TestSTIX21Export(TestSTIX21Export, TestSTIX21):
     def setUp(self):
         self.parser = MISPtoSTIX21Parser()
 
@@ -19,19 +19,22 @@ class TestSTIX21Export(TestSTIX2Export, TestSTIX21):
     def tearDownClass(self):
         attributes_documentation = AttributesDocumentationUpdater(
             'misp_attributes_to_stix21',
-            self._attributes_v21
+            self._attributes_v21,
+            'export'
         )
-        attributes_documentation.check_mapping('stix21')
+        attributes_documentation.check_export_mapping('stix21')
         objects_documentation = ObjectsDocumentationUpdater(
             'misp_objects_to_stix21',
-            self._objects_v21
+            self._objects_v21,
+            'export'
         )
-        objects_documentation.check_mapping('stix21')
+        objects_documentation.check_export_mapping('stix21')
         galaxies_documentation = GalaxiesDocumentationUpdater(
             'misp_galaxies_to_stix21',
-            self._galaxies_v21
+            self._galaxies_v21,
+            'export'
         )
-        galaxies_documentation.check_mapping('stix21')
+        galaxies_documentation.check_export_mapping('stix21')
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
