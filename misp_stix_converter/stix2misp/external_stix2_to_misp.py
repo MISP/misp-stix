@@ -222,7 +222,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     for value in values:
                         attribute = {'value': value}
                         attribute.update(getattr(self._mapping, f'attack_pattern_{feature}_attribute'))
-                        attributes.append(attribute)
+                        attributes.append(**attribute)
         if attributes:
             misp_object = self._create_misp_object('attack-pattern', attack_pattern)
             for attribute in attributes:
