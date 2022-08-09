@@ -210,10 +210,19 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'attack_pattern_object_mapping'
         )
         if hasattr(attack_pattern, 'external_references'):
+            references = defaultdict(set)
             for reference in attack_pattern.external_references:
-                attribute = self._parse_attack_pattern_reference(reference)
-                if attribute is not None:
-                    attributes.append(attribute)
+                if hasattr(reference, 'url'):
+                    references['references'].add(reference.url)
+                if hasattr(reference, 'external_id'):
+                    external_id = reference.external_id
+                    reference['id'].add(external_id.split('-')[1] if external_id.startswtih('CAPEC-') else external_id)
+            if references:
+                for feature, values in references.items():
+                    for value in values:
+                        attribute = {'value': value}
+                        attribute.update(getattr(self._mapping, f'attack_pattern_{feature}_attribute'))
+                        attributes.append(attribute)
         if attributes:
             misp_object = self._create_misp_object('attack-pattern', attack_pattern)
             for attribute in attributes:

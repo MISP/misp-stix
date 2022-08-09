@@ -11,12 +11,14 @@ from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
 from pymisp import MISPAttribute, MISPObject, MISPSighting
+from stix2.v20.common import ExternalReference as ExternalReference_v20
 from stix2.v20.observables import (
     Process as Process_v20, WindowsPEBinaryExt as WindowsExtension_v20)
 from stix2.v20.sdo import (CustomObject as CustomObject_v20, Identity as Identity_v20,
     Indicator as Indicator_v20, Malware as Malware_v20, ObservedData as ObservedData_v20,
     Tool as Tool_v20)
 from stix2.v20.sro import Sighting as Sighting_v20
+from stix2.v21.common import ExternalReference as ExternalReference_v21
 from stix2.v21.observables import (
     DomainName, Process as Process_v21, WindowsPEBinaryExt as WindowsExtension_v21)
 from stix2.v21.sdo import (CustomObject as CustomObject_v21, Identity as Identity_v21,
@@ -39,6 +41,10 @@ _CUSTOM_TYPING = Union[
 _EXTENSION_TYPING = Union[
     WindowsExtension_v20,
     WindowsExtension_v21
+]
+_EXTERNAL_REFERENCE_TYPING = [
+    ExternalReference_v20,
+    ExternalReference_v21
 ]
 _GALAXY_TYPES = (
     'attack-pattern',
@@ -388,6 +394,16 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             for reference in attack_pattern.external_references:
                 misp_object.add_attribute(**self._parse_attack_pattern_reference(reference))
         self._add_misp_object(misp_object)
+
+    def _parse_attack_pattern_reference(self, reference: _EXTERNAL_REFERENCE_TYPING) -> dict:
+        if reference.source_name == 'url':
+            attribute = {'value': reference.url}
+            attribute.update(self._mapping.attack_pattern_references_attribute)
+            return attribute
+        external_id = reference.external_id
+        attribute = {'value': external_id.split('-')[1] if external_id.startswith('CAPEC-') else external_id}
+        attribute.update(self._mapping.attack_pattern_id_attribute)
+        return attribute
 
     def _parse_course_of_action_object(self, course_of_action: _COURSE_OF_ACTION_TYPING):
         misp_object = self._create_misp_object('course-of-action', course_of_action)

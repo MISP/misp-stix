@@ -113,6 +113,11 @@ class STIX2Mapping:
                 'object_relation': 'accuracy_radius'
             }
         )
+        self.__attack_pattern_id_attribute = {'type': 'text', 'object_relation': 'id'}
+        self.__attack_pattern_references_attribute = {
+            'type': 'link',
+            'object_relation': 'references'
+        }
         self.__comment_attribute = Mapping(**comment_attribute)
         self.__description_attribute = {'type': 'text', 'object_relation': 'description'}
         self.__name_attribute = {'type': 'text', 'object_relation': 'name'}
@@ -181,6 +186,14 @@ class STIX2Mapping:
     @property
     def accuracy_radius_attribute(self) -> dict:
         return self.__accuracy_radius_attribute
+
+    @property
+    def attack_pattern_id_attribute(self) -> dict:
+        return self.__attack_pattern_id_attribute
+
+    @property
+    def attack_pattern_references_attribute(self) -> dict:
+        return self.__attack_pattern_references_attribute
 
     @property
     def bundle_to_misp_mapping(self) -> dict:

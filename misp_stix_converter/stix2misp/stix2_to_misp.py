@@ -637,21 +637,6 @@ class STIX2toMISPParser(STIXtoMISPParser):
             return f'AS{number}'
         return number
 
-    @staticmethod
-    def _parse_attack_pattern_reference(reference: dict) -> Union[dict, None]:
-        if reference.source_name == 'capec':
-            return {
-                'type': 'text',
-                'object_relation': 'id',
-                'value': reference.external_id.split('-')[1]
-            }
-        if reference.source_name in ('link', 'url'):
-            return {
-                'type': 'link',
-                'object_relation': 'references',
-                'value': reference.url
-            }
-
     def _parse_markings(self, misp_feature: Union[MISPAttribute, MISPObject], marking_refs: list):
         for marking_ref in marking_refs:
             try:
