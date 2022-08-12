@@ -1,11 +1,12 @@
 [tool.poetry]
 name = "misp_stix_converter"
-version = "0.1.0"
+version = "2.4.160"
 description = "Python scripts used by MISP to export MISP format into STIX and to import STIX into MISP format."
 authors = ["Christian Studer <christian.studer@circl.lu>"]
 maintainers = ["Christian Studer <christian.studer@circl.lu>"]
 license = "BSD-3-Clause"
-repository = "https://github.com/chrisr3d/MISP-STIX-Converter"
+repository = "https://github.com/MISP/misp-stix"
+documentation = "https://misp.github.io/misp-stix/"
 readme = "README.md"
 
 [tool.poetry.scripts]
