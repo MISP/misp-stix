@@ -9,6 +9,24 @@ repository = "https://github.com/MISP/misp-stix"
 documentation = "https://misp.github.io/misp-stix/"
 readme = "README.md"
 
+classifiers = [
+    'License :: OSI Approved :: BSD License',
+    'Development Status :: 4 - Beta',
+    'Environment :: Console',
+    'Operating System :: POSIX :: Linux',
+    'Intended Audience :: Science/Research',
+    'Intended Audience :: Information Technology',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Topic :: Security'
+]
+
+[tool.poetry.urls]
+"Source" = "https://github.com/MISP/misp-stix"
+"Bug Tracker" = "https://github.com/MISP/misp-stix/issues"
+
 [tool.poetry.scripts]
 misp_stix_converter = 'misp_stix_converter:main'
 
@@ -19,12 +37,12 @@ stix = "^1.2.0"
 cybox = "^2.1.0"
 mixbox = "^1.0.3"
 maec = "^4.1.0"
-stix2 = {git = "https://github.com/MISP/cti-python-stix2.git", rev = "main"}
+misp-lib-stix2 = "^3.0.1"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.8.3"
 pytest = "^7.1.2"
 
 [build-system]
-requires = ["poetry>=0.12", "setuptools>=65.1.1"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry_core>=1.0", "setuptools>=65.1.1"]
+build-backend = "poetry.core.masonry.api"
