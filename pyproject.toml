@@ -26,5 +26,5 @@ flake8 = "^3.8.3"
 pytest = "^7.1.2"
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=0.12", "setuptools>=65.1.1"]
 build-backend = "poetry.masonry.api"
