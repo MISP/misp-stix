@@ -29,7 +29,7 @@ If you want to know more about virtual environments, [python has you covered](ht
 
 From the current repository:
 ```
-pip3 install .
+pip3 install misp-stix
 ```
 
 ## Install the latest version from the repository for development purposes
