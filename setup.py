@@ -40,6 +40,6 @@ setup(
         'Topic :: Security',
         'Topic :: Internet',
     ],
-    install_requires=['pymisp', 'stix', 'misp-lib-stix2']
+    install_requires=['pymisp', 'stix', 'misp-lib-stix2'],
     tests_require=['pytest', 'flake8']
 )
