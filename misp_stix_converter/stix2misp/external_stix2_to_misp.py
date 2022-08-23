@@ -217,13 +217,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     references['references'].add(reference.url)
                 if hasattr(reference, 'external_id'):
                     external_id = reference.external_id
-                    reference['id'].add(external_id.split('-')[1] if external_id.startswtih('CAPEC-') else external_id)
+                    references['id'].add(external_id.split('-')[1] if external_id.startswith('CAPEC-') else external_id)
             if references:
                 for feature, values in references.items():
                     for value in values:
                         attribute = {'value': value}
                         attribute.update(getattr(self._mapping, f'attack_pattern_{feature}_attribute'))
-                        attributes.append(**attribute)
+                        attributes.append(attribute)
         if attributes:
             misp_object = self._create_misp_object('attack-pattern', attack_pattern)
             for attribute in attributes:
