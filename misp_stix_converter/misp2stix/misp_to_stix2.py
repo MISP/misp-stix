@@ -3066,6 +3066,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _handle_value_for_pattern(self, attribute_value: str) -> str:
         # return attribute_value.replace("'", '##APOSTROPHE##').replace('"', '##QUOTE##')
+        if not isinstance(attribute_value, str):
+            return attribute_value
         sanitized = self._sanitize_registry_key_value(attribute_value)
         return sanitized.replace("'", "\\'").replace('"', '\\\\"')
 
