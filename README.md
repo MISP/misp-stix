@@ -9,6 +9,8 @@
 
 MISP-STIX-converter is a Python library (>=3.7) to handle all the conversions between the [MISP standard format](https://www.misp-standard.org/) and STIX formats.
 
+The package is available as [misp-stix](https://pypi.org/project/misp-stix/) in PyPI.
+
 ## Features
 
 - MISP standard format conversion to STIX 1.x (1.1.1 and 1.2)
@@ -31,6 +33,8 @@ From the current repository:
 ```
 pip3 install misp-stix
 ```
+
+Package details at PyPI: [misp-stix](https://pypi.org/project/misp-stix/)
 
 ## Install the latest version from the repository for development purposes
 
