@@ -1973,7 +1973,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     self._object_error(pe_object, exception)
         if self._objects_to_parse.get('pe-section'):
             for misp_object in self._objects_to_parse.pop('pe-section').values():
-                self._parse_custom_object(misp_object)
+                self._parse_custom_object(misp_object[1])
 
     def _resolve_pe_to_parse(self, pe_object: dict, pe_ids: bool):
         to_ids, section_uuids = self._handle_pe_object_references(
