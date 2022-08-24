@@ -140,7 +140,9 @@ class MISPtoSTIXParser:
     ################################################################################
 
     @staticmethod
-    def _datetime_from_timestamp(timestamp: str) -> datetime:
+    def _datetime_from_timestamp(timestamp: Union[datetime, str]) -> datetime:
+        if isinstance(timestamp, datetime):
+            return timestamp
         return datetime.utcfromtimestamp(int(timestamp))
 
     @staticmethod
