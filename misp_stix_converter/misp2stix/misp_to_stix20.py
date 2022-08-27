@@ -3,6 +3,7 @@
 
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix20_mapping import Stix20Mapping
+from base64 import b64encode
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
@@ -192,13 +193,16 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     ################################################################################
 
     def _parse_attachment_attribute_observable(self, attribute: dict):
+        data = attribute['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
         observable_object = {
             '0': File(
                 name=attribute['value'],
                 _valid_refs={'1': 'artifact'},
                 content_ref='1'
             ),
-            '1': self._create_artifact(attribute['data'])
+            '1': self._create_artifact(data)
         }
         self._handle_attribute_observable(attribute, observable_object)
 
@@ -413,6 +417,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_malware_sample_attribute_observable(self, attribute: dict):
         filename, hash_value = attribute['value'].split('|')
+        data = attribute['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
         observable_object = {
             '0': File(
                 name=filename,
@@ -422,7 +429,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 _valid_refs={'1': 'artifact'},
                 content_ref='1'
             ),
-            '1': self._create_artifact(attribute['data'], malware_sample=True)
+            '1': self._create_artifact(data, malware_sample=True)
         }
         self._handle_attribute_observable(attribute, observable_object)
 
@@ -613,6 +620,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                         str_index = str(index)
                         if isinstance(value, tuple):
                             value, data = value
+                            if not isinstance(data, str):
+                                data = b64encode(data.getvalue()).decode()
                             observable_object[str_index] = self._create_artifact(
                                 data,
                                 filename=value
@@ -1141,6 +1150,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if not isinstance(attachment, tuple):
             return None
         filename, data = attachment
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
         artifact_args = {
             'payload_bin': data,
             'allow_custom': True

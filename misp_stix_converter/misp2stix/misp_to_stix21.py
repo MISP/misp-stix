@@ -4,6 +4,7 @@
 import re
 from .misp_to_stix2 import MISPtoSTIX2Parser
 from .stix21_mapping import Stix21Mapping
+from base64 import b64encode
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
@@ -214,6 +215,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_attachment_attribute_observable(self, attribute: dict):
         artifact_id = f"artifact--{attribute['uuid']}"
+        data = attribute['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
         objects = [
             File(
                 id=f"file--{attribute['uuid']}",
@@ -222,7 +226,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             ),
             Artifact(
                 id=artifact_id,
-                payload_bin=attribute['data']
+                payload_bin=data
             )
         ]
         self._handle_attribute_observable(attribute, objects)
@@ -476,6 +480,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_malware_sample_attribute_observable(self, attribute: dict):
         artifact_id = f"artifact--{attribute['uuid']}"
         filename, hash_value = attribute['value'].split('|')
+        data = attribute['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
         objects = [
             File(
                 id=f"file--{attribute['uuid']}",
@@ -485,7 +492,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 },
                 content_ref=artifact_id
             ),
-            self._create_artifact(artifact_id, attribute['data'], malware_sample=True)
+            self._create_artifact(artifact_id, data, malware_sample=True)
         ]
         self._handle_attribute_observable(attribute, objects)
 
@@ -788,6 +795,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     for attribute in attributes.pop(feature):
                         if len(attribute) == 3:
                             value, data, uuid = attribute
+                            if not isinstance(data, str):
+                                data = b64encode(data.getvalue()).decode()
                             object_id = f'artifact--{uuid}'
                             objects.append(
                                 self._create_artifact(object_id, data, filename=value)
@@ -1551,6 +1560,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if len(attachment) < 3:
             return None
         filename, data, uuid = attachment
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
         artifact_args = {
             'id': getattr(self, self._id_parsing_function['attribute'])('artifact', {'uuid': uuid}),
             'payload_bin': data,

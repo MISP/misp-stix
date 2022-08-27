@@ -5,6 +5,7 @@ import json
 import os
 import re
 from .exportparser import MISPtoSTIXParser
+from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -15,7 +16,7 @@ from typing import Generator, Optional, Tuple, Union
 
 _label_fields = ('type', 'category', 'to_ids')
 _misp_time_fields = ('first_seen', 'last_seen')
-_object_attributes_additional_fields = ('category', 'comment', 'data', 'to_ids', 'uuid')
+_object_attributes_additional_fields = ('category', 'comment', 'to_ids', 'uuid')
 _object_attributes_fields = ('type', 'object_relation', 'value')
 _stix_time_fields = {
     'indicator': ('valid_from', 'valid_until'),
@@ -422,8 +423,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if attribute.get('to_ids', False):
                 value = self._handle_value_for_pattern(attribute['value'])
                 file_pattern = self._create_filename_pattern(value)
-                data = self._handle_value_for_pattern(attribute['data'])
-                data_pattern = self._create_content_ref_pattern(data)
+                data = attribute['data']
+                if not isinstance(data, str):
+                    data = b64encode(data.getvalue()).decode()
+                data_pattern = self._create_content_ref_pattern(
+                    self._handle_value_for_pattern(data)
+                )
                 pattern = f"[{file_pattern} AND {data_pattern}]"
                 self._handle_attribute_indicator(attribute, pattern)
             else:
@@ -664,12 +669,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attribute.get('data'):
             if attribute.get('to_ids', False):
                 value = self._handle_value_for_pattern(attribute['value'])
-                file_pattern = self._create_filename_hash_pattern('md5', value)
-                data = self._handle_value_for_pattern(attribute['data'])
-                data_pattern = self._create_content_ref_pattern(data)
+                data = attribute['data']
+                if not isinstance(data, str):
+                    data = b64encode(data.getvalue()).decode()
+                print(f'script: {data}')
                 pattern = [
-                    file_pattern,
-                    data_pattern,
+                    self._create_filename_hash_pattern('md5', value),
+                    self._create_content_ref_pattern(
+                        self._handle_value_for_pattern(data)
+                    ),
                     self._mapping.malware_sample_additional_pattern_values
                 ]
                 self._handle_attribute_indicator(attribute, f"[{' AND '.join(pattern)}]")
@@ -1140,10 +1148,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _parse_custom_attachment(attachment: Union[str, tuple]) -> dict:
         if isinstance(attachment, tuple):
-            attachment = {
-                'value': attachment[0],
-                'data': attachment[1]
-            }
+            data = attachment[1]
+            if not isinstance(data, str):
+                data = b64encode(data.getvalue()).decode()
+            attachment = {'value': attachment[0], 'data': data}
         return {
             'allow_custom': True,
             'x_misp_attachment': attachment
@@ -1190,6 +1198,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for field in _object_attributes_additional_fields:
             if attribute.get(field):
                 custom_attribute[field] = attribute[field]
+        if attribute.get('data'):
+            data = attribute['data']
+            if not isinstance(data, str):
+                data = b64encode(data.getvalue()).decode()
+            custom_attribute['data'] = data
         return custom_attribute
 
     def _parse_domain_ip_object(self, misp_object: dict):
@@ -1336,6 +1349,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             value = attributes.pop('attachment')
             if isinstance(value, tuple):
                 value, data = value
+                if not isinstance(data, str):
+                    data = b64encode(data.getvalue()).decode()
                 filename_pattern = self._create_content_ref_pattern(value, 'x_misp_filename')
                 data_pattern = self._create_content_ref_pattern(data)
                 pattern.append(f'({data_pattern} AND {filename_pattern})')
@@ -1392,6 +1407,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 attachment = attributes.pop('attachment')
                 if isinstance(attachment, tuple):
                     attachment, data = attachment
+                    if not isinstance(data, str):
+                        data = b64encode(data.getvalue()).decode()
                     pattern.append(self._create_content_ref_pattern(data))
                 if '.' in attachment:
                     extension = attachment.split('.')[-1]
@@ -1487,6 +1504,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         pattern = []
         if isinstance(malware_sample, tuple):
             malware_sample, data = malware_sample
+            if not isinstance(data, str):
+                data = b64encode(data.getvalue()).decode()
             pattern.append(self._create_content_ref_pattern(data))
         filename, md5 = malware_sample.split('|')
         pattern.append(self._create_content_ref_pattern(filename, 'x_misp_filename'))
@@ -2459,8 +2478,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_labels(attribute: dict) -> list:
         return [f'misp:{feature}="{attribute[feature]}"' for feature in _label_fields if attribute.get(feature)]
 
-    def _create_malware_sample_args(self, value: str, data: str) -> dict:
+    def _create_malware_sample_args(self, value: str, data: Union[io.BytesIO, str]) -> dict:
         filename, md5 = value.split('|')
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
         args = {
             'allow_custom': True,
             'hashes': {
@@ -3038,8 +3059,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _handle_custom_data_pattern(prefix: str, key: str, value: Union[str, tuple]) -> list:
         if isinstance(value, tuple):
             value, data = value
-            if '\\' in data:
-                data = data.replace('\\', '')
+            if not isinstance(data, str):
+                data = b64encode(data.getvalue()).decode()
             return [
                 f"{prefix}:x_misp_{key}.data = '{data}'",
                 f"{prefix}:x_misp_{key}.value = '{value}'"
@@ -3086,10 +3107,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_custom_data_value(value_to_parse: Union[str, tuple]) -> Union[dict, str]:
         if isinstance(value_to_parse, tuple):
             value, data = value_to_parse
-            return {
-                'value': value,
-                'data': data.replace('\\', '')
-            }
+            if not isinstance(data, str):
+                data = b64encode(data.getvalue()).decode()
+            return {'value': value, 'data': data}
         return value_to_parse
 
     def _parse_email_display_names(self, attributes: dict, feature: str) -> dict:
