@@ -1436,10 +1436,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 if attributes.get(key):
                     for domain_value in attributes.pop(key):
                         patterns.append(f"({prefix}:{pattern} = '{domain_value}')")
-            for key, feature in self._mapping.ip_port_object_mapping['features'].items():
-                if attributes.get(key):
-                    for value in attributes.pop(key):
-                        patterns.append(f"{prefix}:{feature} = '{value}'")
+            for asset in ('features', 'timeline'):
+                for key, feature in self._mapping.ip_port_object_mapping[asset].items():
+                    if attributes.get(key):
+                        for value in attributes.pop(key):
+                            patterns.append(f"{prefix}:{feature} = '{value}'")
             if attributes:
                 patterns.extend(self._handle_pattern_multiple_properties(attributes, prefix))
             self._handle_object_indicator(misp_object, patterns)
@@ -1549,12 +1550,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     pattern.append(f"({' AND '.join(reference)})")
             if attributes.get('protocol'):
                 pattern.append(f"{prefix}:protocols[0] = '{attributes.pop('protocol').lower()}'")
-            for key, feature in self._mapping.netflow_object_mapping['features'].items():
-                if attributes.get(key):
-                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
-            for key, feature in self._mapping.netflow_object_mapping['extensions'].items():
-                if attributes.get(key):
-                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            for asset in ('features', 'timeline', 'extensions'):
+                for key, feature in self._mapping.netflow_object_mapping[asset].items():
+                    if attributes.get(key):
+                        pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
             if attributes:
                 pattern.extend(self._handle_pattern_properties(attributes, 'network-traffic'))
             self._handle_object_indicator(misp_object, pattern)
@@ -2712,6 +2711,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for key, feature in self._mapping.ip_port_object_mapping['features'].items():
             if attributes.get(key):
                 args[feature] = self._select_single_feature(attributes, key)
+        for key, feature in self._mapping.ip_port_object_mapping['timeline'].items():
+            if attributes.get(key):
+                value = attributes.pop(key)
+                if not isinstance(value, datetime):
+                    value = self._datetime_from_str(value)
+                args[feature] = value
         if attributes:
             args.update(self._handle_observable_multiple_properties(attributes))
         return args
@@ -2750,6 +2755,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for key, feature in self._mapping.netflow_object_mapping['features'].items():
             if attributes.get(key):
                 args[feature] = attributes.pop(key)
+        for key, feature in self._mapping.netflow_object_mapping['timeline'].items():
+            if attributes.get(key):
+                value = attributes.pop(key)
+                if not isinstance(value, datetime):
+                    value = self._datetime_from_str(value)
+                args[feature] = value
         if attributes:
             args.update(self._handle_observable_properties(attributes))
         return args
@@ -2980,6 +2991,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         regex = '%Y-%m-%dT%H:%M:%S'
         if '.' in timestamp:
             regex = f'{regex}.%f'
+        if timestamp.endswith('Z'):
+            regex = f'{regex}Z'
         return datetime.strptime(timestamp.split('+')[0], regex)
 
     @staticmethod

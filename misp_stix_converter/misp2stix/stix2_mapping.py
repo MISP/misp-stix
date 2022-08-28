@@ -588,9 +588,13 @@ class Stix2Mapping:
             features = Mapping(
                 **{
                     'dst-port': "dst_port",
-                    'first-seen': "start",
-                    'last-seen': "end",
                     'src-port': "src_port"
+                }
+            ),
+            timeline = Mapping(
+                **{
+                    'first-seen': "start",
+                    'last-seen': "end"
                 }
             )
         )
@@ -652,9 +656,11 @@ class Stix2Mapping:
                 'src-port': 'src_port',
                 'dst-port': 'dst_port',
                 'byte-count': 'src_byte_count',
-                'first-packet-seen': 'start',
-                'last-packet-seen': 'end',
                 'packet-count': 'src_packets'
+            },
+            timeline = {
+                'first-packet-seen': 'start',
+                'last-packet-seen': 'end'
             },
             extensions = {
                 'icmp-type': "extensions.'icmp-ext'.icmp_type_hex",

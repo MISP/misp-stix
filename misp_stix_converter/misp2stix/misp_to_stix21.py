@@ -1244,7 +1244,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             registry_key_args['key'] = attributes.pop('key')
         if attributes.get('last-modified'):
             modified = attributes.pop('last-modified')
-            if not modified.endswith('Z'):
+            if not isinstance(modified, datetime) and not modified.endswith('Z'):
                 modified = f"{modified}Z"
             registry_key_args['modified_time'] = modified
         return registry_key_args
