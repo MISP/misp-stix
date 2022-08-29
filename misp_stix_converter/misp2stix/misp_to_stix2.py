@@ -1470,36 +1470,47 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
         self._append_SDO(self._create_identity(identity_args))
 
-    def _parse_lnk_object_pattern(self, attributes: dict) -> list:
-        prefix = 'file'
-        pattern = []
-        if attributes.get('filename'):
-            for filename in attributes.pop('filename'):
-                pattern.append(f"{prefix}:name = '{filename}'")
-        for feature in self._mapping.lnk_path_fields:
-            if attributes.get(feature):
-                for value in attributes.pop(feature):
-                    pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")
-        for hash_type in self._mapping.lnk_hash_types:
-            if attributes.get(hash_type):
+    def _parse_lnk_object(self, misp_object: dict):
+        if self._fetch_ids_flag(misp_object['Attribute']):
+            prefix = 'file'
+            attributes = self._extract_multiple_object_attributes_with_data_escaped(
+                misp_object['Attribute'],
+                force_single=self._mapping.lnk_single_fields,
+                with_data=self._mapping.lnk_data_fields
+            )
+            pattern = []
+            for key, feature in self._mapping.lnk_time_fields.items():
+                if attributes.get(key):
+                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            if attributes.get('filename'):
+                for filename in attributes.pop('filename'):
+                    pattern.append(f"{prefix}:name = '{filename}'")
+            for feature in self._mapping.lnk_path_fields:
+                if attributes.get(feature):
+                    for value in attributes.pop(feature):
+                        pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")
+            for hash_type in self._mapping.lnk_hash_types:
+                if attributes.get(hash_type):
+                    pattern.append(
+                        self._create_hash_pattern(
+                            hash_type,
+                            attributes.pop(hash_type)
+                        )
+                    )
+            if attributes.get('malware-sample'):
                 pattern.append(
-                    self._create_hash_pattern(
-                        hash_type,
-                        attributes.pop(hash_type)
+                    self._parse_malware_sample_object_attribute(
+                        attributes.pop('malware-sample')
                     )
                 )
-        if attributes.get('malware-sample'):
-            pattern.append(
-                self._parse_malware_sample_object_attribute(
-                    attributes.pop('malware-sample')
-                )
-            )
-        for key, feature in self._mapping.lnk_object_mapping.items():
-            if attributes.get(key):
-                pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
-        if attributes:
-            pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
-        return pattern
+            for key, feature in self._mapping.lnk_object_mapping.items():
+                if attributes.get(key):
+                    pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
+            if attributes:
+                pattern.extend(self._handle_pattern_multiple_properties(attributes, prefix))
+            self._handle_object_indicator(misp_object, pattern)
+        else:
+            self._parse_lnk_object_observable(misp_object)
 
     def _parse_malware_sample_object_attribute(self, malware_sample: Union[str, tuple]) -> str:
         pattern = []
@@ -2737,6 +2748,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for key, feature in self._mapping.lnk_object_mapping.items():
             if attributes.get(key):
                 file_args[feature] = self._select_single_feature(attributes, key)
+        for key, feature in self._mapping.lnk_time_fields.items():
+            if attributes.get(key):
+                value = self._select_single_feature(attributes, key)
+                if not isinstance(value, datetime):
+                    value = self._datetime_from_str(value)
+                file_args[feature] = value
         if attributes:
             file_args.update(self._handle_observable_multiple_properties(attributes))
         return file_args

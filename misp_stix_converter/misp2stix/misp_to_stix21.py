@@ -1005,74 +1005,53 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         self._handle_object_observable(misp_object, objects)
 
-    def _parse_lnk_object(self, misp_object: dict):
-        if self._fetch_ids_flag(misp_object['Attribute']):
-            attributes = self._extract_multiple_object_attributes_with_data_escaped(
-                misp_object['Attribute'],
-                force_single=self._mapping.lnk_single_fields,
-                with_data=self._mapping.lnk_data_fields
-            )
-            pattern = []
-            for key, feature in self._mapping.lnk_time_fields.items():
-                if attributes.get(key):
-                    pattern.append(f"file:{feature} = '{attributes.pop(key)}'")
-            pattern.extend(self._parse_lnk_object_pattern(attributes))
-            self._handle_object_indicator(misp_object, pattern)
-        else:
-            attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
-                misp_object['Attribute'],
-                with_uuid=self._mapping.lnk_uuid_fields,
-                with_data=self._mapping.lnk_data_fields
-            )
-            objects: list = []
-            file_args: dict[str, Union[bool, datetime, str]] = {
-                'id': f"file--{misp_object['uuid']}"
-            }
-            if attributes.get('path'):
-                self._parse_directory_ref(
-                    file_args,
-                    objects,
-                    *self._select_single_feature(
-                        attributes,
-                        'path'
-                    )
+    def _parse_lnk_object_observable(self, misp_object: dict):
+        attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
+            misp_object['Attribute'],
+            with_uuid=self._mapping.lnk_uuid_fields,
+            with_data=self._mapping.lnk_data_fields
+        )
+        objects: list = []
+        file_args: dict[str, Union[bool, datetime, str]] = {
+            'id': f"file--{misp_object['uuid']}"
+        }
+        if attributes.get('path'):
+            self._parse_directory_ref(
+                file_args,
+                objects,
+                *self._select_single_feature(
+                    attributes,
+                    'path'
                 )
-            elif attributes.get('fullpath'):
-                self._parse_directory_ref(
-                    file_args,
-                    objects,
-                    *self._select_single_feature(
-                        attributes,
-                        'fullpath'
-                    )
+            )
+        elif attributes.get('fullpath'):
+            self._parse_directory_ref(
+                file_args,
+                objects,
+                *self._select_single_feature(
+                    attributes,
+                    'fullpath'
                 )
-            if attributes.get('malware-sample'):
-                value = self._select_single_feature(attributes, 'malware-sample')
-                if len(value) == 3:
-                    value, data, uuid = value
-                    artifact_id = f'artifact--{uuid}'
-                    args = self._create_malware_sample_args(value, data)
-                    args['id'] = artifact_id
-                    objects.append(Artifact(**args))
-                    file_args['content_ref'] = artifact_id
-                else:
-                    file_args.update(
-                        {
-                            'allow_custom': True,
-                            'x_misp_malware_sample': value[0]
-                        }
-                    )
-            for key, feature in self._mapping.lnk_time_fields.items():
-                if attributes.get(key):
-                    file_args[feature] = self._datetime_from_str(
-                        self._select_single_feature(
-                            attributes,
-                            key
-                        )
-                    )
-            file_args.update(self._parse_lnk_args(attributes))
-            objects.insert(0, self._create_file_object(file_args))
-            self._handle_object_observable(misp_object, objects)
+            )
+        if attributes.get('malware-sample'):
+            value = self._select_single_feature(attributes, 'malware-sample')
+            if len(value) == 3:
+                value, data, uuid = value
+                artifact_id = f'artifact--{uuid}'
+                args = self._create_malware_sample_args(value, data)
+                args['id'] = artifact_id
+                objects.append(Artifact(**args))
+                file_args['content_ref'] = artifact_id
+            else:
+                file_args.update(
+                    {
+                        'allow_custom': True,
+                        'x_misp_malware_sample': value[0]
+                    }
+                )
+        file_args.update(self._parse_lnk_args(attributes))
+        objects.insert(0, self._create_file_object(file_args))
+        self._handle_object_observable(misp_object, objects)
 
     def _parse_mutex_object_observable(self, misp_object: dict):
         mutex_args = self._parse_mutex_args(misp_object['Attribute'])

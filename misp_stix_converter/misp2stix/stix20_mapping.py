@@ -50,6 +50,13 @@ class Stix20Mapping(Stix2Mapping):
                 'text': 'description'
             }
         )
+        self.__lnk_time_fields = Mapping(
+            **{
+                'lnk-access-time': 'accessed',
+                'lnk-creation-time': 'created',
+                'lnk-modification-time': 'modified'
+            }
+        )
         self.__network_socket_mapping = Mapping(
             features = Mapping(
                 **{
@@ -161,6 +168,10 @@ class Stix20Mapping(Stix2Mapping):
     @property
     def employee_object_mapping(self) -> dict:
         return self.__employee_object_mapping
+
+    @property
+    def lnk_time_fields(self) -> dict:
+        return self.__lnk_time_fields
 
     @property
     def malware_sample_additional_observable_values(self) -> dict:
