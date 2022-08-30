@@ -63,7 +63,9 @@ class TestSTIX21(TestSTIX2):
         return hash_type.lower() if hash_type.isupper() else hash_type.upper()
 
     def _check_grouping_features(self, grouping, event, identity_id):
-        timestamp = self._datetime_from_timestamp(event['timestamp'])
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(grouping.type, 'grouping')
         self.assertEqual(grouping.id, f"grouping--{event['uuid']}")
         self.assertEqual(grouping.created_by_ref, identity_id)

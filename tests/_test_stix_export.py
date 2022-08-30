@@ -4,6 +4,7 @@
 import json
 import os
 import unittest
+from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -100,7 +101,9 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(attack_pattern.created_by_ref, identity_id)
         self._check_killchain(attack_pattern.kill_chain_phases[0], misp_object['meta-category'])
         self._check_object_labels(misp_object, attack_pattern.labels, to_ids=False)
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = misp_object['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(attack_pattern.created, timestamp)
         self.assertEqual(attack_pattern.modified, timestamp)
         id_, name, summary, weakness1, weakness2, prerequisite, solution = (attribute['value'] for attribute in misp_object['Attribute'])
@@ -124,7 +127,9 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(campaign.type, 'campaign')
         self.assertEqual(campaign.created_by_ref, identity_id)
         self._check_attribute_labels(attribute, campaign.labels)
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = attribute['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(campaign.created, timestamp)
         self.assertEqual(campaign.modified, timestamp)
 
@@ -157,14 +162,18 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
         self._check_attribute_labels(attribute, vulnerability.labels)
-        timestamp = self._datetime_from_timestamp(attribute['timestamp'])
+        timestamp = attribute['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(vulnerability.created, timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
 
     def _check_course_of_action_object(self, course_of_action, misp_object, identity_id):
         self.assertEqual(course_of_action.type, 'course-of-action')
         self.assertEqual(course_of_action.created_by_ref, identity_id)
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = misp_object['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(course_of_action.created, timestamp)
         self.assertEqual(course_of_action.modified, timestamp)
         name, description, *attributes = misp_object['Attribute']
@@ -193,7 +202,9 @@ class TestSTIX2Export(TestSTIX2):
             f"identity--{misp_object['uuid']}"
         )
         self.assertEqual(employee.identity_class, 'individual')
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = misp_object['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(employee.created, timestamp)
         self.assertEqual(employee.modified, timestamp)
         self.assertEqual(employee.created_by_ref, identity_id)
@@ -247,8 +258,9 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(indicator.type, 'indicator')
         self.assertEqual(indicator.created_by_ref, identity_id)
 
-    def _check_indicator_time_features(self, indicator, object_time):
-        timestamp = self._datetime_from_timestamp(object_time)
+    def _check_indicator_time_features(self, indicator, timestamp):
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(indicator.created, timestamp)
         self.assertEqual(indicator.modified, timestamp)
         self.assertEqual(indicator.valid_from, timestamp)
@@ -265,7 +277,9 @@ class TestSTIX2Export(TestSTIX2):
             f"identity--{misp_object['uuid']}"
         )
         self.assertEqual(legal_entity.identity_class, 'organization')
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = misp_object['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(legal_entity.created, timestamp)
         self.assertEqual(legal_entity.modified, timestamp)
         self.assertEqual(legal_entity.created_by_ref, identity_id)
@@ -281,10 +295,11 @@ class TestSTIX2Export(TestSTIX2):
             legal_entity.x_misp_registration_number,
             registration_number['value']
         )
-        self.assertEqual(
-            legal_entity.x_misp_logo,
-            {'value': logo['value'], 'data': logo['data']}
-        )
+        self.assertEqual(legal_entity.x_misp_logo['value'], logo['value'])
+        data = logo['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
+        self.assertEqual(legal_entity.x_misp_logo['data'], data)
 
     def _check_object_indicator_features(self, indicator, misp_object, identity_id, object_ref):
         self._check_indicator_features(indicator, identity_id, object_ref, misp_object['uuid'])
@@ -315,12 +330,16 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(vulnerability.type, 'vulnerability')
         self.assertEqual(vulnerability.created_by_ref, identity_id)
         self._check_object_labels(misp_object, vulnerability.labels, to_ids=False)
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = misp_object['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
         cve, cvss, summary, created, published, references1, references2 = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(vulnerability.name, cve)
         self.assertEqual(vulnerability.description, summary)
-        timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
+        timestamp = misp_object['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(vulnerability.created, timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
         cve_ref, url1, url2 = vulnerability.external_references
@@ -344,8 +363,9 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(observed_data.created_by_ref, identity_id)
         self.assertEqual(observed_data.number_observed, 1)
 
-    def _check_observable_time_features(self, observed_data, object_time):
-        timestamp = self._datetime_from_timestamp(object_time)
+    def _check_observable_time_features(self, observed_data, timestamp):
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(observed_data.created, timestamp)
         self.assertEqual(observed_data.modified, timestamp)
         self.assertEqual(observed_data.first_observed, timestamp)
@@ -540,9 +560,14 @@ class TestSTIX2Export(TestSTIX2):
                 except AssertionError:
                     if '(s)' in attribute[feature]:
                         self.assertEqual(custom_attribute[feature], attribute[feature].replace('(s)', ''))
-            for feature in ('category', 'comment', 'data', 'to_ids', 'uuid'):
+            for feature in ('category', 'comment', 'to_ids', 'uuid'):
                 if attribute.get(feature):
                     self.assertEqual(custom_attribute[feature], attribute[feature])
+            if attribute.get('data'):
+                data = attribute['data']
+                if not isinstance(data, str):
+                    data = b64encode(data.getvalue()).decode()
+                self.assertEqual(custom_attribute['data'], data)
 
     def _sanitize_documentation(self, documentation):
         if isinstance(documentation, list):
