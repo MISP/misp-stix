@@ -3,6 +3,7 @@
 
 from datetime import datetime
 from misp_stix_converter import MISPtoSTIX21Parser, misp_collection_to_stix2_1, misp_to_stix2_1
+from pymisp import MISPAttribute, MISPEvent
 from .test_events import *
 from .update_documentation import (
     AttributesDocumentationUpdater, GalaxiesDocumentationUpdater,
@@ -4334,69 +4335,116 @@ class TestSTIX21ExportInteroperability(TestSTIX2Export, TestSTIX21):
     def setUp(self):
         self.parser = MISPtoSTIX21Parser(interoperability=True)
 
-    def _run_galaxy_tests(self, event, timestamp):
-        orgc = event['Event']['Orgc']
+    def _check_galaxy_object(self, stix_object, name, cluster_value):
+        self.assertEqual(stix_object.type, name)
+        name, reference = cluster_value.split(' - ')
+        self.assertEqual(stix_object.name, name)
+        self.assertEqual(stix_object.external_references[0].external_id, reference)
+
+    def _run_galaxy_tests(self, event):
+        orgc = event['Orgc']
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
         self.parser.parse_misp_event(event)
         stix_objects = self.parser.stix_objects
         for stix_object in stix_objects:
             self.assertEqual(stix_object.spec_version, '2.1')
         mitre_identity, identity, grouping, stix_object = stix_objects
         identity_id = self._check_identity_features(identity, orgc, timestamp)
-        args = (grouping, event['Event'], identity_id)
-        object_ref = self._check_grouping_features(*args)[0]
+        object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
         self.assertEqual(stix_object.id, object_ref)
         self.assertEqual(stix_object.created_by_ref, mitre_identity.id)
         return stix_object
 
+
+class TestSTIX21JSONExportInteroperability(TestSTIX21ExportInteroperability):
+    def test_attack_pattern(self):
+        event = get_event_with_attack_pattern_galaxy()['Event']
+        cluster_value = event['Galaxy'][0]['GalaxyCluster'][0]['value']
+        attack_pattern = self._run_galaxy_tests(event)
+        self._check_galaxy_object(attack_pattern, 'attack-pattern', cluster_value)
+
+    def test_course_of_action(self):
+        event = get_event_with_course_of_action_galaxy()['Event']
+        cluster_value = event['Galaxy'][0]['GalaxyCluster'][0]['value']
+        course_of_action = self._run_galaxy_tests(event)
+        self._check_galaxy_object(course_of_action, 'course-of-action', cluster_value)
+
+    def test_intrusion_set(self):
+        event = get_event_with_intrusion_set_galaxy()['Event']
+        cluster_value = event['Galaxy'][0]['GalaxyCluster'][0]['value']
+        intrusion_set = self._run_galaxy_tests(event)
+        self._check_galaxy_object(intrusion_set, 'intrusion-set', cluster_value)
+
+    def test_malware(self):
+        event = get_event_with_malware_galaxy()['Event']
+        cluster_value = event['Galaxy'][0]['GalaxyCluster'][0]['value']
+        malware = self._run_galaxy_tests(event)
+        self._check_galaxy_object(malware, 'malware', cluster_value)
+
+    def test_tool(self):
+        event = get_event_with_tool_galaxy()['Event']
+        cluster_value = event['Galaxy'][0]['GalaxyCluster'][0]['value']
+        tool = self._run_galaxy_tests(event)
+        self._check_galaxy_object(tool, 'tool', cluster_value)
+
+
+class TestSTIX21MISPExportInteroperability(TestSTIX21ExportInteroperability):
     def test_attack_pattern(self):
         event = get_event_with_attack_pattern_galaxy()
-        galaxy = event['Event']['Galaxy'][0]
-        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        attack_pattern = self._run_galaxy_tests(event, timestamp)
-        self.assertEqual(attack_pattern.type, 'attack-pattern')
-        name, reference = galaxy['GalaxyCluster'][0]['value'].split(' - ')
-        self.assertEqual(attack_pattern.name, name)
-        self.assertEqual(attack_pattern.external_references[0].external_id, reference)
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        attack_pattern = self._run_galaxy_tests(misp_event)
+        self._check_galaxy_object(
+            attack_pattern,
+            'attack-pattern',
+            misp_event.galaxies[0]['GalaxyCluster'][0]['value']
+        )
 
     def test_course_of_action(self):
         event = get_event_with_course_of_action_galaxy()
-        galaxy = event['Event']['Galaxy'][0]
-        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        course_of_action = self._run_galaxy_tests(event, timestamp)
-        self.assertEqual(course_of_action.type, 'course-of-action')
-        name, reference = galaxy['GalaxyCluster'][0]['value'].split(' - ')
-        self.assertEqual(course_of_action.name, name)
-        self.assertEqual(course_of_action.external_references[0].external_id, reference)
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        course_of_action = self._run_galaxy_tests(misp_event)
+        self._check_galaxy_object(
+            course_of_action,
+            'course-of-action',
+            misp_event.galaxies[0]['GalaxyCluster'][0]['value']
+        )
 
     def test_intrusion_set(self):
         event = get_event_with_intrusion_set_galaxy()
-        galaxy = event['Event']['Galaxy'][0]
-        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        intrusion_set = self._run_galaxy_tests(event, timestamp)
-        self.assertEqual(intrusion_set.type, 'intrusion-set')
-        name, reference = galaxy['GalaxyCluster'][0]['value'].split(' - ')
-        self.assertEqual(intrusion_set.name, name)
-        self.assertEqual(intrusion_set.external_references[0].external_id, reference)
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        intrusion_set = self._run_galaxy_tests(misp_event)
+        self._check_galaxy_object(
+            intrusion_set,
+            'intrusion-set',
+            misp_event.galaxies[0]['GalaxyCluster'][0]['value']
+        )
 
     def test_malware(self):
         event = get_event_with_malware_galaxy()
-        galaxy = event['Event']['Galaxy'][0]
-        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        malware = self._run_galaxy_tests(event, timestamp)
-        self.assertEqual(malware.type, 'malware')
-        name, reference = galaxy['GalaxyCluster'][0]['value'].split(' - ')
-        self.assertEqual(malware.name, name)
-        self.assertEqual(malware.external_references[0].external_id, reference)
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        malware = self._run_galaxy_tests(misp_event)
+        self._check_galaxy_object(
+            malware,
+            'malware',
+            misp_event.galaxies[0]['GalaxyCluster'][0]['value']
+        )
 
     def test_tool(self):
         event = get_event_with_tool_galaxy()
-        galaxy = event['Event']['Galaxy'][0]
-        timestamp = self._datetime_from_timestamp(event['Event']['timestamp'])
-        tool = self._run_galaxy_tests(event, timestamp)
-        self.assertEqual(tool.type, 'tool')
-        name, reference = galaxy['GalaxyCluster'][0]['value'].split(' - ')
-        self.assertEqual(tool.name, name)
-        self.assertEqual(tool.external_references[0].external_id, reference)
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        tool = self._run_galaxy_tests(misp_event)
+        self._check_galaxy_object(
+            tool,
+            'tool',
+            misp_event.galaxies[0]['GalaxyCluster'][0]['value']
+        )
 
 
 class TestCollectionSTIX21Export(TestCollectionSTIX2Export):
@@ -4432,6 +4480,8 @@ class TestFeedSTIX21Export(TestSTIX2Export):
     def setUp(self):
         self.parser = MISPtoSTIX21Parser()
 
+
+class TestFeedSTIX21JSONExport(TestFeedSTIX21Export):
     def test_attributes_feed(self):
         attributes = get_attributes_feed()
         for attribute in attributes[:2]:
@@ -4451,6 +4501,38 @@ class TestFeedSTIX21Export(TestSTIX2Export):
         )
         self._assert_multiple_equal(
             attributes[3]['Event']['Orgc']['name'],
+            identity1.name,
+            identity2.name
+        )
+        indicators = (indicator1, indicator2, indicator3, indicator4)
+        for attribute, indicator in zip(attributes, indicators):
+            self.assertEqual(indicator.id, f"indicator--{attribute['Attribute']['uuid']}")
+
+
+class TestFeedSTIX21MISPExport(TestFeedSTIX21Export):
+    def test_attributes_feed(self):
+        attributes = get_attributes_feed()
+        for attribute in attributes[:2]:
+            misp_attribute = MISPAttribute()
+            misp_attribute.from_dict(**attribute)
+            self.parser.parse_misp_attribute(misp_attribute)
+        bundle = self.parser.bundle
+        self.assertEqual(len(bundle.objects), 3)
+        identity1, indicator1, indicator2 = bundle.objects
+        for attribute in attributes[2:]:
+            misp_attribute = MISPAttribute()
+            misp_attribute.from_dict(**attribute)
+            self.parser.parse_misp_attribute(misp_attribute)
+        bundle = self.parser.bundle
+        self.assertEqual(len(bundle.objects), 3)
+        identity2, indicator3, indicator4 = bundle.objects
+        self._assert_multiple_equal(
+            self.parser._mapping.misp_identity_args['id'],
+            identity1.id,
+            identity2.id
+        )
+        self._assert_multiple_equal(
+            self.parser._mapping.misp_identity_args['name'],
             identity1.name,
             identity2.name
         )
