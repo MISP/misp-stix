@@ -1123,12 +1123,14 @@ _TEST_ASN_OBJECT = {
         {
             "type": "ip-src",
             "object_relation": "subnet-announced",
-            "value": "1.2.3.4"
+            "value": "1.2.3.4",
+            "to_ids": False
         },
         {
             "type": "ip-src",
             "object_relation": "subnet-announced",
-            "value": "8.8.8.8"
+            "value": "8.8.8.8",
+            "to_ids": False
         }
     ]
 }
@@ -4336,7 +4338,7 @@ def get_event_with_geolocation_object():
 def get_event_with_http_request_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
-        _TEST_HTTP_REQUEST_OBJECT
+        deepcopy(_TEST_HTTP_REQUEST_OBJECT)
     ]
     return event
 
