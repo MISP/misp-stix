@@ -88,12 +88,12 @@ class TestSTIX2Export(TestSTIX2):
 
     @staticmethod
     def _add_attribute_ids_flag(event):
-        for attribute in event['Event']['Attribute']:
+        for attribute in event['Attribute']:
             attribute['to_ids'] = True
 
     @staticmethod
     def _add_object_ids_flag(event):
-        for misp_object in event['Event']['Object']:
+        for misp_object in event['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
 
     def _check_attack_pattern_object(self, attack_pattern, misp_object, identity_id):
@@ -467,6 +467,15 @@ class TestSTIX2Export(TestSTIX2):
         self.assertEqual(stix_sighting.where_sighted_refs, [identity_id])
 
     @staticmethod
+    def _datetime_from_str(timestamp):
+        regex = '%Y-%m-%dT%H:%M:%S'
+        if '.' in timestamp:
+            regex = f'{regex}.%f'
+        if timestamp.endswith('Z'):
+            regex = f'{regex}Z'
+        return datetime.strptime(timestamp.split('+')[0], regex)
+
+    @staticmethod
     def _datetime_from_timestamp(timestamp):
         return datetime.utcfromtimestamp(int(timestamp))
 
@@ -506,12 +515,12 @@ class TestSTIX2Export(TestSTIX2):
 
     @staticmethod
     def _remove_attribute_ids_flag(event):
-        for attribute in event['Event']['Attribute']:
+        for attribute in event['Attribute']:
             attribute['to_ids'] = False
 
     @staticmethod
     def _remove_object_ids_flags(event):
-        for misp_object in event['Event']['Object']:
+        for misp_object in event['Object']:
             for attribute in misp_object['Attribute']:
                 attribute['to_ids'] = False
 
