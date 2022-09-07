@@ -6,6 +6,7 @@ import re
 import socket
 from .stix1_mapping import Stix1Mapping
 from .exportparser import MISPtoSTIXParser
+from base64 import b64encode
 from collections import defaultdict
 from cybox.core import Observable, ObservableComposition, RelatedObject
 from cybox.common import Hash, HashList, ByteRun, ByteRuns
@@ -747,7 +748,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         observable = self._create_observable(address_object, uuid, 'Address', alternative_uuid)
         return observable
 
-    def _create_artifact_object(self, data: BytesIO) -> Artifact:
+    def _create_artifact_object(self, data: Union[str, BytesIO]) -> Artifact:
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
         raw_artifact = RawArtifact(data)
         artifact = Artifact()
         artifact.raw_artifact = raw_artifact
