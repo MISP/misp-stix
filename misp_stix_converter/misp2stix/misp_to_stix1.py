@@ -877,10 +877,11 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         observable = self._create_observable(port_object, uuid, object_type)
         return observable
 
-    @staticmethod
-    def _create_property(name: str, value: str) -> Property:
+    def _create_property(self, name: str, value: str) -> Property:
         prop = Property()
         prop.name = name
+        if isinstance(value, datetime):
+            value = self._datetime_to_str(value)
         prop.value = value
         return prop
 
@@ -1031,8 +1032,8 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         return handling
 
     @staticmethod
-    def _from_datetime_to_str(date):
-        return date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    def _datetime_to_str(timestamp):
+        return datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S")
 
     def _sort_tags(self, tags: list) -> Tuple[dict, dict]:
         sorted_tags = defaultdict(list)
@@ -1168,7 +1169,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             timestamp = timestamp
         )
         incident_time = Time()
-        incident_time.incident_discovery = self._misp_event['date']
+        date_value = self._misp_event['date']
+        if not isinstance(date_value, str):
+            date_value = datetime.strftime(date_value, '%m/%d/%Y')
+        incident_time.incident_discovery = date_value
         if self._is_published():
             incident_time.incident_reported = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
         incident.time = incident_time
@@ -1505,10 +1509,15 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             custom_object.description = misp_object['description']
         custom_object.custom_properties = CustomProperties()
         for attribute in misp_object['Attribute']:
-            custom_object.custom_properties.append(self._create_property(
-                attribute['object_relation'],
-                attribute['value']
-            ))
+            value = attribute['value']
+            if isinstance(value, datetime):
+                value = self._datetime_to_str(value)
+            custom_object.custom_properties.append(
+                self._create_property(
+                    attribute['object_relation'],
+                    value
+                )
+            )
         observable = self._create_observable(custom_object, misp_object['uuid'], 'Custom')
         self._object_not_mapped_warning(misp_object['name'])
         return observable
@@ -2011,7 +2020,10 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             whois_object.registrants = registrants
         for key, feature in self._mapping.whois_object_mapping.items():
             if attributes.get(key):
-                setattr(whois_object, feature, attributes.pop(key))
+                value = attributes.pop(key)
+                if isinstance(value, datetime):
+                    value = value.date()
+                setattr(whois_object, feature, value)
                 setattr(getattr(whois_object, feature), 'condition', 'Equals')
         if attributes.get('nameserver'):
             nameservers = WhoisNameservers()
@@ -2056,7 +2068,8 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                 validity = Validity()
                 for key in ('before', 'after'):
                     if attributes.get(f'validity-not-{key}'):
-                        setattr(validity, f'not_{key}', attributes.pop(f'validity-not-{key}'))
+                        value = attributes.pop(f'validity-not-{key}')
+                        setattr(validity, f'not_{key}', self._datetime_from_str(value))
                         setattr(getattr(validity, f'not_{key}'), 'condition', 'Equals')
                 x509_cert.validity = validity
             if content['pubkey']:
