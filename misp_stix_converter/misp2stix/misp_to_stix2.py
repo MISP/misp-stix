@@ -2730,10 +2730,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 args[feature] = self._select_single_feature(attributes, key)
         for key, feature in self._mapping.ip_port_object_mapping['timeline'].items():
             if attributes.get(key):
-                value = attributes.pop(key)
-                if not isinstance(value, datetime):
-                    value = self._datetime_from_str(value)
-                args[feature] = value
+                args[feature] = self._datetime_from_str(attributes.pop(key))
         if attributes:
             args.update(self._handle_observable_multiple_properties(attributes))
         return args
@@ -2757,9 +2754,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for key, feature in self._mapping.lnk_time_fields.items():
             if attributes.get(key):
                 value = self._select_single_feature(attributes, key)
-                if not isinstance(value, datetime):
-                    value = self._datetime_from_str(value)
-                file_args[feature] = value
+                file_args[feature] = self._datetime_from_str(value)
         if attributes:
             file_args.update(self._handle_observable_multiple_properties(attributes))
         return file_args
@@ -2780,10 +2775,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 args[feature] = attributes.pop(key)
         for key, feature in self._mapping.netflow_object_mapping['timeline'].items():
             if attributes.get(key):
-                value = attributes.pop(key)
-                if not isinstance(value, datetime):
-                    value = self._datetime_from_str(value)
-                args[feature] = value
+                args[feature] = self._datetime_from_str(attributes.pop(key))
         if attributes:
             args.update(self._handle_observable_properties(attributes))
         return args
@@ -3008,15 +3000,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if custom_args.get('markings'):
             stix_markings = ListProperty(StringProperty)
             stix_markings.clean(custom_args['markings'])
-
-    @staticmethod
-    def _datetime_from_str(timestamp: str) -> datetime:
-        regex = '%Y-%m-%dT%H:%M:%S'
-        if '.' in timestamp:
-            regex = f'{regex}.%f'
-        if timestamp.endswith('Z'):
-            regex = f'{regex}Z'
-        return datetime.strptime(timestamp.split('+')[0], regex)
 
     @staticmethod
     def _define_address_type(address):

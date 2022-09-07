@@ -140,6 +140,17 @@ class MISPtoSTIXParser:
     ################################################################################
 
     @staticmethod
+    def _datetime_from_str(timestamp: Union[datetime, str]) -> datetime:
+        if isinstance(timestamp, datetime):
+            return timestamp
+        regex = '%Y-%m-%dT%H:%M:%S'
+        if '.' in timestamp:
+            regex = f'{regex}.%f'
+        if timestamp.endswith('Z'):
+            regex = f'{regex}Z'
+        return datetime.strptime(timestamp.split('+')[0], regex)
+
+    @staticmethod
     def _datetime_from_timestamp(timestamp: Union[datetime, str]) -> datetime:
         if isinstance(timestamp, datetime):
             return timestamp
