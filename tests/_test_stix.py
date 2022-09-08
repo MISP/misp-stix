@@ -5,7 +5,7 @@ import unittest
 from datetime import datetime
 
 
-class TestSTIX2(unittest.TestCase):
+class TestSTIX(unittest.TestCase):
 
     def _assert_multiple_equal(self, reference, *elements):
         for element in elements:
@@ -15,8 +15,17 @@ class TestSTIX2(unittest.TestCase):
     def _datetime_to_str(datetime_value):
         return datetime.strftime(datetime_value, '%Y-%m-%dT%H:%M:%S')
 
+    @staticmethod
+    def _datetime_from_str(timestamp):
+        regex = '%Y-%m-%dT%H:%M:%S'
+        if '.' in timestamp:
+            regex = f'{regex}.%f'
+        if timestamp.endswith('Z'):
+            regex = f'{regex}Z'
+        return datetime.strptime(timestamp.split('+')[0], regex)
 
-class TestSTIX20(TestSTIX2):
+
+class TestSTIX20(TestSTIX):
     __hash_types_mapping = {
         'sha1': 'SHA-1',
         'SHA-1': 'sha1',
@@ -40,7 +49,7 @@ class TestSTIX20(TestSTIX2):
         return hash_type.lower() if hash_type.isupper() else hash_type.upper()
 
 
-class TestSTIX21(TestSTIX2):
+class TestSTIX21(TestSTIX):
     __hash_types_mapping = {
         'sha1': 'SHA-1',
         'SHA-1': 'sha1',

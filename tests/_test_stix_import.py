@@ -5,10 +5,10 @@ import json
 from base64 import b64encode
 from collections import defaultdict
 from misp_stix_converter import InternalSTIX2toMISPParser
-from ._test_stix import TestSTIX2
+from ._test_stix import TestSTIX
 
 
-class TestSTIX2Import(TestSTIX2):
+class TestSTIX2Import(TestSTIX):
     def _check_attribute_labels(self, attribute, labels):
         if len(labels) == 3:
             type_label, category_label, ids_label = labels

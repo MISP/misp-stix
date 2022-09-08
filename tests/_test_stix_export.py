@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from stix.core import STIXPackage
 from uuid import uuid5, UUID
-from ._test_stix import TestSTIX2
+from ._test_stix import TestSTIX
 
 _DEFAULT_ORGNAME = 'MISP'
 
@@ -80,7 +80,7 @@ class TestCollectionSTIX2Export(TestCollectionSTIXExport):
         self.assertEqual(reference['objects'], to_test['objects'])
 
 
-class TestSTIX2Export(TestSTIX2):
+class TestSTIX2Export(TestSTIX):
     _labels = [
         'Threat-Report',
         'misp:tool="MISP-STIX-Converter"'
@@ -465,15 +465,6 @@ class TestSTIX2Export(TestSTIX2):
         )
         self.assertEqual(stix_sighting.sighting_of_ref, object_id)
         self.assertEqual(stix_sighting.where_sighted_refs, [identity_id])
-
-    @staticmethod
-    def _datetime_from_str(timestamp):
-        regex = '%Y-%m-%dT%H:%M:%S'
-        if '.' in timestamp:
-            regex = f'{regex}.%f'
-        if timestamp.endswith('Z'):
-            regex = f'{regex}Z'
-        return datetime.strptime(timestamp.split('+')[0], regex)
 
     @staticmethod
     def _datetime_from_timestamp(timestamp):
