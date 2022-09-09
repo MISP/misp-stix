@@ -41,5 +41,7 @@ setup(
         'Topic :: Internet',
     ],
     install_requires=['pymisp', 'stix', 'misp-lib-stix2'],
-    tests_require=['pytest', 'flake8']
+    tests_require=['pytest', 'flake8'],
+    include_package_data=True,
+    package_data={'misp_stix_converter': ['data/cti', 'data/misp-galaxy']}
 )
