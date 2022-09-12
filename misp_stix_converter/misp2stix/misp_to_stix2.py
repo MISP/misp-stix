@@ -3153,7 +3153,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'relationship_type': relationship_type,
                 'created': timestamp,
                 'modified': timestamp,
-                'allow_custom': True
+                'allow_custom': True,
+                'interoperability': True
             }
         )
 
@@ -3166,7 +3167,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'source_ref': source_id,
                 'undefined_target_ref': referenced_uuid,
                 'relationship_type': reference['relationship_type'],
-                'allow_custom': True
+                'allow_custom': True,
+                'interoperability': True
             }
             if reference.get('timestamp'):
                 reference_timestamp = self._datetime_from_timestamp(reference['timestamp'])
