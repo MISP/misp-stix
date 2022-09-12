@@ -676,7 +676,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 data = attribute['data']
                 if not isinstance(data, str):
                     data = b64encode(data.getvalue()).decode()
-                print(f'script: {data}')
                 pattern = [
                     self._create_filename_hash_pattern('md5', value),
                     self._create_content_ref_pattern(

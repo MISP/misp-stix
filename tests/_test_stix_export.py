@@ -37,15 +37,11 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
 
     def __check_observables(self, reference_observables, observables_to_test):
         for reference_observable, observable_to_test in zip(reference_observables, observables_to_test):
-            print(reference_observable)
-            print(observable_to_test)
             uuid = '-'.join(part for part in reference_observable['object']['id'].split('-')[1:])
-            print(uuid)
             for key, value in reference_observable['object']['properties'].items():
                 if 'value' in key:
                     uuid = uuid5(UUID(uuid), value['value'])
                     break
-            print(uuid)
             self.assertEqual(
                 reference_observable['id'],
                 f'{_DEFAULT_ORGNAME}:Observable-{uuid}'
