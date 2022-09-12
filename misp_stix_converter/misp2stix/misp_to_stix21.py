@@ -126,7 +126,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     for misp_object in self._objects_to_parse['annotation'].values():
                         to_ids, annotation_object = misp_object
                         if annotation_object.get('ObjectReference') is None or not self._annotates(annotation_object['ObjectReference']):
-                            self._parse_custom_object(annotation_object[1])
+                            self._parse_custom_object(annotation_object)
                         else:
                             self._parse_annotation_object(to_ids, annotation_object)
 
