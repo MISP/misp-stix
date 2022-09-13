@@ -509,11 +509,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_domain_ip_attribute(self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
-            domain, ip = self._handle_value_for_pattern(attribute['value']).split('|')
-            domain_pattern = self._create_domain_pattern(domain)
-            resolving_ref = self._create_domain_resolving_pattern(ip)
-            pattern = f"[{domain_pattern} AND {resolving_ref}]"
-            self._handle_attribute_indicator(attribute, pattern)
+            value = self._handle_value_for_pattern(attribute['value'])
+            for separator in self.composite_separators:
+                if separator in value:
+                    domain, ip = value.split(separator)
+                    domain_pattern = self._create_domain_pattern(domain)
+                    resolving_ref = self._create_domain_resolving_pattern(ip)
+                    pattern = f"[{domain_pattern} AND {resolving_ref}]"
+                    self._handle_attribute_indicator(attribute, pattern)
+                    break
+            else:
+                self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+                self._parse_custom_attribute(attribute)
         else:
             self._parse_domain_ip_attribute_observable(attribute)
 
@@ -615,21 +622,36 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_hash_composite_attribute(self, attribute: Union[MISPAttribute, dict], hash_type: Optional[str] = None):
         if attribute.get('to_ids', False):
-            if hash_type is None:
-                hash_type = attribute['type'].split('|')[1]
             value = self._handle_value_for_pattern(attribute['value'])
-            pattern = self._create_filename_hash_pattern(hash_type, value)
-            self._handle_attribute_indicator(attribute, f"[{pattern}]")
+            for separator in self.composite_separators:
+                if separator in value:
+                    if hash_type is None:
+                        hash_type = attribute['type'].split(separator)[1]
+                    pattern = self._create_filename_hash_pattern(
+                        hash_type, value, separator)
+                    self._handle_attribute_indicator(attribute, f"[{pattern}]")
+                    break
+            else:
+                self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+                pattern = f"[{self._create_filename_pattern(value)}]"
+                self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_hash_composite_attribute_observable(attribute, hash_type=hash_type)
 
     def _parse_hostname_port_attribute(self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
-            hostname, port = self._handle_value_for_pattern(attribute['value']).split('|')
-            hostname_pattern = self._create_domain_pattern(hostname)
-            port_pattern = self._create_port_pattern(port)
-            pattern = f"[{hostname_pattern} AND {port_pattern}]"
-            self._handle_attribute_indicator(attribute, pattern)
+            value = self._handle_value_for_pattern(attribute['value'])
+            for separator in self.composite_separators:
+                if separator in value:
+                    hostname, port = value.split(separator)
+                    hostname_pattern = self._create_domain_pattern(hostname)
+                    port_pattern = self._create_port_pattern(port)
+                    pattern = f"[{hostname_pattern} AND {port_pattern}]"
+                    self._handle_attribute_indicator(attribute, pattern)
+                    break
+            else:
+                self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+                self._parse_custom_attribute(attribute)
         else:
             self._parse_hostname_port_attribute_observable(attribute)
 
@@ -652,12 +674,19 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_ip_port_attribute(self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
-            ip_type = attribute['type'].split('|')[0].split('-')[1]
-            ip_value, port_value = self._handle_value_for_pattern(attribute['value']).split('|')
-            ip_pattern = self._create_ip_pattern(ip_type, ip_value)
-            port_pattern = self._create_port_pattern(port_value, ip_type=ip_type)
-            pattern = f"[{ip_pattern} AND {port_pattern}]"
-            self._handle_attribute_indicator(attribute, pattern)
+            value = self._handle_value_for_pattern(attribute['value'])
+            for separator in self.composite_separators:
+                if separator in value:
+                    ip_type = attribute['type'].split(separator)[0].split('-')[1]
+                    ip_value, port_value = value.split(separator)
+                    ip_pattern = self._create_ip_pattern(ip_type, ip_value)
+                    port_pattern = self._create_port_pattern(port_value, ip_type=ip_type)
+                    pattern = f"[{ip_pattern} AND {port_pattern}]"
+                    self._handle_attribute_indicator(attribute, pattern)
+                    break
+            else:
+                self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+                self._parse_custom_attribute(attribute)
         else:
             self._parse_ip_port_attribute_observable(attribute)
 
@@ -677,12 +706,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 if not isinstance(data, str):
                     data = b64encode(data.getvalue()).decode()
                 pattern = [
-                    self._create_filename_hash_pattern('md5', value),
                     self._create_content_ref_pattern(
                         self._handle_value_for_pattern(data)
-                    ),
-                    self._mapping.malware_sample_additional_pattern_values
+                    )
                 ]
+                for separator in self.composite_separators:
+                    if separator in value:
+                        pattern.append(
+                            self._create_filename_hash_pattern(
+                                'md5', value, separator)
+                        )
+                        break
+                else:
+                    self._composite_attribute_value_warning(
+                        attribute['type'], attribute['value'])
+                pattern.append(self._mapping.malware_sample_additional_pattern_values)
                 self._handle_attribute_indicator(attribute, f"[{' AND '.join(pattern)}]")
             else:
                 self._parse_malware_sample_attribute_observable(attribute)
@@ -715,10 +753,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _parse_regkey_value_attribute(self, attribute: Union[MISPAttribute, dict]):
         if attribute.get('to_ids', False):
-            key, data = self._handle_value_for_pattern(attribute['value']).split('|')
-            key_pattern = self._create_regkey_pattern(key)
-            pattern = f"[{key_pattern} AND windows-registry-key:values.data = '{data.strip()}']"
-            self._handle_attribute_indicator(attribute, pattern)
+            value = self._handle_value_for_pattern(attribute['value'])
+            for separator in self.composite_separators:
+                if separator in value:
+                    key, data = value.split(separator)
+                    key_pattern = self._create_regkey_pattern(key)
+                    pattern = f"[{key_pattern} AND windows-registry-key:values.data = '{data.strip()}']"
+                    self._handle_attribute_indicator(attribute, pattern)
+                    break
+            else:
+                self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+                pattern = f"[{self._create_regkey_pattern(value)}]"
+                self._handle_attribute_indicator(attribute, pattern)
         else:
             self._parse_regkey_value_attribute_observable(attribute)
 
@@ -1524,10 +1570,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if not isinstance(data, str):
                 data = b64encode(data.getvalue()).decode()
             pattern.append(self._create_content_ref_pattern(data))
-        filename, md5 = malware_sample.split('|')
-        pattern.append(self._create_content_ref_pattern(filename, 'x_misp_filename'))
-        pattern.append(self._create_content_ref_pattern(md5, 'hashes.MD5'))
-        pattern.append(self._mapping.malware_sample_additional_pattern_values)
+        for separator in self.composite_separators:
+            if separator in malware_sample:
+                filename, md5 = malware_sample.split(separator)
+                pattern.append(self._create_content_ref_pattern(filename, 'x_misp_filename'))
+                pattern.append(self._create_content_ref_pattern(md5, 'hashes.MD5'))
+                pattern.append(self._mapping.malware_sample_additional_pattern_values)
+                break
+        else:
+            self._composite_attribute_value_warning('malware-sample', malware_sample)
+            pattern.append(self._create_content_ref_pattern(malware_sample, 'x_misp_filename'))
         return f"({' AND '.join(pattern)})"
 
     def _parse_mutex_object(self, misp_object: Union[MISPObject, dict]):
@@ -2494,17 +2546,27 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         return [f'misp:{feature}="{attribute[feature]}"' for feature in _label_fields if attribute.get(feature)]
 
     def _create_malware_sample_args(self, value: str, data: Union[io.BytesIO, str]) -> dict:
-        filename, md5 = value.split('|')
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
         args = {
             'allow_custom': True,
-            'hashes': {
-                'MD5': md5
-            },
-            'payload_bin': data,
-            'x_misp_filename': filename
+            'payload_bin': data
         }
+        for separator in self.composite_separators:
+            if separator in value:
+                filename, md5 = value.split(separator)
+                args.update(
+                    {
+                        'hashes': {
+                            'MD5': md5
+                        },
+                        'x_misp_filename': filename
+                    }
+                )
+                break
+        else:
+            self._composite_attribute_value_warning('malware-sample', value)
+            args['x_misp_filename'] = value
         args.update(self._mapping.malware_sample_additional_observable_values)
         return args
 
@@ -2959,8 +3021,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_domain_resolving_pattern(value: str) -> str:
         return f"domain-name:resolves_to_refs[*].value = '{value}'"
 
-    def _create_filename_hash_pattern(self, hash_type: str, attribute_value: str) -> str:
-        filename, hash_value = attribute_value.split('|')
+    def _create_filename_hash_pattern(self, hash_type: str, attribute_value: str, separator: str) -> str:
+        filename, hash_value = attribute_value.split(separator)
         filename_pattern = self._create_filename_pattern(filename)
         hash_pattern = self._create_hash_pattern(hash_type, hash_value)
         return f"{filename_pattern} AND {hash_pattern}"

@@ -220,17 +220,23 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_domain_ip_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
-        domain, ip = attribute['value'].split('|')
-        address_object = self._get_address_type(ip)(value=ip)
-        observable_object = {
-            '0': DomainName(
-                value=domain,
-                _valid_refs={'1': address_object._type},
-                resolves_to_refs=['1']
-            ),
-            '1': address_object
-        }
-        self._handle_attribute_observable(attribute, observable_object)
+        for separator in self.composite_separators:
+            if separator in attribute['value']:
+                domain, ip = attribute['value'].split(separator)
+                address_object = self._get_address_type(ip)(value=ip)
+                observable_object = {
+                    '0': DomainName(
+                        value=domain,
+                        _valid_refs={'1': address_object._type},
+                        resolves_to_refs=['1']
+                    ),
+                    '1': address_object
+                }
+                self._handle_attribute_observable(attribute, observable_object)
+                break
+        else:
+            self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+            self._parse_custom_attribute(attribute)
 
     def _parse_email_attachment_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
         observable_object = {
@@ -349,37 +355,56 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_hash_composite_attribute_observable(self, attribute: Union[MISPAttribute, dict],
                                                    hash_type: Optional[str] = None):
-        if hash_type is None:
-            hash_type = attribute['type'].split('|')[1]
-        hash_type = self._define_hash_type(hash_type)
-        filename, hash_value = attribute['value'].split('|')
-        file_args = {
-            'name': filename,
-            'hashes': {
-                hash_type: hash_value
+        for separator in self.composite_separators:
+            if separator in attribute['value']:
+                if hash_type is None:
+                    hash_type = attribute['type'].split(separator)[1]
+                hash_type = self._define_hash_type(hash_type)
+                filename, hash_value = attribute['value'].split(separator)
+                file_args = {
+                    'name': filename,
+                    'hashes': {
+                        hash_type: hash_value
+                    }
+                }
+                if hash_type not in HASHING_ALGORITHM:
+                    file_args['allow_custom'] = True
+                observable_object = {
+                    '0': File(**file_args)
+                }
+                self._handle_attribute_observable(attribute, observable_object)
+                break
+        else:
+            self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+            observable_object = {
+                '0': File(
+                    **{
+                        'name': attribute['value']
+                    }
+                )
             }
-        }
-        if hash_type not in HASHING_ALGORITHM:
-            file_args['allow_custom'] = True
-        observable_object = {
-            '0': File(**file_args)
-        }
-        self._handle_attribute_observable(attribute, observable_object)
+            self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_hostname_port_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
-        hostname, port = attribute['value'].split('|')
-        observable_object = {
-            '0': DomainName(
-                value=hostname
-            ),
-            '1': NetworkTraffic(
-                dst_port=port,
-                _valid_refs={'0': 'domain-name'},
-                dst_ref='0',
-                protocols=['tcp']
-            )
-        }
-        self._handle_attribute_observable(attribute, observable_object)
+        for separator in self.composite_separators:
+            if separator in attribute['value']:
+                hostname, port = attribute['value'].split(separator)
+                observable_object = {
+                    '0': DomainName(
+                        value=hostname
+                    ),
+                    '1': NetworkTraffic(
+                        dst_port=port,
+                        _valid_refs={'0': 'domain-name'},
+                        dst_ref='0',
+                        protocols=['tcp']
+                    )
+                }
+                self._handle_attribute_observable(attribute, observable_object)
+                break
+        else:
+            self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+            self._parse_custom_attribute(attribute)
 
     def _parse_ip_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
         address_object = self._get_address_type(attribute['value'])(value=attribute['value'])
@@ -396,20 +421,26 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_ip_port_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
-        ip_value, port_value = attribute['value'].split('|')
-        address_object = self._get_address_type(ip_value)(value=ip_value)
-        ip_type = attribute['type'].split('|')[0].split('-')[1]
-        network_traffic_args = {
-            '_valid_refs': {'1': address_object._type},
-            f'{ip_type}_ref': '1',
-            f'{ip_type}_port': port_value,
-            'protocols': ['tcp']
-        }
-        observable_object = {
-            '0': NetworkTraffic(**network_traffic_args),
-            '1': address_object
-        }
-        self._handle_attribute_observable(attribute, observable_object)
+        for separator in self.composite_separators:
+            if separator in attribute['value']:
+                ip_value, port_value = attribute['value'].split(separator)
+                address_object = self._get_address_type(ip_value)(value=ip_value)
+                ip_type = attribute['type'].split(separator)[0].split('-')[1]
+                network_traffic_args = {
+                    '_valid_refs': {'1': address_object._type},
+                    f'{ip_type}_ref': '1',
+                    f'{ip_type}_port': port_value,
+                    'protocols': ['tcp']
+                }
+                observable_object = {
+                    '0': NetworkTraffic(**network_traffic_args),
+                    '1': address_object
+                }
+                self._handle_attribute_observable(attribute, observable_object)
+                break
+        else:
+            self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+            self._parse_custom_attribute(attribute)
 
     def _parse_mac_address_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
         observable_object = {
@@ -418,19 +449,28 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_malware_sample_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
-        filename, hash_value = attribute['value'].split('|')
         data = attribute['data']
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
+        file_args = {
+            '_valid_refs': {'1': 'artifact'},
+            'content_ref': '1'
+        }
+        for separator in self.composite_separators:
+            if separator in attribute['value']:
+                filename, hash_value = attribute['value'].split(separator)
+                file_args.update(
+                    {
+                        'name': filename,
+                        'hashes': {'MD5': hash_value}
+                    }
+                )
+                break
+        else:
+            self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+            file_args['name'] = attribute['value']
         observable_object = {
-            '0': File(
-                name=filename,
-                hashes={
-                    'MD5': hash_value
-                },
-                _valid_refs={'1': 'artifact'},
-                content_ref='1'
-            ),
+            '0': File(**file_args),
             '1': self._create_artifact(data, malware_sample=True)
         }
         self._handle_attribute_observable(attribute, observable_object)
@@ -450,19 +490,30 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_regkey_value_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
-        key, value = attribute['value'].split('|')
-        observable_object = {
-            '0': WindowsRegistryKey(
-                key=key.strip(),
-                values=[
-                    WindowsRegistryValueType(
-                        name='',
-                        data=value.strip()
+        for separator in self.composite_separators:
+            if separator in attribute['value']:
+                key, value = attribute['value'].split(separator)
+                observable_object = {
+                    '0': WindowsRegistryKey(
+                        key=key.strip(),
+                        values=[
+                            WindowsRegistryValueType(
+                                name='',
+                                data=value.strip()
+                            )
+                        ]
                     )
-                ]
-            )
-        }
-        self._handle_attribute_observable(attribute, observable_object)
+                }
+                self._handle_attribute_observable(attribute, observable_object)
+                break
+        else:
+            self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+            observable_object = {
+                '0': WindowsRegistryKey(
+                    key=attribute['value'].strip()
+                )
+            }
+            self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_url_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
         observable_object = {

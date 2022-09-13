@@ -10,6 +10,7 @@ from typing import Optional, Union
 
 
 class MISPtoSTIXParser:
+    __composite_separators = ('|', '_')
     __published_fields = ('published', 'publish_timestamp')
     __PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
 
@@ -20,6 +21,10 @@ class MISPtoSTIXParser:
         self._identifier: str
         self._mapping: Union[Stix20Mapping, Stix21Mapping]
         self._misp_event: dict
+
+    @property
+    def composite_separators(cls) -> tuple:
+        return cls.__composite_separators
 
     @property
     def errors(self) -> dict:
@@ -210,6 +215,10 @@ class MISPtoSTIXParser:
 
     def _attribute_not_mapped_warning(self, attribute_type: str):
         message = f"MISP Attribute type {attribute_type} not mapped."
+        self.__warnings[self._identifier].add(message)
+
+    def _composite_attribute_value_warning(self, attribute_type: str, value: str):
+        message = f"The {attribute_type} MISP Attribute should have a composite value: {value}"
         self.__warnings[self._identifier].add(message)
 
     def _object_error(self, misp_object: dict, exception: Exception):
