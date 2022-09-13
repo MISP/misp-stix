@@ -32,7 +32,7 @@ class MISPtoSTIXParser:
 
     @property
     def warnings(self) -> dict:
-        return self.__warnings
+        return {identifier: list(warnings) for identifier, warnings in self.__warnings.items()}
 
     ################################################################################
     #                           COMMON PARSING FUNCTIONS                           #
