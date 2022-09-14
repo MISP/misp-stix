@@ -412,7 +412,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 if hash_type is None:
-                    hash_type = attribute['type'].split(separator)[1]
+                    hash_type = attribute['type'].split('|')[1]
                 hash_type = self._define_hash_type(hash_type)
                 filename, hash_value = attribute['value'].split(separator)
                 file_args.update(
@@ -479,7 +479,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 ip_value, port_value = attribute['value'].split(separator)
                 address_type = self._get_address_type(ip_value)
                 address_id = f"{address_type._type}--{attribute['uuid']}"
-                ip_type = attribute['type'].split(separator)[0].split('-')[1]
+                ip_type = attribute['type'].split('|')[0].split('-')[1]
                 network_traffic_args = {
                     'id': f"network-traffic--{attribute['uuid']}",
                     f'{ip_type}_ref': address_id,

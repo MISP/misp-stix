@@ -626,7 +626,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             for separator in self.composite_separators:
                 if separator in value:
                     if hash_type is None:
-                        hash_type = attribute['type'].split(separator)[1]
+                        hash_type = attribute['type'].split('|')[1]
                     pattern = self._create_filename_hash_pattern(
                         hash_type, value, separator)
                     self._handle_attribute_indicator(attribute, f"[{pattern}]")
@@ -677,7 +677,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             value = self._handle_value_for_pattern(attribute['value'])
             for separator in self.composite_separators:
                 if separator in value:
-                    ip_type = attribute['type'].split(separator)[0].split('-')[1]
+                    ip_type = attribute['type'].split('|')[0].split('-')[1]
                     ip_value, port_value = value.split(separator)
                     ip_pattern = self._create_ip_pattern(ip_type, ip_value)
                     port_pattern = self._create_port_pattern(port_value, ip_type=ip_type)
