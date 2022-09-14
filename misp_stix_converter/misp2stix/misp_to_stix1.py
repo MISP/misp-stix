@@ -235,26 +235,32 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         self._handle_attribute(attribute, observable)
 
     def _parse_domain_ip_attribute(self, attribute: dict):
-        domain, ip = attribute['value'].split('|')
-        domain_observable = self._create_domain_observable(
-            domain,
-            attribute['uuid'],
-            alternative_uuid=uuid5(UUID(attribute['uuid']), domain)
-        )
-        address_observable = self._create_address_observable(
-            attribute['type'],
-            ip,
-            attribute['uuid'],
-            alternative_uuid=uuid5(UUID(attribute['uuid']), ip)
-        )
-        observable = self._create_observable_composition(
-            [
-                domain_observable,
-                address_observable
-            ],
-            attribute['uuid']
-        )
-        self._handle_attribute(attribute, observable)
+        for separator in self.composite_separators:
+            if separator in attribute['value']:
+                domain, ip = attribute['value'].split(separator)
+                domain_observable = self._create_domain_observable(
+                    domain,
+                    attribute['uuid'],
+                    alternative_uuid=uuid5(UUID(attribute['uuid']), domain)
+                )
+                address_observable = self._create_address_observable(
+                    attribute['type'],
+                    ip,
+                    attribute['uuid'],
+                    alternative_uuid=uuid5(UUID(attribute['uuid']), ip)
+                )
+                observable = self._create_observable_composition(
+                    [
+                        domain_observable,
+                        address_observable
+                    ],
+                    attribute['uuid']
+                )
+                self._handle_attribute(attribute, observable)
+                break
+        else:
+            self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+            self._parse_custom_attribute(attribute)
 
     def _parse_email_attachment(self, attribute: dict):
         file_object = File()
@@ -306,13 +312,20 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         self._handle_attribute(attribute, observable)
 
     def _parse_hash_composite_attribute(self, attribute: dict):
-        filename, hash_value = attribute['value'].split('|')
-        file_object = self._create_file_object(filename)
-        attribute_type = attribute['type'].split('|')[1] if '|' in attribute['type'] else 'filename|md5'
-        hash = self._parse_hash_value(attribute_type, hash_value)
-        file_object.add_hash(hash)
-        observable = self._create_observable(file_object, attribute['uuid'], 'File')
-        self._handle_attribute(attribute, observable)
+        for separator in self.composite_separators:
+            if separator in attribute['value']:
+                filename, hash_value = attribute['value'].split(separator)
+                file_object = self._create_file_object(filename)
+                attribute_type = attribute['type'].split('|')[1] if '|' in attribute['type'] else 'md5'
+                file_object.add_hash(self._parse_hash_value(attribute_type, hash_value))
+                observable = self._create_observable(file_object, attribute['uuid'], 'File')
+                self._handle_attribute(attribute, observable)
+                break
+        else:
+            self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+            file_object = self._create_file_object(attribute['value'])
+            observable = self._create_observable(file_object, attribute['uuid'], 'File')
+            self._handle_attribute(attribute, observable)
 
     @staticmethod
     def _parse_hash_value(attribute_type: str, attribute_value: str):
@@ -329,10 +342,18 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         self._handle_attribute(attribute, observable)
 
     def _parse_hostname_port_attribute(self, attribute: dict):
-        hostname, port = attribute['value'].split('|')
-        socket_address = self._create_socket_address_object(hostname=hostname, port=port)
-        observable = self._create_observable(socket_address, attribute['uuid'], 'SocketAddress')
-        self._handle_attribute(attribute, observable)
+        for separator in self.composite_separators:
+            if separator in attribute['value']:
+                hostname, port = attribute['value'].split(separator)
+                socket_address = self._create_socket_address_object(
+                    hostname=hostname, port=port)
+                observable = self._create_observable(
+                    socket_address, attribute['uuid'], 'SocketAddress')
+                self._handle_attribute(attribute, observable)
+                break
+        else:
+            self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+            self._parse_custom_attribute(attribute)
 
     def _parse_http_method_attribute(self, attribute: dict):
         http_client_request = HTTPClientRequest()
@@ -356,11 +377,18 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         self._handle_attribute(attribute, observable)
 
     def _parse_ip_port_attribute(self, attribute: dict):
-        ip, port = attribute['value'].split('|')
-        ip_type = attribute['type'].split('|')[0]
-        socket_address = self._create_socket_address_object(ip=(ip_type, ip), port=port)
-        observable = self._create_observable(socket_address, attribute['uuid'], 'SocketAddress')
-        self._handle_attribute(attribute, observable)
+        for separator in self.composite_separators:
+            if separator in attribute['value']:
+                ip, port = attribute['value'].split(separator)
+                ip_type = attribute['type'].split('|')[0]
+                socket_address = self._create_socket_address_object(ip=(ip_type, ip), port=port)
+                observable = self._create_observable(
+                    socket_address, attribute['uuid'], 'SocketAddress')
+                self._handle_attribute(attribute, observable)
+                break
+        else:
+            self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+            self._parse_custom_attribute(attribute)
 
     def _parse_mac_address(self, attribute: dict):
         network_interface = NetworkInterface()
@@ -414,14 +442,24 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         self._handle_attribute(attribute, observable)
 
     def _parse_regkey_value_attribute(self, attribute: dict):
-        regkey, value = attribute['value'].split('|')
-        registry_key = self._create_registry_key_object(regkey)
-        registry_value = RegistryValue()
-        registry_value.data = value.strip()
-        registry_value.data.condition = "Equals"
-        registry_key.values = RegistryValues(registry_value)
-        observable = self._create_observable(registry_key, attribute['uuid'], 'WindowsRegistryKey')
-        self._handle_attribute(attribute, observable)
+        for separator in self.composite_separators:
+            if separator in attribute['value']:
+                regkey, value = attribute['value'].split(separator)
+                registry_key = self._create_registry_key_object(regkey)
+                registry_value = RegistryValue()
+                registry_value.data = value.strip()
+                registry_value.data.condition = "Equals"
+                registry_key.values = RegistryValues(registry_value)
+                observable = self._create_observable(
+                    registry_key, attribute['uuid'], 'WindowsRegistryKey')
+                self._handle_attribute(attribute, observable)
+                break
+        else:
+            self._composite_attribute_value_warning(attribute['type'], attribute['value'])
+            registry_key = self._create_registry_key_object(attribute['value'])
+            observable = self._create_observable(
+                registry_key, attribute['uuid'], 'WindowsRegistryKey')
+            self._handle_attribute(attribute, observable)
 
     def _parse_size_in_bytes_attribute(self, attribute: dict):
         file_object = File()
@@ -834,10 +872,15 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         information_source = InformationSource(identity=identity)
         return information_source
 
-    def _create_malware_sample_observable(self, value: str, data: BytesIO, uuid: str) -> Observable:
-        filename, hash_value = value.split('|')
+    def _create_malware_sample_observable(self, filename: str, data: BytesIO, uuid: str) -> Observable:
         artifact_object = self._create_artifact_object(data)
-        artifact_object.hashes = HashList(self._parse_hash_value('md5', hash_value))
+        for separator in self.composite_separators:
+            if separator in filename:
+                filename, hash_value = filename.split(separator)
+                artifact_object.hashes = HashList(self._parse_hash_value('md5', hash_value))
+                break
+        else:
+            self._composite_attribute_value_warning('malware-sample', filename)
         observable = self._create_observable(artifact_object, uuid, 'Artifact')
         observable.title = filename
         return observable
