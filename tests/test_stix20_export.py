@@ -753,10 +753,10 @@ class TestSTIX20AttributesExport(TestSTIX20GenericExport):
             data = b64encode(data.getvalue()).decode()
         attribute_value, pattern = self._run_indicator_tests(event)
         filename, hash_value = attribute_value.split('|')
-        file_pattern, hash_pattern, data_pattern, mime_type = pattern[1:-1].split(' AND ')
+        data_pattern, file_pattern, hash_pattern, mime_type = pattern[1:-1].split(' AND ')
+        self.assertEqual(data_pattern, f"file:content_ref.payload_bin = '{data}'")
         self.assertEqual(file_pattern, f"file:name = '{filename}'")
         self.assertEqual(hash_pattern, f"file:hashes.MD5 = '{hash_value}'")
-        self.assertEqual(data_pattern, f"file:content_ref.payload_bin = '{data}'")
         self.assertEqual(mime_type, f"file:content_ref.mime_type = 'application/zip'")
 
     def _test_event_with_malware_sample_observable_attribute(self, event):
