@@ -39,10 +39,7 @@ class Stix20Mapping(Stix2Mapping):
             }
         )
         self.__email_observable_mapping = Mapping(
-            **{
-                'send-date': 'date',
-                'subject': 'subject'
-            }
+            subject = 'subject'
         )
         self.__employee_object_mapping = Mapping(
             **{

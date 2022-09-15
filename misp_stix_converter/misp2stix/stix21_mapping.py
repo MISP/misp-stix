@@ -88,7 +88,6 @@ class Stix21Mapping(Stix2Mapping):
         self.__email_observable_mapping = Mapping(
             **{
                 'message-id': 'message_id',
-                'send-date': 'date',
                 'subject': 'subject'
             }
         )

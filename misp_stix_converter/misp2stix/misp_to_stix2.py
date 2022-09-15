@@ -2737,6 +2737,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 if attributes.get(key):
                     header_fields[feature] = self._select_single_feature(attributes, key)
             email_args['additional_header_fields'] = header_fields
+        if attributes.get('send-date'):
+            send_date = self._select_single_feature(attributes, 'send-date')
+            if not isinstance(send_date, datetime):
+                send_date = self._datetime_from_str(send_date)
+            email_args['date'] = send_date
         for key, feature in self._mapping.email_observable_mapping.items():
             if attributes.get(key):
                 email_args[feature] = self._select_single_feature(attributes, key)
