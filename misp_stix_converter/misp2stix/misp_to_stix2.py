@@ -59,7 +59,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     if 'Attribute' in content:
                         self.parse_misp_attribute(content)
             else:
-                self.parse_misp_event(json_content)
+                if 'Attribute' in json_content:
+                    self.parse_misp_attributes(json_content)
+                else:
+                    self.parse_misp_event(json_content)
 
     def parse_misp_attribute(self, attribute: Union[MISPAttribute, dict]):
         self._results_handling_function = '_append_SDO_without_refs'
