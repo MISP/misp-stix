@@ -14,7 +14,7 @@ The package is available as [misp-stix](https://pypi.org/project/misp-stix/) in 
 ## Features
 
 - MISP standard format conversion to STIX 1.x (1.1.1 and 1.2)
-- MISP standard format conversion to STIX 2.0 (2.0 and 2.1)
+- MISP standard format conversion to STIX 2.x (2.0 and 2.1)
 - Maps [MISP Objects](https://github.com/MISP/misp-objects) and [MISP galaxies](https://github.com/misp/misp-galaxy) with [respective semantically similar objects](https://github.com/MISP/misp-stix/tree/main/documentation)
 - STIX to MISP standard format
 - Provides an extendable library for mapping and facilitate extension
