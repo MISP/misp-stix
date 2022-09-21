@@ -11,6 +11,7 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from pymisp import MISPAttribute, MISPEvent, MISPObject
+from stix2.hashes import check_hash, Hash
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
@@ -24,6 +25,12 @@ _stix_time_fields = {
     'indicator': ('valid_from', 'valid_until'),
     'observed-data': ('first_observed', 'last_observed')
 }
+
+
+class InvalidHashValueError(Exception):
+    def __init__(self, message):
+        super(InvalidHashValueError, self).__init__(message)
+        self.message = message
 
 
 class MISPtoSTIX2Parser(MISPtoSTIXParser):
@@ -351,6 +358,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             else:
                 self._parse_custom_attribute(attribute)
                 self._attribute_not_mapped_warning(attribute_type)
+        except InvalidHashValueError:
+            self._hash_attribute_value_error(attribute)
+            self._parse_custom_attribute(attribute)
         except Exception as exception:
             self._attribute_error(attribute, exception)
 
@@ -824,6 +834,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attribute.get('to_ids', False):
             hash_type = attribute['type'].split('-')[-1].upper()
             value = ''.join(character for character in attribute['value'] if character.isalnum())
+            if not self._check_hash_value(hash_type, value):
+                raise InvalidHashValueError()
             pattern = f"[x509-certificate:hashes.{hash_type} = '{value}']"
             self._handle_attribute_indicator(attribute, pattern)
         else:
@@ -3061,6 +3073,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
+
+    @staticmethod
+    def _check_hash_value(attribute_type, value):
+        hash_type = attribute_type.upper()
+        return hasattr(Hash, hash_type) and check_hash(
+            getattr(Hash, hash_type),
+            value
+        )
 
     @staticmethod
     def _clean_custom_properties(custom_args: dict):
