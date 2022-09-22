@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
-from .misp_to_stix2 import MISPtoSTIX2Parser
+from .misp_to_stix2 import InvalidHashValueError, MISPtoSTIX2Parser
 from .stix21_mapping import Stix21Mapping
 from base64 import b64encode
 from collections import defaultdict
@@ -394,18 +394,19 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_hash_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
         hash_type = self._define_hash_type(attribute['type'])
+        if not self._check_hash_value(hash_type, attribute['value']):
+            raise InvalidHashValueError()
         file_args: dict[str, Union[bool, dict, str]] = {
             'id': f"file--{attribute['uuid']}",
-            'hashes': {
-                hash_type: attribute['value']
-            }
+            'hashes': {hash_type: attribute['value']}
         }
         if hash_type not in HASHING_ALGORITHM:
             file_args['allow_custom'] = True
         file_object = File(**file_args)
         self._handle_attribute_observable(attribute, [file_object])
 
-    def _parse_hash_composite_attribute_observable(self, attribute: Union[MISPAttribute, dict], hash_type: Optional[str] = None):
+    def _parse_hash_composite_attribute_observable(self, attribute: Union[MISPAttribute, dict],
+                                                   hash_type: Optional[str] = None):
         file_args = {
             'id': f"file--{attribute['uuid']}"
         }
@@ -415,6 +416,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     hash_type = attribute['type'].split('|')[1]
                 hash_type = self._define_hash_type(hash_type)
                 filename, hash_value = attribute['value'].split(separator)
+                if not self._check_hash_value(hash_type, hash_value):
+                    raise InvalidHashValueError()
                 file_args.update(
                     {
                         'name': filename,
@@ -507,9 +510,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [mac_address_object])
 
     def _parse_malware_sample_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
-        data = attribute['data']
-        if not isinstance(data, str):
-            data = b64encode(data.getvalue()).decode()
         artifact_id = f"artifact--{attribute['uuid']}"
         file_args = {
             'id': f"file--{attribute['uuid']}",
@@ -518,6 +518,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 filename, hash_value = attribute['value'].split(separator)
+                if not self._check_hash_value('MD5', hash_value):
+                    raise InvalidHashValueError()
                 file_args.update(
                     {
                         'name': filename,
@@ -528,6 +530,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         else:
             self._composite_attribute_value_warning(attribute['type'], attribute['value'])
             file_args['name'] = attribute['value']
+        data = attribute['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
         objects = [
             File(**file_args),
             self._create_artifact(artifact_id, data, malware_sample=True)
@@ -586,12 +591,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, [url_object])
 
     def _parse_x509_fingerprint_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
-        hash_type = attribute['type'].split('-')[-1]
+        hash_type = self._define_hash_type(attribute['type'].split('-')[-1])
+        if not self._check_hash_value(hash_type, attribute['value']):
+            raise InvalidHashValueError()
         x509_object = X509Certificate(
             id=f"x509-certificate--{attribute['uuid']}",
-            hashes={
-                self._define_hash_type(hash_type): attribute['value']
-            }
+            hashes={hash_type: attribute['value']}
         )
         self._handle_attribute_observable(attribute, [x509_object])
 

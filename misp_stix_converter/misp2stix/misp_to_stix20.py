@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .misp_to_stix2 import MISPtoSTIX2Parser
+from .misp_to_stix2 import InvalidHashValueError, MISPtoSTIX2Parser
 from .stix20_mapping import Stix20Mapping
 from base64 import b64encode
 from collections import defaultdict
@@ -341,6 +341,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
 
     def _parse_hash_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
         hash_type = self._define_hash_type(attribute['type'])
+        if not self._check_hash_value(hash_type, attribute['value']):
+            raise InvalidHashValueError()
         file_args: dict[str, Union[bool, dict]] = {
             'hashes': {
                 hash_type: attribute['value']
@@ -361,6 +363,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                     hash_type = attribute['type'].split('|')[1]
                 hash_type = self._define_hash_type(hash_type)
                 filename, hash_value = attribute['value'].split(separator)
+                if not self._check_hash_value(hash_type, hash_value):
+                    raise InvalidHashValueError()
                 file_args = {
                     'name': filename,
                     'hashes': {
@@ -449,9 +453,6 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_malware_sample_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
-        data = attribute['data']
-        if not isinstance(data, str):
-            data = b64encode(data.getvalue()).decode()
         file_args = {
             '_valid_refs': {'1': 'artifact'},
             'content_ref': '1'
@@ -459,6 +460,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         for separator in self.composite_separators:
             if separator in attribute['value']:
                 filename, hash_value = attribute['value'].split(separator)
+                if not self._check_hash_value('MD5', hash_value):
+                    raise InvalidHashValueError()
                 file_args.update(
                     {
                         'name': filename,
@@ -469,6 +472,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         else:
             self._composite_attribute_value_warning(attribute['type'], attribute['value'])
             file_args['name'] = attribute['value']
+        data = attribute['data']
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
         observable_object = {
             '0': File(**file_args),
             '1': self._create_artifact(data, malware_sample=True)
@@ -524,12 +530,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_attribute_observable(attribute, observable_object)
 
     def _parse_x509_fingerprint_attribute_observable(self, attribute: Union[MISPAttribute, dict]):
-        hash_type = attribute['type'].split('-')[-1]
+        hash_type = self._define_hash_type(attribute['type'].split('-')[-1])
+        if not self._check_hash_value(hash_type, attribute['value']):
+            raise InvalidHashValueError()
         observable_object = {
             '0': X509Certificate(
-                hashes={
-                    self._define_hash_type(hash_type): attribute['value']
-                }
+                hashes={hash_type: attribute['value']}
             )
         }
         self._handle_attribute_observable(attribute, observable_object)

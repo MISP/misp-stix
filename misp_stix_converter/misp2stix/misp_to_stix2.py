@@ -28,9 +28,7 @@ _stix_time_fields = {
 
 
 class InvalidHashValueError(Exception):
-    def __init__(self, message):
-        super(InvalidHashValueError, self).__init__(message)
-        self.message = message
+    pass
 
 
 class MISPtoSTIX2Parser(MISPtoSTIXParser):
@@ -359,7 +357,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 self._parse_custom_attribute(attribute)
                 self._attribute_not_mapped_warning(attribute_type)
         except InvalidHashValueError:
-            self._hash_attribute_value_error(attribute)
+            self._invalid_attribute_hash_value_error(attribute)
             self._parse_custom_attribute(attribute)
         except Exception as exception:
             self._attribute_error(attribute, exception)
@@ -3051,10 +3049,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_filename_pattern(name: str) -> str:
         return f"file:name = '{name}'"
 
-    def _create_hash_pattern(self, hash_type: str, value: str,
+    def _create_hash_pattern(self, attribute_type: str, value: str,
                              prefix: Optional[str] = 'file:hashes') -> str:
         value = value.strip('"').strip("'").strip('\\')
-        return f"{prefix}.{self._define_hash_type(hash_type)} = '{value}'"
+        hash_type = self._define_hash_type(attribute_type)
+        if not self._check_hash_value(hash_type, value):
+            raise InvalidHashValueError()
+        return f"{prefix}.{hash_type} = '{value}'"
 
     def _create_ip_pattern(self, ip_type: str, value: str) -> str:
         address_type = self._define_address_type(value)

@@ -6,6 +6,7 @@ from .stix20_mapping import Stix20Mapping
 from .stix21_mapping import Stix21Mapping
 from collections import defaultdict
 from datetime import datetime
+from pymisp import MISPAttribute
 from typing import Optional, Union
 
 
@@ -220,6 +221,11 @@ class MISPtoSTIXParser:
     def _composite_attribute_value_warning(self, attribute_type: str, value: str):
         message = f"The {attribute_type} MISP Attribute should have a composite value: {value}"
         self.__warnings[self._identifier].add(message)
+
+    def _invalid_attribute_hash_value_error(self, attribute: Union[MISPAttribute, dict]):
+        features = f"Error with the {attribute['type']} value: {attribute['value']}"
+        message = f"{features} is not a valid {attribute['type']} hash."
+        self.__errors[self._identifier].append(message)
 
     def _object_error(self, misp_object: dict, exception: Exception):
         features = f"{misp_object['name']} object: {misp_object['uuid']}"
