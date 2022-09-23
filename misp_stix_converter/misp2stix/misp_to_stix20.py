@@ -725,7 +725,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             file_args['_valid_refs'][str_index] = 'directory'
             index += 1
         if attributes.get('malware-sample') and isinstance(attributes['malware-sample'], tuple):
-            args = self._create_malware_sample_args(*attributes.pop('malware-sample'))
+            malware_sample = attributes.pop('malware-sample')
+            try:
+                args = self._parse_malware_sample_args(*malware_sample)
+            except InvalidHashValueError:
+                self._invalid_object_hash_value_error('MD5', misp_object)
+                args = self._parse_malware_sample_custom_args(*malware_sample)
             str_index = str(index)
             observable_object[str_index] = Artifact(**args)
             file_args['content_ref'] = str_index
@@ -737,7 +742,15 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             args = self._create_attachment_args(*attributes.pop('attachment'))
             observable_object[str(index)] = Artifact(**args)
         if attributes:
-            file_args.update(self._parse_file_args(attributes))
+            file_args.update(
+                self._parse_file_args(
+                    attributes,
+                    {
+                        'uuid': misp_object['uuid'],
+                        'name': misp_object['name']
+                    }
+                )
+            )
         return file_args, observable_object
 
     def _parse_http_request_object_observable(self, misp_object: Union[MISPObject, dict]):
@@ -852,12 +865,25 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 index += 1
                 break
         if attributes.get('malware-sample') and isinstance(attributes['malware-sample'], tuple):
-            args = self._create_malware_sample_args(*attributes.pop('malware-sample'))
+            malware_sample = attributes.pop('malware-sample')
+            try:
+                args = self._parse_malware_sample_args(*malware_sample)
+            except InvalidHashValueError:
+                self._invalid_object_hash_value_error('MD5', misp_object)
+                args = self._parse_malware_sample_custom_args(*malware_sample)
             str_index = str(index)
             observable_object[str_index] = Artifact(**args)
             file_args['content_ref'] = str_index
             file_args['_valid_refs'][str_index] = 'artifact'
-        file_args.update(self._parse_lnk_args(attributes))
+        file_args.update(
+            self._parse_lnk_args(
+                attributes,
+                {
+                    'uuid': misp_object['uuid'],
+                    'name': misp_object['name']
+                }
+            )
+        )
         observable_object['0'] = self._create_file_object(file_args)
         self._handle_object_observable(misp_object, observable_object)
 
@@ -1021,7 +1047,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, observable_object)
 
     def _parse_x509_object_observable(self, misp_object: Union[MISPObject, dict]):
-        x509_args = self._parse_x509_args(misp_object['Attribute'])
+        x509_args = self._parse_x509_args(misp_object)
         observable_object = {'0': X509Certificate(**x509_args)}
         self._handle_object_observable(misp_object, observable_object)
 

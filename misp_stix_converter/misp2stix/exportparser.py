@@ -6,7 +6,7 @@ from .stix20_mapping import Stix20Mapping
 from .stix21_mapping import Stix21Mapping
 from collections import defaultdict
 from datetime import datetime
-from pymisp import MISPAttribute
+from pymisp import MISPAttribute, MISPObject
 from typing import Optional, Union
 
 
@@ -227,8 +227,13 @@ class MISPtoSTIXParser:
         message = f"{features} is not a valid {attribute['type']} hash."
         self.__errors[self._identifier].append(message)
 
+    def _invalid_object_hash_value_error(self, hash_type: str, misp_object: Union[MISPObject, dict]):
+        features = f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
+        message = f"Error with the {features}: Invalid {hash_type} value."
+        self.__errors[self._identifier].append(message)
+
     def _object_error(self, misp_object: dict, exception: Exception):
-        features = f"{misp_object['name']} object: {misp_object['uuid']}"
+        features = f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
         tb = self._parse_traceback(exception)
         message = f"Error with the {features}:\n{tb}."
         self.__errors[self._identifier].append(message)

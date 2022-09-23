@@ -605,19 +605,26 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     ################################################################################
 
     @staticmethod
-    def _extract_multiple_object_attributes_with_uuid_and_data(attributes: list, with_uuid: tuple = (), with_data: tuple = ()) -> dict:
+    def _extract_multiple_object_attributes_with_uuid_and_data(attributes: list, force_single: tuple = (),
+                                                               with_uuid: tuple = (), with_data: tuple = ()) -> dict:
         attributes_dict = defaultdict(list)
         for attribute in attributes:
             relation = attribute['object_relation']
             if relation not in with_uuid and relation not in with_data:
-                attributes_dict[relation].append(attribute['value'])
+                if relation in force_single:
+                    attributes_dict[relation] = attribute['value']
+                else:
+                    attributes_dict[relation].append(attribute['value'])
                 continue
             value = [attribute['value']]
             if relation in with_data and attribute.get('data'):
                 value.append(attribute['data'])
             if relation in with_uuid:
                 value.append(attribute['uuid'])
-            attributes_dict[relation].append(tuple(value))
+            if relation in force_single:
+                attributes_dict[relation] = tuple(value)
+            else:
+                attributes_dict[relation].append(tuple(value))
         return attributes_dict
 
     @staticmethod
@@ -883,6 +890,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_file_observable_object(self, misp_object: Union[MISPObject, dict]) -> tuple:
         attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
             misp_object['Attribute'],
+            force_single=self._mapping.file_single_fields,
             with_uuid=self._mapping.file_uuid_fields,
             with_data=self._mapping.file_data_fields
         )
@@ -902,7 +910,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             if len(value) == 3:
                 value, data, uuid = value
                 artifact_id = f'artifact--{uuid}'
-                args = self._create_malware_sample_args(value, data)
+                try:
+                    args = self._parse_malware_sample_args(value, data)
+                except InvalidHashValueError:
+                    self._invalid_object_hash_value_error('MD5', misp_object)
+                    args = self._parse_malware_sample_custom_args(value, data)
                 args['id'] = artifact_id
                 objects.append(Artifact(**args))
                 file_args['content_ref'] = artifact_id
@@ -931,7 +943,15 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     }
                 )
         if attributes:
-            file_args.update(self._parse_file_args(attributes))
+            file_args.update(
+                self._parse_file_args(
+                    attributes,
+                    {
+                        'uuid': misp_object['uuid'],
+                        'name': misp_object['name']
+                    }
+                )
+            )
         file_args['id'] = getattr(self, self._id_parsing_function['object'])('file', misp_object)
         return file_args, objects
 
@@ -1062,6 +1082,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_lnk_object_observable(self, misp_object: Union[MISPObject, dict]):
         attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
             misp_object['Attribute'],
+            force_single=self._mapping.lnk_single_fields,
             with_uuid=self._mapping.lnk_uuid_fields,
             with_data=self._mapping.lnk_data_fields
         )
@@ -1092,7 +1113,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             if len(value) == 3:
                 value, data, uuid = value
                 artifact_id = f'artifact--{uuid}'
-                args = self._create_malware_sample_args(value, data)
+                try:
+                    args = self._parse_malware_sample_args(value, data)
+                except InvalidHashValueError:
+                    self._invalid_object_hash_value_error('MD5', misp_object)
+                    args = self._parse_malware_sample_custom_args(value, data)
                 args['id'] = artifact_id
                 objects.append(Artifact(**args))
                 file_args['content_ref'] = artifact_id
@@ -1103,7 +1128,15 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                         'x_misp_malware_sample': value[0]
                     }
                 )
-        file_args.update(self._parse_lnk_args(attributes))
+        file_args.update(
+            self._parse_lnk_args(
+                attributes,
+                {
+                    'uuid': misp_object['uuid'],
+                    'name': misp_object['name']
+                }
+            )
+        )
         objects.insert(0, self._create_file_object(file_args))
         self._handle_object_observable(misp_object, objects)
 
@@ -1356,7 +1389,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_object_observable(misp_object, [user_account])
 
     def _parse_x509_object_observable(self, misp_object: Union[MISPObject, dict]):
-        x509_args = self._parse_x509_args(misp_object['Attribute'])
+        x509_args = self._parse_x509_args(misp_object)
         x509_args['id'] = getattr(self, self._id_parsing_function['object'])(
             'x509-certificate',
             misp_object

@@ -1370,7 +1370,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     self._objects_to_parse['file'][misp_object['uuid']] = to_ids, misp_object
                     return
         if to_ids:
-            pattern = self._parse_file_object_pattern(misp_object['Attribute'])
+            pattern = self._parse_file_object_pattern(misp_object)
             self._handle_object_indicator(misp_object, pattern)
         else:
             self._parse_file_object_observable(misp_object)
@@ -1380,22 +1380,26 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._handle_file_observable_objects(file_args, observable_objects)
         self._handle_object_observable(misp_object, observable_objects)
 
-    def _parse_file_object_pattern(self, attributes: list) -> list:
+    def _parse_file_object_pattern(self, misp_object: Union[MISPObject, dict]) -> list:
         prefix = 'file'
         attributes = self._extract_multiple_object_attributes_with_data_escaped(
-            attributes,
+            misp_object['Attribute'],
             force_single=self._mapping.file_single_fields,
             with_data=self._mapping.file_data_fields
         )
         pattern = []
         for hash_type in self._mapping.hash_attribute_types:
             if attributes.get(hash_type):
-                pattern.append(
-                    self._create_hash_pattern(
-                        hash_type,
-                        attributes.pop(hash_type)
+                try:
+                    pattern.append(
+                        self._create_hash_pattern(
+                            hash_type,
+                            attributes[hash_type]
+                        )
                     )
-                )
+                    del attributes[hash_type]
+                except InvalidHashValueError:
+                    self._invalid_object_hash_value_error(hash_type, misp_object)
         for key, feature in self._mapping.file_object_mapping.items():
             if attributes.get(key):
                 for value in attributes.pop(key):
@@ -1404,11 +1408,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             value = attributes.pop('path')
             pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")
         if attributes.get('malware-sample'):
-            pattern.append(
-                self._parse_malware_sample_object_attribute(
-                    attributes.pop('malware-sample')
+            malware_sample = attributes.pop('malware-sample')
+            try:
+                pattern.append(
+                    self._parse_malware_sample_object_attribute(malware_sample)
                 )
-            )
+            except InvalidHashValueError:
+                self._invalid_object_hash_value_error('malware-sample', misp_object)
+                attributes['malware-sample'] = malware_sample[1]
         if attributes.get('attachment'):
             value = attributes.pop('attachment')
             if isinstance(value, tuple):
@@ -1555,18 +1562,25 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")
             for hash_type in self._mapping.lnk_hash_types:
                 if attributes.get(hash_type):
-                    pattern.append(
-                        self._create_hash_pattern(
-                            hash_type,
-                            attributes.pop(hash_type)
+                    try:
+                        pattern.append(
+                            self._create_hash_pattern(
+                                hash_type,
+                                attributes[hash_type]
+                            )
                         )
-                    )
+                        del attributes[hash_type]
+                    except InvalidHashValueError:
+                        self._invalid_object_hash_value_error(hash_type, misp_object)
             if attributes.get('malware-sample'):
-                pattern.append(
-                    self._parse_malware_sample_object_attribute(
-                        attributes.pop('malware-sample')
+                malware_sample = attributes.pop('malware-sample')
+                try:
+                    pattern.append(
+                        self._parse_malware_sample_object_attribute(malware_sample)
                     )
-                )
+                except InvalidHashValueError:
+                    self._invalid_object_hash_value_error('malware-sample', misp_object)
+                    attributes['malware-sample'] = malware_sample[1]
             for key, feature in self._mapping.lnk_object_mapping.items():
                 if attributes.get(key):
                     pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
@@ -1587,6 +1601,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if separator in malware_sample:
                 filename, md5 = malware_sample.split(separator)
                 pattern.append(self._create_content_ref_pattern(filename, 'x_misp_filename'))
+                if not self._check_hash_value('MD5', md5):
+                    raise InvalidHashValueError()
                 pattern.append(self._create_content_ref_pattern(md5, 'hashes.MD5'))
                 pattern.append(self._mapping.malware_sample_additional_pattern_values)
                 break
@@ -1766,13 +1782,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 for key, feature in self._mapping.pe_section_mapping.items():
                     if attributes.get(key):
                         section[feature] = attributes.pop(key)
-                for hash_type in self._mapping.file_hash_main_types:
-                    if attributes.get(hash_type):
-                        value = self._select_single_feature(attributes, hash_type)
-                        section['hashes'][self._define_hash_type(hash_type)] = value
+                for attribute_type in self._mapping.file_hash_main_types:
+                    if attributes.get(attribute_type):
+                        value = self._select_single_feature(attributes, attribute_type)
+                        hash_type = self._define_hash_type(attribute_type)
+                        if self._check_hash_value(hash_type, value):
+                            section['hashes'][hash_type] = value
+                        else:
+                            self._invalid_object_hash_value_error(attribute_type, pe_object)
+                            attributes[attribute_type].append(value)
                 if attributes:
                     custom = True
-                    section.update(self._handle_observable_properties(attributes))
+                    section.update(self._handle_observable_multiple_properties(attributes))
                 extension['sections'].append(self._create_windowsPESection(section))
         return self._create_PE_extension(extension), custom
 
@@ -1800,21 +1821,24 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if uuids is not None:
             for section_uuid in uuids:
                 section_prefix = f"{prefix}.sections[{uuids.index(section_uuid)}]"
-                attributes = self._extract_object_attributes_escaped(
-                    self._objects_to_parse['pe-section'].pop(section_uuid)[1]['Attribute']
-                )
+                section_object = self._objects_to_parse['pe-section'].pop(section_uuid)[1]
+                attributes = self._extract_object_attributes_escaped(section_object['Attribute'])
                 for key, feature in self._mapping.pe_section_mapping.items():
                     if attributes.get(key):
                         pattern.append(f"{section_prefix}.{feature} = '{attributes.pop(key)}'")
                 for hash_type in self._mapping.pe_section_hash_types:
                     if attributes.get(hash_type):
-                        pattern.append(
-                            self._create_hash_pattern(
-                                hash_type,
-                                attributes.pop(hash_type),
-                                prefix=f'{section_prefix}.hashes'
+                        try:
+                            pattern.append(
+                                self._create_hash_pattern(
+                                    hash_type,
+                                    attributes[hash_type],
+                                    prefix=f'{section_prefix}.hashes'
+                                )
                             )
-                        )
+                            del attributes[hash_type]
+                        except InvalidHashValueError:
+                            self._invalid_object_hash_value_error(hash_type, section_object)
                 if attributes:
                     pattern.extend(
                         self._handle_pattern_properties(
@@ -1985,10 +2009,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             pattern = []
             if attributes.get('self_signed'):
                 pattern.append(f"{prefix}:is_self_signed = '{attributes.pop('self_signed')}'")
-            for feature in self._mapping.x509_hash_fields:
-                if attributes.get(feature):
-                    hash_type = self._define_hash_type(feature.split('-')[-1])
-                    pattern.append(f"{prefix}:hashes.{hash_type} = '{attributes.pop(feature)}'")
+            for attribute_type in self._mapping.x509_hash_fields:
+                if attributes.get(attribute_type):
+                    hash_type = self._define_hash_type(attribute_type.split('-')[-1])
+                    if self._check_hash_value(hash_type, attributes[attribute_type]):
+                        pattern.append(f"{prefix}:hashes.{hash_type} = '{attributes.pop(attribute_type)}'")
+                    else:
+                        self._invalid_object_hash_value_error(attribute_type, misp_object)
             for data_type in ('features', 'timeline'):
                 for key, feature in self._mapping.x509_object_mapping[data_type].items():
                     if attributes.get(key):
@@ -2020,7 +2047,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             else:
                 self._unclear_pe_references_warning(file_uuid, pe_uuid)
             if file_ids:
-                pattern = self._parse_file_object_pattern(file_object['Attribute'])
+                pattern = self._parse_file_object_pattern(file_object)
                 self._handle_object_indicator(file_object, pattern)
             else:
                 self._parse_file_object_observable(file_object)
@@ -2032,7 +2059,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             [file_ids, pe_ids]
         )
         if to_ids:
-            pattern = self._parse_file_object_pattern(file_object['Attribute'])
+            pattern = self._parse_file_object_pattern(file_object)
             pattern.extend(self._parse_pe_extensions_pattern(pe_object, section_uuids))
             self._handle_object_indicator(file_object, pattern)
         else:
@@ -2558,31 +2585,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_labels(attribute: Union[MISPAttribute, dict]) -> list:
         return [f'misp:{feature}="{attribute[feature]}"' for feature in _label_fields if attribute.get(feature)]
 
-    def _create_malware_sample_args(self, value: str, data: Union[io.BytesIO, str]) -> dict:
-        if not isinstance(data, str):
-            data = b64encode(data.getvalue()).decode()
-        args = {
-            'allow_custom': True,
-            'payload_bin': data
-        }
-        for separator in self.composite_separators:
-            if separator in value:
-                filename, md5 = value.split(separator)
-                args.update(
-                    {
-                        'hashes': {
-                            'MD5': md5
-                        },
-                        'x_misp_filename': filename
-                    }
-                )
-                break
-        else:
-            self._composite_attribute_value_warning('malware-sample', value)
-            args['x_misp_filename'] = value
-        args.update(self._mapping.malware_sample_additional_observable_values)
-        return args
-
     @staticmethod
     def _create_object_labels(misp_object: Union[MISPObject, dict], to_ids: Optional[bool] = None) -> list:
         labels = [
@@ -2762,20 +2764,26 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             email_args.update(self._handle_observable_multiple_properties(attributes))
         return email_args
 
-    def _parse_file_args(self, attributes: dict) -> dict:
+    def _parse_file_args(self, attributes: dict, misp_object: dict) -> dict:
         file_args = defaultdict(dict)
-        for hash_type in self._mapping.file_hash_main_types:
-            if attributes.get(hash_type):
-                value = self._select_single_feature(attributes, hash_type)
-                file_args['hashes'][self._define_hash_type(hash_type)] = value
-        for hash_type in self._mapping.file_hash_types:
-            if attributes.get(hash_type):
-                feature = self._define_hash_type(hash_type)
-                value = self._select_single_feature(attributes, hash_type)
-                if feature not in file_args['hashes']:
-                    file_args['hashes'][feature] = value
-                else:
-                    attributes[hash_type] = [value]
+        for attribute_type in self._mapping.file_hash_main_types:
+            value = attributes.get(attribute_type)
+            if value is None:
+                continue
+            hash_type = self._define_hash_type(attribute_type)
+            if self._check_hash_value(hash_type, value):
+                file_args['hashes'][hash_type] = attributes.pop(attribute_type)
+            else:
+                self._invalid_object_hash_value_error(hash_type, misp_object)
+        for attribute_type in self._mapping.file_hash_types:
+            hash_type = self._define_hash_type(attribute_type)
+            value = attributes.get(attribute_type)
+            if value is None or hash_type in file_args['hashes']:
+                continue
+            if self._check_hash_value(hash_type, value):
+                file_args['hashes'][hash_type] = attributes.pop(attribute_type)
+            else:
+                self._invalid_object_hash_value_error(hash_type, misp_object)
         for key, feature in self._mapping.file_object_mapping.items():
             if attributes.get(key):
                 value = self._select_single_feature(attributes, key)
@@ -2814,19 +2822,20 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             args.update(self._handle_observable_multiple_properties(attributes))
         return args
 
-    def _parse_lnk_args(self, attributes: dict) -> dict:
+    def _parse_lnk_args(self, attributes: dict, misp_object) -> dict:
         file_args = defaultdict(dict)
         if attributes.get('filename'):
             file_args['name'] = self._select_single_feature(
                 attributes, 'filename')
-        for hash_type in self._mapping.lnk_hash_types:
-            if attributes.get(hash_type):
-                feature = self._define_hash_type(hash_type)
-                value = self._select_single_feature(attributes, hash_type)
-                if feature not in file_args['hashes']:
-                    file_args['hashes'][feature] = value
-                else:
-                    attributes[hash_type] = [value]
+        for attribute_type in self._mapping.lnk_hash_types:
+            value = attributes.get(attribute_type)
+            if value is None:
+                continue
+            hash_type = self._define_hash_type(attribute_type)
+            if self._check_hash_value(hash_type, value):
+                file_args['hashes'][hash_type] = attributes.pop(attribute_type)
+            else:
+                self._invalid_object_hash_value_error(hash_type, misp_object)
         for key, feature in self._mapping.lnk_object_mapping.items():
             if attributes.get(key):
                 file_args[feature] = self._select_single_feature(attributes, key)
@@ -2837,6 +2846,42 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attributes:
             file_args.update(self._handle_observable_multiple_properties(attributes))
         return file_args
+
+    def _parse_malware_sample_additional_fields(self, data: Union[io.BytesIO, str]) -> dict:
+        args = {}
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
+        args['payload_bin'] = data
+        args.update(self._mapping.malware_sample_additional_observable_values)
+        return args
+
+    def _parse_malware_sample_args(self, value: str, data: Union[io.BytesIO, str]) -> dict:
+        args = {'allow_custom': True}
+        for separator in self.composite_separators:
+            if separator in value:
+                filename, md5 = value.split(separator)
+                if not self._check_hash_value('MD5', md5):
+                    raise InvalidHashValueError()
+                args.update(
+                    {
+                        'hashes': {'MD5': md5},
+                        'x_misp_filename': filename
+                    }
+                )
+                break
+        else:
+            self._composite_attribute_value_warning('malware-sample', value)
+            args['x_misp_filename'] = value
+        args.update(self._parse_malware_sample_additional_fields(data))
+        return args
+
+    def _parse_malware_sample_custom_args(self, value: str, data: Union[io.BytesIO, str]) -> dict:
+        args = {
+            'allow_custom': True,
+            'x_misp_malware_sample': value
+        }
+        args.update(self._parse_malware_sample_additional_fields(data))
+        return args
 
     def _parse_mutex_args(self, attributes: dict) -> dict:
         attributes = self._extract_object_attributes(attributes)
@@ -2987,18 +3032,23 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             )
         return user_account_args
 
-    def _parse_x509_args(self, attributes: dict) -> dict:
+    def _parse_x509_args(self, misp_object: Union[MISPObject, dict]) -> dict:
         attributes = self._extract_multiple_object_attributes(
-            attributes,
+            misp_object['Attribute'],
             force_single=self._mapping.x509_single_fields
         )
         x509_args = defaultdict(dict)
         if attributes.get('self_signed'):
             x509_args['is_self_signed'] = attributes.pop('self_signed')
         for feature in self._mapping.x509_hash_fields:
-            if attributes.get(feature):
-                hash_type = self._define_hash_type(feature.split('-')[-1])
+            value = attributes.get(feature)
+            if value is None:
+                continue
+            hash_type = self._define_hash_type(feature.split('-')[-1])
+            if self._check_hash_value(hash_type, value):
                 x509_args['hashes'][hash_type] = attributes.pop(feature)
+            else:
+                self._invalid_object_hash_value_error(hash_type, misp_object)
         for key, feature in self._mapping.x509_object_mapping['features'].items():
             if attributes.get(key):
                 x509_args[feature] = attributes.pop(key)
