@@ -203,7 +203,7 @@ class MISPtoSTIXParser:
     #                     ERRORS & WARNINGS HANDLING FUNCTIONS                     #
     ################################################################################
 
-    def _attribute_error(self, attribute: dict, exception: Exception):
+    def _attribute_error(self, attribute: Union[MISPAttribute, dict], exception: Exception):
         features = f"{attribute['type']} attribute: {attribute['value']} (uuid: {attribute['uuid']})"
         tb = self._parse_traceback(exception)
         message = f"Error with the {features}:\n{tb}."
@@ -219,7 +219,7 @@ class MISPtoSTIXParser:
         self.__warnings[self._identifier].add(message)
 
     def _composite_attribute_value_warning(self, attribute_type: str, value: str):
-        message = f"The {attribute_type} MISP Attribute should have a composite value: {value}"
+        message = f"The {attribute_type} MISP Attribute should have a composite value: {value}."
         self.__warnings[self._identifier].add(message)
 
     def _invalid_attribute_hash_value_error(self, attribute: Union[MISPAttribute, dict]):
