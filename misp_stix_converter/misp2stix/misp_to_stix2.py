@@ -3128,7 +3128,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _check_hash_value(attribute_type, value):
         hash_type = attribute_type.upper()
-        return hasattr(Hash, hash_type) and check_hash(
+        return not hasattr(Hash, hash_type) or check_hash(
             getattr(Hash, hash_type),
             value
         )
