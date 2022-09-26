@@ -2534,6 +2534,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     @staticmethod
     def _create_attachment_args(value: str, data: str) -> dict:
+        if not isinstance(data, str):
+            data = b64encode(data.getvalue()).decode()
         return {
             'allow_custom': True,
             'payload_bin': data,
