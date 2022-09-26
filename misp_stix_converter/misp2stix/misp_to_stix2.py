@@ -2126,12 +2126,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                         break
                 else:
                     file_args['name'] = ''
+                if custom:
+                    file_args['allow_custom'] = custom
+                observable = self._handle_file_observable_object(file_args)
+                self._handle_object_observable(pe_object, observable)
             except Exception as exception:
                 self._object_error(pe_object, exception)
-            if custom:
-                file_args['allow_custom'] = custom
-            observable = self._handle_file_observable_object(file_args)
-            self._handle_object_observable(pe_object, observable)
 
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
