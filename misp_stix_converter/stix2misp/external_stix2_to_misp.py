@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from .. import Mapping
+from .exceptions import (UnknownParsingFunctionError, UnknownObservableMappingError,
+    UnknownPatternMappingError, UnknownPatternTypeError)
 from .external_stix2_mapping import ExternalSTIX2Mapping
 from .stix2_to_misp import (STIX2toMISPParser, _ATTACK_PATTERN_TYPING,
     _COURSE_OF_ACTION_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from collections import defaultdict
-from misp_stix_converter.stix2misp.exceptions import (UnknownParsingFunctionError,
-    UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
 from pymisp import MISPAttribute, MISPObject
 from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
     CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
