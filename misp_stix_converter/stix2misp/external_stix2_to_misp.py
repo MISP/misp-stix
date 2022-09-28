@@ -169,11 +169,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 raise UnknownPatternTypeError(indicator.pattern_type)
         if self._is_pattern_too_complex(indicator.pattern):
             return '_create_stix_pattern_object'
-        observable_types = self._extract_types_from_pattern(indicator.pattern)
-        try:
-            return self._mapping.pattern_mapping[observable_types]
-        except KeyError:
-            raise UnknownPatternMappingError(observable_types)
+        return '_parse_stix_pattern'
 
     def _parse_attack_pattern(self, attack_pattern_ref: str):
         """
@@ -300,9 +296,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         indicator = self._get_stix_object(indicator_ref)
         try:
             feature = self._handle_pattern_mapping(indicator)
-        except UnknownPatternMappingError as error:
-            self._unknown_pattern_mapping_warning(indicator.id, error)
-            feature = '_create_stix_pattern_object'
         except UnknownPatternTypeError as error:
             self._unknown_pattern_type_error(indicator.id, error)
             return
