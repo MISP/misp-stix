@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .. import Mapping
 from .exceptions import (UnknownParsingFunctionError, UnknownObservableMappingError,
     UnknownPatternMappingError, UnknownPatternTypeError)
 from .external_stix2_mapping import ExternalSTIX2Mapping
