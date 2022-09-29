@@ -2279,6 +2279,12 @@ _TEST_PERSON_OBJECT = {
             "type": "phone-number",
             "object_relation": "phone-number",
             "value": "0123456789"
+        },
+        {
+            "uuid": "6a464f2f-1ae0-4810-ab67-378e2489b8c0",
+            "type": "text",
+            "object_relation": "role",
+            "value": "Guru"
         }
     ]
 }
@@ -4210,7 +4216,6 @@ def get_event_with_custom_objects():
     event['Event']['Object'] = [
         deepcopy(_TEST_BANK_ACCOUNT_OBJECT),
         deepcopy(_TEST_BTC_WALLET_OBJECT),
-        deepcopy(_TEST_PERSON_OBJECT),
         deepcopy(_TEST_REPORT_OBJECT)
     ]
     return event
@@ -4615,6 +4620,7 @@ def get_event_with_object_references():
     btc_object = deepcopy(_TEST_BTC_WALLET_OBJECT)
     coa_object = deepcopy(_TEST_COURSE_OF_ACTION_OBJECT)
     ip_object = deepcopy(_TEST_IP_PORT_OBJECT)
+    person_object = deepcopy(_TEST_PERSON_OBJECT)
     vuln_object = {
         "name": "vulnerability",
         "meta-category": "vulnerability",
@@ -4664,6 +4670,12 @@ def get_event_with_object_references():
             "relationship_type": "protects-against"
         }
     ]
+    person_object['ObjectReference'] = [
+        {
+            "referenced_uuid": ip_object['uuid'],
+            "relationship_type": "owns"
+        }
+    ]
     ip_object['Attribute'][0]['to_ids'] = True
     ip_object['ObjectReference'] = [
         {
@@ -4678,6 +4690,7 @@ def get_event_with_object_references():
         btc_object,
         coa_object,
         ip_object,
+        person_object,
         vuln_object
     ]
     return event
@@ -4838,6 +4851,14 @@ def get_event_with_pe_objects():
     event['Event']['Object'] = [
         deepcopy(_TEST_PE_OBJECT),
         deepcopy(_TEST_PE_SECTION_OBJECT)
+    ]
+    return event
+
+
+def get_event_with_person_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_PERSON_OBJECT)
     ]
     return event
 

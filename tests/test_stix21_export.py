@@ -4156,6 +4156,26 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             *misp_objects
         )
 
+    def _test_event_with_person_object(self, event):
+        orgc = event['Orgc']
+        misp_object = deepcopy(event['Object'][0])
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, person = stix_objects
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        person_ref = self._check_grouping_features(grouping, event, identity_id)[0]
+        role = self._check_person_object(
+            person,
+            misp_object,
+            person_ref,
+            identity_id
+        )
+        self.assertEqual(person.roles, [role])
+
     def _test_event_with_process_indicator_object(self, event):
         attributes, pattern = self._run_indicator_from_object_tests(event)
         _pid, _child_pid, _parent_pid, _name, _image, _parent_image, _port, _hidden, _command_line, _parent_name = (attribute['value'] for attribute in attributes)
@@ -4481,17 +4501,17 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_object_references(self, event):
         orgc = event['Orgc']
-        ap_object, as_object, btc_object, coa_object, ip_object, vuln_object = deepcopy(event['Object'])
+        ap_object, as_object, btc_object, coa_object, ip_object, person_object, vuln_object = deepcopy(event['Object'])
         self.parser.parse_misp_event(event)
-        stix_objects = self._check_bundle_features(15)
+        stix_objects = self._check_bundle_features(17)
         self._check_spec_versions(stix_objects)
-        identity, grouping, attack_pattern, observed_data, autonomous_system, custom, coa, indicator, vulnerability, *relationships = stix_objects
+        identity, grouping, attack_pattern, observed_data, autonomous_system, custom, coa, indicator, person, vulnerability, *relationships = stix_objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         grouping_refs = self._check_grouping_features(grouping, event, identity_id)
-        ap_ref, observed_data_ref, as_ref, custom_ref, coa_ref, indicator_ref, vuln_ref, *relationship_refs = grouping_refs
+        ap_ref, observed_data_ref, as_ref, custom_ref, coa_ref, indicator_ref, person_ref, vuln_ref, *relationship_refs = grouping_refs
         self._assert_multiple_equal(
             attack_pattern.id,
             ap_ref,
@@ -4523,13 +4543,18 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             f"indicator--{ip_object['uuid']}"
         )
         self._assert_multiple_equal(
+            person.id,
+            person_ref,
+            f"identity--{person_object['uuid']}"
+        )
+        self._assert_multiple_equal(
             vulnerability.id,
             vuln_ref,
             f"vulnerability--{vuln_object['uuid']}"
         )
         for relationship, relationship_ref in zip(relationships, relationship_refs):
             self.assertEqual(relationship.id, relationship_ref)
-        relation1, relation2, relation3, relation4, relation5, relation6 = relationships
+        relation1, relation2, relation3, relation4, relation5, relation6, relation7 = relationships
         timestamp = ap_object['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
@@ -4580,11 +4605,21 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             'protected-with',
             timestamp
         )
-        timestamp = vuln_object['timestamp']
+        timestamp = person_object['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self._check_relationship_features(
             relation6,
+            person_ref,
+            indicator_ref,
+            'owns',
+            timestamp
+        )
+        timestamp = vuln_object['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        self._check_relationship_features(
+            relation7,
             vuln_ref,
             indicator_ref,
             'affects',
@@ -5026,6 +5061,14 @@ class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
             misp_object = event['Event']['Object'],
             observed_data = self.parser.stix_objects[-2:],
             name = 'pe & pe-sections'
+        )
+
+    def test_event_with_person_object(self):
+        event = get_event_with_person_object()
+        self._test_event_with_person_object(event['Event'])
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            identity = self.parser.stix_objects[-1]
         )
 
     def test_event_with_process_indicator_object(self):
@@ -5470,6 +5513,12 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_pe_and_section_observable_object(misp_event)
+
+    def test_event_with_person_object(self):
+        event = get_event_with_person_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_person_object(misp_event)
 
     def test_event_with_process_indicator_object(self):
         event = get_event_with_process_object_v2()
