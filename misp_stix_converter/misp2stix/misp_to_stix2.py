@@ -1735,6 +1735,36 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             identity_args.update(self._handle_observable_multiple_properties_with_data(attributes, name))
         self._append_SDO(self._create_identity(identity_args))
 
+    def _parse_person_object(self, misp_object: Union[MISPObject, dict]):
+        identity_args = self._parse_identity_args(misp_object, 'individual')
+        attributes = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=self._mapping.person_single_fields
+        )
+        if 'full-name' not in attributes:
+            name_features = ('first-name', 'middle-name', 'last-name')
+            name = [attributes.pop(key) for key in name_features if attributes.get(key)]
+            if name:
+                identity_args['name'] = ' '.join(name)
+        for key, feature in self._mapping.person_object_mapping.items():
+            if attributes.get(key):
+                identity_args[feature] = attributes.pop(key)
+        contact_information = self._parse_contact_information(
+            attributes,
+            misp_object['name']
+        )
+        if contact_information:
+            identity_args['contact_information'] = ' / '.join(contact_information)
+        if attributes:
+            identity_args.update(self._handle_observable_multiple_properties(attributes))
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                    misp_object['ObjectReference'],
+                    identity_args['id'],
+                    identity_args['modified']
+                )
+         self._append_SDO(self._create_identity(identity_args))
+
     def _parse_organization_object(self, misp_object: Union[MISPObject, dict]):
         identity_args = self._parse_identity_args(misp_object, 'organization')
         attributes = self._extract_multiple_object_attributes(

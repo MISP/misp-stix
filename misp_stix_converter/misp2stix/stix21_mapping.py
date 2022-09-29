@@ -185,6 +185,13 @@ class Stix21Mapping(Stix2Mapping):
             'parent-pid',
             'parent-command-line'
         )
+        self.__person_object_mapping = Mapping(
+            **{
+                'full-name': 'name',
+                'text': 'description',
+                'role': 'roles'
+            }
+        )
         self.__process_object_mapping = Mapping(
             features = Mapping(
                 **{
@@ -359,6 +366,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def parent_process_fields(self) -> tuple:
         return self.__parent_process_fields
+
+    @property
+    def person_object_mapping(self) -> dict:
+        return self.__person_object_mapping
 
     @property
     def process_object_mapping(self) -> dict:

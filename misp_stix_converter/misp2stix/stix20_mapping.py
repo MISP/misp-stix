@@ -85,6 +85,12 @@ class Stix20Mapping(Stix2Mapping):
             description = 'description',
             name = 'name'
         )
+        self.__person_object_mapping = Mapping(
+            **{
+                'full-name': 'name',
+                'text': 'description'
+            }
+        )
         self.__process_object_mapping = Mapping(
             features = Mapping(
                 **{
@@ -189,6 +195,10 @@ class Stix20Mapping(Stix2Mapping):
     @property
     def organization_object_mapping(self) -> dict:
         return self.__organization_object_mapping
+
+    @property
+    def person_object_mapping(self) -> dict:
+        return self.__person_object_mapping
 
     @property
     def process_object_mapping(self) -> dict:
