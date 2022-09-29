@@ -1360,6 +1360,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             identity_args['contact_information'] = ' / '.join(contact_information)
         if attributes:
             identity_args.update(self._handle_observable_multiple_properties(attributes))
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                    misp_object['ObjectReference'],
+                    identity_args['id'],
+                    identity_args['modified']
+                )
         self._append_SDO(self._create_identity(identity_args))
 
     def _parse_file_object(self, misp_object: Union[MISPObject, dict]):
@@ -1539,6 +1545,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     name
                 )
             )
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                    misp_object['ObjectReference'],
+                    identity_args['id'],
+                    identity_args['modified']
+                )
         self._append_SDO(self._create_identity(identity_args))
 
     def _parse_lnk_object(self, misp_object: Union[MISPObject, dict]):
@@ -1733,6 +1745,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             identity_args['contact_information'] = ' / '.join(contact_info)
         if attributes:
             identity_args.update(self._handle_observable_multiple_properties_with_data(attributes, name))
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                    misp_object['ObjectReference'],
+                    identity_args['id'],
+                    identity_args['modified']
+                )
         self._append_SDO(self._create_identity(identity_args))
 
     def _parse_person_object(self, misp_object: Union[MISPObject, dict]):
@@ -1763,7 +1781,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     identity_args['id'],
                     identity_args['modified']
                 )
-         self._append_SDO(self._create_identity(identity_args))
+        self._append_SDO(self._create_identity(identity_args))
 
     def _parse_organization_object(self, misp_object: Union[MISPObject, dict]):
         identity_args = self._parse_identity_args(misp_object, 'organization')
@@ -1782,6 +1800,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             identity_args['contact_information'] = ' / '.join(contact_info)
         if attributes:
             identity_args.update(self._handle_observable_multiple_properties(attributes))
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                    misp_object['ObjectReference'],
+                    identity_args['id'],
+                    identity_args['modified']
+                )
         self._append_SDO(self._create_identity(identity_args))
 
     def _parse_pe_extensions_observable(self, pe_object: dict, uuids: Optional[list] = None) -> dict:
