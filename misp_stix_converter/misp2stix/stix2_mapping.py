@@ -349,6 +349,7 @@ class Stix2Mapping:
             'parler-account': '_parse_account_object_with_attachment',
             'pe': '_populate_objects_to_parse',
             'pe-section': '_populate_objects_to_parse',
+            'person': '_parse_person_object',
             'process': '_parse_process_object',
             'reddit-account': '_parse_account_object_with_attachment',
             'registry-key': '_parse_registry_key_object',
@@ -752,6 +753,19 @@ class Stix2Mapping:
                 'name': 'name',
                 'size-in-bytes': 'size'
             }
+        )
+        self.__person_contact_info_fields = (
+            'address',
+            'e-mail',
+            'fax-number',
+            'phone-number'
+        )
+        self.__person_single_fields = (
+            'first-name',
+            'full-name',
+            'last-name',
+            'middle-name',
+            'text'
         )
         self.__reddit_account_data_fields = (
             'account-avatar',
@@ -1180,6 +1194,14 @@ class Stix2Mapping:
     @property
     def pe_section_mapping(self) -> dict:
         return self.__pe_section_mapping
+
+    @property
+    def person_contact_info_fields(self) -> tuple:
+        return self.__person_contact_info_fields
+
+    @property
+    def person_single_fields(self) -> tuple:
+        return self.__person_single_fields
 
     @property
     def reddit_account_data_fields(self) -> tuple:
