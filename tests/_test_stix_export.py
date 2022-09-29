@@ -427,6 +427,30 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(sha512_, f"{prefix}.hashes.SHA512 = '{_sha512}'")
         self.assertEqual(ssdeep_, f"{prefix}.hashes.SSDEEP = '{_ssdeep}'")
 
+    def _check_person_object(self, identity, misp_object, person_ref, identity_id):
+        self.assertEqual(identity.type, 'identity')
+        self._assert_multiple_equal(
+            identity.id,
+            person_ref,
+            f"identity--{misp_object['uuid']}"
+        )
+        self.assertEqual(identity.identity_class, 'individual')
+        timestamp = misp_object['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        self.assertEqual(identity.created, timestamp)
+        self.assertEqual(identity.modified, timestamp)
+        self.assertEqual(identity.created_by_ref, identity_id)
+        first_name, last_name, nationality, passport, phone, role = misp_object['Attribute']
+        self.assertEqual(identity.name, f"{first_name['value']} {last_name['value']}")
+        self.assertEqual(
+            identity.contact_information,
+            f"{phone['object_relation']}: {phone['value']}"
+        )
+        self.assertEqual(identity.x_misp_nationality, nationality['value'])
+        self.assertEqual(identity.x_misp_passport_number, passport['value'])
+        return role['value']
+
     def _check_relationship_features(self, relationship, source_id, target_id, relationship_type, timestamp):
         self.assertEqual(relationship.type, 'relationship')
         self.assertEqual(relationship.source_ref, source_id)
