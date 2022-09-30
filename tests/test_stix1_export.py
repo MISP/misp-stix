@@ -1689,7 +1689,7 @@ class TestStix1Export(TestSTIX):
         self._check_credential_properties(properties, attributes)
 
     def _test_event_with_custom_objects(self, event):
-        account, btc, person, report = deepcopy(event['Object'])
+        account, btc, report = deepcopy(event['Object'])
         orgc = event['Orgc']['name']
         self.parser.parse_misp_event(event)
         incident = self.parser.stix_package.incidents[0]
@@ -1716,10 +1716,7 @@ class TestStix1Export(TestSTIX):
             'Custom'
         )
         self._check_custom_properties(btc['Attribute'], btc_properties.custom_properties)
-        person_observable, report_observable = incident.related_observables.observable
-        self.assertEqual(person_observable.relationship, person['meta-category'])
-        person_properties = self._check_observable_features(person_observable.item, person, 'Custom')
-        self._check_custom_properties(person['Attribute'], person_properties.custom_properties)
+        report_observable = incident.related_observables.observable[0]
         self.assertEqual(report_observable.relationship, report['meta-category'])
         report_properties = self._check_observable_features(report_observable.item, report, 'Custom')
         self._check_custom_properties(report['Attribute'], report_properties.custom_properties)
