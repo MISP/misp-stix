@@ -130,15 +130,15 @@ class ExternalSTIX2Mapping(STIX2Mapping):
         )
         self.__observable_mapping = Mapping(**observable_mapping)
         pattern_mapping = {
-            'email-addr': 'parse_email_address_pattern',
-            'email-message': 'parse_email_message_pattern',
-            'mac-addr': 'parse_mac_address_pattern',
-            'mutex': 'parse_mutex_pattern',
-            'network-traffic': 'parse_network_traffic_pattern',
-            'process': 'parse_process_pattern',
-            'user-account': 'parse_user_account_pattern',
-            'windows-registry-key': 'parse_regkey_pattern',
-            'x509-certificate': 'parse_x509_pattern'
+            'email-addr': '_parse_email_address_pattern',
+            'email-message': '_parse_email_message_pattern',
+            'mac-addr': '_parse_mac_address_pattern',
+            'mutex': '_parse_mutex_pattern',
+            'network-traffic': '_parse_network_traffic_pattern',
+            'process': '_parse_process_pattern',
+            'user-account': '_parse_user_account_pattern',
+            'windows-registry-key': '_parse_regkey_pattern',
+            'x509-certificate': '_parse_x509_pattern'
         }
         pattern_mapping.update(
             dict.fromkeys(
@@ -223,6 +223,34 @@ class ExternalSTIX2Mapping(STIX2Mapping):
             pattern_version = self.version_attribute
         )
 
+        # STIX PATTERN TO MISP MAPPING
+        self.__domain_ip_pattern_mapping = Mapping(
+            **{
+                'domain-name': self.domain_attribute,
+                'ipv4-addr': self.ip_attribute,
+                'ipv6-addr': self.ip_attribute
+            }
+        )
+        self.__file_pattern_mapping = Mapping(
+            mime_type = self.mime_type_attribute,
+            name = self.filename_attribute,
+            name_enc = self.file_encoding_attribute,
+            size = self.size_in_bytes_attribute
+        )
+        self.__x509_pattern_mapping = Mapping(
+            is_self_signed = self.is_self_signed_attribute,
+            issuer = self.issuer_attribute,
+            serial_number = self.serial_number_attribute,
+            signature_algorithm = self.signature_algorithm_attribute,
+            subject = self.subject_attribute,
+            subject_public_key_algorithm = self.pubkey_info_algorithm_attribute,
+            subject_public_key_exponent = self.pubkey_info_exponent_attribute,
+            subject_public_key_modulus = self.pubkey_info_modulus_attribute,
+            validity_not_after = self.validity_not_after_attribute,
+            validity_not_before = self.validity_not_before_attribute,
+            version = self.version_attribute
+        )
+
     @property
     def attack_pattern_object_mapping(self) -> dict:
         return self.__attack_pattern_object_mapping
@@ -230,6 +258,14 @@ class ExternalSTIX2Mapping(STIX2Mapping):
     @property
     def course_of_action_object_mapping(self) -> dict:
         return self.__course_of_action_object_mapping
+
+    @property
+    def domain_ip_pattern_mapping(self) -> dict:
+        return self.__domain_ip_pattern_mapping
+
+    @property
+    def file_pattern_mapping(self) -> dict:
+        return self.__file_pattern_mapping
 
     @property
     def observable_mapping(self) -> dict:
@@ -250,6 +286,10 @@ class ExternalSTIX2Mapping(STIX2Mapping):
     @property
     def vulnerability_object_mapping(self) -> dict:
         return self.__vulnerability_object_mapping
+
+    @property
+    def x509_pattern_mapping(self) -> dict:
+        return self.__x509_pattern_mapping
 
     @property
     def yara_object_mapping(self) -> dict:

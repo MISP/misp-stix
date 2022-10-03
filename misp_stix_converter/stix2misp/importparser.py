@@ -8,16 +8,14 @@ from .exceptions import (SynonymsResourceJSONError, UnavailableGalaxyResourcesEr
     UnavailableSynonymsResourceError)
 from collections import defaultdict
 from pathlib import Path
-from stix2.v20.sdo import(
-    AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
-    IntrusionSet as IntrusionSet_v20, Malware as Malware_v20, Tool as Tool_v20,
-    ThreatActor as ThreatActor_v20, Vulnerability as Vulnerability_v20)
-from stix2.v21.sdo import(
-    AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
-    IntrusionSet as IntrusionSet_v21, Malware as Malware_v21, Tool as Tool_v21,
-    ThreatActor as ThreatActor_v21, Vulnerability as Vulnerability_v21)
+from stix2.v20.sdo import Indicator as Indicator_v20
+from stix2.v21.sdo import Indicator as Indicator_v21
 from typing import Union
 
+_INDICATOR_TYPING = Union[
+    Indicator_v20,
+    Indicator_v21
+]
 _ROOT_PATH = Path(__file__).parents[1].resolve()
 
 
@@ -88,6 +86,12 @@ class STIXtoMISPParser:
         message = f"Error with the Malware object with id {malware_id}: {tb}"
         self.__errors[self._identifier].add(message)
 
+    def _no_converted_content_from_pattern_warning(self, indicator: _INDICATOR_TYPING):
+        message = f"Indicator's (id: {indicator.id}) pattern: {indicator.pattern}"
+        self.__warnings[self._identifier].add(
+            f"No content to extract from the following {message}"
+        )
+
     def _object_ref_loading_error(self, object_ref: str):
         message = f"Error loading the STIX object with id {object_ref}"
         self.__errors[self._identifier].add(message)
@@ -152,6 +156,10 @@ class STIXtoMISPParser:
     def _unknown_stix_object_type_error(self, object_type: str):
         message = f"Unknown STIX object type: {object_type}"
         self.__errors[self._identifier].add(message)
+
+    def _unmapped_pattern_warning(self, indicator_id: str, feature: str):
+        message = f"Unmapped pattern part in indicator with id {indicator_id}: {feature}"
+        self.__warnings[self._identifier].add(message)
 
     def _vulnerability_error(self, vulnerability_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
