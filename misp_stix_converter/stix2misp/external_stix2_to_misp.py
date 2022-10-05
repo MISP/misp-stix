@@ -635,6 +635,24 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     attributes.append(attribute)
         self._handle_import_case(indicator, attributes, 'ip-port')
 
+    def _parse_regkey_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for identifiers, assertion, value in compiled_pattern.comparisons['windows-registry-key']:
+            if assertion != '=':
+                continue
+            identifier = identifiers[-1] if 'values' in identifiers else identifiers[0]
+            if identifier in self._mapping.regkey_pattern_mapping:
+                attribute = {'value': value}
+                attribute.update(self._mapping.regkey_pattern_mapping[identifier])
+                attributes.append(attribute)
+            else:
+                self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+        if attributes:
+            self._handle_import_case(indicator, attributes, 'registry-key')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
     def _parse_sigma_pattern(self, indicator: Indicator_v21):
         if hasattr(indicator, 'name') or hasattr(indicator, 'external_references'):
             attributes = []
@@ -708,6 +726,27 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object,
             confidence = getattr(indicator, 'confidence', None)
         )
+
+    def _parse_url_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        if 'url' in compiled_pattern.comparisons:
+            for identifiers, assertion, value in compiled_pattern.comparisons['url']:
+                if assertion != '=':
+                    continue
+                if identifiers[0] != 'value':
+                    self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+                    continue
+                attribute = {'value': value}
+                attribute.update(self._mapping.url_attribute)
+                attributes.append(attribute)
+        types = [key for key in compiled_pattern.comparisons.keys() if key != 'url']
+        if types:
+            self._unknown_pattern_mapping_warning(indicator.id, types)
+        if attributes:
+            self._handle_import_case(indicator, attributes, 'url')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
 
     def _parse_x509_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []

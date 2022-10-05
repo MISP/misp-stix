@@ -387,7 +387,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
         is_ca_attribute = {'type': 'boolean', 'object_relation': 'is_ca'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
         last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
-        last_modified_attribute = {'type': 'datetime', 'object_relation': 'last-modified'}
         last_packet_seen_attribute = {'type': 'datetime', 'object_relation': 'last-packet-seen'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
@@ -461,7 +460,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__src_as_attribute = {'type': 'AS', 'object_relation': 'src-as'}
         self.__tcp_flags_attribute = {'type': 'text', 'object_relation': 'tcp-flags'}
         self.__uri_attribute = {'type': 'uri', 'object_relation': 'uri'}
-        self.__url_attribute = {'type': 'url', 'object_relation': 'url'}
 
         # STIX TO MISP OBJECTS MAPPING
         self.__android_app_object_mapping = Mapping(
@@ -1082,16 +1080,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_url = self.url_attribute
         )
         self.__registry_key_object_mapping = Mapping(
-            key = {'type': 'regkey', 'object_relation': 'key'},
-            modified_time = last_modified_attribute,
-            x_misp_last_modified = last_modified_attribute,
+            key = self.regkey_attribute,
+            modified = self.last_modified_attribute,
+            modified_time = self.last_modified_attribute,
             x_misp_hive = {'type': 'text', 'object_relation': 'hive'},
             x_misp_root_keys = {'type': 'text', 'object_relation': 'root-keys'}
         )
         self.__registry_key_values_mapping = Mapping(
-            data = {'type': 'text', 'object_relation': 'data'},
-            data_type = {'type': 'text', 'object_relation': 'data-type'},
-            name = {'type': 'text', 'object_relation': 'name'}
+            data = self.data_attribute,
+            data_type = self.data_type_attribute,
+            name = self.name_attribute
         )
         self.__script_from_malware_object_mapping = Mapping(
             name = self.filename_attribute,
@@ -1519,10 +1517,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def uri_attribute(self) -> dict:
         return self.__uri_attribute
-
-    @property
-    def url_attribute(self) -> dict:
-        return self.__url_attribute
 
     @property
     def url_object_mapping(self) -> dict:

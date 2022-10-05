@@ -237,6 +237,14 @@ class ExternalSTIX2Mapping(STIX2Mapping):
             name_enc = self.file_encoding_attribute,
             size = self.size_in_bytes_attribute
         )
+        self.__regkey_pattern_mapping = Mapping(
+            data = self.data_attribute,
+            data_type = self.data_type_attribute,
+            modified = self.last_modified_attribute,
+            modified_time = self.last_modified_attribute,
+            name = self.name_attribute,
+            key = self.regkey_attribute
+        )
         self.__x509_pattern_mapping = Mapping(
             is_self_signed = self.is_self_signed_attribute,
             issuer = self.issuer_attribute,
@@ -278,6 +286,10 @@ class ExternalSTIX2Mapping(STIX2Mapping):
     @property
     def pattern_mapping(self) -> dict:
         return self.__pattern_mapping
+
+    @property
+    def regkey_pattern_mapping(self) -> dict:
+        return self.__regkey_pattern_mapping
 
     @property
     def sigma_object_mapping(self) -> dict:

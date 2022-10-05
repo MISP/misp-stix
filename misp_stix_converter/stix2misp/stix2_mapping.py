@@ -119,6 +119,18 @@ class STIX2Mapping:
             'object_relation': 'references'
         }
         self.__comment_attribute = Mapping(**comment_attribute)
+        self.__data_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'data'
+            }
+        )
+        self.__data_type_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'data-type'
+            }
+        )
         self.__description_attribute = Mapping(
             **{
                 'type': 'text',
@@ -161,6 +173,12 @@ class STIX2Mapping:
                 'object_relation': 'issuer'
             }
         )
+        self.__last_modified_attribute = Mapping(
+            **{
+                'type': 'datetime',
+                'object_relation': 'last-modified'
+            }
+        )
         self.__mime_type_attribute = Mapping(
             **{
                 'type': 'mime-type',
@@ -195,6 +213,12 @@ class STIX2Mapping:
             **{
                 'type': 'link',
                 'object_relation': 'references'
+            }
+        )
+        self.__regkey_attribute = Mapping(
+            **{
+                'type': 'regkey',
+                'object_relation': 'key'
             }
         )
         self.__serial_number_attribute = Mapping(
@@ -245,6 +269,12 @@ class STIX2Mapping:
             **{
                 'type': 'link',
                 'object_relation': 'ref'
+            }
+        )
+        self.__url_attribute = Mapping(
+            **{
+                'type': 'url',
+                'object_relation': 'url'
             }
         )
         self.__validity_not_after_attribute = Mapping(
@@ -323,6 +353,14 @@ class STIX2Mapping:
         return self.__description_attribute
 
     @property
+    def data_attribute(self) -> dict:
+        return self.__data_attribute
+
+    @property
+    def data_type_attribute(self) -> dict:
+        return self.__data_type_attribute
+
+    @property
     def domain_attribute(self) -> dict:
         return self.__domain_attribute
 
@@ -345,6 +383,10 @@ class STIX2Mapping:
     @property
     def issuer_attribute(self) -> dict:
         return self.__issuer_attribute
+
+    @property
+    def last_modified_attribute(self) -> dict:
+        return self.__last_modified_attribute
 
     @property
     def location_object_mapping(self) -> dict:
@@ -377,6 +419,14 @@ class STIX2Mapping:
     @property
     def pubkey_info_modulus_attribute(self) -> dict:
         return self.__pubkey_info_modulus_attribute
+
+    @property
+    def references_attribute(self) -> dict:
+        return self.__references_attribute
+
+    @property
+    def regkey_attribute(self) -> dict:
+        return self.__regkey_attribute
 
     @property
     def serial_number_attribute(self) -> dict:
@@ -435,8 +485,8 @@ class STIX2Mapping:
         return self.__timeline_mapping
 
     @property
-    def references_attribute(self) -> dict:
-        return self.__references_attribute
+    def url_attribute(self) -> dict:
+        return self.__url_attribute
 
     @property
     def validity_not_after_attribute(self) -> dict:
