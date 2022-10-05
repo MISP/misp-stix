@@ -307,6 +307,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             raise UnknownParsingFunctionError(feature)
         try:
             parser(indicator)
+        except UnknownPatternMappingError as error:
+            self._unknown_pattern_mapping_warning(indicator.id, error.__str__())
+            self._create_stix_pattern_object(indicator)
         except InvalidSTIXPatternError as error:
             self._invalid_stix_pattern_error(indicator.id, error)
             self._create_stix_pattern_object(indicator)
@@ -707,8 +710,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         try:
             feature = self._mapping.pattern_mapping[observable_types]
         except KeyError:
-            self._unknown_pattern_mapping_warning(indicator.id, observable_types)
-            self._create_stix_pattern_object(indicator)
+            raise UnknownPatternMappingError(observable_types)
         try:
             parser = getattr(self, feature)
         except AttributeError:
