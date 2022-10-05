@@ -596,7 +596,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 if assertion != '=':
                     continue
                 if 'hashes' in identifiers:
-                    hash_type = identifiers[1]
+                    hash_type = identifiers[1].lower().replace('-', '')
                     attributes.append(
                         {
                             'type': hash_type,
@@ -715,7 +715,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if assertion != '=':
                 continue
             if 'hashes' in identifiers:
-                hash_type = identifiers[1].lower()
+                hash_type = identifiers[1].lower().replace('-', '')
                 attributes.append(
                     {
                         'type': f'x509-fingerprint-{hash_type}',
