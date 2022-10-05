@@ -94,6 +94,14 @@ class STIX2PatternParser:
                 self.__set_pattern_data(pattern_data)
         self.__valid = self.__parse_err_listener(parseErrListener.err_strings)
 
+    @staticmethod
+    def __handle_value(features: list, assertion: str, value: str) -> list:
+        return [
+            [feature if isinstance(feature, str) else '[*]' for feature in features],
+            assertion,
+            value.strip("'")
+        ]
+
     def __parse_err_listener(self, err_listener):
         if len(err_listener) == 0:
             return True
@@ -103,7 +111,7 @@ class STIX2PatternParser:
     def __set_pattern_data(self, pattern_data):
         for key, values in pattern_data.comparisons.items():
             pattern_data.comparisons[key] = [
-                [keys, assertion, value.strip("'")] for keys, assertion, value in values
+                self.__handle_value(*value) for value in values
             ]
         self.__pattern_data = pattern_data
 
