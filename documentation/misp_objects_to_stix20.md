@@ -2701,7 +2701,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[file:name = 'oui' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip') AND file:size = '35' AND file:x_misp_lnk_creation_time = '2017-10-01T08:00:00' AND file:x_misp_lnk_modification_time = '2020-10-25T16:22:00' AND file:x_misp_lnk_access_time = '2021-01-01T00:00:00']",
+          "pattern": "[file:accessed = '2021-01-01T00:00:00' AND file:created = '2017-10-01T08:00:00' AND file:modified = '2020-10-25T16:22:00' AND file:name = 'oui' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip') AND file:size = '35']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -2750,11 +2750,11 @@ For the rest of this documentation, we will then, in order to keep the content c
                   },
                   "size": 35,
                   "name": "oui",
+                  "created": "2017-10-01T08:00:00Z",
+                  "modified": "2020-10-25T16:22:00Z",
+                  "accessed": "2021-01-01T00:00:00Z",
                   "parent_directory_ref": "1",
-                  "content_ref": "2",
-                  "x_misp_lnk_access_time": "2021-01-01T00:00:00",
-                  "x_misp_lnk_creation_time": "2017-10-01T08:00:00",
-                  "x_misp_lnk_modification_time": "2020-10-25T16:22:00"
+                  "content_ref": "2"
               }
           },
           "labels": [
@@ -3740,6 +3740,78 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
 
+- person
+  - MISP
+    ```json
+    {
+        "name": "person",
+        "meta-category": "misc",
+        "description": "An object which describes a person or an identity.",
+        "uuid": "868037d5-d804-4f1d-8016-f296361f9c68",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "uuid": "37c42710-aaf7-4f10-956b-f8eb7adffb81",
+                "type": "first-name",
+                "object_relation": "first-name",
+                "value": "John"
+            },
+            {
+                "uuid": "05583483-4d7f-496a-aa1b-279d484b5966",
+                "type": "last-name",
+                "object_relation": "last-name",
+                "value": "Smith"
+            },
+            {
+                "uuid": "a4e174fc-f341-432f-beb3-27b99ec22541",
+                "type": "nationality",
+                "object_relation": "nationality",
+                "value": "USA"
+            },
+            {
+                "uuid": "f6f12b78-5f96-4c64-9462-2e881d70cd4a",
+                "type": "passport-number",
+                "object_relation": "passport-number",
+                "value": "ABA9875413"
+            },
+            {
+                "uuid": "6c0a87f4-54a3-401a-a37f-13b2996d4d37",
+                "type": "phone-number",
+                "object_relation": "phone-number",
+                "value": "0123456789"
+            },
+            {
+                "uuid": "6a464f2f-1ae0-4810-ab67-378e2489b8c0",
+                "type": "text",
+                "object_relation": "role",
+                "value": "Guru"
+            }
+        ]
+    }
+    ```
+  - STIX
+    - Identity
+      ```json
+      {
+          "type": "identity",
+          "id": "identity--868037d5-d804-4f1d-8016-f296361f9c68",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "name": "John Smith",
+          "identity_class": "individual",
+          "contact_information": "phone-number: 0123456789",
+          "labels": [
+              "misp:name=\"person\"",
+              "misp:meta-category=\"misc\"",
+              "misp:to_ids=\"False\""
+          ],
+          "x_misp_nationality": "USA",
+          "x_misp_passport_number": "ABA9875413",
+          "x_misp_role": "Guru"
+      }
+      ```
+
 - process
   - MISP
     ```json
@@ -4030,7 +4102,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:x_misp_hive = 'hklm' AND windows-registry-key:x_misp_last_modified = '2020-10-25T16:22:00']",
+          "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified = '2020-10-25T16:22:00' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:x_misp_hive = 'hklm']",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -4067,8 +4139,8 @@ For the rest of this documentation, we will then, in order to keep the content c
                           "data_type": "REG_SZ"
                       }
                   ],
-                  "x_misp_hive": "hklm",
-                  "x_misp_last_modified": "2020-10-25T16:22:00"
+                  "modified": "2020-10-25T16:22:00Z",
+                  "x_misp_hive": "hklm"
               }
           },
           "labels": [

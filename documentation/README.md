@@ -360,6 +360,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | pe | Windows PE binary extension within a File Object |
 | pe & pe-sections | Windows PE binary extension within a File Object |
 | pe-section | Sections fields in the Windows PE binary extension (always exported with the related pe object) |
+| person | **Identity** |
 | process | Process Objects (potential reference to File Objects) |
 | reddit-account | User Account Object |
 | registry-key | Windows Registry Key Object |
@@ -546,6 +547,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | pe | Windows PE binary extension within a File Object |
 | pe & pe-sections | Windows PE binary extension within a File Object |
 | pe-section | Sections fields in the Windows PE binary extension (always exported with the related pe object) |
+| person | **Identity** |
 | process | Process Objects (potential reference to File Objects) |
 | reddit-account | User Account Object |
 | registry-key | Windows Registry Key Object |
