@@ -3,6 +3,7 @@
 
 from .exceptions import (AttributeFromPatternParsingError, UndefinedSTIXObjectError,
     UndefinedIndicatorError, UndefinedObservableError, UnknownParsingFunctionError)
+from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2Mapping
 from .stix2_to_misp import (
     STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
@@ -55,10 +56,6 @@ _GALAXY_TYPES = (
     'tool',
     'vulnerability'
 )
-_INDICATOR_TYPING = Union[
-    Indicator_v20,
-    Indicator_v21
-]
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20,
     ObservedData_v21

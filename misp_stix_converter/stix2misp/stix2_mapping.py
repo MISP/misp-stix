@@ -119,12 +119,112 @@ class STIX2Mapping:
             'object_relation': 'references'
         }
         self.__comment_attribute = Mapping(**comment_attribute)
-        self.__description_attribute = {'type': 'text', 'object_relation': 'description'}
-        self.__name_attribute = {'type': 'text', 'object_relation': 'name'}
+        self.__data_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'data'
+            }
+        )
+        self.__data_type_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'data-type'
+            }
+        )
+        self.__description_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'description'
+            }
+        )
+        self.__domain_attribute = Mapping(
+            **{
+                'type': 'domain',
+                'object_relation': 'domain'
+            }
+        )
+        self.__file_encoding_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'file-encoding'
+            }
+        )
+        self.__filename_attribute = Mapping(
+            **{
+                'type': 'filename',
+                'object_relation': 'filename'
+            }
+        )
+        self.__ip_attribute = Mapping(
+            **{
+                'type': 'ip-dst',
+                'object_relation': 'ip'
+            }
+        )
+        self.__is_self_signed_attribute = Mapping(
+            **{
+                'type': 'boolean',
+                'object_relation': 'self_signed'
+            }
+        )
+        self.__issuer_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'issuer'
+            }
+        )
+        self.__last_modified_attribute = Mapping(
+            **{
+                'type': 'datetime',
+                'object_relation': 'last-modified'
+            }
+        )
+        self.__mime_type_attribute = Mapping(
+            **{
+                'type': 'mime-type',
+                'object_relation': 'mimetype'
+            }
+        )
+        self.__name_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'name'
+            }
+        )
+        self.__pubkey_info_algorithm_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'pubkey-info-algorithm'
+            }
+        )
+        self.__pubkey_info_exponent_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'pubkey-info-exponent'
+            }
+        )
+        self.__pubkey_info_modulus_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'pubkey-info-modulus'
+            }
+        )
         self.__references_attribute = Mapping(
             **{
                 'type': 'link',
                 'object_relation': 'references'
+            }
+        )
+        self.__regkey_attribute = Mapping(
+            **{
+                'type': 'regkey',
+                'object_relation': 'key'
+            }
+        )
+        self.__serial_number_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'serial-number'
             }
         )
         self.__sigma_attribute = Mapping(**sigma_attribute)
@@ -140,12 +240,53 @@ class STIX2Mapping:
                 'object_relation': 'sigma-rule-name'
             }
         )
+        self.__signature_algorithm_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'signature_algorithm'
+            }
+        )
+        self.__size_in_bytes_attribute = Mapping(
+            **{
+                'type': 'size-in-bytes',
+                'object_relation': 'size-in-bytes'
+            }
+        )
         self.__snort_attribute = Mapping(**snort_attribute)
-        self.__summary_attribute = Mapping(**{'type': 'text', 'object_relation': 'summary'})
+        self.__subject_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'subject'
+            }
+        )
+        self.__summary_attribute = Mapping(
+            **{
+                'type': 'text',
+                'object_relation': 'summary'
+            }
+        )
         self.__suricata_reference_attribute = Mapping(
             **{
                 'type': 'link',
                 'object_relation': 'ref'
+            }
+        )
+        self.__url_attribute = Mapping(
+            **{
+                'type': 'url',
+                'object_relation': 'url'
+            }
+        )
+        self.__validity_not_after_attribute = Mapping(
+            **{
+                'type': 'datetime',
+                'object_relation': 'validity-not-after'
+            }
+        )
+        self.__validity_not_before_attribute = Mapping(
+            **{
+                'type': 'datetime',
+                'object_relation': 'validity-not-before'
             }
         )
         self.__version_attribute = Mapping(**version_attribute)
@@ -212,8 +353,48 @@ class STIX2Mapping:
         return self.__description_attribute
 
     @property
+    def data_attribute(self) -> dict:
+        return self.__data_attribute
+
+    @property
+    def data_type_attribute(self) -> dict:
+        return self.__data_type_attribute
+
+    @property
+    def domain_attribute(self) -> dict:
+        return self.__domain_attribute
+
+    @property
+    def file_encoding_attribute(self) -> dict:
+        return self.__file_encoding_attribute
+
+    @property
+    def filename_attribute(self) -> dict:
+        return self.__filename_attribute
+
+    @property
+    def ip_attribute(self) -> dict:
+        return self.__ip_attribute
+
+    @property
+    def is_self_signed_attribute(self) -> dict:
+        return self.__is_self_signed_attribute
+
+    @property
+    def issuer_attribute(self) -> dict:
+        return self.__issuer_attribute
+
+    @property
+    def last_modified_attribute(self) -> dict:
+        return self.__last_modified_attribute
+
+    @property
     def location_object_mapping(self) -> dict:
         return self.__location_object_mapping
+
+    @property
+    def mime_type_attribute(self) -> dict:
+        return self.__mime_type_attribute
 
     @property
     def name_attribute(self) -> dict:
@@ -228,6 +409,30 @@ class STIX2Mapping:
         return self.__observable_object_types
 
     @property
+    def pubkey_info_algorithm_attribute(self) -> dict:
+        return self.__pubkey_info_algorithm_attribute
+
+    @property
+    def pubkey_info_exponent_attribute(self) -> dict:
+        return self.__pubkey_info_exponent_attribute
+
+    @property
+    def pubkey_info_modulus_attribute(self) -> dict:
+        return self.__pubkey_info_modulus_attribute
+
+    @property
+    def references_attribute(self) -> dict:
+        return self.__references_attribute
+
+    @property
+    def regkey_attribute(self) -> dict:
+        return self.__regkey_attribute
+
+    @property
+    def serial_number_attribute(self) -> dict:
+        return self.__serial_number_attribute
+
+    @property
     def sigma_attribute(self) -> dict:
         return self.__sigma_attribute
 
@@ -240,6 +445,14 @@ class STIX2Mapping:
         return self.__sigma_rule_name_attribute
 
     @property
+    def signature_algorithm_attribute(self) -> dict:
+        return self.__signature_algorithm_attribute
+
+    @property
+    def size_in_bytes_attribute(self) -> dict:
+        return self.__size_in_bytes_attribute
+
+    @property
     def snort_attribute(self) -> dict:
         return self.__snort_attribute
 
@@ -250,6 +463,10 @@ class STIX2Mapping:
     @property
     def stix_to_misp_mapping(self) -> dict:
         return self.__stix_to_misp_mapping
+
+    @property
+    def subject_attribute(self) -> dict:
+        return self.__subject_attribute
 
     @property
     def summary_attribute(self) -> dict:
@@ -268,8 +485,16 @@ class STIX2Mapping:
         return self.__timeline_mapping
 
     @property
-    def references_attribute(self) -> dict:
-        return self.__references_attribute
+    def url_attribute(self) -> dict:
+        return self.__url_attribute
+
+    @property
+    def validity_not_after_attribute(self) -> dict:
+        return self.__validity_not_after_attribute
+
+    @property
+    def validity_not_before_attribute(self) -> dict:
+        return self.__validity_not_before_attribute
 
     @property
     def version_attribute(self) -> dict:

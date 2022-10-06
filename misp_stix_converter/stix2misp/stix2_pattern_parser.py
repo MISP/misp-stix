@@ -67,7 +67,7 @@ class STIX2PatternParser:
             if obj_validator_results:
                 parseErrListener.err_strings.extend(obj_validator_results)
             else:
-                self.__pattern_data = pattern_data
+                self.__set_pattern_data(pattern_data)
         self.__valid = self.__parse_err_listener(parseErrListener.err_strings)
 
     def _load_stix_21_pattern(self, pattern_str: str):
@@ -91,14 +91,29 @@ class STIX2PatternParser:
             if obj_validator_results:
                 parseErrListener.err_strings.extend(obj_validator_results)
             else:
-                self.__pattern_data = pattern_data
+                self.__set_pattern_data(pattern_data)
         self.__valid = self.__parse_err_listener(parseErrListener.err_strings)
+
+    @staticmethod
+    def __handle_value(features: list, assertion: str, value: str) -> list:
+        return [
+            [feature if isinstance(feature, str) else '[*]' for feature in features],
+            assertion,
+            value.strip("'")
+        ]
 
     def __parse_err_listener(self, err_listener):
         if len(err_listener) == 0:
             return True
         self.__errors = err_listener
         return False
+
+    def __set_pattern_data(self, pattern_data):
+        for key, values in pattern_data.comparisons.items():
+            pattern_data.comparisons[key] = [
+                self.__handle_value(*value) for value in values
+            ]
+        self.__pattern_data = pattern_data
 
     @staticmethod
     def __set_version(version: str) -> str:

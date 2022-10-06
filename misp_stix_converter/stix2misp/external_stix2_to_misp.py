@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .exceptions import (UnknownParsingFunctionError, UnknownObservableMappingError,
-    UnknownPatternMappingError, UnknownPatternTypeError)
+from .exceptions import (InvalidSTIXPatternError, UnknownParsingFunctionError,
+    UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
 from .external_stix2_mapping import ExternalSTIX2Mapping
+from .importparser import _INDICATOR_TYPING
+from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (STIX2toMISPParser, _ATTACK_PATTERN_TYPING,
     _COURSE_OF_ACTION_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from collections import defaultdict
@@ -16,6 +18,7 @@ from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
     CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21,
     Indicator as Indicator_v21, Note, ObservedData as ObservedData_v21,
     Vulnerability as Vulnerability_v21)
+from stix2patterns.inspector import _PatternData as PatternData
 from typing import Optional, Union
 
 _OBSERVABLE_OBJECTS_TYPING = Union[
@@ -44,7 +47,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         except AttributeError:
             self._custom_object = {custom_object.id: data_to_load}
 
-    def _load_indicator(self, indicator: Union[Indicator_v20, Indicator_v21]):
+    def _load_indicator(self, indicator: _INDICATOR_TYPING):
         data_to_load = self._build_data_to_load(indicator)
         try:
             self._indicator[indicator.id] = data_to_load
@@ -152,7 +155,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             raise UnknownObservableMappingError(observable_types)
         return f'{feature}_refs'
 
-    def _handle_pattern_mapping(self, indicator: Union[Indicator_v20, Indicator_v21]) -> str:
+    def _handle_pattern_mapping(self, indicator: _INDICATOR_TYPING) -> str:
         """
         Mapping between an indicator pattern and the function used to parse it and
         convert it into a MISP attribute or object.
@@ -304,8 +307,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             raise UnknownParsingFunctionError(feature)
         try:
             parser(indicator)
-        except Exception as exception:
-            self._indicator_error(indicator.id, exception)
+        except UnknownPatternMappingError as error:
+            self._unknown_pattern_mapping_warning(indicator.id, error.__str__())
+            self._create_stix_pattern_object(indicator)
+        except InvalidSTIXPatternError as error:
+            self._invalid_stix_pattern_error(indicator.id, error)
+            self._create_stix_pattern_object(indicator)
 
     def _parse_intrusion_set(self, intrusion_set_ref: str):
         """
@@ -532,7 +539,17 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     #                          PATTERNS PARSING FUNCTIONS                          #
     ################################################################################
 
-    def _create_stix_pattern_object(self, indicator: Union[Indicator_v20, Indicator_v21]):
+    def _compile_stix_pattern(self, indicator: _INDICATOR_TYPING) -> PatternData:
+        try:
+            self._pattern_parser.handle_indicator(indicator)
+        except AttributeError:
+            self._pattern_parser = STIX2PatternParser()
+            self._pattern_parser.handle_indicator(indicator)
+        if not self._pattern_parser.valid:
+            raise InvalidSTIXPatternError(indicator.pattern)
+        return self._pattern_parser.pattern
+
+    def _create_stix_pattern_object(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('stix2-pattern', indicator)
         if hasattr(indicator, 'description'):
             misp_object.comment = indicator.description
@@ -551,6 +568,93 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             }
         )
         self._add_misp_object(misp_object)
+
+    def _parse_domain_ip_port_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        features = ('domain-name', 'ipv4-addr', 'ipv6-addr')
+        for feature in features:
+            if feature in compiled_pattern.comparisons:
+                for identifiers, assertion, value in compiled_pattern.comparisons[feature]:
+                    if assertion != '=':
+                        continue
+                    if identifiers[0] != 'value':
+                        self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+                        continue
+                    attribute = {'value': value}
+                    attribute.update(self._mapping.domain_ip_pattern_mapping[feature])
+                    attributes.append(attribute)
+        types = [key for key in compiled_pattern.comparisons.keys() if key not in features]
+        if types:
+            self._unknown_pattern_mapping_warning(indicator.id, types)
+        if attributes:
+            self._handle_import_case(indicator, attributes, 'domain-ip')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
+    def _parse_file_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        if 'file' in compiled_pattern.comparisons:
+            for identifiers, assertion, value in compiled_pattern.comparisons['file']:
+                if assertion != '=':
+                    continue
+                if 'hashes' in identifiers:
+                    hash_type = identifiers[1].lower().replace('-', '')
+                    attributes.append(
+                        {
+                            'type': hash_type,
+                            'object_relation': hash_type,
+                            'value': value
+                        }
+                    )
+                    continue
+                if identifiers[0] in self._mapping.file_pattern_mapping:
+                    attribute = {'value': value}
+                    attribute.update(self._mapping.file_pattern_mapping[identifiers[0]])
+                    attributes.append(attribute)
+                else:
+                    self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+        types = [key for key in compiled_pattern.comparisons.keys() if key != 'file']
+        if types:
+            self._unknown_pattern_mapping_warning(indicator.id, types)
+        if attributes:
+            self._handle_import_case(indicator, attributes, 'file')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
+    def _parse_ip_address_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for feature in ('ipv4-addr', 'ipv6-addr'):
+            if feature in compiled_pattern.comparisons:
+                for identifiers, assertion, value in compiled_pattern.comparisons[feature]:
+                    if assertion != '=':
+                        continue
+                    if identifiers[0] != 'value':
+                        self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+                        continue
+                    attribute = {'value': value}
+                    attribute.update(self._mapping.ip_attribute)
+                    attributes.append(attribute)
+        self._handle_import_case(indicator, attributes, 'ip-port')
+
+    def _parse_regkey_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for identifiers, assertion, value in compiled_pattern.comparisons['windows-registry-key']:
+            if assertion != '=':
+                continue
+            identifier = identifiers[-1] if 'values' in identifiers else identifiers[0]
+            if identifier in self._mapping.regkey_pattern_mapping:
+                attribute = {'value': value}
+                attribute.update(self._mapping.regkey_pattern_mapping[identifier])
+                attributes.append(attribute)
+            else:
+                self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+        if attributes:
+            self._handle_import_case(indicator, attributes, 'registry-key')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
 
     def _parse_sigma_pattern(self, indicator: Indicator_v21):
         if hasattr(indicator, 'name') or hasattr(indicator, 'external_references'):
@@ -600,6 +704,19 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             confidence = getattr(indicator, 'confidence', None)
         )
 
+    def _parse_stix_pattern(self, indicator: _INDICATOR_TYPING):
+        compiled_pattern = self._compile_stix_pattern(indicator)
+        observable_types = '_'.join(sorted(compiled_pattern.comparisons.keys()))
+        try:
+            feature = self._mapping.pattern_mapping[observable_types]
+        except KeyError:
+            raise UnknownPatternMappingError(observable_types)
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        parser(compiled_pattern, indicator)
+
     def _parse_suricata_pattern(self, indicator: Indicator_v21):
         misp_object = self._create_misp_object('suricata', indicator)
         for feature, mapping in self._mapping.suricata_object_mapping.items():
@@ -611,6 +728,54 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object,
             confidence = getattr(indicator, 'confidence', None)
         )
+
+    def _parse_url_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        if 'url' in compiled_pattern.comparisons:
+            for identifiers, assertion, value in compiled_pattern.comparisons['url']:
+                if assertion != '=':
+                    continue
+                if identifiers[0] != 'value':
+                    self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+                    continue
+                attribute = {'value': value}
+                attribute.update(self._mapping.url_attribute)
+                attributes.append(attribute)
+        types = [key for key in compiled_pattern.comparisons.keys() if key != 'url']
+        if types:
+            self._unknown_pattern_mapping_warning(indicator.id, types)
+        if attributes:
+            self._handle_import_case(indicator, attributes, 'url')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
+    def _parse_x509_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for identifiers, assertion, value in compiled_pattern.comparisons['x509-certificate']:
+            if assertion != '=':
+                continue
+            if 'hashes' in identifiers:
+                hash_type = identifiers[1].lower().replace('-', '')
+                attributes.append(
+                    {
+                        'type': f'x509-fingerprint-{hash_type}',
+                        'object_relation': f'x509-fingerprint-{hash_type}',
+                        'value': value
+                    }
+                )
+                continue
+            if identifiers[0] in self._mapping.x509_pattern_mapping:
+                attribute = {'value': value}
+                attribute.update(self._mapping.x509_pattern_mapping[identifiers[0]])
+                attributes.append(attribute)
+            else:
+                self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+        if attributes:
+            self._handle_import_case(indicator, attributes, 'x509')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
 
     def _parse_yara_pattern(self, indicator: Indicator_v21):
         if hasattr(indicator, 'pattern_version'):
