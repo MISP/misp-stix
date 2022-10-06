@@ -1027,6 +1027,11 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         registry_key_args = {}
         if attributes.get('key'):
             registry_key_args['key'] = attributes.pop('key')
+        if attributes.get('last-modified'):
+            modified = attributes.pop('last-modified')
+            if not isinstance(modified, datetime) and not modified.endswith('Z'):
+                modified = f"{modified}Z"
+            registry_key_args['modified'] = modified
         return registry_key_args
 
     def _parse_regkey_key_values_pattern(self, attributes: dict, prefix: str) -> list:
@@ -1034,6 +1039,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         if attributes.get('key'):
             value = self._sanitize_registry_key_value(attributes.pop('key').strip("'").strip('"'))
             pattern.append(f"{prefix}:key = '{value}'")
+        if attributes.get('last-modified'):
+            modified = self._handle_value_for_pattern(attributes.pop('last-modified'))
+            pattern.append(f"{prefix}:modified = '{modified}'")
         return pattern
 
     def _parse_url_object_observable(self, misp_object: Union[MISPObject, dict]):
