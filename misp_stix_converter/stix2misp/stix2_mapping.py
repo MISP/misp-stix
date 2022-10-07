@@ -101,203 +101,169 @@ class STIX2Mapping:
 
         # ATTRIBUTES MAPPING DECLARATION
         comment_attribute = {'type': 'comment', 'object_relation': 'comment'}
-        sigma_attribute = {'type': 'sigma', 'object_relation': 'sigma'}
+        reference_attribute = {'type': 'link', 'object_relation': 'reference'}
+        references_attribute = {'type': 'link', 'object_relation': 'references'}
         snort_attribute = {'type': 'snort', 'object_relation': 'suricata'}
         version_attribute = {'type': 'text', 'object_relation': 'version'}
-        yara_attribute = {'type': 'yara', 'object_relation': 'yara'}
 
         # SINGLE ATTRIBUTES MAPPING
         self.__accuracy_radius_attribute = Mapping(
-            **{
-                'type': 'float',
-                'object_relation': 'accuracy_radius'
-            }
+            **{'type': 'float', 'object_relation': 'accuracy_radius'}
         )
-        self.__attack_pattern_id_attribute = {'type': 'text', 'object_relation': 'id'}
-        self.__attack_pattern_references_attribute = {
-            'type': 'link',
-            'object_relation': 'references'
-        }
+        self.__args_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'args'}
+        )
+        self.__attack_pattern_id_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'id'}
+        )
+        self.__attack_pattern_references_attribute = Mapping(**references_attribute)
+        self.__command_line_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'command-line'}
+        )
         self.__comment_attribute = Mapping(**comment_attribute)
+        self.__content_type_attribute = Mapping(
+            **{'type': 'other', 'object_relation': 'content-type'}
+        )
+        self.__cookie_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'cookie'}
+        )
+        self.__creation_time_attribute = Mapping(
+            **{'type': 'datetime', 'object_relation': 'creation-time'}
+        )
+        self.__current_directory_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'current-directory'}
+        )
         self.__data_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'data'
-            }
+            **{'type': 'text', 'object_relation': 'data'}
         )
         self.__data_type_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'data-type'
-            }
+            **{'type': 'text', 'object_relation': 'data-type'}
         )
         self.__description_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'description'
-            }
+            **{'type': 'text', 'object_relation': 'description'}
         )
         self.__domain_attribute = Mapping(
-            **{
-                'type': 'domain',
-                'object_relation': 'domain'
-            }
+            **{'type': 'domain', 'object_relation': 'domain'}
+        )
+        self.__dst_port_attribute = Mapping(
+            **{'type': 'port', 'object_relation': 'dst-port'}
+        )
+        self.__email_body_attribute = Mapping(
+            **{'type': 'email-body', 'object_relation': 'email-body'}
+        )
+        self.__email_subject_attribute = Mapping(
+            **{'type': 'email-subject', 'object_relation': 'subject'}
         )
         self.__file_encoding_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'file-encoding'
-            }
+            **{'type': 'text', 'object_relation': 'file-encoding'}
         )
         self.__filename_attribute = Mapping(
-            **{
-                'type': 'filename',
-                'object_relation': 'filename'
-            }
+            **{'type': 'filename', 'object_relation': 'filename'}
+        )
+        self.__hidden_attribute = Mapping(
+            **{'type': 'boolean', 'object_relation': 'hidden'}
         )
         self.__ip_attribute = Mapping(
-            **{
-                'type': 'ip-dst',
-                'object_relation': 'ip'
-            }
+            **{'type': 'ip-dst', 'object_relation': 'ip'}
         )
         self.__is_self_signed_attribute = Mapping(
-            **{
-                'type': 'boolean',
-                'object_relation': 'self_signed'
-            }
+            **{'type': 'boolean', 'object_relation': 'self_signed'}
         )
         self.__issuer_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'issuer'
-            }
+            **{'type': 'text', 'object_relation': 'issuer'}
         )
         self.__last_modified_attribute = Mapping(
-            **{
-                'type': 'datetime',
-                'object_relation': 'last-modified'
-            }
+            **{'type': 'datetime', 'object_relation': 'last-modified'}
+        )
+        self.__message_id_attribute = Mapping(
+            **{'type': 'email-message-id', 'object_relation': 'message-id'}
+        )
+        self.__method_attribute = Mapping(
+            **{'type': 'http-method', 'object_relation': 'method'}
         )
         self.__mime_type_attribute = Mapping(
-            **{
-                'type': 'mime-type',
-                'object_relation': 'mimetype'
-            }
+            **{'type': 'mime-type', 'object_relation': 'mimetype'}
         )
         self.__name_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'name'
-            }
+            **{'type': 'text', 'object_relation': 'name'}
+        )
+        self.__pid_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'pid'}
         )
         self.__pubkey_info_algorithm_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'pubkey-info-algorithm'
-            }
+            **{'type': 'text', 'object_relation': 'pubkey-info-algorithm'}
         )
         self.__pubkey_info_exponent_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'pubkey-info-exponent'
-            }
+            **{'type': 'text', 'object_relation': 'pubkey-info-exponent'}
         )
         self.__pubkey_info_modulus_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'pubkey-info-modulus'
-            }
+            **{'type': 'text', 'object_relation': 'pubkey-info-modulus'}
         )
-        self.__references_attribute = Mapping(
-            **{
-                'type': 'link',
-                'object_relation': 'references'
-            }
+        self.__references_attribute = Mapping(**references_attribute)
+        self.__referer_attribute = Mapping(
+            **{'type': 'other', 'object_relation': 'referer'}
         )
         self.__regkey_attribute = Mapping(
-            **{
-                'type': 'regkey',
-                'object_relation': 'key'
-            }
+            **{'type': 'regkey', 'object_relation': 'key'}
+        )
+        self.__send_date_attribute = Mapping(
+            **{'type': 'datetime', 'object_relation': 'send-date'}
         )
         self.__serial_number_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'serial-number'
-            }
+            **{'type': 'text', 'object_relation': 'serial-number'}
         )
-        self.__sigma_attribute = Mapping(**sigma_attribute)
-        self.__sigma_reference_attribute = Mapping(
-            **{
-                'type': 'link',
-                'object_relation': 'reference'
-            }
+        self.__sigma_attribute = Mapping(
+            **{'type': 'sigma', 'object_relation': 'sigma'}
         )
+        self.__sigma_reference_attribute = Mapping(**reference_attribute)
         self.__sigma_rule_name_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'sigma-rule-name'
-            }
+            **{'type': 'text', 'object_relation': 'sigma-rule-name'}
         )
         self.__signature_algorithm_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'signature_algorithm'
-            }
+            **{'type': 'text', 'object_relation': 'signature_algorithm'}
         )
         self.__size_in_bytes_attribute = Mapping(
-            **{
-                'type': 'size-in-bytes',
-                'object_relation': 'size-in-bytes'
-            }
+            **{'type': 'size-in-bytes', 'object_relation': 'size-in-bytes'}
         )
         self.__snort_attribute = Mapping(**snort_attribute)
+        self.__src_port_attribute = Mapping(
+            **{'type': 'port', 'object_relation': 'src-port'}
+        )
         self.__subject_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'subject'
-            }
+            **{'type': 'text', 'object_relation': 'subject'}
         )
         self.__summary_attribute = Mapping(
-            **{
-                'type': 'text',
-                'object_relation': 'summary'
-            }
+            **{'type': 'text', 'object_relation': 'summary'}
         )
         self.__suricata_reference_attribute = Mapping(
-            **{
-                'type': 'link',
-                'object_relation': 'ref'
-            }
+            **{'type': 'link', 'object_relation': 'ref'}
+        )
+        self.__uri_attribute = Mapping(
+            **{'type': 'uri', 'object_relation': 'uri'}
         )
         self.__url_attribute = Mapping(
-            **{
-                'type': 'url',
-                'object_relation': 'url'
-            }
+            **{'type': 'url', 'object_relation': 'url'}
+        )
+        self.__user_agent_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'user-agent'}
         )
         self.__validity_not_after_attribute = Mapping(
-            **{
-                'type': 'datetime',
-                'object_relation': 'validity-not-after'
-            }
+            **{'type': 'datetime', 'object_relation': 'validity-not-after'}
         )
         self.__validity_not_before_attribute = Mapping(
-            **{
-                'type': 'datetime',
-                'object_relation': 'validity-not-before'
-            }
+            **{'type': 'datetime', 'object_relation': 'validity-not-before'}
         )
         self.__version_attribute = Mapping(**version_attribute)
         self.__vulnerability_attribute = Mapping(
-            **{
-                'type': 'vulnerability',
-                'object_relation': 'id'
-            }
+            **{'type': 'vulnerability', 'object_relation': 'id'}
         )
-        self.__yara_attribute = Mapping(**yara_attribute)
-        self.__yara_rule_name_attribute = Mapping(**{'type': 'text', 'object_relation': 'yara-rule-name'})
+        self.__yara_attribute = Mapping(
+            **{'type': 'yara', 'object_relation': 'yara'}
+        )
+        self.__yara_reference_attribute = Mapping(**reference_attribute)
+        self.__yara_rule_name_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'yara-rule-name'}
+        )
 
         # MISP OBJECTS MAPPING
         self.__connection_protocols = {
@@ -329,6 +295,10 @@ class STIX2Mapping:
         return self.__accuracy_radius_attribute
 
     @property
+    def args_attribute(self) -> dict:
+        return self.__args_attribute
+
+    @property
     def attack_pattern_id_attribute(self) -> dict:
         return self.__attack_pattern_id_attribute
 
@@ -341,12 +311,32 @@ class STIX2Mapping:
         return self.__bundle_to_misp_mapping
 
     @property
+    def command_line_attribute(self) -> dict:
+        return self.__command_line_attribute
+
+    @property
     def comment_attribute(self) -> dict:
         return self.__comment_attribute
 
     @property
     def connection_protocols(self) -> dict:
         return self.__connection_protocols
+
+    @property
+    def content_type_attribute(self) -> dict:
+        return self.__content_type_attribute
+
+    @property
+    def cookie_attribute(self) -> dict:
+        return self.__cookie_attribute
+
+    @property
+    def creation_time_attribute(self) -> dict:
+        return self.__creation_time_attribute
+
+    @property
+    def current_directory_attribute(self) -> dict:
+        return self.__current_directory_attribute
 
     @property
     def description_attribute(self) -> dict:
@@ -365,12 +355,28 @@ class STIX2Mapping:
         return self.__domain_attribute
 
     @property
+    def dst_port_attribute(self) -> dict:
+        return self.__dst_port_attribute
+
+    @property
+    def email_body_attribute(self) -> dict:
+        return self.__email_body_attribute
+
+    @property
+    def email_subject_attribute(self) -> dict:
+        return self.__email_subject_attribute
+
+    @property
     def file_encoding_attribute(self) -> dict:
         return self.__file_encoding_attribute
 
     @property
     def filename_attribute(self) -> dict:
         return self.__filename_attribute
+
+    @property
+    def hidden_attribute(self) -> dict:
+        return self.__hidden_attribute
 
     @property
     def ip_attribute(self) -> dict:
@@ -393,6 +399,14 @@ class STIX2Mapping:
         return self.__location_object_mapping
 
     @property
+    def message_id_attribute(self) -> dict:
+        return self.__message_id_attribute
+
+    @property
+    def method_attribute(self) -> dict:
+        return self.__method_attribute
+
+    @property
     def mime_type_attribute(self) -> dict:
         return self.__mime_type_attribute
 
@@ -407,6 +421,10 @@ class STIX2Mapping:
     @property
     def observable_object_types(self) -> tuple:
         return self.__observable_object_types
+
+    @property
+    def pid_attribute(self) -> dict:
+        return self.__pid_attribute
 
     @property
     def pubkey_info_algorithm_attribute(self) -> dict:
@@ -425,8 +443,16 @@ class STIX2Mapping:
         return self.__references_attribute
 
     @property
+    def referer_attribute(self) -> dict:
+        return self.__referer_attribute
+
+    @property
     def regkey_attribute(self) -> dict:
         return self.__regkey_attribute
+
+    @property
+    def send_date_attribute(self) -> dict:
+        return self.__send_date_attribute
 
     @property
     def serial_number_attribute(self) -> dict:
@@ -457,6 +483,10 @@ class STIX2Mapping:
         return self.__snort_attribute
 
     @property
+    def src_port_attribute(self) -> dict:
+        return self.__src_port_attribute
+
+    @property
     def stix_object_loading_mapping(self) -> dict:
         return self.__stix_object_loading_mapping
 
@@ -485,8 +515,16 @@ class STIX2Mapping:
         return self.__timeline_mapping
 
     @property
+    def uri_attribute(self) -> dict:
+        return self.__uri_attribute
+
+    @property
     def url_attribute(self) -> dict:
         return self.__url_attribute
+
+    @property
+    def user_agent_attribute(self) -> dict:
+        return self.__user_agent_attribute
 
     @property
     def validity_not_after_attribute(self) -> dict:
@@ -507,6 +545,10 @@ class STIX2Mapping:
     @property
     def yara_attribute(self) -> dict:
         return self.__yara_attribute
+
+    @property
+    def yara_reference_attribute(self) -> dict:
+        return self.__yara_reference_attribute
 
     @property
     def yara_rule_name_attribute(self) -> dict:

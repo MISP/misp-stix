@@ -592,6 +592,44 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
+    def _parse_email_address_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for identifiers, assertion, value in compiled_pattern.comparisons['email-addr']:
+            if assertion != '=':
+                continue
+            if identifiers[0] in self._mapping.email_address_pattern_mapping:
+                attribute = {'value': value}
+                attribute.update(
+                    self._mapping.email_address_pattern_mapping[identifiers[0]]
+                )
+                attributes.append(attribute)
+            else:
+                self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+        if attributes:
+            self._handle_import_case(indicator, attributes, 'email')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
+    def _parse_email_message_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for identifiers, assertion, value in compiled_pattern.comparisons['email-message']:
+            if assertion != '=':
+                continue
+            if identifiers[0] in self._mapping.email_message_pattern_mapping:
+                attribute = {'value': value}
+                attribute.update(
+                    self._mapping.email_message_pattern_mapping[identifiers[0]]
+                )
+                attributes.append(attribute)
+            else:
+                self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+        if attributes:
+            self._handle_import_case(indicator, attributes, 'file')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
     def _parse_file_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
         if 'file' in compiled_pattern.comparisons:
@@ -637,6 +675,23 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     attribute.update(self._mapping.ip_attribute)
                     attributes.append(attribute)
         self._handle_import_case(indicator, attributes, 'ip-port')
+
+    def _parse_process_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for identifiers, assertion, value in compiled_pattern.comparisons['process']:
+            if assertion != '=':
+                continue
+            if identifiers[0] in self._mapping.process_pattern_mapping:
+                attribute = {'value': value}
+                attribute.update(self._mapping.process_pattern_mapping[identifiers[0]])
+                attributes.append(attribute)
+            else:
+                self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+        if attributes:
+            self._handle_import_case(indicator, attributes, 'process')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
 
     def _parse_regkey_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
