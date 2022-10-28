@@ -94,7 +94,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 for reference in references:
                     if reference in self._event_report_matching:
                         object_refs.update(self._event_report_matching[reference])
-                note_args['object_refs'] = list(object_refs)
+                note_args['object_refs'] = list(object_refs) if object_refs else self._handle_empty_note_refs()
                 self._append_SDO(Note(**note_args))
         else:
             self._handle_attributes_and_objects()
@@ -1621,6 +1621,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if ':' in address:
             return IPv6Address
         return IPv4Address
+
+    def _handle_empty_note_refs(self) -> list:
+        object_type = 'report' if self._is_published() else 'grouping'
+        return [f"{object_type}--{self._misp_event['uuid']}"]
 
     def _parse_image_attachment(self, attachment: tuple) -> Union[dict, None]:
         if len(attachment) < 3:

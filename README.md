@@ -87,7 +87,7 @@ Parameters specific to STIX 1 export:
 
 ### In Python scripts
 
-Given a MISP Event (with its metadata fields, attributes, objects, galaxies and tags), declared in an `event` variable in JSON format, you can get the result of a conversion into one of the supported STIX versions:
+Given a MISP Event (with its metadata fields, attributes, objects, galaxies and tags), declared in an `event` variable in Python dict format, you can get the result of a conversion into one of the supported STIX versions:
 
 - Convert a MISP Event in STIX1:
 

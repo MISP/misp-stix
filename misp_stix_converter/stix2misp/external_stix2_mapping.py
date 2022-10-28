@@ -231,11 +231,36 @@ class ExternalSTIX2Mapping(STIX2Mapping):
                 'ipv6-addr': self.ip_attribute
             }
         )
+        self.__email_address_pattern_mapping = Mapping(
+            **{
+                'display_names': {
+                    'type': 'email-dst-display-name',
+                    'object_relation': 'to-display-name'
+                },
+                'value': {
+                    'type': 'email-dst', 'object_relation': 'to'
+                }
+            }
+        )
+        self.__email_message_pattern_mapping = Mapping(
+            body = self.email_body_attribute,
+            date = self.send_date_attribute,
+            message_id = self.message_id_attribute,
+            subject = self.email_subject_attribute
+        )
         self.__file_pattern_mapping = Mapping(
             mime_type = self.mime_type_attribute,
             name = self.filename_attribute,
             name_enc = self.file_encoding_attribute,
             size = self.size_in_bytes_attribute
+        )
+        self.__process_pattern_mapping = Mapping(
+            arguments = self.args_attribute,
+            command_line = self.command_line_attribute,
+            created = self.creation_time_attribute,
+            created_time = self.creation_time_attribute,
+            cwd = self.current_directory_attribute,
+            is_hidden = self.hidden_attribute,
         )
         self.__regkey_pattern_mapping = Mapping(
             data = self.data_attribute,
@@ -243,7 +268,8 @@ class ExternalSTIX2Mapping(STIX2Mapping):
             modified = self.last_modified_attribute,
             modified_time = self.last_modified_attribute,
             name = self.name_attribute,
-            key = self.regkey_attribute
+            key = self.regkey_attribute,
+            pid = self.pid_attribute
         )
         self.__x509_pattern_mapping = Mapping(
             is_self_signed = self.is_self_signed_attribute,
@@ -272,6 +298,14 @@ class ExternalSTIX2Mapping(STIX2Mapping):
         return self.__domain_ip_pattern_mapping
 
     @property
+    def email_address_pattern_mapping(self) -> dict:
+        return self.__email_address_pattern_mapping
+
+    @property
+    def email_message_pattern_mapping(self) -> dict:
+        return self.__email_message_pattern_mapping
+
+    @property
     def file_pattern_mapping(self) -> dict:
         return self.__file_pattern_mapping
 
@@ -286,6 +320,10 @@ class ExternalSTIX2Mapping(STIX2Mapping):
     @property
     def pattern_mapping(self) -> dict:
         return self.__pattern_mapping
+
+    @property
+    def process_pattern_mapping(self) -> dict:
+        return self.__process_pattern_mapping
 
     @property
     def regkey_pattern_mapping(self) -> dict:
