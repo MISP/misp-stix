@@ -1022,6 +1022,17 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         self._handle_object_observable(misp_object, objects)
 
+    def _parse_identity_object(self, misp_object: Union[MISPObject, dict]):
+        identity_args = self._extract_multiple_object_attributes(
+            misp_object['Attribute'],
+            force_single=self._mapping.identity_single_fields
+        )
+        self._handle_non_indicator_object(
+            misp_object,
+            identity_args,
+            'identity'
+        )
+
     def _parse_image_object_observable(self, misp_object: Union[MISPObject, dict]):
         attributes = self._extract_multiple_object_attributes_with_uuid_and_data(
             misp_object['Attribute'],
