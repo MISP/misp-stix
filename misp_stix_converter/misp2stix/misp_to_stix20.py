@@ -1104,7 +1104,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return AttackPattern(**attack_pattern_args)
 
     def _create_bundle(self) -> Bundle:
-        return Bundle(self.stix_objects, allow_custom=True)
+        return Bundle(self.stix_objects, allow_custom=True, id="bundle--" + self._misp_event.get('uuid'))
 
     @staticmethod
     def _create_campaign(campaign_args: dict) -> Campaign:
