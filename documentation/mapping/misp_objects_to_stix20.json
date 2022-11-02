@@ -2207,6 +2207,61 @@
             }
         }
     },
+    "identity": {
+        "MISP": {
+            "name": "identity",
+            "description": "Identities can represent actual individuals, organizations, or groups as well as classes of individuals, organizations, systems or groups.",
+            "meta-category": "misc",
+            "uuid": "a54e32af-5569-4949-b1fe-ad75054cde45",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "John Doe"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "contact_information",
+                    "value": "email-address: jdoe@email.com / phone-number: 0123456789"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "description",
+                    "value": "Unknown person"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "identity_class",
+                    "value": "individual"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "roles",
+                    "value": "Placeholder name"
+                }
+            ]
+        },
+        "STIX": {
+            "Identity": {
+                "type": "identity",
+                "id": "identity--a54e32af-5569-4949-b1fe-ad75054cde45",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "name": "John Doe",
+                "description": "Unknown person",
+                "identity_class": "individual",
+                "contact_information": "email-address: jdoe@email.com / phone-number: 0123456789",
+                "labels": [
+                    "misp:name=\"identity\"",
+                    "misp:meta-category=\"misc\"",
+                    "misp:to_ids=\"False\""
+                ],
+                "x_misp_roles": "Placeholder name"
+            }
+        }
+    },
     "image": {
         "MISP": {
             "name": "image",

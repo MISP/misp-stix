@@ -4348,6 +4348,47 @@ def get_event_with_http_request_object():
     return event
 
 
+def get_event_with_identity_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        {
+            "name": "identity",
+            "description": "Identities can represent actual individuals, organizations, or groups as well as classes of individuals, organizations, systems or groups.",
+            "meta-category": "misc",
+            "uuid": "a54e32af-5569-4949-b1fe-ad75054cde45",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "John Doe"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "contact_information",
+                    "value": "email-address: jdoe@email.com / phone-number: 0123456789"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "description",
+                    "value": "Unknown person"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "identity_class",
+                    "value": "individual"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "roles",
+                    "value": "Placeholder name"
+                }
+            ]
+        }
+    ]
+    return event
+
+
 def get_event_with_image_object():
     event = deepcopy(_BASE_EVENT)
     with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:

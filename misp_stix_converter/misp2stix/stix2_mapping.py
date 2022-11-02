@@ -336,6 +336,7 @@ class Stix2Mapping:
             'github-user': '_parse_account_object_with_attachment',
             'gitlab-user': '_parse_account_object',
             'http-request': '_parse_http_request_object',
+            'identity': '_parse_identity_object',
             'image': '_parse_image_object',
             'ip-port': '_parse_ip_port_object',
             'legal-entity': '_parse_legal_entity_object',
@@ -561,6 +562,12 @@ class Stix2Mapping:
             'text',
             'uri',
             'url'
+        )
+        self.__identity_single_fields = (
+            'contact_information',
+            'description',
+            'identity_class',
+            'name'
         )
         self.__image_data_fields = (
             'attachment',
@@ -1066,6 +1073,10 @@ class Stix2Mapping:
     @property
     def http_request_single_fields(self) -> tuple:
         return self.__http_request_single_fields
+
+    @property
+    def identity_single_fields(self) -> tuple:
+        return self.__identity_single_fields
 
     @property
     def image_data_fields(self) -> tuple:

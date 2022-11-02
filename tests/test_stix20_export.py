@@ -2609,6 +2609,30 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(domain_name.value, host)
         self.assertEqual(domain_name.resolves_to_refs, ['2'])
 
+    def _test_event_with_identity_object(self, event):
+        orgc = event['Orgc']
+        misp_object = deepcopy(event['Object'][0])
+        self.parser.parse_misp_event(event)
+        created_by_ref_identity, report, identity = self.parser.stix_objects
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(created_by_ref_identity, orgc, timestamp)
+        object_ref = self._check_report_features(report, event, identity_id, timestamp)[0]
+        self.assertEqual(identity.type, 'identity')
+        self._assert_multiple_equal(
+            identity.id,
+            object_ref,
+            f"identity--{misp_object['uuid']}"
+        )
+        self.assertEqual(identity.created_by_ref, identity_id)
+        name, contact_information, description, identity_class, roles = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(identity.name, name)
+        self.assertEqual(identity.contact_information, contact_information)
+        self.assertEqual(identity.description, description)
+        self.assertEqual(identity.identity_class, identity_class)
+        self.assertEqual(identity.x_misp_roles, roles)
+
     def _test_event_with_image_indicator_object(self, event):
         attributes, pattern = self._run_indicator_from_object_tests(event)
         attachment, filename, url, text = (attribute['value'] for attribute in attributes)
@@ -3636,6 +3660,14 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
             observed_data = self.parser.stix_objects[-1]
         )
 
+    def test_event_with_identity_object(self):
+        event = get_event_with_identity_object()
+        self._test_event_with_identity_object(event['Event'])
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            identity = self.parser.stix_objects[-1]
+        )
+
     def test_event_with_image_indicator_object(self):
         event = get_event_with_image_object()
         self._test_event_with_image_indicator_object(event['Event'])
@@ -4111,6 +4143,12 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_http_request_observable_object(misp_event)
+
+    def test_event_with_identity_object(self):
+        event = get_event_with_identity_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_identity_object(misp_event)
 
     def test_event_with_image_indicator_object(self):
         event = get_event_with_image_object()
