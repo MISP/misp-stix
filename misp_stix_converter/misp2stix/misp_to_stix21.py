@@ -64,6 +64,24 @@ class CustomMispObject():
     pass
 
 
+@CustomObject(
+    'x-misp-galaxy-cluster',
+    [
+        ('id', IDProperty('x-misp-galaxy-cluster')),
+        ('labels', ListProperty(StringProperty, required=True)),
+        ('created', TimestampProperty(required=True, precision='millisecond')),
+        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.1')),
+        ('x_misp_name', StringProperty(required=True)),
+        ('x_misp_type', StringProperty(required=True)),
+        ('x_misp_value', StringProperty(required=True)),
+        ('x_misp_description', StringProperty(required=True))
+    ]
+)
+class CustomGalaxyCluster:
+    pass
+
+
 class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def __init__(self, interoperability=False):
         super().__init__(interoperability)
@@ -1463,6 +1481,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_custom_attribute(self, custom_args: dict) -> CustomAttribute:
         self._clean_custom_properties(custom_args)
         return CustomAttribute(**custom_args)
+
+    def _create_custom_galaxy(self, custom_args: dict) -> CustomGalaxyCluster:
+        return CustomGalaxyCluster(**custom_args)
 
     def _create_custom_object(self, custom_args: dict) -> CustomMispObject:
         self._clean_custom_properties(custom_args)

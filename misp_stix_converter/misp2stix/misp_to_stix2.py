@@ -10,7 +10,7 @@ from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from pymisp import MISPAttribute, MISPEvent, MISPObject
+from pymisp import MISPAttribute, MISPEvent, MISPGalaxy, MISPGalaxyCluster, MISPObject
 from stix2.hashes import check_hash, Hash
 from stix2.properties import ListProperty, StringProperty
 from stix2.v20.bundle import Bundle as Bundle_v20
@@ -846,15 +846,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _resolve_objects(self):
         for misp_object in self._misp_event['Object']:
-            try:
-                object_name = misp_object['name']
-                if object_name in self._mapping.objects_mapping:
-                    getattr(self, self._mapping.objects_mapping[object_name])(misp_object)
-                else:
-                    self._parse_custom_object(misp_object)
-                    self._object_not_mapped_warning(object_name)
-            except Exception as exception:
-                self._object_error(misp_object, exception)
+            # try:
+            object_name = misp_object['name']
+            if object_name in self._mapping.objects_mapping:
+                getattr(self, self._mapping.objects_mapping[object_name])(misp_object)
+            else:
+                self._parse_custom_object(misp_object)
+                self._object_not_mapped_warning(object_name)
+            # except Exception as exception:
+            #     self._object_error(misp_object, exception)
 
     def _extract_multiple_object_attributes_escaped(self, attributes: list, force_single: Optional[tuple] = None) -> dict:
         attributes_dict = defaultdict(list)
@@ -990,9 +990,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 if galaxy_type in self._mapping.galaxy_types_mapping:
                     to_call = self._mapping.galaxy_types_mapping[galaxy_type]
                     getattr(self, to_call.format('attribute'))(galaxy, object_id, timestamp)
-                    tag_names.update(self._quick_fetch_tag_names(galaxy))
                 else:
-                    self._object_galaxy_not_mapped_warning(galaxy_type, misp_object['name'])
+                    self._handle_undefined_attribute_galaxy(galaxy, object_id, timestamp)
+                tag_names.update(self._quick_fetch_tag_names(galaxy))
             return tuple(tag for tag in tags if tag not in tag_names)
         return tuple(tags)
 
@@ -2298,6 +2298,21 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if object_ref not in self.__object_refs:
                 self.__object_refs.append(object_ref)
 
+    def _handle_undefined_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+                                           object_id: str, timestamp: datetime):
+        object_refs = self._parse_undefined_galaxy(galaxy, timestamp)
+        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+
+    def _handle_undefined_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+        object_refs = self._parse_undefined_galaxy(
+            galaxy, self._datetime_from_timestamp(self._misp_event['timestamp'])
+        )
+        self._handle_object_refs(object_refs)
+
+    def _handle_undefined_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+        object_refs = self._parse_undefined_galaxy(galaxy)
+        self._handle_object_refs(object_refs)
+
     def _is_galaxy_parsed(self, object_refs: list, cluster: dict) -> bool:
         object_id = cluster['uuid']
         if object_id in self.unique_ids:
@@ -2556,6 +2571,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         object_refs = self._parse_tool_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
+    def _parse_undefined_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+                                timestamp: Optional[datetime] = None) -> list:
+        object_refs = []
+        for cluster in galaxy['GalaxyCluster']:
+            if self._is_galaxy_parsed(object_refs, cluster):
+                continue
+            custom_args = self._cteate_custom_galaxy_args(
+                cluster, galaxy['name'], timestamp
+            )
+            custom_galaxy = self._create_custom_galaxy(custom_args)
+            self.__objects.append(custom_galaxy)
+            custom_id = f"x-misp-galaxy-cluster--{cluster['uuid']}"
+            object_refs.append(custom_id)
+            self.__ids[cluster['uuid']] = custom_id
+        return object_refs
+
     def _parse_vulnerability_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
         object_refs = self._parse_vulnerability_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
@@ -2605,6 +2636,30 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'payload_bin': data,
             'x_misp_filename': value
         }
+
+    def _create_custom_galaxy_args(
+            self, cluster: Union[MISPGalaxyCluster, dict], galaxy_name: str,
+            timestamp: Optional[datetime] = None) -> dict:
+        custom_args = {
+            'id': f"x-misp-galaxy-cluster--{cluster['uuid']}",
+            'labels': self._create_galaxy_labels(galaxy_name, cluster),
+            'x_misp_name': galaxy_name,
+            'x_misp_type': cluster['type'],
+            'x_misp_value': cluster['value'],
+            'x_misp_description': cluster['description'],
+            'interoperability': True
+        }
+        if timestamp is None:
+            if not cluster.get('timestamp'):
+                return custom_args
+            timestamp = self._datetime_from_timestamp(cluster['timestamp'])
+        custom_args.update(
+            {
+                'created': timestamp,
+                'modified': timestamp
+            }
+        )
+        return custom_args
 
     def _create_galaxy_args(self, cluster: Union[MISPGalaxyCluster, dict],
                             description: str, name: str, object_id: str,

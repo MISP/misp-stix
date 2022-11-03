@@ -1417,6 +1417,11 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
                     to_call = self._mapping.galaxy_types_mapping[galaxy_type]
                     getattr(self, to_call.format('object'))(galaxy, stix_object)
                     tag_names.update(self._quick_fetch_tag_names(galaxy))
+                else:
+                    self._object_galaxy_incompatible_warning(
+                        galaxy_type,
+                        misp_object['name']
+                    )
             return tuple(tag for tag in tags if tag not in tag_names)
         return tuple(tags)
 
@@ -1441,9 +1446,15 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         if galaxies:
             tag_names = set()
             for galaxy_type, galaxy in galaxies.items():
-                to_call = self._mapping.galaxy_types_mapping[galaxy_type]
-                getattr(self, to_call.format('attribute'))(galaxy, indicator)
-                tag_names.update(self._quick_fetch_tag_names(galaxy))
+                if galaxy_type in self._mapping.galaxy_types_mapping:
+                    to_call = self._mapping.galaxy_types_mapping[galaxy_type]
+                    getattr(self, to_call.format('attribute'))(galaxy, indicator)
+                    tag_names.update(self._quick_fetch_tag_names(galaxy))
+                else:
+                    self._object_galaxy_not_mapped_warning(
+                        galaxy_type,
+                        misp_object['name']
+                    )
             return tuple(tag for tag in tags if tag not in tag_names)
         return tuple(tags)
 
@@ -2165,6 +2176,12 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     ################################################################################
     #                          GALAXIES PARSING FUNCTIONS                          #
     ################################################################################
+
+    def _handle_undefined_event_galaxy(self, galaxy: dict):
+        self._event_galaxy_not_mapped_warning(galaxy['type'])
+
+    def _handle_undefined_parent_galaxy(self, galaxy: dict):
+        self._parent_galaxy_not_mapped_warning(galaxy['type'])
 
     def _parse_attack_pattern_event_galaxy(self, galaxy: dict):
         galaxy_name = galaxy['name']
