@@ -390,7 +390,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], indicator_id)
 
-    def _handle_attribute_observable(self, attribute: Union[MISPAttribute, dict], observable: Union[dict, list]):
+    def _handle_attribute_observable(self, attribute: Union[MISPAttribute, dict],
+                                     observable: Union[dict, list]):
         observable_id = getattr(self, self._id_parsing_function['attribute'])('observed-data', attribute)
         observable_args = {
             'id': observable_id,
@@ -2330,13 +2331,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                             return True
         return False
 
-    def _parse_attack_pattern_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
+    def _parse_attack_pattern_attribute_galaxy(self, galaxy: dict, object_id: str,
+                                               timestamp: datetime):
         object_refs = self._parse_attack_pattern_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
 
     def _parse_attack_pattern_event_galaxy(self, galaxy: dict):
-        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
-        object_refs = self._parse_attack_pattern_galaxy(galaxy, timestamp)
+        object_refs = self._parse_attack_pattern_galaxy(
+            galaxy, self._datetime_from_timestamp(self._misp_event['timestamp'])
+        )
         self._handle_object_refs(object_refs)
 
     def _parse_attack_pattern_galaxy(self, galaxy: dict, timestamp: Optional[datetime] = None) -> list:
@@ -2369,13 +2372,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         object_refs = self._parse_attack_pattern_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
-    def _parse_course_of_action_attribute_galaxy(self, galaxy: dict, object_id: str, timestamp: datetime):
+    def _parse_course_of_action_attribute_galaxy(self, galaxy: dict, object_id: str,
+                                                 timestamp: datetime):
         object_refs = self._parse_course_of_action_galaxy(galaxy, timestamp)
         self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
 
     def _parse_course_of_action_event_galaxy(self, galaxy: dict):
-        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
-        object_refs = self._parse_course_of_action_galaxy(galaxy, timestamp)
+        object_refs = self._parse_course_of_action_galaxy(
+            galaxy, self._datetime_from_timestamp(self._misp_event['timestamp'])
+        )
         self._handle_object_refs(object_refs)
 
     def _parse_course_of_action_galaxy(self, galaxy: dict, timestamp: Optional[datetime] = None) -> list:
@@ -2409,8 +2414,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
 
     def _parse_intrusion_set_event_galaxy(self, galaxy: dict):
-        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
-        object_refs = self._parse_intrusion_set_galaxy(galaxy, timestamp)
+        object_refs = self._parse_intrusion_set_galaxy(
+            galaxy, self._datetime_from_timestamp(self._misp_event['timestamp'])
+        )
         self._handle_object_refs(object_refs)
 
     def _parse_intrusion_set_galaxy(self, galaxy: dict, timestamp: Optional[datetime] = None) -> list:
@@ -2448,8 +2454,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
 
     def _parse_malware_event_galaxy(self, galaxy: dict):
-        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
-        object_refs = self._parse_malware_galaxy(galaxy, timestamp)
+        object_refs = self._parse_malware_galaxy(
+            galaxy, self._datetime_from_timestamp(self._misp_event['timestamp'])
+        )
         self._handle_object_refs(object_refs)
 
     def _parse_malware_galaxy(self, galaxy: dict, timestamp: Optional[datetime] = None) -> list:
@@ -2483,8 +2490,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
 
     def _parse_threat_actor_event_galaxy(self, galaxy: dict):
-        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
-        object_refs = self._parse_threat_actor_galaxy(galaxy, timestamp)
+        object_refs = self._parse_threat_actor_galaxy(
+            galaxy, self._datetime_from_timestamp(self._misp_event['timestamp'])
+        )
         self._handle_object_refs(object_refs)
 
     def _parse_threat_actor_galaxy(self, galaxy: dict, timestamp: Optional[datetime] = None) -> list:
@@ -2517,8 +2525,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
 
     def _parse_tool_event_galaxy(self, galaxy: dict):
-        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
-        object_refs = self._parse_tool_galaxy(galaxy, timestamp)
+        object_refs = self._parse_tool_galaxy(
+            galaxy, self._datetime_from_timestamp(self._misp_event['timestamp'])
+        )
         self._handle_object_refs(object_refs)
 
     def _parse_tool_galaxy(self, galaxy: dict, timestamp: Optional[datetime] = None) -> list:
@@ -2552,8 +2561,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
 
     def _parse_vulnerability_event_galaxy(self, galaxy: dict):
-        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
-        object_refs = self._parse_vulnerability_galaxy(galaxy, timestamp)
+        object_refs = self._parse_vulnerability_galaxy(
+            galaxy, self._datetime_from_timestamp(self._misp_event['timestamp'])
+        )
         self._handle_object_refs(object_refs)
 
     def _parse_vulnerability_galaxy(self, galaxy: dict, timestamp: Optional[datetime] = None) -> list:
@@ -2596,7 +2606,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'x_misp_filename': value
         }
 
-    def _create_galaxy_args(self, cluster: dict, description: str, name: str, object_id: str, timestamp: Optional[datetime] = None) -> dict:
+    def _create_galaxy_args(self, cluster: Union[MISPGalaxyCluster, dict],
+                            description: str, name: str, object_id: str,
+                            timestamp: Optional[datetime] = None) -> dict:
         galaxy_args = {
             'id': object_id,
             'type': object_id.split('--')[0],
