@@ -2577,12 +2577,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         for cluster in galaxy['GalaxyCluster']:
             if self._is_galaxy_parsed(object_refs, cluster):
                 continue
-            custom_args = self._cteate_custom_galaxy_args(
-                cluster, galaxy['name'], timestamp
+            custom_id = f"x-misp-galaxy-cluster--{cluster['uuid']}"
+            custom_args = self._create_custom_galaxy_args(
+                cluster, galaxy['name'], galaxy['description'], custom_id, timestamp
             )
             custom_galaxy = self._create_custom_galaxy(custom_args)
             self.__objects.append(custom_galaxy)
-            custom_id = f"x-misp-galaxy-cluster--{cluster['uuid']}"
             object_refs.append(custom_id)
             self.__ids[cluster['uuid']] = custom_id
         return object_refs
@@ -2637,16 +2637,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'x_misp_filename': value
         }
 
-    def _create_custom_galaxy_args(
-            self, cluster: Union[MISPGalaxyCluster, dict], galaxy_name: str,
-            timestamp: Optional[datetime] = None) -> dict:
+    def _create_custom_galaxy_args(self, cluster: Union[MISPGalaxyCluster, dict],
+                                   galaxy_name: str, description: str, custom_id: str,
+                                   timestamp: Optional[datetime] = None) -> dict:
         custom_args = {
-            'id': f"x-misp-galaxy-cluster--{cluster['uuid']}",
+            'id': custom_id,
             'labels': self._create_galaxy_labels(galaxy_name, cluster),
             'x_misp_name': galaxy_name,
             'x_misp_type': cluster['type'],
             'x_misp_value': cluster['value'],
-            'x_misp_description': cluster['description'],
+            'x_misp_description': f"{description} | {cluster['description']}",
             'interoperability': True
         }
         if timestamp is None:
