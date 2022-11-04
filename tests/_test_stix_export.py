@@ -184,6 +184,22 @@ class TestSTIX2Export(TestSTIX):
                 attribute['value']
             )
 
+    def _check_custom_galaxy_features(self, stix_object, galaxy, timestamp):
+        cluster = galaxy['GalaxyCluster'][0]
+        self.assertEqual(stix_object.type, 'x-misp-galaxy-cluster')
+        self.assertEqual(stix_object.id, f"x-misp-galaxy-cluster--{cluster['uuid']}")
+        self.assertEqual(stix_object.created, timestamp)
+        self.assertEqual(stix_object.modified, timestamp)
+        self.assertEqual(stix_object.x_misp_name, galaxy['name'])
+        self.assertEqual(stix_object.x_misp_type, cluster['type'])
+        self.assertEqual(stix_object.x_misp_value, cluster['value'])
+        self.assertEqual(
+            stix_object.x_misp_description,
+            f"{galaxy['description']} | {cluster['description']}"
+        )
+        self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
+        self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
+
     def _check_email_address(self, address_object, address, display_name=None):
         self.assertEqual(address_object.type, 'email-addr')
         self.assertEqual(address_object.value, address)
@@ -219,10 +235,13 @@ class TestSTIX2Export(TestSTIX):
 
     def _check_galaxy_features(self, stix_object, galaxy, timestamp, killchain, synonyms):
         cluster = galaxy['GalaxyCluster'][0]
+        self.assertEqual(stix_object.id, f"{stix_object.type}--{cluster['uuid']}")
         self.assertEqual(stix_object.created, timestamp)
         self.assertEqual(stix_object.modified, timestamp)
         self.assertEqual(stix_object.name, cluster['value'])
-        self.assertEqual(stix_object.description, f"{galaxy['description']} | {cluster['description']}")
+        self.assertEqual(
+            stix_object.description, f"{galaxy['description']} | {cluster['description']}"
+        )
         self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
         self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
         if killchain:

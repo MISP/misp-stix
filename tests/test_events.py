@@ -826,6 +826,21 @@ _TEST_MALWARE_GALAXY = {
     ]
 }
 
+_TEST_TEA_MATRIX_GALAXY = {
+    "uuid": "c5f2dfb4-21a1-42d8-a452-1d3c36a204ff",
+    "name": "Tea Matrix",
+    "type": "tea-matrix",
+    "description": "Tea Matrix",
+    "GalaxyCluster": [
+        {
+            "uuid": "24430dc6-9c27-4b3c-a5e7-6dda478fffa0",
+            "type": "tea-matrix",
+            "value": "Milk in tea",
+            "description": "Milk in tea"
+        }
+    ]
+}
+
 _TEST_THREAT_ACTOR_GALAXY = {
     "uuid": "698774c7-8022-42c4-917f-8d6e4f06ada3",
     "name": "Threat Actor",
@@ -2973,6 +2988,14 @@ def get_event_with_course_of_action_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
+    ]
+    return event
+
+
+def get_event_with_custom_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_TEA_MATRIX_GALAXY)
     ]
     return event
 

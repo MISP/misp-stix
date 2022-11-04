@@ -4378,6 +4378,14 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
         self.assertEqual(course_of_action.type, 'course-of-action')
         self._check_galaxy_features(course_of_action, galaxy, timestamp, False, False)
 
+    def _test_event_with_custom_galaxy(self, event):
+        galaxy = event['Galaxy'][0]
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        custom_galaxy = self._run_galaxy_tests(event, timestamp)
+        self._check_custom_galaxy_features(custom_galaxy, galaxy, timestamp)
+
     def _test_event_with_intrusion_set_galaxy(self, event):
         galaxy = event['Galaxy'][0]
         timestamp = event['timestamp']
@@ -4443,6 +4451,10 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             summary = 'mitre-course-of-action, mitre-enterprise-attack-course-of-action, mitre-mobile-attack-course-of-action'
         )
 
+    def test_event_with_custom_galaxy(self):
+        event = get_event_with_custom_galaxy()
+        self._test_event_with_custom_galaxy(event['Event'])
+
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()
         self._test_event_with_intrusion_set_galaxy(event['Event'])
@@ -4501,6 +4513,12 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_course_of_action_galaxy(misp_event)
+
+    def test_event_with_custom_galaxy(self):
+        event = get_event_with_custom_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_custom_galaxy(misp_event)
 
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()

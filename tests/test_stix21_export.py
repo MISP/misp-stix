@@ -5658,7 +5658,6 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         attack_pattern = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(attack_pattern.type, 'attack-pattern')
-        self.assertEqual(attack_pattern.id, f"attack-pattern--{galaxy['GalaxyCluster'][0]['uuid']}")
         self._check_galaxy_features(attack_pattern, galaxy, timestamp, True, False)
 
     def _test_event_with_course_of_action_galaxy(self, event):
@@ -5668,11 +5667,15 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         course_of_action = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(course_of_action.type, 'course-of-action')
-        self.assertEqual(
-            course_of_action.id,
-            f"course-of-action--{galaxy['GalaxyCluster'][0]['uuid']}"
-        )
         self._check_galaxy_features(course_of_action, galaxy, timestamp, False, False)
+
+    def _test_event_with_custom_galaxy(self, event):
+        galaxy = event['Galaxy'][0]
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        custom_galaxy = self._run_galaxy_tests(event, timestamp)
+        self._check_custom_galaxy_features(custom_galaxy, galaxy, timestamp)
 
     def _test_event_with_intrusion_set_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -5681,7 +5684,6 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         intrusion_set = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(intrusion_set.type, 'intrusion-set')
-        self.assertEqual(intrusion_set.id, f"intrusion-set--{galaxy['GalaxyCluster'][0]['uuid']}")
         self._check_galaxy_features(intrusion_set, galaxy, timestamp, False, True)
 
     def _test_event_with_malware_galaxy(self, event):
@@ -5691,7 +5693,6 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         malware = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(malware.type, 'malware')
-        self.assertEqual(malware.id, f"malware--{galaxy['GalaxyCluster'][0]['uuid']}")
         self._check_galaxy_features(malware, galaxy, timestamp, True, True)
 
     def _test_event_with_threat_actor_galaxy(self, event):
@@ -5701,7 +5702,6 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         threat_actor = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(threat_actor.type, 'threat-actor')
-        self.assertEqual(threat_actor.id, f"threat-actor--{galaxy['GalaxyCluster'][0]['uuid']}")
         self._check_galaxy_features(threat_actor, galaxy, timestamp, False, True)
 
     def _test_event_with_tool_galaxy(self, event):
@@ -5711,7 +5711,6 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         tool = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(tool.type, 'tool')
-        self.assertEqual(tool.id, f"tool--{galaxy['GalaxyCluster'][0]['uuid']}")
         self._check_galaxy_features(tool, galaxy, timestamp, True, True)
 
     def _test_event_with_vulnerability_galaxy(self, event):
@@ -5721,7 +5720,6 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         vulnerability = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(vulnerability.type, 'vulnerability')
-        self.assertEqual(vulnerability.id, f"vulnerability--{galaxy['GalaxyCluster'][0]['uuid']}")
         self._check_galaxy_features(vulnerability, galaxy, timestamp, False, False)
 
 
@@ -5743,6 +5741,10 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
             course_of_action = self.parser.stix_objects[-1],
             summary = 'mitre-course-of-action, mitre-enterprise-attack-course-of-action, mitre-mobile-attack-course-of-action'
         )
+
+    def test_event_with_custom_galaxy(self):
+        event = get_event_with_custom_galaxy()
+        self._test_event_with_custom_galaxy(event['Event'])
 
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()
@@ -5808,6 +5810,12 @@ class TestSTIX21MISPGalaxiesExport(TestSTIX21GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_course_of_action_galaxy(misp_event)
+
+    def test_event_with_custom_galaxy(self):
+        event = get_event_with_custom_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_custom_galaxy(misp_event)
 
     def test_event_with_intrusion_set_galaxy(self):
         event = get_event_with_intrusion_set_galaxy()
