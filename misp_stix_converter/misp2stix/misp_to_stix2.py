@@ -846,15 +846,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _resolve_objects(self):
         for misp_object in self._misp_event['Object']:
-            # try:
-            object_name = misp_object['name']
-            if object_name in self._mapping.objects_mapping:
-                getattr(self, self._mapping.objects_mapping[object_name])(misp_object)
-            else:
-                self._parse_custom_object(misp_object)
-                self._object_not_mapped_warning(object_name)
-            # except Exception as exception:
-            #     self._object_error(misp_object, exception)
+            try:
+                object_name = misp_object['name']
+                if object_name in self._mapping.objects_mapping:
+                    getattr(self, self._mapping.objects_mapping[object_name])(misp_object)
+                else:
+                    self._parse_custom_object(misp_object)
+                    self._object_not_mapped_warning(object_name)
+            except Exception as exception:
+                self._object_error(misp_object, exception)
 
     def _extract_multiple_object_attributes_escaped(self, attributes: list, force_single: Optional[tuple] = None) -> dict:
         attributes_dict = defaultdict(list)
