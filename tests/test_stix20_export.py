@@ -407,28 +407,53 @@ class TestSTIX20AttributesExport(TestSTIX20GenericExport):
     def _test_embedded_indicator_attribute_galaxy(self, event):
         orgc = event['Orgc']
         attribute = event['Attribute'][0]
+        event_galaxy = deepcopy(event['Galaxy'][0])
         self.parser.parse_misp_event(event)
-        bundle = self._check_bundle_features(8)
-        identity, report, attack_pattern, course_of_action, indicator, malware, *relationships = bundle.objects
+        bundle = self._check_bundle_features(10)
+        identity, report, attack_pattern, course_of_action, custom, indicator, malware, *relationships = bundle.objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_refs = self._check_report_features(report, event, identity_id, timestamp)
         self.assertEqual(report.published, timestamp)
-        ap_ref, coa_ref, indicator_ref, malware_ref, apr_ref, coar_ref = object_refs
-        ap_relationship, coa_relationship = relationships
-        self.assertEqual(attack_pattern.id, ap_ref)
-        self.assertEqual(course_of_action.id, coa_ref)
-        self.assertEqual(indicator.id, indicator_ref)
-        self.assertEqual(malware.id, malware_ref)
-        self.assertEqual(ap_relationship.id, apr_ref)
-        self.assertEqual(coa_relationship.id, coar_ref)
+        ap_ref, coa_ref, custom_ref, indicator_ref, malware_ref, apr_ref, coar_ref, customr_ref = object_refs
+        ap_relationship, coa_relationship, custom_relationship = relationships
+        ap_galaxy, coa_galaxy, custom_galaxy = attribute['Galaxy']
+        self._assert_multiple_equal(
+            attack_pattern.id,
+            ap_ref,
+            f"attack-pattern--{ap_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
+        self._assert_multiple_equal(
+            course_of_action.id,
+            coa_ref,
+            f"course-of-action--{coa_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
+        self._assert_multiple_equal(
+            custom.id,
+            custom_ref,
+            f"x-misp-galaxy-cluster--{custom_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
+        self._assert_multiple_equal(
+            indicator.id,
+            indicator_ref,
+            f"indicator--{attribute['uuid']}"
+        )
+        self._assert_multiple_equal(
+            malware.id,
+            malware_ref,
+            f"malware--{event_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
+        self._assert_multiple_equal(ap_relationship.id, apr_ref)
+        self._assert_multiple_equal(coa_relationship.id, coar_ref)
+        self.assertEqual(custom_relationship.id, customr_ref)
         timestamp = attribute['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self._check_relationship_features(ap_relationship, indicator_ref, ap_ref, 'indicates', timestamp)
         self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'has', timestamp)
+        self._check_relationship_features(custom_relationship, indicator_ref, custom_ref, 'has', timestamp)
 
     def _test_embedded_non_indicator_attribute_galaxy(self, event):
         orgc = event['Orgc']
@@ -2058,28 +2083,57 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self._add_object_ids_flag(event)
         orgc = event['Orgc']
         misp_object = deepcopy(event['Object'][0])
+        tool_galaxy, event_coa_galaxy, event_custom_galaxy = deepcopy(event['Galaxy'])
         self.parser.parse_misp_event(event)
-        bundle = self._check_bundle_features(8)
-        identity, report, malware, coa, indicator, tool, *relationships = bundle.objects
+        bundle = self._check_bundle_features(10)
+        identity, report, malware, coa, custom, indicator, tool, *relationships = bundle.objects
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_refs = self._check_report_features(report, event, identity_id, timestamp)
         self.assertEqual(report.published, timestamp)
-        malware_ref, coa_ref, indicator_ref, tool_ref, mr_ref, coar_ref = object_refs
-        malware_relationship, coa_relationship = relationships
-        self.assertEqual(malware.id, malware_ref)
-        self.assertEqual(coa.id, coa_ref)
-        self.assertEqual(indicator.id, indicator_ref)
-        self.assertEqual(tool.id, tool_ref)
+        malware_ref, coa_ref, custom_ref, indicator_ref, tool_ref, mr_ref, coar_ref, customr_ref = object_refs
+        malware_relationship, coa_relationship, custom_relationship = relationships
+        malware_galaxy = misp_object['Attribute'][0]['Galaxy'][0]
+        coa_galaxy = misp_object['Attribute'][1]['Galaxy'][0]
+        custom_galaxy = misp_object['Attribute'][2]['Galaxy'][0]
+        self._assert_multiple_equal(
+            malware.id,
+            malware_ref,
+            f"malware--{malware_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
+        self._assert_multiple_equal(
+            coa.id,
+            coa_ref,
+            f"course-of-action--{event_coa_galaxy['GalaxyCluster'][0]['uuid']}",
+            f"course-of-action--{coa_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
+        self._assert_multiple_equal(
+            custom.id,
+            custom_ref,
+            f"x-misp-galaxy-cluster--{event_custom_galaxy['GalaxyCluster'][0]['uuid']}",
+            f"x-misp-galaxy-cluster--{custom_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
+        self._assert_multiple_equal(
+            indicator.id,
+            indicator_ref,
+            f"indicator--{misp_object['uuid']}"
+        )
+        self._assert_multiple_equal(
+            tool.id,
+            tool_ref,
+            f"tool--{tool_galaxy['GalaxyCluster'][0]['uuid']}"
+        )
         self.assertEqual(malware_relationship.id, mr_ref)
         self.assertEqual(coa_relationship.id, coar_ref)
+        self.assertEqual(custom_relationship.id, customr_ref)
         timestamp = misp_object['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self._check_relationship_features(malware_relationship, indicator_ref, malware_ref, 'indicates', timestamp)
         self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'has', timestamp)
+        self._check_relationship_features(custom_relationship, indicator_ref, custom_ref, 'has', timestamp)
 
     def _test_embedded_non_indicator_object_galaxy(self, event):
         orgc = event['Orgc']

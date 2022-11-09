@@ -3165,10 +3165,12 @@ def get_indicator_attribute_with_galaxy():
 
 def get_embedded_indicator_attribute_galaxy():
     attribute = get_indicator_attribute_with_galaxy()
+    attribute['Galaxy'].append(deepcopy(_TEST_TEA_MATRIX_GALAXY))
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [attribute]
     event['Event']['Galaxy'] = [
-        deepcopy(_TEST_MALWARE_GALAXY)
+        deepcopy(_TEST_MALWARE_GALAXY),
+        deepcopy(_TEST_TEA_MATRIX_GALAXY)
     ]
     return event
 
@@ -3989,10 +3991,12 @@ def get_embedded_indicator_object_galaxy():
     misp_object['Attribute'][1]['Galaxy'] = [
         deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
     ]
+    misp_object['Attribute'][2]['Galaxy'] = [deepcopy(_TEST_TEA_MATRIX_GALAXY)]
     event['Event']['Object'] = [misp_object]
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_TOOL_GALAXY),
-        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
+        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY),
+        deepcopy(_TEST_TEA_MATRIX_GALAXY)
     ]
     return event
 
