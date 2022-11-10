@@ -884,7 +884,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__network_connection_object_mapping = Mapping(
             dst_port = self.dst_port_attribute,
             src_port = src_port_attribute,
-            start = self.first_packet_seen_attribute,
+            start = first_packet_seen_attribute,
             x_misp_community_id = community_id_attribute,
             x_misp_hostname_dst = hostname_dst_attribute,
             x_misp_hostname_src = hostname_src_attribute
