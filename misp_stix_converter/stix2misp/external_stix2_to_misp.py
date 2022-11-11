@@ -285,6 +285,25 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 'used': {self.misp_event.uuid: False}
             }
 
+    def _parse_identity(self, identity_ref: str):
+        identity = self._get_stix_object(identity_ref)
+        if not hasattr(identity, 'identity_class'):
+            self._parse_identity_object(identity)
+
+    def _parse_identity_object(self, identity: _IDENTITY_TYPING):
+        misp_object = self._create_misp_object('identity', identity)
+        for feature in self._mapping.identity_object_single_fields:
+            if hasattr(identity, feature):
+                misp_object.add_attribute(feature, getattr(identity, feature))
+        for feature in self._mapping.identity_object_multiple_fields:
+            if hasattr(identity_feature):
+                for value in getattr(identity, feature):
+                    misp_object.add_attribute(feature, value)
+        self._add_misp_object(
+            misp_object,
+            confidence=getattr(identity, 'confidence', None)
+        )
+
     def _parse_indicator(self, indicator_ref: str):
         """
         Indicator object parsing function.

@@ -207,6 +207,15 @@ class ExternalSTIX2Mapping(STIX2Mapping):
             name = self.name_attribute,
             description = self.description_attribute
         )
+        self.__identity_object_multiple_fields = (
+            'roles', 'sectors'
+        )
+        self.__identity_object_single_fields = (
+            'name',
+            'description',
+            'identity_class',
+            'contact_information'
+        )
         self.__sigma_object_mapping = Mapping(
             pattern = self.sigma_attribute,
             description = self.comment_attribute,
@@ -308,6 +317,14 @@ class ExternalSTIX2Mapping(STIX2Mapping):
     @property
     def file_pattern_mapping(self) -> dict:
         return self.__file_pattern_mapping
+
+    @property
+    def identity_object_multiple_fields(self) -> tuple:
+        return self.__identity_object_multiple_fields
+
+    @property
+    def identity_object_single_fields(self) -> tuple:
+        return self.__identity_object_single_fields
 
     @property
     def observable_mapping(self) -> dict:
