@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .exceptions import (AttributeFromPatternParsingError, UndefinedSTIXObjectError,
-    UndefinedIndicatorError, UndefinedObservableError, UnknownParsingFunctionError)
+from .exceptions import (
+    AttributeFromPatternParsingError, UndefinedSTIXObjectError,
+    UndefinedIndicatorError, UndefinedObservableError,
+    UnknownParsingFunctionError)
 from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2Mapping
 from .stix2_to_misp import (
     STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
-    _GALAXY_OBJECTS_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
+    _GALAXY_OBJECTS_TYPING, _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
@@ -15,16 +17,16 @@ from pymisp import MISPAttribute, MISPObject, MISPSighting
 from stix2.v20.common import ExternalReference as ExternalReference_v20
 from stix2.v20.observables import (
     Process as Process_v20, WindowsPEBinaryExt as WindowsExtension_v20)
-from stix2.v20.sdo import (CustomObject as CustomObject_v20, Identity as Identity_v20,
-    Indicator as Indicator_v20, Malware as Malware_v20, ObservedData as ObservedData_v20,
-    Tool as Tool_v20)
+from stix2.v20.sdo import (
+    CustomObject as CustomObject_v20, Malware as Malware_v20,
+    ObservedData as ObservedData_v20, Tool as Tool_v20)
 from stix2.v20.sro import Sighting as Sighting_v20
 from stix2.v21.common import ExternalReference as ExternalReference_v21
 from stix2.v21.observables import (
     DomainName, Process as Process_v21, WindowsPEBinaryExt as WindowsExtension_v21)
-from stix2.v21.sdo import (CustomObject as CustomObject_v21, Identity as Identity_v21,
-    Indicator as Indicator_v21, Malware as Malware_v21, ObservedData as ObservedData_v21,
-    Opinion, Tool as Tool_v21)
+from stix2.v21.sdo import (
+    CustomObject as CustomObject_v21, Indicator as Indicator_v21, Opinion,
+    Malware as Malware_v21, ObservedData as ObservedData_v21, Tool as Tool_v21)
 from stix2.v21.sro import Sighting as Sighting_v21
 from typing import Optional, Union
 
@@ -413,7 +415,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
         self._add_misp_object(misp_object)
 
-    def _parse_employee_object(self, identity: Union[Identity_v20, Identity_v21]):
+    def _parse_employee_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._create_misp_object('employee', identity)
         for key, mapping in self._mapping.employee_object_mapping.items():
             if hasattr(identity, key):
@@ -432,7 +434,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
-    def _parse_identity_object(self, identity: Union[Identity_v20, Identity_v21], name: str) -> MISPObject:
+    def _parse_identity_object(self, identity: _IDENTITY_TYPING, name: str) -> MISPObject:
         misp_object = self._create_misp_object(name, identity)
         feature = name.replace('-', '_')
         for key, mapping in getattr(self._mapping, f'{feature}_object_mapping').items():
@@ -464,8 +466,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 'used': {self.misp_event.uuid: False}
             }
 
-
-    def _parse_legal_entity_object(self, identity: Union[Identity_v20, Identity_v21]):
+    def _parse_legal_entity_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._parse_identity_object(identity, 'legal-entity')
         if hasattr(identity, 'x_misp_logo'):
             attribute = {'type': 'attachment', 'object_relation': 'logo'}
@@ -476,7 +477,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
-    def _parse_news_agency_object(self, identity: Union[Identity_v20, Identity_v21]):
+    def _parse_news_agency_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._parse_identity_object(identity, 'news-agency')
         if hasattr(identity, 'x_misp_attachment'):
             attribute = {'type': 'attachment', 'object_relation': 'attachment'}
@@ -487,7 +488,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
-    def _parse_organization_object(self, identity: Union[Identity_v20, Identity_v21]):
+    def _parse_organization_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._parse_identity_object(identity, 'organization')
         self._add_misp_object(misp_object)
 

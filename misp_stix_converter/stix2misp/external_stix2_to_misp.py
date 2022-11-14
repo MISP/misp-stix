@@ -7,7 +7,7 @@ from .external_stix2_mapping import ExternalSTIX2Mapping
 from .importparser import _INDICATOR_TYPING
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (STIX2toMISPParser, _ATTACK_PATTERN_TYPING,
-    _COURSE_OF_ACTION_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
+    _COURSE_OF_ACTION_TYPING, _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from collections import defaultdict
 from pymisp import MISPAttribute, MISPObject
 from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
@@ -286,17 +286,32 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             }
 
     def _parse_identity(self, identity_ref: str):
+        """
+        Identity object parsing function.
+        Based on the `identity_class` field, we try to redirect to the
+        appropriate parsing function
+
+        :param identity_ref: The Identity id used to find the related Identity
+            object to parse
+        """
         identity = self._get_stix_object(identity_ref)
         if not hasattr(identity, 'identity_class'):
             self._parse_identity_object(identity)
 
     def _parse_identity_object(self, identity: _IDENTITY_TYPING):
+        """
+        Generic Identity object parsing function.
+        With the STIX Identity object, we extract the different fields and
+        generate a generic MISP identity object.
+
+        :param identity: The Identity object to parse
+        """
         misp_object = self._create_misp_object('identity', identity)
         for feature in self._mapping.identity_object_single_fields:
             if hasattr(identity, feature):
                 misp_object.add_attribute(feature, getattr(identity, feature))
         for feature in self._mapping.identity_object_multiple_fields:
-            if hasattr(identity_feature):
+            if hasattr(identity, feature):
                 for value in getattr(identity, feature):
                     misp_object.add_attribute(feature, value)
         self._add_misp_object(

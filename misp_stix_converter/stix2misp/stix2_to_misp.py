@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import sys
 import time
@@ -82,6 +82,10 @@ _GALAXY_OBJECTS_TYPING = Union[
     Tool_v21,
     Vulnerability_v20,
     Vulnerability_v21
+]
+_IDENTITY_TYPING = Union[
+    Identity_v20,
+    Identity_v21
 ]
 _MISP_FEATURES_TYPING = Union[
     MISPAttribute,
