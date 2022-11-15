@@ -37,38 +37,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._mapping = ExternalSTIX2Mapping()
 
     ################################################################################
-    #                        STIX OBJECTS LOADING FUNCTIONS                        #
-    ################################################################################
-
-    def _load_custom_object(self, custom_object: Union[CustomObject_v20, CustomObject_v21]):
-        data_to_load = self._build_data_to_load(custom_object)
-        try:
-            self._custom_object[custom_object.id] = data_to_load
-        except AttributeError:
-            self._custom_object = {custom_object.id: data_to_load}
-
-    def _load_indicator(self, indicator: _INDICATOR_TYPING):
-        data_to_load = self._build_data_to_load(indicator)
-        try:
-            self._indicator[indicator.id] = data_to_load
-        except AttributeError:
-            self._indicator = {indicator.id: data_to_load}
-
-    def _load_note(self, note: Note):
-        data_to_load = self._build_data_to_load(note)
-        try:
-            self._note[note.id] = data_to_load
-        except AttributeError:
-            self._note = {note.id: data_to_load}
-
-    def _load_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
-        data_to_load = self._build_data_to_load(observed_data)
-        try:
-            self._observed_data[observed_data.id] = data_to_load
-        except AttributeError:
-            self._observed_data = {observed_data.id: data_to_load}
-
-    ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 

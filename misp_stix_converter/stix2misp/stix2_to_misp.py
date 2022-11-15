@@ -13,7 +13,7 @@ from .importparser import STIXtoMISPParser
 from .internal_stix2_mapping import InternalSTIX2Mapping
 from collections import defaultdict
 from datetime import datetime
-from pymisp import AbstractMISP, MISPEvent, MISPAttribute, MISPObject
+from pymisp import AbstractMISP, MISPEvent, MISPAttribute, MISPObject, MISPSighting
 from stix2.parsing import parse as stix2_parser
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
@@ -22,7 +22,7 @@ from stix2.v20.sdo import (AttackPattern as AttackPattern_v20, Campaign as Campa
     Indicator as Indicator_v20, IntrusionSet as IntrusionSet_v20, Malware as Malware_v20,
     ObservedData as ObservedData_v20, Report as Report_v20, ThreatActor as ThreatActor_v20,
     Tool as Tool_v20, Vulnerability as Vulnerability_v20)
-from stix2.v20.sro import Relationship as Relationship_v20
+from stix2.v20.sro import Relationship as Relationship_v20, Sighting as Sighting_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v21.common import MarkingDefinition as MarkingDefinition_v21
 from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, DomainName,
@@ -32,9 +32,10 @@ from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, Domain
 from stix2.v21.sdo import (AttackPattern as AttackPattern_v21, Campaign as Campaign_v21,
     CourseOfAction as CourseOfAction_v21, Grouping, Identity as Identity_v21,
     Indicator as Indicator_v21, IntrusionSet as IntrusionSet_v21, Location,
-    Malware as Malware_v21, ObservedData as ObservedData_v21, Note, Report as Report_v21,
-    ThreatActor as ThreatActor_v21, Tool as Tool_v21, Vulnerability as Vulnerability_v21)
-from stix2.v21.sro import Relationship as Relationship_v21
+    Malware as Malware_v21, Note, ObservedData as ObservedData_v21, Opinion,
+    Report as Report_v21, ThreatActor as ThreatActor_v21, Tool as Tool_v21,
+    Vulnerability as Vulnerability_v21)
+from stix2.v21.sro import Relationship as Relationship_v21, Sighting as Sighting_v21
 from typing import Optional, Union
 
 _LOADED_FEATURES = (
@@ -99,6 +100,10 @@ _SDO_TYPING = Union[
     ObservedData_v21,
     Vulnerability_v20,
     Vulnerability_v21
+]
+_SIGHTING_TYPING = Union[
+    Sighting_v20,
+    Sighting_v21
 ]
 _VULNERABILITY_TYPING = Union[
     Vulnerability_v20,
@@ -287,22 +292,46 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._marking_definition = {marking_definition.id: data_to_load}
 
     def _load_note(self, note: Note):
+        self._validate_uuid(note.id)
         try:
             self._note[note.id] = note
         except AttributeError:
             self._note = {note.id: note}
 
     def _load_observable_object(self, observable: _OBSERVABLE_TYPES):
+        self._validate_uuid(observable.id)
         try:
             self._observable[observable.id] = observable
         except AttributeError:
             self._observable = {observable.id: observable}
 
     def _load_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
+        self._validate_uuid(observed_data.id)
         try:
             self._observed_data[observed_data.id] = observed_data
         except AttributeError:
             self._observed_data = {observed_data.id: observed_data}
+
+    def _load_opinion(self, opinion: Opinion):
+        sighting = MISPSighting()
+        sighting_args = {
+            'date_sighting': self._timestamp_from_date(opinion.modified),
+            'type': '1'
+        }
+        if hasattr(opinion, 'x_misp_source'):
+            sighting_args['source'] = opinion.x_misp_source
+        if hasattr(opinion, 'x_misp_author_ref'):
+            identity = self._identity[opinion.x_misp_author_ref]['stix_object']
+            sighting_args['Organisation'] = {
+                'uuid': identity.id.split('--')[1],
+                'name': identity.name
+            }
+        sighting.from_dict(**sighting_args)
+        try:
+            self._sighting[opinion.object_refs[0].split('--')[1]].append(sighting)
+        except AttributeError:
+            self._sighting = defaultdict(list)
+            self._sighting[opinion.object_refs[0].split('--')[1]].append(sighting)
 
     def _load_relationship(self, relationship: Union[Relationship_v20, Relationship_v21]):
         reference = {
@@ -320,6 +349,27 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._report[report.id] = report
         except AttributeError:
             self._report = {report.id: report}
+
+    def _load_sighting(self, sighting: _SIGHTING_TYPING):
+        misp_sighting = MISPSighting()
+        sighting_args = {
+            'date_sighting': self._timestamp_from_date(sighting.modified),
+            'type': '0'
+        }
+        if hasattr(sighting, 'description'):
+            sighting_args['source'] = sighting.description
+        if hasattr(sighting, 'where_sighted_refs'):
+            identity = self._identity[sighting.where_sighted_refs[0]]['stix_object']
+            sighting_args['Organisation'] = {
+                'uuid': identity.id.split('--')[1],
+                'name': identity.name
+            }
+        misp_sighting.from_dict(**sighting_args)
+        try:
+            self._sighting[sighting.sighting_of_ref.split('--')[1]].append(misp_sighting)
+        except AttributeError:
+            self._sighting = defaultdict(list)
+            self._sighting[sighting.sighting_of_ref.split('--')[1]].append(misp_sighting)
 
     def _load_threat_actor(self, threat_actor: Union[ThreatActor_v20, ThreatActor_v21]):
         data_to_load = self._build_data_to_load(threat_actor)

@@ -20,14 +20,12 @@ from stix2.v20.observables import (
 from stix2.v20.sdo import (
     CustomObject as CustomObject_v20, Malware as Malware_v20,
     ObservedData as ObservedData_v20, Tool as Tool_v20)
-from stix2.v20.sro import Sighting as Sighting_v20
 from stix2.v21.common import ExternalReference as ExternalReference_v21
 from stix2.v21.observables import (
     DomainName, Process as Process_v21, WindowsPEBinaryExt as WindowsExtension_v21)
 from stix2.v21.sdo import (
-    CustomObject as CustomObject_v21, Indicator as Indicator_v21, Opinion,
+    CustomObject as CustomObject_v21, Indicator as Indicator_v21,
     Malware as Malware_v21, ObservedData as ObservedData_v21, Tool as Tool_v21)
-from stix2.v21.sro import Sighting as Sighting_v21
 from typing import Optional, Union
 
 _attribute_additional_fields = (
@@ -65,10 +63,6 @@ _OBSERVED_DATA_TYPING = Union[
 _PROCESS_TYPING = Union[
     Process_v20,
     Process_v21
-]
-_SIGHTING_TYPING = Union[
-    Sighting_v20,
-    Sighting_v21
 ]
 
 
@@ -112,48 +106,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except AttributeError:
             self._sighting = defaultdict(list)
             self._sighting[custom_object.object_ref.split('--')[1]].append(sighting)
-
-    def _load_opinion(self, opinion: Opinion):
-        sighting = MISPSighting()
-        sighting_args = {
-            'date_sighting': self._timestamp_from_date(opinion.modified),
-            'type': '1'
-        }
-        if hasattr(opinion, 'x_misp_source'):
-            sighting_args['source'] = opinion.x_misp_source
-        if hasattr(opinion, 'x_misp_author_ref'):
-            identity = self._identity[opinion.x_misp_author_ref]['stix_object']
-            sighting_args['Organisation'] = {
-                'uuid': identity.id.split('--')[1],
-                'name': identity.name
-            }
-        sighting.from_dict(**sighting_args)
-        try:
-            self._sighting[opinion.object_refs[0].split('--')[1]].append(sighting)
-        except AttributeError:
-            self._sighting = defaultdict(list)
-            self._sighting[opinion.object_refs[0].split('--')[1]].append(sighting)
-
-    def _load_sighting(self, sighting: _SIGHTING_TYPING):
-        misp_sighting = MISPSighting()
-        sighting_args = {
-            'date_sighting': self._timestamp_from_date(sighting.modified),
-            'type': '0'
-        }
-        if hasattr(sighting, 'description'):
-            sighting_args['source'] = sighting.description
-        if hasattr(sighting, 'where_sighted_refs'):
-            identity = self._identity[sighting.where_sighted_refs[0]]['stix_object']
-            sighting_args['Organisation'] = {
-                'uuid': identity.id.split('--')[1],
-                'name': identity.name
-            }
-        misp_sighting.from_dict(**sighting_args)
-        try:
-            self._sighting[sighting.sighting_of_ref.split('--')[1]].append(misp_sighting)
-        except AttributeError:
-            self._sighting = defaultdict(list)
-            self._sighting[sighting.sighting_of_ref.split('--')[1]].append(misp_sighting)
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
