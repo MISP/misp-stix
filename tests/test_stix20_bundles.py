@@ -5115,7 +5115,7 @@ _REGISTRY_KEY_INDICATOR_OBJECT = {
     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:x_misp_hive = 'hklm' AND windows-registry-key:x_misp_last_modified = '2020-10-25T16:22:00']",
+    "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:x_misp_hive = 'hklm' AND windows-registry-key:modified = '2020-10-25T16:22:00']",
     "valid_from": "2020-10-25T16:22:00Z",
     "kill_chain_phases": [
         {
@@ -5150,7 +5150,7 @@ _REGISTRY_KEY_OBSERVABLE_OBJECT = {
                 }
             ],
             "x_misp_hive": "hklm",
-            "x_misp_last_modified": "2020-10-25T16:22:00"
+            "modified": "2020-10-25T16:22:00Z"
         }
     },
     "labels": [

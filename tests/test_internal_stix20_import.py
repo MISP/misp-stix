@@ -2140,7 +2140,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         modified_time = self._check_registry_key_observable_object(misp_object.attributes, observable)
         self.assertEqual(modified_time.type, 'datetime')
         self.assertEqual(modified_time.object_relation, 'last-modified')
-        self.assertEqual(self._datetime_to_str(modified_time.value), observable.x_misp_last_modified)
+        self.assertEqual(modified_time.value, observable.modified)
         self._populate_documentation(
             misp_object = json.loads(misp_object.to_json()),
             observed_data = observed_data
