@@ -218,6 +218,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _load_attack_pattern(self, attack_pattern: Union[AttackPattern_v20, AttackPattern_v21]):
         data_to_load = self._build_data_to_load(attack_pattern)
+        self._check_uuid(attack_pattern.id)
         try:
             self._attack_pattern[attack_pattern.id] = data_to_load
         except AttributeError:
@@ -225,6 +226,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _load_campaign(self, campaign: Union[Campaign_v20, Campaign_v21]):
         data_to_load = self._build_data_to_load(campaign)
+        self._check_uuid(campaign.id)
         try:
             self._campaign[campaign.id] = data_to_load
         except AttributeError:
@@ -232,12 +234,14 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _load_course_of_action(self, course_of_action: Union[CourseOfAction_v20, CourseOfAction_v21]):
         data_to_load = self._build_data_to_load(course_of_action)
+        self._check_uuid(course_of_action.id)
         try:
             self._course_of_action[course_of_action.id] = data_to_load
         except AttributeError:
             self._course_of_action = {course_of_action.id: data_to_load}
 
     def _load_grouping(self, grouping: Grouping):
+        self._check_uuid(grouping.id)
         try:
             self._grouping[grouping.id] = grouping
         except AttributeError:
@@ -245,12 +249,14 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _load_identity(self, identity: Union[Identity_v20, Identity_v21]):
         data_to_load = self._build_data_to_load(identity)
+        self._check_uuid(identity.id)
         try:
             self._identity[identity.id] = data_to_load
         except AttributeError:
             self._identity = {identity.id: data_to_load}
 
     def _load_indicator(self, indicator: Union[Indicator_v20, Indicator_v21]):
+        self._check_uuid(indicator.id)
         try:
             self._indicator[indicator.id] = indicator
         except AttributeError:
@@ -258,12 +264,14 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _load_intrusion_set(self, intrusion_set: Union[IntrusionSet_v20, IntrusionSet_v21]):
         data_to_load = self._build_data_to_load(intrusion_set)
+        self._check_uuid(intrusion_set.id)
         try:
             self._intrusion_set[intrusion_set.id] = data_to_load
         except AttributeError:
             self._intrusion_set = {intrusion_set.id: data_to_load}
 
     def _load_location(self, location: Location):
+        self._check_uuid(location.id)
         try:
             self._location[location.id] = location
         except AttributeError:
@@ -273,6 +281,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 self._location = {location['id']: location}
 
     def _load_malware(self, malware: Union[Malware_v20, Malware_v21]):
+        self._check_uuid(malware.id)
         data_to_load = self._build_data_to_load(malware)
         try:
             self._malware[malware.id] = data_to_load
@@ -292,21 +301,21 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._marking_definition = {marking_definition.id: data_to_load}
 
     def _load_note(self, note: Note):
-        self._validate_uuid(note.id)
+        self._check_uuid(note.id)
         try:
             self._note[note.id] = note
         except AttributeError:
             self._note = {note.id: note}
 
     def _load_observable_object(self, observable: _OBSERVABLE_TYPES):
-        self._validate_uuid(observable.id)
+        self._check_uuid(observable.id)
         try:
             self._observable[observable.id] = observable
         except AttributeError:
             self._observable = {observable.id: observable}
 
     def _load_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
-        self._validate_uuid(observed_data.id)
+        self._check_uuid(observed_data.id)
         try:
             self._observed_data[observed_data.id] = observed_data
         except AttributeError:
@@ -323,28 +332,32 @@ class STIX2toMISPParser(STIXtoMISPParser):
         if hasattr(opinion, 'x_misp_author_ref'):
             identity = self._identity[opinion.x_misp_author_ref]['stix_object']
             sighting_args['Organisation'] = {
-                'uuid': identity.id.split('--')[1],
+                'uuid': self._sanitise_uuid(identity.id),
                 'name': identity.name
             }
         sighting.from_dict(**sighting_args)
-        try:
-            self._sighting[opinion.object_refs[0].split('--')[1]].append(sighting)
-        except AttributeError:
-            self._sighting = defaultdict(list)
-            self._sighting[opinion.object_refs[0].split('--')[1]].append(sighting)
+        for object_ref in opinion.object_refs:
+            sanitised_ref = self._sanitise_uuid(object_ref)
+            try:
+                self._sighting[sanitised_ref].append(sighting)
+            except AttributeError:
+                self._sighting = defaultdict(list)
+                self._sighting[sanitised_ref].append(sighting)
 
     def _load_relationship(self, relationship: Union[Relationship_v20, Relationship_v21]):
         reference = {
             'referenced_uuid': relationship.target_ref,
             'relationship_type': relationship.relationship_type
         }
+        source_uuid = self._sanitise_uuid(relationship.source_ref)
         try:
-            self._relationship[relationship.source_ref.split('--')[1]].append(reference)
+            self._relationship[source_uuid].append(reference)
         except AttributeError:
             self._relationship = defaultdict(list)
-            self._relationship[relationship.source_ref.split('--')[1]].append(reference)
+            self._relationship[source_uuid].append(reference)
 
     def _load_report(self, report: Union[Report_v20, Report_v21]):
+        self._check_uuid(report.id)
         try:
             self._report[report.id] = report
         except AttributeError:
@@ -361,18 +374,20 @@ class STIX2toMISPParser(STIXtoMISPParser):
         if hasattr(sighting, 'where_sighted_refs'):
             identity = self._identity[sighting.where_sighted_refs[0]]['stix_object']
             sighting_args['Organisation'] = {
-                'uuid': identity.id.split('--')[1],
+                'uuid': self._sanitise_uuid(identity.id),
                 'name': identity.name
             }
         misp_sighting.from_dict(**sighting_args)
+        sighting_of_ref = self._sanitise_uuid(sighting.sighting_of_ref)
         try:
-            self._sighting[sighting.sighting_of_ref.split('--')[1]].append(misp_sighting)
+            self._sighting[sighting_of_ref].append(misp_sighting)
         except AttributeError:
             self._sighting = defaultdict(list)
-            self._sighting[sighting.sighting_of_ref.split('--')[1]].append(misp_sighting)
+            self._sighting[sighting_of_ref].append(misp_sighting)
 
     def _load_threat_actor(self, threat_actor: Union[ThreatActor_v20, ThreatActor_v21]):
         data_to_load = self._build_data_to_load(threat_actor)
+        self._check_uuid(threat_actor.id)
         try:
             self._threat_actor[threat_actor.id] = data_to_load
         except AttributeError:
@@ -380,6 +395,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _load_tool(self, tool: Union[Tool_v20, Tool_v21]):
         data_to_load = self._build_data_to_load(tool)
+        self._check_uuid(tool.id)
         try:
             self._tool[tool.id] = data_to_load
         except AttributeError:
@@ -387,6 +403,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _load_vulnerability(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
         data_to_load = self._build_data_to_load(vulnerability)
+        self._check_uuid(vulnerability.id)
         try:
             self._vulnerability[vulnerability.id] = data_to_load
         except AttributeError:
@@ -592,7 +609,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 self._galaxies[referenced_uuid]['used'][self.misp_event.uuid] = True
             else:
                 misp_object.add_reference(
-                    referenced_uuid.split('--')[1],
+                    self._sanitise_uuid(referenced_uuid),
                     relationship['relationship_type']
                 )
 
@@ -650,7 +667,11 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _create_misp_event(self, stix_object: Union[Grouping, Report_v20, Report_v21]) -> MISPEvent:
         misp_event = MISPEvent(force_timestamps=True)
-        misp_event.uuid = stix_object.id.split('--')[-1]
+        event_uuid = self._extract_uuid(stix_object.id)
+        if event_uuid in self.replacement_uuids:
+            self._sanitise_object_uuid(misp_event, event_uuid)
+        else:
+            misp_event.uuid = event_uuid
         misp_event.info = stix_object.name
         misp_event.timestamp = self._timestamp_from_date(stix_object.modified)
         self._handle_misp_event_tags(misp_event, stix_object)
@@ -663,10 +684,13 @@ class STIX2toMISPParser(STIXtoMISPParser):
             force_timestamps=True
         )
         if stix_object is not None:
-            try:
-                misp_object.uuid = stix_object.id.split('--')[-1]
-            except AttributeError:
-                misp_object.uuid = stix_object['id'].split('--')[1]
+            object_uuid = self._extract_uuid(
+                stix_object['id'] if isinstance(stix_object, dict) else stix_object.id
+            )
+            if object_uuid in self.replacement_uuids:
+                self._sanitise_object_uuid(misp_object, object_uuid)
+            else:
+                misp_object.uuid = object_uuid
             misp_object.update(self._parse_timeline(stix_object))
         return misp_object
 
@@ -679,6 +703,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
             return all(object_ref in self._observable for object_ref in object_refs)
         except AttributeError:
             return False
+
+    @staticmethod
+    def _extract_uuid(object_id: str) -> str:
+        return object_id.split('--')[-1]
 
     @staticmethod
     def _fetch_tags_from_labels(misp_feature: _MISP_FEATURES_TYPING, labels: list):

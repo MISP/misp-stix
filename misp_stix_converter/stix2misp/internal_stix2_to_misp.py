@@ -76,12 +76,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     ################################################################################
 
     def _load_custom_attribute(self, custom_attribute: _CUSTOM_TYPING):
+        self._check_uuid(custom_attribute.id)
         try:
             self._custom_attribute[custom_attribute.id] = custom_attribute
         except AttributeError:
             self._custom_attribute = {custom_attribute.id: custom_attribute}
 
     def _load_custom_object(self, custom_object: _CUSTOM_TYPING):
+        self._check_uuid(custom_object.id)
         try:
             self._custom_object[custom_object.id] = custom_object
         except AttributeError:
@@ -101,11 +103,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 'name': custom_object.x_misp_author
             }
         sighting.from_dict(**sighting_args)
+        object_ref = self._sanitise_uuid(custom_object.object_ref)
         try:
-            self._sighting[custom_object.object_ref.split('--')[1]].append(sighting)
+            self._sighting[object_ref].append(sighting)
         except AttributeError:
             self._sighting = defaultdict(list)
-            self._sighting[custom_object.object_ref.split('--')[1]].append(sighting)
+            self._sighting[object_ref].append(sighting)
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #

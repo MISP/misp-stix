@@ -11,12 +11,16 @@ from pathlib import Path
 from stix2.v20.sdo import Indicator as Indicator_v20
 from stix2.v21.sdo import Indicator as Indicator_v21
 from typing import Union
+from uuid import UUID, uuid5
 
 _INDICATOR_TYPING = Union[
     Indicator_v20,
     Indicator_v21
 ]
 _ROOT_PATH = Path(__file__).parents[1].resolve()
+
+_RFC_VERSIONS = (1, 3, 4, 5)
+_UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
 
 class STIXtoMISPParser:
@@ -25,12 +29,17 @@ class STIXtoMISPParser:
         self._galaxies: dict = {}
         if synonyms_path is not None:
             self.__synonyms_path = Path(synonyms_path)
+        self.__replacement_uuids: dict = {}
         self.__errors: defaultdict = defaultdict(set)
         self.__warnings: defaultdict = defaultdict(set)
 
     @property
     def errors(self) -> dict:
         return self.__errors
+
+    @property
+    def replacement_uuids(self) -> dict:
+        return self.__replacement_uuids
 
     @property
     def synonyms_mapping(self) -> dict:
@@ -245,3 +254,26 @@ class STIXtoMISPParser:
         except json.JSONDecodeError:
             message = f""
             raise SynonymsResourceJSONError(message)
+
+    ################################################################################
+    #                      UUID SANITATION HANDLING FUNCTIONS                      #
+    ################################################################################
+    def _check_uuid(self, object_id: str):
+        object_uuid = self._extract_uuid(object_id)
+        if UUID(object_uuid).version not in _RFC_VERSIONS and object_uuid not in self.replacement_uuids:
+            self.replacement_uuids[object_uuid] = uuid5(_UUIDv4, object_uuid)
+
+    def _sanitise_object_uuid(self, misp_object, object_uuid: str):
+        comment = f'Original UUID was: {object_uuid}'
+        misp_object.comment = f'{misp_object.comment} - {comment}' if hasattr(misp_object, 'comment') else comment
+        misp_object.uuid = self.replacement_uuids[object_uuid]
+
+    def _sanitise_uuid(self, object_id: str) -> str:
+        object_uuid = self._extract_uuid(object_id)
+        if UUID(object_uuid).version not in _RFC_VERSIONS:
+            if object_uuid in self.replacement_uuids:
+                return self.replacement_uuids[object_uuid]
+            sanitised_uuid = uuid5(_UUIDv4, object_uuid)
+            self.replacement_uuids[object_uuid] = sanitised_uuid
+            return sanitised_uuid
+        return object_uuid
