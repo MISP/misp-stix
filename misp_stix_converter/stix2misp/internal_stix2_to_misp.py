@@ -192,17 +192,23 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_custom_object(self, custom_ref: str):
         custom_object = self._get_stix_object(custom_ref)
         name = custom_object.x_misp_name
-        misp_object = self._create_misp_object(name, custom_object)
+        misp_object = self._create_misp_object(name)
         misp_object.category = custom_object.x_misp_meta_category
+        misp_object.update(self._parse_timeline(custom_object))
+        if hasattr(custom_object, 'x_misp_comment'):
+            misp_object.comment = custom_object.x_misp_comment
         object_uuid = self._extract_uuid(custom_object.id)
         if object_uuid in self.replacement_uuids:
             self._sanitise_object_uuid(misp_object, object_uuid)
         else:
             misp_object.uuid = object_uuid
-        misp_object.timestamp = self._timestamp_from_date(custom_object.modified)
-        if hasattr(custom_object, 'x_misp_comment'):
-            misp_object.comment = custom_object.x_misp_comment
         for attribute in custom_object.x_misp_attributes:
+            if attribute.get('uuid'):
+                attribute.update(
+                    self._sanitise_attribute_uuid(
+                        attribute['uuid'], attribute.get('comment')
+                    )
+                )
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
