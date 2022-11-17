@@ -8,9 +8,10 @@ from .exceptions import (SynonymsResourceJSONError, UnavailableGalaxyResourcesEr
     UnavailableSynonymsResourceError)
 from collections import defaultdict
 from pathlib import Path
+from pymisp import MISPObject
 from stix2.v20.sdo import Indicator as Indicator_v20
 from stix2.v21.sdo import Indicator as Indicator_v21
-from typing import Union
+from typing import Optional, Union
 from uuid import UUID, uuid5
 
 _INDICATOR_TYPING = Union[
@@ -258,12 +259,23 @@ class STIXtoMISPParser:
     ################################################################################
     #                      UUID SANITATION HANDLING FUNCTIONS                      #
     ################################################################################
+
     def _check_uuid(self, object_id: str):
         object_uuid = self._extract_uuid(object_id)
         if UUID(object_uuid).version not in _RFC_VERSIONS and object_uuid not in self.replacement_uuids:
             self.replacement_uuids[object_uuid] = uuid5(_UUIDv4, object_uuid)
 
-    def _sanitise_object_uuid(self, misp_object, object_uuid: str):
+    def _sanitise_attribute_uuid(self, object_id: str, comment: Optional[str] = None) -> dict:
+        attribute_uuid = self._extract_uuid(object_id)
+        if attribute_uuid in self.replacement_uuids:
+            attribute_comment = f'Original UUID was: {attribute_uuid}'
+            return {
+                'uuid': self.replacement_uuids[attribute_uuid],
+                'comment': f'{comment} - {attribute_comment}' if comment else attribute_comment
+            }
+        return {'uuid': attribute_uuid}
+
+    def _sanitise_object_uuid(self, misp_object: MISPObject, object_uuid: str):
         comment = f'Original UUID was: {object_uuid}'
         misp_object.comment = f'{misp_object.comment} - {comment}' if hasattr(misp_object, 'comment') else comment
         misp_object.uuid = self.replacement_uuids[object_uuid]

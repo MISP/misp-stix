@@ -744,7 +744,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         return misp_object
 
     @staticmethod
-    def _sanitize_value(value: str) -> str:
+    def _sanitise_value(value: str) -> str:
         return value.replace('\\\\', '\\')
 
     @staticmethod

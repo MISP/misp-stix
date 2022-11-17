@@ -176,13 +176,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         custom_attribute = self._get_stix_object(custom_ref)
         attribute = {
             "type": custom_attribute.x_misp_type,
-            "value": self._sanitize_value(custom_attribute.x_misp_value),
-            "timestamp": self._timestamp_from_date(custom_attribute.modified),
-            "uuid": custom_attribute.id.split('--')[1]
+            "value": self._sanitise_value(custom_attribute.x_misp_value),
+            "timestamp": self._timestamp_from_date(custom_attribute.modified)
         }
         for field in _attribute_additional_fields:
             if hasattr(custom_attribute, f'x_misp_{field}'):
                 attribute[field] = getattr(custom_attribute, f'x_misp_{field}')
+        attribute.update(
+            self._sanitise_attribute_uuid(
+                custom_attribute.id, comment=attribute.get('comment')
+            )
+        )
         self._add_misp_attribute(attribute)
 
     def _parse_custom_object(self, custom_ref: str):
@@ -190,7 +194,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         name = custom_object.x_misp_name
         misp_object = self._create_misp_object(name, custom_object)
         misp_object.category = custom_object.x_misp_meta_category
-        misp_object.uuid = custom_object.id.split('--')[1]
+        object_uuid = self._extract_uuid(custom_object.id)
+        if object_uuid in self.replacement_uuids:
+            self._sanitise_object_uuid(misp_object, object_uuid)
+        else:
+            misp_object.uuid = object_uuid
         misp_object.timestamp = self._timestamp_from_date(custom_object.modified)
         if hasattr(custom_object, 'x_misp_comment'):
             misp_object.comment = custom_object.x_misp_comment
@@ -270,7 +278,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
         if hasattr(note, 'object_refs'):
             for object_ref in note.object_refs:
-                misp_object.add_reference(object_ref.split('--')[1], 'annotates')
+                misp_object.add_reference(self._sanitise_uuid(object_ref), 'annotates')
         self._add_misp_object(misp_object)
 
     def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
@@ -288,7 +296,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         feature = self._handle_observable_object_mapping(observed_data.labels, observed_data.id)
         try:
             parser = getattr(self, f"{feature}_observable_v21")
-        except AttributeError as error:
+        except AttributeError:
             raise UnknownParsingFunctionError(f"{feature}_observable_v21")
         try:
             parser(observed_data)
@@ -860,25 +868,28 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                             misp_object.add_attribute(**attribute)
                 else:
                     attribute = {
-                        'uuid': observable.id.split('--')[1],
                         'type': 'domain',
                         'object_relation': 'domain',
                         'value': observable.value
                     }
+                    attribute.update(
+                        self._sanitise_attribute_uuid(observable.id)
+                    )
                     misp_object.add_attribute(**attribute)
                 if hasattr(observable, 'resolves_to_refs'):
                     for reference in observable.resolves_to_refs:
                         if reference in parsed:
                             continue
                         address = self._observable[reference]
-                        misp_object.add_attribute(
-                            **{
-                                'uuid': address.id.split('--')[1],
-                                'type': 'ip-dst',
-                                'object_relation': 'ip',
-                                'value': address.value
-                            }
+                        attribute = {
+                            'type': 'ip-dst',
+                            'object_relation': 'ip',
+                            'value': address.value
+                        }
+                        attribute.update(
+                            self._sanitise_attribute_uuid(address.id)
                         )
+                        misp_object.add_attribute(**attribute)
                         parsed.append(reference)
         self._add_misp_object(misp_object)
 
@@ -1039,7 +1050,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     'value': directory.path
                 }
                 if hasattr(directory, 'id'):
-                    attribute['uuid'] = directory.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(directory.id)
+                    )
                 misp_object.add_attribute(**attribute)
             if hasattr(observable, 'content_ref'):
                 artifact = observables[observable.content_ref]
@@ -1063,7 +1076,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                         }
                     )
                 if hasattr(artifact, 'id'):
-                    attribute['uuid'] = artifact.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(artifact.id)
+                    )
                 misp_object.add_attribute(**attribute)
             if hasattr(observable, 'extensions') and 'windows-pebinary-ext' in observable.extensions:
                 pe_uuid = self._object_from_file_extension_observable(
@@ -1105,7 +1120,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                             'value': address.value
                         }
                         if hasattr(address, 'id'):
-                            attribute['uuid'] = address.id.split('--')[1]
+                            attribute.update(
+                                self._sanitise_attribute_uuid(address.id)
+                            )
                         misp_object.add_attribute(**attribute)
                 for feature, mapping in self._mapping.http_request_object_mapping.items():
                     if hasattr(observable, feature):
@@ -1138,7 +1155,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     'value': observable.value
                 }
                 if hasattr(observable, 'id'):
-                    attribute['uuid'] = observable.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(observable.id)
+                    )
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
@@ -1169,7 +1188,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                         'data': observable.payload_bin
                     }
                     if hasattr(observable, 'id'):
-                        attribute['uuid'] = observable.id.split('--')[1]
+                        attribute.update(
+                            self._sanitise_attribute_uuid(observable.id)
+                        )
                     misp_object.add_attribute(**attribute)
                     if hasattr(observable, 'x_misp_url'):
                         misp_object.add_attribute(
@@ -1186,7 +1207,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                         'value': observable.url
                     }
                     if hasattr(observable, 'id'):
-                        attribute['uuid'] = observable.id.split('--')[1]
+                        attribute.update(
+                            self._sanitise_attribute_uuid(observable.id)
+                        )
                     misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
@@ -1211,7 +1234,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                             'value': address.value
                         }
                         if hasattr(address, 'id'):
-                            attribute['uuid'] = address.id.split('--')[1]
+                            attribute.update(
+                                self._sanitise_attribute_uuid(address.id)
+                            )
                         misp_object.add_attribute(**attribute)
                         ip_protocols.add(address.type.split('-')[0])
                 for feature, mapping in self._mapping.ip_port_object_mapping.items():
@@ -1265,7 +1290,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     'value': directory.path
                 }
                 if hasattr(directory, 'id'):
-                    attribute['uuid'] = directory.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(directory.id)
+                    )
                 misp_object.add_attribute(**attribute)
             if hasattr(observable, 'content_ref'):
                 artifact = observables[observable.content_ref]
@@ -1276,7 +1303,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     'data': artifact.payload_bin
                 }
                 if hasattr(artifact, 'id'):
-                    attribute['uuid'] = artifact.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(artifact.id)
+                    )
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
@@ -1307,7 +1336,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                         'value': address.value
                     }
                     if hasattr(address, 'id'):
-                        attribute['uuid'] = address.id.split('--')[1]
+                        attribute.update(
+                            self._sanitise_attribute_uuid(address.id)
+                        )
                     misp_object.add_attribute(**attribute)
                     if hasattr(address, 'belongs_to_refs'):
                         for as_reference in getattr(address, 'belongs_to_refs'):
@@ -1315,7 +1346,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                             attribute = {'value': f'AS{autonomous_system.number}'}
                             attribute.update(getattr(self._mapping, f'{feature}_as_attribute'))
                             if hasattr(autonomous_system, 'id'):
-                                attribute['uuid'] = autonomous_system.id.split('--')[1]
+                                attribute.update(
+                                    self._sanitise_attribute_uuid(autonomous_system.id)
+                                )
                             misp_object.add_attribute(**attribute)
             for feature, mapping in self._mapping.netflow_object_mapping.items():
                 if hasattr(observable, feature):
@@ -1446,7 +1479,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 reference = observables[getattr(observable, f'{feature}_ref')]
                 attribute = {'value': reference.value}
                 if hasattr(reference, 'id'):
-                    attribute['uuid'] = reference.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(reference.id)
+                    )
                 if reference.type == 'domain-name':
                     attribute.update(
                         {
@@ -1499,14 +1534,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             )
         elif hasattr(main_process, 'image_ref'):
             image = observables[main_process.image_ref]
-            misp_object.add_attribute(
-                **{
-                    'uuid': image.id.split('--')[1],
-                    'type': 'filename',
-                    'object_relation': 'image',
-                    'value': image.name
-                }
+            attribute = {
+                'type': 'filename',
+                'object_relation': 'image',
+                'value': image.name
+            }
+            attribute.update(
+                self._sanitise_attribute_uuid(image.id)
             )
+            misp_object.add_attribute(**attribute)
         if hasattr(main_process, 'child_refs'):
             for child_ref in main_process.child_refs:
                 process = observables[child_ref]
@@ -1516,7 +1552,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     'value': process.pid
                 }
                 if hasattr(process, 'id'):
-                    attribute['uuid'] = process.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(process.id)
+                    )
                 misp_object.add_attribute(**attribute)
         if hasattr(main_process, 'parent_ref'):
             parent_process = observables[main_process.parent_ref]
@@ -1525,7 +1563,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     attribute = {'value': getattr(parent_process, feature)}
                     attribute.update(mapping)
                     if feature == 'pid' and hasattr(parent_process, 'id'):
-                        attribute['uuid'] = parent_process.id.split('--')[1]
+                        attribute.update(
+                            self._sanitise_attribute_uuid(parent_process.id)
+                        )
                     misp_object.add_attribute(**attribute)
             if hasattr(parent_process, 'binary_ref'):
                 image = observables[parent_process.binary_ref]
@@ -1538,14 +1578,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
             elif hasattr(parent_process, 'image_ref'):
                 image = observables[parent_process.image_ref]
-                misp_object.add_attribute(
-                    **{
-                        'uuid': image.id.split('--')[1],
-                        'type': 'filename',
-                        'object_relation': 'parent-image',
-                        'value': image.name
-                    }
+                attribute = {
+                    'type': 'filename',
+                    'object_relation': 'parent-image',
+                    'value': image.name
+                }
+                attribute.update(
+                    self._sanitise_attribute_uuid(image.id)
                 )
+                misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
     def _object_from_process_observable_v20(self, observed_data: ObservedData_v20):
@@ -2337,10 +2378,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = self._attribute_from_labels(stix_object.labels)
-        attribute['uuid'] = stix_object.id.split('--')[-1]
         attribute.update(self._parse_timeline(stix_object))
         if hasattr(stix_object, 'description') and stix_object.description:
             attribute['comment'] = stix_object.description
+        attribute.update(
+            self._sanitise_attribute_uuid(
+                stix_object.id, comment=attribute.get('comment')
+            )
+        )
         if hasattr(stix_object, 'object_marking_refs'):
             self._update_marking_refs(attribute['uuid'])
         return attribute
@@ -2354,15 +2399,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             'value': getattr(reference, feature)
         }
 
-    @staticmethod
-    def _create_attribute_from_reference_v21(attribute_type: str, object_relation: str,
+    def _create_attribute_from_reference_v21(self, attribute_type: str, object_relation: str,
                                              feature: str, reference) -> dict:
-        return {
-            'uuid': reference.id.split('--')[1],
+        attribute = {
             'type': attribute_type,
             'object_relation': object_relation,
             'value': getattr(reference, feature)
         }
+        attribute.update(
+            self._sanitise_attribute_uuid(reference.id)
+        )
+        return attribute
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
