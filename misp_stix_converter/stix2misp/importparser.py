@@ -273,6 +273,14 @@ class STIXtoMISPParser:
                 'uuid': self.replacement_uuids[attribute_uuid],
                 'comment': f'{comment} - {attribute_comment}' if comment else attribute_comment
             }
+        if UUID(attribute_uuid).version not in _RFC_VERSIONS:
+            attribute_comment = f'Original UUID was: {attribute_uuid}'
+            sanitised_uuid = uuid5(_UUIDv4, attribute_uuid)
+            self.replacement_uuids[attribute_uuid] = sanitised_uuid
+            return {
+                'uuid': sanitised_uuid,
+                'comment': f'{comment} - {attribute_comment}' if comment else attribute_comment
+            }
         return {'uuid': attribute_uuid}
 
     def _sanitise_object_uuid(self, misp_object: MISPObject, object_uuid: str):
