@@ -115,6 +115,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 note_args['object_refs'] = list(object_refs) if object_refs else self._handle_empty_note_refs()
                 self._append_SDO(Note(**note_args))
         else:
+            self._id_parsing_function = {
+                'attribute': '_define_stix_object_id',
+                'object': '_define_stix_object_id'
+            }
             self._handle_attributes_and_objects()
 
     def _define_stix_object_id_from_attribute(self, feature: str, attribute: Union[MISPAttribute, dict]) -> str:
@@ -664,7 +668,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         objects.insert(0, self._create_file_object(args))
 
     def _handle_patterning_object_indicator(self, misp_object: Union[MISPObject, dict], indicator_args: dict):
-        indicator_id = getattr(self, self._id_parsing_function['object'])('indicator', misp_object)
+        indicator_id = getattr(self, self._id_parsing_function['object'])(
+            'indicator', misp_object
+        )
         indicator_args.update(
             {
                 'id': indicator_id,
@@ -694,19 +700,25 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_account_object_observable(self, misp_object: Union[MISPObject, dict], account_type: str):
         account_args = self._parse_account_args(misp_object['Attribute'], account_type)
-        account_args['id'] = getattr(self, self._id_parsing_function['object'])('user-account', misp_object)
+        account_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'user-account', misp_object
+        )
         account_object = UserAccount(**account_args)
         self._handle_object_observable(misp_object, [account_object])
 
     def _parse_account_object_with_attachment_observable(self, misp_object: Union[MISPObject, dict], account_type: str):
         account_args = self._parse_account_with_attachment_args(misp_object['Attribute'], account_type)
-        account_args['id'] = getattr(self, self._id_parsing_function['object'])('user-account', misp_object)
+        account_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'user-account', misp_object
+        )
         account_object = UserAccount(**account_args)
         self._handle_object_observable(misp_object, [account_object])
 
     def _parse_android_app_object_observable(self, misp_object: Union[MISPObject, dict]):
         software_args = self._parse_android_app_args(misp_object['Attribute'])
-        software_args['id'] = getattr(self, self._id_parsing_function['object'])('software', misp_object)
+        software_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'software', misp_object
+        )
         software_object = Software(**software_args)
         self._handle_object_observable(misp_object, [software_object])
 
@@ -756,26 +768,31 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_asn_object_observable(self, misp_object: Union[MISPObject, dict]):
         as_args = self._parse_AS_args(misp_object['Attribute'])
-        as_args['id'] = getattr(self, self._id_parsing_function['object'])('autonomous-system', misp_object)
+        as_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'autonomous-system', misp_object
+        )
         AS_object = AutonomousSystem(**as_args)
         self._handle_object_observable(misp_object, [AS_object])
 
     def _parse_cpe_asset_object_observable(self, misp_object: Union[MISPObject, dict]):
         software_args = self._parse_cpe_asset_args(misp_object['Attribute'])
-        software_args['id'] = getattr(self, self._id_parsing_function['object'])('software', misp_object)
+        software_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'software', misp_object
+        )
         software_object = Software(**software_args)
         self._handle_object_observable(misp_object, [software_object])
 
     def _parse_credential_object_observable(self, misp_object: Union[MISPObject, dict]):
         credential_args = self._parse_credential_args(misp_object['Attribute'])
-        credential_args['id'] = getattr(self, self._id_parsing_function['object'])('user-account', misp_object)
+        credential_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'user-account', misp_object
+        )
         user_object = UserAccount(**credential_args)
         self._handle_object_observable(misp_object, [user_object])
 
     def _parse_directory_ref(self, file_args: dict, objects: list, value: str, uuid: str):
         directory_id = getattr(self, self._id_parsing_function['attribute'])(
-            'directory',
-            {'uuid': uuid}
+            'directory', {'uuid': uuid}
         )
         directory = Directory(id=directory_id, path=value)
         objects.append(directory)
@@ -790,7 +807,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         observable_objects, resolves_to_refs = self._parse_domainip_ip_attributes(attributes)
         domain_args = {
             'resolves_to_refs': resolves_to_refs,
-            'id': getattr(self, self._id_parsing_function['object'])('domain-name', misp_object)
+            'id': getattr(self, self._id_parsing_function['object'])(
+                'domain-name', misp_object
+            )
         }
         domain_args.update(self._parse_domain_args(attributes))
         observable_objects.insert(0, DomainName(**domain_args))
@@ -901,7 +920,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             if attributes.get('from'):
                 attributes['from'] = [value[0] for value in attributes.pop('from')]
             email_message_args.update(self._parse_email_args(attributes))
-        email_message_args['id'] = getattr(self, self._id_parsing_function['object'])('email-message', misp_object)
+        email_message_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'email-message', misp_object
+        )
         objects.insert(0, EmailMessage(**email_message_args))
         self._handle_object_observable(misp_object, objects)
 
@@ -970,11 +991,15 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     }
                 )
             )
-        file_args['id'] = getattr(self, self._id_parsing_function['object'])('file', misp_object)
+        file_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'file', misp_object
+        )
         return file_args, objects
 
     def _parse_geolocation_object(self, misp_object: Union[MISPObject, dict]):
-        location_id = getattr(self, self._id_parsing_function['object'])('location', misp_object)
+        location_id = getattr(self, self._id_parsing_function['object'])(
+            'location', misp_object
+        )
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         location_args = {
             'id': location_id,
@@ -1014,8 +1039,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         network_traffic_args = {
             'id': getattr(self, self._id_parsing_function['object'])(
-                'network-traffic',
-                misp_object
+                'network-traffic', misp_object
             )
         }
         objects = []
@@ -1058,7 +1082,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             with_data=self._mapping.image_data_fields
         )
         artifact_args = self._parse_image_args(attributes)
-        file_args = {'id': getattr(self, self._id_parsing_function['object'])('file', misp_object)}
+        file_args = {
+            'id': getattr(self, self._id_parsing_function['object'])(
+                'file', misp_object
+            )
+        }
         if attributes.get('filename'):
             file_args['name'] = self._select_single_feature(attributes, 'filename')
         if attributes:
@@ -1082,8 +1110,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         protocols = set()
         network_traffic_args = {
             'id': getattr(self, self._id_parsing_function['object'])(
-                'network-traffic',
-                misp_object
+                'network-traffic', misp_object
             )
         }
         objects = []
@@ -1171,7 +1198,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_mutex_object_observable(self, misp_object: Union[MISPObject, dict]):
         mutex_args = self._parse_mutex_args(misp_object['Attribute'])
-        mutex_args['id'] = getattr(self, self._id_parsing_function['object'])('mutex', misp_object)
+        mutex_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'mutex', misp_object
+        )
         self._handle_object_observable(misp_object, [Mutex(**mutex_args)])
 
     def _parse_netflow_object_observable(self, misp_object: Union[MISPObject, dict]):
@@ -1181,8 +1210,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         network_traffic_args = {
             'id': getattr(self, self._id_parsing_function['object'])(
-                'network-traffic',
-                misp_object
+                'network-traffic', misp_object
             )
         }
         objects = []
@@ -1226,8 +1254,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if attributes:
             network_traffic_args.update(self._parse_network_connection_args(attributes))
         network_traffic_args['id'] = getattr(self, self._id_parsing_function['object'])(
-            'network-traffic',
-            misp_object
+            'network-traffic', misp_object
         )
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         self._handle_object_observable(misp_object, objects)
@@ -1267,8 +1294,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             if attributes:
                 network_traffic_args.update(self._parse_network_socket_args(attributes))
             network_traffic_args['id'] = getattr(self, self._id_parsing_function['object'])(
-                'network-traffic',
-                misp_object
+                'network-traffic', misp_object
             )
             objects.insert(0, NetworkTraffic(**network_traffic_args))
             self._handle_object_observable(misp_object, objects)
@@ -1317,8 +1343,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 process_args['image_ref'] = image_uuid
             process_args.update(self._parse_process_args(attributes, 'features'))
             process_args['id'] = getattr(self, self._id_parsing_function['object'])(
-                'process',
-                misp_object
+                'process', misp_object
             )
             objects.insert(0, Process(**process_args))
             self._handle_object_observable(misp_object, objects)
@@ -1326,8 +1351,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_registry_key_object_observable(self, misp_object: Union[MISPObject, dict]):
         registry_key_args = self._parse_registry_key_args(misp_object['Attribute'])
         registry_key_args['id'] = getattr(self, self._id_parsing_function['object'])(
-            'windows-registry-key',
-            misp_object
+            'windows-registry-key', misp_object
         )
         registry_key = WindowsRegistryKey(**registry_key_args)
         self._handle_object_observable(misp_object, [registry_key])
@@ -1411,8 +1435,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_user_account_object_observable(self, misp_object: Union[MISPObject, dict]):
         user_account_args = self._parse_user_account_args(misp_object['Attribute'])
         user_account_args['id'] = getattr(self, self._id_parsing_function['object'])(
-            'user-account',
-            misp_object
+            'user-account', misp_object
         )
         user_account = UserAccount(**user_account_args)
         self._handle_object_observable(misp_object, [user_account])
@@ -1420,8 +1443,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_x509_object_observable(self, misp_object: Union[MISPObject, dict]):
         x509_args = self._parse_x509_args(misp_object)
         x509_args['id'] = getattr(self, self._id_parsing_function['object'])(
-            'x509-certificate',
-            misp_object
+            'x509-certificate', misp_object
         )
         x509_certificate = X509Certificate(**x509_args)
         self._handle_object_observable(misp_object, [x509_certificate])
@@ -1612,8 +1634,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             url, uuid = self._select_single_feature(attributes, 'url')
             return {
                 'id': getattr(self, self._id_parsing_function['attribute'])(
-                    'artifact',
-                    {'uuid': uuid}
+                    'artifact', {'uuid': uuid}
                 ),
                 'url': url
             }
@@ -1665,7 +1686,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
         artifact_args = {
-            'id': getattr(self, self._id_parsing_function['attribute'])('artifact', {'uuid': uuid}),
+            'id': getattr(self, self._id_parsing_function['attribute'])(
+                'artifact', {'uuid': uuid}
+            ),
             'payload_bin': data,
             'allow_custom': True
         }
