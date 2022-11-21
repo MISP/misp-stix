@@ -5,10 +5,13 @@ import json
 from base64 import b64encode
 from collections import defaultdict
 from misp_stix_converter import InternalSTIX2toMISPParser
+from uuid import UUID
 from ._test_stix import TestSTIX
 
 
 class TestSTIX2Import(TestSTIX):
+    _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
+
     def _check_attribute_labels(self, attribute, labels):
         if len(labels) == 3:
             type_label, category_label, ids_label = labels
@@ -72,6 +75,10 @@ class TestSTIX2Import(TestSTIX):
             self._populate_campaign_documentation(**kwargs)
         elif 'note' in kwargs:
             self._populate_note_documentation(**kwargs)
+
+    @staticmethod
+    def _extract_uuid(object_id):
+        return object_id.split('--')[-1]
 
     @staticmethod
     def _timestamp_from_datetime(datetime_value):
