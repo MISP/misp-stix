@@ -1,38 +1,42 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .exceptions import (InvalidSTIXPatternError, UnknownParsingFunctionError,
-    UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
+from .exceptions import (
+    InvalidSTIXPatternError, UnknownParsingFunctionError,
+    UnknownObservableMappingError, UnknownPatternMappingError,
+    UnknownPatternTypeError)
 from .external_stix2_mapping import ExternalSTIX2Mapping
 from .importparser import _INDICATOR_TYPING
 from .stix2_pattern_parser import STIX2PatternParser
-from .stix2_to_misp import (STIX2toMISPParser, _ATTACK_PATTERN_TYPING,
-    _COURSE_OF_ACTION_TYPING, _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
+from .stix2_to_misp import (
+    STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
+    _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from collections import defaultdict
 from pymisp import MISPAttribute, MISPObject
-from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
-    CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
-    Indicator as Indicator_v20, ObservedData as ObservedData_v20,
-    Vulnerability as Vulnerability_v20)
-from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
-    CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21,
+from stix2.v20.sdo import (
+    AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
+    ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
+from stix2.v21.sdo import (
+    AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
     Indicator as Indicator_v21, Note, ObservedData as ObservedData_v21,
     Vulnerability as Vulnerability_v21)
 from stix2patterns.inspector import _PatternData as PatternData
 from typing import Optional, Union
 
+# Attack Pattern, Course of Action & Vulnerability objects are obviously not
+# Observable objects but they're parsed at some point the same way
 _OBSERVABLE_OBJECTS_TYPING = Union[
     AttackPattern_v20,
-    AttackPattern_v21,  # Attack Pattern,
-    CourseOfAction_v20, # Course of Action,
-    CourseOfAction_v21, # & Vulnerability objects are obviously not Observable objects
-    Vulnerability_v20,  # but they're parsed at some point the same wayObservable objects are
+    AttackPattern_v21,
+    CourseOfAction_v20,
+    CourseOfAction_v21,
+    Vulnerability_v20,
     Vulnerability_v21
 ]
 
 
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, synonyms_path: Optional[str]=None):
+    def __init__(self, synonyms_path: Optional[str] = None):
         super().__init__(synonyms_path)
         self._mapping = ExternalSTIX2Mapping()
 
@@ -40,7 +44,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 
-    def _handle_import_case(self, stix_object: _SDO_TYPING, attributes: list, name: str, force_object: Optional[tuple]=None):
+    def _handle_import_case(self, stix_object: _SDO_TYPING, attributes: list,
+                            name: str, force_object: Optional[tuple] = None):
         """
         After we extracted attributes from a STIX object (Indicator pattern,
         Observable object, Vulnerability fields, etc.), we want to know if it is
@@ -61,14 +66,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
             self._add_misp_object(
                 misp_object,
-                confidence = getattr(stix_object, 'confidence', None)
+                confidence=getattr(stix_object, 'confidence', None)
             )
         else:
             attribute = self._create_attribute_dict(stix_object)
             attribute.update(attributes[0])
             self._add_misp_attribute(
                 attribute,
-                confidence = getattr(stix_object, 'confidence', None)
+                confidence=getattr(stix_object, 'confidence', None)
             )
 
     def _handle_observable_mapping(self, observed_data: ObservedData_v21) -> str:
@@ -196,7 +201,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
             self._add_misp_object(
                 misp_object,
-                confidence = getattr(attack_pattern, 'confidence', None)
+                confidence=getattr(attack_pattern, 'confidence', None)
             )
         else:
             self._galaxies[attack_pattern.id] = {
@@ -245,7 +250,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
             self._add_misp_object(
                 misp_object,
-                confidence = getattr(course_of_action, 'confidence', None)
+                confidence=getattr(course_of_action, 'confidence', None)
             )
         else:
             self._galaxies[course_of_action.id] = {
@@ -351,7 +356,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         misp_object = self._parse_location_object(location)
         self._add_misp_object(
             misp_object,
-            confidence = getattr(location, 'confidence', None)
+            confidence=getattr(location, 'confidence', None)
         )
 
     def _parse_malware(self, malware_ref: str):
@@ -733,7 +738,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if len(attributes) == 1 and attributes[0]['type'] == 'sigma':
                 self._add_misp_attribute(
                     attributes[0],
-                    confidence = getattr(indicator, 'confidence', None)
+                    confidence=getattr(indicator, 'confidence', None)
                 )
             else:
                 misp_object = self._create_misp_object('sigma', indicator)
@@ -741,7 +746,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     misp_object.add_attribute(**attribute)
                 self._add_misp_object(
                     misp_object,
-                    confidence = getattr(indicator, 'confidence', None)
+                    confidence=getattr(indicator, 'confidence', None)
                 )
         else:
             attribute = self._create_attribute_dict(indicator)
@@ -749,7 +754,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             attribute.update(self._mapping.sigma_attribute)
             self._add_misp_attribute(
                 attribute,
-                confidence = getattr(indicator, 'confidence', None)
+                confidence=getattr(indicator, 'confidence', None)
             )
 
     def _parse_snort_pattern(self, indicator: Indicator_v21):
@@ -758,7 +763,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute.update(self._mapping.snort_attribute)
         self._add_misp_attribute(
             attribute,
-            confidence = getattr(indicator, 'confidence', None)
+            confidence=getattr(indicator, 'confidence', None)
         )
 
     def _parse_stix_pattern(self, indicator: _INDICATOR_TYPING):
@@ -783,7 +788,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(
             misp_object,
-            confidence = getattr(indicator, 'confidence', None)
+            confidence=getattr(indicator, 'confidence', None)
         )
 
     def _parse_url_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
@@ -853,7 +858,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     misp_object.add_attribute(**attribute)
             self._add_misp_object(
                 misp_object,
-                confidence = getattr(indicator, 'confidence', None)
+                confidence=getattr(indicator, 'confidence', None)
             )
         else:
             attribute = self._create_attribute_dict(indicator)
@@ -861,7 +866,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             attribute.update(self._mapping.yara_attribute)
             self._add_misp_attribute(
                 attribute,
-                confidence = getattr(indicator, 'confidence', None)
+                confidence=getattr(indicator, 'confidence', None)
             )
 
     ################################################################################
