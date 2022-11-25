@@ -202,8 +202,10 @@ class Stix2Mapping:
         self.__attribute_types_mapping = Mapping(**_attribute_types_mapping)
         # GALAXIES MAPPING
         _attack_pattern_types = (
+            'cmtmf-attack-pattern',
             'mitre-attack-pattern',
             'mitre-enterprise-attack-attack-pattern',
+            'mitre-ics-techniques',
             'mitre-mobile-attack-attack-pattern',
             'mitre-pre-attack-attack-pattern'
         )
@@ -220,18 +222,22 @@ class Stix2Mapping:
         )
         _malware_types = (
             'android',
-            'banker',
-            'stealer',
             'backdoor',
-            'ransomware',
-            'mitre-malware',
+            'banker',
+            'cryptominers',
             'malpedia',
             'mitre-enterprise-attack-malware',
-            'mitre-mobile-attack-malware'
+            'mitre-ics-software',
+            'mitre-malware',
+            'mitre-mobile-attack-malware',
+            'ransomware',
+            'stealer'
         )
         _threat_actor_types = (
+            '360net-threat-actor',
+            'microsoft-activity-group',
+            'mitre-ics-groups',
             'threat-actor',
-            'microsoft-activity-group'
         )
         _tool_types = (
             'botnet',
