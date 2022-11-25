@@ -2371,9 +2371,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 attack_pattern_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('external_id') is not None:
-                references = self._handle_external_references(cluster['meta']['external_id'])
-                attack_pattern_args['external_references'] = references
+            if cluster.get('meta'):
+                attack_pattern_args.update(
+                    self._parse_meta_fields(cluster['meta'], 'attack_pattern')
+                )
             self.__objects.append(
                 self._create_attack_pattern_from_galaxy(
                     attack_pattern_args,
@@ -2413,9 +2414,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 course_of_action_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('external_id') is not None:
-                references = self._handle_external_references(cluster['meta']['external_id'])
-                course_of_action_args['external_references'] = references
+            if cluster.get('meta'):
+                course_of_action_args.update(
+                    self._parse_meta_fields(cluster['meta'], 'course_of_action')
+                )
             course_of_action = self._create_course_of_action(course_of_action_args)
             self.__objects.append(course_of_action)
             object_refs.append(course_of_action_id)
@@ -2425,6 +2427,27 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_course_of_action_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_course_of_action_galaxy(galaxy)
         self._handle_object_refs(object_refs)
+
+    def _parse_external_id(self, external_id: str) -> dict:
+        return {
+            'source_name': self._define_source_name(external_id),
+            'external_id': external_id
+        }
+
+    def _parse_external_reference(self, meta_args: dict, key: str, values: Union[list, str]):
+        feature = self._mapping.external_references_fields[key]
+        if isinstance(values, list):
+            meta_args['external_references'].extend(
+                getattr(self, feature)(value) for value in values
+            )
+        else:
+            meta_args['external_references'].append(
+                getattr(self, feature)(values)
+            )
+
+    @staticmethod
+    def _parse_external_url(url: str) -> dict:
+        return {'source_name': 'url', 'url': url}
 
     def _parse_intrusion_set_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                               object_id: str, timestamp: datetime):
@@ -2451,13 +2474,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 intrusion_set_id,
                 timestamp
             )
-            if cluster.get('meta') is not None:
-                meta = cluster['meta']
-                if meta.get('external_id') is not None:
-                    references = self._handle_external_references(meta['external_id'])
-                    intrusion_set_args['external_references'] = references
-                if meta.get('synonyms') is not None:
-                    intrusion_set_args['aliases'] = meta['synonyms']
+            if cluster.get('meta'):
+                intrusion_set_args.update(
+                    self._parse_meta_fields(cluster['meta'], 'intrusion_set')
+                )
             intrusion_set = self._create_intrusion_set(intrusion_set_args)
             self.__objects.append(intrusion_set)
             object_refs.append(intrusion_set_id)
@@ -2467,6 +2487,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_intrusion_set_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_intrusion_set_galaxy(galaxy)
         self._handle_object_refs(object_refs)
+
+    @staticmethod
+    def _parse_kill_chain(meta_args: dict, values: list):
+        for value in values:
+            *name, phase = value.split(':')
+            meta_args['kill_chain_phases'].append(
+                {
+                    'kill_chain_name': ':'.join(name),
+                    'phase_name': phase
+                }
+            )
 
     def _parse_malware_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                         object_id: str, timestamp: datetime):
@@ -2493,9 +2524,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 malware_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('external_id') is not None:
-                references = self._handle_external_references(cluster['meta']['external_id'])
-                malware_args['external_references'] = references
+            if cluster.get('meta'):
+                meta_args = self._parse_meta_fields(cluster['meta'], 'malware')
+                if 'labels' in meta_args:
+                    malware_args['labels'].extend(meta_args.pop('labels'))
+                malware_args.update(meta_args)
             malware = self._create_malware(malware_args, cluster=cluster)
             self.__objects.append(malware)
             object_refs.append(malware_id)
@@ -2505,6 +2538,35 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_malware_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_malware_galaxy(galaxy)
         self._handle_object_refs(object_refs)
+
+    def _parse_malware_types(self, meta_args: dict, values: list):
+        feature = 'malware_types' if self._version == '2.1' else 'labels'
+        meta_args[feature] = values
+
+    def _parse_meta_fields(self, cluster_meta: dict, object_type: str) -> dict:
+        meta_args = defaultdict(list)
+        for key, values in cluster_meta.items():
+            if key in self._mapping.external_references_fields:
+                self._parse_external_reference(meta_args, key, values)
+                continue
+            feature = f'{object_type}_meta_mapping'
+            if key in getattr(self._mapping, feature, {}):
+                getattr(self, getattr(self._mapping, feature)[key])(
+                    meta_args, values if isinstance(values, list) else [values]
+                )
+            else:
+                meta_args[f"x_misp_{key.replace(' ', '_')}"] = values
+        if any(key.startswith('x_misp_') for key in meta_args.keys()):
+            meta_args['allow_custom'] = True
+        return meta_args
+
+    def _parse_synonyms_21_meta_field(self, meta_args: dict, values: list):
+        feature = 'aliases' if self._version == '2.1' else 'x_misp_synonyms'
+        meta_args[feature] = values
+
+    @staticmethod
+    def _parse_synonyms_meta_field(meta_args: dict, values: list):
+        meta_args['aliases'] = values
 
     def _parse_threat_actor_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                              object_id: str, timestamp: datetime):
@@ -2531,8 +2593,13 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 threat_actor_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('synonyms') is not None:
-                threat_actor_args['aliases'] = cluster['meta']['synonyms']
+            if cluster.get('meta'):
+                meta_args = self._parse_meta_fields(
+                    cluster['meta'], 'threat_actor'
+                )
+                if 'labels' in meta_args:
+                    threat_actor_args['labels'].extend(meta_args.pop('labels'))
+                threat_actor_args.update(meta_args)
             threat_actor = self._create_threat_actor(threat_actor_args)
             self.__objects.append(threat_actor)
             object_refs.append(threat_actor_id)
@@ -2568,9 +2635,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 tool_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('external_id') is not None:
-                references = self._handle_external_references(cluster['meta']['external_id'])
-                tool_args['external_references'] = references
+            if cluster.get('meta'):
+                meta_args = self._parse_meta_fields(cluster['meta'], 'tool')
+                if 'labels' in meta_args:
+                    tool_args['labels'].extend(meta_args.pop('labels'))
+                tool_args.update(meta_args)
             tool = self._create_tool(tool_args, cluster=cluster)
             self.__objects.append(tool)
             object_refs.append(tool_id)
@@ -2580,6 +2649,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_tool_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_tool_galaxy(galaxy)
         self._handle_object_refs(object_refs)
+
+    def _parse_tool_types(self, meta_args: dict, values: list):
+        feature = 'tool_types' if self._version == '2.1' else 'labels'
+        meta_args[feature] = values
 
     def _parse_undefined_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                 timestamp: Optional[datetime] = None) -> list:
@@ -2622,9 +2695,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 vulnerability_id,
                 timestamp
             )
-            if cluster.get('meta', {}).get('aliases') is not None:
-                references = self._handle_external_references(cluster['meta']['aliases'])
-                vulnerability_args['external_references'] = references
+            if cluster.get('meta'):
+                vulnerability_args.update(
+                    self._parse_meta_fields(cluster['meta'], 'vulnerability')
+                )
             vulnerability = self._create_vulnerability(vulnerability_args)
             self.__objects.append(vulnerability)
             object_refs.append(vulnerability_id)

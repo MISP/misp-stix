@@ -325,6 +325,39 @@ class Stix2Mapping:
             )
         )
         self.__galaxy_types_mapping = Mapping(**_galaxy_types_mapping)
+        self.__external_references_fields = Mapping(
+            **{
+                'external_id': '_parse_external_id',
+                'refs': '_parse_external_url',
+                'Technique ID': '_parse_external_id'
+            }
+        )
+        self.__attack_pattern_meta_mapping = Mapping(
+            kill_chain = '_parse_kill_chain'
+        )
+        self.__intrusion_set_meta_mapping = Mapping(
+            synonyms = '_parse_synonyms_meta_field'
+        )
+        self.__malware_meta_mapping = Mapping(
+            **{
+                'kill_chain': '_parse_kill_chain',
+                'synonyms': '_parse_synonyms_21_meta_field',
+                'type': '_parse_malware_types'
+            }
+        )
+        self.__threat_actor_meta_mapping = Mapping(
+            **{
+                'synonyms': '_parse_synonyms_meta_field',
+                'type': '_parse_threat_actor_types'
+            }
+        )
+        self.__tool_meta_mapping = Mapping(
+            **{
+                'kill_chain': '_parse_kill_chain',
+                'synonyms': '_parse_synonyms_21_meta_field',
+                'type': '_parse_tool_types'
+            }
+        )
 
     def _declare_objects_mapping(self, updates: Optional[dict]=None):
         _objects_mapping = {
@@ -941,6 +974,10 @@ class Stix2Mapping:
         return self.__as_single_fields
 
     @property
+    def attack_pattern_meta_mapping(self) -> dict:
+        return self.__attack_pattern_meta_mapping
+
+    @property
     def attack_pattern_object_mapping(self) -> dict:
         return self.__attack_pattern_object_mapping
 
@@ -1011,6 +1048,10 @@ class Stix2Mapping:
     @property
     def external_id_to_source_name(self) -> dict:
         return self.__external_id_to_source_name
+
+    @property
+    def external_references_fields(self) -> dict:
+        return self.__external_references_fields
 
     @property
     def facebook_account_data_fields(self) -> tuple:
@@ -1097,6 +1138,10 @@ class Stix2Mapping:
         return self.__image_uuid_fields
 
     @property
+    def intrusion_set_meta_mapping(self) -> dict:
+        return self.__intrusion_set_meta_mapping
+
+    @property
     def ip_port_object_mapping(self) -> dict:
         return self.__ip_port_object_mapping
 
@@ -1139,6 +1184,10 @@ class Stix2Mapping:
     @property
     def lnk_single_fields(self) -> tuple:
         return self.__lnk_single_fields
+
+    @property
+    def malware_meta_mapping(self) -> dict:
+        return self.__malware_meta_mapping
 
     @property
     def misp_identity_args(self) -> dict:
@@ -1271,6 +1320,14 @@ class Stix2Mapping:
     @property
     def telegram_account_single_fields(self) -> tuple:
         return self.__telegram_account_single_fields
+
+    @property
+    def threat_actor_meta_mapping(self) -> dict:
+        return self.__threat_actor_meta_mapping
+
+    @property
+    def tool_meta_mapping(self) -> dict:
+        return self.__tool_meta_mapping
 
     @property
     def twitter_account_data_fields(self) -> tuple:
