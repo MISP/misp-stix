@@ -191,7 +191,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._sanitise_object_uuid(misp_object, object_uuid)
         else:
             misp_object.uuid = object_uuid
-        for attribute in custom_object.x_misp_attributes:
+        for custom_attribute in custom_object.x_misp_attributes:
+            attribute = dict(custom_attribute)
             if attribute.get('uuid'):
                 attribute.update(
                     self._sanitise_attribute_uuid(
