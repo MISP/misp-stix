@@ -47,15 +47,6 @@ _EXTERNAL_REFERENCE_TYPING = [
     ExternalReference_v20,
     ExternalReference_v21
 ]
-_GALAXY_TYPES = (
-    'attack-pattern',
-    'course-of-action',
-    'intrusion-set',
-    'malware',
-    'threat-actor',
-    'tool',
-    'vulnerability'
-)
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20,
     ObservedData_v21
@@ -125,13 +116,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _handle_object_mapping(self, labels: list, object_id: str) -> str:
         parsed_labels = {key: value.strip('"') for key, value in (label.split('=') for label in labels)}
         if 'misp:galaxy-type' in parsed_labels:
-            return '_parse_internal_galaxy'
+            return '_parse_galaxy'
         if 'misp:name' in parsed_labels:
             return self._mapping.objects_mapping[parsed_labels['misp:name']]
         if 'misp:type' in parsed_labels:
             return self._mapping.attributes_mapping[parsed_labels['misp:type']]
-        if object_id.split('--')[0] in _GALAXY_TYPES:
-            return '_parse_galaxy'
         raise UndefinedSTIXObjectError(object_id)
 
     def _handle_observable_object_mapping(self, labels: list, object_id: str) -> str:
@@ -403,6 +392,16 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
+    def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
+        if stix_object.id in self._galaxies:
+            self._galaxies[stix_object.id]['used'][self.misp_event.uuid] = False
+        else:
+            galaxy_type = stix_object.labels[1].split('=')[1].strip('"')
+            self._galaxies[stix_object.id] = {
+                'tag_names': [f'misp-galaxy:{galaxy_type}="{stix_object.name}"'],
+                'used': {self.misp_event.uuid: False}
+            }
+
     def _parse_identity_object(self, identity: _IDENTITY_TYPING, name: str) -> MISPObject:
         misp_object = self._create_misp_object(name, identity)
         feature = name.replace('-', '_')
@@ -424,16 +423,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute.update(mapping[object_relation])
                 misp_object.add_attribute(**attribute)
         return misp_object
-
-    def _parse_internal_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
-        if stix_object.id in self._galaxies:
-            self._galaxies[stix_object.id]['used'][self.misp_event.uuid] = False
-        else:
-            galaxy_type = stix_object.labels[1].split('=')[1].strip('"')
-            self._galaxies[stix_object.id] = {
-                'tag_names': [f'misp-galaxy:{galaxy_type}="{stix_object.name}"'],
-                'used': {self.misp_event.uuid: False}
-            }
 
     def _parse_legal_entity_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._parse_identity_object(identity, 'legal-entity')
