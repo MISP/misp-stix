@@ -394,14 +394,22 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._add_misp_object(misp_object)
 
     def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
-        if stix_object.id in self._galaxies:
-            self._galaxies[stix_object.id]['used'][self.misp_event.uuid] = False
+        if stix_object.id in self._clusters:
+            self._clusters[stix_object.id]['used'][self.misp_event.uuid] = False
         else:
             galaxy_type = stix_object.labels[1].split('=')[1].strip('"')
-            self._galaxies[stix_object.id] = {
-                'tag_names': [f'misp-galaxy:{galaxy_type}="{stix_object.name}"'],
+            self._clusters[stix_object.id] = {
+                'cluster': getattr(
+                    self, self._mapping.galaxy_mapping[stix_object.type]
+                )(
+                    stix_object, galaxy_type=galaxy_type
+                ),
                 'used': {self.misp_event.uuid: False}
             }
+            if galaxy_type not in self._galaxies:
+                self._galaxies[galaxy_type] = self._create_misp_galaxy(
+                    stix_object, galaxy_type=galaxy_type
+                )
 
     def _parse_identity_object(self, identity: _IDENTITY_TYPING, name: str) -> MISPObject:
         misp_object = self._create_misp_object(name, identity)
