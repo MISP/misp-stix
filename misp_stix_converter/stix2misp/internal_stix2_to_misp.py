@@ -58,8 +58,8 @@ _PROCESS_TYPING = Union[
 
 
 class InternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, synonyms_path: Optional[str] = None):
-        super().__init__(synonyms_path)
+    def __init__(self):
+        super().__init__()
         self._mapping = InternalSTIX2Mapping()
 
     ################################################################################

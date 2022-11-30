@@ -24,15 +24,7 @@ class ObjectTypeLoadingError(STIXtoMISPError):
     pass
 
 
-class SynonymsResourceJSONError(STIXtoMISPError):
-    pass
-
-
 class UnavailableGalaxyResourcesError(STIXtoMISPError):
-    pass
-
-
-class UnavailableSynonymsResourceError(STIXtoMISPError):
     pass
 
 

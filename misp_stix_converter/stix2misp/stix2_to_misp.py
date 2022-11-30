@@ -3,9 +3,8 @@
 
 import sys
 import time
-from .exceptions import (ObjectRefLoadingError, ObjectTypeLoadingError,
-    SynonymsResourceJSONError, UnavailableGalaxyResourcesError,
-    UnavailableSynonymsResourceError, UndefinedIndicatorError,
+from .exceptions import (
+    ObjectRefLoadingError, ObjectTypeLoadingError, UndefinedIndicatorError,
     UndefinedSTIXObjectError, UndefinedObservableError, UnknownAttributeTypeError,
     UnknownObjectNameError, UnknownParsingFunctionError, UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2Mapping
@@ -112,8 +111,8 @@ _VULNERABILITY_TYPING = Union[
 
 
 class STIX2toMISPParser(STIXtoMISPParser):
-    def __init__(self, synonyms_path: Union[None, str]):
-        super().__init__(synonyms_path)
+    def __init__(self):
+        super().__init__()
         self._creators: set = set()
         self._mapping: Union[ExternalSTIX2Mapping, InternalSTIX2Mapping]
 
@@ -169,11 +168,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             sys.exit('No STIX content loaded, please run `load_stix_content` first.')
         try:
             getattr(self, feature)()
-        except (
-            SynonymsResourceJSONError,
-            UnavailableGalaxyResourcesError,
-            UnavailableSynonymsResourceError
-        ) as error:
+        except Exception as error:
             self._critical_error(error)
 
     def parse_stix_content(self, filename: str):
