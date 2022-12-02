@@ -9,16 +9,15 @@ from .external_stix2_mapping import ExternalSTIX2Mapping
 from .importparser import _INDICATOR_TYPING
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
-    STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
-    _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
-from collections import defaultdict
+    STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _IDENTITY_TYPING, _SDO_TYPING,
+    _VULNERABILITY_TYPING)
 from pymisp import MISPAttribute, MISPObject
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
     ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
-    Indicator as Indicator_v21, Note, ObservedData as ObservedData_v21,
+    Indicator as Indicator_v21, ObservedData as ObservedData_v21,
     Vulnerability as Vulnerability_v21)
 from stix2patterns.inspector import _PatternData as PatternData
 from typing import Optional, Union
@@ -149,46 +148,61 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_attack_pattern(self, attack_pattern_ref: str):
         """
         AttackPattern object parsing function.
-        We check if the attack pattern name is a known Galaxy Cluster name and store
-        the associated tag names what will be used to populate the Galaxies lists
-        within the appropriate MISP data structure (attribute, event).
+        We check if the attack pattern already has been seen by looking at its
+        ID, otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param attack_pattern_ref: The AttackPattern id used to find the related
-            AttackPattern object to parse
+        :param attack_pattern_ref: The AttackPattern id
         """
-        attack_pattern = self._get_stix_object(attack_pattern_ref)
-        if attack_pattern.id in self._clusters:
-            self._clusters[attack_pattern.id]['used'][self.misp_event.uuid] = False
+        if attack_pattern_ref in self._clusters:
+            self._clusters[attack_pattern_ref]['used'][self.misp_event.uuid] = False
         else:
+            attack_pattern = self._get_stix_object(attack_pattern_ref)
             self._clusters[attack_pattern.id] = {
                 'cluster': self._parse_attack_pattern_cluster(attack_pattern),
                 'used': {self.misp_event.uuid: False}
             }
             if 'attack-pattern' not in self._galaxies:
-                self._galaxies['attack-pattern'] = self._create_misp_galaxy(
+                self._galaxies['attack-pattern'] = self._create_galaxy_args(
                     attack_pattern
                 )
+
+    def _parse_campaign(self, campaign_ref: str):
+        """
+        Campaign object parsing function.
+        We check if the campaign already has been seen by looking at its ID,
+        otherwise we convert it as a MISP Galaxy Cluster
+
+        :param capaign_ref: The Campaign id
+        """
+        if campaign_ref in self._clusters:
+            self._clusters[campaign_ref]['used'][self.misp_event.uuid] = False
+        else:
+            campaign = self._get_stix_object(campaign_ref)
+            self._clusters[campaign.id] = {
+                'cluster': self._parse_campaign_cluster(campaign),
+                'used': {self.misp_event.uuid: False}
+            }
+            if 'campaign' not in self._galaxies:
+                self._galaxies['campaign'] = self._create_galaxy_args(campaign)
 
     def _parse_course_of_action(self, course_of_action_ref: str):
         """
         CourseOfAction object parsing function.
-        We check if the course of action name is a known Galaxy Cluster name and
-        store the associated tag names what will be used to populate the Galaxies
-        lists within the appropriate MISP data structure (attribute, event).
+        We check if the course of action already has been seen by looking at its
+        ID, otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param course_of_action_ref: The CourseOfAction id used to find the related
-            CourseOfAction object to parse
+        :param course_of_action_ref: The CourseOfAction id
         """
-        course_of_action = self._get_stix_object(course_of_action_ref)
-        if course_of_action.id in self._clusters:
-            self._clusters[course_of_action.id]['used'][self.misp_event.uuid] = False
+        if course_of_action_ref in self._clusters:
+            self._clusters[course_of_action_ref]['used'][self.misp_event.uuid] = False
         else:
+            course_of_action = self._get_stix_object(course_of_action_ref)
             self._clusters[course_of_action.id] = {
                 'cluster': self._parse_course_of_action_cluster(course_of_action),
-                'user': {self.misp_event.uuid: False}
+                'used': {self.misp_event.uuid: False}
             }
             if 'course-of-action' not in self._galaxies:
-                self._galaxies['course-of-action'] = self._create_misp_galaxy(
+                self._galaxies['course-of-action'] = self._create_galaxy_args(
                     course_of_action
                 )
 
@@ -287,23 +301,21 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_intrusion_set(self, intrusion_set_ref: str):
         """
         IntrusionSet object parsing function.
-        We check if the malware name is a known Galaxy Cluster name and store the
-        associated tag names what will be used to populate the Galaxies lists within
-        the appropriate MISP data structure (attribute, event).
+        We check if the intrusion set already has been seen by looking at its
+        ID, otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param intrusion_set_ref: The IntrusionSet id used to fing the related
-            IntrusionSet object to parse
+        :param intrusion_set_ref: The IntrusionSet id
         """
-        intrusion_set = self._get_stix_object(intrusion_set_ref)
-        if intrusion_set.id in self._clusters:
-            self._clusters[intrusion_set.id]['used'][self.misp_event.uuid] = False
+        if intrusion_set_ref in self._clusters:
+            self._clusters[intrusion_set_ref]['used'][self.misp_event.uuid] = False
         else:
+            intrusion_set = self._get_stix_object(intrusion_set_ref)
             self._clusters[intrusion_set.id] = {
                 'cluster': self._parse_intrusion_set_cluster(intrusion_set),
-                'user': {self.misp_event.uuid: False}
+                'used': {self.misp_event.uuid: False}
             }
             if 'intrusion-set' not in self._galaxies:
-                self._galaxies['intrusion-set'] = self._create_misp_galaxy(
+                self._galaxies['intrusion-set'] = self._create_galaxy_args(
                     intrusion_set
                 )
 
@@ -326,23 +338,21 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_malware(self, malware_ref: str):
         """
         Malware object parsing function.
-        We check if the malware name is a known Galaxy Cluster name and store the
-        associated tag names what will be used to populate the Galaxies lists within
-        the appropriate MISP data structure (attribute, event).
+        We check if the malware already has been seen by looking at its ID,
+        otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param malware_ref: The Malware id used to find the related Malware object
-            to parse
+        :param malware_ref: The Malware id
         """
-        malware = self._get_stix_object(malware_ref)
-        if malware.id in self._clusters:
-            self._clusters[malware.id]['used'][self.misp_event.uuid] = False
+        if malware_ref in self._clusters:
+            self._clusters[malware_ref]['used'][self.misp_event.uuid] = False
         else:
+            malware = self._get_stix_object(malware_ref)
             self._clusters[malware.id] = {
                 'cluster': self._parse_malware_cluster(malware),
                 'used': {self.misp_event.uuid: False}
             }
             if 'malware' not in self._galaxies:
-                self._galaxies['malware'] = self._create_misp_galaxy(
+                self._galaxies['malware'] = self._create_galaxy_args(
                     malware
                 )
 
@@ -391,68 +401,61 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_threat_actor(self, threat_actor_ref: str):
         """
         ThreatActor object parsing function.
-        We check if the threat actor name is a known Galaxy Cluster name and store
-        the associated tag names what will be used to populate the Galaxies lists
-        within the appropriate MISP data structure (attribute, event).
+        We check if the threat actor already has been seen by looking at its ID,
+        otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param threat_actor_ref: The ThreatActor id used to find the related
-            ThreatActor object to parse
+        :param threat_actor_ref: The ThreatActor id
         """
-        threat_actor = self._get_stix_object(threat_actor_ref)
-        if threat_actor.id in self._clusters:
-            self._clusters[threat_actor.id]['used'][self.misp_event.uuid] = False
+        if threat_actor_ref in self._clusters:
+            self._clusters[threat_actor_ref]['used'][self.misp_event.uuid] = False
         else:
+            threat_actor = self._get_stix_object(threat_actor_ref)
             self._clusters[threat_actor.id] = {
                 'cluster': self._parse_threat_actor_cluster(threat_actor),
                 'used': {self.misp_event.uuid: False}
             }
             if 'threat-actor' not in self._galaxies:
-                self._galaxies['threat-actor'] = self._create_misp_galaxy(
+                self._galaxies['threat-actor'] = self._create_galaxy_args(
                     threat_actor
                 )
 
     def _parse_tool(self, tool_ref: str):
         """
         Tool object parsing function.
-        We check if the tool name is a known Galaxy Cluster name and store the
-        associated tag names what will be used to populate the Galaxies lists within
-        the appropriate MISP data structure (attribute, event).
+        We check if the tool already has been seen by looking at its ID,
+        otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param tool_ref: The Tool id used to find the related Tool object to parse
+        :param tool_ref: The Tool id
         """
-        tool = self._get_stix_object(tool_ref)
-        if tool.id in self._clusters:
-            self._clusters[tool.id]['used'][self.misp_event.uuid] = False
+        if tool_ref in self._clusters:
+            self._clusters[tool_ref]['used'][self.misp_event.uuid] = False
         else:
+            tool = self._get_stix_object(tool_ref)
             self._clusters[tool.id] = {
                 'cluster': self._parse_tool_cluster(tool),
                 'used': {self.misp_event.uuid: False}
             }
             if 'tool' not in self._galaxies:
-                self._galaxies['tool'] = self._create_misp_galaxy(tool)
+                self._galaxies['tool'] = self._create_galaxy_args(tool)
 
     def _parse_vulnerability(self, vulnerability_ref: str):
         """
         Vulnerabilty object parsing function.
-        If the vulnerability name is a known Galaxy Cluster name, we store the
-        associated tag names that will be used afterwards to populate the Galaxies
-        lists within the appropriate MISP data structure.
-        Otherwise, the vulnerability is parsed and depending on the converted
-        attributes, the result is either a MISP attribute or a MISP object.
+        If the vulnerability already has been seen by looking at its ID,
+        otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param vulnerability_ref: The Vulnerability id used to find the related
-            Vulnerability object to parse
+        :param vulnerability_ref: The Vulnerability id
         """
-        vulnerability = self._get_stix_object(vulnerability_ref)
-        if vulnerability.id in self._clusters:
-            self._clusters[vulnerability.id]['used'][self.misp_event.uuid] = False
+        if vulnerability_ref in self._clusters:
+            self._clusters[vulnerability_ref]['used'][self.misp_event.uuid] = False
         else:
+            vulnerability = self._get_stix_object(vulnerability_ref)
             self._clusters[vulnerability.id] = {
                 'cluster': self._parse_vulnerability_cluster(vulnerability),
                 'used': {self.misp_event.uuid: False}
             }
             if 'vulnerability' not in self._galaxies:
-                self._galaxies['vulnerability'] = self._create_misp_galaxy(vulnerability)
+                self._galaxies['vulnerability'] = self._create_galaxy_args(vulnerability)
 
     def _parse_vulnerability_object(self, vulnerability: _VULNERABILITY_TYPING):
         """
@@ -492,7 +495,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 'used': {self.misp_event.uuid: False}
             }
             if 'vulnerability' not in self._galaxies:
-                self._galaxies['vulnerability'] = self._create_misp_galaxy(
+                self._galaxies['vulnerability'] = self._create_galaxy_args(
                     vulnerability
                 )
 

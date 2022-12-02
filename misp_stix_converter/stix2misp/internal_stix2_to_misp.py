@@ -26,7 +26,7 @@ from stix2.v21.observables import (
 from stix2.v21.sdo import (
     CustomObject as CustomObject_v21, Indicator as Indicator_v21,
     Malware as Malware_v21, ObservedData as ObservedData_v21, Tool as Tool_v21)
-from typing import Optional, Union
+from typing import Union
 
 _attribute_additional_fields = (
     'category',
@@ -398,17 +398,22 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._clusters[stix_object.id]['used'][self.misp_event.uuid] = False
         else:
             galaxy_type = stix_object.labels[1].split('=')[1].strip('"')
+            galaxy_description, cluster_description = stix_object.description.split(' | ')
             self._clusters[stix_object.id] = {
                 'cluster': getattr(
                     self, self._mapping.galaxy_mapping[stix_object.type]
                 )(
-                    stix_object, galaxy_type=galaxy_type
+                    stix_object,
+                    description=cluster_description,
+                    galaxy_type=galaxy_type
                 ),
                 'used': {self.misp_event.uuid: False}
             }
             if galaxy_type not in self._galaxies:
-                self._galaxies[galaxy_type] = self._create_misp_galaxy(
-                    stix_object, galaxy_type=galaxy_type
+                self._galaxies[galaxy_type] = self._create_galaxy_args(
+                    stix_object,
+                    description=galaxy_description,
+                    galaxy_type=galaxy_type
                 )
 
     def _parse_identity_object(self, identity: _IDENTITY_TYPING, name: str) -> MISPObject:

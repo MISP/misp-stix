@@ -265,6 +265,92 @@ class STIX2Mapping:
             **{'type': 'text', 'object_relation': 'yara-rule-name'}
         )
 
+        # MISP GALAXIES MAPPING
+        self.__galaxy_name_mapping = Mapping(
+            **{
+                "attack-pattern": {
+                    "name": "Attack Pattern",
+                    "description": "Attack Patterns are a type of TTP that describe ways that adversaries attempt to compromise targets. Attack Patterns are used to help categorize attacks, generalize specific attacks to the patterns that they follow, and provide detailed information about how attacks are performed."
+                },
+                "campaign": {
+                    "name": "Campaign",
+                    "description": "A Campaign is a grouping of adversarial behaviors that describes a set of malicious activities or attacks (sometimes called waves) that occur over a period of time against a specific set of targets. Campaigns usually have well defined objectives and may be part of an Intrusion Set."
+                },
+                "course-of-action": {
+                    "name": "Course of Action",
+                    "description": "A Course of Action is an action taken either to prevent an attack or to respond to an attack that is in progress. It may describe technical, automatable responses (applying patches, reconfiguring firewalls) but can also describe higher level actions like employee training or policy changes."
+                },
+                "intrusion-set": {
+                    "name": "Intrusion Set",
+                    "description": "An Intrusion Set is a grouped set of adversarial behaviors and resources with common properties that is believed to be orchestrated by a single organization. An Intrusion Set may capture multiple Campaigns or other activities that are all tied together by shared attributes indicating a commonly known or unknown Threat Actor."
+                },
+                "malware": {
+                    "name": "Malware",
+                    "description": "Malware is a type of TTP that represents malicious code. It generally refers to a program that is inserted into a system, usually covertly. The intent is to compromise the confidentiality, integrity, or availability of the victim's data, applications, or operating system (OS) or otherwise annoy or disrupt the victim."
+                },
+                "threat-actor": {
+                    "name": "Threat Actor",
+                    "description": "Threat Actors are actual individuals, groups, or organizations believed to be operating with malicious intent. A Threat Actor is not an Intrusion Set but may support or be affiliated with various Intrusion Sets, groups, or organizations over time."
+                },
+                "tool": {
+                    "name": "Tool",
+                    "description": "Tools are legitimate software that can be used by threat actors to perform attacks. Knowing how and when threat actors use such tools can be important for understanding how campaigns are executed. Unlike malware, these tools or software packages are often found on a system and have legitimate purposes for power users, system administrators, network administrators, or even normal users."
+                },
+                "vulnerability": {
+                    "name": "Vulnerability",
+                    "description": "A Vulnerability is a weakness or defect in the requirements, designs, or implementations of the computational logic (e.g., code) found in software and some hardware components (e.g., firmware) that can be directly exploited to negatively impact the confidentiality, integrity, or availability of that system."
+                }
+            }
+        )
+
+        self.__attack_pattern_meta_mapping = Mapping(
+            aliases = 'synonyms',
+            external_references = 'refs',
+            kill_chain_phases = 'kill_chain'
+        )
+        self.__campaign_meta_mapping = Mapping(
+            aliases = 'synonyms',
+            objective = 'objective'
+        )
+        self.__intrusion_set_meta_mapping = Mapping(
+            aliases = 'synonyms',
+            goals = 'goals',
+            primary_motivation = 'primary_motivation',
+            resource_level = 'resource_level',
+            secondary_motivations = 'secondary_motivations'
+        )
+        self.__malware_meta_mapping = Mapping(
+            aliases = 'synonyms',
+            architecture_execution_envs = 'architecture_execution_envs',
+            capabilities = 'capabilities',
+            implementation_languages = 'implementation_languages',
+            is_family = 'is_family',
+            kill_chain_phases = 'kill_chain',
+            labels = 'labels',
+            malware_types = 'malware_types',
+            operating_system_refs = 'operating_system_refs',
+            sample_refs = 'sample_refs'
+        )
+        self.__threat_actor_meta_mapping = Mapping(
+            aliases = 'synonyms',
+            goals = 'goals',
+            labels = 'labels',
+            personal_motivations = 'personal_motivations',
+            primary_motivation = 'primary_motivation',
+            resource_level = 'resource_level',
+            roles = 'roles',
+            secondary_motivations = 'secondary_motivations',
+            sophistication = 'sophistication',
+            threat_actor_types = 'threat_actor_types'
+        )
+        self.__tool_meta_mapping = Mapping(
+            aliases = 'synonyms',
+            kill_chain_phases = 'kill_chain',
+            labels = 'labels',
+            tool_types = 'tool_types',
+            tool_version = 'tool_version'
+        )
+
         # MISP OBJECTS MAPPING
         self.__connection_protocols = {
             "IP": "3", "ICMP": "3", "ARP": "3",
@@ -303,12 +389,20 @@ class STIX2Mapping:
         return self.__attack_pattern_id_attribute
 
     @property
+    def attack_pattern_meta_mapping(self) -> dict:
+        return self.__attack_pattern_meta_mapping
+
+    @property
     def attack_pattern_references_attribute(self) -> dict:
         return self.__attack_pattern_references_attribute
 
     @property
     def bundle_to_misp_mapping(self) -> dict:
         return self.__bundle_to_misp_mapping
+
+    @property
+    def campaign_meta_mapping(self) -> dict:
+        return self.__campaign_meta_mapping
 
     @property
     def command_line_attribute(self) -> dict:
@@ -375,8 +469,16 @@ class STIX2Mapping:
         return self.__filename_attribute
 
     @property
+    def galaxy_name_mapping(self) -> dict:
+        return self.__galaxy_name_mapping
+
+    @property
     def hidden_attribute(self) -> dict:
         return self.__hidden_attribute
+
+    @property
+    def intrusion_set_meta_mapping(self) -> dict:
+        return self.__intrusion_set_meta_mapping
 
     @property
     def ip_attribute(self) -> dict:
@@ -397,6 +499,10 @@ class STIX2Mapping:
     @property
     def location_object_mapping(self) -> dict:
         return self.__location_object_mapping
+
+    @property
+    def malware_meta_mapping(self) -> dict:
+        return self.__malware_meta_mapping
 
     @property
     def message_id_attribute(self) -> dict:
@@ -511,8 +617,16 @@ class STIX2Mapping:
         return self.__suricata_reference_attribute
 
     @property
+    def threat_actor_meta_mapping(self) -> dict:
+        return self.__threat_actor_meta_mapping
+
+    @property
     def timeline_mapping(self) -> dict:
         return self.__timeline_mapping
+
+    @property
+    def tool_meta_mapping(self) -> dict:
+        return self.__tool_meta_mapping
 
     @property
     def uri_attribute(self) -> dict:

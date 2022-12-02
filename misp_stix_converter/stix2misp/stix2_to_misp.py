@@ -12,23 +12,29 @@ from .importparser import STIXtoMISPParser
 from .internal_stix2_mapping import InternalSTIX2Mapping
 from collections import defaultdict
 from datetime import datetime
-from pymisp import AbstractMISP, MISPEvent, MISPAttribute, MISPObject, MISPSighting
+from pymisp import (
+    AbstractMISP, MISPEvent, MISPAttribute, MISPGalaxy, MISPGalaxyCluster,
+    MISPObject, MISPSighting)
 from stix2.parsing import parse as stix2_parser
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
-from stix2.v20.sdo import (AttackPattern as AttackPattern_v20, Campaign as Campaign_v20,
+from stix2.v20.sdo import (
+    AttackPattern as AttackPattern_v20, Campaign as Campaign_v20,
     CourseOfAction as CourseOfAction_v20, Identity as Identity_v20,
-    Indicator as Indicator_v20, IntrusionSet as IntrusionSet_v20, Malware as Malware_v20,
-    ObservedData as ObservedData_v20, Report as Report_v20, ThreatActor as ThreatActor_v20,
-    Tool as Tool_v20, Vulnerability as Vulnerability_v20)
+    Indicator as Indicator_v20, IntrusionSet as IntrusionSet_v20,
+    Malware as Malware_v20, ObservedData as ObservedData_v20,
+    Report as Report_v20, ThreatActor as ThreatActor_v20, Tool as Tool_v20,
+    Vulnerability as Vulnerability_v20)
 from stix2.v20.sro import Relationship as Relationship_v20, Sighting as Sighting_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v21.common import MarkingDefinition as MarkingDefinition_v21
-from stix2.v21.observables import (Artifact, AutonomousSystem, Directory, DomainName,
-    EmailAddress, EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
+from stix2.v21.observables import (
+    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress,
+    EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
     NetworkTraffic, Process, Software, URL, UserAccount, WindowsRegistryKey,
     X509Certificate)
-from stix2.v21.sdo import (AttackPattern as AttackPattern_v21, Campaign as Campaign_v21,
+from stix2.v21.sdo import (
+    AttackPattern as AttackPattern_v21, Campaign as Campaign_v21,
     CourseOfAction as CourseOfAction_v21, Grouping, Identity as Identity_v21,
     Indicator as Indicator_v21, IntrusionSet as IntrusionSet_v21, Location,
     Malware as Malware_v21, Note, ObservedData as ObservedData_v21, Opinion,
@@ -63,6 +69,10 @@ _ATTACK_PATTERN_TYPING = Union[
     AttackPattern_v20,
     AttackPattern_v21
 ]
+_CAMPAIGN_TYPING = Union[
+    Campaign_v20,
+    Campaign_v21
+]
 _COURSE_OF_ACTION_TYPING = Union[
     CourseOfAction_v20,
     CourseOfAction_v21
@@ -70,6 +80,8 @@ _COURSE_OF_ACTION_TYPING = Union[
 _GALAXY_OBJECTS_TYPING = Union[
     AttackPattern_v20,
     AttackPattern_v21,
+    Campaign_v20,
+    Campaign_v21,
     CourseOfAction_v20,
     CourseOfAction_v21,
     IntrusionSet_v20,
@@ -87,6 +99,14 @@ _IDENTITY_TYPING = Union[
     Identity_v20,
     Identity_v21
 ]
+_INTRUSION_SET_TYPING = Union[
+    IntrusionSet_v20,
+    IntrusionSet_v21
+]
+_MALWARE_TYPING = Union[
+    Malware_v20,
+    Malware_v21
+]
 _MISP_FEATURES_TYPING = Union[
     MISPAttribute,
     MISPEvent,
@@ -103,6 +123,14 @@ _SDO_TYPING = Union[
 _SIGHTING_TYPING = Union[
     Sighting_v20,
     Sighting_v21
+]
+_THREAT_ACTOR_TYPING = Union[
+    ThreatActor_v20,
+    ThreatActor_v21
+]
+_TOOL_TYPING = Union[
+    Tool_v20,
+    Tool_v21
 ]
 _VULNERABILITY_TYPING = Union[
     Vulnerability_v20,
@@ -547,12 +575,16 @@ class STIX2toMISPParser(STIXtoMISPParser):
         self._parse_galaxies()
 
     def _parse_galaxies(self):
-        for galaxy in self._galaxies.values():
-            if self.misp_event.uuid not in galaxy['used']:
+        clusters = defaultdict(list)
+        for cluster in self._clusters.values():
+            if self.misp_event.uuid not in cluster['used']:
                 continue
-            if not galaxy['used'][self.misp_event.uuid]:
-                for tag_name in galaxy['tag_names']:
-                    self.misp_event.add_tag(tag_name)
+            if not cluster['used'][self.misp_event.uuid]:
+                misp_cluster = cluster['cluster']
+                clusters[misp_cluster.type].append(misp_cluster)
+        if clusters:
+            for galaxy in self._aggregate_galaxy_clusters(clusters):
+                self.misp_event.add_galaxy(galaxy)
 
     def _parse_location_object(self, location: Location) -> MISPObject:
         misp_object = self._create_misp_object('geolocation', location)
@@ -579,34 +611,191 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._parse_observed_data_v20(observed_data)
 
     ################################################################################
+    #                  MISP GALAXIES & CLUSTERS PARSING FUNCTIONS                  #
+    ################################################################################
+
+    def _aggregate_galaxy_clusters(self, galaxies: dict):
+        for galaxy_type, clusters in galaxies.items():
+            misp_galaxy = MISPGalaxy()
+            misp_galaxy.from_dict(**self._galaxies[galaxy_type])
+            for cluster in clusters:
+                misp_galaxy.clusters.append(cluster)
+            yield misp_galaxy
+
+    @staticmethod
+    def _create_cluster_args(stix_object: _GALAXY_OBJECTS_TYPING,
+                             description: Union[None, str],
+                             galaxy_type: Union[None, str]) -> dict:
+        if galaxy_type is None:
+            galaxy_type = stix_object.type
+        if description is not None:
+            return {
+                'type': galaxy_type,
+                'value': stix_object.name,
+                'description': description
+            }
+        cluster_args = {
+            'type': galaxy_type,
+            'value': stix_object.name
+        }
+        if hasattr(stix_object, 'description'):
+            cluster_args['description'] = stix_object.description
+        return cluster_args
+
+    def _create_galaxy_args(self, stix_object: _GALAXY_OBJECTS_TYPING,
+                            description: Optional[str] = None,
+                            galaxy_type: Optional[str] = None) -> dict:
+        misp_galaxy = MISPGalaxy()
+        if description is None and galaxy_type is None:
+            galaxy_args = {'type': stix_object.type}
+            galaxy_args.update(
+                self._mapping.galaxy_name_mapping[stix_object.type]
+            )
+            misp_galaxy.from_dict(**galaxy_args)
+            return misp_galaxy
+        galaxy_args = {
+            'type': galaxy_type,
+            'name': galaxy_type.title(),
+            'description': description
+        }
+        misp_galaxy.from_dict(**galaxy_args)
+        return misp_galaxy
+
+    @staticmethod
+    def _extract_custom_fields(stix_object: _GALAXY_OBJECTS_TYPING):
+        for key, value in stix_object.items():
+            if key.startswith('x_misp_'):
+                yield '_'.join(key.split('_')[2:]), value
+
+    def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
+        mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
+        meta = {}
+        for feature, field in getattr(self._mapping, mapping).items():
+            if hasattr(stix_object, feature):
+                meta[field] = getattr(stix_object, feature)
+        meta.update(dict(self._extract_custom_fields(stix_object)))
+        return meta
+
+    def _parse_attack_pattern_cluster(self, attack_pattern: _ATTACK_PATTERN_TYPING,
+                                      description: Optional[str] = None,
+                                      galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        attack_pattern_args = self._create_cluster_args(
+            attack_pattern, description, galaxy_type
+        )
+        meta = self._handle_meta_fields(attack_pattern)
+        if meta:
+            attack_pattern_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(attack_pattern_args)
+
+    def _parse_campaign_cluster(self, campaign: _CAMPAIGN_TYPING, description: Optional[str] = None,
+                                galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        campaign_args = self._create_cluster_args(
+            campaign, description, galaxy_type
+        )
+        meta = self._handle_meta_fields(campaign)
+        if meta:
+            campaign_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(campaign_args)
+
+    def _parse_course_of_action_cluster(self, course_of_action: _COURSE_OF_ACTION_TYPING,
+                                        description: Optional[str] = None,
+                                        galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        course_of_action_args = self._create_cluster_args(
+            course_of_action, description ,galaxy_type
+        )
+        meta = dict(self._extract_custom_fields(course_of_action))
+        if meta:
+            course_of_action_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(course_of_action_args)
+
+    def _parse_intrusion_set_cluster(self, intrusion_set: _INTRUSION_SET_TYPING,
+                                     description: Optional[str] = None,
+                                     galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        intrusion_set_args = self._create_cluster_args(
+            intrusion_set, description, galaxy_type
+        )
+        meta = self._handle_meta_fields(intrusion_set)
+        if meta:
+            intrusion_set_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(intrusion_set_args)
+
+    def _parse_malware_cluster(self, malware: _MALWARE_TYPING, description: Optional[str] = None,
+                               galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        malware_args = self._create_cluster_args(
+            malware, description, galaxy_type
+        )
+        meta = self._handle_meta_fields(malware)
+        if meta:
+            malware_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(malware_args)
+
+    def _parse_threat_actor_cluster(self, threat_actor: _THREAT_ACTOR_TYPING,
+                                    description: Optional[str] = None,
+                                    galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        threat_actor_args = self._create_cluster_args(
+            threat_actor, description, galaxy_type
+        )
+        meta = self._handle_meta_fields(threat_actor)
+        if meta:
+            threat_actor_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(threat_actor_args)
+
+    def _parse_tool_cluster(self, tool: _TOOL_TYPING, description: Optional[str] = None,
+                            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        tool_args = self._create_cluster_args(tool, description, galaxy_type)
+        meta = self._handle_meta_fields(tool)
+        if meta:
+            tool_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(tool_args)
+
+    def _parse_vulnerability_cluster(self, vulnerability: _VULNERABILITY_TYPING,
+                                     description: Optional[str] = None,
+                                     galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        vulnerability_args = self._create_cluster_args(
+            vulnerability, description, galaxy_type
+        )
+        meta = dict(self._extract_custom_fields(vulnerability))
+        if meta:
+            vulnerability_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(vulnerability_args)
+
+    ################################################################################
     #                 RELATIONSHIPS & SIGHTINGS PARSING FUNCTIONS.                 #
     ################################################################################
 
     def _parse_attribute_relationships(self, attribute: MISPAttribute):
+        clusters = defaultdict(list)
         for relationship in self._relationship[attribute.uuid]:
             referenced_uuid = relationship['referenced_uuid']
-            if referenced_uuid in self._galaxies:
-                for tag_name in self._galaxies[referenced_uuid]['tag_names']:
-                    attribute.add_tag(tag_name)
-                self._galaxies[referenced_uuid]['used'][self.misp_event.uuid] = True
+            if referenced_uuid in self._clusters:
+                cluster = self._clusters[referenced_uuid]['cluster']
+                clusters[cluster['type']].append(cluster)
+                self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+        if clusters:
+            for galaxy in self._aggregate_galaxy_clusters(clusters):
+                attribute.add_galaxy(galaxy)
 
     def _parse_attribute_sightings(self, attribute: MISPAttribute):
         for sighting in self._sighting[attribute.uuid]:
             attribute.add_sighting(sighting)
 
     def _parse_object_relationships(self, misp_object: MISPObject):
+        clusters = defaultdict(list)
         for relationship in self._relationship[misp_object.uuid]:
             referenced_uuid = relationship['referenced_uuid']
-            if referenced_uuid in self._galaxies:
-                for tag_name in self._galaxies[referenced_uuid]['tag_names']:
-                    for attribute in misp_object.attributes:
-                        attribute.add_tag(tag_name)
-                self._galaxies[referenced_uuid]['used'][self.misp_event.uuid] = True
+            if referenced_uuid in self._clusters:
+                cluster = self._clusters[referenced_uuid]['cluster']
+                clusters[cluster['type']].append(cluster)
+                self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
             else:
                 misp_object.add_reference(
                     self._sanitise_uuid(referenced_uuid),
                     relationship['relationship_type']
                 )
+        if clusters:
+            for galaxy in self._aggregate_galaxy_clusters(clusters):
+                for attribute in misp_object.attributes:
+                    attribute.add_galaxy(galaxy)
 
     def _parse_object_sightings(self, misp_object: MISPObject):
         for sighting in self._sighting[misp_object.uuid]:
@@ -671,6 +860,18 @@ class STIX2toMISPParser(STIXtoMISPParser):
         misp_event.timestamp = self._timestamp_from_date(stix_object.modified)
         self._handle_misp_event_tags(misp_event, stix_object)
         return misp_event
+
+    @staticmethod
+    def _create_misp_galaxy(galaxy_args: dict) -> MISPGalaxy:
+        galaxy = MISPGalaxy()
+        galaxy.from_dict(**galaxy_args)
+        return galaxy
+
+    @staticmethod
+    def _create_misp_galaxy_cluster(cluster_args: dict) -> MISPGalaxyCluster:
+        cluster = MISPGalaxyCluster()
+        cluster.from_dict(**cluster_args)
+        return cluster
 
     def _create_misp_object(self, name: str, stix_object: Optional[_SDO_TYPING] = None) -> MISPObject:
         misp_object = MISPObject(
