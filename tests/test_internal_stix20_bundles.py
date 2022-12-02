@@ -6139,7 +6139,7 @@ _X509_OBSERVABLE_OBJECT = {
 }
 
 
-class TestSTIX20Bundles:
+class TestInternalSTIX20Bundles:
     __bundle = {
         "type": "bundle",
         "id": "bundle--314e4210-e41a-4952-9f3c-135d7d577112",

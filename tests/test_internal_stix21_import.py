@@ -3,27 +3,12 @@
 
 import json
 from uuid import uuid5
-from .test_stix21_bundles import TestSTIX21Bundles
-from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
+from .test_internal_stix21_bundles import TestInternalSTIX21Bundles
 from ._test_stix import TestSTIX21
 from ._test_stix_import import TestInternalSTIX2Import, TestSTIX21Import
 
 
 class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Import):
-    @classmethod
-    def tearDownClass(self):
-        attributes_documentation = AttributesDocumentationUpdater(
-            'stix21_to_misp_attributes',
-            self._attributes_v21,
-            'import'
-        )
-        attributes_documentation.check_import_mapping('stix21')
-        objects_documentation = ObjectsDocumentationUpdater(
-            'stix21_to_misp_objects',
-            self._objects_v21,
-            'import'
-        )
-        objects_documentation.check_import_mapping('stix21')
 
     ################################################################################
     #                      MISP ATTRIBUTES CHECKING FUNCTIONS                      #
@@ -66,7 +51,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
     ################################################################################
 
     def test_stix21_bundle_with_AS_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_AS_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_AS_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -81,7 +66,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_AS_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_AS_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_AS_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -101,7 +86,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_attachment_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_attachment_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_attachment_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -121,7 +106,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_attachment_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_attachment_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_attachment_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -144,7 +129,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_campaign_name_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_campaign_name_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_campaign_name_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -157,7 +142,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_custom_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_custom_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_custom_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -168,7 +153,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self._check_custom_attribute(attribute, custom_attribute)
 
     def test_stix21_bundle_with_domain_ip_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_domain_ip_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_domain_ip_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -187,7 +172,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_domain_ip_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_domain_ip_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_domain_ip_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -212,7 +197,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_domain_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_domain_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_domain_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -227,7 +212,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_domain_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_domain_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_domain_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -247,7 +232,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_attachment_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_attachment_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_attachment_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -262,7 +247,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_attachment_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_attachment_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_attachment_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -288,7 +273,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_body_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_body_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_body_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -303,7 +288,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_body_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_body_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_body_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -323,7 +308,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_destination_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_destination_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_destination_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -338,7 +323,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_destination_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_destination_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_destination_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -360,7 +345,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_header_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_header_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_header_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -375,7 +360,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_header_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_header_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_header_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -395,7 +380,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -410,7 +395,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_message_id_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_message_id_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_message_id_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -425,7 +410,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_message_id_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_message_id_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_message_id_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -445,7 +430,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -465,7 +450,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_reply_to_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_reply_to_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_reply_to_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -480,7 +465,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_reply_to_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_reply_to_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_reply_to_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -500,7 +485,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_source_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_source_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_source_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -515,7 +500,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_source_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_source_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_source_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -537,7 +522,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_subject_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_subject_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_subject_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -552,7 +537,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_subject_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_subject_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_subject_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -572,7 +557,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_x_mailer_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_x_mailer_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_x_mailer_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -587,7 +572,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_x_mailer_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_x_mailer_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_x_mailer_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -607,7 +592,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_filename_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_filename_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_filename_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -622,7 +607,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_filename_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_filename_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_filename_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -642,7 +627,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundl_with_github_username_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_github_username_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_github_username_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -660,7 +645,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_github_username_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_github_username_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_github_username_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -680,7 +665,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_hash_composite_indicator_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_hash_composite_indicator_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_hash_composite_indicator_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -699,7 +684,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
 
     def test_stix21_bundle_with_hash_composite_observable_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_hash_composite_observable_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_hash_composite_observable_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -723,7 +708,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
 
     def test_stix21_bundle_with_hash_indicator_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_hash_indicator_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_hash_indicator_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -739,7 +724,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
 
     def test_stix21_bundle_with_hash_observable_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_hash_observable_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_hash_observable_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -761,7 +746,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
 
     def test_stix21_bundle_with_hostname_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_hostname_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_hostname_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -776,7 +761,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_hostname_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_hostname_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_hostname_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -796,7 +781,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_hostname_port_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_hostname_port_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_hostname_port_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -814,7 +799,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_hostname_port_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_hostname_port_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_hostname_port_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -836,7 +821,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_http_indicator_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_http_indicator_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_http_indicator_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -854,7 +839,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
 
     def test_stix21_bundle_with_ip_indicator_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_ip_indicator_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_ip_indicator_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -872,7 +857,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
 
     def test_stix21_bundle_with_ip_observable_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_ip_observable_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_ip_observable_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -897,7 +882,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
 
     def test_stix21_bundle_with_ip_port_indicator_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_ip_port_indicator_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_ip_port_indicator_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -924,7 +909,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
 
     def test_stix21_bundle_with_ip_port_observable_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_ip_port_observable_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_ip_port_observable_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -950,7 +935,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
 
     def test_stix21_bundle_with_mac_address_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_mac_address_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_mac_address_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -965,7 +950,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_mac_address_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_mac_address_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_mac_address_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -985,7 +970,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_malware_sample_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_malware_sample_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_malware_sample_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1007,7 +992,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_malware_sample_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_malware_sample_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_malware_sample_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1030,7 +1015,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_mutex_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_mutex_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_mutex_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1045,7 +1030,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_mutex_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_mutex_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_mutex_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1065,7 +1050,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_patterning_language_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_patterning_language_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_patterning_language_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1088,7 +1073,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_port_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_port_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_port_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1103,7 +1088,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_regkey_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_regkey_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_regkey_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1118,7 +1103,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_regkey_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_regkey_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_regkey_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1138,7 +1123,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_regkey_value_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_regkey_value_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_regkey_value_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1156,7 +1141,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_regkey_value_observable_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_regkey_value_observable_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_regkey_value_observable_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1179,7 +1164,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_size_in_bytes_indicator_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_size_in_bytes_indicator_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_size_in_bytes_indicator_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1194,7 +1179,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_url_indicator_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_url_indicator_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_url_indicator_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1210,7 +1195,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
 
     def test_stix21_bundle_with_url_observable_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_url_observable_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_url_observable_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1231,7 +1216,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
 
     def test_stix21_bundle_with_vulnerability_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_vulnerability_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_vulnerability_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1244,7 +1229,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_x509_fingerprint_indicator_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_x509_fingerprint_indicator_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_x509_fingerprint_indicator_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1265,7 +1250,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
 
     def test_stix21_bundle_with_x509_fingerprint_observable_attributes(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_x509_fingerprint_observable_attributes()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_x509_fingerprint_observable_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1291,7 +1276,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
     ################################################################################
 
     def test_stix21_bundle_with_invalid_uuids(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_invalid_uuids()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_invalid_uuids()
         grouping, ap1, coa1, indicator1 = bundle.objects[1:5]
         ap2, od, _, ip_addr, custom, coa2, indicator2, vuln = bundle.objects[8:16]
         self.parser.load_stix_bundle(bundle)
@@ -1361,7 +1346,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertIn(f'Original UUID was: {vulnerability_uuid}', vulnerability.comment)
 
     def test_stix21_bundle_with_multiple_reports_as_multiple_events(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_multiple_reports()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_multiple_reports()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         _, grouping1, od1, _, od2, _, grouping2, indicator1, indicator2, malware, relation1, relation2 = bundle.objects
@@ -1373,7 +1358,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_multiple_reports_as_single_event(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_multiple_reports()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_multiple_reports()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle(single_event = True)
         _, _, od1, _, od2, _, _, indicator1, indicator2, malware, relation1, relation2 = bundle.objects
@@ -1383,7 +1368,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_no_report(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_no_report()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_no_report()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         _, od1, _, od2, _, indicator1, indicator2, malware, relation1, relation2 = bundle.objects
@@ -1393,7 +1378,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_sightings(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_sightings()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_sightings()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1421,7 +1406,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.assertEqual(sighting.Organisation['name'], identity.name)
 
     def test_stix21_bundle_with_single_report(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_single_report()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_single_report()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         _, grouping, od1, _, od2, _, indicator1, indicator2, malware, relation1, relation2 = bundle.objects
@@ -1434,7 +1419,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
     ################################################################################
 
     def test_stix21_bundle_with_attack_pattern_galaxy(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_attack_pattern_galaxy()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_attack_pattern_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1446,7 +1431,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_course_of_action_galaxy(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_course_of_action_galaxy()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_course_of_action_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1458,7 +1443,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_galaxy_embedded_in_attribute(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_galaxy_embedded_in_attribute()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_galaxy_embedded_in_attribute()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1478,7 +1463,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_intrusion_set_galaxy(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_intrusion_set_galaxy()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_intrusion_set_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1490,7 +1475,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_malware_galaxy(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_malware_galaxy()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_malware_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1502,7 +1487,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_threat_actor_galaxy(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_threat_actor_galaxy()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_threat_actor_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1514,7 +1499,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_tool_galaxy(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_tool_galaxy()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_tool_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1526,7 +1511,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_vulnerability_galaxy(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_vulnerability_galaxy()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_vulnerability_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1542,7 +1527,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
     ################################################################################
 
     def test_stix21_bundle_with_account_indicator_objects(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_account_indicator_objects()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_account_indicator_objects()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1562,7 +1547,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_account_observable_objects(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_account_observable_objects()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_account_observable_objects()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1592,7 +1577,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_account_with_attachment_indicator_objects(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_account_with_attachment_indicator_objects()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_account_with_attachment_indicator_objects()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1639,7 +1624,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_account_with_attachment_observable_objects(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_account_with_attachment_observable_objects()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_account_with_attachment_observable_objects()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1722,7 +1707,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_android_app_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_android_app_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_android_app_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1736,7 +1721,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_android_app_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_android_app_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_android_app_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1755,7 +1740,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_annotation_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_annotation_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_annotation_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1800,7 +1785,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_asn_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_asn_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_asn_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1814,7 +1799,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_asn_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_asn_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_asn_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1833,7 +1818,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_attack_pattern_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_attack_pattern_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_attack_pattern_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1846,7 +1831,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_course_of_action_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_course_of_action_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_course_of_action_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1859,7 +1844,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_cpe_asset_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_cpe_asset_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_cpe_asset_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1873,7 +1858,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_cpe_asset_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_cpe_asset_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_cpe_asset_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1892,7 +1877,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_credential_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_credential_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_credential_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1909,7 +1894,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_credential_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_credential_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_credential_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1934,7 +1919,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_custom_objects(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_custom_objects()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_custom_objects()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1944,7 +1929,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self._check_custom_object(misp_object, custom_object)
 
     def test_stix21_bundle_with_domain_ip_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_domain_ip_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_domain_ip_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -1958,7 +1943,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_domain_ip_observable_objects(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_domain_ip_observable_objects()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_domain_ip_observable_objects()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2023,7 +2008,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2037,7 +2022,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_email_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_email_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_email_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2103,7 +2088,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_employee_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_employee_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_employee_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2117,7 +2102,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_file_and_pe_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_file_and_pe_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_file_and_pe_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2151,7 +2136,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_file_and_pe_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_file_and_pe_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_file_and_pe_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2191,7 +2176,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_file_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_file_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_file_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2205,7 +2190,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_file_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_file_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_file_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2241,7 +2226,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_geolocation_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_geolocation_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_geolocation_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2264,7 +2249,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_http_request_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_http_request_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_http_request_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2278,7 +2263,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_http_request_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_http_request_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_http_request_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2320,7 +2305,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_image_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_image_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_image_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2334,7 +2319,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_image_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_image_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_image_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2364,7 +2349,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_ip_port_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_ip_port_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_ip_port_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2378,7 +2363,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_ip_port_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_ip_port_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_ip_port_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2408,7 +2393,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_legal_entity_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_legal_entity_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_legal_entity_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2421,7 +2406,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_lnk_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_lnk_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_lnk_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2445,7 +2430,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_lnk_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_lnk_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_lnk_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2490,7 +2475,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_mutex_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_mutex_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_mutex_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2504,7 +2489,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_mutex_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_mutex_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_mutex_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2523,7 +2508,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_netflow_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_netflow_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_netflow_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2537,7 +2522,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_netflow_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_netflow_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_netflow_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2585,7 +2570,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_network_connection_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_network_connection_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_network_connection_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2599,7 +2584,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_network_connection_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_network_connection_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_network_connection_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2635,7 +2620,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_network_socket_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_network_socket_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_network_socket_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2653,7 +2638,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_network_socket_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_network_socket_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_network_socket_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2696,7 +2681,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_news_agency_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_news_agency_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_news_agency_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2709,7 +2694,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_object_references(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_object_references()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_object_references()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2741,7 +2726,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(vulnerability_references[0].relationship_type, 'affects')
 
     def test_stix21_bundle_with_organization_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_organization_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_organization_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2755,7 +2740,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_patterning_language_objects(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_patterning_language_objects()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_patterning_language_objects()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2818,7 +2803,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_process_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_process_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_process_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2843,7 +2828,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_process_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_process_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_process_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2904,7 +2889,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_registry_key_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_registry_key_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_registry_key_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2923,7 +2908,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_registry_key_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_registry_key_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_registry_key_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2948,7 +2933,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_script_objects(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_script_objects()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_script_objects()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2975,7 +2960,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_url_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_url_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_url_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -2989,7 +2974,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_url_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_url_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_url_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -3008,7 +2993,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_vulnerability_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_vulnerability_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_vulnerability_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -3021,7 +3006,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_x509_indicator_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_x509_indicator_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_x509_indicator_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
@@ -3035,7 +3020,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     def test_stix21_bundle_with_x509_observable_object(self):
-        bundle = TestSTIX21Bundles.get_bundle_with_x509_observable_object()
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_x509_observable_object()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event

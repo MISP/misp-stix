@@ -1260,7 +1260,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "id": "relationship--0ded93a1-38e5-4d2d-aecb-1f0e98daedb7",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "relationship_type": "includes",
+        "relationship_type": "related-to",
         "source_ref": "observed-data--55555555-5555-5555-5555-555555555555",
         "target_ref": "indicator--88888888-8888-8888-8888-888888888888"
     },
@@ -7520,7 +7520,7 @@ _X509_OBSERVABLE_OBJECT = [
 ]
 
 
-class TestSTIX21Bundles:
+class TestInternalSTIX21Bundles:
     __bundle = {
         "type": "bundle",
         "id": "bundle--1dec4c6d-b06a-4f9a-a3e9-7bcdbac4f83a"

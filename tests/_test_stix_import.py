@@ -7,6 +7,7 @@ from collections import defaultdict
 from misp_stix_converter import InternalSTIX2toMISPParser
 from uuid import UUID
 from ._test_stix import TestSTIX
+from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
 
 
 class TestSTIX2Import(TestSTIX):
@@ -89,6 +90,21 @@ class TestSTIX20Import(TestSTIX2Import):
     _attributes_v20 = defaultdict(dict)
     _objects_v20 = defaultdict(dict)
     _galaxies_v20 = defaultdict(dict)
+
+    @classmethod
+    def tearDownClass(self):
+        attributes_documentation = AttributesDocumentationUpdater(
+            'stix20_to_misp_attributes',
+            self._attributes_v20,
+            'import'
+        )
+        attributes_documentation.check_import_mapping('stix20')
+        objects_documentation = ObjectsDocumentationUpdater(
+            'stix20_to_misp_objects',
+            self._objects_v20,
+            'import'
+        )
+        objects_documentation.check_import_mapping('stix20')
 
     def _populate_attack_pattern_documentation(self, **kwargs):
         if 'misp_object' in kwargs:
@@ -177,6 +193,21 @@ class TestSTIX21Import(TestSTIX2Import):
     _attributes_v21 = defaultdict(dict)
     _objects_v21 = defaultdict(dict)
     _galaxies_v21 = defaultdict(dict)
+
+    @classmethod
+    def tearDownClass(self):
+        attributes_documentation = AttributesDocumentationUpdater(
+            'stix21_to_misp_attributes',
+            self._attributes_v21,
+            'import'
+        )
+        attributes_documentation.check_import_mapping('stix21')
+        objects_documentation = ObjectsDocumentationUpdater(
+            'stix21_to_misp_objects',
+            self._objects_v21,
+            'import'
+        )
+        objects_documentation.check_import_mapping('stix21')
 
     def _populate_attack_pattern_documentation(self, **kwargs):
         if 'misp_object' in kwargs:
