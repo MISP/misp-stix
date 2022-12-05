@@ -2529,7 +2529,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 if 'labels' in meta_args:
                     malware_args['labels'].extend(meta_args.pop('labels'))
                 malware_args.update(meta_args)
-            malware = self._create_malware(malware_args, cluster=cluster)
+            malware = self._create_malware(malware_args)
             self.__objects.append(malware)
             object_refs.append(malware_id)
             self.__ids[cluster['uuid']] = malware_id
@@ -2555,7 +2555,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     meta_args, values if isinstance(values, list) else [values]
                 )
             else:
-                meta_args[f"x_misp_{key.replace(' ', '_')}"] = values
+                feature = key.replace(' ', '_').replace('-', '_')
+                meta_args[f"x_misp_{feature}"] = values
         if any(key.startswith('x_misp_') for key in meta_args.keys()):
             meta_args['allow_custom'] = True
         return meta_args
@@ -2640,7 +2641,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 if 'labels' in meta_args:
                     tool_args['labels'].extend(meta_args.pop('labels'))
                 tool_args.update(meta_args)
-            tool = self._create_tool(tool_args, cluster=cluster)
+            tool = self._create_tool(tool_args)
             self.__objects.append(tool)
             object_refs.append(tool_id)
             self.__ids[cluster['uuid']] = tool_id

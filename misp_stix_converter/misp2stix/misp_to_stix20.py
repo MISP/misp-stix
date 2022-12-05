@@ -1113,10 +1113,6 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             args.update(self._mapping.malware_sample_additional_observable_values)
         return Artifact(**args)
 
-    def _create_attack_pattern_from_galaxy(self, args: dict, cluster: dict) -> AttackPattern:
-        args['kill_chain_phases'] = self._create_killchain(cluster['type'])
-        return AttackPattern(**args)
-
     @staticmethod
     def _create_attack_pattern(attack_pattern_args: dict) -> AttackPattern:
         return AttackPattern(**attack_pattern_args)
@@ -1175,7 +1171,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             'identity_class': 'organization',
             'interoperability': True
         }
-        return Identity(**identity_args)
+        return self._create_identity(identity_args)
 
     @staticmethod
     def _create_indicator(indicator_args: dict) -> Indicator:
@@ -1185,9 +1181,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_intrusion_set(intrusion_set_args: dict) -> IntrusionSet:
         return IntrusionSet(**intrusion_set_args)
 
-    def _create_malware(self, malware_args: dict, cluster: Optional[dict] = None) -> Malware:
-        if cluster is not None:
-            malware_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
+    @staticmethod
+    def _create_malware(malware_args: dict) -> Malware:
         return Malware(**malware_args)
 
     def _create_observed_data(self, args: dict, observable: dict):
@@ -1214,9 +1209,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_threat_actor(threat_actor_args: dict) -> ThreatActor:
         return ThreatActor(**threat_actor_args)
 
-    def _create_tool(self, tool_args: dict, cluster: Optional[dict] = None) -> Tool:
-        if cluster is not None:
-            tool_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
+    @staticmethod
+    def _create_tool(tool_args: dict) -> Tool:
         return Tool(**tool_args)
 
     @staticmethod
