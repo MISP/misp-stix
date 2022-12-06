@@ -2376,10 +2376,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     self._parse_meta_fields(cluster['meta'], 'attack_pattern')
                 )
             self.__objects.append(
-                self._create_attack_pattern_from_galaxy(
-                    attack_pattern_args,
-                    cluster
-                )
+                self._create_attack_pattern(attack_pattern_args)
             )
             object_refs.append(attack_pattern_id)
             self.__ids[cluster['uuid']] = attack_pattern_id
