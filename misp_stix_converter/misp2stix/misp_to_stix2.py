@@ -2488,12 +2488,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _parse_kill_chain(meta_args: dict, values: list):
         for value in values:
-            *name, phase = value.split(':')
+            name, *_, phase = value.split(':')
             meta_args['kill_chain_phases'].append(
-                {
-                    'kill_chain_name': ':'.join(name),
-                    'phase_name': phase
-                }
+                {'kill_chain_name': name, 'phase_name': phase}
             )
 
     def _parse_malware_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
