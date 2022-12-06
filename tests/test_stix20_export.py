@@ -4421,7 +4421,7 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         attack_pattern = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(attack_pattern.type, 'attack-pattern')
-        self._check_galaxy_features(attack_pattern, galaxy, timestamp, True, False)
+        self._check_galaxy_features(attack_pattern, galaxy, timestamp)
 
     def _test_event_with_course_of_action_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -4430,7 +4430,7 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         course_of_action = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(course_of_action.type, 'course-of-action')
-        self._check_galaxy_features(course_of_action, galaxy, timestamp, False, False)
+        self._check_galaxy_features(course_of_action, galaxy, timestamp)
 
     def _test_event_with_custom_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -4447,7 +4447,7 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         intrusion_set = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(intrusion_set.type, 'intrusion-set')
-        self._check_galaxy_features(intrusion_set, galaxy, timestamp, False, True)
+        self._check_galaxy_features(intrusion_set, galaxy, timestamp)
 
     def _test_event_with_malware_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -4456,7 +4456,7 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         malware = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(malware.type, 'malware')
-        self._check_galaxy_features(malware, galaxy, timestamp, True, False)
+        self._check_galaxy_features(malware, galaxy, timestamp)
 
     def _test_event_with_threat_actor_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -4465,7 +4465,7 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         threat_actor = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(threat_actor.type, 'threat-actor')
-        self._check_galaxy_features(threat_actor, galaxy, timestamp, False, True)
+        self._check_galaxy_features(threat_actor, galaxy, timestamp)
 
     def _test_event_with_tool_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -4474,7 +4474,7 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         tool = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(tool.type, 'tool')
-        self._check_galaxy_features(tool, galaxy, timestamp, True, False)
+        self._check_galaxy_features(tool, galaxy, timestamp)
 
     def _test_event_with_vulnerability_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -4483,7 +4483,7 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         vulnerability = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(vulnerability.type, 'vulnerability')
-        self._check_galaxy_features(vulnerability, galaxy, timestamp, False, False)
+        self._check_galaxy_features(vulnerability, galaxy, timestamp)
 
 
 class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
@@ -4620,7 +4620,12 @@ class TestSTIX20ExportInteroperability(TestSTIX2Export):
         self.assertEqual(stix_object.type, name)
         name, reference = cluster_value.split(' - ')
         self.assertEqual(stix_object.name, name)
-        self.assertEqual(stix_object.external_references[0].external_id, reference)
+        try:
+            self.assertEqual(
+                stix_object.external_references[0].external_id, reference
+            )
+        except AssertionError:
+            self.assertEqual(stix_object.x_mitre_old_attack_id, reference)
 
     def _run_galaxy_tests(self, event):
         orgc = event['Orgc']
