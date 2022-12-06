@@ -2996,7 +2996,7 @@ def get_event_with_tags():
         {"name": "tlp:white"},
         {"name": 'misp:tool="misp2stix"'},
         {"name": 'misp-galaxy:mitre-attack-pattern="Code Signing - T1116"'},
-        {"name": 'misp-galaxy:mitre-attack-pattern="Access Token Manipulation - T1134"'}
+        {"name": 'misp-galaxy:mitre-pre-attack-attack-pattern="Test malware in various execution environments - PRE-T1134"'}
     ]
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_ATTACK_PATTERN_GALAXY)
