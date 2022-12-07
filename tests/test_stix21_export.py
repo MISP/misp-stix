@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime
-from misp_stix_converter import MISPtoSTIX21Parser, misp_collection_to_stix2_1, misp_to_stix2_1
+from misp_stix_converter import (
+    MISPtoSTIX21Mapping, MISPtoSTIX21Parser, misp_collection_to_stix2_1,
+    misp_to_stix2_1)
 from pymisp import MISPAttribute, MISPEvent
 from .test_events import *
 from .update_documentation import (
@@ -5740,13 +5742,17 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
 
 
 class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
+    _mapping_types = MISPtoSTIX21Mapping()
+
     def test_event_with_attack_pattern_galaxy(self):
         event = get_event_with_attack_pattern_galaxy()
         self._test_event_with_attack_pattern_galaxy(event['Event'])
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             attack_pattern = self.parser.stix_objects[-1],
-            summary = 'mitre-attack-pattern, mitre-enterprise-attack-attack-pattern, mitre-mobile-attack-attack-pattern, mitre-pre-attack-attack-pattern'
+            summary = ', '.join(
+                sorted(self._mapping_types.attack_pattern_types)
+            )
         )
 
     def test_event_with_course_of_action_galaxy(self):
@@ -5755,7 +5761,9 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             course_of_action = self.parser.stix_objects[-1],
-            summary = 'mitre-course-of-action, mitre-enterprise-attack-course-of-action, mitre-mobile-attack-course-of-action'
+            summary = ', '.join(
+                sorted(self._mapping_types.course_of_action_types)
+            )
         )
 
     def test_event_with_custom_galaxy(self):
@@ -5768,7 +5776,9 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             intrusion_set = self.parser.stix_objects[-1],
-            summary = 'mitre-enterprise-attack-intrusion-set, mitre-intrusion-set, mitre-mobile-attack-intrusion-set, mitre-pre-attack-intrusion-set'
+            summary = ', '.join(
+                sorted(self._mapping_types.intrusion_set_types)
+            )
         )
 
     def test_event_with_malware_galaxy(self):
@@ -5777,7 +5787,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             malware = self.parser.stix_objects[-1],
-            summary = 'android, backdoor, banker, malpedia, mitre-enterprise-attack-malware, mitre-malware, mitre-mobile-attack-malware, ransomware, stealer'
+            summary = ', '.join(sorted(self._mapping_types.malware_types))
         )
 
     def test_event_with_threat_actor_galaxy(self):
@@ -5786,7 +5796,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             threat_actor = self.parser.stix_objects[-1],
-            summary = 'microsoft-activity-group, threat-actor'
+            summary = ', '.join(sorted(self._mapping_types.threat_actor_types))
         )
 
     def test_event_with_tool_galaxy(self):
@@ -5795,7 +5805,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             tool = self.parser.stix_objects[-1],
-            summary = 'botnet, exploit-kit, mitre-enterprise-attack-tool, mitre-mobile-attack-tool, mitre-tool, rat, tds, tool'
+            summary = ', '.join(sorted(self._mapping_types.tool_types))
         )
 
     def test_event_with_vulnerability_galaxy(self):
@@ -5804,7 +5814,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             vulnerability = self.parser.stix_objects[-1],
-            summary = 'branded-vulnerability'
+            summary = ', '.join(sorted(self._mapping_types.vulnerability_types))
         )
 
     def test_attribute_with_attack_pattern_galaxy(self):
