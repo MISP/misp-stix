@@ -2,8 +2,9 @@
 #!/usr/bin/env python3
 
 import traceback
-from .stix20_mapping import Stix20Mapping
-from .stix21_mapping import Stix21Mapping
+from .stix1_mapping import MISPtoSTIX1Mapping
+from .stix20_mapping import MISPtoSTIX20Mapping
+from .stix21_mapping import MISPtoSTIX21Mapping
 from collections import defaultdict
 from datetime import datetime
 from pymisp import MISPAttribute, MISPObject
@@ -20,7 +21,9 @@ class MISPtoSTIXParser:
         self.__errors: defaultdict = defaultdict(list)
         self.__warnings: defaultdict = defaultdict(set)
         self._identifier: str
-        self._mapping: Union[Stix20Mapping, Stix21Mapping]
+        self._mapping: Union[
+            MISPtoSTIX1Mapping, MISPtoSTIX20Mapping, MISPtoSTIX21Mapping
+        ]
         self._misp_event: dict
 
     @property

@@ -3,7 +3,7 @@
 
 import re
 from .misp_to_stix2 import InvalidHashValueError, MISPtoSTIX2Parser
-from .stix21_mapping import Stix21Mapping
+from .stix21_mapping import MISPtoSTIX21Mapping
 from base64 import b64encode
 from collections import defaultdict
 from copy import deepcopy
@@ -86,7 +86,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def __init__(self, interoperability=False):
         super().__init__(interoperability)
         self._version = '2.1'
-        self._mapping = Stix21Mapping()
+        self._mapping = MISPtoSTIX21Mapping()
 
     def _parse_event_data(self):
         if self._misp_event.get('EventReport'):

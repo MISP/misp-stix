@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 from .. import Mapping
-from .stix2_mapping import Stix2Mapping
+from .stix2_mapping import MISPtoSTIX2Mapping
 from stix2.v21.common import TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED
 
 
-class Stix21Mapping(Stix2Mapping):
+class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     def __init__(self):
         super().__init__()
         v21_specific_attributes = {

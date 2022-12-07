@@ -4,7 +4,7 @@
 import json
 import re
 import socket
-from .stix1_mapping import Stix1Mapping
+from .stix1_mapping import MISPtoSTIX1Mapping
 from .exportparser import MISPtoSTIXParser
 from base64 import b64encode
 from collections import defaultdict
@@ -93,7 +93,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
         self._orgname = orgname
         self._orgname_id = re.sub('[\W]+', '', orgname.replace(" ", "_"))
         self._version = version
-        self._mapping = Stix1Mapping()
+        self._mapping = MISPtoSTIX1Mapping()
 
     @property
     def stix_package(self) -> STIXPackage:
