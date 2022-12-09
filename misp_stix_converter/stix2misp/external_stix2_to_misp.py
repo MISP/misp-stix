@@ -5,7 +5,7 @@ from .exceptions import (
     InvalidSTIXPatternError, UnknownParsingFunctionError,
     UnknownObservableMappingError, UnknownPatternMappingError,
     UnknownPatternTypeError)
-from .external_stix2_mapping import ExternalSTIX2Mapping
+from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import _INDICATOR_TYPING
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
@@ -37,7 +37,7 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def __init__(self):
         super().__init__()
-        self._mapping = ExternalSTIX2Mapping()
+        self._mapping = ExternalSTIX2toMISPMapping()
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #

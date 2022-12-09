@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from .. import Mapping
-from .stix2_mapping import STIX2Mapping
+from .stix2_mapping import STIX2toMISPMapping
 
 
-class ExternalSTIX2Mapping(STIX2Mapping):
+class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     def __init__(self):
         super().__init__()
         self._declare_mapping()

@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from .. import Mapping
-from .stix2_mapping import STIX2Mapping
+from .stix2_mapping import STIX2toMISPMapping
 
 
-class InternalSTIX2Mapping(STIX2Mapping):
+class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     def __init__(self):
         super().__init__()
         first_seen_attribute = {'type': 'datetime', 'object_relation': 'first-seen'}

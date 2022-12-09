@@ -6,7 +6,7 @@ from .exceptions import (
     UndefinedIndicatorError, UndefinedObservableError,
     UnknownParsingFunctionError)
 from .importparser import _INDICATOR_TYPING
-from .internal_stix2_mapping import InternalSTIX2Mapping
+from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .stix2_to_misp import (
     STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
     _GALAXY_OBJECTS_TYPING, _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
@@ -60,7 +60,7 @@ _PROCESS_TYPING = Union[
 class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def __init__(self):
         super().__init__()
-        self._mapping = InternalSTIX2Mapping()
+        self._mapping = InternalSTIX2toMISPMapping()
 
     ################################################################################
     #                        STIX OBJECTS LOADING FUNCTIONS                        #

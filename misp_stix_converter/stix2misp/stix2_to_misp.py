@@ -7,9 +7,9 @@ from .exceptions import (
     ObjectRefLoadingError, ObjectTypeLoadingError, UndefinedIndicatorError,
     UndefinedSTIXObjectError, UndefinedObservableError, UnknownAttributeTypeError,
     UnknownObjectNameError, UnknownParsingFunctionError, UnknownStixObjectTypeError)
-from .external_stix2_mapping import ExternalSTIX2Mapping
+from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import STIXtoMISPParser
-from .internal_stix2_mapping import InternalSTIX2Mapping
+from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from collections import defaultdict
 from datetime import datetime
 from pymisp import (
@@ -142,7 +142,9 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def __init__(self):
         super().__init__()
         self._creators: set = set()
-        self._mapping: Union[ExternalSTIX2Mapping, InternalSTIX2Mapping]
+        self._mapping: Union[
+            ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping
+        ]
 
         self._attack_pattern: dict
         self._campaign: dict

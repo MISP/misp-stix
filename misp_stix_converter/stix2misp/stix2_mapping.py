@@ -5,7 +5,7 @@ from .. import Mapping
 from typing import Optional
 
 
-class STIX2Mapping:
+class STIX2toMISPMapping:
     def __init__(self):
         self.__bundle_to_misp_mapping = Mapping(
             **{
