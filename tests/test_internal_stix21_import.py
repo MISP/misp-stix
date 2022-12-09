@@ -1425,10 +1425,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, attack_pattern = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
-        self.assertEqual(
-            event.tags[1].name,
-            f'misp-galaxy:mitre-attack-pattern="{attack_pattern.name}"'
-        )
+        self._check_attack_pattern_galaxy(event.galaxies[0], attack_pattern)
 
     def test_stix21_bundle_with_course_of_action_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_course_of_action_galaxy()
@@ -1437,10 +1434,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, course_of_action = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
-        self.assertEqual(
-            event.tags[1].name,
-            f'misp-galaxy:mitre-course-of-action="{course_of_action.name}"'
-        )
+        self._check_course_of_action_galaxy(event.galaxies[0], course_of_action)
 
     def test_stix21_bundle_with_galaxy_embedded_in_attribute(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_galaxy_embedded_in_attribute()
@@ -1449,18 +1443,23 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, report, attack_pattern, course_of_action, _, malware, _, _ = bundle.objects
         attribute = self._check_misp_event_features(event, report)[0]
-        self.assertEqual(
-            attribute.tags[0].name,
-            f'misp-galaxy:mitre-attack-pattern="{attack_pattern.name}"'
+        ap_galaxy, coa_galaxy = attribute.galaxies
+        self._check_galaxy_fields(
+            ap_galaxy, attack_pattern, 'mitre-attack-pattern', 'Attack Pattern'
         )
         self.assertEqual(
-            attribute.tags[1].name,
-            f'misp-galaxy:mitre-course-of-action="{course_of_action.name}"'
+            ap_galaxy.clusters[0].meta['external_id'],
+            attack_pattern.external_references[0].external_id
         )
-        self.assertEqual(
-            event.tags[1].name,
-            f'misp-galaxy:mitre-malware="{malware.name}"'
+        self._check_galaxy_fields(
+            coa_galaxy, course_of_action, 'mitre-course-of-action',
+            'Course of Action'
         )
+        galaxy = event.galaxies[0]
+        self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
+        meta = galaxy.clusters[0].meta
+        self.assertEqual(meta['synonyms'], malware.aliases)
+        self.assertEqual(meta['is_family'], malware.is_family)
 
     def test_stix21_bundle_with_intrusion_set_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_intrusion_set_galaxy()
@@ -1469,10 +1468,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, intrusion_set = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
-        self.assertEqual(
-            event.tags[1].name,
-            f'misp-galaxy:mitre-intrusion-set="{intrusion_set.name}"'
-        )
+        self._check_intrusion_set_galaxy(event.galaxies[0], intrusion_set)
 
     def test_stix21_bundle_with_malware_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_malware_galaxy()
@@ -1481,10 +1477,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, malware = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
-        self.assertEqual(
-            event.tags[1].name,
-            f'misp-galaxy:mitre-malware="{malware.name}"'
-        )
+        self._check_malware_galaxy(event.galaxies[0], malware)
 
     def test_stix21_bundle_with_threat_actor_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_threat_actor_galaxy()
@@ -1493,10 +1486,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, threat_actor = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
-        self.assertEqual(
-            event.tags[1].name,
-            f'misp-galaxy:threat-actor="{threat_actor.name}"'
-        )
+        self._check_threat_actor_galaxy(event.galaxies[0], threat_actor)
 
     def test_stix21_bundle_with_tool_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_tool_galaxy()
@@ -1505,10 +1495,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, tool = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
-        self.assertEqual(
-            event.tags[1].name,
-            f'misp-galaxy:mitre-tool="{tool.name}"'
-        )
+        self._check_tool_galaxy(event.galaxies[0], tool)
 
     def test_stix21_bundle_with_vulnerability_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_vulnerability_galaxy()
@@ -1517,10 +1504,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, vulnerability = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
-        self.assertEqual(
-            event.tags[1].name,
-            f'misp-galaxy:branded-vulnerability="{vulnerability.name}"'
-        )
+        self._check_vulnerability_galaxy(event.galaxies[0], vulnerability)
 
     ################################################################################
     #                          MISP OBJECTS IMPORT TESTS.                          #

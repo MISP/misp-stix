@@ -388,10 +388,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             od2.id.split('--')[1]
         )
         self.assertEqual(reference1.relationship_type, relation1.relationship_type)
-        self.assertEqual(
-            event1.tags[1].name,
-            f'misp-galaxy:mitre-malware="{malware.name}"'
-        )
+        self._check_generic_malware_galaxy(event1.galaxies[0], malware)
         self.assertEqual(event2.uuid, report2.id.split('--')[1])
         self.assertEqual(len(event2.objects), 1)
         self.assertEqual(len(event2.attributes), 1)
@@ -405,10 +402,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             indicator2.id.split('--')[1]
         )
         self.assertEqual(reference2.relationship_type, relation2.relationship_type)
-        self.assertEqual(
-            event2.tags[1].name,
-            f'misp-galaxy:mitre-malware="{malware.name}"'
-        )
+        self._check_generic_malware_galaxy(event2.galaxies[0], malware)
 
     def _check_event_from_bundle_with_no_report(self, bundle_objects, bundle_id):
         od1, od2, indicator1, indicator2, malware, relation1, relation2 = bundle_objects
@@ -435,10 +429,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             od2.id.split('--')[1]
         )
         self.assertEqual(reference2.relationship_type, relation2.relationship_type)
-        self.assertEqual(
-            event.tags[0].name,
-            f'misp-galaxy:mitre-malware="{malware.name}"'
-        )
+        self._check_generic_malware_galaxy(event.galaxies[0], malware)
 
     def _check_event_from_bundle_with_single_report(self, bundle_objects):
         report, od1, od2, indicator1, indicator2, malware, relation1, relation2 = bundle_objects
@@ -465,10 +456,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             indicator1.id.split('--')[1]
         )
         self.assertEqual(reference2.relationship_type, relation2.relationship_type)
-        self.assertEqual(
-            event.tags[1].name,
-            f'misp-galaxy:mitre-malware="{malware.name}"'
-        )
+        self._check_generic_malware_galaxy(event.galaxies[0], malware)
 
     def _check_single_event_from_bundle_with_multiple_reports(self, bundle_objects, bundle_id):
         od1, od2, indicator1, indicator2, malware, relation1, relation2 = bundle_objects
@@ -495,10 +483,116 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             indicator2.id.split('--')[1]
         )
         self.assertEqual(reference2.relationship_type, relation2.relationship_type)
-        self.assertEqual(
-            event.tags[0].name,
-            f'misp-galaxy:mitre-malware="{malware.name}"'
+        self._check_generic_malware_galaxy(event.galaxies[0], malware)
+
+    ################################################################################
+    #                       MISP GALAXIES CHECKING FUNCTIONS                       #
+    ################################################################################
+
+    def _check_attack_pattern_galaxy(self, galaxy, attack_pattern):
+        self._check_galaxy_fields(
+            galaxy, attack_pattern, 'mitre-pre-attack-attack-pattern',
+            'Pre Attack - Attack Pattern'
         )
+        meta = galaxy.clusters[0].meta
+        external_id, url = attack_pattern.external_references
+        self.assertEqual(meta['external_id'], external_id.external_id)
+        self.assertEqual(meta['refs'], [url.url])
+        kill_chain = attack_pattern.kill_chain_phases[0]
+        self.assertEqual(
+            meta['kill_chain'],
+            [f'{kill_chain.kill_chain_name}:{kill_chain.phase_name}']
+        )
+
+    def _check_course_of_action_galaxy(self, galaxy, course_of_action):
+        self._check_galaxy_fields(
+            galaxy, course_of_action, 'mitre-course-of-action',
+            'Course of Action'
+        )
+        meta = galaxy.clusters[0].meta
+        external_id, *urls = course_of_action.external_references
+        self.assertEqual(meta['external_id'], external_id.external_id)
+        for ref, url in zip(meta['refs'], urls):
+            self.assertEqual(ref, url.url)
+
+    def _check_galaxy_fields(self, galaxy, stix_object, galaxy_type, galaxy_name):
+        cluster = galaxy.clusters[0]
+        self._assert_multiple_equal(galaxy.type, cluster.type, galaxy_type)
+        self.assertEqual(galaxy.name, galaxy_name)
+        galaxy_description, cluster_description = stix_object.description.split(' | ')
+        self.assertEqual(galaxy.description, galaxy_description)
+        self.assertEqual(cluster.value, stix_object.name)
+        self.assertEqual(cluster.description, cluster_description)
+
+    def _check_generic_malware_galaxy(self, galaxy, malware):
+        self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
+        meta = galaxy.clusters[0].meta
+        if hasattr(malware, 'aliases'):
+            self.assertEqual(meta['synonyms'], malware.aliases)
+        if hasattr(malware, 'is_family'):
+            self.assertEqual(meta['is_family'], malware.is_family)
+
+    def _check_intrusion_set_galaxy(self, galaxy, intrusion_set):
+        self._check_galaxy_fields(
+            galaxy, intrusion_set, 'mitre-intrusion-set', 'Intrusion Set'
+        )
+        meta = galaxy.clusters[0].meta
+        external_id, *urls = intrusion_set.external_references
+        self.assertEqual(meta['external_id'], external_id.external_id)
+        for ref, url in zip(meta['refs'], urls):
+            self.assertEqual(ref, url.url)
+        self.assertEqual(meta['synonyms'], intrusion_set.aliases)
+
+    def _check_malware_galaxy(self, galaxy, malware):
+        self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
+        meta = galaxy.clusters[0].meta
+        external_id, *urls = malware.external_references
+        self.assertEqual(meta['external_id'], external_id.external_id)
+        for ref, url in zip(meta['refs'], urls):
+            self.assertEqual(ref, url.url)
+        if hasattr(malware, 'aliases'):
+            self.assertEqual(meta['synonyms'], malware.aliases)
+        else:
+            self.assertEqual(meta['synonyms'], malware.x_misp_synonyms)
+        if hasattr(malware, 'is_family'):
+            self.assertEqual(meta['is_family'], malware.is_family)
+        self.assertEqual(meta['mitre_platforms'], malware.x_misp_mitre_platforms)
+
+    def _check_threat_actor_galaxy(self, galaxy, threat_actor):
+        self._check_galaxy_fields(
+            galaxy, threat_actor, 'threat-actor', 'Threat Actor'
+        )
+        meta = galaxy.clusters[0].meta
+        self.assertEqual(meta['synonyms'], threat_actor.aliases)
+        self.assertEqual(
+            meta['cfr-type-of-incident'],
+            threat_actor.x_misp_cfr_type_of_incident
+        )
+
+    def _check_tool_galaxy(self, galaxy, tool):
+        self._check_galaxy_fields(galaxy, tool, 'mitre-tool', 'Tool')
+        meta = galaxy.clusters[0].meta
+        if hasattr(tool, 'aliases'):
+            self.assertEqual(meta['synonyms'], tool.aliases)
+        else:
+            self.assertEqual(meta['synonyms'], tool.x_misp_synonyms)
+        external_id, *urls = tool.external_references
+        self.assertEqual(meta['external_id'], external_id.external_id)
+        for ref, url in zip(meta['refs'], urls):
+            self.assertEqual(ref, url.url)
+        self.assertEqual(meta['mitre_platforms'], tool.x_misp_mitre_platforms)
+
+    def _check_vulnerability_galaxy(self, galaxy, vulnerability):
+        self._check_galaxy_fields(
+            galaxy, vulnerability, 'branded-vulnerability',
+            'Branded Vulnerability'
+        )
+        meta = galaxy.clusters[0].meta
+        self.assertEqual(
+            meta['external_id'],
+            vulnerability.external_references[0]['external_id']
+        )
+        self.assertEqual(meta['aliases'], vulnerability.x_misp_aliases)
 
     ################################################################################
     #                       MISP OBJECTS CHECKING FUNCTIONS.                       #
