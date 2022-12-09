@@ -754,25 +754,29 @@ _ATTACHMENT_OBSERVABLE_ATTRIBUTE = [
 _ATTACK_PATTERN_GALAXY = {
     "type": "attack-pattern",
     "spec_version": "2.1",
-    "id": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48",
+    "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "name": "Access Token Manipulation - T1134",
-    "description": "ATT&CK Tactic | Windows uses access tokens to determine the ownership of a running process.",
+    "name": "Test malware in various execution environments - PRE-T1134",
+    "description": "ATT&CK Tactic | Malware may perform differently on different platforms and different operating systems.",
     "kill_chain_phases": [
         {
-            "kill_chain_name": "misp-category",
-            "phase_name": "mitre-attack-pattern"
+            "kill_chain_name": "mitre-pre-attack",
+            "phase_name": "test-capabilities"
         }
     ],
     "labels": [
-        "misp:galaxy-name=\"Attack Pattern\"",
-        "misp:galaxy-type=\"mitre-attack-pattern\""
+        "misp:galaxy-name=\"Pre Attack - Attack Pattern\"",
+        "misp:galaxy-type=\"mitre-pre-attack-attack-pattern\""
     ],
     "external_references": [
         {
-            "source_name": "capec",
-            "external_id": "CAPEC-633"
+            "source_name": "mitre-pre-attack",
+            "external_id": "PRE-T1134"
+        },
+        {
+            "source_name": "url",
+            "url": "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
         }
     ]
 }
@@ -818,12 +822,6 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Access Token Manipulation - T1134",
         "description": "ATT&CK Tactic | Windows uses access tokens to determine the ownership of a running process.",
-        "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "mitre-attack-pattern"
-            }
-        ],
         "labels": [
             "misp:galaxy-name=\"Attack Pattern\"",
             "misp:galaxy-type=\"mitre-attack-pattern\""
@@ -883,12 +881,6 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "is_family": True,
         "aliases": [
             "BISCUIT"
-        ],
-        "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "mitre-malware"
-            }
         ],
         "labels": [
             "misp:galaxy-name=\"Malware\"",
@@ -969,12 +961,6 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Access Token Manipulation - T1134",
         "description": "ATT&CK Tactic | Windows uses access tokens to determine the ownership of a running process.",
-        "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "mitre-attack-pattern"
-            }
-        ],
         "labels": [
             "misp:galaxy-name=\"Attack Pattern\"",
             "misp:galaxy-type=\"mitre-attack-pattern\""
@@ -1037,12 +1023,6 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "aliases": [
             "BISCUIT"
         ],
-        "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "mitre-malware"
-            }
-        ],
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -1078,12 +1058,6 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Buffer Overflow in Local Command-Line Utilities",
         "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
-        "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "vulnerability"
-            }
-        ],
         "labels": [
             "misp:name=\"attack-pattern\"",
             "misp:meta-category=\"vulnerability\"",
@@ -1461,12 +1435,6 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
         "aliases": [
             "BISCUIT"
         ],
-        "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "mitre-malware"
-            }
-        ],
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -1606,12 +1574,6 @@ _BUNDLE_WITH_NO_REPORT = [
         "is_family": True,
         "aliases": [
             "BISCUIT"
-        ],
-        "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "mitre-malware"
-            }
         ],
         "labels": [
             "misp:galaxy-name=\"Malware\"",
@@ -1884,6 +1846,20 @@ _COURSE_OF_ACTION_GALAXY = {
     "labels": [
         "misp:galaxy-name=\"Course of Action\"",
         "misp:galaxy-type=\"mitre-course-of-action\""
+    ],
+    "external_references": [
+        {
+            "source_name": "mitre-attack",
+            "external_id": "T1020"
+        },
+        {
+            "source_name": "url",
+            "url": "https://apps.nsa.gov/iaarchive/library/ia-guidance/tech-briefs/application-whitelisting-using-microsoft-applocker.cfm"
+        },
+        {
+            "source_name": "url",
+            "url": "https://attack.mitre.org/mitigations/T1020"
+        }
     ]
 }
 _COURSE_OF_ACTION_OBJECT = {
@@ -5309,6 +5285,20 @@ _INTRUSION_SET_GALAXY = {
     "labels": [
         "misp:galaxy-name=\"Intrusion Set\"",
         "misp:galaxy-type=\"mitre-intrusion-set\""
+    ],
+    "external_references": [
+        {
+            "source_name": "mitre-attack",
+            "external_id": "G0023"
+        },
+        {
+            "source_name": "url",
+            "url": "https://attack.mitre.org/groups/G0023"
+        },
+        {
+            "source_name": "url",
+            "url": "https://www.fireeye.com/blog/threat-research/2015/12/the-eps-awakens-part-two.html"
+        }
     ]
 }
 _IP_INDICATOR_ATTRIBUTES = [
@@ -5777,19 +5767,30 @@ _MALWARE_GALAXY = {
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "BISCUIT - S0017",
     "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-    "is_family": True,
+    "is_family": False,
     "aliases": [
         "BISCUIT"
-    ],
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "mitre-malware"
-        }
     ],
     "labels": [
         "misp:galaxy-name=\"Malware\"",
         "misp:galaxy-type=\"mitre-malware\""
+    ],
+    "external_references": [
+        {
+            "source_name": "mitre-attack",
+            "external_id": "S0017"
+        },
+        {
+            "source_name": "url",
+            "url": "https://attack.mitre.org/software/S0017"
+        },
+        {
+            "source_name": "url",
+            "url": "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report-appendix.zip"
+        }
+    ],
+    "x_misp_mitre_platforms": [
+        "Windows"
     ]
 }
 _MALWARE_SAMPLE_INDICATOR_ATTRIBUTE = {
@@ -6235,12 +6236,6 @@ _OBJECTS_WITH_REFERENCES = [
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Buffer Overflow in Local Command-Line Utilities",
         "description": "This attack targets command-line utilities available in a number of shells. An attacker can leverage a vulnerability found in a command-line utility to escalate privilege to root.",
-        "kill_chain_phases": [
-            {
-                "kill_chain_name": "misp-category",
-                "phase_name": "vulnerability"
-            }
-        ],
         "labels": [
             "misp:name=\"attack-pattern\"",
             "misp:meta-category=\"vulnerability\"",
@@ -7003,6 +6998,9 @@ _THREAT_ACTOR_GALAXY = {
     "labels": [
         "misp:galaxy-name=\"Threat Actor\"",
         "misp:galaxy-type=\"threat-actor\""
+    ],
+    "x_misp_cfr_type_of_incident": [
+        "Denial of service"
     ]
 }
 _TOOL_GALAXY = {
@@ -7014,17 +7012,29 @@ _TOOL_GALAXY = {
     "name": "cmd - S0106",
     "description": "Name of ATT&CK software | cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
     "aliases": [
+        "cmd",
         "cmd.exe"
-    ],
-    "kill_chain_phases": [
-        {
-            "kill_chain_name": "misp-category",
-            "phase_name": "mitre-tool"
-        }
     ],
     "labels": [
         "misp:galaxy-name=\"Tool\"",
         "misp:galaxy-type=\"mitre-tool\""
+    ],
+    "external_references": [
+        {
+            "source_name": "mitre-attack",
+            "external_id": "S0106"
+        },
+        {
+            "source_name": "url",
+            "url": "https://attack.mitre.org/software/S0106"
+        },
+        {
+            "source_name": "url",
+            "url": "https://technet.microsoft.com/en-us/library/bb490880.aspx"
+        }
+    ],
+    "x_misp_mitre_platforms": [
+        "Windows"
     ]
 }
 _URL_INDICATOR_ATTRIBUTES = [
@@ -7266,6 +7276,9 @@ _VULNERABILITY_GALAXY = {
             "source_name": "cve",
             "external_id": "CVE-2015-0235"
         }
+    ],
+    "x_misp_aliases": [
+        "CVE-2015-0235"
     ]
 }
 _VULNERABILITY_OBJECT = {
