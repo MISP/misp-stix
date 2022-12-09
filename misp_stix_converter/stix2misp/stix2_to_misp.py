@@ -646,7 +646,8 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _create_galaxy_args(self, stix_object: _GALAXY_OBJECTS_TYPING,
                             description: Optional[str] = None,
-                            galaxy_type: Optional[str] = None) -> dict:
+                            galaxy_type: Optional[str] = None,
+                            galaxy_name: Optional[str] = None) -> dict:
         misp_galaxy = MISPGalaxy()
         if description is None and galaxy_type is None:
             galaxy_args = {'type': stix_object.type}
@@ -655,9 +656,11 @@ class STIX2toMISPParser(STIXtoMISPParser):
             )
             misp_galaxy.from_dict(**galaxy_args)
             return misp_galaxy
+        if galaxy_name is None:
+            galaxy_name = galaxy_type.replace('-', ' ').title()
         galaxy_args = {
             'type': galaxy_type,
-            'name': galaxy_type.title(),
+            'name': galaxy_name,
             'description': description
         }
         misp_galaxy.from_dict(**galaxy_args)
@@ -668,6 +671,35 @@ class STIX2toMISPParser(STIXtoMISPParser):
         for key, value in stix_object.items():
             if key.startswith('x_misp_'):
                 yield '_'.join(key.split('_')[2:]), value
+
+    @staticmethod
+    def _handle_kill_chain_phases(kill_chain_phases: list) -> list:
+        kill_chains = []
+        for kill_chain in kill_chain_phases:
+            kill_chains.append(
+                f'{kill_chain.kill_chain_name}:{kill_chain.phase_name}'
+            )
+        return kill_chains
+
+    @staticmethod
+    def _handle_external_references(external_references: list) -> dict:
+        meta = defaultdict(list)
+        for reference in external_references:
+            if reference.get('url'):
+                meta['refs'].append(reference['url'])
+            if reference.get('external_id'):
+                meta['external_id'].append(reference['external_id'])
+        if 'external_id' in meta and len(meta['external_id']) == 1:
+            meta['external_id'] = meta.pop('external_id')[0]
+        return meta
+
+    @staticmethod
+    def _handle_labels(meta: dict, labels: list):
+        meta_labels = [
+            label for label in labels if not label.startswith('misp:galaxy-')
+        ]
+        if meta_labels:
+            meta['labels'] = meta_labels
 
     def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
         mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
@@ -685,6 +717,16 @@ class STIX2toMISPParser(STIXtoMISPParser):
             attack_pattern, description, galaxy_type
         )
         meta = self._handle_meta_fields(attack_pattern)
+        if hasattr(attack_pattern, 'external_references'):
+            meta.update(
+                self._handle_external_references(
+                    attack_pattern.external_references
+                )
+            )
+        if hasattr(attack_pattern, 'kill_chain_phases'):
+            meta['kill_chain'] = self._handle_kill_chain_phases(
+                attack_pattern.kill_chain_phases
+            )
         if meta:
             attack_pattern_args['meta'] = meta
         return self._create_misp_galaxy_cluster(attack_pattern_args)
@@ -695,6 +737,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
             campaign, description, galaxy_type
         )
         meta = self._handle_meta_fields(campaign)
+        if hasattr(campaign, 'external_references'):
+            meta.update(
+                self._handle_external_references(campaign.external_references)
+            )
         if meta:
             campaign_args['meta'] = meta
         return self._create_misp_galaxy_cluster(campaign_args)
@@ -706,6 +752,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
             course_of_action, description ,galaxy_type
         )
         meta = dict(self._extract_custom_fields(course_of_action))
+        if hasattr(course_of_action, 'external_references'):
+            meta.update(
+                self._handle_external_references(
+                    course_of_action.external_references
+                )
+            )
         if meta:
             course_of_action_args['meta'] = meta
         return self._create_misp_galaxy_cluster(course_of_action_args)
@@ -717,6 +769,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
             intrusion_set, description, galaxy_type
         )
         meta = self._handle_meta_fields(intrusion_set)
+        if hasattr(intrusion_set, 'external_references'):
+            meta.update(
+                self._handle_external_references(
+                    intrusion_set.external_references
+                )
+            )
         if meta:
             intrusion_set_args['meta'] = meta
         return self._create_misp_galaxy_cluster(intrusion_set_args)
@@ -727,6 +785,16 @@ class STIX2toMISPParser(STIXtoMISPParser):
             malware, description, galaxy_type
         )
         meta = self._handle_meta_fields(malware)
+        if hasattr(malware, 'external_references'):
+            meta.update(
+                self._handle_external_references(malware.external_references)
+            )
+        if hasattr(malware, 'kill_chain_phases'):
+            meta['kill_chain'] = self._handle_kill_chain_phases(
+                malware.kill_chain_phases
+            )
+        if hasattr(malware, 'labels'):
+            self._handle_labels(meta, malware.labels)
         if meta:
             malware_args['meta'] = meta
         return self._create_misp_galaxy_cluster(malware_args)
@@ -738,6 +806,14 @@ class STIX2toMISPParser(STIXtoMISPParser):
             threat_actor, description, galaxy_type
         )
         meta = self._handle_meta_fields(threat_actor)
+        if hasattr(threat_actor, 'external_references'):
+            meta.update(
+                self._handle_external_references(
+                    threat_actor.external_references
+                )
+            )
+        if hasattr(threat_actor, 'labels'):
+            self._handle_labels(meta, threat_actor.labels)
         if meta:
             threat_actor_args['meta'] = meta
         return self._create_misp_galaxy_cluster(threat_actor_args)
@@ -746,6 +822,20 @@ class STIX2toMISPParser(STIXtoMISPParser):
                             galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         tool_args = self._create_cluster_args(tool, description, galaxy_type)
         meta = self._handle_meta_fields(tool)
+        if hasattr(tool, 'kill_chain_phases'):
+            meta['kill_chain'] = self._handle_kill_chain_phases(
+                tool.kill_chain_phases
+            )
+        if hasattr(tool, 'external_references'):
+            meta.update(
+                self._handle_external_references(tool.external_references)
+            )
+        if hasattr(tool, 'kill_chain_phases'):
+            meta['kill_chain'] = self._handle_kill_chain_phases(
+                tool.kill_chain_phases
+            )
+        if hasattr(tool, 'labels'):
+            self._handle_labels(meta, tool.labels)
         if meta:
             tool_args['meta'] = meta
         return self._create_misp_galaxy_cluster(tool_args)
@@ -757,6 +847,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
             vulnerability, description, galaxy_type
         )
         meta = dict(self._extract_custom_fields(vulnerability))
+        if hasattr(vulnerability, 'external_references'):
+            meta.update(
+                self._handle_external_references(
+                    vulnerability.external_references
+                )
+            )
         if meta:
             vulnerability_args['meta'] = meta
         return self._create_misp_galaxy_cluster(vulnerability_args)

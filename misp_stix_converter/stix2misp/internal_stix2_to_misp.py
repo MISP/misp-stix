@@ -397,12 +397,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if stix_object.id in self._clusters:
             self._clusters[stix_object.id]['used'][self.misp_event.uuid] = False
         else:
-            galaxy_type = stix_object.labels[1].split('=')[1].strip('"')
+            galaxy_type, galaxy_name = self._extract_galaxy_labels(stix_object.labels)
             galaxy_description, cluster_description = stix_object.description.split(' | ')
+            object_type = stix_object.type.replace('-', '_')
             self._clusters[stix_object.id] = {
-                'cluster': getattr(
-                    self, self._mapping.galaxy_mapping[stix_object.type]
-                )(
+                'cluster': getattr(self, f'_parse_{object_type}_cluster')(
                     stix_object,
                     description=cluster_description,
                     galaxy_type=galaxy_type
@@ -413,7 +412,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._galaxies[galaxy_type] = self._create_galaxy_args(
                     stix_object,
                     description=galaxy_description,
-                    galaxy_type=galaxy_type
+                    galaxy_type=galaxy_type,
+                    galaxy_name=galaxy_name
                 )
 
     def _parse_identity_object(self, identity: _IDENTITY_TYPING, name: str) -> MISPObject:
@@ -2446,6 +2446,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _extract_features_from_pattern(pattern: str) -> tuple:
         identifier, value = pattern.split(' = ')
         return identifier.split(':')[1], value.strip("'")
+
+    @staticmethod
+    def _extract_galaxy_labels(labels: list) -> dict:
+        for label in labels[:2]:
+            if 'galaxy-type' in label:
+                galaxy_type = label.split('=')[1].strip('"')
+            elif 'galaxy-name' in label:
+                galaxy_name = label.split('=')[1].strip('"')
+        return galaxy_type, galaxy_name
 
     @staticmethod
     def _fetch_main_process(observables: dict) -> _PROCESS_TYPING:

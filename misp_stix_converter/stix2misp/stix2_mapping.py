@@ -304,9 +304,7 @@ class STIX2toMISPMapping:
         )
 
         self.__attack_pattern_meta_mapping = Mapping(
-            aliases = 'synonyms',
-            external_references = 'refs',
-            kill_chain_phases = 'kill_chain'
+            aliases = 'synonyms'
         )
         self.__campaign_meta_mapping = Mapping(
             aliases = 'synonyms',
@@ -325,8 +323,6 @@ class STIX2toMISPMapping:
             capabilities = 'capabilities',
             implementation_languages = 'implementation_languages',
             is_family = 'is_family',
-            kill_chain_phases = 'kill_chain',
-            labels = 'labels',
             malware_types = 'malware_types',
             operating_system_refs = 'operating_system_refs',
             sample_refs = 'sample_refs'
@@ -334,7 +330,6 @@ class STIX2toMISPMapping:
         self.__threat_actor_meta_mapping = Mapping(
             aliases = 'synonyms',
             goals = 'goals',
-            labels = 'labels',
             personal_motivations = 'personal_motivations',
             primary_motivation = 'primary_motivation',
             resource_level = 'resource_level',
@@ -345,8 +340,6 @@ class STIX2toMISPMapping:
         )
         self.__tool_meta_mapping = Mapping(
             aliases = 'synonyms',
-            kill_chain_phases = 'kill_chain',
-            labels = 'labels',
             tool_types = 'tool_types',
             tool_version = 'tool_version'
         )
