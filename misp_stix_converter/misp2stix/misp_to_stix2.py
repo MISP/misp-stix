@@ -2730,6 +2730,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'x_misp_description': f"{description} | {cluster['description']}",
             'interoperability': True
         }
+        if cluster.get('meta'):
+            custom_args['x_misp_meta'] = cluster['meta']
         if timestamp is None:
             if not cluster.get('timestamp'):
                 return custom_args
