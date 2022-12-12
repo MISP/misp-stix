@@ -65,6 +65,7 @@ class STIX2toMISPMapping:
             'tool': '_load_tool',
             'vulnerability': '_load_vulnerability',
             'x-misp-attribute': '_load_custom_attribute',
+            'x-misp-galaxy-cluster': '_load_custom_galaxy_cluster',
             'x-misp-object': '_load_custom_object',
             'x-misp-opinion': '_load_custom_opinion'
         }
@@ -95,6 +96,7 @@ class STIX2toMISPMapping:
                 'tool': '_parse_tool',
                 'vulnerability': '_parse_vulnerability',
                 'x-misp-attribute': '_parse_custom_attribute',
+                'x-misp-galaxy-cluster': '_parse_custom_galaxy_cluster',
                 'x-misp-object': '_parse_custom_object'
             }
         )

@@ -73,6 +73,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except AttributeError:
             self._custom_attribute = {custom_attribute.id: custom_attribute}
 
+    def _load_custom_galaxy_cluster(self, custom_galaxy: _CUSTOM_TYPING):
+        self._check_uuid(custom_galaxy.id)
+        try:
+            self._custom_galaxy_cluster[custom_galaxy.id] = custom_galaxy
+        except AttributeError:
+            self._custom_galaxy_cluster = {custom_galaxy.id: custom_galaxy}
+
     def _load_custom_object(self, custom_object: _CUSTOM_TYPING):
         self._check_uuid(custom_object.id)
         try:
@@ -177,6 +184,33 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             )
         )
         self._add_misp_attribute(attribute)
+
+    def _parse_custom_galaxy_cluster(self, custom_ref: str):
+        if custom_ref in self._clusters:
+            self._clusters[custom_ref]['used'][self.misp_event.uuid] = False
+        else:
+            custom_galaxy = self._get_stix_object(custom_ref)
+            galaxy_type = custom_galaxy.x_misp_type
+            galaxy_description, cluster_description = custom_galaxy.x_misp_description.split(' | ')
+            cluster_args = {
+                'type': galaxy_type,
+                'value': custom_galaxy.x_misp_value,
+                'description': cluster_description
+            }
+            if hasattr(custom_galaxy, 'x_misp_meta'):
+                cluster_args['meta'] = custom_galaxy.x_misp_meta
+            self._clusters[custom_ref] = {
+                'cluster': self._create_misp_galaxy_cluster(cluster_args),
+                'used': {self.misp_event.uuid: False}
+            }
+            if galaxy_type not in self._galaxies:
+                self._galaxies[galaxy_type] = self._create_galaxy_args(
+                    custom_galaxy,
+                    description=galaxy_description,
+                    galaxy_type=galaxy_type,
+                    galaxy_name=custom_galaxy.x_misp_name
+                )
+
 
     def _parse_custom_object(self, custom_ref: str):
         custom_object = self._get_stix_object(custom_ref)
