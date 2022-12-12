@@ -4,7 +4,9 @@
 import json
 from base64 import b64encode
 from collections import defaultdict
-from misp_stix_converter import InternalSTIX2toMISPParser
+from misp_stix_converter import (
+    ExternalSTIX2toMISPMapping, ExternalSTIX2toMISPParser,
+    InternalSTIX2toMISPParser)
 from uuid import UUID
 from ._test_stix import TestSTIX
 from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
@@ -303,6 +305,33 @@ class TestSTIX21Import(TestSTIX2Import):
                 'MISP': kwargs['misp_object'],
                 'STIX': json.loads(kwargs['vulnerability'].serialize())
             }
+
+
+class TestExternalSTIX2Import(TestSTIX2Import):
+    _galaxy_name_mapping = ExternalSTIX2toMISPMapping().galaxy_name_mapping
+
+    def setUp(self):
+        self.parser = ExternalSTIX2toMISPParser()
+
+    def _check_galaxy_features(self, galaxies, stix_object):
+        self.assertEqual(len(galaxies), 1)
+        galaxy = galaxies[0]
+        self.assertEqual(len(galaxy.clusters), 1)
+        cluster = galaxy.clusters[0]
+        self._assert_multiple_equal(
+            galaxy.type, cluster.type, stix_object.type
+        )
+        self.assertEqual(
+            galaxy.name, self._galaxy_name_mapping[stix_object.type]['name']
+        )
+        self.assertEqual(
+            galaxy.description,
+            self._galaxy_name_mapping[stix_object.type]['description']
+        )
+        self.assertEqual(cluster.value, stix_object.name)
+        if hasattr(stix_object, 'description'):
+            self.assertEqual(cluster.description, stix_object.description)
+        return cluster.meta
 
 
 class TestInternalSTIX2Import(TestSTIX2Import):
