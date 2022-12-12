@@ -515,6 +515,15 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         for ref, url in zip(meta['refs'], urls):
             self.assertEqual(ref, url.url)
 
+    def _check_custom_galaxy(self, galaxy, custom):
+        cluster = galaxy.clusters[0]
+        self._assert_multiple_equal(galaxy.type, cluster.type, 'tea-matrix')
+        self.assertEqual(galaxy.name, 'Tea Matrix')
+        galaxy_description, cluster_description = custom.x_misp_description.split(' | ')
+        self.assertEqual(galaxy.description, galaxy_description)
+        self.assertEqual(cluster.value, custom.x_misp_value)
+        self.assertEqual(cluster.description, cluster_description)
+
     def _check_galaxy_fields(self, galaxy, stix_object, galaxy_type, galaxy_name):
         cluster = galaxy.clusters[0]
         self._assert_multiple_equal(galaxy.type, cluster.type, galaxy_type)

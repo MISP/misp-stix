@@ -1176,6 +1176,15 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_misp_event_features(event, report)
         self._check_course_of_action_galaxy(event.galaxies[0], course_of_action)
 
+    def test_stix20_bundle_with_custom_galaxy(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_custom_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, custom = bundle.objects
+        self._check_misp_event_features(event, report)
+        self._check_custom_galaxy(event.galaxies[0], custom)
+
     def test_stix20_bundle_with_galaxy_embedded_in_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_galaxy_embedded_in_attribute()
         self.parser.load_stix_bundle(bundle)

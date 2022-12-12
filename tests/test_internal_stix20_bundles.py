@@ -1750,6 +1750,20 @@ _CUSTOM_ATTRIBUTES = [
         "x_misp_value": "Mozilla Firefox"
     }
 ]
+_CUSTOM_GALAXY = {
+    "type": "x-misp-galaxy-cluster",
+    "id": "x-misp-galaxy-cluster--24430dc6-9c27-4b3c-a5e7-6dda478fffa0",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "labels": [
+        "misp:galaxy-name=\"Tea Matrix\"",
+        "misp:galaxy-type=\"tea-matrix\""
+    ],
+    "x_misp_description": "Tea Matrix | Milk in tea",
+    "x_misp_name": "Tea Matrix",
+    "x_misp_type": "tea-matrix",
+    "x_misp_value": "Milk in tea"
+}
 _CUSTOM_OBJECTS = [
     {
         "type": "x-misp-object",
@@ -6525,6 +6539,10 @@ class TestInternalSTIX20Bundles:
     @classmethod
     def get_bundle_with_course_of_action_galaxy(cls):
         return cls.__assemble_bundle(_COURSE_OF_ACTION_GALAXY)
+
+    @classmethod
+    def get_bundle_with_custom_galaxy(cls):
+        return cls.__assemble_bundle(_CUSTOM_GALAXY)
 
     @classmethod
     def get_bundle_with_intrusion_set_galaxy(cls):
