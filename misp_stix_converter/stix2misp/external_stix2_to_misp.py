@@ -459,6 +459,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_vulnerability_object(self, vulnerability: _VULNERABILITY_TYPING):
         """
+        # Not currently used, but if we can ever define wether the vulnerability
+        # is well known or in progress, we might use this function again for
+        # vulnerabilities in progress
+
         Vulnerability object conversion as MISP attribute or object function.
         We found no match with any Galaxy Cluster name, so we now parse this
         Vulnerability object to extract MISP attributes.
