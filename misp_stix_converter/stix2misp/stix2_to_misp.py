@@ -234,36 +234,26 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                        STIX OBJECTS LOADING FUNCTIONS                        #
     ################################################################################
 
-    @staticmethod
-    def _build_data_to_load(stix_object) -> dict:
-        return {
-            'stix_object': stix_object,
-            'used': False
-        }
-
     def _load_attack_pattern(self, attack_pattern: Union[AttackPattern_v20, AttackPattern_v21]):
-        data_to_load = self._build_data_to_load(attack_pattern)
         self._check_uuid(attack_pattern.id)
         try:
-            self._attack_pattern[attack_pattern.id] = data_to_load
+            self._attack_pattern[attack_pattern.id] = attack_pattern
         except AttributeError:
-            self._attack_pattern = {attack_pattern.id: data_to_load}
+            self._attack_pattern = {attack_pattern.id: attack_pattern}
 
     def _load_campaign(self, campaign: Union[Campaign_v20, Campaign_v21]):
-        data_to_load = self._build_data_to_load(campaign)
         self._check_uuid(campaign.id)
         try:
-            self._campaign[campaign.id] = data_to_load
+            self._campaign[campaign.id] = campaign
         except AttributeError:
             self._campaign = {campaign.id: campaign}
 
     def _load_course_of_action(self, course_of_action: Union[CourseOfAction_v20, CourseOfAction_v21]):
-        data_to_load = self._build_data_to_load(course_of_action)
         self._check_uuid(course_of_action.id)
         try:
-            self._course_of_action[course_of_action.id] = data_to_load
+            self._course_of_action[course_of_action.id] = course_of_action
         except AttributeError:
-            self._course_of_action = {course_of_action.id: data_to_load}
+            self._course_of_action = {course_of_action.id: course_of_action}
 
     def _load_grouping(self, grouping: Grouping):
         self._check_uuid(grouping.id)
@@ -273,12 +263,11 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._grouping = {grouping.id: grouping}
 
     def _load_identity(self, identity: Union[Identity_v20, Identity_v21]):
-        data_to_load = self._build_data_to_load(identity)
         self._check_uuid(identity.id)
         try:
-            self._identity[identity.id] = data_to_load
+            self._identity[identity.id] = identity
         except AttributeError:
-            self._identity = {identity.id: data_to_load}
+            self._identity = {identity.id: identity}
 
     def _load_indicator(self, indicator: Union[Indicator_v20, Indicator_v21]):
         self._check_uuid(indicator.id)
@@ -288,30 +277,25 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._indicator = {indicator.id: indicator}
 
     def _load_intrusion_set(self, intrusion_set: Union[IntrusionSet_v20, IntrusionSet_v21]):
-        data_to_load = self._build_data_to_load(intrusion_set)
         self._check_uuid(intrusion_set.id)
         try:
-            self._intrusion_set[intrusion_set.id] = data_to_load
+            self._intrusion_set[intrusion_set.id] = intrusion_set
         except AttributeError:
-            self._intrusion_set = {intrusion_set.id: data_to_load}
+            self._intrusion_set = {intrusion_set.id: intrusion_set}
 
     def _load_location(self, location: Location):
-        self._check_uuid(location.id)
+        self._check_uuid(location['id'])
         try:
-            self._location[location.id] = location
+            self._location[location['id']] = location
         except AttributeError:
-            try:
-                self._location = {location.id: location}
-            except AttributeError:
-                self._location = {location['id']: location}
+            self._location = {location['id']: location}
 
     def _load_malware(self, malware: Union[Malware_v20, Malware_v21]):
         self._check_uuid(malware.id)
-        data_to_load = self._build_data_to_load(malware)
         try:
-            self._malware[malware.id] = data_to_load
+            self._malware[malware.id] = malware
         except AttributeError:
-            self._malware = {malware.id: data_to_load}
+            self._malware = {malware.id: malware}
 
     def _load_marking_definition(self, marking_definition: Union[MarkingDefinition_v20, MarkingDefinition_v21]):
         definition_type = marking_definition.definition_type
@@ -355,7 +339,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         if hasattr(opinion, 'x_misp_source'):
             sighting_args['source'] = opinion.x_misp_source
         if hasattr(opinion, 'x_misp_author_ref'):
-            identity = self._identity[opinion.x_misp_author_ref]['stix_object']
+            identity = self._identity[opinion.x_misp_author_ref]
             sighting_args['Organisation'] = {
                 'uuid': self._sanitise_uuid(identity.id),
                 'name': identity.name
@@ -397,7 +381,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         if hasattr(sighting, 'description'):
             sighting_args['source'] = sighting.description
         if hasattr(sighting, 'where_sighted_refs'):
-            identity = self._identity[sighting.where_sighted_refs[0]]['stix_object']
+            identity = self._identity[sighting.where_sighted_refs[0]]
             sighting_args['Organisation'] = {
                 'uuid': self._sanitise_uuid(identity.id),
                 'name': identity.name
@@ -411,28 +395,25 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._sighting[sighting_of_ref].append(misp_sighting)
 
     def _load_threat_actor(self, threat_actor: Union[ThreatActor_v20, ThreatActor_v21]):
-        data_to_load = self._build_data_to_load(threat_actor)
         self._check_uuid(threat_actor.id)
         try:
-            self._threat_actor[threat_actor.id] = data_to_load
+            self._threat_actor[threat_actor.id] = threat_actor
         except AttributeError:
-            self._threat_actor = {threat_actor.id: data_to_load}
+            self._threat_actor = {threat_actor.id: threat_actor}
 
     def _load_tool(self, tool: Union[Tool_v20, Tool_v21]):
-        data_to_load = self._build_data_to_load(tool)
         self._check_uuid(tool.id)
         try:
-            self._tool[tool.id] = data_to_load
+            self._tool[tool.id] = tool
         except AttributeError:
-            self._tool = {tool.id: data_to_load}
+            self._tool = {tool.id: tool}
 
     def _load_vulnerability(self, vulnerability: Union[Vulnerability_v20, Vulnerability_v21]):
-        data_to_load = self._build_data_to_load(vulnerability)
         self._check_uuid(vulnerability.id)
         try:
-            self._vulnerability[vulnerability.id] = data_to_load
+            self._vulnerability[vulnerability.id] = vulnerability
         except AttributeError:
-            self._vulnerability = {vulnerability.id: data_to_load}
+            self._vulnerability = {vulnerability.id: vulnerability}
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
@@ -444,11 +425,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             object_type = object_type.replace('x-misp', 'custom')
         feature = f"_{object_type.replace('-', '_')}"
         try:
-            stix_object = getattr(self, feature)[object_ref]
-            if isinstance(stix_object, dict):
-                stix_object['used'] = True
-                return stix_object['stix_object']
-            return stix_object
+            return getattr(self, feature)[object_ref]
         except AttributeError:
             raise ObjectTypeLoadingError(object_type)
         except KeyError:
