@@ -8,7 +8,7 @@ from base64 import b64encode
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from pymisp import MISPAttribute, MISPObject
+from pymisp import MISPAttribute, MISPGalaxy, MISPGalaxyCluster, MISPObject
 from stix2.properties import (DictionaryProperty, IDProperty, ListProperty,
                               ReferenceProperty, StringProperty, TimestampProperty)
 from stix2.v21.bundle import Bundle
@@ -1030,7 +1030,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 location_args[feature] = attributes.pop(key)
         if attributes:
             location_args.update(self._handle_observable_properties(attributes))
-        self._append_SDO(Location(**location_args))
+        self._append_SDO(self._create_location(location_args))
 
     def _parse_http_request_object_observable(self, misp_object: Union[MISPObject, dict]):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(
@@ -1464,6 +1464,98 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
     ################################################################################
+    #                          GALAXIES PARSING FUNCTIONS                          #
+    ################################################################################
+
+    def _create_region_galaxy_args(self, cluster: Union[MISPGalaxyCluster, dict],
+                                    description: str, name: str,
+                                    timestamp: datetime) -> dict:
+        region_value = cluster['value'].split(' - ')[1]
+        location_args = {
+            'id': f"location--{cluster['uuid']}",
+            'type': 'location',
+            'name': region_value,
+            'region': self._parse_region_value(region_value),
+            'description': f"{description} | {cluster['description']}",
+            'labels': self._create_galaxy_labels(name, cluster),
+            'interoperability': True
+        }
+        if timestamp is None:
+            if not cluster.get('timestamp'):
+                return location_args
+            timestamp = self._datetime_from_timestamp(cluster['timestamp'])
+        location_args.update(
+            {
+                'created': timestamp,
+                'modified': timestamp
+            }
+        )
+        return location_args
+
+    def _parse_country_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+                              timestamp: Union[datetime, None]) -> list:
+        object_refs = []
+        ids = {}
+        for cluster in galaxy['GalaxyCluster']:
+            if self._is_galaxy_parsed(object_refs, cluster):
+                continue
+            location_id = f"location--{cluster['uuid']}"
+            location_args = self._create_galaxy_args(
+                cluster, galaxy['description'], galaxy['name'], location_id,
+                timestamp
+            )
+            location_args['country'] = cluster['meta']['ISO']
+            location = self._create_location(location_args)
+            self._append_SDO_without_refs(location)
+            object_refs.append(location_id)
+            ids[cluster['uuid']] = location_id
+        self.populate_unique_ids(ids)
+        return object_refs
+
+    def _parse_location_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+                                         object_id: str, timestamp: datetime):
+        object_refs = self._parse_location_galaxy(galaxy, timestamp)
+        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+
+    def _parse_location_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+        object_refs = self._parse_location_galaxy(
+            galaxy, self._datetime_from_timestamp(self._misp_event['timestamp'])
+        )
+        self._handle_object_refs(object_refs)
+
+    def _parse_location_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+                               timestamp: Optional[datetime] = None) -> list:
+        if galaxy['type'] == 'country':
+            return self._parse_country_galaxy(galaxy, timestamp)
+        return self._parse_region_galaxy(galaxy, timestamp)
+
+    def _parse_location_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+        object_refs = self._parse_location_galaxy(galaxy)
+        self._handle_object_refs(object_refs)
+
+    def _parse_region_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+                             timestamp: Union[datetime, None]) -> list:
+        object_refs = []
+        ids = {}
+        for cluster in galaxy['GalaxyCluster']:
+            if self._is_galaxy_parsed(object_refs, cluster):
+                continue
+            location_args = self._create_region_galaxy_args(
+                cluster, galaxy['description'], galaxy['name'], timestamp
+            )
+            location = self._create_location(location_args)
+            self._append_SDO_without_refs(location)
+            object_refs.append(location.id)
+            ids[cluster['uuid']] = location.id
+        self.populate_unique_ids(ids)
+        return object_refs
+
+    def _parse_region_value(self, region_value: str) -> str:
+        if region_value in self._mapping.regions_mapping:
+            return self._mapping.regions_mapping[region_value]
+        return region_value.lower().replace(' ', '-')
+
+    ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 
@@ -1557,6 +1649,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     @staticmethod
     def _create_intrusion_set(intrusion_set_args: dict) -> IntrusionSet:
         return IntrusionSet(**intrusion_set_args)
+
+    @staticmethod
+    def _create_location(location_args: dict) -> Location:
+        return Location(**location_args)
 
     @staticmethod
     def _create_malware(malware_args: dict) -> Malware:

@@ -51,7 +51,8 @@ class MISPtoSTIX2Mapping:
             'reference_from_CAPEC'
         )
 
-    def _declare_attributes_mapping(self, updates: Optional[dict]=None):
+    def _declare_attributes_mapping(self, attribute_updates: Optional[dict]=None,
+                                    galaxy_updates: Optional[dict]=None):
         self.__misp_identity_args = Mapping(
             id = 'identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f',
             type = 'identity',
@@ -197,8 +198,8 @@ class MISPtoSTIX2Mapping:
                 '_parse_x509_fingerprint_attribute'
             )
         )
-        if updates is not None:
-            _attribute_types_mapping.update(updates)
+        if attribute_updates is not None:
+            _attribute_types_mapping.update(attribute_updates)
         self.__attribute_types_mapping = Mapping(**_attribute_types_mapping)
         # GALAXIES MAPPING
         _attack_pattern_types = (
@@ -286,7 +287,6 @@ class MISPtoSTIX2Mapping:
                 'tool'
             )
         )
-        self.__cluster_to_stix_object = Mapping(**_cluster_to_stix_object)
         _galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
         _galaxy_types_mapping.update(
             dict.fromkeys(
@@ -324,6 +324,16 @@ class MISPtoSTIX2Mapping:
                 '_parse_tool_{}_galaxy'
             )
         )
+        if galaxy_updates is not None:
+            if 'cluster_to_stix_object' in galaxy_updates:
+                _cluster_to_stix_object.update(
+                    galaxy_updates['cluster_to_stix_object']
+                )
+            if 'galaxy_types_mapping' in galaxy_updates:
+                _galaxy_types_mapping.update(
+                    galaxy_updates['galaxy_types_mapping']
+                )
+        self.__cluster_to_stix_object = Mapping(**_cluster_to_stix_object)
         self.__galaxy_types_mapping = Mapping(**_galaxy_types_mapping)
         self.__external_references_fields = Mapping(
             **{
