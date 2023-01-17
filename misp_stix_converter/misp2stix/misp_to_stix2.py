@@ -93,7 +93,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if self._markings:
             for marking in self._markings.values():
                 if not marking['used']:
-                    self.__objects.append(marking['marking'])
+                    self._append_SDO_without_refs(marking['marking'])
                     marking['used'] = True
         if self.__relationships:
             self._handle_relationships()
@@ -123,7 +123,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         identity_id = self._mapping.misp_identity_args['id']
         if identity_id not in self.unique_ids:
             identity = self._create_identity(self._mapping.misp_identity_args)
-            self.__objects.append(identity)
+            self._append_SDO_without_refs(identity)
             self.__ids[identity_id] = identity_id
         return identity_id
 
@@ -138,7 +138,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     'identity_class': 'organization'
                 }
                 identity = self._create_identity(identity_args)
-                self.__objects.append(identity)
+                self._append_SDO_without_refs(identity)
                 self.__ids[identity_id] = identity_id
             return identity_id
         return self._handle_default_identity()
@@ -248,7 +248,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if self._markings:
             for marking in self._markings.values():
                 if not marking['used']:
-                    self.__objects.append(marking['marking'])
+                    self._append_SDO_without_refs(marking['marking'])
                     marking['used'] = True
         if self._is_published():
             report_id = f"report--{self._misp_event['uuid']}"
@@ -2291,7 +2291,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             self.__index += 1
             self.__ids[identity_id] = identity_id
         stix_object['allow_custom'] = True
-        self.__objects.append(getattr(self, f"_create_{object_type.replace('-', '_')}")(stix_object))
+        self._append_SDO_without_refs(
+            getattr(self, f"_create_{object_type.replace('-', '_')}")(
+                stix_object
+            )
+        )
 
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
@@ -2375,7 +2379,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 attack_pattern_args.update(
                     self._parse_meta_fields(cluster['meta'], 'attack_pattern')
                 )
-            self.__objects.append(
+            self._append_SDO_without_refs(
                 self._create_attack_pattern(attack_pattern_args)
             )
             object_refs.append(attack_pattern_id)
@@ -2416,7 +2420,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     self._parse_meta_fields(cluster['meta'], 'course_of_action')
                 )
             course_of_action = self._create_course_of_action(course_of_action_args)
-            self.__objects.append(course_of_action)
+            self._append_SDO_without_refs(course_of_action)
             object_refs.append(course_of_action_id)
             self.__ids[cluster['uuid']] = course_of_action_id
         return object_refs
@@ -2476,7 +2480,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     self._parse_meta_fields(cluster['meta'], 'intrusion_set')
                 )
             intrusion_set = self._create_intrusion_set(intrusion_set_args)
-            self.__objects.append(intrusion_set)
+            self._append_SDO_without_refs(intrusion_set)
             object_refs.append(intrusion_set_id)
             self.__ids[cluster['uuid']] = intrusion_set_id
         return object_refs
@@ -2524,7 +2528,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     malware_args['labels'].extend(meta_args.pop('labels'))
                 malware_args.update(meta_args)
             malware = self._create_malware(malware_args)
-            self.__objects.append(malware)
+            self._append_SDO_without_refs(malware)
             object_refs.append(malware_id)
             self.__ids[cluster['uuid']] = malware_id
         return object_refs
@@ -2596,7 +2600,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     threat_actor_args['labels'].extend(meta_args.pop('labels'))
                 threat_actor_args.update(meta_args)
             threat_actor = self._create_threat_actor(threat_actor_args)
-            self.__objects.append(threat_actor)
+            self._append_SDO_without_refs(threat_actor)
             object_refs.append(threat_actor_id)
             self.__ids[cluster['uuid']] = threat_actor_id
         return object_refs
@@ -2636,7 +2640,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     tool_args['labels'].extend(meta_args.pop('labels'))
                 tool_args.update(meta_args)
             tool = self._create_tool(tool_args)
-            self.__objects.append(tool)
+            self._append_SDO_without_refs(tool)
             object_refs.append(tool_id)
             self.__ids[cluster['uuid']] = tool_id
         return object_refs
@@ -2660,7 +2664,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 cluster, galaxy['name'], galaxy['description'], custom_id, timestamp
             )
             custom_galaxy = self._create_custom_galaxy(custom_args)
-            self.__objects.append(custom_galaxy)
+            self._append_SDO_without_refs(custom_galaxy)
             object_refs.append(custom_id)
             self.__ids[cluster['uuid']] = custom_id
         return object_refs
@@ -2695,7 +2699,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     self._parse_meta_fields(cluster['meta'], 'vulnerability')
                 )
             vulnerability = self._create_vulnerability(vulnerability_args)
-            self.__objects.append(vulnerability)
+            self._append_SDO_without_refs(vulnerability)
             object_refs.append(vulnerability_id)
             self.__ids[cluster['uuid']] = vulnerability_id
         return object_refs
@@ -2850,7 +2854,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if self.__identity_id not in self.unique_ids:
             self.__ids[self.__identity_id] = self.__identity_id
             identity = self._create_identity_object(orgc['name'])
-            self.__objects.append(identity)
+            self._append_SDO_without_refs(identity)
             self.__index += 1
 
     ################################################################################
