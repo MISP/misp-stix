@@ -1505,6 +1505,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 timestamp
             )
             location_args['country'] = cluster['meta']['ISO']
+            location_args.update(
+                self._parse_meta_fields(cluster['meta'], 'location')
+            )
             location = self._create_location(location_args)
             self._append_SDO_without_refs(location)
             object_refs.append(location_id)
@@ -1542,6 +1545,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 continue
             location_args = self._create_region_galaxy_args(
                 cluster, galaxy['description'], galaxy['name'], timestamp
+            )
+            location_args.update(
+                self._parse_meta_fields(cluster['meta'], 'location')
             )
             location = self._create_location(location_args)
             self._append_SDO_without_refs(location)
