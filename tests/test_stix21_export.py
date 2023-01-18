@@ -5658,6 +5658,10 @@ class TestSTIX21MISPObjectsExport(TestSTIX21ObjectsExport):
 
 
 class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
+    def _check_location_meta_fields(self, stix_object, meta):
+        for key, values in meta.items():
+            self.assertEqual(getattr(stix_object, f'x_misp_{key}'), values)
+
     def _run_galaxy_tests(self, event, timestamp):
         orgc = event['Orgc']
         self.parser.parse_misp_event(event)
@@ -5703,6 +5707,44 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         intrusion_set = self._run_galaxy_tests(event, timestamp)
         self.assertEqual(intrusion_set.type, 'intrusion-set')
         self._check_galaxy_features(intrusion_set, galaxy, timestamp)
+
+    def _test_event_with_location_galaxies(self, event):
+        country, region = event['Galaxy']
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        orgc = event['Orgc']
+        self.parser.parse_misp_event(event)
+        stix_objects = self.parser.stix_objects
+        self._check_spec_versions(stix_objects)
+        identity, grouping, location1, location2 = stix_objects
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        location1_ref, location2_ref = self._check_grouping_features(
+            grouping, event, identity_id
+        )
+        self.assertEqual(location1.id, location1_ref)
+        self.assertEqual(location2.id, location2_ref)
+        self._assert_multiple_equal(
+            location1.type,
+            location2.type,
+            'location'
+        )
+        self._check_galaxy_features(location1, country, timestamp)
+        cluster = region['GalaxyCluster'][0]
+        self.assertEqual(location2.id, f"{location2.type}--{cluster['uuid']}")
+        self.assertEqual(location2.created, timestamp)
+        self.assertEqual(location2.modified, timestamp)
+        region_value = cluster['value'].split(' - ')[-1]
+        self.assertEqual(location2.name, region_value)
+        self.assertEqual(
+            location2.description, f"{region['description']} | {cluster['description']}"
+        )
+        self.assertEqual(location2.labels[0], f'misp:galaxy-name="{region["name"]}"')
+        self.assertEqual(location2.labels[1], f'misp:galaxy-type="{region["type"]}"')
+        getattr(self, f"_check_{location2.type.replace('-', '_')}_meta_fields")(
+            location2, cluster['meta']
+        )
+        self.assertEqual(location2.region, region_value.lower().replace(' ', '-'))
 
     def _test_event_with_malware_galaxy(self, event):
         galaxy = event['Galaxy'][0]
@@ -5781,6 +5823,15 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
             )
         )
 
+    def test_event_with_location_galaxies(self):
+        event = get_event_with_location_galaxies()
+        self._test_event_with_location_galaxies(event['Event'])
+        for galaxy, location in zip(event['Event']['Galaxy'], self.parser.stix_objects[-2:]):
+            self._populate_documentation(
+                galaxy=galaxy,
+                location=location
+            )
+
     def test_event_with_malware_galaxy(self):
         event = get_event_with_malware_galaxy()
         self._test_event_with_malware_galaxy(event['Event'])
@@ -5848,6 +5899,12 @@ class TestSTIX21MISPGalaxiesExport(TestSTIX21GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_intrusion_set_galaxy(misp_event)
+
+    def test_event_with_location_galaxies(self):
+        event = get_event_with_location_galaxies()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_location_galaxies(misp_event)
 
     def test_event_with_malware_galaxy(self):
         event = get_event_with_malware_galaxy()

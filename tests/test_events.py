@@ -775,6 +775,32 @@ _TEST_ATTACK_PATTERN_GALAXY = {
     ]
 }
 
+_TEST_COUNTRY_GALAXY = {
+    "uuid": "84668357-5a8c-4bdd-9f0f-6b50b2aee4c1",
+    "type": "country",
+    "name": "Country",
+    "description": "Country meta information",
+    "GalaxyCluster": [
+        {
+            "uuid": "84668357-5a8c-4bdd-9f0f-6b50b2535745",
+            "type": "country",
+            "value": "sweden",
+            "description": "Sweden",
+            "meta": {
+                "Capital": "Stockholm",
+                "Continent": "EU",
+                "CurrencyCode": "SEK",
+                "CurrencyName": "Krona",
+                "ISO": "SE",
+                "ISO3": "SWE",
+                "Languages": "sv-SE,se,sma,fi-SE",
+                "Population": "9828655",
+                "tld": ".se"
+            }
+        }
+    ]
+}
+
 _TEST_COURSE_OF_ACTION_GALAXY = {
     "uuid": "6fcb4472-6de4-11e7-b5f7-37771619e14e",
     "name": "Course of Action",
@@ -855,6 +881,40 @@ _TEST_MALWARE_GALAXY = {
     ]
 }
 
+_TEST_REGION_GALAXY = {
+    "uuid": "d151a79a-e029-11e9-9409-f3e0cf3d93aa",
+    "name": "Regions UN M49",
+    "type": "region",
+    "description": "Regions based on UN M49",
+    "GalaxyCluster": [
+        {
+            "uuid": "f93cb275-0366-4ecc-abf0-a17928d1e177",
+            "type": "region",
+            "value": "154 - Northern Europe",
+            "description": "Nothern Europe",
+            "meta": {
+                "subregion": [
+                    "830 - Channel Islands",
+                    "248 - Åland Islands",
+                    "208 - Denmark",
+                    "233 - Estonia",
+                    "234 - Faroe Islands",
+                    "246 - Finland",
+                    "352 - Iceland",
+                    "372 - Ireland",
+                    "833 - Isle of Man",
+                    "428 - Latvia",
+                    "440 - Lithuania",
+                    "578 - Norway",
+                    "744 - Svalbard and Jan Mayen Islands",
+                    "752 - Sweden",
+                    "826 - United Kingdom of Great Britain and Northern Ireland"
+                ]
+            }
+        }
+    ]
+}
+
 _TEST_TEA_MATRIX_GALAXY = {
     "uuid": "c5f2dfb4-21a1-42d8-a452-1d3c36a204ff",
     "name": "Tea Matrix",
@@ -865,7 +925,8 @@ _TEST_TEA_MATRIX_GALAXY = {
             "uuid": "24430dc6-9c27-4b3c-a5e7-6dda478fffa0",
             "type": "tea-matrix",
             "value": "Milk in tea",
-            "description": "Milk in tea"
+            "description": "Milk in tea",
+            "relationship_type": "ennemy-of"
         }
     ]
 }
@@ -3045,6 +3106,15 @@ def get_event_with_intrusion_set_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_INTRUSION_SET)
+    ]
+    return event
+
+
+def get_event_with_location_galaxies():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_COUNTRY_GALAXY),
+        deepcopy(_TEST_REGION_GALAXY)
     ]
     return event
 
