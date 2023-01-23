@@ -153,6 +153,28 @@ _INTRUSION_SET_OBJECTS = [
         ]
     }
 ]
+_LOCATION_OBJECTS = [
+    {
+        "type": "location",
+        "spec_version": "2.1",
+        "id": "location--84668357-5a8c-4bdd-9f0f-6b50b2535745",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "sweden",
+        "description": "Sweden",
+        "country": "SE"
+    },
+    {
+        "type": "location",
+        "spec_version": "2.1",
+        "id": "location--f93cb275-0366-4ecc-abf0-a17928d1e177",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Northern Europe",
+        "description": "Nothern Europe",
+        "region": "northern-europe"
+    }
+]
 _MALWARE_OBJECTS = [
     {
         "type": "malware",
@@ -411,6 +433,10 @@ class TestExternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_intrusion_set_galaxy(cls):
         return cls.__assemble_galaxy_bundle(*_INTRUSION_SET_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_location_galaxy(cls):
+        return cls.__assemble_galaxy_bundle(*_LOCATION_OBJECTS)
 
     @classmethod
     def get_bundle_with_malware_galaxy(cls):

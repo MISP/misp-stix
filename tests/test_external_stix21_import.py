@@ -14,6 +14,27 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     #                          MISP GALAXIES IMPORT TESTS                          #
     ################################################################################
 
+    def _check_location_galaxy_features(self, galaxies, stix_object, galaxy_type, cluster_value=None):
+        self.assertEqual(len(galaxies), 1)
+        galaxy = galaxies[0]
+        self.assertEqual(len(galaxy.clusters), 1)
+        cluster = galaxy.clusters[0]
+        self._assert_multiple_equal(galaxy.type, cluster.type, galaxy_type)
+        self.assertEqual(
+            galaxy.name, self._galaxy_name_mapping[galaxy_type]['name']
+        )
+        self.assertEqual(
+            galaxy.description,
+            self._galaxy_name_mapping[galaxy_type]['description']
+        )
+        if cluster_value is None:
+            self.assertEqual(cluster.value, stix_object.name)
+        else:
+            self.assertEqual(cluster.value, cluster_value)
+        if hasattr(stix_object, 'description'):
+            self.assertEqual(cluster.description, stix_object.description)
+        return cluster.meta
+
     def test_stix21_bundle_with_attack_pattern_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_attack_pattern_galaxy()
         self.parser.load_stix_bundle(bundle)
@@ -94,6 +115,26 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(meta['synonyms'], attribute_is.aliases)
         self.assertEqual(meta['resource_level'], attribute_is.resource_level)
         self.assertEqual(meta['primary_motivation'], attribute_is.primary_motivation)
+
+    def test_stix21_bundle_with_location_galaxy(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_location_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, event_location, indicator, attribute_location, _ = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        country_meta = self._check_location_galaxy_features(
+            event.galaxies, event_location, 'country'
+        )
+        self.assertEqual(country_meta, {})
+        self.assertEqual(len(event.attributes), 1)
+        attribute = event.attributes[0]
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        region_meta = self._check_location_galaxy_features(
+            attribute.galaxies, attribute_location, 'region',
+            cluster_value='154 - Northern Europe'
+        )
+        self.assertEqual(region_meta, {})
 
     def test_stix21_bundle_with_malware_galaxy(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_malware_galaxy()
