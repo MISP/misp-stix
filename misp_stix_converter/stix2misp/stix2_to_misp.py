@@ -86,6 +86,7 @@ _GALAXY_OBJECTS_TYPING = Union[
     CourseOfAction_v21,
     IntrusionSet_v20,
     IntrusionSet_v21,
+    Location,
     Malware_v20,
     Malware_v21,
     ThreatActor_v20,
@@ -603,22 +604,27 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     @staticmethod
     def _create_cluster_args(stix_object: _GALAXY_OBJECTS_TYPING,
-                             description: Union[None, str],
-                             galaxy_type: Union[None, str]) -> dict:
+                             galaxy_type: Union[None, str],
+                             description: Optional[str] = None,
+                             cluster_value: Optional[str] = None) -> dict:
         if galaxy_type is None:
             galaxy_type = stix_object.type
+        if cluster_value is None:
+            cluster_value = stix_object.name
         if description is not None:
             return {
                 'type': galaxy_type,
-                'value': stix_object.name,
+                'value': cluster_value,
                 'description': description
             }
         cluster_args = {
             'type': galaxy_type,
-            'value': stix_object.name
+            'value': cluster_value
         }
         if hasattr(stix_object, 'description'):
             cluster_args['description'] = stix_object.description
+            return cluster_args
+        cluster_args['description'] = cluster_value.capitalize()
         return cluster_args
 
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
@@ -671,7 +677,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                                       description: Optional[str] = None,
                                       galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         attack_pattern_args = self._create_cluster_args(
-            attack_pattern, description, galaxy_type
+            attack_pattern, galaxy_type, description=description
         )
         meta = self._handle_meta_fields(attack_pattern)
         if hasattr(attack_pattern, 'external_references'):
@@ -691,7 +697,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def _parse_campaign_cluster(self, campaign: _CAMPAIGN_TYPING, description: Optional[str] = None,
                                 galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         campaign_args = self._create_cluster_args(
-            campaign, description, galaxy_type
+            campaign, galaxy_type, description=description
         )
         meta = self._handle_meta_fields(campaign)
         if hasattr(campaign, 'external_references'):
@@ -723,7 +729,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                                      description: Optional[str] = None,
                                      galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         intrusion_set_args = self._create_cluster_args(
-            intrusion_set, description, galaxy_type
+            intrusion_set, galaxy_type, description=description
         )
         meta = self._handle_meta_fields(intrusion_set)
         if hasattr(intrusion_set, 'external_references'):
@@ -739,7 +745,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def _parse_malware_cluster(self, malware: _MALWARE_TYPING, description: Optional[str] = None,
                                galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         malware_args = self._create_cluster_args(
-            malware, description, galaxy_type
+            malware, galaxy_type, description=description
         )
         meta = self._handle_meta_fields(malware)
         if hasattr(malware, 'external_references'):
@@ -777,7 +783,9 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _parse_tool_cluster(self, tool: _TOOL_TYPING, description: Optional[str] = None,
                             galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        tool_args = self._create_cluster_args(tool, description, galaxy_type)
+        tool_args = self._create_cluster_args(
+            tool, galaxy_type, description=description
+        )
         meta = self._handle_meta_fields(tool)
         if hasattr(tool, 'kill_chain_phases'):
             meta['kill_chain'] = self._handle_kill_chain_phases(
@@ -801,7 +809,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                                      description: Optional[str] = None,
                                      galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         vulnerability_args = self._create_cluster_args(
-            vulnerability, description, galaxy_type
+            vulnerability, galaxy_type, description=description
         )
         meta = dict(self._extract_custom_fields(vulnerability))
         if hasattr(vulnerability, 'external_references'):

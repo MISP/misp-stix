@@ -17,7 +17,7 @@ from stix2.v20.sdo import (
     ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
-    Indicator as Indicator_v21, ObservedData as ObservedData_v21,
+    Indicator as Indicator_v21, Location, ObservedData as ObservedData_v21,
     Vulnerability as Vulnerability_v21)
 from stix2patterns.inspector import _PatternData as PatternData
 from typing import Optional, Union
@@ -328,12 +328,26 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         :param location_ref: The Location id used to find the related Location
             object to parse
         """
-        location = self._get_stix_object(location_ref)
-        misp_object = self._parse_location_object(location)
-        self._add_misp_object(
-            misp_object,
-            confidence=getattr(location, 'confidence', None)
-        )
+        if location_ref in self._clusters:
+            self._clusters[location_ref]['used'][self.misp_event.uuid] = False
+        else:
+            location = self._get_stix_object(location_ref)
+            if any(hasattr(location, feature) for feature in self._mapping.location_object_fields):
+                misp_object = self._parse_location_object(location)
+                self._add_misp_object(
+                    misp_object,
+                    confidence=getattr(location, 'confidence', None)
+                )
+            else:
+                feature = 'region' if not hasattr(location, 'country') else 'country'
+                self._clusters[location.id] = {
+                    'cluster': getattr(self, f'_parse_{feature}_cluster')(location),
+                    'used': {self.misp_event.uuid: False}
+                }
+                if feature not in self._galaxies:
+                    self._galaxies[feature] = self._create_galaxy_args(
+                        location, galaxy_type=feature
+                    )
 
     def _parse_malware(self, malware_ref: str):
         """
@@ -516,6 +530,24 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         misp_galaxy = MISPGalaxy()
         misp_galaxy.from_dict(**galaxy_args)
         return misp_galaxy
+
+    def _parse_country_cluster(self, location: Location):
+        country_args = self._create_cluster_args(location, 'country')
+        return self._create_misp_galaxy_cluster(country_args)
+
+    def _parse_region_cluster(self, location: Location):
+        region_args = self._create_cluster_args(
+            location, 'region',
+            cluster_value=self._parse_region_value(location)
+        )
+        return self._create_misp_galaxy_cluster(region_args)
+
+    def _parse_region_value(self, location: Location) -> str:
+        if hasattr(location, 'region'):
+            return self._mapping.regions_mapping.get(
+                location.region, location.name
+            )
+        return location.name
 
     ################################################################################
     #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #

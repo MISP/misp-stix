@@ -339,6 +339,13 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                 }
             }
         )
+        self.__location_object_fields = (
+            'city',
+            'latitude',
+            'longitude',
+            'postal_code',
+            'street_address',
+        )
 
     @property
     def attack_pattern_object_mapping(self) -> dict:
@@ -375,6 +382,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def identity_object_single_fields(self) -> tuple:
         return self.__identity_object_single_fields
+
+    @property
+    def location_object_fields(self) -> tuple:
+        return self.__location_object_fields
 
     @property
     def observable_mapping(self) -> dict:
