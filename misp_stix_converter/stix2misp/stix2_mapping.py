@@ -312,6 +312,31 @@ class STIX2toMISPMapping:
             aliases = 'synonyms',
             objective = 'objective'
         )
+        self.__dash_meta_fields= (
+            'x_misp_attribution_confidence',
+            'x_misp_calling_code',
+            'x_misp_cfr_suspected_state_sponsor',
+            'x_misp_cfr_suspected_victims',
+            'x_misp_cfr_target_category',
+            'x_misp_cfr_type_of_incident',
+            'x_misp_colt_average',
+            'x_misp_colt_median',
+            'x_misp_iso_code',
+            'x_misp_member_of',
+            'x_misp_mode_of_operation',
+            'x_misp_official_languages',
+            'x_misp_official_refs',
+            'x_misp_payment_method',
+            'x_misp_ransomenotes_refs',
+            'x_misp_ransomnotes_filenames',
+            'x_misp_ransomnotes_refs',
+            'x_misp_spoken_language',
+            'x_misp_suspected_victims',
+            'x_misp_target_category',
+            'x_misp_territory_type',
+            'x_misp_threat_actor_classification',
+            'x_misp_top_level_domain'
+        )
         self.__intrusion_set_meta_mapping = Mapping(
             aliases = 'synonyms',
             goals = 'goals',
@@ -428,8 +453,8 @@ class STIX2toMISPMapping:
         return self.__current_directory_attribute
 
     @property
-    def description_attribute(self) -> dict:
-        return self.__description_attribute
+    def dash_meta_fields(self) -> tuple:
+        return self.__dash_meta_fields
 
     @property
     def data_attribute(self) -> dict:
@@ -438,6 +463,10 @@ class STIX2toMISPMapping:
     @property
     def data_type_attribute(self) -> dict:
         return self.__data_type_attribute
+
+    @property
+    def description_attribute(self) -> dict:
+        return self.__description_attribute
 
     @property
     def domain_attribute(self) -> dict:

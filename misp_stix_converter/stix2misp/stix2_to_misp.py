@@ -643,11 +643,11 @@ class STIX2toMISPParser(STIXtoMISPParser):
         misp_galaxy.from_dict(**galaxy_args)
         return misp_galaxy
 
-    @staticmethod
-    def _extract_custom_fields(stix_object: _GALAXY_OBJECTS_TYPING):
+    def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
         for key, value in stix_object.items():
             if key.startswith('x_misp_'):
-                yield '_'.join(key.split('_')[2:]), value
+                separator = '-' if key in self._mapping.dash_meta_fields else '_'
+                yield separator.join(key.split('_')[2:]), value
 
     @staticmethod
     def _handle_kill_chain_phases(kill_chain_phases: list) -> list:
