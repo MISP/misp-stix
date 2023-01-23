@@ -1479,6 +1479,23 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_misp_event_features_from_grouping(event, grouping)
         self._check_intrusion_set_galaxy(event.galaxies[0], intrusion_set)
 
+    def test_stix21_bundle_with_location_galaxies(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_location_galaxies()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, location1, location2 = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        country, region = event.galaxies
+        self._check_galaxy_fields(country, location1, 'country', 'Country')
+        meta = country.clusters[0].meta
+        for field, value in meta.items():
+            self.assertEqual(value, getattr(location1, f'x_misp_{field}'))
+        self._check_galaxy_fields(region, location2, 'region', 'Regions UN M49')
+        self.assertEqual(
+            region.clusters[0].meta['subregion'], location2.x_misp_subregion
+        )
+
     def test_stix21_bundle_with_malware_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_malware_galaxy()
         self.parser.load_stix_bundle(bundle)

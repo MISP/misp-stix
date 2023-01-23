@@ -5725,6 +5725,62 @@ _LNK_OBSERVABLE_OBJECT = [
         "x_misp_filename": "oui"
     }
 ]
+_LOCATION_GALAXIES = [
+    {
+        "type": "location",
+        "spec_version": "2.1",
+        "id": "location--84668357-5a8c-4bdd-9f0f-6b50b2535745",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "sweden",
+        "description": "Country meta information | Sweden",
+        "country": "SE",
+        "labels": [
+            "misp:galaxy-name=\"Country\"",
+            "misp:galaxy-type=\"country\""
+        ],
+        "x_misp_Capital": "Stockholm",
+        "x_misp_Continent": "EU",
+        "x_misp_CurrencyCode": "SEK",
+        "x_misp_CurrencyName": "Krona",
+        "x_misp_ISO": "SE",
+        "x_misp_ISO3": "SWE",
+        "x_misp_Languages": "sv-SE,se,sma,fi-SE",
+        "x_misp_Population": "9828655",
+        "x_misp_tld": ".se"
+    },
+    {
+        "type": "location",
+        "spec_version": "2.1",
+        "id": "location--f93cb275-0366-4ecc-abf0-a17928d1e177",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Northern Europe",
+        "description": "Regions based on UN M49 | Nothern Europe",
+        "region": "northern-europe",
+        "labels": [
+            "misp:galaxy-name=\"Regions UN M49\"",
+            "misp:galaxy-type=\"region\""
+        ],
+        "x_misp_subregion": [
+            "830 - Channel Islands",
+            "248 - \u00c5land Islands",
+            "208 - Denmark",
+            "233 - Estonia",
+            "234 - Faroe Islands",
+            "246 - Finland",
+            "352 - Iceland",
+            "372 - Ireland",
+            "833 - Isle of Man",
+            "428 - Latvia",
+            "440 - Lithuania",
+            "578 - Norway",
+            "744 - Svalbard and Jan Mayen Islands",
+            "752 - Sweden",
+            "826 - United Kingdom of Great Britain and Northern Ireland"
+        ]
+    }
+]
 _MAC_ADDRESS_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -7936,6 +7992,10 @@ class TestInternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_intrusion_set_galaxy(cls):
         return cls.__assemble_bundle(_INTRUSION_SET_GALAXY)
+
+    @classmethod
+    def get_bundle_with_location_galaxies(cls):
+        return cls.__assemble_bundle(*_LOCATION_GALAXIES)
 
     @classmethod
     def get_bundle_with_malware_galaxy(cls):
