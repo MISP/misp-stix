@@ -680,12 +680,14 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
         mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
-        meta = {}
-        for feature, field in getattr(self._mapping, mapping).items():
-            if hasattr(stix_object, feature):
-                meta[field] = getattr(stix_object, feature)
-        meta.update(dict(self._extract_custom_fields(stix_object)))
-        return meta
+        if hasattr(self._mapping, mapping):
+            meta = {}
+            for feature, field in getattr(self._mapping, mapping).items():
+                if hasattr(stix_object, feature):
+                    meta[field] = getattr(stix_object, feature)
+            meta.update(dict(self._extract_custom_fields(stix_object)))
+            return meta
+        return dict(self._extract_custom_fields(stix_object))
 
     def _parse_attack_pattern_cluster(self, attack_pattern: _ATTACK_PATTERN_TYPING,
                                       description: Optional[str] = None,
