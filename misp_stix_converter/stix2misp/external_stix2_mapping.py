@@ -294,6 +294,52 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             version = self.version_attribute
         )
 
+        # MISP GALAXIES MAPPING
+        self.__galaxy_name_mapping = Mapping(
+            **{
+                "attack-pattern": {
+                    "name": "Attack Pattern",
+                    "description": "Attack Patterns are a type of TTP that describe ways that adversaries attempt to compromise targets. Attack Patterns are used to help categorize attacks, generalize specific attacks to the patterns that they follow, and provide detailed information about how attacks are performed."
+                },
+                "campaign": {
+                    "name": "Campaign",
+                    "description": "A Campaign is a grouping of adversarial behaviors that describes a set of malicious activities or attacks (sometimes called waves) that occur over a period of time against a specific set of targets. Campaigns usually have well defined objectives and may be part of an Intrusion Set."
+                },
+                "country": {
+                    "name": "Country",
+                    "description": "Country meta information based on the database provided by geonames.org."
+                },
+                "course-of-action": {
+                    "name": "Course of Action",
+                    "description": "A Course of Action is an action taken either to prevent an attack or to respond to an attack that is in progress. It may describe technical, automatable responses (applying patches, reconfiguring firewalls) but can also describe higher level actions like employee training or policy changes."
+                },
+                "intrusion-set": {
+                    "name": "Intrusion Set",
+                    "description": "An Intrusion Set is a grouped set of adversarial behaviors and resources with common properties that is believed to be orchestrated by a single organization. An Intrusion Set may capture multiple Campaigns or other activities that are all tied together by shared attributes indicating a commonly known or unknown Threat Actor."
+                },
+                "malware": {
+                    "name": "Malware",
+                    "description": "Malware is a type of TTP that represents malicious code. It generally refers to a program that is inserted into a system, usually covertly. The intent is to compromise the confidentiality, integrity, or availability of the victim's data, applications, or operating system (OS) or otherwise annoy or disrupt the victim."
+                },
+                "region": {
+                    "name": "Regions UN M49",
+                    "description": "Regions based on UN M49."
+                },
+                "threat-actor": {
+                    "name": "Threat Actor",
+                    "description": "Threat Actors are actual individuals, groups, or organizations believed to be operating with malicious intent. A Threat Actor is not an Intrusion Set but may support or be affiliated with various Intrusion Sets, groups, or organizations over time."
+                },
+                "tool": {
+                    "name": "Tool",
+                    "description": "Tools are legitimate software that can be used by threat actors to perform attacks. Knowing how and when threat actors use such tools can be important for understanding how campaigns are executed. Unlike malware, these tools or software packages are often found on a system and have legitimate purposes for power users, system administrators, network administrators, or even normal users."
+                },
+                "vulnerability": {
+                    "name": "Vulnerability",
+                    "description": "A Vulnerability is a weakness or defect in the requirements, designs, or implementations of the computational logic (e.g., code) found in software and some hardware components (e.g., firmware) that can be directly exploited to negatively impact the confidentiality, integrity, or availability of that system."
+                }
+            }
+        )
+
     @property
     def attack_pattern_object_mapping(self) -> dict:
         return self.__attack_pattern_object_mapping
@@ -317,6 +363,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def file_pattern_mapping(self) -> dict:
         return self.__file_pattern_mapping
+
+    @property
+    def galaxy_name_mapping(self) -> dict:
+        return self.__galaxy_name_mapping
 
     @property
     def identity_object_multiple_fields(self) -> tuple:

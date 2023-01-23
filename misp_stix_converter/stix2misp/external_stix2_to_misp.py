@@ -9,9 +9,9 @@ from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import _INDICATOR_TYPING
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
-    STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _IDENTITY_TYPING, _SDO_TYPING,
-    _VULNERABILITY_TYPING)
-from pymisp import MISPAttribute, MISPObject
+    STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
+    _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
+from pymisp import MISPAttribute, MISPGalaxy, MISPObject
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
     ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
@@ -502,6 +502,20 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._galaxies['vulnerability'] = self._create_galaxy_args(
                     vulnerability
                 )
+
+    ################################################################################
+    #                 STIX Domain Objects (SDOs) PARSING FUNCTIONS                 #
+    ################################################################################
+
+    def _create_galaxy_args(self, stix_object: _GALAXY_OBJECTS_TYPING,
+                            galaxy_type: Optional[str] = None) -> MISPGalaxy:
+        galaxy_args = {
+            'type': stix_object.type if galaxy_type is None else galaxy_type
+        }
+        galaxy_args.update(self._mapping.galaxy_name_mapping[galaxy_args['type']])
+        misp_galaxy = MISPGalaxy()
+        misp_galaxy.from_dict(**galaxy_args)
+        return misp_galaxy
 
     ################################################################################
     #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #

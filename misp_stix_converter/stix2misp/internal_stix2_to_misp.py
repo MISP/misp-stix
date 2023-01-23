@@ -13,7 +13,7 @@ from .stix2_to_misp import (
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from pymisp import MISPAttribute, MISPGalaxyCluster, MISPObject, MISPSighting
+from pymisp import MISPAttribute, MISPGalaxy, MISPGalaxyCluster, MISPObject, MISPSighting
 from stix2.v20.common import ExternalReference as ExternalReference_v20
 from stix2.v20.observables import (
     Process as Process_v20, WindowsPEBinaryExt as WindowsExtension_v20)
@@ -205,10 +205,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             }
             if galaxy_type not in self._galaxies:
                 self._galaxies[galaxy_type] = self._create_galaxy_args(
-                    custom_galaxy,
-                    description=galaxy_description,
-                    galaxy_type=galaxy_type,
-                    galaxy_name=custom_galaxy.x_misp_name
+                    galaxy_description, galaxy_type, custom_galaxy.x_misp_name
                 )
 
 
@@ -376,6 +373,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     #                 STIX Domain Objects (SDOs) PARSING FUNCTIONS                 #
     ################################################################################
 
+    def _create_galaxy_args(self, description: str, galaxy_type: str,
+                            galaxy_name: str) -> MISPGalaxy:
+        misp_galaxy = MISPGalaxy()
+        misp_galaxy.from_dict(
+            **{
+                'type': galaxy_type,
+                'name': galaxy_name,
+                'description': description
+            }
+        )
+        return misp_galaxy
+
     def _parse_attack_pattern_object(self, attack_pattern: _ATTACK_PATTERN_TYPING):
         misp_object = self._create_misp_object('attack-pattern', attack_pattern)
         for key, mapping in self._mapping.attack_pattern_object_mapping.items():
@@ -447,10 +456,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             }
             if galaxy_type not in self._galaxies:
                 self._galaxies[galaxy_type] = self._create_galaxy_args(
-                    stix_object,
-                    description=galaxy_description,
-                    galaxy_type=galaxy_type,
-                    galaxy_name=galaxy_name
+                    galaxy_description, galaxy_type, galaxy_name
                 )
 
     def _parse_identity_object(self, identity: _IDENTITY_TYPING, name: str) -> MISPObject:

@@ -621,28 +621,6 @@ class STIX2toMISPParser(STIXtoMISPParser):
             cluster_args['description'] = stix_object.description
         return cluster_args
 
-    def _create_galaxy_args(self, stix_object: _GALAXY_OBJECTS_TYPING,
-                            description: Optional[str] = None,
-                            galaxy_type: Optional[str] = None,
-                            galaxy_name: Optional[str] = None) -> dict:
-        misp_galaxy = MISPGalaxy()
-        if description is None and galaxy_type is None:
-            galaxy_args = {'type': stix_object.type}
-            galaxy_args.update(
-                self._mapping.galaxy_name_mapping[stix_object.type]
-            )
-            misp_galaxy.from_dict(**galaxy_args)
-            return misp_galaxy
-        if galaxy_name is None:
-            galaxy_name = galaxy_type.replace('-', ' ').title()
-        galaxy_args = {
-            'type': galaxy_type,
-            'name': galaxy_name,
-            'description': description
-        }
-        misp_galaxy.from_dict(**galaxy_args)
-        return misp_galaxy
-
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
         for key, value in stix_object.items():
             if key.startswith('x_misp_'):
