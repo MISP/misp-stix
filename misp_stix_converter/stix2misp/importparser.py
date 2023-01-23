@@ -76,6 +76,11 @@ class STIXtoMISPParser:
         message = f"Error with the Intrusion Set object with id {intrusion_set_id}: {tb}"
         self.__errors[self._identifier].add(message)
 
+    def _location_error(self, location_id: str, exception: Exception):
+        tb = self._parse_traceback(exception)
+        message = f"Error with the Location object with id {location_id}: {tb}"
+        self.__errors[self._identifier].add(message)
+
     def _malware_error(self, malware_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         message = f"Error with the Malware object with id {malware_id}: {tb}"

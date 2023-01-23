@@ -277,12 +277,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_location(self, location_ref: str):
         location = self._get_stix_object(location_ref)
-        misp_object = self._parse_location_object(location)
-        for label in location.labels:
-            if label.startswith('misp:'):
-                continue
-            misp_object.add_tag(label)
-        self._add_misp_object(misp_object)
+        feature = self._handle_object_mapping(location.labels, location.id)
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        try:
+            parser(location)
+        except Exception as exception:
+            self._location_error(location.id, exception)
 
     def _parse_malware(self, malware_ref: str):
         malware = self._get_stix_object(malware_ref)

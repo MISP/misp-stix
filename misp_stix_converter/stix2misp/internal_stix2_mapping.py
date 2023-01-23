@@ -286,6 +286,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'employee': '_parse_employee_object',
             'facebook-account': '_object_from_facebook_account',
             'file': '_object_from_file',
+            'geolocation': '_parse_location_object',
             'github-user': '_object_from_github_user',
             'gitlab-user': '_object_from_gitlab_user',
             'http-request': '_object_from_http_request',

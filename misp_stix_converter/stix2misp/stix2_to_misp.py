@@ -580,7 +580,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             misp_object.add_attribute(**attribute)
         if hasattr(location, 'object_marking_refs'):
             self._parse_markings(misp_object, location.object_marking_refs)
-        return misp_object
+        self._add_misp_object(misp_object)
 
     def _parse_observed_data(self, observed_data_ref: str):
         observed_data = self._get_stix_object(observed_data_ref)
@@ -755,6 +755,16 @@ class STIX2toMISPParser(STIXtoMISPParser):
         if meta:
             intrusion_set_args['meta'] = meta
         return self._create_misp_galaxy_cluster(intrusion_set_args)
+
+    def _parse_location_cluster(self, location: Location, description: Optional[str] = None,
+                                galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        location_args = self._create_cluster_args(
+            location, description, galaxy_type
+        )
+        meta = self._handle_meta_fields(location)
+        if meta:
+            location_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(location_args)
 
     def _parse_malware_cluster(self, malware: _MALWARE_TYPING, description: Optional[str] = None,
                                galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
