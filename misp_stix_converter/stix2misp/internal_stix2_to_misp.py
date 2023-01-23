@@ -13,7 +13,7 @@ from .stix2_to_misp import (
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from pymisp import MISPAttribute, MISPObject, MISPSighting
+from pymisp import MISPAttribute, MISPGalaxyCluster, MISPObject, MISPSighting
 from stix2.v20.common import ExternalReference as ExternalReference_v20
 from stix2.v20.observables import (
     Process as Process_v20, WindowsPEBinaryExt as WindowsExtension_v20)
@@ -24,9 +24,9 @@ from stix2.v21.common import ExternalReference as ExternalReference_v21
 from stix2.v21.observables import (
     DomainName, Process as Process_v21, WindowsPEBinaryExt as WindowsExtension_v21)
 from stix2.v21.sdo import (
-    CustomObject as CustomObject_v21, Indicator as Indicator_v21,
+    CustomObject as CustomObject_v21, Indicator as Indicator_v21, Location,
     Malware as Malware_v21, ObservedData as ObservedData_v21, Tool as Tool_v21)
-from typing import Union
+from typing import Optional, Union
 
 _attribute_additional_fields = (
     'category',
@@ -485,6 +485,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute['value'] = identity.x_misp_logo
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
+
+    def _parse_location_cluster(self, location: Location, description: Optional[str] = None,
+                                galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        location_args = {
+            'type': galaxy_type,
+            'description': description,
+            'value': location.name if galaxy_type == 'country' else self._mapping.regions_mapping[location.region]
+        }
+        meta = self._handle_meta_fields(location)
+        if meta:
+            location_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(location_args)
 
     def _parse_news_agency_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._parse_identity_object(identity, 'news-agency')

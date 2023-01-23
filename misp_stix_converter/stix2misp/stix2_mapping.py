@@ -354,6 +354,40 @@ class STIX2toMISPMapping:
             operating_system_refs = 'operating_system_refs',
             sample_refs = 'sample_refs'
         )
+        self.__regions_mapping = Mapping(
+            **{
+                'world': '001 - World',
+                'africa': '002 - Africa',
+                'eastern-africa': '014 - Eastern Africa',
+                'middle-africa': '017 - Middle Africa',
+                'northern-africa': '015 - Northern Africa',
+                'southern-africa': '018 - Southern Africa',
+                'western-africa': '011 - Western Africa',
+                'americas': '019 - Americas',
+                'caribbean': '029 - Caribbean',
+                'central-america': '013 - Central America',
+                'latin-america-caribbean': '419 - Latin America and the Caribbean',
+                'northern-america': '021 - Northern America',
+                'south-america': '005 - South America',
+                'asia': '142 - Asia',
+                'central-asia': '143 - Central Asia',
+                'eastern-asia': '030 - Eastern Asia',
+                'southern-asia': '034 - Southern Asia',
+                'south-eastern-asia': '035 - South-eastern Asia',
+                'western-asia': '145 - Western Asia',
+                'europe': '150 - Europe',
+                'eastern-europe': '151 - Eastern Europe',
+                'northern-europe': '154 - Northern Europe',
+                'southern-europe': '039 - Southern Europe',
+                'western-europe': '155 - Western Europe',
+                'oceania': '009 - Oceania',
+                'antarctica': '010 - Antarctica',
+                'australia-new-zealand': '053 - Australia and New Zealand',
+                'melanesia': '054 - Melanesia',
+                'micronesia': '057 - Micronesia',
+                'polynesia': '061 - Polynesia'
+            }
+        )
         self.__threat_actor_meta_mapping = Mapping(
             aliases = 'synonyms',
             goals = 'goals',
@@ -575,6 +609,10 @@ class STIX2toMISPMapping:
     @property
     def referer_attribute(self) -> dict:
         return self.__referer_attribute
+
+    @property
+    def regions_mapping(self) -> dict:
+        return self.__regions_mapping
 
     @property
     def regkey_attribute(self) -> dict:

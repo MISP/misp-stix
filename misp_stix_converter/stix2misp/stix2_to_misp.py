@@ -758,16 +758,6 @@ class STIX2toMISPParser(STIXtoMISPParser):
             intrusion_set_args['meta'] = meta
         return self._create_misp_galaxy_cluster(intrusion_set_args)
 
-    def _parse_location_cluster(self, location: Location, description: Optional[str] = None,
-                                galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        location_args = self._create_cluster_args(
-            location, description, galaxy_type
-        )
-        meta = self._handle_meta_fields(location)
-        if meta:
-            location_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(location_args)
-
     def _parse_malware_cluster(self, malware: _MALWARE_TYPING, description: Optional[str] = None,
                                galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         malware_args = self._create_cluster_args(
