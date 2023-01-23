@@ -110,7 +110,7 @@ class STIX2toMISPMapping:
 
         # SINGLE ATTRIBUTES MAPPING
         self.__accuracy_radius_attribute = Mapping(
-            **{'type': 'float', 'object_relation': 'accuracy_radius'}
+            **{'type': 'float', 'object_relation': 'accuracy-radius'}
         )
         self.__args_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'args'}
