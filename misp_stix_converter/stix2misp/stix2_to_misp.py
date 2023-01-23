@@ -694,7 +694,8 @@ class STIX2toMISPParser(STIXtoMISPParser):
             attack_pattern_args['meta'] = meta
         return self._create_misp_galaxy_cluster(attack_pattern_args)
 
-    def _parse_campaign_cluster(self, campaign: _CAMPAIGN_TYPING, description: Optional[str] = None,
+    def _parse_campaign_cluster(self, campaign: _CAMPAIGN_TYPING,
+                                description: Optional[str] = None,
                                 galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         campaign_args = self._create_cluster_args(
             campaign, galaxy_type, description=description
@@ -712,7 +713,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                                         description: Optional[str] = None,
                                         galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         course_of_action_args = self._create_cluster_args(
-            course_of_action, description ,galaxy_type
+            course_of_action, galaxy_type, description=description
         )
         meta = dict(self._extract_custom_fields(course_of_action))
         if hasattr(course_of_action, 'external_references'):
@@ -742,7 +743,8 @@ class STIX2toMISPParser(STIXtoMISPParser):
             intrusion_set_args['meta'] = meta
         return self._create_misp_galaxy_cluster(intrusion_set_args)
 
-    def _parse_malware_cluster(self, malware: _MALWARE_TYPING, description: Optional[str] = None,
+    def _parse_malware_cluster(self, malware: _MALWARE_TYPING,
+                               description: Optional[str] = None,
                                galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         malware_args = self._create_cluster_args(
             malware, galaxy_type, description=description
@@ -766,7 +768,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                                     description: Optional[str] = None,
                                     galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         threat_actor_args = self._create_cluster_args(
-            threat_actor, description, galaxy_type
+            threat_actor, galaxy_type, description=description
         )
         meta = self._handle_meta_fields(threat_actor)
         if hasattr(threat_actor, 'external_references'):
