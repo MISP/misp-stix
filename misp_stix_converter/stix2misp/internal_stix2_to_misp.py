@@ -1,30 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .exceptions import (AttributeFromPatternParsingError, UndefinedSTIXObjectError,
-    UndefinedIndicatorError, UndefinedObservableError, UnknownParsingFunctionError)
-from .internal_stix2_mapping import InternalSTIX2Mapping
+from .exceptions import (
+    AttributeFromPatternParsingError, UndefinedSTIXObjectError,
+    UndefinedIndicatorError, UndefinedObservableError,
+    UnknownParsingFunctionError)
+from .importparser import _INDICATOR_TYPING
+from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .stix2_to_misp import (
     STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
-    _GALAXY_OBJECTS_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
+    _GALAXY_OBJECTS_TYPING, _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from pymisp import MISPAttribute, MISPObject, MISPSighting
+from pymisp import MISPAttribute, MISPGalaxy, MISPGalaxyCluster, MISPObject, MISPSighting
 from stix2.v20.common import ExternalReference as ExternalReference_v20
 from stix2.v20.observables import (
     Process as Process_v20, WindowsPEBinaryExt as WindowsExtension_v20)
-from stix2.v20.sdo import (CustomObject as CustomObject_v20, Identity as Identity_v20,
-    Indicator as Indicator_v20, Malware as Malware_v20, ObservedData as ObservedData_v20,
-    Tool as Tool_v20)
-from stix2.v20.sro import Sighting as Sighting_v20
+from stix2.v20.sdo import (
+    CustomObject as CustomObject_v20, Malware as Malware_v20,
+    ObservedData as ObservedData_v20, Tool as Tool_v20)
 from stix2.v21.common import ExternalReference as ExternalReference_v21
 from stix2.v21.observables import (
     DomainName, Process as Process_v21, WindowsPEBinaryExt as WindowsExtension_v21)
-from stix2.v21.sdo import (CustomObject as CustomObject_v21, Identity as Identity_v21,
-    Indicator as Indicator_v21, Malware as Malware_v21, ObservedData as ObservedData_v21,
-    Opinion, Tool as Tool_v21)
-from stix2.v21.sro import Sighting as Sighting_v21
+from stix2.v21.sdo import (
+    CustomObject as CustomObject_v21, Indicator as Indicator_v21, Location,
+    Malware as Malware_v21, ObservedData as ObservedData_v21, Tool as Tool_v21)
 from typing import Optional, Union
 
 _attribute_additional_fields = (
@@ -46,19 +47,6 @@ _EXTERNAL_REFERENCE_TYPING = [
     ExternalReference_v20,
     ExternalReference_v21
 ]
-_GALAXY_TYPES = (
-    'attack-pattern',
-    'course-of-action',
-    'intrusion-set',
-    'malware',
-    'threat-actor',
-    'tool',
-    'vulnerability'
-)
-_INDICATOR_TYPING = Union[
-    Indicator_v20,
-    Indicator_v21
-]
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20,
     ObservedData_v21
@@ -67,28 +55,33 @@ _PROCESS_TYPING = Union[
     Process_v20,
     Process_v21
 ]
-_SIGHTING_TYPING = Union[
-    Sighting_v20,
-    Sighting_v21
-]
 
 
 class InternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, synonyms_path: Optional[str] = None):
-        super().__init__(synonyms_path)
-        self._mapping = InternalSTIX2Mapping()
+    def __init__(self):
+        super().__init__()
+        self._mapping = InternalSTIX2toMISPMapping()
 
     ################################################################################
     #                        STIX OBJECTS LOADING FUNCTIONS                        #
     ################################################################################
 
     def _load_custom_attribute(self, custom_attribute: _CUSTOM_TYPING):
+        self._check_uuid(custom_attribute.id)
         try:
             self._custom_attribute[custom_attribute.id] = custom_attribute
         except AttributeError:
             self._custom_attribute = {custom_attribute.id: custom_attribute}
 
+    def _load_custom_galaxy_cluster(self, custom_galaxy: _CUSTOM_TYPING):
+        self._check_uuid(custom_galaxy.id)
+        try:
+            self._custom_galaxy_cluster[custom_galaxy.id] = custom_galaxy
+        except AttributeError:
+            self._custom_galaxy_cluster = {custom_galaxy.id: custom_galaxy}
+
     def _load_custom_object(self, custom_object: _CUSTOM_TYPING):
+        self._check_uuid(custom_object.id)
         try:
             self._custom_object[custom_object.id] = custom_object
         except AttributeError:
@@ -108,53 +101,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 'name': custom_object.x_misp_author
             }
         sighting.from_dict(**sighting_args)
+        object_ref = self._sanitise_uuid(custom_object.object_ref)
         try:
-            self._sighting[custom_object.object_ref.split('--')[1]].append(sighting)
+            self._sighting[object_ref].append(sighting)
         except AttributeError:
             self._sighting = defaultdict(list)
-            self._sighting[custom_object.object_ref.split('--')[1]].append(sighting)
-
-    def _load_opinion(self, opinion: Opinion):
-        sighting = MISPSighting()
-        sighting_args = {
-            'date_sighting': self._timestamp_from_date(opinion.modified),
-            'type': '1'
-        }
-        if hasattr(opinion, 'x_misp_source'):
-            sighting_args['source'] = opinion.x_misp_source
-        if hasattr(opinion, 'x_misp_author_ref'):
-            identity = self._identity[opinion.x_misp_author_ref]['stix_object']
-            sighting_args['Organisation'] = {
-                'uuid': identity.id.split('--')[1],
-                'name': identity.name
-            }
-        sighting.from_dict(**sighting_args)
-        try:
-            self._sighting[opinion.object_refs[0].split('--')[1]].append(sighting)
-        except AttributeError:
-            self._sighting = defaultdict(list)
-            self._sighting[opinion.object_refs[0].split('--')[1]].append(sighting)
-
-    def _load_sighting(self, sighting: _SIGHTING_TYPING):
-        misp_sighting = MISPSighting()
-        sighting_args = {
-            'date_sighting': self._timestamp_from_date(sighting.modified),
-            'type': '0'
-        }
-        if hasattr(sighting, 'description'):
-            sighting_args['source'] = sighting.description
-        if hasattr(sighting, 'where_sighted_refs'):
-            identity = self._identity[sighting.where_sighted_refs[0]]['stix_object']
-            sighting_args['Organisation'] = {
-                'uuid': identity.id.split('--')[1],
-                'name': identity.name
-            }
-        misp_sighting.from_dict(**sighting_args)
-        try:
-            self._sighting[sighting.sighting_of_ref.split('--')[1]].append(misp_sighting)
-        except AttributeError:
-            self._sighting = defaultdict(list)
-            self._sighting[sighting.sighting_of_ref.split('--')[1]].append(misp_sighting)
+            self._sighting[object_ref].append(sighting)
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
@@ -171,13 +123,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _handle_object_mapping(self, labels: list, object_id: str) -> str:
         parsed_labels = {key: value.strip('"') for key, value in (label.split('=') for label in labels)}
         if 'misp:galaxy-type' in parsed_labels:
-            return '_parse_internal_galaxy'
+            return '_parse_galaxy'
         if 'misp:name' in parsed_labels:
             return self._mapping.objects_mapping[parsed_labels['misp:name']]
         if 'misp:type' in parsed_labels:
             return self._mapping.attributes_mapping[parsed_labels['misp:type']]
-        if object_id.split('--')[0] in _GALAXY_TYPES:
-            return '_parse_galaxy'
         raise UndefinedSTIXObjectError(object_id)
 
     def _handle_observable_object_mapping(self, labels: list, object_id: str) -> str:
@@ -222,25 +172,64 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         custom_attribute = self._get_stix_object(custom_ref)
         attribute = {
             "type": custom_attribute.x_misp_type,
-            "value": self._sanitize_value(custom_attribute.x_misp_value),
-            "timestamp": self._timestamp_from_date(custom_attribute.modified),
-            "uuid": custom_attribute.id.split('--')[1]
+            "value": self._sanitise_value(custom_attribute.x_misp_value),
+            "timestamp": self._timestamp_from_date(custom_attribute.modified)
         }
         for field in _attribute_additional_fields:
             if hasattr(custom_attribute, f'x_misp_{field}'):
                 attribute[field] = getattr(custom_attribute, f'x_misp_{field}')
+        attribute.update(
+            self._sanitise_attribute_uuid(
+                custom_attribute.id, comment=attribute.get('comment')
+            )
+        )
         self._add_misp_attribute(attribute)
+
+    def _parse_custom_galaxy_cluster(self, custom_ref: str):
+        if custom_ref in self._clusters:
+            self._clusters[custom_ref]['used'][self.misp_event.uuid] = False
+        else:
+            custom_galaxy = self._get_stix_object(custom_ref)
+            galaxy_type = custom_galaxy.x_misp_type
+            galaxy_description, cluster_description = custom_galaxy.x_misp_description.split(' | ')
+            cluster_args = {
+                'type': galaxy_type,
+                'value': custom_galaxy.x_misp_value,
+                'description': cluster_description
+            }
+            if hasattr(custom_galaxy, 'x_misp_meta'):
+                cluster_args['meta'] = custom_galaxy.x_misp_meta
+            self._clusters[custom_ref] = {
+                'cluster': self._create_misp_galaxy_cluster(cluster_args),
+                'used': {self.misp_event.uuid: False}
+            }
+            if galaxy_type not in self._galaxies:
+                self._galaxies[galaxy_type] = self._create_galaxy_args(
+                    galaxy_description, galaxy_type, custom_galaxy.x_misp_name
+                )
+
 
     def _parse_custom_object(self, custom_ref: str):
         custom_object = self._get_stix_object(custom_ref)
         name = custom_object.x_misp_name
-        misp_object = self._create_misp_object(name, custom_object)
+        misp_object = self._create_misp_object(name)
         misp_object.category = custom_object.x_misp_meta_category
-        misp_object.uuid = custom_object.id.split('--')[1]
-        misp_object.timestamp = self._timestamp_from_date(custom_object.modified)
+        misp_object.update(self._parse_timeline(custom_object))
         if hasattr(custom_object, 'x_misp_comment'):
             misp_object.comment = custom_object.x_misp_comment
-        for attribute in custom_object.x_misp_attributes:
+        object_uuid = self._extract_uuid(custom_object.id)
+        if object_uuid in self.replacement_uuids:
+            self._sanitise_object_uuid(misp_object, object_uuid)
+        else:
+            misp_object.uuid = object_uuid
+        for custom_attribute in custom_object.x_misp_attributes:
+            attribute = dict(custom_attribute)
+            if attribute.get('uuid'):
+                attribute.update(
+                    self._sanitise_attribute_uuid(
+                        attribute['uuid'], attribute.get('comment')
+                    )
+                )
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
@@ -285,12 +274,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_location(self, location_ref: str):
         location = self._get_stix_object(location_ref)
-        misp_object = self._parse_location_object(location)
-        for label in location.labels:
-            if label.startswith('misp:'):
-                continue
-            misp_object.add_tag(label)
-        self._add_misp_object(misp_object)
+        feature = self._handle_object_mapping(location.labels, location.id)
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        try:
+            parser(location)
+        except Exception as exception:
+            self._location_error(location.id, exception)
 
     def _parse_malware(self, malware_ref: str):
         malware = self._get_stix_object(malware_ref)
@@ -316,7 +308,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
         if hasattr(note, 'object_refs'):
             for object_ref in note.object_refs:
-                misp_object.add_reference(object_ref.split('--')[1], 'annotates')
+                misp_object.add_reference(self._sanitise_uuid(object_ref), 'annotates')
         self._add_misp_object(misp_object)
 
     def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
@@ -334,7 +326,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         feature = self._handle_observable_object_mapping(observed_data.labels, observed_data.id)
         try:
             parser = getattr(self, f"{feature}_observable_v21")
-        except AttributeError as error:
+        except AttributeError:
             raise UnknownParsingFunctionError(f"{feature}_observable_v21")
         try:
             parser(observed_data)
@@ -381,6 +373,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     #                 STIX Domain Objects (SDOs) PARSING FUNCTIONS                 #
     ################################################################################
 
+    def _create_galaxy_args(self, description: str, galaxy_type: str,
+                            galaxy_name: str) -> MISPGalaxy:
+        misp_galaxy = MISPGalaxy()
+        misp_galaxy.from_dict(
+            **{
+                'type': galaxy_type,
+                'name': galaxy_name,
+                'description': description
+            }
+        )
+        return misp_galaxy
+
     def _parse_attack_pattern_object(self, attack_pattern: _ATTACK_PATTERN_TYPING):
         misp_object = self._create_misp_object('attack-pattern', attack_pattern)
         for key, mapping in self._mapping.attack_pattern_object_mapping.items():
@@ -416,7 +420,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
         self._add_misp_object(misp_object)
 
-    def _parse_employee_object(self, identity: Union[Identity_v20, Identity_v21]):
+    def _parse_employee_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._create_misp_object('employee', identity)
         for key, mapping in self._mapping.employee_object_mapping.items():
             if hasattr(identity, key):
@@ -435,7 +439,27 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
-    def _parse_identity_object(self, identity: Union[Identity_v20, Identity_v21], name: str) -> MISPObject:
+    def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
+        if stix_object.id in self._clusters:
+            self._clusters[stix_object.id]['used'][self.misp_event.uuid] = False
+        else:
+            galaxy_type, galaxy_name = self._extract_galaxy_labels(stix_object.labels)
+            galaxy_description, cluster_description = stix_object.description.split(' | ')
+            object_type = stix_object.type.replace('-', '_')
+            self._clusters[stix_object.id] = {
+                'cluster': getattr(self, f'_parse_{object_type}_cluster')(
+                    stix_object,
+                    description=cluster_description,
+                    galaxy_type=galaxy_type
+                ),
+                'used': {self.misp_event.uuid: False}
+            }
+            if galaxy_type not in self._galaxies:
+                self._galaxies[galaxy_type] = self._create_galaxy_args(
+                    galaxy_description, galaxy_type, galaxy_name
+                )
+
+    def _parse_identity_object(self, identity: _IDENTITY_TYPING, name: str) -> MISPObject:
         misp_object = self._create_misp_object(name, identity)
         feature = name.replace('-', '_')
         for key, mapping in getattr(self._mapping, f'{feature}_object_mapping').items():
@@ -457,18 +481,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
         return misp_object
 
-    def _parse_internal_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
-        if stix_object.id in self._galaxies:
-            self._galaxies[stix_object.id]['used'][self.misp_event.uuid] = False
-        else:
-            galaxy_type = stix_object.labels[1].split('=')[1].strip('"')
-            self._galaxies[stix_object.id] = {
-                'tag_names': [f'misp-galaxy:{galaxy_type}="{stix_object.name}"'],
-                'used': {self.misp_event.uuid: False}
-            }
-
-
-    def _parse_legal_entity_object(self, identity: Union[Identity_v20, Identity_v21]):
+    def _parse_legal_entity_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._parse_identity_object(identity, 'legal-entity')
         if hasattr(identity, 'x_misp_logo'):
             attribute = {'type': 'attachment', 'object_relation': 'logo'}
@@ -479,7 +492,19 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
-    def _parse_news_agency_object(self, identity: Union[Identity_v20, Identity_v21]):
+    def _parse_location_cluster(self, location: Location, description: Optional[str] = None,
+                                galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        location_args = {
+            'type': galaxy_type,
+            'description': description,
+            'value': location.name if galaxy_type == 'country' else self._mapping.regions_mapping[location.region]
+        }
+        meta = self._handle_meta_fields(location)
+        if meta:
+            location_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(location_args)
+
+    def _parse_news_agency_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._parse_identity_object(identity, 'news-agency')
         if hasattr(identity, 'x_misp_attachment'):
             attribute = {'type': 'attachment', 'object_relation': 'attachment'}
@@ -490,7 +515,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
-    def _parse_organization_object(self, identity: Union[Identity_v20, Identity_v21]):
+    def _parse_organization_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._parse_identity_object(identity, 'organization')
         self._add_misp_object(misp_object)
 
@@ -907,25 +932,28 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                             misp_object.add_attribute(**attribute)
                 else:
                     attribute = {
-                        'uuid': observable.id.split('--')[1],
                         'type': 'domain',
                         'object_relation': 'domain',
                         'value': observable.value
                     }
+                    attribute.update(
+                        self._sanitise_attribute_uuid(observable.id)
+                    )
                     misp_object.add_attribute(**attribute)
                 if hasattr(observable, 'resolves_to_refs'):
                     for reference in observable.resolves_to_refs:
                         if reference in parsed:
                             continue
                         address = self._observable[reference]
-                        misp_object.add_attribute(
-                            **{
-                                'uuid': address.id.split('--')[1],
-                                'type': 'ip-dst',
-                                'object_relation': 'ip',
-                                'value': address.value
-                            }
+                        attribute = {
+                            'type': 'ip-dst',
+                            'object_relation': 'ip',
+                            'value': address.value
+                        }
+                        attribute.update(
+                            self._sanitise_attribute_uuid(address.id)
                         )
+                        misp_object.add_attribute(**attribute)
                         parsed.append(reference)
         self._add_misp_object(misp_object)
 
@@ -1086,7 +1114,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     'value': directory.path
                 }
                 if hasattr(directory, 'id'):
-                    attribute['uuid'] = directory.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(directory.id)
+                    )
                 misp_object.add_attribute(**attribute)
             if hasattr(observable, 'content_ref'):
                 artifact = observables[observable.content_ref]
@@ -1110,7 +1140,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                         }
                     )
                 if hasattr(artifact, 'id'):
-                    attribute['uuid'] = artifact.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(artifact.id)
+                    )
                 misp_object.add_attribute(**attribute)
             if hasattr(observable, 'extensions') and 'windows-pebinary-ext' in observable.extensions:
                 pe_uuid = self._object_from_file_extension_observable(
@@ -1152,7 +1184,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                             'value': address.value
                         }
                         if hasattr(address, 'id'):
-                            attribute['uuid'] = address.id.split('--')[1]
+                            attribute.update(
+                                self._sanitise_attribute_uuid(address.id)
+                            )
                         misp_object.add_attribute(**attribute)
                 for feature, mapping in self._mapping.http_request_object_mapping.items():
                     if hasattr(observable, feature):
@@ -1185,7 +1219,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     'value': observable.value
                 }
                 if hasattr(observable, 'id'):
-                    attribute['uuid'] = observable.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(observable.id)
+                    )
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
@@ -1216,7 +1252,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                         'data': observable.payload_bin
                     }
                     if hasattr(observable, 'id'):
-                        attribute['uuid'] = observable.id.split('--')[1]
+                        attribute.update(
+                            self._sanitise_attribute_uuid(observable.id)
+                        )
                     misp_object.add_attribute(**attribute)
                     if hasattr(observable, 'x_misp_url'):
                         misp_object.add_attribute(
@@ -1233,7 +1271,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                         'value': observable.url
                     }
                     if hasattr(observable, 'id'):
-                        attribute['uuid'] = observable.id.split('--')[1]
+                        attribute.update(
+                            self._sanitise_attribute_uuid(observable.id)
+                        )
                     misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
@@ -1258,7 +1298,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                             'value': address.value
                         }
                         if hasattr(address, 'id'):
-                            attribute['uuid'] = address.id.split('--')[1]
+                            attribute.update(
+                                self._sanitise_attribute_uuid(address.id)
+                            )
                         misp_object.add_attribute(**attribute)
                         ip_protocols.add(address.type.split('-')[0])
                 for feature, mapping in self._mapping.ip_port_object_mapping.items():
@@ -1312,7 +1354,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     'value': directory.path
                 }
                 if hasattr(directory, 'id'):
-                    attribute['uuid'] = directory.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(directory.id)
+                    )
                 misp_object.add_attribute(**attribute)
             if hasattr(observable, 'content_ref'):
                 artifact = observables[observable.content_ref]
@@ -1323,7 +1367,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     'data': artifact.payload_bin
                 }
                 if hasattr(artifact, 'id'):
-                    attribute['uuid'] = artifact.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(artifact.id)
+                    )
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
@@ -1354,7 +1400,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                         'value': address.value
                     }
                     if hasattr(address, 'id'):
-                        attribute['uuid'] = address.id.split('--')[1]
+                        attribute.update(
+                            self._sanitise_attribute_uuid(address.id)
+                        )
                     misp_object.add_attribute(**attribute)
                     if hasattr(address, 'belongs_to_refs'):
                         for as_reference in getattr(address, 'belongs_to_refs'):
@@ -1362,7 +1410,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                             attribute = {'value': f'AS{autonomous_system.number}'}
                             attribute.update(getattr(self._mapping, f'{feature}_as_attribute'))
                             if hasattr(autonomous_system, 'id'):
-                                attribute['uuid'] = autonomous_system.id.split('--')[1]
+                                attribute.update(
+                                    self._sanitise_attribute_uuid(autonomous_system.id)
+                                )
                             misp_object.add_attribute(**attribute)
             for feature, mapping in self._mapping.netflow_object_mapping.items():
                 if hasattr(observable, feature):
@@ -1493,7 +1543,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 reference = observables[getattr(observable, f'{feature}_ref')]
                 attribute = {'value': reference.value}
                 if hasattr(reference, 'id'):
-                    attribute['uuid'] = reference.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(reference.id)
+                    )
                 if reference.type == 'domain-name':
                     attribute.update(
                         {
@@ -1546,14 +1598,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             )
         elif hasattr(main_process, 'image_ref'):
             image = observables[main_process.image_ref]
-            misp_object.add_attribute(
-                **{
-                    'uuid': image.id.split('--')[1],
-                    'type': 'filename',
-                    'object_relation': 'image',
-                    'value': image.name
-                }
+            attribute = {
+                'type': 'filename',
+                'object_relation': 'image',
+                'value': image.name
+            }
+            attribute.update(
+                self._sanitise_attribute_uuid(image.id)
             )
+            misp_object.add_attribute(**attribute)
         if hasattr(main_process, 'child_refs'):
             for child_ref in main_process.child_refs:
                 process = observables[child_ref]
@@ -1563,7 +1616,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     'value': process.pid
                 }
                 if hasattr(process, 'id'):
-                    attribute['uuid'] = process.id.split('--')[1]
+                    attribute.update(
+                        self._sanitise_attribute_uuid(process.id)
+                    )
                 misp_object.add_attribute(**attribute)
         if hasattr(main_process, 'parent_ref'):
             parent_process = observables[main_process.parent_ref]
@@ -1572,7 +1627,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     attribute = {'value': getattr(parent_process, feature)}
                     attribute.update(mapping)
                     if feature == 'pid' and hasattr(parent_process, 'id'):
-                        attribute['uuid'] = parent_process.id.split('--')[1]
+                        attribute.update(
+                            self._sanitise_attribute_uuid(parent_process.id)
+                        )
                     misp_object.add_attribute(**attribute)
             if hasattr(parent_process, 'binary_ref'):
                 image = observables[parent_process.binary_ref]
@@ -1585,14 +1642,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
             elif hasattr(parent_process, 'image_ref'):
                 image = observables[parent_process.image_ref]
-                misp_object.add_attribute(
-                    **{
-                        'uuid': image.id.split('--')[1],
-                        'type': 'filename',
-                        'object_relation': 'parent-image',
-                        'value': image.name
-                    }
+                attribute = {
+                    'type': 'filename',
+                    'object_relation': 'parent-image',
+                    'value': image.name
+                }
+                attribute.update(
+                    self._sanitise_attribute_uuid(image.id)
                 )
+                misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object)
 
     def _object_from_process_observable_v20(self, observed_data: ObservedData_v20):
@@ -2384,10 +2442,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = self._attribute_from_labels(stix_object.labels)
-        attribute['uuid'] = stix_object.id.split('--')[-1]
         attribute.update(self._parse_timeline(stix_object))
         if hasattr(stix_object, 'description') and stix_object.description:
             attribute['comment'] = stix_object.description
+        attribute.update(
+            self._sanitise_attribute_uuid(
+                stix_object.id, comment=attribute.get('comment')
+            )
+        )
         if hasattr(stix_object, 'object_marking_refs'):
             self._update_marking_refs(attribute['uuid'])
         return attribute
@@ -2401,15 +2463,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             'value': getattr(reference, feature)
         }
 
-    @staticmethod
-    def _create_attribute_from_reference_v21(attribute_type: str, object_relation: str,
+    def _create_attribute_from_reference_v21(self, attribute_type: str, object_relation: str,
                                              feature: str, reference) -> dict:
-        return {
-            'uuid': reference.id.split('--')[1],
+        attribute = {
             'type': attribute_type,
             'object_relation': object_relation,
             'value': getattr(reference, feature)
         }
+        attribute.update(
+            self._sanitise_attribute_uuid(reference.id)
+        )
+        return attribute
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
@@ -2437,6 +2501,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _extract_features_from_pattern(pattern: str) -> tuple:
         identifier, value = pattern.split(' = ')
         return identifier.split(':')[1], value.strip("'")
+
+    @staticmethod
+    def _extract_galaxy_labels(labels: list) -> dict:
+        for label in labels[:2]:
+            if 'galaxy-type' in label:
+                galaxy_type = label.split('=')[1].strip('"')
+            elif 'galaxy-name' in label:
+                galaxy_name = label.split('=')[1].strip('"')
+        return galaxy_type, galaxy_name
 
     @staticmethod
     def _fetch_main_process(observables: dict) -> _PROCESS_TYPING:

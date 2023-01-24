@@ -5,7 +5,7 @@ from .. import Mapping
 from typing import Optional
 
 
-class Stix2Mapping:
+class MISPtoSTIX2Mapping:
     def __init__(self):
         self.__external_id_to_source_name = Mapping(
             CAPEC = 'capec',
@@ -51,7 +51,8 @@ class Stix2Mapping:
             'reference_from_CAPEC'
         )
 
-    def _declare_attributes_mapping(self, updates: Optional[dict]=None):
+    def _declare_attributes_mapping(self, attribute_updates: Optional[dict]=None,
+                                    galaxy_updates: Optional[dict]=None):
         self.__misp_identity_args = Mapping(
             id = 'identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f',
             type = 'identity',
@@ -197,13 +198,15 @@ class Stix2Mapping:
                 '_parse_x509_fingerprint_attribute'
             )
         )
-        if updates is not None:
-            _attribute_types_mapping.update(updates)
+        if attribute_updates is not None:
+            _attribute_types_mapping.update(attribute_updates)
         self.__attribute_types_mapping = Mapping(**_attribute_types_mapping)
         # GALAXIES MAPPING
         _attack_pattern_types = (
+            'cmtmf-attack-pattern',
             'mitre-attack-pattern',
             'mitre-enterprise-attack-attack-pattern',
+            'mitre-ics-techniques',
             'mitre-mobile-attack-attack-pattern',
             'mitre-pre-attack-attack-pattern'
         )
@@ -220,18 +223,22 @@ class Stix2Mapping:
         )
         _malware_types = (
             'android',
-            'banker',
-            'stealer',
             'backdoor',
-            'ransomware',
-            'mitre-malware',
+            'banker',
+            'cryptominers',
             'malpedia',
             'mitre-enterprise-attack-malware',
-            'mitre-mobile-attack-malware'
+            'mitre-ics-software',
+            'mitre-malware',
+            'mitre-mobile-attack-malware',
+            'ransomware',
+            'stealer'
         )
         _threat_actor_types = (
+            '360net-threat-actor',
+            'microsoft-activity-group',
+            'mitre-ics-groups',
             'threat-actor',
-            'microsoft-activity-group'
         )
         _tool_types = (
             'botnet',
@@ -280,7 +287,6 @@ class Stix2Mapping:
                 'tool'
             )
         )
-        self.__cluster_to_stix_object = Mapping(**_cluster_to_stix_object)
         _galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
         _galaxy_types_mapping.update(
             dict.fromkeys(
@@ -318,7 +324,57 @@ class Stix2Mapping:
                 '_parse_tool_{}_galaxy'
             )
         )
+        if galaxy_updates is not None:
+            if 'cluster_to_stix_object' in galaxy_updates:
+                _cluster_to_stix_object.update(
+                    galaxy_updates['cluster_to_stix_object']
+                )
+            if 'galaxy_types_mapping' in galaxy_updates:
+                _galaxy_types_mapping.update(
+                    galaxy_updates['galaxy_types_mapping']
+                )
+        self.__cluster_to_stix_object = Mapping(**_cluster_to_stix_object)
         self.__galaxy_types_mapping = Mapping(**_galaxy_types_mapping)
+        self.__external_references_fields = Mapping(
+            **{
+                'external_id': '_parse_external_id',
+                'refs': '_parse_external_url',
+                'Technique ID': '_parse_external_id'
+            }
+        )
+        self.__attack_pattern_meta_mapping = Mapping(
+            kill_chain = '_parse_kill_chain'
+        )
+        self.__attack_pattern_types = _attack_pattern_types
+        self.__course_of_action_types = _course_of_action_types
+        self.__intrusion_set_meta_mapping = Mapping(
+            synonyms = '_parse_synonyms_meta_field'
+        )
+        self.__intrusion_set_types = _intrusion_set_types
+        self.__malware_meta_mapping = Mapping(
+            **{
+                'kill_chain': '_parse_kill_chain',
+                'synonyms': '_parse_synonyms_21_meta_field',
+                'type': '_parse_malware_types'
+            }
+        )
+        self.__malware_types = _malware_types
+        self.__threat_actor_meta_mapping = Mapping(
+            **{
+                'synonyms': '_parse_synonyms_meta_field',
+                'type': '_parse_threat_actor_types'
+            }
+        )
+        self.__threat_actor_types = _threat_actor_types
+        self.__tool_meta_mapping = Mapping(
+            **{
+                'kill_chain': '_parse_kill_chain',
+                'synonyms': '_parse_synonyms_21_meta_field',
+                'type': '_parse_tool_types'
+            }
+        )
+        self.__tool_types = _tool_types
+        self.__vulnerability_types = ('branded-vulnerability',)
 
     def _declare_objects_mapping(self, updates: Optional[dict]=None):
         _objects_mapping = {
@@ -935,6 +991,10 @@ class Stix2Mapping:
         return self.__as_single_fields
 
     @property
+    def attack_pattern_meta_mapping(self) -> dict:
+        return self.__attack_pattern_meta_mapping
+
+    @property
     def attack_pattern_object_mapping(self) -> dict:
         return self.__attack_pattern_object_mapping
 
@@ -947,6 +1007,10 @@ class Stix2Mapping:
         return self.__attack_pattern_single_fields
 
     @property
+    def attack_pattern_types(self) -> tuple:
+        return self.__attack_pattern_types
+
+    @property
     def attribute_types_mapping(self) -> dict:
         return self.__attribute_types_mapping
 
@@ -957,6 +1021,10 @@ class Stix2Mapping:
     @property
     def course_of_action_object_mapping(self) -> tuple:
         return self.__course_of_action_object_mapping
+
+    @property
+    def course_of_action_types(self) -> tuple:
+        return self.__course_of_action_types
 
     @property
     def cpe_asset_object_mapping(self) -> dict:
@@ -1005,6 +1073,10 @@ class Stix2Mapping:
     @property
     def external_id_to_source_name(self) -> dict:
         return self.__external_id_to_source_name
+
+    @property
+    def external_references_fields(self) -> dict:
+        return self.__external_references_fields
 
     @property
     def facebook_account_data_fields(self) -> tuple:
@@ -1091,6 +1163,14 @@ class Stix2Mapping:
         return self.__image_uuid_fields
 
     @property
+    def intrusion_set_meta_mapping(self) -> dict:
+        return self.__intrusion_set_meta_mapping
+
+    @property
+    def intrusion_set_types(self) -> tuple:
+        return self.__intrusion_set_types
+
+    @property
     def ip_port_object_mapping(self) -> dict:
         return self.__ip_port_object_mapping
 
@@ -1133,6 +1213,14 @@ class Stix2Mapping:
     @property
     def lnk_single_fields(self) -> tuple:
         return self.__lnk_single_fields
+
+    @property
+    def malware_meta_mapping(self) -> dict:
+        return self.__malware_meta_mapping
+
+    @property
+    def malware_types(self) -> tuple:
+        return self.__malware_types
 
     @property
     def misp_identity_args(self) -> dict:
@@ -1267,6 +1355,22 @@ class Stix2Mapping:
         return self.__telegram_account_single_fields
 
     @property
+    def threat_actor_meta_mapping(self) -> dict:
+        return self.__threat_actor_meta_mapping
+
+    @property
+    def threat_actor_types(self) -> tuple:
+        return self.__threat_actor_types
+
+    @property
+    def tool_meta_mapping(self) -> dict:
+        return self.__tool_meta_mapping
+
+    @property
+    def tool_types(self) -> tuple:
+        return self.__tool_types
+
+    @property
     def twitter_account_data_fields(self) -> tuple:
         return self.__twitter_account_data_fields
 
@@ -1285,6 +1389,10 @@ class Stix2Mapping:
     @property
     def user_account_single_fields(self) -> tuple:
         return self.__user_account_single_fields
+
+    @property
+    def vulnerability_types(self) -> tuple:
+        return self.__vulnerability_types
 
     @property
     def x509_hash_fields(self) -> tuple:

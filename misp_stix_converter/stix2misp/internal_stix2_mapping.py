@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from .. import Mapping
-from .stix2_mapping import STIX2Mapping
+from .stix2_mapping import STIX2toMISPMapping
 
 
-class InternalSTIX2Mapping(STIX2Mapping):
+class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     def __init__(self):
         super().__init__()
         first_seen_attribute = {'type': 'datetime', 'object_relation': 'first-seen'}
@@ -286,6 +286,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'employee': '_parse_employee_object',
             'facebook-account': '_object_from_facebook_account',
             'file': '_object_from_file',
+            'geolocation': '_parse_location_object',
             'github-user': '_object_from_github_user',
             'gitlab-user': '_object_from_gitlab_user',
             'http-request': '_object_from_http_request',
@@ -330,7 +331,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
         address_family_attribute = {'type': 'text', 'object_relation': 'address-family'}
         alias_attribute = {'type': 'text', 'object_relation': 'alias'}
         archive_attribute = {'type': 'link', 'object_relation': 'archive'}
-        args_attribute = {'type': 'text', 'object_relation': 'args'}
         attachment_attribute = {'type': 'attachment', 'object_relation': 'attachment'}
         authentihash_attribute = {'type': 'authentihash', 'object_relation': 'authentihash'}
         basicauth_password_attribute = {'type': 'text', 'object_relation': 'basicauth-password'}
@@ -342,28 +342,17 @@ class InternalSTIX2Mapping(STIX2Mapping):
         cc_attribute = {'type': 'email-dst', 'object_relation': 'cc'}
         cc_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'cc-display-name'}
         certificate_attribute = {'type': 'x509-fingerprint-sha1', 'object_relation': 'certificate'}
-        command_line_attribute = {'type': 'text', 'object_relation': 'command-line'}
         comment_text_attribute = {'type': 'text', 'object_relation': 'comment'}
         community_id_attribute = {'type': 'community-id', 'object_relation': 'community-id'}
         compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
-        content_type_attribute = {'type': 'other', 'object_relation': 'content-type'}
-        cookie_attribute = {'type': 'text', 'object_relation': 'cookie'}
-        creation_time_attribute = {'type': 'datetime', 'object_relation': 'creation-time'}
-        current_directory_attribute = {'type': 'text', 'object_relation': 'current-directory'}
         direction_attribute = {'type': 'text', 'object_relation': 'direction'}
-        domain_attribute = {'type': 'domain', 'object_relation': 'domain'}
         domain_family_attribute = {'type': 'text', 'object_relation': 'domain-family'}
-        dst_port_attribute = {'type': 'port', 'object_relation': 'dst-port'}
         email_attachment_attribute = {'type': 'email-attachment', 'object_relation': 'attachment'}
-        email_body_attribute = {'type': 'email-body', 'object_relation': 'email-body'}
         email_header_attribute = {'type': 'email-header', 'object_relation': 'header'}
-        email_subject_attribute = {'type': 'email-subject', 'object_relation': 'subject'}
         eml_attribute = {'type': 'attachment', 'object_relation': 'eml'}
         employee_type_attribute = {'type': 'text', 'object_relation': 'employee-type'}
         entropy_attribute = {'type': 'float', 'object_relation': 'entropy'}
         fake_process_name_attribute = {'type': 'boolean', 'object_relation': 'fake-process-name'}
-        file_encoding_attribute = {'type': 'text', 'object_relation': 'file-encoding'}
-        filename_attribute = {'type': 'filename', 'object_relation': 'filename'}
         first_packet_seen_attribute = {'type': 'datetime', 'object_relation': 'first-packet-seen'}
         flow_count_attribute = {'type': 'counter', 'object_relation': 'flow-count'}
         followers_attribute = {'type': 'text', 'object_relation': 'followers'}
@@ -375,7 +364,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
         from_domain_attribute = {'type': 'domain', 'object_relation': 'from-domain'}
         guid_attribute = {'type': 'text', 'object_relation': 'guid'}
         header_attribute = {'type': 'text', 'object_relation': 'header'}
-        hidden_attribute = {'type': 'boolean', 'object_relation': 'hidden'}
         hostname_attribute = {'type': 'hostname', 'object_relation': 'hostname'}
         hostname_dst_attribute = {'type': 'hostname', 'object_relation': 'hostname-dst'}
         hostname_src_attribute = {'type': 'hostname', 'object_relation': 'hostname-src'}
@@ -384,25 +372,18 @@ class InternalSTIX2Mapping(STIX2Mapping):
         image_text_attribute = {'type': 'text', 'object_relation': 'image-text'}
         imphash_attribute = {'type': 'imphash', 'object_relation': 'imphash'}
         integrity_level_attribute = {'type': 'text', 'object_relation': 'integrity-level'}
-        ip_attribute = {'type': 'ip-dst', 'object_relation': 'ip'}
         ip_protocol_number_attribute = {'type': '', 'object_relation': 'ip-protocol-number'}
         ip_source_attribute = {'type': 'ip-src', 'object_relation': 'ip-src'}
         ip_version_attribute = {'type': 'counter', 'object_relation': 'ip_version'}
         is_ca_attribute = {'type': 'boolean', 'object_relation': 'is_ca'}
-        is_self_signed_attribute = {'type': 'boolean', 'object_relation': 'self_signed'}
-        issuer_attribute = {'type': 'text', 'object_relation': 'issuer'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
         last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
-        last_modified_attribute = {'type': 'datetime', 'object_relation': 'last-modified'}
         last_packet_seen_attribute = {'type': 'datetime', 'object_relation': 'last-packet-seen'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
         lnk_creation_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-creation-time'}
         md5_attribute = {'type': 'md5', 'object_relation': 'md5'}
-        message_id_attribute = {'type': 'email-message-id', 'object_relation': 'message-id'}
-        method_attribute = {'type': 'http-method', 'object_relation': 'method'}
         mime_boundary_attribute = {'type': 'email-mime-boundary', 'object_relation': 'mime-boundary'}
-        mime_type_attribute = {'type': 'mime-type', 'object_relation': 'mimetype'}
         modification_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-modification-time'}
         msg_attribute = {'type': 'attachment', 'object_relation': 'msg'}
         packet_count_attribute = {'type': 'counter', 'object_relation': 'packet-count'}
@@ -417,27 +398,20 @@ class InternalSTIX2Mapping(STIX2Mapping):
         pattern_in_file_attribute = {'type': 'pattern-in-file', 'object_relation': 'pattern-in-file'}
         pem_attribute = {'type': 'text', 'object_relation': 'pem'}
         pgid_attribute = {'type': 'text', 'object_relation': 'pgid'}
-        pid_attribute = {'type': 'text', 'object_relation': 'pid'}
         port_attribute = {'type': 'port', 'object_relation': 'port'}
         process_state_attribute = {'type': 'process-state', 'object_relation': 'process-state'}
         proxy_password_attribute = {'type': 'text', 'object_relation': 'proxy-password'}
         proxy_user_attribute = {'type': 'text', 'object_relation': 'proxy-user'}
-        pubkey_info_algorithm_attribute = {'type': 'text', 'object_relation': 'pubkey-info-algorithm'}
-        pubkey_info_exponent_attribute = {'type': 'text', 'object_relation': 'pubkey-info-exponent'}
-        pubkey_info_modulus_attribute = {'type': 'text', 'object_relation': 'pubkey-info-modulus'}
         pubkey_info_size_attribute = {'type': 'text', 'object_relation': 'pubkey-info-size'}
         raw_base64_attribute = {'type': 'text', 'object_relation': 'raw-base64'}
         received_hostname_attribute = {'type': 'hostname', 'object_relation': 'received-header-hostname'}
         received_ip_attribute = {'type': 'ip-src', 'object_relation': 'received-header-ip'}
-        referer_attribute = {'type': 'other', 'object_relation': 'referer'}
         reply_to_attribute = {'type': 'email-reply-to', 'object_relation': 'reply-to'}
         reply_to_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'reply-to-display-name'}
         return_path_attribute = {'type': 'email-src', 'object_relation': 'return-path'}
         role_attribute = {'type': 'text', 'object_relation': 'role'}
         screenshot_attribute = {'type': 'attachment', 'object_relation': 'screenshot'}
         script_attribute = {'type': 'text', 'object_relation': 'script'}
-        send_date_attribute = {'type': 'datetime', 'object_relation': 'send-date'}
-        serial_number_attribute = {'type': 'text', 'object_relation': 'serial-number'}
         sha1_attribute = {'type': 'sha1', 'object_relation': 'sha1'}
         sha224_attribute = {'type': 'sha224', 'object_relation': 'sha224'}
         sha256_attribute = {'type': 'sha256', 'object_relation': 'sha256'}
@@ -447,13 +421,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         sha3_512_attribute = {'type': 'sha3-512', 'object_relation': 'sha3-512'}
         sha384_attribute = {'type': 'sha384', 'object_relation': 'sha384'}
         sha512_attribute = {'type': 'sha512', 'object_relation': 'sha512'}
-        signature_algorithm_attribute = {'type': 'text', 'object_relation': 'signature_algorithm'}
-        size_in_bytes_attribute = {'type': 'size-in-bytes', 'object_relation': 'size-in-bytes'}
         src_port_attribute = {'type': 'port', 'object_relation': 'src-port'}
         ssdeep_attribute = {'type': 'ssdeep', 'object_relation': 'ssdeep'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
         start_time_attribute = {'type': 'datetime', 'object_relation': 'start-time'}
-        subject_attribute = {'type': 'text', 'object_relation': 'subject'}
         telfhash_attribute = {'type': 'telfhash', 'object_relation': 'telfhash'}
         text_attribute = {'type': 'text', 'object_relation': 'text'}
         thread_index_attribute = {'type': 'email-thread-index', 'object_relation': 'thread-index'}
@@ -462,29 +433,34 @@ class InternalSTIX2Mapping(STIX2Mapping):
         to_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'to-display-name'}
         type_attribute = {'type': 'text', 'object_relation': 'type'}
         username_attribute = {'type': 'text', 'object_relation': 'username'}
-        user_agent_attribute = {'type': 'text', 'object_relation': 'user-agent'}
         user_avatar_attribute = {'type': 'attachment', 'object_relation': 'user-avatar'}
         user_creator_attribute = {'type': 'text', 'object_relation': 'user-creator'}
         user_process_attribute = {'type': 'text', 'object_relation': 'user-process'}
-        validity_not_after_attribute = {'type': 'datetime', 'object_relation': 'validity-not-after'}
-        validity_not_before_attribute = {'type': 'datetime', 'object_relation': 'validity-not-before'}
         verified_attribute = {'type': 'text', 'object_relation': 'verified'}
         vhash_attribute = {'type': 'vhash', 'object_relation': 'vhash'}
         x_mailer_attribute = {'type': 'email-x-mailer', 'object_relation': 'x-mailer'}
-        self.__dst_as_attribute = {'type': 'AS', 'object_relation': 'dst-as'}
-        self.__icmp_type_attribute = {'type': 'text', 'object_relation': 'icmp-type'}
-        self.__protocol_attribute = {'type': 'text', 'object_relation': 'protocol'}
-        self.__src_as_attribute = {'type': 'AS', 'object_relation': 'src-as'}
-        self.__tcp_flags_attribute = {'type': 'text', 'object_relation': 'tcp-flags'}
-        self.__uri_attribute = {'type': 'uri', 'object_relation': 'uri'}
-        self.__url_attribute = {'type': 'url', 'object_relation': 'url'}
+        self.__dst_as_attribute = Mapping(
+            **{'type': 'AS', 'object_relation': 'dst-as'}
+        )
+        self.__icmp_type_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'icmp-type'}
+        )
+        self.__protocol_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'protocol'}
+        )
+        self.__src_as_attribute = Mapping(
+            **{'type': 'AS', 'object_relation': 'src-as'}
+        )
+        self.__tcp_flags_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'tcp-flags'}
+        )
 
         # STIX TO MISP OBJECTS MAPPING
         self.__android_app_object_mapping = Mapping(
             name = self.name_attribute,
             x_misp_appid = {'type': 'text', 'object_relation': 'appid'},
             x_misp_certificate = {'type': 'sha1', 'object_relation': 'certificate'},
-            x_misp_domain = domain_attribute,
+            x_misp_domain = self.domain_attribute,
             x_misp_sha256 = sha256_attribute
         )
         self.__annotation_object_mapping = Mapping(
@@ -551,7 +527,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_type = type_attribute
         )
         self.__domain_ip_object_mapping = Mapping(
-            value = {'type': 'domain', 'object_relation': 'domain'},
+            value = self.domain_attribute,
             x_misp_first_seen = first_seen_attribute,
             x_misp_hostname = hostname_attribute,
             x_misp_last_seen = last_seen_attribute,
@@ -573,16 +549,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
                     'display_name': bcc_display_name_attribute,
                     'value': bcc_attribute
                 },
-                'body': email_body_attribute,
+                'body': self.email_body_attribute,
                 'cc_refs': {
                     'display_name': cc_display_name_attribute,
                     'value': cc_attribute
                 },
-                'date': send_date_attribute,
+                'date': self.send_date_attribute,
                 'from_ref.display_name': from_display_name_attribute,
                 'from_ref.value': from_attribute,
-                'message_id': message_id_attribute,
-                'subject': email_subject_attribute,
+                'message_id': self.message_id_attribute,
+                'subject': self.email_subject_attribute,
                 'to_refs': {
                     'display_name': to_display_name_attribute,
                     'value': to_attribute
@@ -590,7 +566,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'x_misp_attachment': email_attachment_attribute,
                 'x_misp_from_domain': from_domain_attribute,
                 'x_misp_ip_src': ip_source_attribute,
-                'x_misp_message_id': message_id_attribute,
+                'x_misp_message_id': self.message_id_attribute,
                 'x_misp_mime_boundary': mime_boundary_attribute,
                 'x_misp_received_header_hostname': received_hostname_attribute,
                 'x_misp_received_header_ip': received_ip_attribute,
@@ -598,18 +574,18 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'x_misp_return_path': return_path_attribute,
                 'x_misp_screenshot': screenshot_attribute,
                 'x_misp_thread_index': thread_index_attribute,
-                'x_misp_user_agent': user_agent_attribute
+                'x_misp_user_agent': self.user_agent_attribute
             }
         )
         self.__email_object_mapping = Mapping(
-            body = email_body_attribute,
-            date = send_date_attribute,
-            message_id = message_id_attribute,
-            subject = email_subject_attribute,
+            body = self.email_body_attribute,
+            date = self.send_date_attribute,
+            message_id = self.message_id_attribute,
+            subject = self.email_subject_attribute,
             x_misp_attachment = email_attachment_attribute,
             x_misp_from_domain = from_domain_attribute,
             x_misp_ip_src = ip_source_attribute,
-            x_misp_message_id = message_id_attribute,
+            x_misp_message_id = self.message_id_attribute,
             x_misp_mime_boundary = mime_boundary_attribute,
             x_misp_received_header_hostname = received_hostname_attribute,
             x_misp_received_header_ip = received_ip_attribute,
@@ -617,7 +593,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_return_path = return_path_attribute,
             x_misp_screenshot = screenshot_attribute,
             x_misp_thread_index = thread_index_attribute,
-            x_misp_user_agent = user_agent_attribute
+            x_misp_user_agent = self.user_agent_attribute
         )
         self.__employee_object_mapping = Mapping(
             name = {'type': 'full-name', 'object_relation': 'full-name'},
@@ -682,11 +658,11 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'hashes.TELFHASH': telfhash_attribute,
                 'hashes.TLSH': tlsh_attribute,
                 'hashes.VHASH': vhash_attribute,
-                'mime_type': mime_type_attribute,
-                'name': filename_attribute,
-                'name_enc': file_encoding_attribute,
+                'mime_type': self.mime_type_attribute,
+                'name': self.filename_attribute,
+                'name_enc': self.file_encoding_attribute,
                 'parent_directory_ref.path': path_attribute,
-                'size': size_in_bytes_attribute,
+                'size': self.size_in_bytes_attribute,
                 'x_misp_certificate': certificate_attribute,
                 'x_misp_compilation_timestamp': compilation_timestamp_attribute,
                 'x_misp_entropy': entropy_attribute,
@@ -698,10 +674,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
             }
         )
         self.__file_observable_object_mapping = Mapping(
-            mime_type = mime_type_attribute,
-            name = filename_attribute,
-            name_enc = file_encoding_attribute,
-            size = size_in_bytes_attribute,
+            mime_type = self.mime_type_attribute,
+            name = self.filename_attribute,
+            name_enc = self.file_encoding_attribute,
+            size = self.size_in_bytes_attribute,
             x_misp_attachment = attachment_attribute,
             x_misp_certificate = certificate_attribute,
             x_misp_compilation_timestamp = compilation_timestamp_attribute,
@@ -742,15 +718,15 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_web_url = {'type': 'link', 'object_relation': 'web_url'}
         )
         self.__http_request_extension_mapping = Mapping(
-            request_method = method_attribute,
+            request_method = self.method_attribute,
             request_value = self.uri_attribute
         )
         self.__http_request_header_mapping = Mapping(
             **{
-                'Content-Type': content_type_attribute,
-                'Cookie': cookie_attribute,
-                'Referer': referer_attribute,
-                'User-Agent': user_agent_attribute
+                'Content-Type': self.content_type_attribute,
+                'Cookie': self.cookie_attribute,
+                'Referer': self.referer_attribute,
+                'User-Agent': self.user_agent_attribute
             }
         )
         self.__http_request_object_mapping = Mapping(
@@ -765,11 +741,11 @@ class InternalSTIX2Mapping(STIX2Mapping):
         http_ext = "extensions.'http-request-ext'"
         self.__http_request_pattern_object_mapping = Mapping(
             **{
-                f"{http_ext}.request_method": method_attribute,
-                f"{http_ext}.request_header.'Content-Type'": content_type_attribute,
-                f"{http_ext}.request_header.'Cookie'": cookie_attribute,
-                f"{http_ext}.request_header.'Referer'": referer_attribute,
-                f"{http_ext}.request_header.'User-Agent'": user_agent_attribute,
+                f"{http_ext}.request_method": self.method_attribute,
+                f"{http_ext}.request_header.'Content-Type'": self.content_type_attribute,
+                f"{http_ext}.request_header.'Cookie'": self.cookie_attribute,
+                f"{http_ext}.request_header.'Referer'": self.referer_attribute,
+                f"{http_ext}.request_header.'User-Agent'": self.user_agent_attribute,
                 'x_misp_basicauth_password': basicauth_password_attribute,
                 'x_misp_basicauth_user': basicauth_user_attribute,
                 'x_misp_header': header_attribute,
@@ -780,7 +756,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__image_indicator_object_mapping = Mapping(
             **{
-                'name': filename_attribute,
+                'name': self.filename_attribute,
                 'content_ref.url': self.url_attribute,
                 'content_ref.x_misp_url': self.url_attribute,
                 'x_misp_archive': archive_attribute,
@@ -790,22 +766,22 @@ class InternalSTIX2Mapping(STIX2Mapping):
             }
         )
         self.__image_observable_object_mapping = Mapping(
-            name = filename_attribute,
+            name = self.filename_attribute,
             x_misp_archive = archive_attribute,
             x_misp_image_text = image_text_attribute,
             x_misp_link = link_attribute,
             x_misp_username = username_attribute
         )
         self.__ip_port_object_mapping = Mapping(
-            dst_port = dst_port_attribute,
+            dst_port = self.dst_port_attribute,
             src_port = src_port_attribute,
             start = first_seen_attribute,
             end = last_seen_attribute,
             x_misp_AS = {'type': 'AS', 'object_relation': 'AS'},
             x_misp_country_code = {'type': 'text', 'object_relation': 'country-code'},
-            x_misp_domain = domain_attribute,
+            x_misp_domain = self.domain_attribute,
             x_misp_hostname = hostname_attribute,
-            x_misp_ip = ip_attribute,
+            x_misp_ip = self.ip_attribute,
             x_misp_text = text_attribute
         )
         self.__legal_entity_contact_information_mapping = Mapping(
@@ -834,14 +810,14 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'parent_directory_ref.path': path_attribute
         }
         __lnk_object_mapping = Mapping(
-            name = filename_attribute,
+            name = self.filename_attribute,
             atime = access_time_attribute,
             x_misp_lnk_access_time = access_time_attribute,
             ctime = lnk_creation_time_attribute,
             x_misp_lnk_creation_time = lnk_creation_time_attribute,
             mtime = modification_time_attribute,
             x_misp_lnk_modification_time = modification_time_attribute,
-            size = size_in_bytes_attribute,
+            size = self.size_in_bytes_attribute,
             x_misp_fullpath = fullpath_attribute,
             x_misp_path = path_attribute,
             x_misp_birth_droid_file_identifier = {'type': 'text', 'object_relation': 'birth-droid-file-identifier'},
@@ -876,7 +852,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_operating_system = {'type': 'text', 'object_relation': 'operating-system'}
         )
         self.__netflow_object_mapping = Mapping(
-            dst_port = dst_port_attribute,
+            dst_port = self.dst_port_attribute,
             src_port = src_port_attribute,
             start = first_packet_seen_attribute,
             end = last_packet_seen_attribute,
@@ -890,7 +866,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__netflow_pattern_object_mapping = Mapping(
             **{
-                'dst_port': dst_port_attribute,
+                'dst_port': self.dst_port_attribute,
                 'src_port': src_port_attribute,
                 'start': first_packet_seen_attribute,
                 'end': last_packet_seen_attribute,
@@ -907,9 +883,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
             }
         )
         self.__network_connection_object_mapping = Mapping(
-            dst_port = dst_port_attribute,
+            dst_port = self.dst_port_attribute,
             src_port = src_port_attribute,
-            start = {'type': 'datetime', 'object_relation': 'first-packet-seen'},
+            start = first_packet_seen_attribute,
             x_misp_community_id = community_id_attribute,
             x_misp_hostname_dst = hostname_dst_attribute,
             x_misp_hostname_src = hostname_src_attribute
@@ -920,11 +896,11 @@ class InternalSTIX2Mapping(STIX2Mapping):
             socket_type = {'type': 'text', 'object_relation': 'socket-type'}
         )
         self.__network_socket_object_mapping = Mapping(
-            dst_port = dst_port_attribute,
+            dst_port = self.dst_port_attribute,
             src_port = src_port_attribute,
             x_misp_address_family = address_family_attribute,
             x_misp_domain_family = domain_family_attribute,
-            x_misp_filename = filename_attribute,
+            x_misp_filename = self.filename_attribute,
             x_misp_hostname_dst = hostname_dst_attribute,
             x_misp_hostname_src = hostname_src_attribute,
             x_misp_option = {'type': 'text', 'object_relation': 'option'}
@@ -1023,7 +999,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__pe_section_object_mapping = Mapping(
             entropy = entropy_attribute,
             name = self.name_attribute,
-            size = size_in_bytes_attribute,
+            size = self.size_in_bytes_attribute,
             x_misp_characteristic = {'type': 'text', 'object_relation': 'characteristic'},
             x_misp_offset = {'type': 'hex', 'object_relation': 'offset'},
             x_misp_text = text_attribute,
@@ -1032,12 +1008,12 @@ class InternalSTIX2Mapping(STIX2Mapping):
         )
         self.__process_indicator_object_mapping = Mapping(
             **{
-                'arguments': args_attribute,
-                'command_line': command_line_attribute,
-                'created': creation_time_attribute,
-                'created_time': creation_time_attribute,
-                'cwd': current_directory_attribute,
-                'is_hidden': hidden_attribute,
+                'arguments': self.args_attribute,
+                'command_line': self.command_line_attribute,
+                'created': self.creation_time_attribute,
+                'created_time': self.creation_time_attribute,
+                'cwd': self.current_directory_attribute,
+                'is_hidden': self.hidden_attribute,
                 'name': self.name_attribute,
                 'binary_ref.name': image_attribute,
                 'image_ref.name': image_attribute,
@@ -1049,8 +1025,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'parent_ref.x_misp_guid': parent_guid_attribute,
                 'parent_ref.x_misp_process_name': parent_process_name_attribute,
                 'parent_ref.x_misp_process_path': parent_process_path_attribute,
-                'pid': pid_attribute,
-                'x_misp_args': args_attribute,
+                'pid': self.pid_attribute,
+                'x_misp_args': self.args_attribute,
                 'x_misp_fake_process_name': fake_process_name_attribute,
                 'x_misp_guid': guid_attribute,
                 'x_misp_integrity_level': integrity_level_attribute,
@@ -1064,16 +1040,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
             }
         )
         self.__process_observable_object_mapping = Mapping(
-            arguments = args_attribute,
-            x_misp_args = args_attribute,
-            command_line = command_line_attribute,
-            created = creation_time_attribute,
-            created_time = creation_time_attribute,
-            cwd = current_directory_attribute,
-            is_hidden = hidden_attribute,
+            arguments = self.args_attribute,
+            x_misp_args = self.args_attribute,
+            command_line = self.command_line_attribute,
+            created = self.creation_time_attribute,
+            created_time = self.creation_time_attribute,
+            cwd = self.current_directory_attribute,
+            is_hidden = self.hidden_attribute,
             name = self.name_attribute,
             x_misp_name = self.name_attribute,
-            pid = pid_attribute,
+            pid = self.pid_attribute,
             x_misp_fake_process_name = fake_process_name_attribute,
             x_misp_guid = guid_attribute,
             x_misp_integrity_level = integrity_level_attribute,
@@ -1098,26 +1074,26 @@ class InternalSTIX2Mapping(STIX2Mapping):
             x_misp_url = self.url_attribute
         )
         self.__registry_key_object_mapping = Mapping(
-            key = {'type': 'regkey', 'object_relation': 'key'},
-            modified_time = last_modified_attribute,
-            x_misp_last_modified = last_modified_attribute,
+            key = self.regkey_attribute,
+            modified = self.last_modified_attribute,
+            modified_time = self.last_modified_attribute,
             x_misp_hive = {'type': 'text', 'object_relation': 'hive'},
             x_misp_root_keys = {'type': 'text', 'object_relation': 'root-keys'}
         )
         self.__registry_key_values_mapping = Mapping(
-            data = {'type': 'text', 'object_relation': 'data'},
-            data_type = {'type': 'text', 'object_relation': 'data-type'},
-            name = {'type': 'text', 'object_relation': 'name'}
+            data = self.data_attribute,
+            data_type = self.data_type_attribute,
+            name = self.name_attribute
         )
         self.__script_from_malware_object_mapping = Mapping(
-            name = filename_attribute,
+            name = self.filename_attribute,
             description = comment_text_attribute,
             implementation_languages = language_attribute,
             x_misp_script = script_attribute,
             x_misp_state = state_attribute
         )
         self.__script_from_tool_object_mapping = Mapping(
-            name = filename_attribute,
+            name = self.filename_attribute,
             description = comment_text_attribute,
             x_misp_language = language_attribute,
             x_misp_script = script_attribute,
@@ -1170,12 +1146,12 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__url_object_mapping = Mapping(
             value = self.url_attribute,
             x_misp_credential = {'type': 'text', 'object_relation': 'credential'},
-            x_misp_domain = domain_attribute,
+            x_misp_domain = self.domain_attribute,
             x_misp_domain_without_tld = {'type': 'text', 'object_relation': 'domain_without_tld'},
             x_misp_first_seen = first_seen_attribute,
             x_misp_fragment = {'type': 'text', 'object_relation': 'fragment'},
             x_misp_host = {'type': 'hostname', 'object_relation': 'host'},
-            x_misp_ip = ip_attribute,
+            x_misp_ip = self.ip_attribute,
             x_misp_last_seen = last_seen_attribute,
             x_misp_port = port_attribute,
             x_misp_query_string = {'type': 'text', 'object_relation': 'query_string'},
@@ -1231,16 +1207,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
                 'hashes.MD5': {'type': 'x509-fingerprint-md5', 'object_relation': 'x509-fingerprint-md5'},
                 'hashes.SHA1': {'type': 'x509-fingerprint-sha1', 'object_relation': 'x509-fingerprint-sha1'},
                 'hashes.SHA256': {'type': 'x509-fingerprint-sha256', 'object_relation': 'x509-fingerprint-sha256'},
-                'is_self_signed': is_self_signed_attribute,
-                'issuer': issuer_attribute,
-                'serial_number': serial_number_attribute,
-                'signature_algorithm': signature_algorithm_attribute,
-                'subject': subject_attribute,
-                'subject_public_key_algorithm': pubkey_info_algorithm_attribute,
-                'subject_public_key_exponent': pubkey_info_exponent_attribute,
-                'subject_public_key_modulus': pubkey_info_modulus_attribute,
-                'validity_not_after': validity_not_after_attribute,
-                'validity_not_before': validity_not_before_attribute,
+                'is_self_signed': self.is_self_signed_attribute,
+                'issuer': self.issuer_attribute,
+                'serial_number': self.serial_number_attribute,
+                'signature_algorithm': self.signature_algorithm_attribute,
+                'subject': self.subject_attribute,
+                'subject_public_key_algorithm': self.pubkey_info_algorithm_attribute,
+                'subject_public_key_exponent': self.pubkey_info_exponent_attribute,
+                'subject_public_key_modulus': self.pubkey_info_modulus_attribute,
+                'validity_not_after': self.validity_not_after_attribute,
+                'validity_not_before': self.validity_not_before_attribute,
                 'version': self.version_attribute,
                 'x_misp_is_ca': is_ca_attribute,
                 'x_misp_pem': pem_attribute,
@@ -1250,16 +1226,16 @@ class InternalSTIX2Mapping(STIX2Mapping):
             }
         )
         self.__x509_observable_object_mapping = Mapping(
-            is_self_signed = is_self_signed_attribute,
-            issuer = issuer_attribute,
-            serial_number = serial_number_attribute,
-            signature_algorithm = signature_algorithm_attribute,
-            subject = subject_attribute,
-            subject_public_key_algorithm = pubkey_info_algorithm_attribute,
-            subject_public_key_exponent = pubkey_info_exponent_attribute,
-            subject_public_key_modulus = pubkey_info_modulus_attribute,
-            validity_not_after = validity_not_after_attribute,
-            validity_not_before = validity_not_before_attribute,
+            is_self_signed = self.is_self_signed_attribute,
+            issuer = self.issuer_attribute,
+            serial_number = self.serial_number_attribute,
+            signature_algorithm = self.signature_algorithm_attribute,
+            subject = self.subject_attribute,
+            subject_public_key_algorithm = self.pubkey_info_algorithm_attribute,
+            subject_public_key_exponent = self.pubkey_info_exponent_attribute,
+            subject_public_key_modulus = self.pubkey_info_modulus_attribute,
+            validity_not_after = self.validity_not_after_attribute,
+            validity_not_before = self.validity_not_before_attribute,
             version = self.version_attribute,
             x_misp_is_ca = is_ca_attribute,
             x_misp_pem = pem_attribute,
@@ -1271,7 +1247,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             **{
                 'DNS name': {'type': 'hostname', 'object_relation': 'dns_names'},
                 'email': {'type': 'email-dst', 'object_relation': 'email'},
-                'IP': ip_attribute,
+                'IP': self.ip_attribute,
                 'RID': {'type': 'text', 'object_relation': 'rid'},
                 'URI': self.uri_attribute
             }
@@ -1531,14 +1507,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @property
     def twitter_account_object_mapping(self) -> dict:
         return self.__twitter_account_object_mapping
-
-    @property
-    def uri_attribute(self) -> dict:
-        return self.__uri_attribute
-
-    @property
-    def url_attribute(self) -> dict:
-        return self.__url_attribute
 
     @property
     def url_object_mapping(self) -> dict:

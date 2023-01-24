@@ -1,32 +1,29 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
-import json
-import subprocess
 import traceback
-from .exceptions import (SynonymsResourceJSONError, UnavailableGalaxyResourcesError,
-    UnavailableSynonymsResourceError)
 from collections import defaultdict
-from pathlib import Path
-from stix2.v20.sdo import(
-    AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
-    IntrusionSet as IntrusionSet_v20, Malware as Malware_v20, Tool as Tool_v20,
-    ThreatActor as ThreatActor_v20, Vulnerability as Vulnerability_v20)
-from stix2.v21.sdo import(
-    AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
-    IntrusionSet as IntrusionSet_v21, Malware as Malware_v21, Tool as Tool_v21,
-    ThreatActor as ThreatActor_v21, Vulnerability as Vulnerability_v21)
-from typing import Union
+from pymisp import MISPObject
+from stix2.v20.sdo import Indicator as Indicator_v20
+from stix2.v21.sdo import Indicator as Indicator_v21
+from typing import Optional, Union
+from uuid import UUID, uuid5
 
-_ROOT_PATH = Path(__file__).parents[1].resolve()
+_INDICATOR_TYPING = Union[
+    Indicator_v20,
+    Indicator_v21
+]
+
+_RFC_VERSIONS = (1, 3, 4, 5)
+_UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
 
 class STIXtoMISPParser:
-    def __init__(self, synonyms_path: Union[None, str]):
+    def __init__(self):
         self._identifier: str
         self._galaxies: dict = {}
-        if synonyms_path is not None:
-            self.__synonyms_path = Path(synonyms_path)
+        self._clusters: dict = {}
+        self.__replacement_uuids: dict = {}
         self.__errors: defaultdict = defaultdict(set)
         self.__warnings: defaultdict = defaultdict(set)
 
@@ -35,12 +32,8 @@ class STIXtoMISPParser:
         return self.__errors
 
     @property
-    def synonyms_mapping(self) -> dict:
-        try:
-            return self.__synonyms_mapping
-        except AttributeError:
-            self.__get_synonyms_mapping()
-            return self.__synonyms_mapping
+    def replacement_uuids(self) -> dict:
+        return self.__replacement_uuids
 
     @property
     def warnings(self) -> defaultdict:
@@ -83,10 +76,21 @@ class STIXtoMISPParser:
         message = f"Error with the Intrusion Set object with id {intrusion_set_id}: {tb}"
         self.__errors[self._identifier].add(message)
 
+    def _location_error(self, location_id: str, exception: Exception):
+        tb = self._parse_traceback(exception)
+        message = f"Error with the Location object with id {location_id}: {tb}"
+        self.__errors[self._identifier].add(message)
+
     def _malware_error(self, malware_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         message = f"Error with the Malware object with id {malware_id}: {tb}"
         self.__errors[self._identifier].add(message)
+
+    def _no_converted_content_from_pattern_warning(self, indicator: _INDICATOR_TYPING):
+        message = f"Indicator's (id: {indicator.id}) pattern: {indicator.pattern}"
+        self.__warnings[self._identifier].add(
+            f"No content to extract from the following {message}"
+        )
 
     def _object_ref_loading_error(self, object_ref: str):
         message = f"Error loading the STIX object with id {object_ref}"
@@ -140,8 +144,10 @@ class STIXtoMISPParser:
         message = f"Unknown STIX parsing function name: {feature}"
         self.__errors[self._identifier].add(message)
 
-    def _unknown_pattern_mapping_warning(self, indicator_id: str, observable_types: Exception):
-        types = f"containing the following types: {', '.join(observable_types.message.split('_'))}"
+    def _unknown_pattern_mapping_warning(self, indicator_id: str, observable_types: Union[list, str]):
+        if not isinstance(observable_types, list):
+            observable_types = observable_types.split('_')
+        types = f"containing the following types: {', '.join(observable_types)}"
         message = f"Unable to map pattern from the indicator with id {indicator_id}, {types}"
         self.__warnings[self._identifier].add(message)
 
@@ -153,85 +159,53 @@ class STIXtoMISPParser:
         message = f"Unknown STIX object type: {object_type}"
         self.__errors[self._identifier].add(message)
 
+    def _unmapped_pattern_warning(self, indicator_id: str, feature: str):
+        message = f"Unmapped pattern part in indicator with id {indicator_id}: {feature}"
+        self.__warnings[self._identifier].add(message)
+
     def _vulnerability_error(self, vulnerability_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         message = f"Error with the Vulnerability object with id {vulnerability_id}: {tb}"
         self.__errors[self._identifier].add(message)
 
     ################################################################################
-    #           SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING FUNCTIONS.           #
+    #                      UUID SANITATION HANDLING FUNCTIONS                      #
     ################################################################################
 
-    def __galaxies_up_to_date(self) -> bool:
-        fingerprint_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.fingerprint'
-        if not fingerprint_path.exists():
-            return False
-        latest_fingerprint = self.__get_misp_galaxy_fingerprint()
-        if latest_fingerprint is None:
-            return False
-        with open(fingerprint_path, 'rt', encoding='utf-8') as f:
-            fingerprint = f.read()
-        return fingerprint == latest_fingerprint
+    def _check_uuid(self, object_id: str):
+        object_uuid = self._extract_uuid(object_id)
+        if UUID(object_uuid).version not in _RFC_VERSIONS and object_uuid not in self.replacement_uuids:
+            self.replacement_uuids[object_uuid] = uuid5(_UUIDv4, object_uuid)
 
-    def __generate_synonyms_mapping(self):
-        data_path = _ROOT_PATH / 'data' / 'misp-galaxy' / 'clusters'
-        if not data_path.exists():
-            raise UnavailableGalaxyResourcesError(data_path)
-        synonyms_mapping = defaultdict(list)
-        for filename in data_path.glob('*.json'):
-            with open(filename, 'rt', encoding='utf-8') as f:
-                cluster_definition = json.loads(f.read())
-            cluster_type = f"misp-galaxy:{cluster_definition['type']}"
-            for cluster in cluster_definition['values']:
-                value = cluster['value']
-                tag_name = f'{cluster_type}="{value}"'
-                synonyms_mapping[value].append(tag_name)
-                if cluster.get('meta') is not None and cluster['meta'].get('synonyms') is not None:
-                    for synonym in cluster['meta']['synonyms']:
-                        synonyms_mapping[synonym].append(tag_name)
-        with open(self.__synonyms_path, 'wt', encoding='utf-8') as f:
-            f.write(json.dumps(synonyms_mapping))
-        latest_fingerprint = self.__get_misp_galaxy_fingerprint()
-        if latest_fingerprint is not None:
-            fingerprint_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.fingerprint'
-            with open(fingerprint_path, 'wt', encoding='utf-8') as f:
-                f.write(latest_fingerprint)
+    def _sanitise_attribute_uuid(self, object_id: str, comment: Optional[str] = None) -> dict:
+        attribute_uuid = self._extract_uuid(object_id)
+        if attribute_uuid in self.replacement_uuids:
+            attribute_comment = f'Original UUID was: {attribute_uuid}'
+            return {
+                'uuid': self.replacement_uuids[attribute_uuid],
+                'comment': f'{comment} - {attribute_comment}' if comment else attribute_comment
+            }
+        if UUID(attribute_uuid).version not in _RFC_VERSIONS:
+            attribute_comment = f'Original UUID was: {attribute_uuid}'
+            sanitised_uuid = uuid5(_UUIDv4, attribute_uuid)
+            self.replacement_uuids[attribute_uuid] = sanitised_uuid
+            return {
+                'uuid': sanitised_uuid,
+                'comment': f'{comment} - {attribute_comment}' if comment else attribute_comment
+            }
+        return {'uuid': attribute_uuid}
 
-    @staticmethod
-    def __get_misp_galaxy_fingerprint():
-        galaxy_path = _ROOT_PATH / 'data' / 'misp-galaxy'
-        status = subprocess.Popen(
-            [
-                'git',
-                'submodule',
-                'status',
-                galaxy_path
-            ],
-            stdout=subprocess.PIPE
-        )
-        stdout = status.communicate()[0]
-        try:
-            return stdout.decode().split(' ')[1]
-        except IndexError:
-            return None
+    def _sanitise_object_uuid(self, misp_object: MISPObject, object_uuid: str):
+        comment = f'Original UUID was: {object_uuid}'
+        misp_object.comment = f'{misp_object.comment} - {comment}' if hasattr(misp_object, 'comment') else comment
+        misp_object.uuid = self.replacement_uuids[object_uuid]
 
-    def __get_synonyms_mapping(self):
-        if not hasattr(self, '__synonyms_path'):
-            self.__synonyms_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.json'
-            if not self.__synonyms_path.exists() or not self.__galaxies_up_to_date():
-                self.__generate_synonyms_mapping()
-        else:
-            if not self.__synonyms_path.exists():
-                self.__generate_synonyms_mapping()
-        self.__load_synonyms_mapping()
-
-    def __load_synonyms_mapping(self):
-        try:
-            with open(self.__synonyms_path, 'rt', encoding='utf-8') as f:
-                self.__synonyms_mapping = json.loads(f.read())
-        except FileNotFoundError:
-            message = f""
-            raise UnavailableSynonymsResourceError(message)
-        except json.JSONDecodeError:
-            message = f""
-            raise SynonymsResourceJSONError(message)
+    def _sanitise_uuid(self, object_id: str) -> str:
+        object_uuid = self._extract_uuid(object_id)
+        if UUID(object_uuid).version not in _RFC_VERSIONS:
+            if object_uuid in self.replacement_uuids:
+                return self.replacement_uuids[object_uuid]
+            sanitised_uuid = uuid5(_UUIDv4, object_uuid)
+            self.replacement_uuids[object_uuid] = sanitised_uuid
+            return sanitised_uuid
+        return object_uuid

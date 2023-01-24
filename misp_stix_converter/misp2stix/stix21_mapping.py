@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 
 from .. import Mapping
-from .stix2_mapping import Stix2Mapping
+from .stix2_mapping import MISPtoSTIX2Mapping
 from stix2.v21.common import TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED
 
 
-class Stix21Mapping(Stix2Mapping):
+class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     def __init__(self):
         super().__init__()
-        v21_specific_attributes = {
+        v21_specific_attribute_mapping = {
             'email-message-id': '_parse_email_message_id_attribute'
         }
-        v21_specific_attributes.update(
+        v21_specific_attribute_mapping.update(
             dict.fromkeys(
                 [
                     'sigma',
@@ -22,7 +22,20 @@ class Stix21Mapping(Stix2Mapping):
                 '_parse_patterning_language_attribute'
             )
         )
-        self._declare_attributes_mapping(updates=v21_specific_attributes)
+        v21_specific_galaxy_mapping = {
+            'cluster_to_stix_object': {
+                'country': 'location',
+                'region': 'location'
+            },
+            'galaxy_types_mapping': {
+                'country': '_parse_location_{}_galaxy',
+                'region': '_parse_location_{}_galaxy'
+            }
+        }
+        self._declare_attributes_mapping(
+            attribute_updates=v21_specific_attribute_mapping,
+            galaxy_updates=v21_specific_galaxy_mapping
+        )
         self.__confidence_tags = {
             'misp:confidence-level="completely-confident"': 100,
             'misp:confidence-level="usually-confident"': 75,
@@ -38,6 +51,12 @@ class Stix21Mapping(Stix2Mapping):
         pattern_values = (f"file:content_ref.{key} = '{value}'" for key, value in artifact_values.items())
         self.__malware_sample_additional_observable_values = artifact_values
         self.__malware_sample_additional_pattern_values = ' AND '.join(pattern_values)
+        self.__regions_mapping = Mapping(
+            **{
+                'Latin America and the Caribbean': 'latin-america-caribbean',
+                'Australia and New Zealand': 'australia-new-zealand'
+            }
+        )
         self.__tlp_markings = Mapping(
             **{
                 'tlp:white': TLP_WHITE,
@@ -382,6 +401,10 @@ class Stix21Mapping(Stix2Mapping):
     @property
     def process_uuid_fields(self) -> tuple:
         return self.__process_uuid_fields
+
+    @property
+    def regions_mapping(self) -> dict:
+        return self.__regions_mapping
 
     @property
     def sigma_object_mapping(self) -> dict:

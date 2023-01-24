@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from .. import Mapping
-from .stix2_mapping import STIX2Mapping
+from .stix2_mapping import STIX2toMISPMapping
 
 
-class ExternalSTIX2Mapping(STIX2Mapping):
+class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     def __init__(self):
         super().__init__()
         self._declare_mapping()
@@ -130,15 +130,15 @@ class ExternalSTIX2Mapping(STIX2Mapping):
         )
         self.__observable_mapping = Mapping(**observable_mapping)
         pattern_mapping = {
-            'email-addr': 'parse_email_address_pattern',
-            'email-message': 'parse_email_message_pattern',
-            'mac-addr': 'parse_mac_address_pattern',
-            'mutex': 'parse_mutex_pattern',
-            'network-traffic': 'parse_network_traffic_pattern',
-            'process': 'parse_process_pattern',
-            'user-account': 'parse_user_account_pattern',
-            'windows-registry-key': 'parse_regkey_pattern',
-            'x509-certificate': 'parse_x509_pattern'
+            'email-addr': '_parse_email_address_pattern',
+            'email-message': '_parse_email_message_pattern',
+            'mac-addr': '_parse_mac_address_pattern',
+            'mutex': '_parse_mutex_pattern',
+            'network-traffic': '_parse_network_traffic_pattern',
+            'process': '_parse_process_pattern',
+            'user-account': '_parse_user_account_pattern',
+            'windows-registry-key': '_parse_regkey_pattern',
+            'x509-certificate': '_parse_x509_pattern'
         }
         pattern_mapping.update(
             dict.fromkeys(
@@ -207,6 +207,15 @@ class ExternalSTIX2Mapping(STIX2Mapping):
             name = self.name_attribute,
             description = self.description_attribute
         )
+        self.__identity_object_multiple_fields = (
+            'roles', 'sectors'
+        )
+        self.__identity_object_single_fields = (
+            'name',
+            'description',
+            'identity_class',
+            'contact_information'
+        )
         self.__sigma_object_mapping = Mapping(
             pattern = self.sigma_attribute,
             description = self.comment_attribute,
@@ -223,6 +232,121 @@ class ExternalSTIX2Mapping(STIX2Mapping):
             pattern_version = self.version_attribute
         )
 
+        # STIX PATTERN TO MISP MAPPING
+        self.__domain_ip_pattern_mapping = Mapping(
+            **{
+                'domain-name': self.domain_attribute,
+                'ipv4-addr': self.ip_attribute,
+                'ipv6-addr': self.ip_attribute
+            }
+        )
+        self.__email_address_pattern_mapping = Mapping(
+            **{
+                'display_names': {
+                    'type': 'email-dst-display-name',
+                    'object_relation': 'to-display-name'
+                },
+                'value': {
+                    'type': 'email-dst', 'object_relation': 'to'
+                }
+            }
+        )
+        self.__email_message_pattern_mapping = Mapping(
+            body = self.email_body_attribute,
+            date = self.send_date_attribute,
+            message_id = self.message_id_attribute,
+            subject = self.email_subject_attribute
+        )
+        self.__file_pattern_mapping = Mapping(
+            mime_type = self.mime_type_attribute,
+            name = self.filename_attribute,
+            name_enc = self.file_encoding_attribute,
+            size = self.size_in_bytes_attribute
+        )
+        self.__process_pattern_mapping = Mapping(
+            arguments = self.args_attribute,
+            command_line = self.command_line_attribute,
+            created = self.creation_time_attribute,
+            created_time = self.creation_time_attribute,
+            cwd = self.current_directory_attribute,
+            is_hidden = self.hidden_attribute,
+        )
+        self.__regkey_pattern_mapping = Mapping(
+            data = self.data_attribute,
+            data_type = self.data_type_attribute,
+            modified = self.last_modified_attribute,
+            modified_time = self.last_modified_attribute,
+            name = self.name_attribute,
+            key = self.regkey_attribute,
+            pid = self.pid_attribute
+        )
+        self.__x509_pattern_mapping = Mapping(
+            is_self_signed = self.is_self_signed_attribute,
+            issuer = self.issuer_attribute,
+            serial_number = self.serial_number_attribute,
+            signature_algorithm = self.signature_algorithm_attribute,
+            subject = self.subject_attribute,
+            subject_public_key_algorithm = self.pubkey_info_algorithm_attribute,
+            subject_public_key_exponent = self.pubkey_info_exponent_attribute,
+            subject_public_key_modulus = self.pubkey_info_modulus_attribute,
+            validity_not_after = self.validity_not_after_attribute,
+            validity_not_before = self.validity_not_before_attribute,
+            version = self.version_attribute
+        )
+
+        # MISP GALAXIES MAPPING
+        self.__galaxy_name_mapping = Mapping(
+            **{
+                "attack-pattern": {
+                    "name": "Attack Pattern",
+                    "description": "Attack Patterns are a type of TTP that describe ways that adversaries attempt to compromise targets. Attack Patterns are used to help categorize attacks, generalize specific attacks to the patterns that they follow, and provide detailed information about how attacks are performed."
+                },
+                "campaign": {
+                    "name": "Campaign",
+                    "description": "A Campaign is a grouping of adversarial behaviors that describes a set of malicious activities or attacks (sometimes called waves) that occur over a period of time against a specific set of targets. Campaigns usually have well defined objectives and may be part of an Intrusion Set."
+                },
+                "country": {
+                    "name": "Country",
+                    "description": "Country meta information based on the database provided by geonames.org."
+                },
+                "course-of-action": {
+                    "name": "Course of Action",
+                    "description": "A Course of Action is an action taken either to prevent an attack or to respond to an attack that is in progress. It may describe technical, automatable responses (applying patches, reconfiguring firewalls) but can also describe higher level actions like employee training or policy changes."
+                },
+                "intrusion-set": {
+                    "name": "Intrusion Set",
+                    "description": "An Intrusion Set is a grouped set of adversarial behaviors and resources with common properties that is believed to be orchestrated by a single organization. An Intrusion Set may capture multiple Campaigns or other activities that are all tied together by shared attributes indicating a commonly known or unknown Threat Actor."
+                },
+                "malware": {
+                    "name": "Malware",
+                    "description": "Malware is a type of TTP that represents malicious code. It generally refers to a program that is inserted into a system, usually covertly. The intent is to compromise the confidentiality, integrity, or availability of the victim's data, applications, or operating system (OS) or otherwise annoy or disrupt the victim."
+                },
+                "region": {
+                    "name": "Regions UN M49",
+                    "description": "Regions based on UN M49."
+                },
+                "threat-actor": {
+                    "name": "Threat Actor",
+                    "description": "Threat Actors are actual individuals, groups, or organizations believed to be operating with malicious intent. A Threat Actor is not an Intrusion Set but may support or be affiliated with various Intrusion Sets, groups, or organizations over time."
+                },
+                "tool": {
+                    "name": "Tool",
+                    "description": "Tools are legitimate software that can be used by threat actors to perform attacks. Knowing how and when threat actors use such tools can be important for understanding how campaigns are executed. Unlike malware, these tools or software packages are often found on a system and have legitimate purposes for power users, system administrators, network administrators, or even normal users."
+                },
+                "vulnerability": {
+                    "name": "Vulnerability",
+                    "description": "A Vulnerability is a weakness or defect in the requirements, designs, or implementations of the computational logic (e.g., code) found in software and some hardware components (e.g., firmware) that can be directly exploited to negatively impact the confidentiality, integrity, or availability of that system."
+                }
+            }
+        )
+        self.__location_object_fields = (
+            'city',
+            'latitude',
+            'longitude',
+            'postal_code',
+            'street_address',
+        )
+
     @property
     def attack_pattern_object_mapping(self) -> dict:
         return self.__attack_pattern_object_mapping
@@ -230,6 +354,38 @@ class ExternalSTIX2Mapping(STIX2Mapping):
     @property
     def course_of_action_object_mapping(self) -> dict:
         return self.__course_of_action_object_mapping
+
+    @property
+    def domain_ip_pattern_mapping(self) -> dict:
+        return self.__domain_ip_pattern_mapping
+
+    @property
+    def email_address_pattern_mapping(self) -> dict:
+        return self.__email_address_pattern_mapping
+
+    @property
+    def email_message_pattern_mapping(self) -> dict:
+        return self.__email_message_pattern_mapping
+
+    @property
+    def file_pattern_mapping(self) -> dict:
+        return self.__file_pattern_mapping
+
+    @property
+    def galaxy_name_mapping(self) -> dict:
+        return self.__galaxy_name_mapping
+
+    @property
+    def identity_object_multiple_fields(self) -> tuple:
+        return self.__identity_object_multiple_fields
+
+    @property
+    def identity_object_single_fields(self) -> tuple:
+        return self.__identity_object_single_fields
+
+    @property
+    def location_object_fields(self) -> tuple:
+        return self.__location_object_fields
 
     @property
     def observable_mapping(self) -> dict:
@@ -244,12 +400,24 @@ class ExternalSTIX2Mapping(STIX2Mapping):
         return self.__pattern_mapping
 
     @property
+    def process_pattern_mapping(self) -> dict:
+        return self.__process_pattern_mapping
+
+    @property
+    def regkey_pattern_mapping(self) -> dict:
+        return self.__regkey_pattern_mapping
+
+    @property
     def sigma_object_mapping(self) -> dict:
         return self.__sigma_object_mapping
 
     @property
     def vulnerability_object_mapping(self) -> dict:
         return self.__vulnerability_object_mapping
+
+    @property
+    def x509_pattern_mapping(self) -> dict:
+        return self.__x509_pattern_mapping
 
     @property
     def yara_object_mapping(self) -> dict:
