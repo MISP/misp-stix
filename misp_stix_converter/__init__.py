@@ -6,7 +6,8 @@ from .misp_stix_mapping import Mapping
 from .misp2stix import *
 from .misp_stix_converter import (
     misp_attribute_collection_to_stix1, misp_collection_to_stix2_0, misp_collection_to_stix2_1,
-    misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2_0, misp_to_stix2_1)
+    misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2_0, misp_to_stix2_1,
+    stix_1_to_misp, stix_2_to_misp)
 from .misp_stix_converter import (
     _get_campaigns, _get_courses_of_action, _get_events, _get_indicators,
     _get_observables, _get_threat_actors, _get_ttps)
@@ -126,19 +127,27 @@ def _misp_to_stix(stix_args):
         if status != 1:
             sys.exit(f'Error while processing your files - status code = {status}')
         return output
-    results = []
     method = misp_to_stix2_0 if stix_args.version == '2.0' else misp_to_stix2_1
-    for filename in stix_args.file:
+    return _process_files(stix_args.file, method)
+
+
+def _process_files(filenames, method):
+    results = []
+    for filename in filenames:
         status = method(filename)
         if status == 1:
             results.append(f'{filename}.out')
         else:
-            print(f'Error while processing {filename} - status code = {status}', file=sys.stderr)
+            print(
+                f'Error while processing {filename} - status code = {status}',
+                file=sys.stderr
+            )
     return results
 
 
 def _stix_to_misp(stix_args):
-    return
+    method = stix_2_to_misp if stix_args.version in ('2.0', '2.1') else stix_1_to_misp
+    return _process_files(stix_args.file, method)
 
 
 def main():
