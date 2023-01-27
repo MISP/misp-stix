@@ -31,10 +31,12 @@ from uuid import uuid4
 _default_namespace = 'https://misp-project.org'
 _default_org = 'MISP'
 _files_type = Union[Path, str]
+_MISP_STIX_tag = 'misp:tool="MISP-STIX-Converter"'
 _STIX1_default_format = 'xml'
 _STIX1_default_version = '1.1.1'
 _STIX1_valid_formats = ('json', 'xml')
 _STIX1_valid_versions = ('1.1.1', '1.2')
+_STIX2_event_types = ('grouping', 'report')
 
 
 ################################################################################
@@ -429,7 +431,7 @@ def misp_to_stix2_1(filename: _files_type):
 #                         STIX to MISP MAIN FUNCTIONS.                         #
 ################################################################################
 
-def stix_to_misp(filename):
+def stix_1_to_misp(filename):
     event = _load_stix_event(filename)
     if isinstance(event, str):
         return event
@@ -438,17 +440,20 @@ def stix_to_misp(filename):
     stix_parser = InternalSTIX1toMISPParser() if from_misp else ExternalSTIX1toMISPParser()
     stix_parser.load_event()
     stix_parser.build_misp_event(event)
-    stix_parser.save_file()
-    return
+    with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+        f.write(stix_parser.misp_event.to_json(indent=4))
+    return 1
 
 
-def stix2_to_misp(filename):
+def stix_2_to_misp(filename: _files_type):
     with open(filename, 'rt', encoding='utf-8') as f:
         bundle = stix2_parser(f.read(), allow_custom=True, interoperability=True)
     stix_parser = InternalSTIX2toMISPParser() if _from_misp(bundle.objects) else ExternalSTIX2toMISPParser()
-    stix_parser.parse_stix_content(bundle)
-    stix_parser.save_file()
-    return
+    stix_parser.load_stix_bundle(bundle)
+    stix_parser.parse_stix_bundle()
+    with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+        f.write(stix_parser.misp_event.to_json(indent=4))
+    return 1
 
 
 ################################################################################
@@ -472,7 +477,7 @@ def _create_stix_package(orgname: str, version: str) -> STIXPackage:
 
 def _from_misp(stix_objects):
     for stix_object in stix_objects:
-        if stix_object['type'] == 'report' and 'misp:tool="misp2stix2"' in stix_object.get('labels', []):
+        if stix_object['type'] in _STIX2_event_types and _MISP_STIX_tag in stix_object.get('labels', []):
             return True
     return False
 

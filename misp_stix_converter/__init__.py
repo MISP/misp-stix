@@ -6,7 +6,8 @@ from .misp_stix_mapping import Mapping
 from .misp2stix import *
 from .misp_stix_converter import (
     misp_attribute_collection_to_stix1, misp_collection_to_stix2_0, misp_collection_to_stix2_1,
-    misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2_0, misp_to_stix2_1)
+    misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2_0, misp_to_stix2_1,
+    stix_1_to_misp, stix_2_to_misp)
 from .misp_stix_converter import (
     _get_campaigns, _get_courses_of_action, _get_events, _get_indicators,
     _get_observables, _get_threat_actors, _get_ttps)
@@ -21,7 +22,7 @@ from pathlib import Path
 from uuid import uuid4
 
 
-def _process_arguments(stix_args):
+def _misp_to_stix(stix_args):
     if stix_args.version in ('1.1.1', '1.2'):
         if stix_args.feature == 'attribute':
             if len(stix_args.file) == 1:
@@ -126,35 +127,51 @@ def _process_arguments(stix_args):
         if status != 1:
             sys.exit(f'Error while processing your files - status code = {status}')
         return output
-    results = []
     method = misp_to_stix2_0 if stix_args.version == '2.0' else misp_to_stix2_1
-    for filename in stix_args.file:
+    return _process_files(stix_args.file, method)
+
+
+def _process_files(filenames, method):
+    results = []
+    for filename in filenames:
         status = method(filename)
         if status == 1:
             results.append(f'{filename}.out')
         else:
-            print(f'Error while processing {filename} - status code = {status}', file=sys.stderr)
+            print(
+                f'Error while processing {filename} - status code = {status}',
+                file=sys.stderr
+            )
     return results
+
+
+def _stix_to_misp(stix_args):
+    method = stix_2_to_misp if stix_args.version in ('2.0', '2.1') else stix_1_to_misp
+    return _process_files(stix_args.file, method)
 
 
 def main():
     parser = argparse.ArgumentParser(description='Convert MISP <-> STIX')
-    # feature_parser = parser.add_mutually_exclusive_group(required=True)
-    # feature_parser.add_argument('-e', '--export', action='store_true', help='Export MISP to STIX.')
-    # feature_parser.add_argument('-i', '--import', action='store_true', help='Import STIX to MISP.')
-    parser.add_argument('-v', '--version', choices=['1.1.1', '1.2', '2.0', '2.1'], help='STIX version.')
-    parser.add_argument('-f', '--file', nargs='+', help='Path to the file(s) to convert.')
+
+    feature_parser = parser.add_mutually_exclusive_group(required=True)
+    feature_parser.add_argument('-e', '--export', action='store_true', help='Export MISP to STIX.')
+    feature_parser.add_argument('-i', '--import', action='store_true', help='Import STIX to MISP.')
+
+    parser.add_argument('-v', '--version', choices=['1.1.1', '1.2', '2.0', '2.1'], required=True, help='STIX version.')
+    parser.add_argument('-f', '--file', nargs='+', type=Path, required=True, help='Path to the file(s) to convert.')
     parser.add_argument('-s', '--single_output', action='store_true', help='Produce only one result file (in case of multiple input file).')
     parser.add_argument('-t', '--tmp_files', action='store_true', help='Store result in file (in case of multiple result files) instead of keeping it in memory only.')
+    parser.add_argument('-o', '--output', type=Path, default=Path(__file__).parents[1] / 'tmp', help='Output path for the conversion results.')
+
     stix1_parser = parser.add_argument_group('STIX 1 specific parameters')
     stix1_parser.add_argument('--feature', default='event', choices=['attribute', 'event'], help='MISP data structure level.')
     stix1_parser.add_argument('--format', default='xml', choices=['json', 'xml'], help='STIX 1 format.')
     stix1_parser.add_argument('-n', '--namespace', default='https://misp-project.org', help='Namespace to be used in the STIX 1 header.')
-    stix1_parser.add_argument('-o', '--org', default='MISP', help='Organisation name to be used in the STIX 1 header.')
+    stix1_parser.add_argument('-org', default='MISP', help='Organisation name to be used in the STIX 1 header.')
+
     stix_args = parser.parse_args()
-    stix_args.file = [Path(filename).resolve() for filename in stix_args.file]
-    stix_args.output_dir = stix_args.file[0].parent
-    results = _process_arguments(stix_args)
+
+    results = _misp_to_stix(stix_args) if stix_args.export else _stix_to_misp(stix_args)
     if isinstance(results, list):
         files = '\n - '.join(str(result) for result in results)
         print(f"Successfully processed your {'files' if len(results) > 1 else 'file'}. Results available in:\n - {files}")
