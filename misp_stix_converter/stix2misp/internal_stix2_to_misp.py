@@ -13,6 +13,7 @@ from .stix2_to_misp import (
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
+from pathlib import Path
 from pymisp import MISPAttribute, MISPGalaxy, MISPGalaxyCluster, MISPObject, MISPSighting
 from stix2.v20.common import ExternalReference as ExternalReference_v20
 from stix2.v20.observables import (
@@ -58,8 +59,8 @@ _PROCESS_TYPING = Union[
 
 
 class InternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, galaxies_as_tags: Optional[bool] = False):
+        super().__init__(galaxies_as_tags)
         self._mapping = InternalSTIX2toMISPMapping()
 
     ################################################################################
@@ -442,6 +443,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
         if stix_object.id in self._clusters:
             self._clusters[stix_object.id]['used'][self.misp_event.uuid] = False
+        elif self.galaxies_as_tags:
+                galaxy_type = stix_object.labels[1].split('=')[1].strip('"')
+                self._clusters[stix_object.id] = {
+                    'tag_names': [
+                        f'misp-galaxy:{galaxy_type}="{stix_object.name}"'
+                    ],
+                    'used': {self.misp_event.uuid: False}
+                }
         else:
             galaxy_type, galaxy_name = self._extract_galaxy_labels(stix_object.labels)
             galaxy_description, cluster_description = stix_object.description.split(' | ')

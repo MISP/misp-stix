@@ -4,14 +4,17 @@
 import sys
 import time
 from .exceptions import (
-    ObjectRefLoadingError, ObjectTypeLoadingError, UndefinedIndicatorError,
-    UndefinedSTIXObjectError, UndefinedObservableError, UnknownAttributeTypeError,
-    UnknownObjectNameError, UnknownParsingFunctionError, UnknownStixObjectTypeError)
+    ObjectRefLoadingError, ObjectTypeLoadingError, SynonymsResourceJSONError,
+    UnavailableGalaxyResourcesError, UnavailableSynonymsResourceError,
+    UndefinedIndicatorError, UndefinedSTIXObjectError, UndefinedObservableError,
+    UnknownAttributeTypeError, UnknownObjectNameError, UnknownParsingFunctionError,
+    UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import STIXtoMISPParser
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 from pymisp import (
     AbstractMISP, MISPEvent, MISPAttribute, MISPGalaxy, MISPGalaxyCluster,
     MISPObject, MISPSighting)
@@ -140,8 +143,8 @@ _VULNERABILITY_TYPING = Union[
 
 
 class STIX2toMISPParser(STIXtoMISPParser):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, galaxies_as_tags: bool):
+        super().__init__(galaxies_as_tags)
         self._creators: set = set()
         self._mapping: Union[
             ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping
@@ -199,7 +202,11 @@ class STIX2toMISPParser(STIXtoMISPParser):
             sys.exit('No STIX content loaded, please run `load_stix_content` first.')
         try:
             getattr(self, feature)()
-        except Exception as error:
+        except (
+            SynonymsResourceJSONError,
+            UnavailableGalaxyResourcesError,
+            UnavailableSynonymsResourceError
+        ) as error:
             self._critical_error(error)
 
     def parse_stix_content(self, filename: str):
@@ -211,6 +218,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
         self.load_stix_bundle(bundle)
         del bundle
         self.parse_stix_bundle()
+
+    ################################################################################
+    #                                  PROPERTIES                                  #
+    ################################################################################
 
     @property
     def misp_event(self) -> MISPEvent:
@@ -555,16 +566,24 @@ class STIX2toMISPParser(STIXtoMISPParser):
         self._parse_galaxies()
 
     def _parse_galaxies(self):
-        clusters = defaultdict(list)
-        for cluster in self._clusters.values():
-            if self.misp_event.uuid not in cluster['used']:
-                continue
-            if not cluster['used'][self.misp_event.uuid]:
-                misp_cluster = cluster['cluster']
-                clusters[misp_cluster.type].append(misp_cluster)
-        if clusters:
-            for galaxy in self._aggregate_galaxy_clusters(clusters):
-                self.misp_event.add_galaxy(galaxy)
+        if self.galaxies_as_tags:
+            for tags in self._clusters.values():
+                if self.misp_event.uuid not in tags['used']:
+                    continue
+                if not tags['used'][self.misp_event.uuid]:
+                    for tag in tags['tag_names']:
+                        self.misp_event.add_tag(tag)
+        else:
+            clusters = defaultdict(list)
+            for cluster in self._clusters.values():
+                if self.misp_event.uuid not in cluster['used']:
+                    continue
+                if not cluster['used'][self.misp_event.uuid]:
+                    misp_cluster = cluster['cluster']
+                    clusters[misp_cluster.type].append(misp_cluster)
+            if clusters:
+                for galaxy in self._aggregate_galaxy_clusters(clusters):
+                    self.misp_event.add_galaxy(galaxy)
 
     def _parse_location_object(self, location: Location) -> MISPObject:
         misp_object = self._create_misp_object('geolocation', location)
@@ -829,38 +848,55 @@ class STIX2toMISPParser(STIXtoMISPParser):
     ################################################################################
 
     def _parse_attribute_relationships(self, attribute: MISPAttribute):
-        clusters = defaultdict(list)
-        for relationship in self._relationship[attribute.uuid]:
-            referenced_uuid = relationship['referenced_uuid']
-            if referenced_uuid in self._clusters:
-                cluster = self._clusters[referenced_uuid]['cluster']
-                clusters[cluster['type']].append(cluster)
-                self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
-        if clusters:
-            for galaxy in self._aggregate_galaxy_clusters(clusters):
-                attribute.add_galaxy(galaxy)
+        if self.galaxies_as_tags:
+            for relationship in self._relationship[attribute.uuid]:
+                referenced_uuid = relationship['referenced_uuid']
+                if referenced_uuid in self._clusters:
+                    for tag in self._clusters[referenced_uuid]['tag_names']:
+                        attribute.add_tag(tag)
+                    self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+        else:
+            clusters = defaultdict(list)
+            for relationship in self._relationship[attribute.uuid]:
+                referenced_uuid = relationship['referenced_uuid']
+                if referenced_uuid in self._clusters:
+                    cluster = self._clusters[referenced_uuid]['cluster']
+                    clusters[cluster['type']].append(cluster)
+                    self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+            if clusters:
+                for galaxy in self._aggregate_galaxy_clusters(clusters):
+                    attribute.add_galaxy(galaxy)
 
     def _parse_attribute_sightings(self, attribute: MISPAttribute):
         for sighting in self._sighting[attribute.uuid]:
             attribute.add_sighting(sighting)
 
     def _parse_object_relationships(self, misp_object: MISPObject):
-        clusters = defaultdict(list)
-        for relationship in self._relationship[misp_object.uuid]:
-            referenced_uuid = relationship['referenced_uuid']
-            if referenced_uuid in self._clusters:
-                cluster = self._clusters[referenced_uuid]['cluster']
-                clusters[cluster['type']].append(cluster)
-                self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
-            else:
-                misp_object.add_reference(
-                    self._sanitise_uuid(referenced_uuid),
-                    relationship['relationship_type']
-                )
-        if clusters:
-            for galaxy in self._aggregate_galaxy_clusters(clusters):
-                for attribute in misp_object.attributes:
-                    attribute.add_galaxy(galaxy)
+        if self.galaxies_as_tags:
+            for relationship in self._relationship[misp_object.uuid]:
+                referenced_uuid = relationship['referenced_uuid']
+                if referenced_uuid in self._clusters:
+                    for attribute in misp_object.attributes:
+                        for tag in self._clusters[referenced_uuid]['tag_names']:
+                            attribute.add_tag(tag)
+                    self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+        else:
+            clusters = defaultdict(list)
+            for relationship in self._relationship[misp_object.uuid]:
+                referenced_uuid = relationship['referenced_uuid']
+                if referenced_uuid in self._clusters:
+                    cluster = self._clusters[referenced_uuid]['cluster']
+                    clusters[cluster['type']].append(cluster)
+                    self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+                else:
+                    misp_object.add_reference(
+                        self._sanitise_uuid(referenced_uuid),
+                        relationship['relationship_type']
+                    )
+            if clusters:
+                for galaxy in self._aggregate_galaxy_clusters(clusters):
+                    for attribute in misp_object.attributes:
+                        attribute.add_galaxy(galaxy)
 
     def _parse_object_sightings(self, misp_object: MISPObject):
         for sighting in self._sighting[misp_object.uuid]:
