@@ -11,6 +11,7 @@ from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
+from pathlib import Path
 from pymisp import MISPAttribute, MISPGalaxy, MISPObject
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
@@ -35,8 +36,8 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
 
 
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, galaxies_as_tags: Optional[bool] = False):
+        super().__init__(galaxies_as_tags)
         self._mapping = ExternalSTIX2toMISPMapping()
 
     ################################################################################
@@ -156,15 +157,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if attack_pattern_ref in self._clusters:
             self._clusters[attack_pattern_ref]['used'][self.misp_event.uuid] = False
         else:
-            attack_pattern = self._get_stix_object(attack_pattern_ref)
-            self._clusters[attack_pattern.id] = {
-                'cluster': self._parse_attack_pattern_cluster(attack_pattern),
-                'used': {self.misp_event.uuid: False}
-            }
-            if 'attack-pattern' not in self._galaxies:
-                self._galaxies['attack-pattern'] = self._create_galaxy_args(
-                    attack_pattern
-                )
+            self._clusters[attack_pattern_ref] = self._parse_galaxy(
+                attack_pattern_ref
+            )
 
     def _parse_campaign(self, campaign_ref: str):
         """
@@ -177,13 +172,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if campaign_ref in self._clusters:
             self._clusters[campaign_ref]['used'][self.misp_event.uuid] = False
         else:
-            campaign = self._get_stix_object(campaign_ref)
-            self._clusters[campaign.id] = {
-                'cluster': self._parse_campaign_cluster(campaign),
-                'used': {self.misp_event.uuid: False}
-            }
-            if 'campaign' not in self._galaxies:
-                self._galaxies['campaign'] = self._create_galaxy_args(campaign)
+            self._clusters[campaign_ref] = self._parse_galaxy(campaign_ref)
 
     def _parse_course_of_action(self, course_of_action_ref: str):
         """
@@ -196,15 +185,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if course_of_action_ref in self._clusters:
             self._clusters[course_of_action_ref]['used'][self.misp_event.uuid] = False
         else:
-            course_of_action = self._get_stix_object(course_of_action_ref)
-            self._clusters[course_of_action.id] = {
-                'cluster': self._parse_course_of_action_cluster(course_of_action),
-                'used': {self.misp_event.uuid: False}
-            }
-            if 'course-of-action' not in self._galaxies:
-                self._galaxies['course-of-action'] = self._create_galaxy_args(
-                    course_of_action
-                )
+            self._clusters[course_of_action_ref] = self._parse_galaxy(
+                course_of_action_ref
+            )
 
     def _parse_course_of_action_object(self, course_of_action: _COURSE_OF_ACTION_TYPING):
         """
@@ -234,6 +217,31 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 'tag_names': [f'misp-galaxy:course-of-action="{course_of_action.name}"'],
                 'used': {self.misp_event.uuid: False}
             }
+
+    def _parse_galaxy(self, object_ref: str) -> dict:
+        object_type = object_ref.split("--")[0]
+        stix_object = self._get_stix_object(object_ref)
+        name = stix_object.name
+        if self.galaxies_as_tags:
+            tag_names = self._check_existing_galaxy_name(name)
+            if tag_names is None:
+                tag_names = [
+                    f'misp-galaxy:{object_type}="{name}"'
+                ]
+            return {
+                'tag_names': tag_names,
+                'used': {self.misp_event.uuid: False}
+            }
+        if object_type not in self._galaxies:
+            self._galaxies[object_type] = self._create_galaxy_args(stix_object)
+        return {
+            'cluster': getattr(
+                self, f"_parse_{object_type.replace('-', '_')}_cluster"
+            )(
+                stix_object
+            ),
+            'used': {self.misp_event.uuid: False}
+        }
 
     def _parse_identity(self, identity_ref: str):
         """
@@ -309,15 +317,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if intrusion_set_ref in self._clusters:
             self._clusters[intrusion_set_ref]['used'][self.misp_event.uuid] = False
         else:
-            intrusion_set = self._get_stix_object(intrusion_set_ref)
-            self._clusters[intrusion_set.id] = {
-                'cluster': self._parse_intrusion_set_cluster(intrusion_set),
-                'used': {self.misp_event.uuid: False}
-            }
-            if 'intrusion-set' not in self._galaxies:
-                self._galaxies['intrusion-set'] = self._create_galaxy_args(
-                    intrusion_set
-                )
+            self._clusters[intrusion_set_ref] = self._parse_galaxy(
+                intrusion_set_ref
+            )
 
     def _parse_location(self, location_ref: str):
         """
@@ -340,14 +342,27 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
             else:
                 feature = 'region' if not hasattr(location, 'country') else 'country'
-                self._clusters[location.id] = {
-                    'cluster': getattr(self, f'_parse_{feature}_cluster')(location),
-                    'used': {self.misp_event.uuid: False}
-                }
-                if feature not in self._galaxies:
-                    self._galaxies[feature] = self._create_galaxy_args(
-                        location, galaxy_type=feature
-                    )
+                if self.galaxies_as_tags:
+                    tag_names = self._check_existing_galaxy_name(location)
+                    if tag_names is None:
+                        tag_names = [
+                            f'misp-galaxy:{feature}="{location.name}"'
+                        ]
+                    self._clusters[location.id] = {
+                        'tag_names': tag_names,
+                        'used': {self.misp_event.uuid: False}
+                    }
+                else:
+                    self._clusters[location.id] = {
+                        'cluster': getattr(self, f'_parse_{feature}_cluster')(
+                            location
+                        ),
+                        'used': {self.misp_event.uuid: False}
+                    }
+                    if feature not in self._galaxies:
+                        self._galaxies[feature] = self._create_galaxy_args(
+                            location, galaxy_type=feature
+                        )
 
     def _parse_malware(self, malware_ref: str):
         """
@@ -360,15 +375,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if malware_ref in self._clusters:
             self._clusters[malware_ref]['used'][self.misp_event.uuid] = False
         else:
-            malware = self._get_stix_object(malware_ref)
-            self._clusters[malware.id] = {
-                'cluster': self._parse_malware_cluster(malware),
-                'used': {self.misp_event.uuid: False}
-            }
-            if 'malware' not in self._galaxies:
-                self._galaxies['malware'] = self._create_galaxy_args(
-                    malware
-                )
+            self._clusters[malware_ref] = self._parse_galaxy(malware_ref)
 
     def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
         """
@@ -423,15 +430,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if threat_actor_ref in self._clusters:
             self._clusters[threat_actor_ref]['used'][self.misp_event.uuid] = False
         else:
-            threat_actor = self._get_stix_object(threat_actor_ref)
-            self._clusters[threat_actor.id] = {
-                'cluster': self._parse_threat_actor_cluster(threat_actor),
-                'used': {self.misp_event.uuid: False}
-            }
-            if 'threat-actor' not in self._galaxies:
-                self._galaxies['threat-actor'] = self._create_galaxy_args(
-                    threat_actor
-                )
+            self._clusters[threat_actor_ref] = self._parse_galaxy(
+                threat_actor_ref
+            )
 
     def _parse_tool(self, tool_ref: str):
         """
@@ -444,13 +445,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if tool_ref in self._clusters:
             self._clusters[tool_ref]['used'][self.misp_event.uuid] = False
         else:
-            tool = self._get_stix_object(tool_ref)
-            self._clusters[tool.id] = {
-                'cluster': self._parse_tool_cluster(tool),
-                'used': {self.misp_event.uuid: False}
-            }
-            if 'tool' not in self._galaxies:
-                self._galaxies['tool'] = self._create_galaxy_args(tool)
+            self._clusters[tool_ref] = self._parse_galaxy(tool_ref)
 
     def _parse_vulnerability(self, vulnerability_ref: str):
         """
@@ -463,13 +458,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if vulnerability_ref in self._clusters:
             self._clusters[vulnerability_ref]['used'][self.misp_event.uuid] = False
         else:
-            vulnerability = self._get_stix_object(vulnerability_ref)
-            self._clusters[vulnerability.id] = {
-                'cluster': self._parse_vulnerability_cluster(vulnerability),
-                'used': {self.misp_event.uuid: False}
-            }
-            if 'vulnerability' not in self._galaxies:
-                self._galaxies['vulnerability'] = self._create_galaxy_args(vulnerability)
+            self._clusters[vulnerability_ref] = self._parse_galaxy(
+                vulnerability_ref
+            )
 
     def _parse_vulnerability_object(self, vulnerability: _VULNERABILITY_TYPING):
         """
@@ -923,6 +914,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
+
+    def _check_existing_galaxy_name(self, stix_object_name: str) -> Union[list, None]:
+        if stix_object_name in self.synonyms_mapping:
+            return self.synonyms_mapping[stix_object_name]
+        for name, tag_names in self.synonyms_mapping.items():
+            if stix_object_name in name:
+                return tag_names
 
     @staticmethod
     def _extract_types_from_observable_objects(observable_objects: dict) -> list:
