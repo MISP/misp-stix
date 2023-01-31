@@ -314,6 +314,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._malware = {malware.id: malware}
 
     def _load_marking_definition(self, marking_definition: Union[MarkingDefinition_v20, MarkingDefinition_v21]):
+        if not hasattr(marking_definition, 'definition_type'):
+            if not hasattr(self, '_marking_definition'):
+                self._marking_definition = {}
+            return
         definition_type = marking_definition.definition_type
         definition = marking_definition.definition[definition_type]
         data_to_load = {
