@@ -223,6 +223,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                                  PROPERTIES                                  #
     ################################################################################
 
+    @classmethod
+    def generic_info_field(cls) -> str:
+        return f'STIX {cls.stix_version} Bundle imported with the MISP-STIX import feature.'
+
     @property
     def misp_event(self) -> MISPEvent:
         return self.__misp_event
@@ -947,7 +951,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
         misp_event.uuid = self._identifier.split('--')[1]
-        misp_event.info = f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
+        misp_event.info = self.generic_info_field
         return misp_event
 
     def _create_misp_event(self, stix_object: Union[Grouping, Report_v20, Report_v21]) -> MISPEvent:
@@ -957,7 +961,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._sanitise_object_uuid(misp_event, event_uuid)
         else:
             misp_event.uuid = event_uuid
-        misp_event.info = stix_object.name
+        misp_event.info = stix_object.name if hasattr(stix_object, 'name') else self.generic_info_field
         misp_event.timestamp = self._timestamp_from_date(stix_object.modified)
         self._handle_misp_event_tags(misp_event, stix_object)
         return misp_event
