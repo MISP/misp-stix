@@ -1038,7 +1038,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             return f'AS{number}'
         return number
 
-    def _parse_markings(self, misp_feature: Union[MISPAttribute, MISPObject], marking_refs: list):
+    def _parse_markings(self, marking_refs: list):
         for marking_ref in marking_refs:
             try:
                 marking_definition = self._get_stix_object(marking_ref)
@@ -1048,7 +1048,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             except ObjectRefLoadingError as error:
                 self._object_ref_loading_error(error)
                 continue
-            misp_feature.add_tag(marking_definition.name)
+            yield(marking_definition.name)
 
     def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
         misp_object = {'timestamp': self._timestamp_from_date(stix_object.modified)}
