@@ -916,10 +916,18 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     @staticmethod
     def _extract_types_from_observable_objects(observable_objects: dict) -> list:
-        return sorted({observable.type for observable in observable_objects.values()})
+        return '_'.join(
+            sorted(
+                {observable.type for observable in observable_objects.values()}
+            )
+        )
 
     def _extract_types_from_observable_refs(self, observable_refs: list) -> list:
-        return sorted({self._observable[object_ref].type for object_ref in observable_refs})
+        return '_'.join(
+            sorted(
+                {self._observable[object_ref].type for object_ref in observable_refs}
+            )
+        )
 
     @staticmethod
     def _handle_object_forcing(attributes: list, object_forcing: tuple) -> bool:
