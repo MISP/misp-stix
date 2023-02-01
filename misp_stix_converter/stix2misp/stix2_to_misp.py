@@ -7,8 +7,8 @@ from .exceptions import (
     ObjectRefLoadingError, ObjectTypeLoadingError, SynonymsResourceJSONError,
     UnavailableGalaxyResourcesError, UnavailableSynonymsResourceError,
     UndefinedIndicatorError, UndefinedSTIXObjectError, UndefinedObservableError,
-    UnknownAttributeTypeError, UnknownObjectNameError, UnknownParsingFunctionError,
-    UnknownStixObjectTypeError)
+    UnknownAttributeTypeError, UnknownObjectNameError, UnknownObservableMappingError,
+    UnknownParsingFunctionError, UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import STIXtoMISPParser
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
@@ -615,10 +615,13 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _parse_observed_data(self, observed_data_ref: str):
         observed_data = self._get_stix_object(observed_data_ref)
-        if hasattr(observed_data, 'spec_version') and observed_data.spec_version == '2.1':
-            self._parse_observed_data_v21(observed_data)
-        else:
-            self._parse_observed_data_v20(observed_data)
+        try:
+            if hasattr(observed_data, 'spec_version') and observed_data.spec_version == '2.1':
+                self._parse_observed_data_v21(observed_data)
+            else:
+                self._parse_observed_data_v20(observed_data)
+        except UnknownObservableMappingError as observable_types:
+            self._observable_mapping_error(observed_data.id, observable_types)
 
     ################################################################################
     #                  MISP GALAXIES & CLUSTERS PARSING FUNCTIONS                  #
