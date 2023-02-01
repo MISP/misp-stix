@@ -747,8 +747,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         attribute['comment'] = reference.description
                     attributes.append(attribute)
             if len(attributes) == 1 and attributes[0]['type'] == 'sigma':
+                attribute = self._create_attribute_dict(indicator)
+                attribute.update(attributes[0])
                 self._add_misp_attribute(
-                    attributes[0],
+                    attribute,
                     confidence=getattr(indicator, 'confidence', None)
                 )
             else:
@@ -899,17 +901,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self.misp_event.add_object(misp_object)
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
-        attribute = self._parse_timeline(stix_object)
-        if hasattr(stix_object, 'description') and stix_object.description:
-            attribute['comment'] = stix_object.description
-        attribute.update(
-            self._sanitise_attribute_uuid(
-                stix_object.id, comment=attribute.get('comment')
-            )
-        )
-        if hasattr(stix_object, 'object_marking_refs'):
-            self._update_marking_refs(attribute['uuid'])
-        return attribute
+        return super()._create_attribute_dict(stix_object)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #

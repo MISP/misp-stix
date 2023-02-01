@@ -952,6 +952,20 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                       MISP FEATURES CREATION FUNCTIONS                       #
     ################################################################################
 
+    def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
+        attribute = self._parse_timeline(stix_object)
+        if hasattr(stix_object, 'description') and stix_object.description:
+            attribute['comment'] = stix_object.description
+        attribute.update(
+            self._sanitise_attribute_uuid(
+                stix_object.id, comment=attribute.get('comment')
+            )
+        )
+        if hasattr(stix_object, 'object_marking_refs'):
+            tags = tuple(self._parse_markings(stix_object.object_marking_refs))
+            attribute['Tag'] = [{'name': tag} for tag in tags]
+        return attribute
+
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
         misp_event.uuid = self._identifier.split('--')[1]

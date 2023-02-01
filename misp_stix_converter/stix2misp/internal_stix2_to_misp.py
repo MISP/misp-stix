@@ -2451,16 +2451,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = self._attribute_from_labels(stix_object.labels)
-        attribute.update(self._parse_timeline(stix_object))
-        if hasattr(stix_object, 'description') and stix_object.description:
-            attribute['comment'] = stix_object.description
-        attribute.update(
-            self._sanitise_attribute_uuid(
-                stix_object.id, comment=attribute.get('comment')
-            )
-        )
-        if hasattr(stix_object, 'object_marking_refs'):
-            self._update_marking_refs(attribute['uuid'])
+        attribute.update(super()._create_attribute_dict(stix_object))
         return attribute
 
     @staticmethod
