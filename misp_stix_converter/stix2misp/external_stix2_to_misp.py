@@ -62,8 +62,17 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         """
         if len(attributes) > 1 or (force_object is not None and self._handle_object_forcing(attributes, force_object)):
             misp_object = self._create_misp_object(name, stix_object)
-            for attribute in attributes:
-                misp_object.add_attribute(**attribute)
+            if hasattr(stix_object, 'object_marking_refs'):
+                tags = tuple(
+                    self._parse_markings(stix_object.object_marking_refs)
+                )
+                for attribute in attributes:
+                    misp_attribute = misp_object.add_attribute(**attribute)
+                    for tag in tags:
+                        misp_attribute.add_tag(tag)
+            else:
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
             self._add_misp_object(
                 misp_object,
                 confidence=getattr(stix_object, 'confidence', None)
@@ -206,8 +215,17 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         )
         if attributes:
             misp_object = self._create_misp_object('course-of-action', course_of_action)
-            for attribute in attributes:
-                misp_object.add_attribute(**attribute)
+            if hasattr(course_of_action, 'object_marking_refs'):
+                tags = tuple(
+                    self._parse_markings(course_of_action.object_marking_refs)
+                )
+                for attribute in attributes:
+                    misp_attribute = misp_object.add_attribute(**attribute)
+                    for tag in tags:
+                        misp_attribute.add_tag(tag)
+            else:
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
             self._add_misp_object(
                 misp_object,
                 confidence=getattr(course_of_action, 'confidence', None)
@@ -272,6 +290,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if hasattr(identity, feature):
                 for value in getattr(identity, feature):
                     misp_object.add_attribute(feature, value)
+        if hasattr(identity, 'object_marking_refs'):
+            tags = tuple(self._parse_markings(identity.object_marking_refs))
+            for attribute in misp_object.attributes:
+                for tag in tags:
+                    attribute.add_tag(tag)
         self._add_misp_object(
             misp_object,
             confidence=getattr(identity, 'confidence', None)
@@ -755,8 +778,17 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
             else:
                 misp_object = self._create_misp_object('sigma', indicator)
-                for attribute in attributes:
-                    misp_object.add_attribute(**attribute)
+                if hasattr(indicator, 'object_marking_refs'):
+                    tags = tuple(
+                        self._parse_markings(indicator.object_marking_refs)
+                    )
+                    for attribute in attributes:
+                        misp_attribute = misp_object.add_attribute(**attribute)
+                        for tag in tags:
+                            misp_attribute.add_tag(tag)
+                else:
+                    for attribute in attributes:
+                        misp_object.add_attribute(**attribute)
                 self._add_misp_object(
                     misp_object,
                     confidence=getattr(indicator, 'confidence', None)
@@ -799,6 +831,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute = {'value': getattr(indicator, feature)}
                 attribute.update(mapping)
                 misp_object.add_attribute(**attribute)
+        if hasattr(indicator, 'object_marking_refs'):
+            tags = tuple(self._parse_markings(indicator.object_marking_refs))
+            for attribute in misp_object.attributes:
+                for tag in tags:
+                    attribute.add_tag(tag)
         self._add_misp_object(
             misp_object,
             confidence=getattr(indicator, 'confidence', None)
@@ -869,6 +906,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     if hasattr(reference, 'description'):
                         attribute['comment'] = reference.description
                     misp_object.add_attribute(**attribute)
+            if hasattr(indicator, 'object_marking_refs'):
+                tags = tuple(self._parse_markings(indicator.object_marking_refs))
+                for attribute in misp_object.attributes:
+                    for tag in tags:
+                        attribute.add_tag(tag)
             self._add_misp_object(
                 misp_object,
                 confidence=getattr(indicator, 'confidence', None)
