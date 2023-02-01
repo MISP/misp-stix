@@ -607,8 +607,11 @@ class STIX2toMISPParser(STIXtoMISPParser):
             attribute.update(self._mapping.accuracy_radius_attribute)
             misp_object.add_attribute(**attribute)
         if hasattr(location, 'object_marking_refs'):
-            self._parse_markings(misp_object, location.object_marking_refs)
-        self._add_misp_object(misp_object)
+            tags = tuple(self._parse_markings(location.object_marking_refs))
+            for attribute in misp_object.attributes:
+                for tag in tags:
+                    attribute.add_tag(tag)
+        return misp_object
 
     def _parse_observed_data(self, observed_data_ref: str):
         observed_data = self._get_stix_object(observed_data_ref)

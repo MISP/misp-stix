@@ -281,7 +281,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except AttributeError:
             raise UnknownParsingFunctionError(feature)
         try:
-            parser(location)
+            location_object = parser(location)
+            if location_object is not None:
+                self._add_misp_object(location_object)
         except Exception as exception:
             self._location_error(location.id, exception)
 
