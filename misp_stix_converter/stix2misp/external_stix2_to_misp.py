@@ -358,7 +358,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         else:
             location = self._get_stix_object(location_ref)
             if any(hasattr(location, feature) for feature in self._mapping.location_object_fields):
-                misp_object = self._parse_location_object(location)
+                misp_object = self._parse_location_object(
+                    location, to_return=True
+                )
                 self._add_misp_object(
                     misp_object,
                     confidence=getattr(location, 'confidence', None)

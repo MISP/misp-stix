@@ -593,7 +593,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 for galaxy in self._aggregate_galaxy_clusters(clusters):
                     self.misp_event.add_galaxy(galaxy)
 
-    def _parse_location_object(self, location: Location) -> MISPObject:
+    def _parse_location_object(self, location: Location, to_return: Optional[bool] = False) -> MISPObject:
         misp_object = self._create_misp_object('geolocation', location)
         if hasattr(location, 'description'):
             misp_object.comment = location.description
@@ -607,11 +607,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
             attribute.update(self._mapping.accuracy_radius_attribute)
             misp_object.add_attribute(**attribute)
         if hasattr(location, 'object_marking_refs'):
-            tags = tuple(self._parse_markings(location.object_marking_refs))
-            for attribute in misp_object.attributes:
-                for tag in tags:
-                    attribute.add_tag(tag)
-        return misp_object
+            self._handle_object_marking_refs(
+                location.object_marking_refs, misp_object
+            )
+        if to_return:
+            return misp_object
+        self._add_misp_object(misp_object)
 
     def _parse_observed_data(self, observed_data_ref: str):
         observed_data = self._get_stix_object(observed_data_ref)
