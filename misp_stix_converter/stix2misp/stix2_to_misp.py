@@ -1039,6 +1039,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
         for label in (label for label in labels if label.lower() != 'threat-report'):
             misp_feature.add_tag(label)
 
+    def _handle_object_marking_refs(self, object_marking_refs: list, misp_object: MISPObject):
+        tags = self._parse_markings(object_marking_refs)
+        for attribute in misp_object.attributes:
+            for tag in tags:
+                attribute.add_tag(tag)
+
     @staticmethod
     def _parse_AS_value(number: Union[int, str]) -> str:
         if isinstance(number, int) or not number.startswith('AS'):

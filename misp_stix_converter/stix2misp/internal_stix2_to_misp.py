@@ -232,6 +232,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     )
                 )
             misp_object.add_attribute(**attribute)
+        if hasattr(custom_object, 'object_marking_refs'):
+            self._handle_object_marking_refs(
+                custom_object.object_marking_refs, misp_object
+            )
         self._add_misp_object(misp_object)
 
     def _parse_identity(self, identity_ref: str):

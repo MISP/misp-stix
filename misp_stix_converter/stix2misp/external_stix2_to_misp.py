@@ -291,10 +291,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 for value in getattr(identity, feature):
                     misp_object.add_attribute(feature, value)
         if hasattr(identity, 'object_marking_refs'):
-            tags = tuple(self._parse_markings(identity.object_marking_refs))
-            for attribute in misp_object.attributes:
-                for tag in tags:
-                    attribute.add_tag(tag)
+            self._handle_object_marking_refs(
+                identity.object_marking_refs, misp_object
+            )
         self._add_misp_object(
             misp_object,
             confidence=getattr(identity, 'confidence', None)
@@ -834,10 +833,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute.update(mapping)
                 misp_object.add_attribute(**attribute)
         if hasattr(indicator, 'object_marking_refs'):
-            tags = tuple(self._parse_markings(indicator.object_marking_refs))
-            for attribute in misp_object.attributes:
-                for tag in tags:
-                    attribute.add_tag(tag)
+            self._handle_marking_refs(
+                indicator.object_marking_refs, misp_object
+            )
         self._add_misp_object(
             misp_object,
             confidence=getattr(indicator, 'confidence', None)
@@ -909,10 +907,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         attribute['comment'] = reference.description
                     misp_object.add_attribute(**attribute)
             if hasattr(indicator, 'object_marking_refs'):
-                tags = tuple(self._parse_markings(indicator.object_marking_refs))
-                for attribute in misp_object.attributes:
-                    for tag in tags:
-                        attribute.add_tag(tag)
+                self._handle_object_marking_refs(
+                    indicator.object_marking_refs, misp_object
+                )
             self._add_misp_object(
                 misp_object,
                 confidence=getattr(indicator, 'confidence', None)
