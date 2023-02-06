@@ -716,7 +716,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     attribute = {'value': value}
                     attribute.update(self._mapping.ip_attribute)
                     attributes.append(attribute)
-        self._handle_import_case(indicator, attributes, 'ip-port')
+        if attributes:
+            self._handle_import_case(indicator, attributes, 'ip-port')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
 
     def _parse_process_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
