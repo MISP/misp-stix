@@ -9,7 +9,8 @@ from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .stix2_to_misp import (
     STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
-    _GALAXY_OBJECTS_TYPING, _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
+    _GALAXY_OBJECTS_TYPING, _IDENTITY_TYPING, _OBSERVED_DATA_TYPING, _SDO_TYPING,
+    _VULNERABILITY_TYPING)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
@@ -47,10 +48,6 @@ _EXTENSION_TYPING = Union[
 _EXTERNAL_REFERENCE_TYPING = [
     ExternalReference_v20,
     ExternalReference_v21
-]
-_OBSERVED_DATA_TYPING = Union[
-    ObservedData_v20,
-    ObservedData_v21
 ]
 _PROCESS_TYPING = Union[
     Process_v20,

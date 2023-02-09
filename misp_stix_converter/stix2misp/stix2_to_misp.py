@@ -116,6 +116,10 @@ _MISP_FEATURES_TYPING = Union[
     MISPEvent,
     MISPObject
 ]
+_OBSERVED_DATA_TYPING = Union[
+    ObservedData_v20,
+    ObservedData_v21
+]
 _SDO_TYPING = Union[
     Indicator_v20,
     Indicator_v21,
@@ -343,7 +347,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             self._observable = {observable.id: observable}
 
-    def _load_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
+    def _load_observed_data(self, observed_data: _OBSERVED_DATA_TYPING):
         self._check_uuid(observed_data.id)
         try:
             self._observed_data[observed_data.id] = observed_data

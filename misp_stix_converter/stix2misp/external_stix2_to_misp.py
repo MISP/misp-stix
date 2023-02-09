@@ -10,8 +10,7 @@ from .importparser import _INDICATOR_TYPING
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
-    _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
-from pathlib import Path
+    _IDENTITY_TYPING, _OBSERVED_DATA_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from pymisp import MISPAttribute, MISPGalaxy, MISPObject
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
@@ -577,6 +576,132 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 attributes.append(misp_attribute)
         return attributes
 
+    def _handle_duplicate_uuid(self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
+                               feature: str, observed_data_id: str) -> dict:
+        value = getattr(observable_object, feature)
+        return {
+            'uuid': self._create_v5_uuid(value),
+            'value': value,
+            'comment': f'Original Observed Data ID: {observed_data_id} - '
+                       f'UUID generated with the attribute value: {value}'
+        }
+
+    def _handle_observable_uuid(self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
+                                observed_data_id: str) -> str:
+        if hasattr(observable_object, 'id'):
+            return self._sanitise_attribute_uuid(observable_object.id)
+        return self._sanitise_attribute_uuid(observed_data_id)
+
+    def _parse_email_address_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
+        email_addresses = self._fetch_observables(observed_data)
+        if len(email_addresses) > 1:
+            for email_address in email_addresses:
+                address_attribute = {'type': 'email-dst'}
+                address_attribute.update(
+                    self._handle_duplicate_uuid(
+                        email_address, 'value', observed_data.id
+                    )
+                )
+                self._add_misp_attribute(
+                    address_attribute,
+                    confidence=getattr(observed_data, 'confidence', None)
+                )
+                if hasattr(email_address, 'display_name'):
+                    display_attribute = {'type': 'email-dst-display-name'}
+                    display_attribute.update(
+                        self._handle_duplicate_uuid(
+                            email_address, 'display_name', observed_data.id
+                        )
+                    )
+                    self._add_misp_attribute(
+                        display_attribute,
+                        confidence=getattr(observed_data, 'confidence', None)
+                    )
+        else:
+            email_address = email_addresses[0]
+            address_attribute = {'type': 'email-dst'}
+            if hasattr(email_address, 'display_name'):
+                display_attribute = {'type': 'email-dst-display-name'}
+                display_attribute.update(
+                    self._handle_duplicate_uuid(
+                        email_address, 'display_name', observed_data.id
+                    )
+                )
+                self._add_misp_attribute(
+                    display_attribute,
+                    confidence=getattr(observed_data, 'confidence', None)
+                )
+                address_attribute.update(
+                    self._handle_duplicate_uuid(
+                        email_address, 'display_name', observed_data.id
+                    )
+                )
+            else:
+                address_attribute['value'] = email_address.display_name
+                address_attribute.update(
+                    self._handle_observable_uuid(
+                        email_address, observed_data.id
+                    )
+                )
+            self._add_misp_attribute(
+                address_attribute,
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+
+    def _parse_ip_address_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
+        ip_addresses = self._fetch_observables(observed_data)
+        if len(ip_addresses) > 1:
+            for ip_address in ip_addresses:
+                attribute = {'type': 'ip-dst'}
+                attribute.update(
+                    self._handle_duplicate_uuid(
+                        ip_address, 'value', observed_data.id
+                    )
+                )
+                self._add_misp_attribute(
+                    attribute,
+                    confidence=getattr(observed_data, 'confidence', None)
+                )
+        else:
+            attribute = {
+                'type': 'ip-dst',
+                'value': ip_addresses[0].value
+            }
+            attribute.update(
+                self._handle_observable_uuid(ip_addresses[0], observed_data.id)
+            )
+            self._add_misp_attribute(
+                attribute,
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+
+    def _parse_mac_address_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
+        mac_addresses = self._fetch_observables(observed_data)
+        if len(mac_addresses) > 1:
+            for mac_address in mac_addresses:
+                attribute = {'type': 'mac-address'}
+                attribute.update(
+                    self._handle_duplicate_uuid(
+                        mac_address, 'value', observed_data.id
+                    )
+                )
+                self._add_misp_attribute(
+                    attribute,
+                    confidence=getattr(observed_data, 'confidence', None)
+                )
+        else:
+            attribute = {
+                'type': 'mac-address',
+                'value': mac_addresses[0].value
+            }
+            attribute.update(
+                self._handle_observable_uuid(mac_addresses[0], observed_data.id)
+            )
+            self._add_misp_attribute(
+                attribute,
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
     ################################################################################
@@ -972,6 +1097,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             sorted(
                 {self._observable[object_ref].type for object_ref in observable_refs}
             )
+        )
+
+    def _fetch_observables(self, observed_data: _OBSERVED_DATA_TYPING):
+        if hasattr(observed_data, 'objects'):
+            return tuple(observed_data.objects.values())
+        return tuple(
+            self._observable[ref] for ref in observed_data.object_refs
         )
 
     @staticmethod
