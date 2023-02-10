@@ -26,6 +26,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
 
         # MAIN STIX OBJECTS MAPPING
         observable_mapping = {
+            'domain-name': '_parse_domain_observable',
             'domain-name_network-traffic': '_parse_domain_network_traffic_observable',
             'email-addr': '_parse_email_address_observable',
             'mac-addr': '_parse_mac_address_observable',
@@ -73,7 +74,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         observable_mapping.update(
             dict.fromkeys(
                 (
-                    'domain-name',
                     'domain-name_ipv4-addr',
                     'domain-name_ipv6-addr',
                     'domain-name_ipv4-addr_ipv6-addr'
