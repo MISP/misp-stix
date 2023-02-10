@@ -633,11 +633,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
                 address_attribute.update(
                     self._handle_duplicate_uuid(
-                        email_address, 'display_name', observed_data.id
+                        email_address, 'value', observed_data.id
                     )
                 )
             else:
-                address_attribute['value'] = email_address.display_name
+                address_attribute['value'] = email_address.value
                 address_attribute.update(
                     self._handle_observable_uuid(
                         email_address, observed_data.id
