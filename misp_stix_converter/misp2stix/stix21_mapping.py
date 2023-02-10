@@ -23,14 +23,8 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
             )
         )
         v21_specific_galaxy_mapping = {
-            'cluster_to_stix_object': {
-                'country': 'location',
-                'region': 'location'
-            },
-            'galaxy_types_mapping': {
-                'country': '_parse_location_{}_galaxy',
-                'region': '_parse_location_{}_galaxy'
-            }
+            'country': 'location',
+            'region': 'location'
         }
         self._declare_attributes_mapping(
             attribute_updates=v21_specific_attribute_mapping,
