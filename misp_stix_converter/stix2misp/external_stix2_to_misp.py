@@ -12,9 +12,19 @@ from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _OBSERVED_DATA_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from pymisp import MISPAttribute, MISPGalaxy, MISPObject
+from stix2.v20.observables import (
+    AutonomousSystem as AutonomousSystem_v20, DomainName as DomainName_v20,
+    EmailAddress as EmailAddress_v20, IPv4Address as IPv4Address_v20,
+    IPv6Address as IPv6Address_v20, MACAddress as MACAddress_v20,
+    Mutex as Mutex_v20, URL as URL_v20)
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
     Vulnerability as Vulnerability_v20)
+from stix2.v20.observables import (
+    AutonomousSystem as AutonomousSystem_v21, DomainName as DomainName_v21,
+    EmailAddress as EmailAddress_v21, IPv4Address as IPv4Address_v21,
+    IPv6Address as IPv6Address_v21, MACAddress as MACAddress_v21,
+    Mutex as Mutex_v21, URL as URL_v21)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
     Indicator as Indicator_v21, Location, ObservedData as ObservedData_v21,
@@ -31,6 +41,37 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
     CourseOfAction_v21,
     Vulnerability_v20,
     Vulnerability_v21
+]
+_AUTONOMOUS_SYSTEM_TYPING = Union[
+    AutonomousSystem_v20, AutonomousSystem_v21
+]
+_DOMAIN_NAME_TYPING = Union[
+    DomainName_v20, DomainName_v21
+]
+_EMAIL_ADDRESS_TYPING = Union[
+    EmailAddress_v20, EmailAddress_v21
+]
+_GENERIC_OBSERVABLE_TYPING = Union[
+    DomainName_v20, DomainName_v21,
+    EmailAddress_v20, EmailAddress_v21,
+    IPv4Address_v20, IPv4Address_v21,
+    IPv6Address_v20, IPv6Address_v21,
+    MACAddress_v20, MACAddress_v21,
+    Mutex_v20, Mutex_v21,
+    URL_v20, URL_v21
+]
+_IP_ADDRESS_TYPING = Union[
+    IPv4Address_v20, IPv4Address_v21,
+    IPv6Address_v20, IPv6Address_v21
+]
+_MAC_ADDRESS_TYPING = Union[
+    MACAddress_v20, MACAddress_v21
+]
+_MUTEX_TYPING = Union[
+    Mutex_v20, Mutex_v21
+]
+_URL_TYPING = Union[
+    URL_v20, URL_v21
 ]
 
 
@@ -84,57 +125,21 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 confidence=getattr(stix_object, 'confidence', None)
             )
 
-    def _handle_observable_mapping(self, observed_data: ObservedData_v21) -> str:
+    def _handle_observables_mapping(self, observable_mapping: set) -> str:
         """
-        Takes a STIX 2.1 Observed Data object and redirects to the appropriate
-        parsing function depending on the observable objects fields used: objects or
-        object_refs.
+        Simple Observable object types handling function.
+        We check if the Observable object types are actually mapped with a
+        parsing function and return it, or raise an exception.
 
-        :param observed_data: A STIX 2.1 Observed Data object
-        :return: The name of the parsing function which should be used to convert
-            observable objects and their related observable objects into MISP
-            attributes or objects
+        :param observable_mapping: The observable types in a set
+        :returns: The feature used to identify the appropriate parsing function
+        :raises: Exception when the observable types are not known
         """
-        if hasattr(observed_data, 'object_refs'):
-            return self._handle_observable_refs_mapping(observed_data.object_refs)
-        return self._handle_observable_objects_mapping(observed_data.objects)
-
-    def _handle_observable_objects_mapping(self, observable_objects: dict) -> str:
-        """
-        Takes Observable objects to extract each observable object type in order to
-        build a tuple which will be used to map with the appropriate parsing
-        function.
-
-        :param observable_objects: Observable objects as a dict like preconised by
-            the STIX 2.0 standard. Could be either STIX 2.0 or STIX 2.1 (deprecated)
-            observable objects.
-        :return: The name of the parsing function mapped from the observable objects
-            types extracted from the observable objects
-        """
-        observable_types = self._extract_types_from_observable_objects(observable_objects)
+        to_call = '_'.join(sorted(observable_mapping))
         try:
-            feature = self._mapping.observable_mapping[observable_types]
+            return self._mapping.observable_mapping[to_call]
         except KeyError:
-            raise UnknownObservableMappingError(observable_types)
-        return f'{feature}_objects'
-
-    def _handle_observable_refs_mapping(self, observable_refs: list) -> str:
-        """
-        Takes Observable object references to extract each observable object type
-        from the references observable objects in order to build a tuple which will
-        be used to map with the appropriate parsing function.
-
-        :param observable_refs: List of observable object ids referenced by an
-            observed data object
-        :return: The name of the parsing function mapped from the observable objects
-            types extracted from the referenced observable objects.
-        """
-        observable_types = self._extract_types_from_observable_refs(observable_refs)
-        try:
-            feature = self._mapping.observable_mapping[observable_types]
-        except KeyError:
-            raise UnknownObservableMappingError(observable_types)
-        return f'{feature}_refs'
+            raise UnknownObservableMappingError(to_call)
 
     def _handle_pattern_mapping(self, indicator: _INDICATOR_TYPING) -> str:
         """
@@ -400,45 +405,75 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         else:
             self._clusters[malware_ref] = self._parse_galaxy(malware_ref)
 
-    def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
+    def _parse_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
         """
-        STIX 2.0 Observed Data parsing function. Gets the parsing function depending
-        on the observable object types found within the observable objects, and
-        simply calls the parsing function that will simply parse the observable
-        objects, create the appropriate MISP data structure and add it to the
-        associated MISP event.
+        Observed Data with embedded `objects` field parsing.
+        Depending on the Observable object types, we call the appropriate
+        parsing function.
 
-        :param observed_data: The STIX 2.0 Observed Data object to parse
+        :param observed_data: The Observed Data object
         """
-        feature = self._handle_observable_objects_mapping(observed_data.objects)
+        observable_types = [
+            observable.type for observable in observed_data.objects.values()
+        ]
+        observable_mapping = set(observable_types)
+        mapping = self._handle_observables_mapping(observable_mapping)
         try:
-            parser = getattr(self, feature)
+            if len(observable_mapping) > 1:
+                getattr(self, f'_parse_{mapping}_observable_objects')(observed_data)
+            else:
+                feature = self._define_observable_parsing_feature(
+                    observable_types
+                )
+                for observable in observed_data.objects.values():
+                    getattr(self, f'_parse_{mapping}_{feature}')(
+                        observable, observed_data
+                    )
         except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(observed_data)
-        except Exception as exception:
-            self._observed_data_error(observed_data.id, exception)
+            raise UnknownParsingFunctionError(f'_parse_{mapping}_{feature}')
 
-    def _parse_observed_data_v21(self, observed_data: ObservedData_v21):
+    def _parse_observable_refs(self, observed_data: ObservedData_v21):
         """
-        STIX 2.1 Observed Data parsing function. Gets the parsing function depending
-        on the observable object types found either within the observable objects
-        referenced in the object_refs fields, or the observable objects embedded in
-        the observed data. It simply calls the parsing function then in order to
-        parse the observed data and its related observable objects, and create the
-        appropriate MISP data structure that will be added to the associate MISP
-        event.
+        Observed Data with `object_refs` field parsing.
+        The observable types are extracted first. Depending on the types, we
+        look for the referenced Observable objects and parse them.
 
-        :param observed_data: The STIX 2.1 Observed Data object to parse
+        :param observed_data: The Observed Data object
         """
-        feature = self._handle_observable_mapping(observed_data)
+        observable_types = [
+            reference.split('--')[0] for reference in observed_data.object_refs
+        ]
+        observable_mapping = set(observable_types)
+        mapping = self._handle_observables_mapping(observable_mapping)
         try:
-            parser = getattr(self, feature)
+            if len(observable_mapping) > 1:
+                getattr(self, f'_parse_{mapping}_observable_refs')(observed_data)
+            else:
+                feature = self._define_observable_parsing_feature(
+                    observable_types
+                )
+                for object_ref in observed_data.object_refs:
+                    getattr(self, f'_parse_{mapping}_{feature}')(
+                        self._observable[object_ref], observed_data
+                    )
         except AttributeError:
-            raise UnknownParsingFunctionError(feature)
+            raise UnknownParsingFunctionError(f'_parse_{mapping}_{feature}')
+
+    def _parse_observed_data(self, observed_data_ref: str):
+        """
+        Observed Data parsing function.
+        We want first to find out which parsing function is the best depending
+        whether there is an `object_refs` field or the embedded `objects`.
+        Then we call the appropriate parsing function
+
+        :param observed_data: The Observed Data object
+        """
+        observed_data = self._get_stix_object(observed_data_ref)
         try:
-            parser(observed_data)
+            if hasattr(observed_data, 'object_refs'):
+                self._parse_observable_refs(observed_data)
+            else:
+                self._parse_observable_objects(observed_data)
         except Exception as exception:
             self._observed_data_error(observed_data.id, exception)
 
@@ -577,13 +612,18 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         return attributes
 
     def _handle_duplicate_uuid(self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
-                               feature: str, observed_data_id: str) -> dict:
-        value = getattr(observable_object, feature)
+                               value: Union[int, str], observed_data_id: str) -> dict:
+        if hasattr(observable_object, 'id'):
+            return {
+                'uuid': self._sanitise_uuid(observable_object.id),
+                'value': value,
+                'comment': f'Original Observed Data ID: {observed_data_id}'
+            }
         return {
-            'uuid': self._create_v5_uuid(value),
+            'uuid': self._sanitise_uuid(f"{observed_data_id} - {value}"),
             'value': value,
-            'comment': f'Original Observed Data ID: {observed_data_id} - '
-                       f'UUID generated with the attribute value: {value}'
+            'comment': 'UUID v5 generated with the original Observed Data ID'
+                       f'({observed_data_id}) and the attribute value ({value})'
         }
 
     def _handle_observable_uuid(self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
@@ -592,98 +632,173 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             return self._sanitise_attribute_uuid(observable_object.id)
         return self._sanitise_attribute_uuid(observed_data_id)
 
-    def _parse_domain_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
-        self._parse_generic_observable_objects(observed_data, 'domain', 'value')
-
-    def _parse_email_address_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
-        email_addresses = self._fetch_observables(observed_data)
-        if len(email_addresses) > 1:
-            for email_address in email_addresses:
-                address_attribute = {'type': 'email-dst'}
-                address_attribute.update(
-                    self._handle_duplicate_uuid(
-                        email_address, 'value', observed_data.id
-                    )
-                )
-                self._add_misp_attribute(
-                    address_attribute,
-                    confidence=getattr(observed_data, 'confidence', None)
-                )
-                if hasattr(email_address, 'display_name'):
-                    display_attribute = {'type': 'email-dst-display-name'}
-                    display_attribute.update(
-                        self._handle_duplicate_uuid(
-                            email_address, 'display_name', observed_data.id
-                        )
-                    )
-                    self._add_misp_attribute(
-                        display_attribute,
-                        confidence=getattr(observed_data, 'confidence', None)
-                    )
-        else:
-            email_address = email_addresses[0]
-            address_attribute = {'type': 'email-dst'}
-            if hasattr(email_address, 'display_name'):
-                display_attribute = {'type': 'email-dst-display-name'}
-                display_attribute.update(
-                    self._handle_duplicate_uuid(
-                        email_address, 'display_name', observed_data.id
-                    )
-                )
-                self._add_misp_attribute(
-                    display_attribute,
-                    confidence=getattr(observed_data, 'confidence', None)
-                )
-                address_attribute.update(
-                    self._handle_duplicate_uuid(
-                        email_address, 'value', observed_data.id
-                    )
-                )
-            else:
-                address_attribute['value'] = email_address.value
-                address_attribute.update(
-                    self._handle_observable_uuid(
-                        email_address, observed_data.id
-                    )
-                )
-            self._add_misp_attribute(
-                address_attribute,
-                confidence=getattr(observed_data, 'confidence', None)
+    def _parse_as_observables(self, autonomous_system: _AUTONOMOUS_SYSTEM_TYPING,
+                              observed_data: _OBSERVED_DATA_TYPING):
+        if hasattr(autonomous_system, 'name'):
+            attributes = self._parse_asn_observable_object(
+                autonomous_system
             )
-
-    def _parse_generic_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING,
-                                           attribute_type: str, feature: str):
-        observables = self._fetch_observables(observed_data)
-        if len(observables) > 1:
-            for observable in observables:
-                attribute = {'type': attribute_type}
-                attribute.update(
-                    self._handle_duplicate_uuid(
-                        observable, feature, observed_data.id
-                    )
-                )
-                self._add_misp_attribute(
-                    attribute,
-                    confidence=getattr(observed_data, 'confidence', None)
-                )
+            self._handle_import_case(observed_data, attributes, 'asn')
         else:
-            attribute = {
-                'type': attribute_type,
-                'value': getattr(observables[0], feature)
-            }
+            value = f'AS{autonomous_system.number}'
+            attribute = {'type': 'AS'}
             attribute.update(
-                self._handle_observable_uuid(observables[0], observed_data.id)
+                self._handle_duplicate_uuid(
+                    autonomous_system, value, observed_data.id
+                )
             )
             self._add_misp_attribute(
                 attribute,
                 confidence=getattr(observed_data, 'confidence', None)
             )
 
-    def _parse_ip_address_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
-        self._parse_generic_observable_objects(observed_data, 'ip-dst', 'value')
+    def _parse_as_single_observable(self, autonomous_system: _AUTONOMOUS_SYSTEM_TYPING,
+                                    observed_data: _OBSERVED_DATA_TYPING):
+        if hasattr(autonomous_system, 'name'):
+            attributes = self._parse_asn_observable_object(autonomous_system)
+            self._handle_import_case(observed_data, attributes, 'asn')
+        else:
+            attribute = {
+                'type': 'AS',
+                'value': f'AS{autonomous_system.number}'
+            }
+            attribute.update(
+                self._handle_observable_uuid(
+                    autonomous_system, observed_data.id
+                )
+            )
+            self._add_misp_attribute(
+                attribute,
+                confidence=getattr(observed_data, 'confidence', None)
+            )
 
-    def _parse_mac_address_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
-        self._parse_generic_observable_objects(observed_data, 'mac-address', 'value')
+
+    def _parse_domain_observables(self, domain_name: _DOMAIN_NAME_TYPING,
+                                  observed_data: _OBSERVED_DATA_TYPING):
+        self._parse_generic_observables(
+            domain_name, observed_data, 'domain', 'value'
+        )
+
+    def _parse_domain_single_observable(self, domain_name: _DOMAIN_NAME_TYPING,
+                                        observed_data: _OBSERVED_DATA_TYPING):
+        self._parse_generic_single_observable(
+            domain_name, observed_data, 'domain', 'value'
+        )
+
+    def _parse_email_address_observables(self, email_address: _EMAIL_ADDRESS_TYPING,
+                                         observed_data: _OBSERVED_DATA_TYPING):
+        self._parse_generic_observables(
+            email_address, observed_data, 'email-dst', 'value'
+        )
+        if hasattr(email_address, 'display_name'):
+            self._parse_generic_observables(
+                email_address, observed_data,
+                'email-dst-display-name', 'display_name'
+            )
+
+    def _parse_email_address_single_observable(self, email_address: _EMAIL_ADDRESS_TYPING,
+                                               observed_data: _OBSERVED_DATA_TYPING):
+        address_attribute = {'type': 'email-dst'}
+        if hasattr(email_address, 'display_name'):
+            self._parse_generic_single_observable(
+                email_address, observed_data,
+                'email-dst-display-name', 'display_name'
+            )
+            address_attribute.update(
+                self._populate_attribute_from_observable(
+                    email_address, 'value', observed_data.id
+                )
+            )
+        else:
+            address_attribute['value'] = email_address.value
+            address_attribute.update(
+                self._handle_observable_uuid(
+                    email_address, observed_data.id
+                )
+            )
+        self._add_misp_attribute(
+            address_attribute,
+            confidence=getattr(observed_data, 'confidence', None)
+        )
+
+    def _parse_generic_observables(self, observable: _GENERIC_OBSERVABLE_TYPING,
+                                   observed_data: _OBSERVED_DATA_TYPING,
+                                   attribute_type: str, feature: str):
+        attribute = {'type': attribute_type}
+        attribute.update(
+            self._populate_attribute_from_observable(
+                observable, feature, observed_data.id
+            )
+        )
+        self._add_misp_attribute(
+            attribute,
+            confidence=getattr(observed_data, 'confidence', None)
+        )
+
+    def _parse_generic_single_observable(self, observable: _GENERIC_OBSERVABLE_TYPING,
+                                         observed_data: _OBSERVED_DATA_TYPING,
+                                         attribute_type: str, feature: str):
+        attribute = {
+            'type': attribute_type,
+            'value': getattr(observable, feature)
+        }
+        attribute.update(
+            self._handle_observable_uuid(observable, observed_data.id)
+        )
+        self._add_misp_attribute(
+            attribute,
+            confidence=getattr(observed_data, 'confidence', None)
+        )
+
+    def _parse_ip_address_observables(self, ip_address: _IP_ADDRESS_TYPING,
+                                      observed_data: _OBSERVED_DATA_TYPING):
+        self._parse_generic_observables(
+            ip_address, observed_data, 'ip-dst', 'value'
+        )
+
+    def _parse_ip_address_single_observable(self, ip_address: _IP_ADDRESS_TYPING,
+                                            observed_data: _OBSERVED_DATA_TYPING):
+        self._parse_generic_single_observable(
+            ip_address, observed_data, 'ip-dst', 'value'
+        )
+
+    def _parse_mac_address_observables(self, mac_address: _MAC_ADDRESS_TYPING,
+                                       observed_data: _OBSERVED_DATA_TYPING):
+        self._parse_generic_observables(
+            mac_address, observed_data, 'mac-address', 'value'
+        )
+
+    def _parse_mac_address_single_observable(self, mac_address: _MAC_ADDRESS_TYPING,
+                                             observed_data: _OBSERVED_DATA_TYPING):
+        self._parse_generic_single_observable(
+            mac_address, observed_data, 'mac-address', 'value'
+        )
+
+    def _parse_mutex_observables(self, mutex: _MUTEX_TYPING,
+                                 observed_data: _OBSERVED_DATA_TYPING):
+        self._parse_generic_observables(mutex, observed_data, 'mutex', 'name')
+
+    def _parse_mutex_single_observable(self, mutex: _MUTEX_TYPING,
+                                       observed_data: _OBSERVED_DATA_TYPING):
+        self._parse_generic_single_observable(
+            mutex, observed_data, 'mutex', 'name'
+        )
+
+    def _parse_url_observables(self, url: _URL_TYPING,
+                               observed_data: _OBSERVED_DATA_TYPING):
+        self._parse_generic_observables(url, observed_data, 'url', 'value')
+
+    def _parse_url_single_observable(self, url: _URL_TYPING,
+                                     observed_data: _OBSERVED_DATA_TYPING):
+        self._parse_generic_single_observable(url, observed_data, 'url', 'value')
+
+    def _populate_attribute_from_observable(
+            self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
+            feature: str, observed_data_id: str) -> dict:
+        value = getattr(observable_object, feature)
+        return self._handle_duplicate_uuid(
+            observable_object, value, observed_data_id
+        )
 
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #
@@ -1068,26 +1183,27 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 return tag_names
 
     @staticmethod
-    def _extract_types_from_observable_objects(observable_objects: dict) -> list:
-        return '_'.join(
-            sorted(
-                {observable.type for observable in observable_objects.values()}
-            )
-        )
+    def _define_observable_parsing_feature(observable_types: list) -> str:
+        if len(observable_types) > 1:
+            return 'observables'
+        return 'single_observable'
 
-    def _extract_types_from_observable_refs(self, observable_refs: list) -> list:
-        return '_'.join(
-            sorted(
-                {self._observable[object_ref].type for object_ref in observable_refs}
-            )
-        )
+    @staticmethod
+    def _extract_types_from_observables(observed_data: _OBSERVED_DATA_TYPING) -> tuple:
+        if hasattr(observed_data, 'object_refs'):
+            return 'refs', [
+                ref.split('--')[0] for ref in observed_data.object_refs
+            ]
+        return 'objects', [
+            observable.type for observable in observed_data.objects.values()
+        ]
 
     def _fetch_observables(self, observed_data: _OBSERVED_DATA_TYPING):
         if hasattr(observed_data, 'objects'):
-            return tuple(observed_data.objects.values())
-        return tuple(
-            self._observable[ref] for ref in observed_data.object_refs
-        )
+            yield from observed_data.objects.values()
+        else:
+            for reference in observed_data.object_refs:
+                yield self._observable[reference]
 
     @staticmethod
     def _handle_object_forcing(attributes: list, object_forcing: tuple) -> bool:

@@ -312,23 +312,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_reference(self._sanitise_uuid(object_ref), 'annotates')
         self._add_misp_object(misp_object)
 
-    def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
-        feature = self._handle_observable_object_mapping(observed_data.labels, observed_data.id)
+    def _parse_observed_data(self, observed_data_ref: str):
+        observed_data = self._get_stix_object(observed_data_ref)
+        feature = self._handle_observable_object_mapping(
+            observed_data.labels, observed_data.id
+        )
+        version = getattr(observed_data, 'spec_version', '2.0')
+        to_call = f"{feature}_observable_v{version.replace('.', '')}"
         try:
-            parser = getattr(self, f"{feature}_observable_v20")
+            parser = getattr(self, to_call)
         except AttributeError:
-            raise UnknownParsingFunctionError(f"{feature}_observable_v20")
-        try:
-            parser(observed_data)
-        except Exception as exception:
-            self._observed_data_error(observed_data.id, exception)
-
-    def _parse_observed_data_v21(self, observed_data: ObservedData_v21):
-        feature = self._handle_observable_object_mapping(observed_data.labels, observed_data.id)
-        try:
-            parser = getattr(self, f"{feature}_observable_v21")
-        except AttributeError:
-            raise UnknownParsingFunctionError(f"{feature}_observable_v21")
+            raise UnknownParsingFunctionError(to_call)
         try:
             parser(observed_data)
         except Exception as exception:
