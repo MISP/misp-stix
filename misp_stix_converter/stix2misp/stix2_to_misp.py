@@ -14,7 +14,6 @@ from .importparser import STIXtoMISPParser
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from collections import defaultdict
 from datetime import datetime
-from pathlib import Path
 from pymisp import (
     AbstractMISP, MISPEvent, MISPAttribute, MISPGalaxy, MISPGalaxyCluster,
     MISPObject, MISPSighting)

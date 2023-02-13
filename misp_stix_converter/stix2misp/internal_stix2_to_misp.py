@@ -14,7 +14,6 @@ from .stix2_to_misp import (
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from pathlib import Path
 from pymisp import MISPAttribute, MISPGalaxy, MISPGalaxyCluster, MISPObject, MISPSighting
 from stix2.v20.common import ExternalReference as ExternalReference_v20
 from stix2.v20.observables import (

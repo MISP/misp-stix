@@ -14,7 +14,7 @@ from .stix2_to_misp import (
 from pymisp import MISPAttribute, MISPGalaxy, MISPObject
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
-    ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
+    Vulnerability as Vulnerability_v20)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
     Indicator as Indicator_v21, Location, ObservedData as ObservedData_v21,
