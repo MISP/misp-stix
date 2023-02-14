@@ -474,8 +474,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._parse_observable_refs(observed_data)
             else:
                 self._parse_observable_objects(observed_data)
-        except Exception as exception:
-            self._observed_data_error(observed_data.id, exception)
+        except UnknownObservableMappingError as observable_types:
+            self._observable_mapping_error(observed_data.id, observable_types)
 
     def _parse_threat_actor(self, threat_actor_ref: str):
         """

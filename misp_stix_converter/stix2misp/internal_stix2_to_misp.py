@@ -4,7 +4,7 @@
 from .exceptions import (
     AttributeFromPatternParsingError, UndefinedSTIXObjectError,
     UndefinedIndicatorError, UndefinedObservableError,
-    UnknownParsingFunctionError)
+    UnknownObservableMappingError, UnknownParsingFunctionError)
 from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .stix2_to_misp import (
@@ -325,8 +325,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             raise UnknownParsingFunctionError(to_call)
         try:
             parser(observed_data)
-        except Exception as exception:
-            self._observed_data_error(observed_data.id, exception)
+        except UnknownObservableMappingError as observable_types:
+            self._observable_mapping_error(observed_data.id, observable_types)
 
     def _parse_threat_actor(self, threat_actor_ref: str):
         threat_actor = self._get_stix_object(threat_actor_ref)
