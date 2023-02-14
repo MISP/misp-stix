@@ -25,6 +25,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         )
 
         # MAIN STIX OBJECTS MAPPING
+        self.__standalone_observable_types = (
+            'autonomous-system', 'domain-name', 'email-addr', 'mac-addr',
+            'mutex', 'url'
+        )
         observable_mapping = {
             'autonomous-system': 'as',
             'domain-name': 'domain',
@@ -403,6 +407,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def sigma_object_mapping(self) -> dict:
         return self.__sigma_object_mapping
+
+    @property
+    def standalone_observable_types(self) -> dict:
+        return self.__standalone_observable_types
 
     @property
     def vulnerability_object_mapping(self) -> dict:

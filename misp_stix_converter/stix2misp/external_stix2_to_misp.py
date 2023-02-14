@@ -419,7 +419,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         observable_mapping = set(observable_types)
         mapping = self._handle_observables_mapping(observable_mapping)
         try:
-            if len(observable_mapping) > 1:
+            if self._observable_as_object(observable_mapping):
                 getattr(self, f'_parse_{mapping}_observable_objects')(observed_data)
             else:
                 feature = self._define_observable_parsing_feature(
@@ -446,7 +446,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         observable_mapping = set(observable_types)
         mapping = self._handle_observables_mapping(observable_mapping)
         try:
-            if len(observable_mapping) > 1:
+            if self._observable_as_object(observable_mapping):
                 getattr(self, f'_parse_{mapping}_observable_refs')(observed_data)
             else:
                 feature = self._define_observable_parsing_feature(
@@ -1216,6 +1216,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if any(keyword in pattern for keyword in self._mapping.pattern_forbidden_relations):
             return True
         if all(keyword in pattern for keyword in (' AND ', ' OR ')):
+            return True
+        return False
+
+    def _observable_as_object(self, mapping: set) -> bool:
+        if len(mapping) > 1:
+            return True
+        if tuple(mapping)[0] not in self._mapping.standalone_observable_types:
             return True
         return False
 
