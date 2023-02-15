@@ -131,7 +131,7 @@ class STIXtoMISPParser:
         self.__errors[self._identifier].add(message)
 
     def _observable_mapping_error(self, observed_data_id: str, observable_types: str):
-        types = f"containing the following types: {observable_types.__str__().replace('_', ',')}"
+        types = f"containing the following types: {observable_types.__str__().replace('_', ', ')}"
         message = f"Unable to map observable objects related to the Observed Data object with id {observed_data_id}"
         self.__errors[self._identifier].add(f'{message}, {types}')
 
