@@ -974,11 +974,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _create_misp_event(self, stix_object: Union[Grouping, Report_v20, Report_v21]) -> MISPEvent:
         misp_event = MISPEvent(force_timestamps=True)
-        event_uuid = self._extract_uuid(stix_object.id)
-        if event_uuid in self.replacement_uuids:
-            self._sanitise_object_uuid(misp_event, event_uuid)
-        else:
-            misp_event.uuid = event_uuid
+        self._sanitise_object_uuid(misp_event, stix_object.id)
         misp_event.info = stix_object.name if hasattr(stix_object, 'name') else self.generic_info_field
         misp_event.timestamp = self._timestamp_from_date(stix_object.modified)
         self._handle_misp_event_tags(misp_event, stix_object)
@@ -1003,13 +999,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             force_timestamps=True
         )
         if stix_object is not None:
-            object_uuid = self._extract_uuid(
-                stix_object['id'] if isinstance(stix_object, dict) else stix_object.id
-            )
-            if object_uuid in self.replacement_uuids:
-                self._sanitise_object_uuid(misp_object, object_uuid)
-            else:
-                misp_object.uuid = object_uuid
+            self._sanitise_object_uuid(misp_object, stix_object['id'])
             misp_object.update(self._parse_timeline(stix_object))
         return misp_object
 

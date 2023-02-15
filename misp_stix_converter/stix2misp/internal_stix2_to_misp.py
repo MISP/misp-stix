@@ -214,11 +214,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         misp_object.update(self._parse_timeline(custom_object))
         if hasattr(custom_object, 'x_misp_comment'):
             misp_object.comment = custom_object.x_misp_comment
-        object_uuid = self._extract_uuid(custom_object.id)
-        if object_uuid in self.replacement_uuids:
-            self._sanitise_object_uuid(misp_object, object_uuid)
-        else:
-            misp_object.uuid = object_uuid
+        self._sanitise_object_uuid(misp_object, custom_object.id)
         for custom_attribute in custom_object.x_misp_attributes:
             attribute = dict(custom_attribute)
             if attribute.get('uuid'):

@@ -273,19 +273,22 @@ class STIXtoMISPParser:
     def _check_uuid(self, object_id: str):
         object_uuid = self._extract_uuid(object_id)
         if UUID(object_uuid).version not in _RFC_VERSIONS and object_uuid not in self.replacement_uuids:
-            self.replacement_uuids[object_uuid] = uuid5(_UUIDv4, object_uuid)
+            self.replacement_uuids[object_uuid] = self._create_v5_uuid(object_uuid)
+
+    @staticmethod
+    def _create_v5_uuid(value: str) -> UUID:
+        return uuid5(_UUIDv4, value)
 
     def _sanitise_attribute_uuid(self, object_id: str, comment: Optional[str] = None) -> dict:
         attribute_uuid = self._extract_uuid(object_id)
+        attribute_comment = f'Original UUID was: {attribute_uuid}'
         if attribute_uuid in self.replacement_uuids:
-            attribute_comment = f'Original UUID was: {attribute_uuid}'
             return {
                 'uuid': self.replacement_uuids[attribute_uuid],
                 'comment': f'{comment} - {attribute_comment}' if comment else attribute_comment
             }
         if UUID(attribute_uuid).version not in _RFC_VERSIONS:
-            attribute_comment = f'Original UUID was: {attribute_uuid}'
-            sanitised_uuid = uuid5(_UUIDv4, attribute_uuid)
+            sanitised_uuid = self._create_v5_uuid(attribute_uuid)
             self.replacement_uuids[attribute_uuid] = sanitised_uuid
             return {
                 'uuid': sanitised_uuid,
@@ -293,17 +296,21 @@ class STIXtoMISPParser:
             }
         return {'uuid': attribute_uuid}
 
-    def _sanitise_object_uuid(self, misp_object: MISPObject, object_uuid: str):
-        comment = f'Original UUID was: {object_uuid}'
-        misp_object.comment = f'{misp_object.comment} - {comment}' if hasattr(misp_object, 'comment') else comment
-        misp_object.uuid = self.replacement_uuids[object_uuid]
+    def _sanitise_object_uuid(self, misp_object: Union[MISPEvent, MISPObject],
+                              object_id: str):
+        object_uuid = self._extract_uuid(object_id)
+        if object_uuid in self.replacement_uuids:
+            comment = f'Original UUID was: {object_uuid}'
+            misp_object.comment = f'{misp_object.comment} - {comment}' if hasattr(misp_object, 'comment') else comment
+            object_uuid = self.replacement_uuids[object_uuid]
+        misp_object.uuid = object_uuid
 
     def _sanitise_uuid(self, object_id: str) -> str:
         object_uuid = self._extract_uuid(object_id)
         if UUID(object_uuid).version not in _RFC_VERSIONS:
             if object_uuid in self.replacement_uuids:
                 return self.replacement_uuids[object_uuid]
-            sanitised_uuid = uuid5(_UUIDv4, object_uuid)
+            sanitised_uuid = self._create_v5_uuid(object_uuid)
             self.replacement_uuids[object_uuid] = sanitised_uuid
             return sanitised_uuid
         return object_uuid
