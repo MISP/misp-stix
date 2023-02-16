@@ -4,11 +4,10 @@
 import json
 import subprocess
 import traceback
-from .exceptions import (SynonymsResourceJSONError, UnavailableGalaxyResourcesError,
-                         UnavailableSynonymsResourceError)
+from .exceptions import UnavailableGalaxyResourcesError
 from collections import defaultdict
 from pathlib import Path
-from pymisp import MISPObject
+from pymisp import MISPEvent, MISPObject
 from stix2.v20.sdo import Indicator as Indicator_v20
 from stix2.v21.sdo import Indicator as Indicator_v21
 from typing import Optional, Union
