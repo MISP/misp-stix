@@ -21,7 +21,7 @@ The package is available as [misp-stix](https://pypi.org/project/misp-stix/) in 
 
 This library is used by the [MISP core software](https://github.com/MISP/MISP) to perform STIX conversion and serving as a useful tool for anyone looking for a clean way of converting between the MISP standard format and various STIX versions (1.1.1, 1.2, 2.0, 2.1).
 
-A complete [documentation is available](/documentation/) including the mappings between the different formats.
+A complete [documentation is available](./documentation/) including the mappings between the different formats.
 
 ## Install from pip
 
