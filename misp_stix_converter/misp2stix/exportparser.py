@@ -123,9 +123,12 @@ class MISPtoSTIXParser:
             tag_names: list = []
             for galaxy in self._misp_event['Galaxy']:
                 galaxy_type = galaxy['type']
-                if galaxy_type in self._mapping.galaxy_types_mapping:
-                    to_call = self._mapping.galaxy_types_mapping[galaxy_type]
-                    getattr(self, to_call.format('event'))(galaxy)
+                if galaxy_type in self._mapping.cluster_to_stix_object:
+                    stix_type = self._mapping.cluster_to_stix_object[galaxy_type]
+                    getattr(
+                        self,
+                        f"_parse_{stix_type.replace('-', '_')}_event_galaxy"
+                    )(galaxy)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
                     self._handle_undefined_event_galaxy(galaxy)
@@ -135,9 +138,12 @@ class MISPtoSTIXParser:
     def _parse_event_galaxies(self, galaxies: list):
         for galaxy in galaxies:
             galaxy_type = galaxy['type']
-            if galaxy_type in self._mapping.galaxy_types_mapping:
-                to_call = self._mapping.galaxy_types_mapping[galaxy_type]
-                getattr(self, to_call.format('parent'))(galaxy)
+            if galaxy_type in self._mapping.cluster_to_stix_object:
+                stix_type = self._mapping.cluster_to_stix_object[galaxy_type]
+                getattr(
+                    self,
+                    f"_parse_{stix_type.replace('-', '_')}_parent_galaxy"
+                )(galaxy)
             else:
                 self._handle_undefined_parent_galaxy(galaxy)
 

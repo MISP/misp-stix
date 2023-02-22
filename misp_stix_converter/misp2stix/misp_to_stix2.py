@@ -420,9 +420,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             tag_names: list = []
             for galaxy in attribute['Galaxy']:
                 galaxy_type = galaxy['type']
-                if galaxy_type in self._mapping.galaxy_types_mapping:
-                    to_call = self._mapping.galaxy_types_mapping[galaxy_type]
-                    getattr(self, to_call.format('attribute'))(galaxy, object_id, timestamp)
+                if galaxy_type in self._mapping.cluster_to_stix_object:
+                    stix_type = self._mapping.cluster_to_stix_object[galaxy_type]
+                    getattr(
+                        self,
+                        f"_parse_{stix_type.replace('-', '_')}_attribute_galaxy"
+                    )(
+                        galaxy, object_id, timestamp
+                    )
                 else:
                     self._handle_undefined_attribute_galaxy(galaxy, object_id, timestamp)
                 tag_names.extend(self._quick_fetch_tag_names(galaxy))
@@ -987,9 +992,14 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if galaxies:
             tag_names = set()
             for galaxy_type, galaxy in galaxies.items():
-                if galaxy_type in self._mapping.galaxy_types_mapping:
-                    to_call = self._mapping.galaxy_types_mapping[galaxy_type]
-                    getattr(self, to_call.format('attribute'))(galaxy, object_id, timestamp)
+                if galaxy_type in self._mapping.cluster_to_stix_object:
+                    stix_type = self._mapping.cluster_to_stix_object[galaxy_type]
+                    getattr(
+                        self,
+                        f"_parse_{stix_type.replace('-', '_')}_attribute_galaxy"
+                    )(
+                        galaxy, object_id, timestamp
+                    )
                 else:
                     self._handle_undefined_attribute_galaxy(galaxy, object_id, timestamp)
                 tag_names.update(self._quick_fetch_tag_names(galaxy))

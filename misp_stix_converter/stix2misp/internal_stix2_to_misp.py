@@ -4,16 +4,16 @@
 from .exceptions import (
     AttributeFromPatternParsingError, UndefinedSTIXObjectError,
     UndefinedIndicatorError, UndefinedObservableError,
-    UnknownParsingFunctionError)
+    UnknownObservableMappingError, UnknownParsingFunctionError)
 from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .stix2_to_misp import (
     STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
-    _GALAXY_OBJECTS_TYPING, _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
+    _GALAXY_OBJECTS_TYPING, _IDENTITY_TYPING, _OBSERVED_DATA_TYPING, _SDO_TYPING,
+    _VULNERABILITY_TYPING)
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from pathlib import Path
 from pymisp import MISPAttribute, MISPGalaxy, MISPGalaxyCluster, MISPObject, MISPSighting
 from stix2.v20.common import ExternalReference as ExternalReference_v20
 from stix2.v20.observables import (
@@ -47,10 +47,6 @@ _EXTENSION_TYPING = Union[
 _EXTERNAL_REFERENCE_TYPING = [
     ExternalReference_v20,
     ExternalReference_v21
-]
-_OBSERVED_DATA_TYPING = Union[
-    ObservedData_v20,
-    ObservedData_v21
 ]
 _PROCESS_TYPING = Union[
     Process_v20,
@@ -218,11 +214,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         misp_object.update(self._parse_timeline(custom_object))
         if hasattr(custom_object, 'x_misp_comment'):
             misp_object.comment = custom_object.x_misp_comment
-        object_uuid = self._extract_uuid(custom_object.id)
-        if object_uuid in self.replacement_uuids:
-            self._sanitise_object_uuid(misp_object, object_uuid)
-        else:
-            misp_object.uuid = object_uuid
+        self._sanitise_object_uuid(misp_object, custom_object.id)
         for custom_attribute in custom_object.x_misp_attributes:
             attribute = dict(custom_attribute)
             if attribute.get('uuid'):
@@ -232,6 +224,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     )
                 )
             misp_object.add_attribute(**attribute)
+        if hasattr(custom_object, 'object_marking_refs'):
+            self._handle_object_marking_refs(
+                custom_object.object_marking_refs, misp_object
+            )
         self._add_misp_object(misp_object)
 
     def _parse_identity(self, identity_ref: str):
@@ -312,27 +308,21 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_reference(self._sanitise_uuid(object_ref), 'annotates')
         self._add_misp_object(misp_object)
 
-    def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
-        feature = self._handle_observable_object_mapping(observed_data.labels, observed_data.id)
+    def _parse_observed_data(self, observed_data_ref: str):
+        observed_data = self._get_stix_object(observed_data_ref)
+        feature = self._handle_observable_object_mapping(
+            observed_data.labels, observed_data.id
+        )
+        version = getattr(observed_data, 'spec_version', '2.0')
+        to_call = f"{feature}_observable_v{version.replace('.', '')}"
         try:
-            parser = getattr(self, f"{feature}_observable_v20")
+            parser = getattr(self, to_call)
         except AttributeError:
-            raise UnknownParsingFunctionError(f"{feature}_observable_v20")
+            raise UnknownParsingFunctionError(to_call)
         try:
             parser(observed_data)
-        except Exception as exception:
-            self._observed_data_error(observed_data.id, exception)
-
-    def _parse_observed_data_v21(self, observed_data: ObservedData_v21):
-        feature = self._handle_observable_object_mapping(observed_data.labels, observed_data.id)
-        try:
-            parser = getattr(self, f"{feature}_observable_v21")
-        except AttributeError:
-            raise UnknownParsingFunctionError(f"{feature}_observable_v21")
-        try:
-            parser(observed_data)
-        except Exception as exception:
-            self._observed_data_error(observed_data.id, exception)
+        except UnknownObservableMappingError as observable_types:
+            self._observable_mapping_error(observed_data.id, observable_types)
 
     def _parse_threat_actor(self, threat_actor_ref: str):
         threat_actor = self._get_stix_object(threat_actor_ref)
@@ -2451,16 +2441,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = self._attribute_from_labels(stix_object.labels)
-        attribute.update(self._parse_timeline(stix_object))
-        if hasattr(stix_object, 'description') and stix_object.description:
-            attribute['comment'] = stix_object.description
-        attribute.update(
-            self._sanitise_attribute_uuid(
-                stix_object.id, comment=attribute.get('comment')
-            )
-        )
-        if hasattr(stix_object, 'object_marking_refs'):
-            self._update_marking_refs(attribute['uuid'])
+        attribute.update(super()._create_attribute_dict(stix_object))
         return attribute
 
     @staticmethod

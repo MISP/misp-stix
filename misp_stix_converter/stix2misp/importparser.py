@@ -4,11 +4,10 @@
 import json
 import subprocess
 import traceback
-from .exceptions import (SynonymsResourceJSONError, UnavailableGalaxyResourcesError,
-                         UnavailableSynonymsResourceError)
+from .exceptions import UnavailableGalaxyResourcesError
 from collections import defaultdict
 from pathlib import Path
-from pymisp import MISPObject
+from pymisp import MISPEvent, MISPObject
 from stix2.v20.sdo import Indicator as Indicator_v20
 from stix2.v21.sdo import Indicator as Indicator_v21
 from typing import Optional, Union
@@ -129,6 +128,11 @@ class STIXtoMISPParser:
     def _object_type_loading_error(self, object_type: str):
         message = f"Error loading the STIX object of type {object_type}"
         self.__errors[self._identifier].add(message)
+
+    def _observable_mapping_error(self, observed_data_id: str, observable_types: str):
+        types = f"containing the following types: {observable_types.__str__().replace('_', ', ')}"
+        message = f"Unable to map observable objects related to the Observed Data object with id {observed_data_id}"
+        self.__errors[self._identifier].add(f'{message}, {types}')
 
     def _observed_data_error(self, observed_data_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
@@ -268,19 +272,22 @@ class STIXtoMISPParser:
     def _check_uuid(self, object_id: str):
         object_uuid = self._extract_uuid(object_id)
         if UUID(object_uuid).version not in _RFC_VERSIONS and object_uuid not in self.replacement_uuids:
-            self.replacement_uuids[object_uuid] = uuid5(_UUIDv4, object_uuid)
+            self.replacement_uuids[object_uuid] = self._create_v5_uuid(object_uuid)
+
+    @staticmethod
+    def _create_v5_uuid(value: str) -> UUID:
+        return uuid5(_UUIDv4, value)
 
     def _sanitise_attribute_uuid(self, object_id: str, comment: Optional[str] = None) -> dict:
         attribute_uuid = self._extract_uuid(object_id)
+        attribute_comment = f'Original UUID was: {attribute_uuid}'
         if attribute_uuid in self.replacement_uuids:
-            attribute_comment = f'Original UUID was: {attribute_uuid}'
             return {
                 'uuid': self.replacement_uuids[attribute_uuid],
                 'comment': f'{comment} - {attribute_comment}' if comment else attribute_comment
             }
         if UUID(attribute_uuid).version not in _RFC_VERSIONS:
-            attribute_comment = f'Original UUID was: {attribute_uuid}'
-            sanitised_uuid = uuid5(_UUIDv4, attribute_uuid)
+            sanitised_uuid = self._create_v5_uuid(attribute_uuid)
             self.replacement_uuids[attribute_uuid] = sanitised_uuid
             return {
                 'uuid': sanitised_uuid,
@@ -288,17 +295,21 @@ class STIXtoMISPParser:
             }
         return {'uuid': attribute_uuid}
 
-    def _sanitise_object_uuid(self, misp_object: MISPObject, object_uuid: str):
-        comment = f'Original UUID was: {object_uuid}'
-        misp_object.comment = f'{misp_object.comment} - {comment}' if hasattr(misp_object, 'comment') else comment
-        misp_object.uuid = self.replacement_uuids[object_uuid]
+    def _sanitise_object_uuid(self, misp_object: Union[MISPEvent, MISPObject],
+                              object_id: str):
+        object_uuid = self._extract_uuid(object_id)
+        if object_uuid in self.replacement_uuids:
+            comment = f'Original UUID was: {object_uuid}'
+            misp_object.comment = f'{misp_object.comment} - {comment}' if hasattr(misp_object, 'comment') else comment
+            object_uuid = self.replacement_uuids[object_uuid]
+        misp_object.uuid = object_uuid
 
     def _sanitise_uuid(self, object_id: str) -> str:
         object_uuid = self._extract_uuid(object_id)
         if UUID(object_uuid).version not in _RFC_VERSIONS:
             if object_uuid in self.replacement_uuids:
                 return self.replacement_uuids[object_uuid]
-            sanitised_uuid = uuid5(_UUIDv4, object_uuid)
+            sanitised_uuid = self._create_v5_uuid(object_uuid)
             self.replacement_uuids[object_uuid] = sanitised_uuid
             return sanitised_uuid
         return object_uuid
