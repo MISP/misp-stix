@@ -287,9 +287,54 @@ class MISPtoSTIX2Mapping:
                 'tool'
             )
         )
+        _galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
+        _galaxy_types_mapping.update(
+            dict.fromkeys(
+                _attack_pattern_types,
+                '_parse_attack_pattern_{}_galaxy'
+            )
+        )
+        _galaxy_types_mapping.update(
+            dict.fromkeys(
+                _course_of_action_types,
+                '_parse_course_of_action_{}_galaxy'
+            )
+        )
+        _galaxy_types_mapping.update(
+            dict.fromkeys(
+                _intrusion_set_types,
+                '_parse_intrusion_set_{}_galaxy'
+            )
+        )
+        _galaxy_types_mapping.update(
+            dict.fromkeys(
+                _malware_types,
+                '_parse_malware_{}_galaxy'
+            )
+        )
+        _galaxy_types_mapping.update(
+            dict.fromkeys(
+                _threat_actor_types,
+                '_parse_threat_actor_{}_galaxy'
+            )
+        )
+        _galaxy_types_mapping.update(
+            dict.fromkeys(
+                _tool_types,
+                '_parse_tool_{}_galaxy'
+            )
+        )
         if galaxy_updates is not None:
-            _cluster_to_stix_object.update(galaxy_updates)
+            if 'cluster_to_stix_object' in galaxy_updates:
+                _cluster_to_stix_object.update(
+                    galaxy_updates['cluster_to_stix_object']
+                )
+            if 'galaxy_types_mapping' in galaxy_updates:
+                _galaxy_types_mapping.update(
+                    galaxy_updates['galaxy_types_mapping']
+                )
         self.__cluster_to_stix_object = Mapping(**_cluster_to_stix_object)
+        self.__galaxy_types_mapping = Mapping(**_galaxy_types_mapping)
         self.__external_references_fields = Mapping(
             **{
                 'external_id': '_parse_external_id',
@@ -1064,6 +1109,10 @@ class MISPtoSTIX2Mapping:
     @property
     def file_single_fields(self) -> tuple:
         return self.__file_single_fields
+
+    @property
+    def galaxy_types_mapping(self) -> dict:
+        return self.__galaxy_types_mapping
 
     @property
     def github_user_data_fields(self) -> tuple:
