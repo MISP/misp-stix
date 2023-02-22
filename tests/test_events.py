@@ -1800,6 +1800,16 @@ _TEST_FILE_OBJECT = {
             "type": "text",
             "object_relation": "file-encoding",
             "value": "UTF-8"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "creation-time",
+            "value": "2021-10-25T16:22:00"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "modification-time",
+            "value": "2022-10-25T16:22:00"
         }
     ]
 }
