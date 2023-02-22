@@ -46,6 +46,13 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
                 'text': 'description'
             }
         )
+        self.__file_time_fields = Mapping(
+            **{
+                'access-time': 'accessed',
+                'creation-time': 'created',
+                'modification-time': 'modified'
+            }
+        )
         self.__lnk_time_fields = Mapping(
             **{
                 'lnk-access-time': 'accessed',
@@ -170,6 +177,10 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     @property
     def employee_object_mapping(self) -> dict:
         return self.__employee_object_mapping
+
+    @property
+    def file_time_fields(self) -> dict:
+        return self.__file_time_fields
 
     @property
     def lnk_time_fields(self) -> dict:
