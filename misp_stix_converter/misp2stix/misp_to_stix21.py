@@ -3,12 +3,12 @@
 
 import re
 from .misp_to_stix2 import InvalidHashValueError, MISPtoSTIX2Parser
-from .stix21_mapping import Stix21Mapping
+from .stix21_mapping import MISPtoSTIX21Mapping
 from base64 import b64encode
 from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime
-from pymisp import MISPAttribute, MISPObject
+from pymisp import MISPAttribute, MISPGalaxy, MISPGalaxyCluster, MISPObject
 from stix2.properties import (DictionaryProperty, IDProperty, ListProperty,
                               ReferenceProperty, StringProperty, TimestampProperty)
 from stix2.v21.bundle import Bundle
@@ -64,11 +64,30 @@ class CustomMispObject():
     pass
 
 
+@CustomObject(
+    'x-misp-galaxy-cluster',
+    [
+        ('id', IDProperty('x-misp-galaxy-cluster')),
+        ('labels', ListProperty(StringProperty, required=True)),
+        ('created', TimestampProperty(required=True, precision='millisecond')),
+        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.1')),
+        ('x_misp_name', StringProperty(required=True)),
+        ('x_misp_type', StringProperty(required=True)),
+        ('x_misp_value', StringProperty(required=True)),
+        ('x_misp_description', StringProperty(required=True)),
+        ('x_misp_meta', DictionaryProperty())
+    ]
+)
+class CustomGalaxyCluster:
+    pass
+
+
 class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def __init__(self, interoperability=False):
         super().__init__(interoperability)
         self._version = '2.1'
-        self._mapping = Stix21Mapping()
+        self._mapping = MISPtoSTIX21Mapping()
 
     def _parse_event_data(self):
         if self._misp_event.get('EventReport'):
@@ -97,6 +116,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 note_args['object_refs'] = list(object_refs) if object_refs else self._handle_empty_note_refs()
                 self._append_SDO(Note(**note_args))
         else:
+            self._id_parsing_function = {
+                'attribute': '_define_stix_object_id',
+                'object': '_define_stix_object_id'
+            }
             self._handle_attributes_and_objects()
 
     def _define_stix_object_id_from_attribute(self, feature: str, attribute: Union[MISPAttribute, dict]) -> str:
@@ -646,7 +669,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         objects.insert(0, self._create_file_object(args))
 
     def _handle_patterning_object_indicator(self, misp_object: Union[MISPObject, dict], indicator_args: dict):
-        indicator_id = getattr(self, self._id_parsing_function['object'])('indicator', misp_object)
+        indicator_id = getattr(self, self._id_parsing_function['object'])(
+            'indicator', misp_object
+        )
         indicator_args.update(
             {
                 'id': indicator_id,
@@ -676,19 +701,25 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_account_object_observable(self, misp_object: Union[MISPObject, dict], account_type: str):
         account_args = self._parse_account_args(misp_object['Attribute'], account_type)
-        account_args['id'] = getattr(self, self._id_parsing_function['object'])('user-account', misp_object)
+        account_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'user-account', misp_object
+        )
         account_object = UserAccount(**account_args)
         self._handle_object_observable(misp_object, [account_object])
 
     def _parse_account_object_with_attachment_observable(self, misp_object: Union[MISPObject, dict], account_type: str):
         account_args = self._parse_account_with_attachment_args(misp_object['Attribute'], account_type)
-        account_args['id'] = getattr(self, self._id_parsing_function['object'])('user-account', misp_object)
+        account_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'user-account', misp_object
+        )
         account_object = UserAccount(**account_args)
         self._handle_object_observable(misp_object, [account_object])
 
     def _parse_android_app_object_observable(self, misp_object: Union[MISPObject, dict]):
         software_args = self._parse_android_app_args(misp_object['Attribute'])
-        software_args['id'] = getattr(self, self._id_parsing_function['object'])('software', misp_object)
+        software_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'software', misp_object
+        )
         software_object = Software(**software_args)
         self._handle_object_observable(misp_object, [software_object])
 
@@ -738,26 +769,31 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_asn_object_observable(self, misp_object: Union[MISPObject, dict]):
         as_args = self._parse_AS_args(misp_object['Attribute'])
-        as_args['id'] = getattr(self, self._id_parsing_function['object'])('autonomous-system', misp_object)
+        as_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'autonomous-system', misp_object
+        )
         AS_object = AutonomousSystem(**as_args)
         self._handle_object_observable(misp_object, [AS_object])
 
     def _parse_cpe_asset_object_observable(self, misp_object: Union[MISPObject, dict]):
         software_args = self._parse_cpe_asset_args(misp_object['Attribute'])
-        software_args['id'] = getattr(self, self._id_parsing_function['object'])('software', misp_object)
+        software_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'software', misp_object
+        )
         software_object = Software(**software_args)
         self._handle_object_observable(misp_object, [software_object])
 
     def _parse_credential_object_observable(self, misp_object: Union[MISPObject, dict]):
         credential_args = self._parse_credential_args(misp_object['Attribute'])
-        credential_args['id'] = getattr(self, self._id_parsing_function['object'])('user-account', misp_object)
+        credential_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'user-account', misp_object
+        )
         user_object = UserAccount(**credential_args)
         self._handle_object_observable(misp_object, [user_object])
 
     def _parse_directory_ref(self, file_args: dict, objects: list, value: str, uuid: str):
         directory_id = getattr(self, self._id_parsing_function['attribute'])(
-            'directory',
-            {'uuid': uuid}
+            'directory', {'uuid': uuid}
         )
         directory = Directory(id=directory_id, path=value)
         objects.append(directory)
@@ -772,7 +808,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         observable_objects, resolves_to_refs = self._parse_domainip_ip_attributes(attributes)
         domain_args = {
             'resolves_to_refs': resolves_to_refs,
-            'id': getattr(self, self._id_parsing_function['object'])('domain-name', misp_object)
+            'id': getattr(self, self._id_parsing_function['object'])(
+                'domain-name', misp_object
+            )
         }
         domain_args.update(self._parse_domain_args(attributes))
         observable_objects.insert(0, DomainName(**domain_args))
@@ -883,7 +921,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             if attributes.get('from'):
                 attributes['from'] = [value[0] for value in attributes.pop('from')]
             email_message_args.update(self._parse_email_args(attributes))
-        email_message_args['id'] = getattr(self, self._id_parsing_function['object'])('email-message', misp_object)
+        email_message_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'email-message', misp_object
+        )
         objects.insert(0, EmailMessage(**email_message_args))
         self._handle_object_observable(misp_object, objects)
 
@@ -952,11 +992,15 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     }
                 )
             )
-        file_args['id'] = getattr(self, self._id_parsing_function['object'])('file', misp_object)
+        file_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'file', misp_object
+        )
         return file_args, objects
 
     def _parse_geolocation_object(self, misp_object: Union[MISPObject, dict]):
-        location_id = getattr(self, self._id_parsing_function['object'])('location', misp_object)
+        location_id = getattr(self, self._id_parsing_function['object'])(
+            'location', misp_object
+        )
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         location_args = {
             'id': location_id,
@@ -986,7 +1030,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 location_args[feature] = attributes.pop(key)
         if attributes:
             location_args.update(self._handle_observable_properties(attributes))
-        self._append_SDO(Location(**location_args))
+        self._append_SDO(self._create_location(location_args))
 
     def _parse_http_request_object_observable(self, misp_object: Union[MISPObject, dict]):
         attributes = self._extract_object_attributes_with_multiple_and_uuid(
@@ -996,8 +1040,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         network_traffic_args = {
             'id': getattr(self, self._id_parsing_function['object'])(
-                'network-traffic',
-                misp_object
+                'network-traffic', misp_object
             )
         }
         objects = []
@@ -1040,7 +1083,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             with_data=self._mapping.image_data_fields
         )
         artifact_args = self._parse_image_args(attributes)
-        file_args = {'id': getattr(self, self._id_parsing_function['object'])('file', misp_object)}
+        file_args = {
+            'id': getattr(self, self._id_parsing_function['object'])(
+                'file', misp_object
+            )
+        }
         if attributes.get('filename'):
             file_args['name'] = self._select_single_feature(attributes, 'filename')
         if attributes:
@@ -1064,8 +1111,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         protocols = set()
         network_traffic_args = {
             'id': getattr(self, self._id_parsing_function['object'])(
-                'network-traffic',
-                misp_object
+                'network-traffic', misp_object
             )
         }
         objects = []
@@ -1153,7 +1199,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
 
     def _parse_mutex_object_observable(self, misp_object: Union[MISPObject, dict]):
         mutex_args = self._parse_mutex_args(misp_object['Attribute'])
-        mutex_args['id'] = getattr(self, self._id_parsing_function['object'])('mutex', misp_object)
+        mutex_args['id'] = getattr(self, self._id_parsing_function['object'])(
+            'mutex', misp_object
+        )
         self._handle_object_observable(misp_object, [Mutex(**mutex_args)])
 
     def _parse_netflow_object_observable(self, misp_object: Union[MISPObject, dict]):
@@ -1163,8 +1211,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         )
         network_traffic_args = {
             'id': getattr(self, self._id_parsing_function['object'])(
-                'network-traffic',
-                misp_object
+                'network-traffic', misp_object
             )
         }
         objects = []
@@ -1208,8 +1255,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if attributes:
             network_traffic_args.update(self._parse_network_connection_args(attributes))
         network_traffic_args['id'] = getattr(self, self._id_parsing_function['object'])(
-            'network-traffic',
-            misp_object
+            'network-traffic', misp_object
         )
         objects.insert(0, NetworkTraffic(**network_traffic_args))
         self._handle_object_observable(misp_object, objects)
@@ -1249,8 +1295,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             if attributes:
                 network_traffic_args.update(self._parse_network_socket_args(attributes))
             network_traffic_args['id'] = getattr(self, self._id_parsing_function['object'])(
-                'network-traffic',
-                misp_object
+                'network-traffic', misp_object
             )
             objects.insert(0, NetworkTraffic(**network_traffic_args))
             self._handle_object_observable(misp_object, objects)
@@ -1299,8 +1344,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 process_args['image_ref'] = image_uuid
             process_args.update(self._parse_process_args(attributes, 'features'))
             process_args['id'] = getattr(self, self._id_parsing_function['object'])(
-                'process',
-                misp_object
+                'process', misp_object
             )
             objects.insert(0, Process(**process_args))
             self._handle_object_observable(misp_object, objects)
@@ -1308,8 +1352,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_registry_key_object_observable(self, misp_object: Union[MISPObject, dict]):
         registry_key_args = self._parse_registry_key_args(misp_object['Attribute'])
         registry_key_args['id'] = getattr(self, self._id_parsing_function['object'])(
-            'windows-registry-key',
-            misp_object
+            'windows-registry-key', misp_object
         )
         registry_key = WindowsRegistryKey(**registry_key_args)
         self._handle_object_observable(misp_object, [registry_key])
@@ -1393,8 +1436,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_user_account_object_observable(self, misp_object: Union[MISPObject, dict]):
         user_account_args = self._parse_user_account_args(misp_object['Attribute'])
         user_account_args['id'] = getattr(self, self._id_parsing_function['object'])(
-            'user-account',
-            misp_object
+            'user-account', misp_object
         )
         user_account = UserAccount(**user_account_args)
         self._handle_object_observable(misp_object, [user_account])
@@ -1402,8 +1444,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _parse_x509_object_observable(self, misp_object: Union[MISPObject, dict]):
         x509_args = self._parse_x509_args(misp_object)
         x509_args['id'] = getattr(self, self._id_parsing_function['object'])(
-            'x509-certificate',
-            misp_object
+            'x509-certificate', misp_object
         )
         x509_certificate = X509Certificate(**x509_args)
         self._handle_object_observable(misp_object, [x509_certificate])
@@ -1423,6 +1464,104 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_patterning_object_indicator(misp_object, indicator_args)
 
     ################################################################################
+    #                          GALAXIES PARSING FUNCTIONS                          #
+    ################################################################################
+
+    def _create_region_galaxy_args(self, cluster: Union[MISPGalaxyCluster, dict],
+                                    description: str, name: str,
+                                    timestamp: datetime) -> dict:
+        region_value = cluster['value'].split(' - ')[1]
+        location_args = {
+            'id': f"location--{cluster['uuid']}",
+            'type': 'location',
+            'name': region_value,
+            'region': self._parse_region_value(region_value),
+            'description': f"{description} | {cluster['description']}",
+            'labels': self._create_galaxy_labels(name, cluster),
+            'interoperability': True
+        }
+        if timestamp is None:
+            if not cluster.get('timestamp'):
+                return location_args
+            timestamp = self._datetime_from_timestamp(cluster['timestamp'])
+        location_args.update(
+            {
+                'created': timestamp,
+                'modified': timestamp
+            }
+        )
+        return location_args
+
+    def _parse_country_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+                              timestamp: Union[datetime, None]) -> list:
+        object_refs = []
+        ids = {}
+        for cluster in galaxy['GalaxyCluster']:
+            if self._is_galaxy_parsed(object_refs, cluster):
+                continue
+            location_id = f"location--{cluster['uuid']}"
+            location_args = self._create_galaxy_args(
+                cluster, galaxy['description'], galaxy['name'], location_id,
+                timestamp
+            )
+            location_args['country'] = cluster['meta']['ISO']
+            location_args.update(
+                self._parse_meta_fields(cluster['meta'], 'location')
+            )
+            location = self._create_location(location_args)
+            self._append_SDO_without_refs(location)
+            object_refs.append(location_id)
+            ids[cluster['uuid']] = location_id
+        self.populate_unique_ids(ids)
+        return object_refs
+
+    def _parse_location_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+                                         object_id: str, timestamp: datetime):
+        object_refs = self._parse_location_galaxy(galaxy, timestamp)
+        self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
+
+    def _parse_location_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+        object_refs = self._parse_location_galaxy(
+            galaxy, self._datetime_from_timestamp(self._misp_event['timestamp'])
+        )
+        self._handle_object_refs(object_refs)
+
+    def _parse_location_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+                               timestamp: Optional[datetime] = None) -> list:
+        if galaxy['type'] == 'country':
+            return self._parse_country_galaxy(galaxy, timestamp)
+        return self._parse_region_galaxy(galaxy, timestamp)
+
+    def _parse_location_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+        object_refs = self._parse_location_galaxy(galaxy)
+        self._handle_object_refs(object_refs)
+
+    def _parse_region_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+                             timestamp: Union[datetime, None]) -> list:
+        object_refs = []
+        ids = {}
+        for cluster in galaxy['GalaxyCluster']:
+            if self._is_galaxy_parsed(object_refs, cluster):
+                continue
+            location_args = self._create_region_galaxy_args(
+                cluster, galaxy['description'], galaxy['name'], timestamp
+            )
+            location_args.update(
+                self._parse_meta_fields(cluster['meta'], 'location')
+            )
+            location = self._create_location(location_args)
+            self._append_SDO_without_refs(location)
+            object_refs.append(location.id)
+            ids[cluster['uuid']] = location.id
+        self.populate_unique_ids(ids)
+        return object_refs
+
+    def _parse_region_value(self, region_value: str) -> str:
+        if region_value in self._mapping.regions_mapping:
+            return self._mapping.regions_mapping[region_value]
+        return region_value.lower().replace(' ', '-')
+
+    ################################################################################
     #                    STIX OBJECTS CREATION HELPER FUNCTIONS                    #
     ################################################################################
 
@@ -1439,18 +1578,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             args.update(self._mapping.malware_sample_additional_observable_values)
         return Artifact(**args)
 
-    def _create_attack_pattern_from_galaxy(self, args: dict, cluster: dict) -> AttackPattern:
-        args['kill_chain_phases'] = self._create_killchain(cluster['type'])
-        if cluster.get('meta', {}).get('synonyms'):
-            args['aliases'] = cluster['meta']['synonyms']
-        return AttackPattern(**args)
-
     @staticmethod
     def _create_attack_pattern(attack_pattern_args: dict) -> AttackPattern:
         return AttackPattern(**attack_pattern_args)
 
     def _create_bundle(self) -> Bundle:
-        return Bundle(self.stix_objects, allow_custom=True)
+        return Bundle(self.stix_objects, allow_custom=True, id=f"bundle--{self._misp_event.get('uuid')}" if hasattr(self, "_misp_event") else None )
 
     @staticmethod
     def _create_campaign(campaign_args: dict) -> Campaign:
@@ -1463,6 +1596,10 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_custom_attribute(self, custom_args: dict) -> CustomAttribute:
         self._clean_custom_properties(custom_args)
         return CustomAttribute(**custom_args)
+
+    @staticmethod
+    def _create_custom_galaxy(custom_args: dict) -> CustomGalaxyCluster:
+        return CustomGalaxyCluster(**custom_args)
 
     def _create_custom_object(self, custom_args: dict) -> CustomMispObject:
         self._clean_custom_properties(custom_args)
@@ -1519,16 +1656,12 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_intrusion_set(intrusion_set_args: dict) -> IntrusionSet:
         return IntrusionSet(**intrusion_set_args)
 
-    def _create_malware(self, malware_args: dict, cluster: Optional[dict] = None) -> Malware:
-        if cluster is not None:
-            malware_args.update(
-                {
-                    'kill_chain_phases': self._create_killchain(cluster['type']),
-                    'is_family': True
-                }
-            )
-            if cluster.get('meta', {}).get('synonyms'):
-                malware_args['aliases'] = cluster['meta']['synonyms']
+    @staticmethod
+    def _create_location(location_args: dict) -> Location:
+        return Location(**location_args)
+
+    @staticmethod
+    def _create_malware(malware_args: dict) -> Malware:
         if 'is_family' not in malware_args:
             malware_args['is_family'] = False
         return Malware(**malware_args)
@@ -1559,11 +1692,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_threat_actor(threat_actor_args: dict) -> ThreatActor:
         return ThreatActor(**threat_actor_args)
 
-    def _create_tool(self, tool_args: dict, cluster: Optional[dict] = None) -> Tool:
-        if cluster is not None:
-            tool_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
-            if cluster.get('meta', {}).get('synonyms'):
-                tool_args['aliases'] = cluster['meta']['synonyms']
+    @staticmethod
+    def _create_tool(tool_args: dict) -> Tool:
         return Tool(**tool_args)
 
     @staticmethod
@@ -1591,8 +1721,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             url, uuid = self._select_single_feature(attributes, 'url')
             return {
                 'id': getattr(self, self._id_parsing_function['attribute'])(
-                    'artifact',
-                    {'uuid': uuid}
+                    'artifact', {'uuid': uuid}
                 ),
                 'url': url
             }
@@ -1644,7 +1773,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
         artifact_args = {
-            'id': getattr(self, self._id_parsing_function['attribute'])('artifact', {'uuid': uuid}),
+            'id': getattr(self, self._id_parsing_function['attribute'])(
+                'artifact', {'uuid': uuid}
+            ),
             'payload_bin': data,
             'allow_custom': True
         }

@@ -113,7 +113,7 @@ SCHEMALOC_DICT = Mapping(
 )
 
 
-class Stix1Mapping:
+class MISPtoSTIX1Mapping:
     def __init__(self):
         self.__confidence_mapping = {
             'misp:confidence-level="completely-confident"': {

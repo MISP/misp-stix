@@ -2,8 +2,9 @@
 #!/usr/bin/env python3
 
 import traceback
-from .stix20_mapping import Stix20Mapping
-from .stix21_mapping import Stix21Mapping
+from .stix1_mapping import MISPtoSTIX1Mapping
+from .stix20_mapping import MISPtoSTIX20Mapping
+from .stix21_mapping import MISPtoSTIX21Mapping
 from collections import defaultdict
 from datetime import datetime
 from pymisp import MISPAttribute, MISPObject
@@ -20,7 +21,9 @@ class MISPtoSTIXParser:
         self.__errors: defaultdict = defaultdict(list)
         self.__warnings: defaultdict = defaultdict(set)
         self._identifier: str
-        self._mapping: Union[Stix20Mapping, Stix21Mapping]
+        self._mapping: Union[
+            MISPtoSTIX1Mapping, MISPtoSTIX20Mapping, MISPtoSTIX21Mapping
+        ]
         self._misp_event: dict
 
     @property
@@ -107,9 +110,6 @@ class MISPtoSTIXParser:
             if attribute.get('Galaxy'):
                 for galaxy in attribute['Galaxy']:
                     galaxy_type = galaxy['type']
-                    if galaxy_type not in self._mapping.galaxy_types_mapping:
-                        self.__warnings[self._identifier].add(f"{galaxy_type} galaxy in {misp_object['name']} object not mapped.")
-                        continue
                     if galaxy_type in galaxies:
                         self._merge_galaxy_clusters(galaxies[galaxy_type], galaxy)
                     else:
@@ -128,7 +128,7 @@ class MISPtoSTIXParser:
                     getattr(self, to_call.format('event'))(galaxy)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
-                    self.__warnings[self._identifier].add(f'{galaxy_type} galaxy in event not mapped.')
+                    self._handle_undefined_event_galaxy(galaxy)
             return tuple(tag['name'] for tag in self._misp_event.get('Tag', []) if tag['name'] not in tag_names)
         return tuple(tag['name'] for tag in self._misp_event.get('Tag', []))
 
@@ -139,7 +139,7 @@ class MISPtoSTIXParser:
                 to_call = self._mapping.galaxy_types_mapping[galaxy_type]
                 getattr(self, to_call.format('parent'))(galaxy)
             else:
-                self.__warnings[self._identifier].add(f'{galaxy_type} galaxy from event level not mapped.')
+                self._handle_undefined_parent_galaxy(galaxy)
 
     ################################################################################
     #                           COMMON UTILITY FUNCTIONS                           #
@@ -232,6 +232,10 @@ class MISPtoSTIXParser:
         message = f"Error with the {features}: Invalid {hash_type} value."
         self.__errors[self._identifier].append(message)
 
+    def _event_galaxy_not_mapped_warning(self, galaxy_type: str):
+        message = f'{galaxy_type} galaxy in event not mapped.'
+        self.__warnings[self._identifier].add(message)
+
     def _object_error(self, misp_object: dict, exception: Exception):
         features = f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
         tb = self._parse_traceback(exception)
@@ -243,8 +247,16 @@ class MISPtoSTIXParser:
         message = f"{galaxy_type} galaxy in {object_name} object not mapped."
         self.__warnings[self._identifier].add(message)
 
+    def _object_galaxy_incompatible_warning(self, galaxy_type: str, object_name: str):
+        message = f"{galaxy_type} galaxy not compatible with the {object_name}"
+        self.__warnings[self._identifier].add(f"{message} STIX 1 conver")
+
     def _object_not_mapped_warning(self, object_name: str):
         message = f"MISP Object name {object_name} not mapped."
+        self.__warnings[self._identifier].add(message)
+
+    def _parent_galaxy_not_mapping_warning(self, galaxy_type: str):
+        message = f'{galaxy_type} galaxy from event level not mapped.'
         self.__warnings[self._identifier].add(message)
 
     @staticmethod

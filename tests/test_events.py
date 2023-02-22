@@ -753,19 +753,49 @@ _TEST_EVENT_REPORT = {
 
 _TEST_ATTACK_PATTERN_GALAXY = {
     "uuid": "c4e851fa-775f-11e7-8163-b774922098cd",
-    "name": "Attack Pattern",
-    "type": "mitre-attack-pattern",
+    "name": "Pre Attack - Attack Pattern",
+    "type": "mitre-pre-attack-attack-pattern",
     "description": "ATT&CK Tactic",
     "GalaxyCluster": [
         {
-            "uuid": "dcaa092b-7de9-4a21-977f-7fcb77e89c48",
-            "type": "mitre-attack-pattern",
-            "value": "Access Token Manipulation - T1134",
-            "description": "Windows uses access tokens to determine the ownership of a running process.",
+            "uuid": "e042a41b-5ecf-4f3a-8f1f-1b528c534772",
+            "type": "mitre-pre-attack-attack-pattern",
+            "value": "Test malware in various execution environments - PRE-T1134",
+            "description": "Malware may perform differently on different platforms and different operating systems.",
             "meta": {
-                "external_id": [
-                    "CAPEC-633"
+                "external_id": "PRE-T1134",
+                "kill_chain": [
+                    "mitre-pre-attack:pre-attack:test-capabilities"
+                ],
+                "refs": [
+                    "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
                 ]
+            }
+        }
+    ]
+}
+
+_TEST_COUNTRY_GALAXY = {
+    "uuid": "84668357-5a8c-4bdd-9f0f-6b50b2aee4c1",
+    "type": "country",
+    "name": "Country",
+    "description": "Country meta information",
+    "GalaxyCluster": [
+        {
+            "uuid": "84668357-5a8c-4bdd-9f0f-6b50b2535745",
+            "type": "country",
+            "value": "sweden",
+            "description": "Sweden",
+            "meta": {
+                "Capital": "Stockholm",
+                "Continent": "EU",
+                "CurrencyCode": "SEK",
+                "CurrencyName": "Krona",
+                "ISO": "SE",
+                "ISO3": "SWE",
+                "Languages": "sv-SE,se,sma,fi-SE",
+                "Population": "9828655",
+                "tld": ".se"
             }
         }
     ]
@@ -781,7 +811,18 @@ _TEST_COURSE_OF_ACTION_GALAXY = {
             "uuid": "2497ac92-e751-4391-82c6-1b86e34d0294",
             "type": "mitre-course-of-action",
             "value": "Automated Exfiltration Mitigation - T1020",
-            "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network"
+            "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+            "meta": {
+                "external_id": "T1020",
+                "refs": [
+                    "http://technet.microsoft.com/en-us/magazine/2008.06.srp.aspx",
+                    "http://www.sans.org/reading-room/whitepapers/application/application-whitelisting-panacea-propaganda-33599",
+                    "https://apps.nsa.gov/iaarchive/library/ia-guidance/tech-briefs/application-whitelisting-using-microsoft-applocker.cfm",
+                    "https://attack.mitre.org/mitigations/T1020",
+                    "https://blogs.jpcert.or.jp/en/2016/01/windows-commands-abused-by-attackers.html",
+                    "https://technet.microsoft.com/en-us/library/ee791851.aspx"
+                ]
+            }
         }
     ]
 }
@@ -798,6 +839,11 @@ _TEST_INTRUSION_SET = {
             "value": "APT16 - G0023",
             "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
             "meta": {
+                "external_id": "G0023",
+                "refs": [
+                    "https://attack.mitre.org/groups/G0023",
+                    "https://www.fireeye.com/blog/threat-research/2015/12/the-eps-awakens-part-two.html"
+                ],
                 "synonyms": [
                     "APT16"
                 ]
@@ -818,10 +864,69 @@ _TEST_MALWARE_GALAXY = {
             "value": "BISCUIT - S0017",
             "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
             "meta": {
+                "external_id": "S0017",
+                "mitre_platforms": [
+                    "Windows"
+                ],
+                "refs": [
+                    "https://attack.mitre.org/software/S0017",
+                    "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report-appendix.zip",
+                    "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report.pdf"
+                ],
                 "synonyms": [
                     "BISCUIT"
                 ]
             }
+        }
+    ]
+}
+
+_TEST_REGION_GALAXY = {
+    "uuid": "d151a79a-e029-11e9-9409-f3e0cf3d93aa",
+    "name": "Regions UN M49",
+    "type": "region",
+    "description": "Regions based on UN M49",
+    "GalaxyCluster": [
+        {
+            "uuid": "f93cb275-0366-4ecc-abf0-a17928d1e177",
+            "type": "region",
+            "value": "154 - Northern Europe",
+            "description": "Nothern Europe",
+            "meta": {
+                "subregion": [
+                    "830 - Channel Islands",
+                    "248 - Åland Islands",
+                    "208 - Denmark",
+                    "233 - Estonia",
+                    "234 - Faroe Islands",
+                    "246 - Finland",
+                    "352 - Iceland",
+                    "372 - Ireland",
+                    "833 - Isle of Man",
+                    "428 - Latvia",
+                    "440 - Lithuania",
+                    "578 - Norway",
+                    "744 - Svalbard and Jan Mayen Islands",
+                    "752 - Sweden",
+                    "826 - United Kingdom of Great Britain and Northern Ireland"
+                ]
+            }
+        }
+    ]
+}
+
+_TEST_TEA_MATRIX_GALAXY = {
+    "uuid": "c5f2dfb4-21a1-42d8-a452-1d3c36a204ff",
+    "name": "Tea Matrix",
+    "type": "tea-matrix",
+    "description": "Tea Matrix",
+    "GalaxyCluster": [
+        {
+            "uuid": "24430dc6-9c27-4b3c-a5e7-6dda478fffa0",
+            "type": "tea-matrix",
+            "value": "Milk in tea",
+            "description": "Milk in tea",
+            "relationship_type": "ennemy-of"
         }
     ]
 }
@@ -861,7 +966,19 @@ _TEST_TOOL_GALAXY = {
             "value": "cmd - S0106",
             "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
             "meta": {
+                "external_id": "S0106",
+                "mitre_platforms": [
+                    "Windows"
+                ],
+                "refs": [
+                    "https://attack.mitre.org/software/S0106",
+                    "https://technet.microsoft.com/en-us/library/bb490880.aspx",
+                    "https://technet.microsoft.com/en-us/library/bb490886.aspx",
+                    "https://technet.microsoft.com/en-us/library/cc755121.aspx",
+                    "https://technet.microsoft.com/en-us/library/cc771049.aspx"
+                ],
                 "synonyms": [
+                    "cmd",
                     "cmd.exe"
                 ]
             }
@@ -2940,7 +3057,7 @@ def get_event_with_tags():
         {"name": "tlp:white"},
         {"name": 'misp:tool="misp2stix"'},
         {"name": 'misp-galaxy:mitre-attack-pattern="Code Signing - T1116"'},
-        {"name": 'misp-galaxy:mitre-attack-pattern="Access Token Manipulation - T1134"'}
+        {"name": 'misp-galaxy:mitre-pre-attack-attack-pattern="Test malware in various execution environments - PRE-T1134"'}
     ]
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_ATTACK_PATTERN_GALAXY)
@@ -2977,10 +3094,27 @@ def get_event_with_course_of_action_galaxy():
     return event
 
 
+def get_event_with_custom_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_TEA_MATRIX_GALAXY)
+    ]
+    return event
+
+
 def get_event_with_intrusion_set_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_INTRUSION_SET)
+    ]
+    return event
+
+
+def get_event_with_location_galaxies():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_COUNTRY_GALAXY),
+        deepcopy(_TEST_REGION_GALAXY)
     ]
     return event
 
@@ -3142,10 +3276,12 @@ def get_indicator_attribute_with_galaxy():
 
 def get_embedded_indicator_attribute_galaxy():
     attribute = get_indicator_attribute_with_galaxy()
+    attribute['Galaxy'].append(deepcopy(_TEST_TEA_MATRIX_GALAXY))
     event = deepcopy(_BASE_EVENT)
     event['Event']['Attribute'] = [attribute]
     event['Event']['Galaxy'] = [
-        deepcopy(_TEST_MALWARE_GALAXY)
+        deepcopy(_TEST_MALWARE_GALAXY),
+        deepcopy(_TEST_TEA_MATRIX_GALAXY)
     ]
     return event
 
@@ -3966,10 +4102,12 @@ def get_embedded_indicator_object_galaxy():
     misp_object['Attribute'][1]['Galaxy'] = [
         deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
     ]
+    misp_object['Attribute'][2]['Galaxy'] = [deepcopy(_TEST_TEA_MATRIX_GALAXY)]
     event['Event']['Object'] = [misp_object]
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_TOOL_GALAXY),
-        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY)
+        deepcopy(_TEST_COURSE_OF_ACTION_GALAXY),
+        deepcopy(_TEST_TEA_MATRIX_GALAXY)
     ]
     return event
 

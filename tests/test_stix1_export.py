@@ -910,7 +910,7 @@ class TestStix1Export(TestSTIX):
 
     def _test_embedded_indicator_attribute_galaxy(self, event):
         attribute = event['Attribute'][0]
-        ap_galaxy, coa_galaxy = attribute['Galaxy']
+        ap_galaxy, coa_galaxy, _ = attribute['Galaxy']
         ap_cluster = ap_galaxy['GalaxyCluster'][0]
         coa_cluster = coa_galaxy['GalaxyCluster'][0]
         galaxy = event['Galaxy'][0]
@@ -1497,7 +1497,7 @@ class TestStix1Export(TestSTIX):
         malware_cluster = malware_galaxy['GalaxyCluster'][0]
         coa_attribute_galaxy = misp_object['Attribute'][1]['Galaxy'][0]
         coa_attribute_cluster = coa_attribute_galaxy['GalaxyCluster'][0]
-        tool_galaxy, coa_event_galaxy = event['Galaxy']
+        tool_galaxy, coa_event_galaxy, _ = event['Galaxy']
         tool_cluster = tool_galaxy['GalaxyCluster'][0]
         coa_event_cluster = coa_event_galaxy['GalaxyCluster'][0]
         self.parser.parse_misp_event(event)

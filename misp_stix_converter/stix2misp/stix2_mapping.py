@@ -5,7 +5,7 @@ from .. import Mapping
 from typing import Optional
 
 
-class STIX2Mapping:
+class STIX2toMISPMapping:
     def __init__(self):
         self.__bundle_to_misp_mapping = Mapping(
             **{
@@ -65,6 +65,7 @@ class STIX2Mapping:
             'tool': '_load_tool',
             'vulnerability': '_load_vulnerability',
             'x-misp-attribute': '_load_custom_attribute',
+            'x-misp-galaxy-cluster': '_load_custom_galaxy_cluster',
             'x-misp-object': '_load_custom_object',
             'x-misp-opinion': '_load_custom_opinion'
         }
@@ -95,6 +96,7 @@ class STIX2Mapping:
                 'tool': '_parse_tool',
                 'vulnerability': '_parse_vulnerability',
                 'x-misp-attribute': '_parse_custom_attribute',
+                'x-misp-galaxy-cluster': '_parse_custom_galaxy_cluster',
                 'x-misp-object': '_parse_custom_object'
             }
         )
@@ -108,7 +110,7 @@ class STIX2Mapping:
 
         # SINGLE ATTRIBUTES MAPPING
         self.__accuracy_radius_attribute = Mapping(
-            **{'type': 'float', 'object_relation': 'accuracy_radius'}
+            **{'type': 'float', 'object_relation': 'accuracy-radius'}
         )
         self.__args_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'args'}
@@ -265,6 +267,107 @@ class STIX2Mapping:
             **{'type': 'text', 'object_relation': 'yara-rule-name'}
         )
 
+        # MISP GALAXIES MAPPING
+        self.__attack_pattern_meta_mapping = Mapping(
+            aliases = 'synonyms'
+        )
+        self.__campaign_meta_mapping = Mapping(
+            aliases = 'synonyms',
+            objective = 'objective'
+        )
+        self.__dash_meta_fields= (
+            'x_misp_attribution_confidence',
+            'x_misp_calling_code',
+            'x_misp_cfr_suspected_state_sponsor',
+            'x_misp_cfr_suspected_victims',
+            'x_misp_cfr_target_category',
+            'x_misp_cfr_type_of_incident',
+            'x_misp_colt_average',
+            'x_misp_colt_median',
+            'x_misp_iso_code',
+            'x_misp_member_of',
+            'x_misp_mode_of_operation',
+            'x_misp_official_languages',
+            'x_misp_official_refs',
+            'x_misp_payment_method',
+            'x_misp_ransomenotes_refs',
+            'x_misp_ransomnotes_filenames',
+            'x_misp_ransomnotes_refs',
+            'x_misp_spoken_language',
+            'x_misp_suspected_victims',
+            'x_misp_target_category',
+            'x_misp_territory_type',
+            'x_misp_threat_actor_classification',
+            'x_misp_top_level_domain'
+        )
+        self.__intrusion_set_meta_mapping = Mapping(
+            aliases = 'synonyms',
+            goals = 'goals',
+            primary_motivation = 'primary_motivation',
+            resource_level = 'resource_level',
+            secondary_motivations = 'secondary_motivations'
+        )
+        self.__malware_meta_mapping = Mapping(
+            aliases = 'synonyms',
+            architecture_execution_envs = 'architecture_execution_envs',
+            capabilities = 'capabilities',
+            implementation_languages = 'implementation_languages',
+            is_family = 'is_family',
+            malware_types = 'malware_types',
+            operating_system_refs = 'operating_system_refs',
+            sample_refs = 'sample_refs'
+        )
+        self.__regions_mapping = Mapping(
+            **{
+                'world': '001 - World',
+                'africa': '002 - Africa',
+                'eastern-africa': '014 - Eastern Africa',
+                'middle-africa': '017 - Middle Africa',
+                'northern-africa': '015 - Northern Africa',
+                'southern-africa': '018 - Southern Africa',
+                'western-africa': '011 - Western Africa',
+                'americas': '019 - Americas',
+                'caribbean': '029 - Caribbean',
+                'central-america': '013 - Central America',
+                'latin-america-caribbean': '419 - Latin America and the Caribbean',
+                'northern-america': '021 - Northern America',
+                'south-america': '005 - South America',
+                'asia': '142 - Asia',
+                'central-asia': '143 - Central Asia',
+                'eastern-asia': '030 - Eastern Asia',
+                'southern-asia': '034 - Southern Asia',
+                'south-eastern-asia': '035 - South-eastern Asia',
+                'western-asia': '145 - Western Asia',
+                'europe': '150 - Europe',
+                'eastern-europe': '151 - Eastern Europe',
+                'northern-europe': '154 - Northern Europe',
+                'southern-europe': '039 - Southern Europe',
+                'western-europe': '155 - Western Europe',
+                'oceania': '009 - Oceania',
+                'antarctica': '010 - Antarctica',
+                'australia-new-zealand': '053 - Australia and New Zealand',
+                'melanesia': '054 - Melanesia',
+                'micronesia': '057 - Micronesia',
+                'polynesia': '061 - Polynesia'
+            }
+        )
+        self.__threat_actor_meta_mapping = Mapping(
+            aliases = 'synonyms',
+            goals = 'goals',
+            personal_motivations = 'personal_motivations',
+            primary_motivation = 'primary_motivation',
+            resource_level = 'resource_level',
+            roles = 'roles',
+            secondary_motivations = 'secondary_motivations',
+            sophistication = 'sophistication',
+            threat_actor_types = 'threat_actor_types'
+        )
+        self.__tool_meta_mapping = Mapping(
+            aliases = 'synonyms',
+            tool_types = 'tool_types',
+            tool_version = 'tool_version'
+        )
+
         # MISP OBJECTS MAPPING
         self.__connection_protocols = {
             "IP": "3", "ICMP": "3", "ARP": "3",
@@ -303,12 +406,20 @@ class STIX2Mapping:
         return self.__attack_pattern_id_attribute
 
     @property
+    def attack_pattern_meta_mapping(self) -> dict:
+        return self.__attack_pattern_meta_mapping
+
+    @property
     def attack_pattern_references_attribute(self) -> dict:
         return self.__attack_pattern_references_attribute
 
     @property
     def bundle_to_misp_mapping(self) -> dict:
         return self.__bundle_to_misp_mapping
+
+    @property
+    def campaign_meta_mapping(self) -> dict:
+        return self.__campaign_meta_mapping
 
     @property
     def command_line_attribute(self) -> dict:
@@ -339,8 +450,8 @@ class STIX2Mapping:
         return self.__current_directory_attribute
 
     @property
-    def description_attribute(self) -> dict:
-        return self.__description_attribute
+    def dash_meta_fields(self) -> tuple:
+        return self.__dash_meta_fields
 
     @property
     def data_attribute(self) -> dict:
@@ -349,6 +460,10 @@ class STIX2Mapping:
     @property
     def data_type_attribute(self) -> dict:
         return self.__data_type_attribute
+
+    @property
+    def description_attribute(self) -> dict:
+        return self.__description_attribute
 
     @property
     def domain_attribute(self) -> dict:
@@ -379,6 +494,10 @@ class STIX2Mapping:
         return self.__hidden_attribute
 
     @property
+    def intrusion_set_meta_mapping(self) -> dict:
+        return self.__intrusion_set_meta_mapping
+
+    @property
     def ip_attribute(self) -> dict:
         return self.__ip_attribute
 
@@ -397,6 +516,10 @@ class STIX2Mapping:
     @property
     def location_object_mapping(self) -> dict:
         return self.__location_object_mapping
+
+    @property
+    def malware_meta_mapping(self) -> dict:
+        return self.__malware_meta_mapping
 
     @property
     def message_id_attribute(self) -> dict:
@@ -445,6 +568,10 @@ class STIX2Mapping:
     @property
     def referer_attribute(self) -> dict:
         return self.__referer_attribute
+
+    @property
+    def regions_mapping(self) -> dict:
+        return self.__regions_mapping
 
     @property
     def regkey_attribute(self) -> dict:
@@ -511,8 +638,16 @@ class STIX2Mapping:
         return self.__suricata_reference_attribute
 
     @property
+    def threat_actor_meta_mapping(self) -> dict:
+        return self.__threat_actor_meta_mapping
+
+    @property
     def timeline_mapping(self) -> dict:
         return self.__timeline_mapping
+
+    @property
+    def tool_meta_mapping(self) -> dict:
+        return self.__tool_meta_mapping
 
     @property
     def uri_attribute(self) -> dict:

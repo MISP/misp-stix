@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from .misp_to_stix2 import InvalidHashValueError, MISPtoSTIX2Parser
-from .stix20_mapping import Stix20Mapping
+from .stix20_mapping import MISPtoSTIX20Mapping
 from base64 import b64encode
 from collections import defaultdict
 from copy import deepcopy
@@ -63,6 +63,25 @@ class CustomMispObject:
 
 
 @CustomObject(
+    'x-misp-galaxy-cluster',
+    [
+        ('id', IDProperty('x-misp-galaxy-cluster')),
+        ('labels', ListProperty(StringProperty, required=True)),
+        ('created', TimestampProperty(required=True, precision='millisecond')),
+        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),
+        ('x_misp_name', StringProperty(required=True)),
+        ('x_misp_type', StringProperty(required=True)),
+        ('x_misp_value', StringProperty(required=True)),
+        ('x_misp_description', StringProperty(required=True)),
+        ('x_misp_meta', DictionaryProperty())
+    ]
+)
+class CustomGalaxyCluster:
+    pass
+
+
+@CustomObject(
     'x-misp-event-note',
     [
         ('id', IDProperty('x-misp-event-note')),
@@ -100,7 +119,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def __init__(self, interoperability=False):
         super().__init__(interoperability)
         self._version = '2.0'
-        self._mapping = Stix20Mapping()
+        self._mapping = MISPtoSTIX20Mapping()
 
     def _parse_event_data(self):
         if self._misp_event.get('Attribute'):
@@ -1095,16 +1114,12 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             args.update(self._mapping.malware_sample_additional_observable_values)
         return Artifact(**args)
 
-    def _create_attack_pattern_from_galaxy(self, args: dict, cluster: dict) -> AttackPattern:
-        args['kill_chain_phases'] = self._create_killchain(cluster['type'])
-        return AttackPattern(**args)
-
     @staticmethod
     def _create_attack_pattern(attack_pattern_args: dict) -> AttackPattern:
         return AttackPattern(**attack_pattern_args)
 
     def _create_bundle(self) -> Bundle:
-        return Bundle(self.stix_objects, allow_custom=True)
+        return Bundle(self.stix_objects, allow_custom=True, id=f"bundle--{self._misp_event.get('uuid')}" if hasattr(self, "_misp_event") else None )
 
     @staticmethod
     def _create_campaign(campaign_args: dict) -> Campaign:
@@ -1117,6 +1132,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_custom_attribute(self, custom_args: dict) -> CustomAttribute:
         self._clean_custom_properties(custom_args)
         return CustomAttribute(**custom_args)
+
+    def _create_custom_galaxy(self, custom_args: dict) -> CustomGalaxyCluster:
+        return CustomGalaxyCluster(**custom_args)
 
     def _create_custom_object(self, custom_args: dict) -> CustomMispObject:
         self._clean_custom_properties(custom_args)
@@ -1154,7 +1172,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             'identity_class': 'organization',
             'interoperability': True
         }
-        return Identity(**identity_args)
+        return self._create_identity(identity_args)
 
     @staticmethod
     def _create_indicator(indicator_args: dict) -> Indicator:
@@ -1164,9 +1182,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_intrusion_set(intrusion_set_args: dict) -> IntrusionSet:
         return IntrusionSet(**intrusion_set_args)
 
-    def _create_malware(self, malware_args: dict, cluster: Optional[dict] = None) -> Malware:
-        if cluster is not None:
-            malware_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
+    @staticmethod
+    def _create_malware(malware_args: dict) -> Malware:
         return Malware(**malware_args)
 
     def _create_observed_data(self, args: dict, observable: dict):
@@ -1193,9 +1210,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _create_threat_actor(threat_actor_args: dict) -> ThreatActor:
         return ThreatActor(**threat_actor_args)
 
-    def _create_tool(self, tool_args: dict, cluster: Optional[dict] = None) -> Tool:
-        if cluster is not None:
-            tool_args['kill_chain_phases'] = self._create_killchain(cluster['type'])
+    @staticmethod
+    def _create_tool(tool_args: dict) -> Tool:
         return Tool(**tool_args)
 
     @staticmethod

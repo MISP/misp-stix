@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from .. import Mapping
-from .stix2_mapping import STIX2Mapping
+from .stix2_mapping import STIX2toMISPMapping
 
 
-class InternalSTIX2Mapping(STIX2Mapping):
+class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     def __init__(self):
         super().__init__()
         first_seen_attribute = {'type': 'datetime', 'object_relation': 'first-seen'}
@@ -286,6 +286,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'employee': '_parse_employee_object',
             'facebook-account': '_object_from_facebook_account',
             'file': '_object_from_file',
+            'geolocation': '_parse_location_object',
             'github-user': '_object_from_github_user',
             'gitlab-user': '_object_from_gitlab_user',
             'http-request': '_object_from_http_request',
@@ -884,7 +885,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         self.__network_connection_object_mapping = Mapping(
             dst_port = self.dst_port_attribute,
             src_port = src_port_attribute,
-            start = self.first_packet_seen_attribute,
+            start = first_packet_seen_attribute,
             x_misp_community_id = community_id_attribute,
             x_misp_hostname_dst = hostname_dst_attribute,
             x_misp_hostname_src = hostname_src_attribute

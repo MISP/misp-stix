@@ -92,6 +92,15 @@ class TestSTIX2Export(TestSTIX):
         for misp_object in event['Object']:
             misp_object['Attribute'][0]['to_ids'] = True
 
+    def _check_attack_pattern_meta_fields(self, stix_object, meta):
+        self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
+        for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
+            self.assertEqual(external_ref.url, ref)
+        for killchain_phase, killchain in zip(stix_object.kill_chain_phases, meta['kill_chain']):
+            killchain_name, *_, phase_name = killchain.split(':')
+            self.assertEqual(killchain_phase.kill_chain_name, killchain_name)
+            self.assertEqual(killchain_phase.phase_name, phase_name)
+
     def _check_attack_pattern_object(self, attack_pattern, misp_object, identity_id):
         self.assertEqual(attack_pattern.type, 'attack-pattern')
         self.assertEqual(attack_pattern.created_by_ref, identity_id)
@@ -164,6 +173,11 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(vulnerability.created, timestamp)
         self.assertEqual(vulnerability.modified, timestamp)
 
+    def _check_course_of_action_meta_fields(self, stix_object, meta):
+        self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
+        for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
+            self.assertEqual(external_ref.url, ref)
+
     def _check_course_of_action_object(self, course_of_action, misp_object, identity_id):
         self.assertEqual(course_of_action.type, 'course-of-action')
         self.assertEqual(course_of_action.created_by_ref, identity_id)
@@ -183,6 +197,22 @@ class TestSTIX2Export(TestSTIX):
                 ),
                 attribute['value']
             )
+
+    def _check_custom_galaxy_features(self, stix_object, galaxy, timestamp):
+        cluster = galaxy['GalaxyCluster'][0]
+        self.assertEqual(stix_object.type, 'x-misp-galaxy-cluster')
+        self.assertEqual(stix_object.id, f"x-misp-galaxy-cluster--{cluster['uuid']}")
+        self.assertEqual(stix_object.created, timestamp)
+        self.assertEqual(stix_object.modified, timestamp)
+        self.assertEqual(stix_object.x_misp_name, galaxy['name'])
+        self.assertEqual(stix_object.x_misp_type, cluster['type'])
+        self.assertEqual(stix_object.x_misp_value, cluster['value'])
+        self.assertEqual(
+            stix_object.x_misp_description,
+            f"{galaxy['description']} | {cluster['description']}"
+        )
+        self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
+        self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
 
     def _check_email_address(self, address_object, address, display_name=None):
         self.assertEqual(address_object.type, 'email-addr')
@@ -217,18 +247,20 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(reference.source_name, source_name)
         self.assertEqual(reference.external_id, value)
 
-    def _check_galaxy_features(self, stix_object, galaxy, timestamp, killchain, synonyms):
+    def _check_galaxy_features(self, stix_object, galaxy, timestamp):
         cluster = galaxy['GalaxyCluster'][0]
+        self.assertEqual(stix_object.id, f"{stix_object.type}--{cluster['uuid']}")
         self.assertEqual(stix_object.created, timestamp)
         self.assertEqual(stix_object.modified, timestamp)
         self.assertEqual(stix_object.name, cluster['value'])
-        self.assertEqual(stix_object.description, f"{galaxy['description']} | {cluster['description']}")
+        self.assertEqual(
+            stix_object.description, f"{galaxy['description']} | {cluster['description']}"
+        )
         self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
         self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
-        if killchain:
-            self.assertEqual(stix_object.kill_chain_phases[0]['phase_name'], cluster['type'])
-        if synonyms:
-            self.assertEqual(stix_object.aliases[0], cluster['meta']['synonyms'][0])
+        getattr(self, f"_check_{stix_object.type.replace('-', '_')}_meta_fields")(
+            stix_object, cluster['meta']
+        )
 
     def _check_identity_features(self, identity, orgc, timestamp):
         identity_id = f"identity--{orgc['uuid']}"
@@ -260,6 +292,12 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(indicator.created, timestamp)
         self.assertEqual(indicator.modified, timestamp)
         self.assertEqual(indicator.valid_from, timestamp)
+
+    def _check_intrusion_set_meta_fields(self, stix_object, meta):
+        self.assertEqual(stix_object.aliases, meta['synonyms'])
+        self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
+        for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
+            self.assertEqual(external_ref.url, ref)
 
     def _check_killchain(self, killchain, category):
         self.assertEqual(killchain['kill_chain_name'], 'misp-category')
@@ -296,6 +334,16 @@ class TestSTIX2Export(TestSTIX):
         if not isinstance(data, str):
             data = b64encode(data.getvalue()).decode()
         self.assertEqual(legal_entity.x_misp_logo['data'], data)
+
+    def _check_malware_meta_fields(self, stix_object, meta):
+        if hasattr(stix_object, 'aliases'):
+            self.assertEqual(stix_object.aliases, meta['synonyms'])
+        else:
+            self.assertEqual(stix_object.x_misp_synonyms, meta['synonyms'])
+        self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
+        for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
+            self.assertEqual(external_ref.url, ref)
+        self.assertEqual(stix_object.x_misp_mitre_platforms, meta['mitre_platforms'])
 
     def _check_object_indicator_features(self, indicator, misp_object, identity_id, object_ref):
         self._check_indicator_features(indicator, identity_id, object_ref, misp_object['uuid'])
@@ -485,6 +533,22 @@ class TestSTIX2Export(TestSTIX):
         )
         self.assertEqual(stix_sighting.sighting_of_ref, object_id)
         self.assertEqual(stix_sighting.where_sighted_refs, [identity_id])
+
+    def _check_threat_actor_meta_fields(self, stix_object, meta):
+        self.assertEqual(stix_object.aliases, meta['synonyms'])
+
+    def _check_tool_meta_fields(self, stix_object, meta):
+        if hasattr(stix_object, 'aliases'):
+            self.assertEqual(stix_object.aliases, meta['synonyms'])
+        else:
+            self.assertEqual(stix_object.x_misp_synonyms, meta['synonyms'])
+        self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
+        for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
+            self.assertEqual(external_ref.url, ref)
+        self.assertEqual(stix_object.x_misp_mitre_platforms, meta['mitre_platforms'])
+
+    def _check_vulnerability_meta_fields(self, stix_object, meta):
+        self.assertEqual(stix_object.x_misp_aliases, meta['aliases'])
 
     @staticmethod
     def _datetime_from_timestamp(timestamp):

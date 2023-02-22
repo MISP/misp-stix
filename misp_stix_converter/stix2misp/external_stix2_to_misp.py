@@ -1,78 +1,51 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .exceptions import (InvalidSTIXPatternError, UnknownParsingFunctionError,
-    UnknownObservableMappingError, UnknownPatternMappingError, UnknownPatternTypeError)
-from .external_stix2_mapping import ExternalSTIX2Mapping
+from .exceptions import (
+    InvalidSTIXPatternError, UnknownParsingFunctionError,
+    UnknownObservableMappingError, UnknownPatternMappingError,
+    UnknownPatternTypeError)
+from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import _INDICATOR_TYPING
 from .stix2_pattern_parser import STIX2PatternParser
-from .stix2_to_misp import (STIX2toMISPParser, _ATTACK_PATTERN_TYPING,
-    _COURSE_OF_ACTION_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
-from collections import defaultdict
-from pymisp import MISPAttribute, MISPObject
-from stix2.v20.sdo import (AttackPattern as AttackPattern_v20,
-    CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
-    Indicator as Indicator_v20, ObservedData as ObservedData_v20,
-    Vulnerability as Vulnerability_v20)
-from stix2.v21.sdo import (AttackPattern as AttackPattern_v21,
-    CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21,
-    Indicator as Indicator_v21, Note, ObservedData as ObservedData_v21,
+from .stix2_to_misp import (
+    STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
+    _IDENTITY_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
+from pathlib import Path
+from pymisp import MISPAttribute, MISPGalaxy, MISPObject
+from stix2.v20.sdo import (
+    AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
+    ObservedData as ObservedData_v20, Vulnerability as Vulnerability_v20)
+from stix2.v21.sdo import (
+    AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
+    Indicator as Indicator_v21, Location, ObservedData as ObservedData_v21,
     Vulnerability as Vulnerability_v21)
 from stix2patterns.inspector import _PatternData as PatternData
 from typing import Optional, Union
 
+# Attack Pattern, Course of Action & Vulnerability objects are obviously not
+# Observable objects but they're parsed at some point the same way
 _OBSERVABLE_OBJECTS_TYPING = Union[
     AttackPattern_v20,
-    AttackPattern_v21,  # Attack Pattern,
-    CourseOfAction_v20, # Course of Action,
-    CourseOfAction_v21, # & Vulnerability objects are obviously not Observable objects
-    Vulnerability_v20,  # but they're parsed at some point the same wayObservable objects are
+    AttackPattern_v21,
+    CourseOfAction_v20,
+    CourseOfAction_v21,
+    Vulnerability_v20,
     Vulnerability_v21
 ]
 
 
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
-    def __init__(self, synonyms_path: Optional[str]=None):
-        super().__init__(synonyms_path)
-        self._mapping = ExternalSTIX2Mapping()
-
-    ################################################################################
-    #                        STIX OBJECTS LOADING FUNCTIONS                        #
-    ################################################################################
-
-    def _load_custom_object(self, custom_object: Union[CustomObject_v20, CustomObject_v21]):
-        data_to_load = self._build_data_to_load(custom_object)
-        try:
-            self._custom_object[custom_object.id] = data_to_load
-        except AttributeError:
-            self._custom_object = {custom_object.id: data_to_load}
-
-    def _load_indicator(self, indicator: _INDICATOR_TYPING):
-        data_to_load = self._build_data_to_load(indicator)
-        try:
-            self._indicator[indicator.id] = data_to_load
-        except AttributeError:
-            self._indicator = {indicator.id: data_to_load}
-
-    def _load_note(self, note: Note):
-        data_to_load = self._build_data_to_load(note)
-        try:
-            self._note[note.id] = data_to_load
-        except AttributeError:
-            self._note = {note.id: data_to_load}
-
-    def _load_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
-        data_to_load = self._build_data_to_load(observed_data)
-        try:
-            self._observed_data[observed_data.id] = data_to_load
-        except AttributeError:
-            self._observed_data = {observed_data.id: data_to_load}
+    def __init__(self, galaxies_as_tags: Optional[bool] = False):
+        super().__init__(galaxies_as_tags)
+        self._mapping = ExternalSTIX2toMISPMapping()
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 
-    def _handle_import_case(self, stix_object: _SDO_TYPING, attributes: list, name: str, force_object: Optional[tuple]=None):
+    def _handle_import_case(self, stix_object: _SDO_TYPING, attributes: list,
+                            name: str, force_object: Optional[tuple] = None):
         """
         After we extracted attributes from a STIX object (Indicator pattern,
         Observable object, Vulnerability fields, etc.), we want to know if it is
@@ -93,14 +66,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
             self._add_misp_object(
                 misp_object,
-                confidence = getattr(stix_object, 'confidence', None)
+                confidence=getattr(stix_object, 'confidence', None)
             )
         else:
             attribute = self._create_attribute_dict(stix_object)
             attribute.update(attributes[0])
             self._add_misp_attribute(
                 attribute,
-                confidence = getattr(stix_object, 'confidence', None)
+                confidence=getattr(stix_object, 'confidence', None)
             )
 
     def _handle_observable_mapping(self, observed_data: ObservedData_v21) -> str:
@@ -176,91 +149,51 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_attack_pattern(self, attack_pattern_ref: str):
         """
         AttackPattern object parsing function.
-        We check if the attack pattern name is a known Galaxy Cluster name and store
-        the associated tag names what will be used to populate the Galaxies lists
-        within the appropriate MISP data structure (attribute, event).
+        We check if the attack pattern already has been seen by looking at its
+        ID, otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param attack_pattern_ref: The AttackPattern id used to find the related
-            AttackPattern object to parse
+        :param attack_pattern_ref: The AttackPattern id
         """
-        attack_pattern = self._get_stix_object(attack_pattern_ref)
-        if attack_pattern.id in self._galaxies:
-            self._galaxies[attack_pattern.id]['used'][self.misp_event.uuid] = False
+        if attack_pattern_ref in self._clusters:
+            self._clusters[attack_pattern_ref]['used'][self.misp_event.uuid] = False
         else:
-            tag_names = self._check_existing_galaxy_name(attack_pattern.name)
-            if tag_names is not None:
-                self._galaxies[attack_pattern.id] = {
-                    'tag_names': tag_names,
-                    'used': {self.misp_event.uuid: False}
-                }
-            else:
-                self._parse_attack_pattern_object(attack_pattern)
-
-    def _parse_attack_pattern_object(self, attack_pattern: _ATTACK_PATTERN_TYPING):
-        """
-        AttackPattern object conversion as MISP object function.
-        We found no match with any Galaxy Cluster name, so we now parse this
-        AttackPattern object to generate an attack-pattern MISP object.
-
-        :param attack_pattern: The AttackPattern object to parse
-        """
-        attributes = self._get_attributes_from_observable(
-            attack_pattern,
-            'attack_pattern_object_mapping'
-        )
-        if hasattr(attack_pattern, 'external_references'):
-            references = defaultdict(set)
-            for reference in attack_pattern.external_references:
-                if hasattr(reference, 'url'):
-                    references['references'].add(reference.url)
-                if hasattr(reference, 'external_id'):
-                    external_id = reference.external_id
-                    references['id'].add(external_id.split('-')[1] if external_id.startswith('CAPEC-') else external_id)
-            if references:
-                for feature, values in references.items():
-                    for value in values:
-                        attribute = {'value': value}
-                        attribute.update(getattr(self._mapping, f'attack_pattern_{feature}_attribute'))
-                        attributes.append(attribute)
-        if attributes:
-            misp_object = self._create_misp_object('attack-pattern', attack_pattern)
-            for attribute in attributes:
-                misp_object.add_attribute(**attribute)
-            self._add_misp_object(
-                misp_object,
-                confidence = getattr(attack_pattern, 'confidence', None)
+            self._clusters[attack_pattern_ref] = self._parse_galaxy(
+                attack_pattern_ref
             )
+
+    def _parse_campaign(self, campaign_ref: str):
+        """
+        Campaign object parsing function.
+        We check if the campaign already has been seen by looking at its ID,
+        otherwise we convert it as a MISP Galaxy Cluster
+
+        :param capaign_ref: The Campaign id
+        """
+        if campaign_ref in self._clusters:
+            self._clusters[campaign_ref]['used'][self.misp_event.uuid] = False
         else:
-            self._galaxies[attack_pattern.id] = {
-                'tag_names': [f'misp-galaxy:attack-pattern="{attack_pattern.name}"'],
-                'used': {self.misp_event.uuid: False}
-            }
+            self._clusters[campaign_ref] = self._parse_galaxy(campaign_ref)
 
     def _parse_course_of_action(self, course_of_action_ref: str):
         """
         CourseOfAction object parsing function.
-        We check if the course of action name is a known Galaxy Cluster name and
-        store the associated tag names what will be used to populate the Galaxies
-        lists within the appropriate MISP data structure (attribute, event).
+        We check if the course of action already has been seen by looking at its
+        ID, otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param course_of_action_ref: The CourseOfAction id used to find the related
-            CourseOfAction object to parse
+        :param course_of_action_ref: The CourseOfAction id
         """
-        course_of_action = self._get_stix_object(course_of_action_ref)
-        if course_of_action.id in self._galaxies:
-            self._galaxies[course_of_action.id]['used'][self.misp_event.uuid] = False
+        if course_of_action_ref in self._clusters:
+            self._clusters[course_of_action_ref]['used'][self.misp_event.uuid] = False
         else:
-            tag_names = self._check_existing_galaxy_name(course_of_action.name)
-            if tag_names is not None:
-                self._galaxies[course_of_action.id] = {
-                    'tag_names': tag_names,
-                    'used': {self.misp_event.uuid: False}
-                }
-            else:
-                self._parse_course_of_action_object(course_of_action)
+            self._clusters[course_of_action_ref] = self._parse_galaxy(
+                course_of_action_ref
+            )
 
     def _parse_course_of_action_object(self, course_of_action: _COURSE_OF_ACTION_TYPING):
         """
+        # Not currently used, but if we can ever make use of the `action` field
+        # in the STIX 2 CourseOfAction object, we might use this function again
+
         CourseOfAction object conversion as MISP object function.
         We found no match with any Galaxy Cluster name, so we now parse this
         CourseOfAction object to generate an attack-pattern MISP object.
@@ -277,13 +210,72 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
             self._add_misp_object(
                 misp_object,
-                confidence = getattr(course_of_action, 'confidence', None)
+                confidence=getattr(course_of_action, 'confidence', None)
             )
         else:
-            self._galaxies[course_of_action.id] = {
+            self._clusters[course_of_action.id] = {
                 'tag_names': [f'misp-galaxy:course-of-action="{course_of_action.name}"'],
                 'used': {self.misp_event.uuid: False}
             }
+
+    def _parse_galaxy(self, object_ref: str) -> dict:
+        object_type = object_ref.split("--")[0]
+        stix_object = self._get_stix_object(object_ref)
+        name = stix_object.name
+        if self.galaxies_as_tags:
+            tag_names = self._check_existing_galaxy_name(name)
+            if tag_names is None:
+                tag_names = [
+                    f'misp-galaxy:{object_type}="{name}"'
+                ]
+            return {
+                'tag_names': tag_names,
+                'used': {self.misp_event.uuid: False}
+            }
+        if object_type not in self._galaxies:
+            self._galaxies[object_type] = self._create_galaxy_args(stix_object)
+        return {
+            'cluster': getattr(
+                self, f"_parse_{object_type.replace('-', '_')}_cluster"
+            )(
+                stix_object
+            ),
+            'used': {self.misp_event.uuid: False}
+        }
+
+    def _parse_identity(self, identity_ref: str):
+        """
+        Identity object parsing function.
+        Based on the `identity_class` field, we try to redirect to the
+        appropriate parsing function
+
+        :param identity_ref: The Identity id used to find the related Identity
+            object to parse
+        """
+        identity = self._get_stix_object(identity_ref)
+        if not hasattr(identity, 'identity_class'):
+            self._parse_identity_object(identity)
+
+    def _parse_identity_object(self, identity: _IDENTITY_TYPING):
+        """
+        Generic Identity object parsing function.
+        With the STIX Identity object, we extract the different fields and
+        generate a generic MISP identity object.
+
+        :param identity: The Identity object to parse
+        """
+        misp_object = self._create_misp_object('identity', identity)
+        for feature in self._mapping.identity_object_single_fields:
+            if hasattr(identity, feature):
+                misp_object.add_attribute(feature, getattr(identity, feature))
+        for feature in self._mapping.identity_object_multiple_fields:
+            if hasattr(identity, feature):
+                for value in getattr(identity, feature):
+                    misp_object.add_attribute(feature, value)
+        self._add_misp_object(
+            misp_object,
+            confidence=getattr(identity, 'confidence', None)
+        )
 
     def _parse_indicator(self, indicator_ref: str):
         """
@@ -317,24 +309,17 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_intrusion_set(self, intrusion_set_ref: str):
         """
         IntrusionSet object parsing function.
-        We check if the malware name is a known Galaxy Cluster name and store the
-        associated tag names what will be used to populate the Galaxies lists within
-        the appropriate MISP data structure (attribute, event).
+        We check if the intrusion set already has been seen by looking at its
+        ID, otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param intrusion_set_ref: The IntrusionSet id used to fing the related
-            IntrusionSet object to parse
+        :param intrusion_set_ref: The IntrusionSet id
         """
-        intrusion_set = self._get_stix_object(intrusion_set_ref)
-        if intrusion_set.id in self._galaxies:
-            self._galaxies[intrusion_set.id]['used'][self.misp_event.uuid] = False
+        if intrusion_set_ref in self._clusters:
+            self._clusters[intrusion_set_ref]['used'][self.misp_event.uuid] = False
         else:
-            tag_names = self._check_existing_galaxy_name(intrusion_set.name)
-            if tag_names is None:
-                tag_names = [f'misp-galaxy:intrusion-set="{intrusion_set.name}"']
-            self._galaxies[intrusion_set.id] = {
-                'tag_names': tag_names,
-                'used': {self.misp_event.uuid: False}
-            }
+            self._clusters[intrusion_set_ref] = self._parse_galaxy(
+                intrusion_set_ref
+            )
 
     def _parse_location(self, location_ref: str):
         """
@@ -345,34 +330,52 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         :param location_ref: The Location id used to find the related Location
             object to parse
         """
-        location = self._get_stix_object(location_ref)
-        misp_object = self._parse_location_object(location)
-        self._add_misp_object(
-            misp_object,
-            confidence = getattr(location, 'confidence', None)
-        )
+        if location_ref in self._clusters:
+            self._clusters[location_ref]['used'][self.misp_event.uuid] = False
+        else:
+            location = self._get_stix_object(location_ref)
+            if any(hasattr(location, feature) for feature in self._mapping.location_object_fields):
+                misp_object = self._parse_location_object(location)
+                self._add_misp_object(
+                    misp_object,
+                    confidence=getattr(location, 'confidence', None)
+                )
+            else:
+                feature = 'region' if not hasattr(location, 'country') else 'country'
+                if self.galaxies_as_tags:
+                    tag_names = self._check_existing_galaxy_name(location)
+                    if tag_names is None:
+                        tag_names = [
+                            f'misp-galaxy:{feature}="{location.name}"'
+                        ]
+                    self._clusters[location.id] = {
+                        'tag_names': tag_names,
+                        'used': {self.misp_event.uuid: False}
+                    }
+                else:
+                    self._clusters[location.id] = {
+                        'cluster': getattr(self, f'_parse_{feature}_cluster')(
+                            location
+                        ),
+                        'used': {self.misp_event.uuid: False}
+                    }
+                    if feature not in self._galaxies:
+                        self._galaxies[feature] = self._create_galaxy_args(
+                            location, galaxy_type=feature
+                        )
 
     def _parse_malware(self, malware_ref: str):
         """
         Malware object parsing function.
-        We check if the malware name is a known Galaxy Cluster name and store the
-        associated tag names what will be used to populate the Galaxies lists within
-        the appropriate MISP data structure (attribute, event).
+        We check if the malware already has been seen by looking at its ID,
+        otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param malware_ref: The Malware id used to find the related Malware object
-            to parse
+        :param malware_ref: The Malware id
         """
-        malware = self._get_stix_object(malware_ref)
-        if malware.id in self._galaxies:
-            self._galaxies[malware.id]['used'][self.misp_event.uuid] = False
+        if malware_ref in self._clusters:
+            self._clusters[malware_ref]['used'][self.misp_event.uuid] = False
         else:
-            tag_names = self._check_existing_galaxy_name(malware.name)
-            if tag_names is None:
-                tag_names = [f'misp-galaxy:malware="{malware.name}"']
-            self._galaxies[malware.id] = {
-                'tag_names': tag_names,
-                'used': {self.misp_event.uuid: False}
-            }
+            self._clusters[malware_ref] = self._parse_galaxy(malware_ref)
 
     def _parse_observed_data_v20(self, observed_data: ObservedData_v20):
         """
@@ -419,73 +422,52 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_threat_actor(self, threat_actor_ref: str):
         """
         ThreatActor object parsing function.
-        We check if the threat actor name is a known Galaxy Cluster name and store
-        the associated tag names what will be used to populate the Galaxies lists
-        within the appropriate MISP data structure (attribute, event).
+        We check if the threat actor already has been seen by looking at its ID,
+        otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param threat_actor_ref: The ThreatActor id used to find the related
-            ThreatActor object to parse
+        :param threat_actor_ref: The ThreatActor id
         """
-        threat_actor = self._get_stix_object(threat_actor_ref)
-        if threat_actor.id in self._galaxies:
-            self._galaxies[threat_actor.id]['used'][self.misp_event.uuid] = False
+        if threat_actor_ref in self._clusters:
+            self._clusters[threat_actor_ref]['used'][self.misp_event.uuid] = False
         else:
-            tag_names = self._check_existing_galaxy_name(threat_actor.name)
-            if tag_names is None:
-                tag_names = [f'misp-galaxy:tool="{threat_actor.name}"']
-            self._galaxies[threat_actor.id] = {
-                'tag_names': tag_names,
-                'used': {self.misp_event.uuid: False}
-            }
+            self._clusters[threat_actor_ref] = self._parse_galaxy(
+                threat_actor_ref
+            )
 
     def _parse_tool(self, tool_ref: str):
         """
         Tool object parsing function.
-        We check if the tool name is a known Galaxy Cluster name and store the
-        associated tag names what will be used to populate the Galaxies lists within
-        the appropriate MISP data structure (attribute, event).
+        We check if the tool already has been seen by looking at its ID,
+        otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param tool_ref: The Tool id used to find the related Tool object to parse
+        :param tool_ref: The Tool id
         """
-        tool = self._get_stix_object(tool_ref)
-        if tool.id in self._galaxies:
-            self._galaxies[tool.id]['used'][self.misp_event.uuid] = False
+        if tool_ref in self._clusters:
+            self._clusters[tool_ref]['used'][self.misp_event.uuid] = False
         else:
-            tag_names = self._check_existing_galaxy_name(tool.name)
-            if tag_names is None:
-                tag_names = [f'misp-galaxy:tool="{tool.name}"']
-            self._galaxies[tool.id] = {
-                'tag_names': tag_names,
-                'used': {self.misp_event.uuid: False}
-            }
+            self._clusters[tool_ref] = self._parse_galaxy(tool_ref)
 
     def _parse_vulnerability(self, vulnerability_ref: str):
         """
         Vulnerabilty object parsing function.
-        If the vulnerability name is a known Galaxy Cluster name, we store the
-        associated tag names that will be used afterwards to populate the Galaxies
-        lists within the appropriate MISP data structure.
-        Otherwise, the vulnerability is parsed and depending on the converted
-        attributes, the result is either a MISP attribute or a MISP object.
+        If the vulnerability already has been seen by looking at its ID,
+        otherwise we convert it as a MISP Galaxy Cluster.
 
-        :param vulnerability_ref: The Vulnerability id used to find the related
-            Vulnerability object to parse
+        :param vulnerability_ref: The Vulnerability id
         """
-        vulnerability = self._get_stix_object(vulnerability_ref)
-        if vulnerability.id in self._galaxies:
-            self._galaxies[vulnerability.id]['used'][self.misp_event.uuid] = False
+        if vulnerability_ref in self._clusters:
+            self._clusters[vulnerability_ref]['used'][self.misp_event.uuid] = False
         else:
-            tag_names = self._check_existing_galaxy_name(vulnerability.name)
-            if tag_names is None:
-                self._parse_vulnerability_object(vulnerability)
-            else:
-                self._galaxies[vulnerability.id] = {
-                    'tag_names': tag_names,
-                    'used': {self.misp_event.uuid: False}
-                }
+            self._clusters[vulnerability_ref] = self._parse_galaxy(
+                vulnerability_ref
+            )
 
     def _parse_vulnerability_object(self, vulnerability: _VULNERABILITY_TYPING):
         """
+        # Not currently used, but if we can ever define wether the vulnerability
+        # is well known or in progress, we might use this function again for
+        # vulnerabilities in progress
+
         Vulnerability object conversion as MISP attribute or object function.
         We found no match with any Galaxy Cluster name, so we now parse this
         Vulnerability object to extract MISP attributes.
@@ -517,10 +499,46 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if attributes:
             self._handle_import_case(vulnerability, attributes, 'vulnerability')
         else:
-            self._galaxies[vulnerability.id] = {
-                'tag_names': [f'misp-galaxy:vulnerability="{vulnerability.name}"'],
+            self._clusters[vulnerability.id] = {
+                'cluster': self._parse_vulnerbaility_cluster(vulnerability),
                 'used': {self.misp_event.uuid: False}
             }
+            if 'vulnerability' not in self._galaxies:
+                self._galaxies['vulnerability'] = self._create_galaxy_args(
+                    vulnerability
+                )
+
+    ################################################################################
+    #                 STIX Domain Objects (SDOs) PARSING FUNCTIONS                 #
+    ################################################################################
+
+    def _create_galaxy_args(self, stix_object: _GALAXY_OBJECTS_TYPING,
+                            galaxy_type: Optional[str] = None) -> MISPGalaxy:
+        galaxy_args = {
+            'type': stix_object.type if galaxy_type is None else galaxy_type
+        }
+        galaxy_args.update(self._mapping.galaxy_name_mapping[galaxy_args['type']])
+        misp_galaxy = MISPGalaxy()
+        misp_galaxy.from_dict(**galaxy_args)
+        return misp_galaxy
+
+    def _parse_country_cluster(self, location: Location):
+        country_args = self._create_cluster_args(location, 'country')
+        return self._create_misp_galaxy_cluster(country_args)
+
+    def _parse_region_cluster(self, location: Location):
+        region_args = self._create_cluster_args(
+            location, 'region',
+            cluster_value=self._parse_region_value(location)
+        )
+        return self._create_misp_galaxy_cluster(region_args)
+
+    def _parse_region_value(self, location: Location) -> str:
+        if hasattr(location, 'region'):
+            return self._mapping.regions_mapping.get(
+                location.region, location.name
+            )
+        return location.name
 
     ################################################################################
     #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #
@@ -731,7 +749,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if len(attributes) == 1 and attributes[0]['type'] == 'sigma':
                 self._add_misp_attribute(
                     attributes[0],
-                    confidence = getattr(indicator, 'confidence', None)
+                    confidence=getattr(indicator, 'confidence', None)
                 )
             else:
                 misp_object = self._create_misp_object('sigma', indicator)
@@ -739,7 +757,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     misp_object.add_attribute(**attribute)
                 self._add_misp_object(
                     misp_object,
-                    confidence = getattr(indicator, 'confidence', None)
+                    confidence=getattr(indicator, 'confidence', None)
                 )
         else:
             attribute = self._create_attribute_dict(indicator)
@@ -747,7 +765,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             attribute.update(self._mapping.sigma_attribute)
             self._add_misp_attribute(
                 attribute,
-                confidence = getattr(indicator, 'confidence', None)
+                confidence=getattr(indicator, 'confidence', None)
             )
 
     def _parse_snort_pattern(self, indicator: Indicator_v21):
@@ -756,7 +774,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute.update(self._mapping.snort_attribute)
         self._add_misp_attribute(
             attribute,
-            confidence = getattr(indicator, 'confidence', None)
+            confidence=getattr(indicator, 'confidence', None)
         )
 
     def _parse_stix_pattern(self, indicator: _INDICATOR_TYPING):
@@ -781,7 +799,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(**attribute)
         self._add_misp_object(
             misp_object,
-            confidence = getattr(indicator, 'confidence', None)
+            confidence=getattr(indicator, 'confidence', None)
         )
 
     def _parse_url_pattern(self, compiled_pattern: PatternData, indicator: _INDICATOR_TYPING):
@@ -851,7 +869,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     misp_object.add_attribute(**attribute)
             self._add_misp_object(
                 misp_object,
-                confidence = getattr(indicator, 'confidence', None)
+                confidence=getattr(indicator, 'confidence', None)
             )
         else:
             attribute = self._create_attribute_dict(indicator)
@@ -859,7 +877,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             attribute.update(self._mapping.yara_attribute)
             self._add_misp_attribute(
                 attribute,
-                confidence = getattr(indicator, 'confidence', None)
+                confidence=getattr(indicator, 'confidence', None)
             )
 
     ################################################################################
@@ -881,10 +899,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self.misp_event.add_object(misp_object)
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
-        attribute = {'uuid': stix_object.id.split('--')[-1]}
-        attribute.update(self._parse_timeline(stix_object))
+        attribute = self._parse_timeline(stix_object)
         if hasattr(stix_object, 'description') and stix_object.description:
             attribute['comment'] = stix_object.description
+        attribute.update(
+            self._sanitise_attribute_uuid(
+                stix_object.id, comment=attribute.get('comment')
+            )
+        )
         if hasattr(stix_object, 'object_marking_refs'):
             self._update_marking_refs(attribute['uuid'])
         return attribute
