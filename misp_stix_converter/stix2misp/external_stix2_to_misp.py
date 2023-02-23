@@ -34,9 +34,7 @@ from typing import Optional, Tuple, Union
 
 # Attack Pattern, Course of Action & Vulnerability objects are obviously not
 # Observable objects but they're parsed at some point the same way
-_OBSERVABLE_OBJECTS_TYPING = Union[
-    AttackPattern_v20,
-    AttackPattern_v21,
+_GENERIC_SDO_TYPING = Union[
     CourseOfAction_v20,
     CourseOfAction_v21,
     Vulnerability_v20,
@@ -51,7 +49,7 @@ _DOMAIN_NAME_TYPING = Union[
 _EMAIL_ADDRESS_TYPING = Union[
     EmailAddress_v20, EmailAddress_v21
 ]
-_GENERIC_OBSERVABLE_TYPING = Union[
+_OBSERVABLE_OBJECTS_TYPING = Union[
     DomainName_v20, DomainName_v21,
     EmailAddress_v20, EmailAddress_v21,
     IPv4Address_v20, IPv4Address_v21,
@@ -83,6 +81,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
+
+    def _get_attributes_from_generic_SDO(
+            self, stix_object: _GENERIC_SDO_TYPING, mapping: str):
+        for feature, attribute in getattr(self._mapping, mapping).items():
+            if hasattr(stix_object, feature):
+                misp_attribute = {'value': getattr(stix_object, feature)}
+                misp_attribute.update(attribute)
+                yield misp_attribute
 
     def _handle_import_case(self, stix_object: _SDO_TYPING, attributes: list,
                             name: str, force_object: Optional[tuple] = None):
@@ -213,9 +219,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
         :param course_of_action: The CourseOfAction object to parse
         """
-        attributes = self._get_attributes_from_observable(
-            course_of_action,
-            'course_of_action_object_mapping'
+        attributes = tuple(
+            self._get_attributes_from_generic_SDO(
+                course_of_action, 'course_of_action_object_mapping'
+            )
         )
         if attributes:
             misp_object = self._create_misp_object('course-of-action', course_of_action)
@@ -516,7 +523,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
         :param vulnerability: The Vulnerability object to parse
         """
-        attributes = self._get_attributes_from_observable(vulnerability, 'vulnerability_object_mapping')
+        attributes = tuple(
+            self._get_attributes_from_generic_SDO(
+                vulnerability, 'vulnerability_object_mapping'
+            )
+        )
         if hasattr(vulnerability, 'external_references'):
             external_ids = set()
             for reference in vulnerability.external_references:
@@ -617,32 +628,23 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'comment': f'Original Observed Data ID: {observed_data_id}'
         }
 
-    def _get_attributes_from_observable(self, stix_object: _OBSERVABLE_OBJECTS_TYPING, mapping: str) -> list:
-        attributes = []
-        for feature, attribute in getattr(self._mapping, mapping).items():
-            if hasattr(stix_object, feature):
-                misp_attribute = {'value': getattr(stix_object, feature)}
-                misp_attribute.update(attribute)
-                attributes.append(misp_attribute)
-        return attributes
+    def _fill_observable_object_attribute(
+            self, reference: str, observed_data_id: str) -> dict:
+        return {
+            'uuid': self._create_v5_uuid(reference),
+            'comment': f'Original Observed Data ID: {observed_data_id}'
+        }
 
     def _handle_observable_object_attribute(
             self, observable_object: _OBSERVABLE_OBJECTS_TYPING, object_id: str,
             observed_data_id: str, references: str) -> dict:
         if hasattr(observable_object, 'id'):
-            observable_id = observable_object.id
-            return {
-                'uuid': self._create_v5_uuid(
-                    f'{observable_id} - {references}'
-                ),
-                'comment': f'Original Observable object ID: {observable_id}'
-            }
-        return {
-            'uuid': self._create_v5_uuid(
-                f'{observed_data_id} - {object_id} - {references}'
-            ),
-            'comment': f'Original Observed Data ID: {observed_data_id}'
-        }
+            return self._fill_observable_object_attribute(
+                f'{observable_object.id} - {references}', observed_data_id
+            )
+        return self._fill_observable_object_attribute(
+            f'{observed_data_id} - {object_id} - {references}', observed_data_id
+        )
 
     def _handle_observable_attribute(
             self, observable_object: _OBSERVABLE_OBJECTS_TYPING, feature: str,
@@ -733,7 +735,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 autonomous_systems, ip_addresses, observed_data
             )
         else:
-            self.parse_asn_observables(autonomous_systems, observed_data)
+            self._parse_asn_observables(autonomous_systems, observed_data)
 
     def _parse_asn_object_attributes(
             self, autonomous_system: _AUTONOMOUS_SYSTEM_TYPING, object_id: str,
@@ -766,7 +768,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 autonomous_systems, ip_addresses, observed_data
             )
         else:
-            self.parse_asn_observables(autonomous_systems, observed_data)
+            self._parse_asn_observables(autonomous_systems, observed_data)
 
     def _parse_asn_observable_object(
             self, autonomous_system: _AUTONOMOUS_SYSTEM_TYPING,
@@ -1518,13 +1520,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             else:
                 references[reference] = observable
         return main_objects, references
-
-    @staticmethod
-    def _handle_object_forcing(attributes: list, object_forcing: tuple) -> bool:
-        for attribute in attributes:
-            if attribute['object_relation'] in object_forcing:
-                return True
-        return False
 
     def _is_pattern_too_complex(self, pattern: str) -> bool:
         if any(keyword in pattern for keyword in self._mapping.pattern_forbidden_relations):
