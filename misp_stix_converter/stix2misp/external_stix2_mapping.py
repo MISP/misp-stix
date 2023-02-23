@@ -225,6 +225,41 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             pattern_version = self.version_attribute
         )
 
+        # STIX OBSERVABLE OBJECTS TO MISP MAPPING
+        self.__file_hashes_object_mapping = Mapping(
+            **{
+                'MD5': 'md5',
+                'SHA-1': 'sha1',
+                'SHA-256': 'sha256',
+                'SHA-512': 'sha512',
+                'SHA3-256': 'sha3-256',
+                'SHA3-512': 'sha3-512',
+                'SSDEEP': 'ssdeep',
+                'TLSH': 'tlsh'
+            }
+        )
+        self.__file_object_fields = (
+            'contains_refs',
+            'name_enc',
+            'parent_directory_ref'
+        )
+        self.__file_object_mapping = Mapping(
+            mime_type = 'mimetype',
+            name = 'filename',
+            name_enc = 'file-encoding',
+            size = 'size-in-bytes'
+        )
+        self.__pe_object_mapping = Mapping(
+            imphash = 'imphash',
+            number_of_sections = 'number-sections',
+            pe_type = 'type'
+        )
+        self.__pe_section_object_mapping = Mapping(
+            entropy = 'entropy',
+            name = 'name',
+            size = 'size-in-bytes'
+        )
+
         # STIX PATTERN TO MISP MAPPING
         self.__domain_ip_pattern_mapping = Mapping(
             **{
@@ -361,6 +396,18 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__email_message_pattern_mapping
 
     @property
+    def file_hashes_object_mapping(self) -> dict:
+        return self.__file_hashes_object_mapping
+
+    @property
+    def file_object_fields(self) -> tuple:
+        return self.__file_object_fields
+
+    @property
+    def file_object_mapping(self) -> dict:
+        return self.__file_object_mapping
+
+    @property
     def file_pattern_mapping(self) -> dict:
         return self.__file_pattern_mapping
 
@@ -391,6 +438,14 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def pattern_mapping(self) -> dict:
         return self.__pattern_mapping
+
+    @property
+    def pe_object_mapping(self) -> dict:
+        return self.__pe_object_mapping
+
+    @property
+    def pe_section_object_mapping(self) -> dict:
+        return self.__pe_section_object_mapping
 
     @property
     def process_pattern_mapping(self) -> dict:
