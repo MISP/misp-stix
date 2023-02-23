@@ -595,8 +595,11 @@ class MISPtoSTIX1Mapping:
         )
         self.__file_object_mapping = Mapping(
             **{
+                'access-time': 'accessed_time',
+                'creation-time': 'created_time',
                 'entropy': 'peak_entropy',
                 'fullpath': 'full_path',
+                'modification-time': 'modified_time',
                 'path': 'file_path',
                 'size-in-bytes': 'size_in_bytes'
             }

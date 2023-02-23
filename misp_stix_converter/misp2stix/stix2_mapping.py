@@ -562,7 +562,8 @@ class MISPtoSTIX2Mapping:
                 'size-in-bytes': 'size'
             }
         )
-        self.__file_single_fields = self.__file_data_fields + self.__hash_attribute_types + ('path',)
+        single_fields = ('access-time', 'creation-time', 'modification-time', 'path')
+        self.__file_single_fields = self.__file_data_fields + self.__hash_attribute_types + single_fields
         self.__github_user_data_fields = (
             'profile-image',
         )

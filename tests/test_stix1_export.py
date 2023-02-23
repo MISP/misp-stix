@@ -192,14 +192,22 @@ class TestStix1Export(TestSTIX):
     def _check_file_properties(self, properties, attributes, with_artifact=False):
         custom_properties = properties.custom_properties
         if with_artifact:
-            filename, md5, sha1, sha256, size, path, encoding = attributes
+            filename, md5, sha1, sha256, size, path, encoding, creation, modification = attributes
             self._check_custom_properties([encoding], custom_properties)
         else:
-            malware_sample, filename, md5, sha1, sha256, size, attachment, path, encoding = attributes
+            malware_sample, filename, md5, sha1, sha256, size, attachment, path, encoding, creation, modification = attributes
             self._check_custom_properties((malware_sample, attachment, encoding), custom_properties)
         self.assertEqual(properties.file_name.value, filename['value'])
         self.assertEqual(properties.file_path.value, path['value'])
         self.assertEqual(properties.size_in_bytes.value, int(size['value']))
+        creation_time = creation['value']
+        if isinstance(creation_time, str):
+            creation_time = self._datetime_from_str(creation_time)
+        self.assertEqual(properties.created_time.value, creation_time)
+        modification_time = modification['value']
+        if isinstance(modification_time, str):
+            modification_time = self._datetime_from_str(modification_time)
+        self.assertEqual(properties.modified_time.value, modification_time)
         hashes = properties.hashes
         self.assertEqual(len(hashes), 3)
         for hash_property, attribute in zip(hashes, (md5, sha1, sha256)):

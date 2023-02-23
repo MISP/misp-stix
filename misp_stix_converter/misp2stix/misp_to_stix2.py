@@ -1411,6 +1411,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if attributes.get(key):
                 for value in attributes.pop(key):
                     pattern.append(f"{prefix}:{feature} = '{value}'")
+        for key, feature in self._mapping.file_time_fields.items():
+            if attributes.get(key):
+                pattern.append(f"{prefix}:{feature} = '{attributes.pop(key)}'")
         if attributes.get('path'):
             value = attributes.pop('path')
             pattern.append(f"{prefix}:parent_directory_ref.path = '{value}'")
@@ -2998,6 +3001,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if attributes.get(key):
                 value = self._select_single_feature(attributes, key)
                 file_args[feature] = value
+        for key, feature in self._mapping.file_time_fields.items():
+            if attributes.get(key):
+                file_args[feature] = self._datetime_from_str(
+                    self._select_single_feature(attributes, key)
+                )
         if attributes:
             file_args.update(self._handle_observable_multiple_properties(attributes))
         return file_args

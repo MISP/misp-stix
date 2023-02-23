@@ -3446,8 +3446,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
     def _test_event_with_file_indicator_object(self, event):
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute['value'] for attribute in attributes)
-        md5_, sha1_, sha256_, filename_, encoding_, size_, path_, malware_sample_, attachment_ = self._reassemble_pattern(pattern[1:-1])
+        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding, creation, modification = (attribute['value'] for attribute in attributes)
+        md5_, sha1_, sha256_, filename_, encoding_, size_, ctime, mtime, path_, malware_sample_, attachment_ = self._reassemble_pattern(pattern[1:-1])
         self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5}'")
         self.assertEqual(sha1_, f"file:hashes.SHA1 = '{_sha1}'")
         self.assertEqual(sha256_, f"file:hashes.SHA256 = '{_sha256}'")
@@ -3455,6 +3455,8 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(encoding_, f"file:name_enc = '{_encoding}'")
         self.assertEqual(path_, f"file:parent_directory_ref.path = '{_path}'")
         self.assertEqual(size_, f"file:size = '{_size}'")
+        self.assertEqual(ctime, f"file:ctime = '{creation}'")
+        self.assertEqual(mtime, f"file:mtime = '{modification}'")
         ms_data, ms_filename, ms_md5, mime_type, encryption, decryption = malware_sample_.split(' AND ')
         data = attributes[0]['data']
         if not isinstance(data, str):
@@ -3476,7 +3478,7 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
     def _test_event_with_file_observable_object(self, event):
         misp_object = deepcopy(event['Object'][0])
         attributes, grouping_refs, object_refs, observables = self._run_observable_from_object_tests(event)
-        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute for attribute in attributes)
+        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding, ctime, mtime = (attribute for attribute in attributes)
         _file, directory, artifact = observables
         file_id, directory_id, artifact_id = grouping_refs
         file_ref, directory_ref, artifact_ref = object_refs
@@ -3490,6 +3492,14 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(_file.size, int(_size['value']))
         self.assertEqual(_file.name, _filename['value'])
         self.assertEqual(_file.name_enc, _encoding['value'])
+        creation_time = ctime['value']
+        if not isinstance(creation_time, datetime):
+            creation_time = self._datetime_from_str(creation_time)
+        self.assertEqual(_file.ctime, creation_time)
+        modification_time = mtime['value']
+        if not isinstance(modification_time, datetime):
+            modification_time = self._datetime_from_str(modification_time)
+        self.assertEqual(_file.mtime, modification_time)
         hashes = _file.hashes
         self.assertEqual(hashes['MD5'], _md5['value'])
         self.assertEqual(hashes['SHA-1'], _sha1['value'])

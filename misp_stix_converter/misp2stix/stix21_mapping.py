@@ -146,6 +146,13 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
             'ip-dst',
             'ip-src'
         )
+        self.__file_time_fields = Mapping(
+            **{
+                'access-time': 'atime',
+                'creation-time': 'ctime',
+                'modification-time': 'mtime'
+            }
+        )
         self.__lnk_time_fields = Mapping(
             **{
                 'lnk-access-time': 'atime',
@@ -329,6 +336,10 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     @property
     def employee_object_mapping(self) -> dict:
         return self.__employee_object_mapping
+
+    @property
+    def file_time_fields(self) -> dict:
+        return self.__file_time_fields
 
     @property
     def file_uuid_fields(self) -> tuple:

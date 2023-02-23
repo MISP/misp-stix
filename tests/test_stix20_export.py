@@ -2560,8 +2560,8 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
 
     def _test_event_with_file_indicator_object(self, event):
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute['value'] for attribute in attributes)
-        md5_, sha1_, sha256_, filename_, encoding_, size_, path_, malware_sample_, attachment_ = self._reassemble_pattern(pattern[1:-1])
+        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding, creation, modification = (attribute['value'] for attribute in attributes)
+        md5_, sha1_, sha256_, filename_, encoding_, size_, ctime, mtime, path_, malware_sample_, attachment_ = self._reassemble_pattern(pattern[1:-1])
         self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5}'")
         self.assertEqual(sha1_, f"file:hashes.SHA1 = '{_sha1}'")
         self.assertEqual(sha256_, f"file:hashes.SHA256 = '{_sha256}'")
@@ -2569,6 +2569,8 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(encoding_, f"file:name_enc = '{_encoding}'")
         self.assertEqual(path_, f"file:parent_directory_ref.path = '{_path}'")
         self.assertEqual(size_, f"file:size = '{_size}'")
+        self.assertEqual(ctime, f"file:created = '{creation}'")
+        self.assertEqual(mtime, f"file:modified = '{modification}'")
         ms_data, ms_filename, ms_md5, mime_type = malware_sample_.split(' AND ')
         data = attributes[0]['data']
         if not isinstance(data, str):
@@ -2587,12 +2589,18 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
 
     def _test_event_with_file_observable_object(self, event):
         attributes, observable_objects = self._run_observable_from_object_tests(event)
-        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute['value'] for attribute in attributes)
+        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding, ctime, mtime = (attribute['value'] for attribute in attributes)
         _file = observable_objects['0']
         self.assertEqual(_file.type, 'file')
         self.assertEqual(_file.size, int(_size))
         self.assertEqual(_file.name, _filename)
         self.assertEqual(_file.name_enc, _encoding)
+        if isinstance(ctime, str):
+            ctime = self._datetime_from_str(ctime)
+        self.assertEqual(_file.created, ctime)
+        if isinstance(mtime, str):
+            mtime = self._datetime_from_str(mtime)
+        self.assertEqual(_file.modified, mtime)
         hashes = _file.hashes
         self.assertEqual(hashes['MD5'], _md5)
         self.assertEqual(hashes['SHA-1'], _sha1)
