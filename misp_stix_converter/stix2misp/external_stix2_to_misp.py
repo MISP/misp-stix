@@ -606,6 +606,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     ################################################################################
 
     def _check_file_observable_fields(self, file_object: _FILE_TYPING) -> bool:
+        if 'windows-pebinary-ext' in getattr(file_object, 'extensions', {}):
+            return True
         fields = [
             field for field in self._mapping.file_object_mapping
             if hasattr(file_object, field)
