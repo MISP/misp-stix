@@ -34,8 +34,10 @@ from stix2.v21.sdo import (
 from stix2patterns.inspector import _PatternData as PatternData
 from typing import Optional, Tuple, Union
 
-# Attack Pattern, Course of Action & Vulnerability objects are obviously not
-# Observable objects but they're parsed at some point the same way
+_observable_default_properties = (
+    'type', 'spec_version', 'id', 'defanged'
+)
+
 _GENERIC_SDO_TYPING = Union[
     CourseOfAction_v20,
     CourseOfAction_v21,
@@ -1025,6 +1027,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_file_observable_objects(self, files: dict, references: dict,
                                        observed_data: _OBSERVED_DATA_TYPING):
+        feature = 'observable' if len(files) > 1 else 'single_observable'
         for object_id, file_object in files.items():
             if self._force_observable_as_object(file_object, 'file'):
                 reference = getattr(
@@ -1057,6 +1060,30 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                             ),
                             'includes'
                         )
+                continue
+            for field in file_object.properties_populated():
+                if field in _observable_default_properties:
+                    continue
+                if field in self._mapping.file_object_mapping:
+                    attribute = self._mapping.file_object_mapping[field]
+                    self._add_misp_attribute(
+                        getattr(self, f'_handle_{feature}_attribute')(
+                            file_object, field, attribute['type'],
+                            observed_data.id
+                        ),
+                        confidence=getattr(observed_data, 'confidence', None)
+                    )
+                    break
+                if field in self._mapping.file_hashes_object_mapping:
+                    attribute = self._mapping.file_hashes_object_mapping[field]
+                    self._add_misp_attribute(
+                        getattr(self, f'_handle_{feature}_attribute')(
+                            file_object, field, attribute['type'],
+                            observed_data.id
+                        ),
+                        confidence=getattr(observed_data, 'confidence', None)
+                    )
+                    break
 
     def _parse_file_pe_extension(
             self, extension: _PE_EXTENSION_TYPING, object_id: str,
@@ -1197,18 +1224,20 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self, feature: str, observable_object: _OBSERVABLE_OBJECTS_TYPING,
             misp_object: MISPObject, reference: str, observed_data_id: str):
         mapping = getattr(self._mapping, f'{feature}_object_mapping')
-        for field, relation in mapping.items():
+        for field, attr in mapping.items():
             if field in observable_object:
                 value = getattr(
                     observable_object, field, observable_object[field]
                 )
-                misp_object.add_attribute(
-                    relation, value,
-                    **self._fill_observable_object_attribute(
-                        f'{reference} - {relation} - {value}',
+                attribute = {'value': value}
+                attribute.update(attr)
+                attribute.update(
+                    self._fill_observable_object_attribute(
+                        f"{reference} - {attr['object_relation']} - {value}",
                         observed_data_id
                     )
                 )
+                misp_object.add_attribute(**attribute)
 
     ################################################################################
     #                          PATTERNS PARSING FUNCTIONS                          #

@@ -228,14 +228,14 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         # STIX OBSERVABLE OBJECTS TO MISP MAPPING
         self.__file_hashes_object_mapping = Mapping(
             **{
-                'MD5': 'md5',
-                'SHA-1': 'sha1',
-                'SHA-256': 'sha256',
-                'SHA-512': 'sha512',
-                'SHA3-256': 'sha3-256',
-                'SHA3-512': 'sha3-512',
-                'SSDEEP': 'ssdeep',
-                'TLSH': 'tlsh'
+                'MD5': self.md5_attribute,
+                'SHA-1': self.sha1_attribute,
+                'SHA-256': self.sha256_attribute,
+                'SHA-512': self.sha512_attribute,
+                'SHA3-256': self.sha3_256_attribute,
+                'SHA3-512': self.sha3_512_attribute,
+                'SSDEEP': self.ssdeep_attribute,
+                'TLSH': self.tlsh_attribute
             }
         )
         self.__file_object_fields = (
@@ -244,20 +244,20 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'parent_directory_ref'
         )
         self.__file_object_mapping = Mapping(
-            mime_type = 'mimetype',
-            name = 'filename',
-            name_enc = 'file-encoding',
-            size = 'size-in-bytes'
+            mime_type = self.mime_type_attribute,
+            name = self.filename_attribute,
+            name_enc = self.file_encoding_attribute,
+            size = self.size_in_bytes_attribute
         )
         self.__pe_object_mapping = Mapping(
-            imphash = 'imphash',
-            number_of_sections = 'number-sections',
-            pe_type = 'type'
+            imphash = self.imphash_attribute,
+            number_of_sections = self.number_of_sections_attribute,
+            pe_type = self.type_attribute
         )
         self.__pe_section_object_mapping = Mapping(
-            entropy = 'entropy',
-            name = 'name',
-            size = 'size-in-bytes'
+            entropy = self.entropy_attribute,
+            name = self.name_attribute,
+            size = self.size_in_bytes_attribute
         )
 
         # STIX PATTERN TO MISP MAPPING

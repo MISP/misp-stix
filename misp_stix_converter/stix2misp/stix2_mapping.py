@@ -156,6 +156,9 @@ class STIX2toMISPMapping:
         self.__email_subject_attribute = Mapping(
             **{'type': 'email-subject', 'object_relation': 'subject'}
         )
+        self.__entropy_attribute = Mapping(
+            **{'type': 'float', 'object_relation': 'entropy'}
+        )
         self.__file_encoding_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'file-encoding'}
         )
@@ -164,6 +167,9 @@ class STIX2toMISPMapping:
         )
         self.__hidden_attribute = Mapping(
             **{'type': 'boolean', 'object_relation': 'hidden'}
+        )
+        self.__imphash_attribute = Mapping(
+            **{'type': 'imphash', 'object_relation': 'imphash'}
         )
         self.__ip_attribute = Mapping(
             **{'type': 'ip-dst', 'object_relation': 'ip'}
@@ -177,6 +183,9 @@ class STIX2toMISPMapping:
         self.__last_modified_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'last-modified'}
         )
+        self.__md5_attribute = Mapping(
+            **{'type': 'md5', 'object_relation': 'md5'}
+        )
         self.__message_id_attribute = Mapping(
             **{'type': 'email-message-id', 'object_relation': 'message-id'}
         )
@@ -188,6 +197,9 @@ class STIX2toMISPMapping:
         )
         self.__name_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'name'}
+        )
+        self.__number_of_sections_attribute = Mapping(
+            **{'type': 'counter', 'object_relation': 'number-sections'}
         )
         self.__pid_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'pid'}
@@ -214,6 +226,21 @@ class STIX2toMISPMapping:
         self.__serial_number_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'serial-number'}
         )
+        self.__sha1_attribute = Mapping(
+            **{'type': 'sha1', 'object_relation': 'sha1'}
+        )
+        self.__sha256_attribute = Mapping(
+            **{'type': 'sha256', 'object_relation': 'sha256'}
+        )
+        self.__sha3_256_attribute = Mapping(
+            **{'type': 'sha3-256', 'object_relation': 'sha3-256'}
+        )
+        self.__sha3_512_attribute = Mapping(
+            **{'type': 'sha3-512', 'object_relation': 'sha3-512'}
+        )
+        self.__sha512_attribute = Mapping(
+            **{'type': 'sha512', 'object_relation': 'sha512'}
+        )
         self.__sigma_attribute = Mapping(
             **{'type': 'sigma', 'object_relation': 'sigma'}
         )
@@ -231,6 +258,9 @@ class STIX2toMISPMapping:
         self.__src_port_attribute = Mapping(
             **{'type': 'port', 'object_relation': 'src-port'}
         )
+        self.__ssdeep_attribute = Mapping(
+            **{'type': 'ssdeep', 'object_relation': 'ssdeep'}
+        )
         self.__subject_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'subject'}
         )
@@ -239,6 +269,12 @@ class STIX2toMISPMapping:
         )
         self.__suricata_reference_attribute = Mapping(
             **{'type': 'link', 'object_relation': 'ref'}
+        )
+        self.__tlsh_attribute = Mapping(
+            **{'type': 'tlsh', 'object_relation': 'tlsh'}
+        )
+        self.__type_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'type'}
         )
         self.__uri_attribute = Mapping(
             **{'type': 'uri', 'object_relation': 'uri'}
@@ -482,6 +518,10 @@ class STIX2toMISPMapping:
         return self.__email_subject_attribute
 
     @property
+    def entropy_attribute(self) -> dict:
+        return self.__entropy_attribute
+
+    @property
     def file_encoding_attribute(self) -> dict:
         return self.__file_encoding_attribute
 
@@ -492,6 +532,10 @@ class STIX2toMISPMapping:
     @property
     def hidden_attribute(self) -> dict:
         return self.__hidden_attribute
+
+    @property
+    def imphash_attribute(self) -> dict:
+        return self.__imphash_attribute
 
     @property
     def intrusion_set_meta_mapping(self) -> dict:
@@ -530,12 +574,20 @@ class STIX2toMISPMapping:
         return self.__method_attribute
 
     @property
+    def md5_attribute(self) -> dict:
+        return self.__md5_attribute
+
+    @property
     def mime_type_attribute(self) -> dict:
         return self.__mime_type_attribute
 
     @property
     def name_attribute(self) -> dict:
         return self.__name_attribute
+
+    @property
+    def number_of_sections_attribute(self) -> dict:
+        return self.__number_of_sections_attribute
 
     @property
     def object_type_refs_to_skip(self) -> tuple:
@@ -586,6 +638,26 @@ class STIX2toMISPMapping:
         return self.__serial_number_attribute
 
     @property
+    def sha1_attribute(self) -> dict:
+        return self.__sha1_attribute
+
+    @property
+    def sha256_attribute(self) -> dict:
+        return self.__sha256_attribute
+
+    @property
+    def sha3_256_attribute(self) -> dict:
+        return self.__sha3_256_attribute
+
+    @property
+    def sha3_512_attribute(self) -> dict:
+        return self.__sha3_512_attribute
+
+    @property
+    def sha512_attribute(self) -> dict:
+        return self.__sha512_attribute
+
+    @property
     def sigma_attribute(self) -> dict:
         return self.__sigma_attribute
 
@@ -612,6 +684,10 @@ class STIX2toMISPMapping:
     @property
     def src_port_attribute(self) -> dict:
         return self.__src_port_attribute
+
+    @property
+    def ssdeep_attribute(self) -> dict:
+        return self.__ssdeep_attribute
 
     @property
     def stix_object_loading_mapping(self) -> dict:
@@ -646,8 +722,16 @@ class STIX2toMISPMapping:
         return self.__timeline_mapping
 
     @property
+    def tlsh_attribute(self) -> dict:
+        return self.__tlsh_attribute
+
+    @property
     def tool_meta_mapping(self) -> dict:
         return self.__tool_meta_mapping
+
+    @property
+    def type_attribute(self) -> dict:
+        return self.__type_attribute
 
     @property
     def uri_attribute(self) -> dict:
