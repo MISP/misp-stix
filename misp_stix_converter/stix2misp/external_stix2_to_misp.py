@@ -14,18 +14,20 @@ from .stix2_to_misp import (
 from pymisp import MISPAttribute, MISPGalaxy, MISPObject
 from stix2.v20.observables import (
     AutonomousSystem as AutonomousSystem_v20, DomainName as DomainName_v20,
-    EmailAddress as EmailAddress_v20, File as File_v20,
-    IPv4Address as IPv4Address_v20, IPv6Address as IPv6Address_v20,
-    MACAddress as MACAddress_v20, Mutex as Mutex_v20, URL as URL_v20,
+    EmailAddress as EmailAddress_v20, EmailMessage as EmailMessage_v20,
+    File as File_v20, IPv4Address as IPv4Address_v20,
+    IPv6Address as IPv6Address_v20, MACAddress as MACAddress_v20,
+    Mutex as Mutex_v20, URL as URL_v20,
     WindowsPEBinaryExt as WindowsPEBinaryExt_v20)
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
     Vulnerability as Vulnerability_v20)
 from stix2.v20.observables import (
     AutonomousSystem as AutonomousSystem_v21, DomainName as DomainName_v21,
-    EmailAddress as EmailAddress_v21, File as File_v21,
-    IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
-    MACAddress as MACAddress_v21, Mutex as Mutex_v21, URL as URL_v21,
+    EmailAddress as EmailAddress_v21, EmailMessage as EmailMessage_v21,
+    File as File_v21, IPv4Address as IPv4Address_v21,
+    IPv6Address as IPv6Address_v21, MACAddress as MACAddress_v21,
+    Mutex as Mutex_v21, URL as URL_v21,
     WindowsPEBinaryExt as WindowsPEBinaryExt_v21)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
@@ -34,8 +36,10 @@ from stix2.v21.sdo import (
 from stix2patterns.inspector import _PatternData as PatternData
 from typing import Optional, Tuple, Union
 
-_observable_default_properties = (
-    'type', 'spec_version', 'id', 'defanged'
+_observable_skip_properties = (
+    'content_ref', 'content_type', 'decryption_key', 'defanged',
+    'encryption_algorithm', 'extensions', 'id', 'is_encrypted', 'is_multipart',
+    'magic_number_hex', 'received_lines', 'sender_ref', 'spec_version', 'type'
 )
 
 _GENERIC_SDO_TYPING = Union[
@@ -53,12 +57,16 @@ _DOMAIN_NAME_TYPING = Union[
 _EMAIL_ADDRESS_TYPING = Union[
     EmailAddress_v20, EmailAddress_v21
 ]
+_EMAIL_MESSAGE_TYPING = Union[
+    EmailMessage_v20, EmailMessage_v21
+]
 _FILE_TYPING = Union[
     File_v20, File_v21
 ]
 _OBSERVABLE_OBJECTS_TYPING = Union[
     DomainName_v20, DomainName_v21,
     EmailAddress_v20, EmailAddress_v21,
+    EmailMessage_v20, EmailMessage_v21,
     File_v20, File_v21,
     IPv4Address_v20, IPv4Address_v21,
     IPv6Address_v20, IPv6Address_v21,
@@ -609,6 +617,18 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #
     ################################################################################
 
+    def _check_email_observable_fields(
+            self, email_message: _EMAIL_MESSAGE_TYPING, references: dict) -> bool:
+        fields = tuple(self._get_populated_properties(email_message))
+        if len(fields) > 1:
+            return True
+        for field, values in getattr(
+            email_message, 'additional_header_fields', {}
+        ).items():
+            if field in self._mapping.email_additional_header_fields_mapping:
+                length += len(values) if isinstance(values, list) else 1
+        return length > 1
+
     def _check_file_observable_fields(self, file_object: _FILE_TYPING) -> bool:
         if 'windows-pebinary-ext' in getattr(file_object, 'extensions', {}):
             return True
@@ -662,10 +682,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _force_observable_as_object(
             self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
-            object_type: str) -> bool:
+            object_type: str, references: Optional[dict] = None) -> bool:
         fields = getattr(self._mapping, f'{object_type}_object_fields')
         if any(hasattr(observable_object, field) for field in fields):
             return True
+        if references is not None:
+            return getattr(self, f'_check_{object_type}_observable_fields')(
+                observable_object, references
+            )
         return getattr(self, f'_check_{object_type}_observable_fields')(
             observable_object
         )
@@ -984,6 +1008,147 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 confidence=getattr(observed_data, 'confidence', None)
             )
 
+    def _parse_email_embedded_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        email_messages, references = self._filter_observable_objects(
+            observed_data.objects, 'email-message'
+        )
+        self._parse_email_observable_objects(
+            email_messages, references, observed_data
+        )
+
+    def _parse_email_observable_object(
+            self, email_message: _EMAIL_MESSAGE_TYPING, object_id: str,
+            observed_data: _OBSERVED_DATA_TYPING, references: dict,
+            reference: str):
+        misp_object = self._create_misp_object_from_observable(
+            'email', email_message, object_id, observed_data
+        )
+        self._populate_object_attributes_from_observable(
+            'email', email_message, misp_object, reference, observed_data.id
+        )
+        if getattr(email_message, 'from_ref', None) in references:
+            self._parse_email_observable_object_reference(
+                misp_object, references[email_message.from_ref], 'from',
+                email_message.from_ref, observed_data.id
+            )
+        for feature in ('to', 'cc', 'bcc'):
+            if getattr(email_message, f'{feature}_refs', None) in references:
+                for address_ref in getattr(email_message, f'{feature}_refs'):
+                    self._parse_email_observable_object_reference(
+                        misp_object, references[address_ref], feature,
+                        address_ref, observed_data.id
+                    )
+        if hasattr(email_message, 'additional_header_fields'):
+            for field, mapping in self._mapping.email_additional_header_fields_mapping.items():
+                if field not in email_message.additional_header_fields:
+                    continue
+                relation = mapping['object_relation']
+                values = email_message.additional_header_fields[field]
+                if isinstance(values, list):
+                    for index, value in enumerate(values):
+                        attribute = {'value': value}
+                        attribute.update(mapping)
+                        attribute.update(
+                            self._fill_observable_object_attribute(
+                                f'{reference} - {index} - {relation} - {value}',
+                                observed_data.id
+                            )
+                        )
+                        misp_object.add_attribute(**attribute)
+                else:
+                    attribute = {'value': values}
+                    attribute.update(mapping)
+                    attribute.update(
+                        self._fill_observable_object_attribute(
+                            f'{reference} - {relation} - {values}',
+                            observed_data.id
+                        )
+                    )
+                    misp_object.add_attribute(**attribute)
+        self._add_misp_object(
+            misp_object, confidence=getattr(observed_data, 'confidence', None)
+        )
+
+    def _parse_email_observable_object_reference(
+            self, misp_object: MISPObject, address: _EMAIL_ADDRESS_TYPING,
+            relation: str, object_id: str, observed_data_id: str):
+        reference = getattr(
+            address, 'id', f'{observed_data_id} - {object_id}'
+        )
+        misp_object.add_attribute(
+            relation, address.value,
+            **self._fill_observable_object_attribute(
+                f'{reference} - {relation} - {address.value}',
+                observed_data_id
+            )
+        )
+        if hasattr(address, 'display_name'):
+            misp_object.add_attribute(
+                f'{relation}-display-name', address.display_name,
+                **self._fill_observable_object_attribute(
+                    f'{reference} - {relation}-display-name - {address.display_name}',
+                    observed_data_id
+                )
+            )
+
+    def _parse_email_observable_object_refs(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        email_messages, references = self._filter_observable_refs(
+            observed_data.object_refs, 'email-message'
+        )
+        self._parse_email_observable_objects(
+            email_messages, references, observed_data
+        )
+
+    def _parse_email_observable_objects(
+            self, email_messages: dict, references: dict,
+            observed_data: _OBSERVED_DATA_TYPING):
+        feature = 'observable' if len(email_messages) > 1 else 'single_observable'
+        for object_id, email_message in email_messages.items():
+            if self._force_observable_as_object(email_message, 'email', references):
+                reference = getattr(
+                    email_message, 'id', f'{observed_data.id} - {object_id}'
+                )
+                self._parse_email_observable_object(
+                    email_message, object_id, observed_data,
+                    references, reference
+                )
+                continue
+            for field in self._get_populated_properties(email_message):
+                if field in self._mapping.email_object_mapping:
+                    attribute = self._mapping.email_object_mapping[field]
+                    self._add_misp_attribute(
+                        getattr(self, f'_handle_{feature}_attribute')(
+                            email_message, field, attribute['type'],
+                            observed_data.id
+                        ),
+                        confidence=getattr(observed_data, 'confidence', None)
+                    )
+                    break
+                # The only remaining field that is supported in the conversion
+                # mapping at this point should be `additional_header_fields`
+                if field == 'additional_header_fields':
+                    header_fields = email_message.additional_header_fields
+                    if 'Reply-To' in header_fields:
+                        self._add_attribute(
+                            getattr(self, f'_handle_{feature}_attribute')(
+                                header_fields, 'Reply-To', 'email-reply-to',
+                                observed_data.id
+                            ),
+                            confidence=getattr(observed_data, 'confidence', None)
+                        )
+                        break
+                    if 'X-Mailer' in header_fields:
+                        self._add_attribute(
+                            getattr(self, f'_handle_{feature}_attribute')(
+                                header_fields, 'X-Mailer', 'email-x-mailer',
+                                observed_data.id
+                            ),
+                            confidence=getattr(observed_data, 'confidence', None)
+                        )
+                        break
+
     def _parse_file_embedded_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING):
         files, references = self._filter_observable_objects(
@@ -998,8 +1163,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'file', file_object, object_id, observed_data
         )
         self._populate_object_attributes_from_observable(
-            'file', file_object, misp_object,
-            reference, observed_data.id
+            'file', file_object, misp_object, reference, observed_data.id
         )
         if hasattr(file_object, 'hashes'):
             self._populate_object_attributes_from_observable(
@@ -1063,9 +1227,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                             'includes'
                         )
                 continue
-            for field in file_object.properties_populated():
-                if field in _observable_default_properties:
-                    continue
+            for field in self._get_populated_properties(file_object):
                 if field in self._mapping.file_object_mapping:
                     attribute = self._mapping.file_object_mapping[field]
                     self._add_misp_attribute(
@@ -1672,6 +1834,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         return 'objects', [
             observable.type for observable in observed_data.objects.values()
         ]
+
+    @staticmethod
+    def _get_populated_properties(observable_object: _OBSERVABLE_OBJECTS_TYPING):
+        for field in observable_object.properties_populated():
+            if field not in _observable_skip_properties:
+                yield field
+
     @staticmethod
     def _fetch_embedded_observable_objects(
             observed_data: _OBSERVED_DATA_TYPING) -> _OBSERVABLE_OBJECTS_TYPING:

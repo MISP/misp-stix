@@ -220,6 +220,9 @@ class STIX2toMISPMapping:
         self.__regkey_attribute = Mapping(
             **{'type': 'regkey', 'object_relation': 'key'}
         )
+        self.__reply_to_attribute = Mapping(
+            **{'type': 'email-reply-to', 'object_relation': 'reply-to'}
+        )
         self.__send_date_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'send-date'}
         )
@@ -294,6 +297,9 @@ class STIX2toMISPMapping:
         self.__version_attribute = Mapping(**version_attribute)
         self.__vulnerability_attribute = Mapping(
             **{'type': 'vulnerability', 'object_relation': 'id'}
+        )
+        self.__x_mailer_attribute = Mapping(
+            **{'type': 'email-x-mailer', 'object_relation': 'x-mailer'}
         )
         self.__yara_attribute = Mapping(
             **{'type': 'yara', 'object_relation': 'yara'}
@@ -410,6 +416,12 @@ class STIX2toMISPMapping:
             "TCP": "4", "UDP": "4",
             "HTTP": "7", "HTTPS": "7", "FTP": "7"
         }
+        self.__email_additional_header_fields_mapping = Mapping(
+            **{
+                'Reply-To': self.reply_to_attribute,
+                'X-Mailer': self.x_mailer_attribute
+            }
+        )
         location_object_mapping = {
             'city': {'type': 'text', 'object_relation': 'city'},
             'country': {'type': 'text', 'object_relation': 'countrycode'},
@@ -508,6 +520,10 @@ class STIX2toMISPMapping:
     @property
     def dst_port_attribute(self) -> dict:
         return self.__dst_port_attribute
+
+    @property
+    def email_additional_header_fields_mapping(self) -> dict:
+        return self.__email_additional_header_fields_mapping
 
     @property
     def email_body_attribute(self) -> dict:
@@ -628,6 +644,10 @@ class STIX2toMISPMapping:
     @property
     def regkey_attribute(self) -> dict:
         return self.__regkey_attribute
+
+    @property
+    def reply_to_attribute(self) -> dict:
+        return self.__reply_to_attribute
 
     @property
     def send_date_attribute(self) -> dict:
@@ -760,6 +780,10 @@ class STIX2toMISPMapping:
     @property
     def vulnerability_attribute(self) -> dict:
         return self.__vulnerability_attribute
+
+    @property
+    def x_mailer_attribute(self) -> dict:
+        return self.__x_mailer_attribute
 
     @property
     def yara_attribute(self) -> dict:

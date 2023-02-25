@@ -238,6 +238,20 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                 'TLSH': self.tlsh_attribute
             }
         )
+        self.__email_object_fields = (
+            'bcc_refs',
+            'cc_refs',
+            'body_multipart',
+            'date',
+            'from_ref'
+            'raw_email_ref'
+        )
+        self.__email_object_mapping = Mapping(
+            body = self.email_body_attribute,
+            date = self.send_date_attribute,
+            message_id = self.message_id_attribute,
+            subject = self.email_subject_attribute
+        )
         self.__file_object_fields = (
             'contains_refs',
             'name_enc',
@@ -394,6 +408,14 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def email_message_pattern_mapping(self) -> dict:
         return self.__email_message_pattern_mapping
+
+    @property
+    def email_object_fields(self) -> tuple:
+        return self.__email_object_fields
+
+    @property
+    def email_object_mapping(self) -> dict:
+        return self.__email_object_mapping
 
     @property
     def file_hashes_object_mapping(self) -> dict:

@@ -403,7 +403,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         raw_base64_attribute = {'type': 'text', 'object_relation': 'raw-base64'}
         received_hostname_attribute = {'type': 'hostname', 'object_relation': 'received-header-hostname'}
         received_ip_attribute = {'type': 'ip-src', 'object_relation': 'received-header-ip'}
-        reply_to_attribute = {'type': 'email-reply-to', 'object_relation': 'reply-to'}
         reply_to_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'reply-to-display-name'}
         return_path_attribute = {'type': 'email-src', 'object_relation': 'return-path'}
         role_attribute = {'type': 'text', 'object_relation': 'role'}
@@ -427,7 +426,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         user_process_attribute = {'type': 'text', 'object_relation': 'user-process'}
         verified_attribute = {'type': 'text', 'object_relation': 'verified'}
         vhash_attribute = {'type': 'vhash', 'object_relation': 'vhash'}
-        x_mailer_attribute = {'type': 'email-x-mailer', 'object_relation': 'x-mailer'}
         self.__dst_as_attribute = Mapping(
             **{'type': 'AS', 'object_relation': 'dst-as'}
         )
@@ -524,16 +522,10 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_registration_date = {'type': 'datetime', 'object_relation': 'registration-date'},
             x_misp_text = text_attribute
         )
-        self.__email_additional_header_fields_mapping = Mapping(
-            **{
-                'Reply-To': reply_to_attribute,
-                'X-Mailer': x_mailer_attribute
-            }
-        )
         self.__email_indicator_object_mapping = Mapping(
             **{
-                'additional_header_fields.reply_to': reply_to_attribute,
-                'additional_header_fields.x_mailer': x_mailer_attribute,
+                'additional_header_fields.reply_to': self.reply_to_attribute,
+                'additional_header_fields.x_mailer': self.x_mailer_attribute,
                 'bcc_refs': {
                     'display_name': bcc_display_name_attribute,
                     'value': bcc_attribute
@@ -1288,10 +1280,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def dst_as_attribute(self) -> dict:
         return self.__dst_as_attribute
-
-    @property
-    def email_additional_header_fields_mapping(self) -> dict:
-        return self.__email_additional_header_fields_mapping
 
     @property
     def email_indicator_object_mapping(self) -> dict:
