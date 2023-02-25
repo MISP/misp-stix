@@ -438,9 +438,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         mapping = self._handle_observables_mapping(observable_types)
         feature = f'_parse_{mapping}_embedded_observable_objects'
         try:
-            getattr(self, feature)(observed_data)
+            parser = getattr(self, feature)
         except AttributeError:
             raise UnknownParsingFunctionError(feature)
+        parser(observed_data)
 
     def _parse_observable_refs(self, observed_data: ObservedData_v21):
         """
@@ -456,9 +457,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         mapping = self._handle_observables_mapping(observable_types)
         feature = f'_parse_{mapping}_observable_object_refs'
         try:
-            getattr(self, feature)(observed_data)
+            parser = getattr(self, feature)
         except AttributeError:
             raise UnknownParsingFunctionError(feature)
+        parser(observed_data)
 
     def _parse_observed_data(self, observed_data_ref: str):
         """
