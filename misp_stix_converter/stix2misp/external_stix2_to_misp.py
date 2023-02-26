@@ -779,7 +779,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_as_single_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
-        autonomous_system = getattr(self, f'_fetch_{asset}')(observed_data)
+        autonomous_system = next(
+            getattr(self, f'_fetch_{asset}')(observed_data)
+        )
         self._parse_autonomous_system_single_observable_object(
             autonomous_system, observed_data
         )
@@ -985,7 +987,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_email_address_single_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
-        email_address = getattr(self, f'_fetch_{asset}')(observed_data)
+        email_address = next(getattr(self, f'_fetch_{asset}')(observed_data))
         if hasattr(email_address, 'display_name'):
             self._add_misp_attribute(
                 self._create_attribute_from_single_observable_object(
@@ -1327,7 +1329,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_generic_single_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, feature: str,
             attribute_type: str, asset: str):
-        observable_object = getattr(self, f'_fetch_{asset}')(observed_data)
+        observable_object = next(
+            getattr(self, f'_fetch_{asset}')(observed_data)
+        )
         self._add_misp_attribute(
             self._handle_single_observable_attribute(
                 observable_object, feature, attribute_type, observed_data.id
@@ -1843,18 +1847,22 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     @staticmethod
     def _fetch_embedded_observable_objects(
-            observed_data: _OBSERVED_DATA_TYPING) -> _OBSERVABLE_OBJECTS_TYPING:
-        return list(observed_data.objects.values())[0]
+            observed_data: _OBSERVED_DATA_TYPING):
+        for observable_object in observed_data.objects.values():
+            yield observable_object
 
     @staticmethod
-    def _fetch_embedded_observable_objects_with_id(observed_data: _OBSERVED_DATA_TYPING):
+    def _fetch_embedded_observable_objects_with_id(
+            observed_data: _OBSERVED_DATA_TYPING):
         yield from observed_data.objects.items()
 
     def _fetch_observable_object_refs(
-            self, observed_data: _OBSERVED_DATA_TYPING) -> _OBSERVABLE_OBJECTS_TYPING:
-        return self._observable[observed_data.object_refs[0]]
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        for reference in observed_data.object_refs:
+            yield self._observable[reference]
 
-    def _fetch_observable_object_refs_with_id(self, observed_data: _OBSERVED_DATA_TYPING):
+    def _fetch_observable_object_refs_with_id(
+            self, observed_data: _OBSERVED_DATA_TYPING):
         for reference in observed_data.object_refs:
             yield reference, self._observable[reference]
 
