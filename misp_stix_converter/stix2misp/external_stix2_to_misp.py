@@ -445,12 +445,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             observable.type for observable in observed_data.objects.values()
         )
         mapping = self._handle_observables_mapping(observable_types)
-        feature = f'_parse_{mapping}_embedded_observable_objects'
+        feature = f'_parse_{mapping}_observable_objects'
         try:
             parser = getattr(self, feature)
         except AttributeError:
             raise UnknownParsingFunctionError(feature)
-        parser(observed_data)
+        parser(observed_data, 'objects')
 
     def _parse_observable_refs(self, observed_data: ObservedData_v21):
         """
@@ -464,12 +464,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             reference.split('--')[0] for reference in observed_data.object_refs
         )
         mapping = self._handle_observables_mapping(observable_types)
-        feature = f'_parse_{mapping}_observable_object_refs'
+        feature = f'_parse_{mapping}_observable_objects'
         try:
             parser = getattr(self, feature)
         except AttributeError:
             raise UnknownParsingFunctionError(feature)
-        parser(observed_data)
+        parser(observed_data, 'object_refs')
 
     def _parse_observed_data(self, observed_data_ref: str):
         """
@@ -619,7 +619,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     ################################################################################
 
     def _check_email_observable_fields(
-            self, email_message: _EMAIL_MESSAGE_TYPING, references: dict) -> bool:
+            self, email_message: _EMAIL_MESSAGE_TYPING) -> bool:
         fields = tuple(self._get_populated_properties(email_message))
         if len(fields) > 1:
             return True
@@ -796,18 +796,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             attribute_type, value, observed_data_id
         )
 
-    def _parse_as_embedded_observable_objects(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        asset = 'embedded_observable_objects'
-        if len(observed_data.objects) > 1:
-            self._parse_as_observables(observed_data, asset)
-        else:
-            self._parse_as_single_observable(observed_data, asset)
-
-    def _parse_as_observable_object_refs(
-            self, observed_data: ObservedData_v21):
-        asset = 'observable_object_refs'
-        if len(observed_data.object_refs) > 1:
+    def _parse_as_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        if len(getattr(observed_data, asset)) > 1:
             self._parse_as_observables(observed_data, asset)
         else:
             self._parse_as_single_observable(observed_data, asset)
@@ -815,33 +806,21 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_as_observables(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
         autonomous_systems = dict(
-            getattr(self, f'_fetch_{asset}_with_id')(observed_data)
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
         )
         for object_id, autonomous_system in autonomous_systems.items():
-            self._parse_autonomous_system_observable_object(
+            self._parse_autonomous_system_observables(
                 autonomous_system, observed_data, object_id
             )
 
     def _parse_as_single_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
         autonomous_system = next(
-            getattr(self, f'_fetch_{asset}')(observed_data)
+            getattr(self, f'_fetch_observable_{asset}')(observed_data)
         )
-        self._parse_autonomous_system_single_observable_object(
+        self._parse_autonomous_system_single_observable(
             autonomous_system, observed_data
         )
-
-    def _parse_asn_embedded_observable_objects(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        autonomous_systems, ip_addresses = self._filter_observable_objects(
-            observed_data.objects, 'autonomous-system'
-        )
-        if ip_addresses:
-            self._parse_asn_observable_objects(
-                autonomous_systems, ip_addresses, observed_data
-            )
-        else:
-            self._parse_asn_observables(autonomous_systems, observed_data)
 
     def _parse_asn_object_attributes(
             self, autonomous_system: _AUTONOMOUS_SYSTEM_TYPING, object_id: str,
@@ -864,18 +843,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
             )
 
-    def _parse_asn_observable_object_refs(
-            self, observed_data: ObservedData_v21):
-        autonomous_systems, ip_addresses = self._filter_observable_refs(
-            observed_data.object_refs, 'autonomous-system'
-        )
-        if ip_addresses:
-            self._parse_asn_observable_objects(
-                autonomous_systems, ip_addresses, observed_data
-            )
-        else:
-            self._parse_asn_observables(autonomous_systems, observed_data)
-
     def _parse_asn_observable_object(
             self, autonomous_system: _AUTONOMOUS_SYSTEM_TYPING,
             object_id: str, observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
@@ -889,6 +856,16 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         return misp_object
 
     def _parse_asn_observable_objects(
+            self, observed_data: ObservedData_v21, asset: str):
+        AS, IPs = getattr(self, f'_filter_observable_{asset}')(
+            getattr(observed_data, asset), 'autonomous-system'
+        )
+        if IPs:
+            self._parse_asn_observables(AS, IPs, observed_data)
+        else:
+            self._parse_autonomous_system_observable_objects(AS, observed_data)
+
+    def _parse_asn_observables(
             self, autonomous_systems: dict, ip_addresses: dict,
             observed_data: _OBSERVED_DATA_TYPING):
         feature = 'observable' if len(autonomous_systems) > 1 else 'single_observable'
@@ -920,19 +897,19 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 autonomous_system, observed_data, object_id
             )
 
-    def _parse_asn_observables(self, autonomous_systems: dict,
-                               observed_data: _OBSERVED_DATA_TYPING):
+    def _parse_autonomous_system_observable_objects(
+            self, autonomous_systems: dict, observed_data: _OBSERVED_DATA_TYPING):
         if len(autonomous_systems) > 1:
             for object_id, autonomous_system in autonomous_systems.items():
-                self._parse_autonomous_system_observable_object(
+                self._parse_autonomous_system_observables(
                     autonomous_system, observed_data, object_id
                 )
         else:
-            self._parse_autonomous_system_single_observable_object(
+            self._parse_autonomous_system_single_observable(
                 autonomous_systems.values()[0], observed_data
             )
 
-    def _parse_autonomous_system_observable_object(
+    def _parse_autonomous_system_observables(
             self, autonomous_system: _OBSERVABLE_OBJECTS_TYPING,
             observed_data: _OBSERVED_DATA_TYPING, object_id: str):
         if hasattr(autonomous_system, 'name'):
@@ -951,7 +928,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 confidence=getattr(observed_data, 'confidence', None)
             )
 
-    def _parse_autonomous_system_single_observable_object(
+    def _parse_autonomous_system_single_observable(
             self, autonomous_system: _OBSERVABLE_OBJECTS_TYPING,
             observed_data: _OBSERVED_DATA_TYPING,
             object_id: Optional[str] = '0'):
@@ -971,31 +948,20 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 confidence=getattr(observed_data, 'confidence', None)
             )
 
-
-    def _parse_domain_embedded_observable_objects(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        self._parse_generic_embedded_observable_objects(
-            observed_data, 'value', 'domain'
-        )
-
-    def _parse_domain_observable_object_refs(
-            self, observed_data: ObservedData_v21):
-        self._parse_generic_observable_object_refs(
-            observed_data, 'value', 'domain'
-        )
-
-    def _parse_email_address_embedded_observable_objects(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        asset = 'embedded_observable_objects'
-        if len(observed_data.objects) > 1:
-            self._parse_email_address_observables(observed_data, asset)
+    def _parse_domain_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        if len(getattr(observed_data, asset)) > 1:
+            self._parse_generic_observables(
+                observed_data, 'value', 'domain', asset
+            )
         else:
-            self._parse_email_address_single_observable(observed_data, asset)
+            self._parse_generic_single_observable(
+                observed_data, 'value', 'domain', asset
+            )
 
-    def _parse_email_address_observable_object_refs(
-            self, observed_data: ObservedData_v21):
-        asset = 'observable_object_refs'
-        if len(observed_data.object_refs) > 1:
+    def _parse_email_address_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset):
+        if len(observed_data.objects) > 1:
             self._parse_email_address_observables(observed_data, asset)
         else:
             self._parse_email_address_single_observable(observed_data, asset)
@@ -1003,7 +969,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_email_address_observables(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
         email_addresses = dict(
-            getattr(self, f'_fetch_{asset}_with_id')(observed_data)
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
         )
         for object_id, email_address in email_addresses.items():
             if hasattr(email_address, 'display_name'):
@@ -1032,7 +998,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_email_address_single_observable(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
-        email_address = next(getattr(self, f'_fetch_{asset}')(observed_data))
+        email_address = next(
+            getattr(self, f'_fetch_observable_{asset}')(observed_data)
+        )
         if hasattr(email_address, 'display_name'):
             self._add_misp_attribute(
                 self._create_attribute_from_single_observable_object(
@@ -1054,15 +1022,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 ),
                 confidence=getattr(observed_data, 'confidence', None)
             )
-
-    def _parse_email_embedded_observable_objects(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        email_messages, references = self._filter_observable_objects(
-            observed_data.objects, 'email-message'
-        )
-        self._parse_email_observable_objects(
-            email_messages, references, observed_data
-        )
 
     def _parse_email_observable_object(
             self, email_message: _EMAIL_MESSAGE_TYPING, object_id: str,
@@ -1139,21 +1098,16 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
             )
 
-    def _parse_email_observable_object_refs(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        email_messages, references = self._filter_observable_refs(
-            observed_data.object_refs, 'email-message'
-        )
-        self._parse_email_observable_objects(
-            email_messages, references, observed_data
-        )
-
     def _parse_email_observable_objects(
-            self, email_messages: dict, references: dict,
-            observed_data: _OBSERVED_DATA_TYPING):
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        email_messages, references = getattr(
+            self, f'_filter_observable_{asset}'
+        )(
+            getattr(observed_data, asset), 'email-message'
+        )
         feature = 'observable' if len(email_messages) > 1 else 'single_observable'
         for object_id, email_message in email_messages.items():
-            if self._force_observable_as_object(email_message, 'email', references):
+            if self._force_observable_as_object(email_message, 'email'):
                 reference = getattr(
                     email_message, 'id', f'{observed_data.id} - {object_id}'
                 )
@@ -1196,13 +1150,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         )
                         break
 
-    def _parse_file_embedded_observable_objects(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        files, references = self._filter_observable_objects(
-            observed_data.objects, 'file'
-        )
-        self._parse_file_observable_objects(files, references, observed_data)
-
     def _parse_file_observable_object(
             self, file_object: _FILE_TYPING, object_id: str, references: dict,
             reference: str, observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
@@ -1231,15 +1178,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object, confidence=getattr(observed_data, 'confidence', None)
         )
 
-    def _parse_file_observable_object_refs(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        files, references = self._filter_observable_refs(
-            observed_data.object_refs, 'file'
+    def _parse_file_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        files, references = getattr(self, f'_filter_observable_{asset}')(
+            getattr(observed_data, asset), 'file'
         )
-        self._parse_file_observable_objects(files, references, observed_data)
-
-    def _parse_file_observable_objects(self, files: dict, references: dict,
-                                       observed_data: _OBSERVED_DATA_TYPING):
         feature = 'observable' if len(files) > 1 else 'single_observable'
         for object_id, file_object in files.items():
             if self._force_observable_as_object(file_object, 'file'):
@@ -1331,36 +1274,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 pe_object.add_reference(section_object.uuid, 'includes')
         return pe_object.uuid
 
-    def _parse_generic_embedded_observable_objects(
-            self, observed_data: _OBSERVED_DATA_TYPING, feature: str,
-            attribute_type: str):
-        asset = 'embedded_observable_objects'
-        if len(observed_data.objects) > 1:
-            self._parse_generic_observables(
-                observed_data, feature, attribute_type, asset
-            )
-        else:
-            self._parse_generic_single_observable(
-                observed_data, feature, attribute_type, asset
-            )
-
-    def _parse_generic_observable_object_refs(
-            self, observed_data: _OBSERVED_DATA_TYPING, feature: str,
-            attribute_type: str):
-        asset = 'observable_object_refs'
-        if len(observed_data.object_refs) > 1:
-            self._parse_generic_observables(
-                observed_data, feature, attribute_type, asset
-            )
-        else:
-            self._parse_generic_single_observable(
-                observed_data, feature, attribute_type, asset
-            )
-
     def _parse_generic_observables(self, observed_data: _OBSERVED_DATA_TYPING,
                                    feature: str, attribute_type: str,asset: str):
         observable_objects = dict(
-            getattr(self, f'_fetch_{asset}_with_id')(observed_data)
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
         )
         for object_id, observable_object in observable_objects.items():
             self._add_misp_attribute(
@@ -1375,7 +1292,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self, observed_data: _OBSERVED_DATA_TYPING, feature: str,
             attribute_type: str, asset: str):
         observable_object = next(
-            getattr(self, f'_fetch_{asset}')(observed_data)
+            getattr(self, f'_fetch_observable_{asset}')(observed_data)
         )
         self._add_misp_attribute(
             self._handle_single_observable_attribute(
@@ -1384,54 +1301,49 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             confidence=getattr(observed_data, 'confidence', None)
         )
 
-    def _parse_ip_address_embedded_observable_objects(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        self._parse_generic_embedded_observable_objects(
-            observed_data, 'value', 'ip-dst'
-        )
+    def _parse_ip_address_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        if len(getattr(observed_data, asset)) > 1:
+            self._parse_generic_observables(
+                observed_data, 'value', 'ip-dst', asset
+            )
+        else:
+            self._parse_generic_single_observable(
+                observed_data, 'value', 'ip-dst', asset
+            )
 
-    def _parse_ip_address_observable_object_refs(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        self._parse_generic_observable_object_refs(
-            observed_data, 'value', 'ip-dst'
-        )
+    def _parse_mac_address_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        if len(getattr(observed_data, asset)) > 1:
+            self._parse_generic_observables(
+                observed_data, 'value', 'mac-address', asset
+            )
+        else:
+            self._parse_generic_single_observable(
+                observed_data, 'value', 'mac-address', asset
+            )
 
-    def _parse_mac_address_embedded_observable_objects(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        self._parse_generic_embedded_observable_objects(
-            observed_data, 'value', 'mac-address'
-        )
+    def _parse_mutex_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        if len(getattr(observed_data, asset)) > 1:
+            self._parse_generic_observables(
+                observed_data, 'name', 'mutex', asset
+            )
+        else:
+            self._parse_generic_single_observable(
+                observed_data, 'name', 'mutex', asset
+            )
 
-    def _parse_mac_address_observable_object_refs(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        self._parse_generic_observable_object_refs(
-            observed_data, 'value', 'mac-address'
-        )
-
-    def _parse_mutex_embedded_observable_objects(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        self._parse_generic_embedded_observable_objects(
-            observed_data, 'name', 'mutex'
-        )
-
-    def _parse_mutex_observable_object_refs(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        self._parse_generic_observable_object_refs(
-            observed_data, 'name', 'mutex'
-        )
-
-
-    def _parse_url_embedded_observable_objects(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        self._parse_generic_embedded_observable_objects(
-            observed_data, 'value', 'url'
-        )
-
-    def _parse_url_observable_object_refs(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        self._parse_generic_observable_object_refs(
-            observed_data, 'value', 'url'
-        )
+    def _parse_url_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        if len(getattr(observed_data, asset)) > 1:
+            self._parse_generic_observables(
+                observed_data, 'value', 'url', asset
+            )
+        else:
+            self._parse_generic_single_observable(
+                observed_data, 'value', 'url', asset
+            )
 
     def _populate_object_attributes_from_observable(
             self, feature: str, observable_object: _OBSERVABLE_OBJECTS_TYPING,
