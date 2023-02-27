@@ -787,7 +787,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         __lnk_indicator_object_mapping = {
             'hashes.MD5': self.md5_attribute,
             'hashes.SHA1': self.sha1_attribute,
-            'hashes.SHA224': self.sha224_attribute,
+            'hashes.SHA224': sha224_attribute,
             'hashes.SHA256': self.sha256_attribute,
             'hashes.SHA384': sha384_attribute,
             'hashes.SHA512': self.sha512_attribute,
