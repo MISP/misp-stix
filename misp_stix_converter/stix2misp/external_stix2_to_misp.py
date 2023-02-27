@@ -11,6 +11,7 @@ from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _OBSERVED_DATA_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
+from collections import defaultdict
 from pymisp import MISPAttribute, MISPGalaxy, MISPObject
 from stix2.v20.observables import (
     AutonomousSystem as AutonomousSystem_v20, DomainName as DomainName_v20,
@@ -673,12 +674,56 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'comment': f'Original Observed Data ID: {observed_data_id}'
         }
 
+    def _fetch_observable_object_refs(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        for reference in observed_data.object_refs:
+            yield self._observable[reference]
+
+    def _fetch_observable_object_refs_with_id(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        for reference in observed_data.object_refs:
+            yield reference, self._observable[reference]
+
+    @staticmethod
+    def _fetch_observable_objects(
+            observed_data: _OBSERVED_DATA_TYPING):
+        for observable_object in observed_data.objects.values():
+            yield observable_object
+
+    @staticmethod
+    def _fetch_observable_objects_with_id(
+            observed_data: _OBSERVED_DATA_TYPING):
+        yield from observed_data.objects.items()
+
     def _fill_observable_object_attribute(
             self, reference: str, observed_data_id: str) -> dict:
         return {
             'uuid': self._create_v5_uuid(reference),
             'comment': f'Original Observed Data ID: {observed_data_id}'
         }
+
+    def _filter_observable_objects(
+            self, observable_objects: list, *main_types: Tuple[str]) -> Tuple[dict]:
+        main_objects = defaultdict(dict)
+        references = {}
+        for reference, observable in observable_objects.items():
+            if observable.type in main_types:
+                main_objects[observable.type][reference] = observable
+            else:
+                references[reference] = observable
+        return *(main_objects[maintype] for maintype in main_types), references
+
+    def _filter_observable_object_refs(
+            self, object_refs: list, *main_types: Tuple[str]) -> Tuple[dict]:
+        main_objects = defaultdict(dict)
+        references = {}
+        for reference in object_refs:
+            observable = self._observable[reference]
+            if observable.type in main_types:
+                main_objects[observable.type][reference] = observable
+            else:
+                references[reference] = observable
+        return *(main_objects[maintype] for maintype in main_types), references
 
     def _force_observable_as_object(
             self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
@@ -1844,50 +1889,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for field in observable_object.properties_populated():
             if field not in _observable_skip_properties:
                 yield field
-
-    @staticmethod
-    def _fetch_embedded_observable_objects(
-            observed_data: _OBSERVED_DATA_TYPING):
-        for observable_object in observed_data.objects.values():
-            yield observable_object
-
-    @staticmethod
-    def _fetch_embedded_observable_objects_with_id(
-            observed_data: _OBSERVED_DATA_TYPING):
-        yield from observed_data.objects.items()
-
-    def _fetch_observable_object_refs(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        for reference in observed_data.object_refs:
-            yield self._observable[reference]
-
-    def _fetch_observable_object_refs_with_id(
-            self, observed_data: _OBSERVED_DATA_TYPING):
-        for reference in observed_data.object_refs:
-            yield reference, self._observable[reference]
-
-    def _filter_observable_objects(self, observable_objects: list,
-                                   *main_types: Tuple[str]) -> Tuple[dict]:
-        main_objects = {}
-        references = {}
-        for reference, observable in observable_objects.items():
-            if observable.type in main_types:
-                main_objects[reference] = observable
-            else:
-                references[reference] = observable
-        return main_objects, references
-
-    def _filter_observable_refs(self, object_refs: list,
-                                *main_types: Tuple[str]) -> Tuple[dict]:
-        main_objects = {}
-        references = {}
-        for reference in object_refs:
-            observable = self._observable[reference]
-            if observable.type in main_types:
-                main_objects[reference] = observable
-            else:
-                references[reference] = observable
-        return main_objects, references
 
     def _is_pattern_too_complex(self, pattern: str) -> bool:
         if any(keyword in pattern for keyword in self._mapping.pattern_forbidden_relations):
