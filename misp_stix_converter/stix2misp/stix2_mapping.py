@@ -109,6 +109,9 @@ class STIX2toMISPMapping:
         version_attribute = {'type': 'text', 'object_relation': 'version'}
 
         # SINGLE ATTRIBUTES MAPPING
+        self.__access_time_attribute = Mapping(
+            **{'type': 'datetime', 'object_relation': 'access-time'}
+        )
         self.__accuracy_radius_attribute = Mapping(
             **{'type': 'float', 'object_relation': 'accuracy-radius'}
         )
@@ -195,11 +198,17 @@ class STIX2toMISPMapping:
         self.__mime_type_attribute = Mapping(
             **{'type': 'mime-type', 'object_relation': 'mimetype'}
         )
+        self.__modification_time_attribute = Mapping(
+            **{'type': 'datetime', 'object_relation': 'modification-time'}
+        )
         self.__name_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'name'}
         )
         self.__number_of_sections_attribute = Mapping(
             **{'type': 'counter', 'object_relation': 'number-sections'}
+        )
+        self.__path_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'path'}
         )
         self.__pid_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'pid'}
@@ -442,6 +451,10 @@ class STIX2toMISPMapping:
         )
 
     @property
+    def access_time_attribute(self) -> dict:
+        return self.__access_time_attribute
+
+    @property
     def accuracy_radius_attribute(self) -> dict:
         return self.__accuracy_radius_attribute
 
@@ -598,6 +611,10 @@ class STIX2toMISPMapping:
         return self.__mime_type_attribute
 
     @property
+    def modification_time_attribute(self) -> dict:
+        return self.__modification_time_attribute
+
+    @property
     def name_attribute(self) -> dict:
         return self.__name_attribute
 
@@ -612,6 +629,10 @@ class STIX2toMISPMapping:
     @property
     def observable_object_types(self) -> tuple:
         return self.__observable_object_types
+
+    @property
+    def path_attribute(self) -> dict:
+        return self.__path_attribute
 
     @property
     def pid_attribute(self) -> dict:

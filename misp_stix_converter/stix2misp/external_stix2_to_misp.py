@@ -14,21 +14,21 @@ from .stix2_to_misp import (
 from collections import defaultdict
 from pymisp import MISPAttribute, MISPGalaxy, MISPObject
 from stix2.v20.observables import (
-    AutonomousSystem as AutonomousSystem_v20, DomainName as DomainName_v20,
-    EmailAddress as EmailAddress_v20, EmailMessage as EmailMessage_v20,
-    File as File_v20, IPv4Address as IPv4Address_v20,
-    IPv6Address as IPv6Address_v20, MACAddress as MACAddress_v20,
-    Mutex as Mutex_v20, URL as URL_v20,
+    AutonomousSystem as AutonomousSystem_v20, Directory as Directory_v20,
+    DomainName as DomainName_v20, EmailAddress as EmailAddress_v20,
+    EmailMessage as EmailMessage_v20, File as File_v20,
+    IPv4Address as IPv4Address_v20, IPv6Address as IPv6Address_v20,
+    MACAddress as MACAddress_v20, Mutex as Mutex_v20, URL as URL_v20,
     WindowsPEBinaryExt as WindowsPEBinaryExt_v20)
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
     Vulnerability as Vulnerability_v20)
 from stix2.v20.observables import (
-    AutonomousSystem as AutonomousSystem_v21, DomainName as DomainName_v21,
-    EmailAddress as EmailAddress_v21, EmailMessage as EmailMessage_v21,
-    File as File_v21, IPv4Address as IPv4Address_v21,
-    IPv6Address as IPv6Address_v21, MACAddress as MACAddress_v21,
-    Mutex as Mutex_v21, URL as URL_v21,
+    AutonomousSystem as AutonomousSystem_v21, Directory as Directory_v21,
+    DomainName as DomainName_v21, EmailAddress as EmailAddress_v21,
+    EmailMessage as EmailMessage_v21, File as File_v21,
+    IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
+    MACAddress as MACAddress_v21, Mutex as Mutex_v21, URL as URL_v21,
     WindowsPEBinaryExt as WindowsPEBinaryExt_v21)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
@@ -52,6 +52,9 @@ _GENERIC_SDO_TYPING = Union[
 _AUTONOMOUS_SYSTEM_TYPING = Union[
     AutonomousSystem_v20, AutonomousSystem_v21
 ]
+_DIRECTORY_TYPING = Union[
+    Directory_v20, Directory_v21
+]
 _DOMAIN_NAME_TYPING = Union[
     DomainName_v20, DomainName_v21
 ]
@@ -65,6 +68,7 @@ _FILE_TYPING = Union[
     File_v20, File_v21
 ]
 _OBSERVABLE_OBJECTS_TYPING = Union[
+    Directory_v20, Directory_v21,
     DomainName_v20, DomainName_v21,
     EmailAddress_v20, EmailAddress_v21,
     EmailMessage_v20, EmailMessage_v21,
@@ -944,6 +948,33 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._handle_single_observable_special_attribute(
                     autonomous_system, f'AS{autonomous_system.number}',
                     'AS', observed_data.id
+                ),
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+
+    def _parse_directory_observable_object(
+            self, directory: _DIRECTORY_TYPING, object_id: str, reference: str,
+            observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
+        misp_object = self._create_misp_object_from_observable(
+            'directory', directory, object_id, observed_data
+        )
+        self._populate_object_attributes_from_observable(
+            'directory', directory, misp_object, reference, observed_data.id
+        )
+        return misp_object
+
+    def _parse_directory_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        directories = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
+        )
+        for object_id, directory in directories.items():
+            reference = getattr(
+                directory, 'id', f'{observed_data.id} - {object_id}'
+            )
+            self._add_misp_object(
+                self._parse_directory_observable_object(
+                    directory, object_id, reference, observed_data
                 ),
                 confidence=getattr(observed_data, 'confidence', None)
             )

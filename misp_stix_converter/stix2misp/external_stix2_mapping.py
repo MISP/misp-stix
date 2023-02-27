@@ -27,6 +27,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         # MAIN STIX OBJECTS MAPPING
         observable_mapping = {
             'autonomous-system': 'as',
+            'directory': 'directory',
             'domain-name': 'domain',
             'domain-name_network-traffic': 'domain_network_traffic',
             'domain-name_network-traffic_url': 'network_traffic',
@@ -226,17 +227,15 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         )
 
         # STIX OBSERVABLE OBJECTS TO MISP MAPPING
-        self.__file_hashes_object_mapping = Mapping(
-            **{
-                'MD5': self.md5_attribute,
-                'SHA-1': self.sha1_attribute,
-                'SHA-256': self.sha256_attribute,
-                'SHA-512': self.sha512_attribute,
-                'SHA3-256': self.sha3_256_attribute,
-                'SHA3-512': self.sha3_512_attribute,
-                'SSDEEP': self.ssdeep_attribute,
-                'TLSH': self.tlsh_attribute
-            }
+        self.__directory_object_mapping = Mapping(
+            accessed = self.access_time_attribute,
+            atime = self.access_time_attribute,
+            created = self.creation_time_attribute,
+            ctime = self.creation_time_attribute,
+            modified = self.modification_time_attribute,
+            mtime = self.modification_time_attribute,
+            path = self.path_attribute,
+            path_enc = {'type': 'text', 'object_relaiton': 'path-encoding'}
         )
         self.__email_object_fields = (
             'bcc_refs',
@@ -252,13 +251,31 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             message_id = self.message_id_attribute,
             subject = self.email_subject_attribute
         )
+        self.__file_hashes_object_mapping = Mapping(
+            **{
+                'MD5': self.md5_attribute,
+                'SHA-1': self.sha1_attribute,
+                'SHA-256': self.sha256_attribute,
+                'SHA-512': self.sha512_attribute,
+                'SHA3-256': self.sha3_256_attribute,
+                'SHA3-512': self.sha3_512_attribute,
+                'SSDEEP': self.ssdeep_attribute,
+                'TLSH': self.tlsh_attribute
+            }
+        )
         self.__file_object_fields = (
             'contains_refs',
             'name_enc',
             'parent_directory_ref'
         )
         self.__file_object_mapping = Mapping(
+            accessed = self.access_time_attribute,
+            atime = self.access_time_attribute,
+            created = self.creation_time_attribute,
+            ctime = self.creation_time_attribute,
             mime_type = self.mime_type_attribute,
+            modified = self.modification_time_attribute,
+            mtime = self.modification_time_attribute,
             name = self.filename_attribute,
             name_enc = self.file_encoding_attribute,
             size = self.size_in_bytes_attribute
@@ -396,6 +413,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def course_of_action_object_mapping(self) -> dict:
         return self.__course_of_action_object_mapping
+
+    @property
+    def directory_object_mapping(self) -> dict:
+        return self.__directory_object_mapping
 
     @property
     def domain_ip_pattern_mapping(self) -> dict:

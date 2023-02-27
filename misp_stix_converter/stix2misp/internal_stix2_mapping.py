@@ -325,7 +325,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         self.__objects_mapping = Mapping(**objects_mapping)
 
         # ATTRIBUTES DECLARATION
-        access_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-access-time'}
         account_id_attribute = {'type': 'text', 'object_relation': 'account-id'}
         account_name_attribute = {'type': 'text', 'object_relation': 'account-name'}
         address_family_attribute = {'type': 'text', 'object_relation': 'address-family'}
@@ -379,9 +378,10 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         last_packet_seen_attribute = {'type': 'datetime', 'object_relation': 'last-packet-seen'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
+        lnk_access_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-access-time'}
         lnk_creation_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-creation-time'}
+        lnk_modification_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-modification-time'}
         mime_boundary_attribute = {'type': 'email-mime-boundary', 'object_relation': 'mime-boundary'}
-        modification_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-modification-time'}
         msg_attribute = {'type': 'attachment', 'object_relation': 'msg'}
         packet_count_attribute = {'type': 'counter', 'object_relation': 'packet-count'}
         parent_command_line_attribute = {'type': 'text', 'object_relation': 'parent-command-line'}
@@ -391,7 +391,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         parent_process_name_attribute = {'type': 'text', 'object_relation': 'parent-process-name'}
         parent_process_path_attribute = {'type': 'text', 'object_relation': 'parent-process-path'}
         password_attribute = {'type': 'text', 'object_relation': 'password'}
-        path_attribute = {'type': 'text', 'object_relation': 'path'}
         pattern_in_file_attribute = {'type': 'pattern-in-file', 'object_relation': 'pattern-in-file'}
         pem_attribute = {'type': 'text', 'object_relation': 'pem'}
         pgid_attribute = {'type': 'text', 'object_relation': 'pgid'}
@@ -642,20 +641,26 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
                 'mime_type': self.mime_type_attribute,
                 'name': self.filename_attribute,
                 'name_enc': self.file_encoding_attribute,
-                'parent_directory_ref.path': path_attribute,
+                'parent_directory_ref.path': self.path_attribute,
                 'size': self.size_in_bytes_attribute,
                 'x_misp_certificate': certificate_attribute,
                 'x_misp_compilation_timestamp': compilation_timestamp_attribute,
                 'x_misp_entropy': self.entropy_attribute,
                 'x_misp_fullpath': fullpath_attribute,
-                'x_misp_path': path_attribute,
+                'x_misp_path': self.path_attribute,
                 'x_misp_pattern_in_file': pattern_in_file_attribute,
                 'x_misp_state': state_attribute,
                 'x_misp_text': text_attribute
             }
         )
         self.__file_observable_object_mapping = Mapping(
+            accessed = self.access_time_attribute,
+            atime = self.access_time_attribute,
+            created = self.creation_time_attribute,
+            ctime = self.creation_time_attribute,
             mime_type = self.mime_type_attribute,
+            modified = self.modification_time_attribute,
+            mtime = self.modification_time_attribute,
             name = self.filename_attribute,
             name_enc = self.file_encoding_attribute,
             size = self.size_in_bytes_attribute,
@@ -664,7 +669,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_compilation_timestamp = compilation_timestamp_attribute,
             x_misp_entropy = self.entropy_attribute,
             x_misp_fullpath = fullpath_attribute,
-            x_misp_path = path_attribute,
+            x_misp_path = self.path_attribute,
             x_misp_pattern_in_file = pattern_in_file_attribute,
             x_misp_state = state_attribute,
             x_misp_text = text_attribute
@@ -788,19 +793,19 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'hashes.SHA512': self.sha512_attribute,
             'hashes.SSDEEP': self.ssdeep_attribute,
             'hashes.TLSH': self.tlsh_attribute,
-            'parent_directory_ref.path': path_attribute
+            'parent_directory_ref.path': self.path_attribute
         }
         __lnk_object_mapping = Mapping(
             name = self.filename_attribute,
-            atime = access_time_attribute,
-            x_misp_lnk_access_time = access_time_attribute,
+            accessed = lnk_access_time_attribute,
+            atime = lnk_access_time_attribute,
+            created = lnk_creation_time_attribute,
             ctime = lnk_creation_time_attribute,
-            x_misp_lnk_creation_time = lnk_creation_time_attribute,
-            mtime = modification_time_attribute,
-            x_misp_lnk_modification_time = modification_time_attribute,
+            modified = lnk_modification_time_attribute,
+            mtime = lnk_modification_time_attribute,
             size = self.size_in_bytes_attribute,
             x_misp_fullpath = fullpath_attribute,
-            x_misp_path = path_attribute,
+            x_misp_path = self.path_attribute,
             x_misp_birth_droid_file_identifier = {'type': 'text', 'object_relation': 'birth-droid-file-identifier'},
             x_misp_birth_droid_volume_identifier = {'type': 'text', 'object_relation': 'birth-droid-volume-identifier'},
             x_misp_droid_file_identifier = {'type': 'text', 'object_relation': 'droid-file-identifier'},
