@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "misp-stix"
-version = "2.4.163"
+version = "2.4.168"
 description = "Python scripts used by MISP to export MISP format into STIX and to import STIX into MISP format."
 authors = ["Christian Studer <christian.studer@circl.lu>"]
 maintainers = ["Christian Studer <christian.studer@circl.lu>"]
@@ -16,10 +16,10 @@ classifiers = [
     'Operating System :: POSIX :: Linux',
     'Intended Audience :: Science/Research',
     'Intended Audience :: Information Technology',
-    'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
     'Topic :: Security'
 ]
 
@@ -40,7 +40,7 @@ include = [
 misp_stix_converter = 'misp_stix_converter:main'
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 pymisp = "^2.4.157"
 stix = "^1.2.0"
 cybox = "^2.1.0"
