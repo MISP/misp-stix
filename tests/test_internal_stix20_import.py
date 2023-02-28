@@ -1901,22 +1901,13 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         file_object = observed_data.objects['0']
         self.assertEqual(atime.type, 'datetime')
         self.assertEqual(atime.object_relation, 'lnk-access-time')
-        self.assertEqual(
-            self._datetime_to_str(atime.value),
-            file_object.accessed
-        )
+        self.assertEqual(atime.value, file_object.accessed)
         self.assertEqual(ctime.type, 'datetime')
         self.assertEqual(ctime.object_relation, 'lnk-creation-time')
-        self.assertEqual(
-            self._datetime_to_str(ctime.value),
-            file_object.created
-        )
+        self.assertEqual(ctime.value, file_object.created)
         self.assertEqual(mtime.type, 'datetime')
         self.assertEqual(mtime.object_relation, 'lnk-modification-time')
-        self.assertEqual(
-            self._datetime_to_str(mtime.value),
-            file_object.modified
-        )
+        self.assertEqual(mtime.value, file_object.modified)
         self._populate_documentation(
             misp_object = json.loads(misp_object.to_json()),
             observed_data = observed_data
