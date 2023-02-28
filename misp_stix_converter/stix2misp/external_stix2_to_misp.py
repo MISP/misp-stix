@@ -954,15 +954,20 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             )
 
     def _parse_directory_observable_object(
-            self, directory: _DIRECTORY_TYPING, object_id: str, reference: str,
+            self, directory: _DIRECTORY_TYPING, object_id: str,
             observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
+        reference = getattr(
+            directory, 'id', f'{observed_data.id} - {object_id}'
+        )
         misp_object = self._create_misp_object_from_observable(
             'directory', directory, object_id, observed_data
         )
         self._populate_object_attributes_from_observable(
             'directory', directory, misp_object, reference, observed_data.id
         )
-        return misp_object
+        return self._add_misp_object(
+            misp_object, confidence=getattr(observed_data, 'confidence', None)
+        )
 
     def _parse_directory_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
@@ -970,15 +975,39 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
         )
         for object_id, directory in directories.items():
-            reference = getattr(
-                directory, 'id', f'{observed_data.id} - {object_id}'
+            self._parse_directory_observable_object(
+                directory, object_id, observed_data
             )
-            self._add_misp_object(
-                self._parse_directory_observable_object(
-                    directory, object_id, reference, observed_data
-                ),
-                confidence=getattr(observed_data, 'confidence', None)
-            )
+
+    def _parse_directory_observables(
+            self, object_id: str, directories: dict, files: dict,
+            references: dict, mapping: dict, feature: str,
+            observed_data: _OBSERVED_DATA_TYPING) -> str:
+        directory = directories[object_id]
+        misp_object = self._parse_directory_observable_object(
+            directory, object_id, observed_data
+        )
+        if hasattr(directory, 'contains_refs'):
+            for contains_ref in directory.contains_refs:
+                if contains_ref in mapping:
+                    misp_object.add_reference(mapping[contains_ref], 'contains')
+                    continue
+                if contains_ref in directories:
+                    directory_uuid = self._parse_directory_observables(
+                        contains_ref, directories, files, references,
+                        mapping, feature, observed_data
+                    )
+                    mapping[contains_ref] = directory_uuid
+                    misp_object.add_reference(directory_uuid, 'contains')
+                    continue
+                if contains_ref in files:
+                    file_uuid = self._parse_file_observables(
+                        contains_ref, files, references, mapping,
+                        feature, observed_data
+                    )
+                    mapping[contains_ref] = file_uuid
+                    misp_object.add_reference(file_uuid, 'contains')
+        return misp_object.uuid
 
     def _parse_domain_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
@@ -1212,64 +1241,85 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_file_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
-        files, references = getattr(self, f'_filter_observable_{asset}')(
-            getattr(observed_data, asset), 'file'
+        files, directories, references = getattr(
+            self, f'_filter_observable_{asset}'
+        )(
+            getattr(observed_data, asset), 'file', 'directory'
         )
         feature = 'observable' if len(files) > 1 else 'single_observable'
-        for object_id, file_object in files.items():
-            if self._force_observable_as_object(file_object, 'file'):
-                reference = getattr(
-                    file_object, 'id', f'{observed_data.id} - {object_id}'
-                )
-                misp_object = self._parse_file_observable_object(
-                    file_object, object_id, references, reference, observed_data
-                )
-                if hasattr(file_object, 'contains_refs'):
-                    for contains_ref in file_object.contains_refs:
-                        if contains_ref not in files:
-                            continue
-                        if hasattr(files[contains_ref], 'id'):
-                            misp_object.add_reference(
-                                self._sanitise_uuid(contains_ref), 'contains'
-                            )
-                            continue
-                        misp_object.add_reference(
-                            self._create_v5_uuid(
-                                f'{observed_data.id} - {contains_ref}'
-                            ),
-                            'contains'
-                        )
-                if hasattr(file_object, 'extensions'):
-                    if 'windows-pebinary-ext' in file_object.extensions:
-                        misp_object.add_reference(
-                            self._parse_file_pe_extension(
-                                file_object.extensions['windows-pebinary-ext'],
-                                reference, observed_data
-                            ),
-                            'includes'
-                        )
-                continue
-            for field in self._get_populated_properties(file_object):
-                if field in self._mapping.file_object_mapping:
-                    attribute = self._mapping.file_object_mapping[field]
-                    self._add_misp_attribute(
-                        getattr(self, f'_handle_{feature}_attribute')(
-                            file_object, field, attribute['type'],
-                            observed_data.id
-                        ),
-                        confidence=getattr(observed_data, 'confidence', None)
+        mapping = {}
+        if directories:
+            for directory_id, in directories.keys():
+                if directory_id not in mapping:
+                    mapping[directory_id] = self._parse_directory_observables(
+                        directory_id, directories, files, references, mapping,
+                        feature, observed_data
                     )
-                    break
-                if field in self._mapping.file_hashes_object_mapping:
-                    attribute = self._mapping.file_hashes_object_mapping[field]
-                    self._add_misp_attribute(
-                        getattr(self, f'_handle_{feature}_attribute')(
-                            file_object, field, attribute['type'],
-                            observed_data.id
+        for file_id in files.keys():
+            if file_id not in mapping:
+                mapping[file_id] = self._parse_file_observables(
+                    file_id, files, references, mapping, feature, observed_data
+                )
+
+    def _parse_file_observables(
+            self, object_id: str, files: dict, references: dict, mapping: dict,
+            feature: str, observed_data: _OBSERVED_DATA_TYPING) -> str:
+        file_object = files[object_id]
+        if self._force_observable_as_object(file_object, 'file'):
+            reference = getattr(
+                file_object, 'id', f'{observed_data.id} - {object_id}'
+            )
+            misp_object = self._parse_file_observable_object(
+                file_object, object_id, references, reference, observed_data
+            )
+            if hasattr(file_object, 'extensions'):
+                if 'windows-pebinary-ext' in file_object.extensions:
+                    misp_object.add_reference(
+                        self._parse_file_pe_extension(
+                            file_object.extensions['windows-pebinary-ext'],
+                            reference, observed_data
                         ),
-                        confidence=getattr(observed_data, 'confidence', None)
+                        'includes'
                     )
-                    break
+            if hasattr(file_object, 'contains_refs'):
+                for contains_ref in file_object.contains_refs:
+                    if contains_ref not in files:
+                        continue
+                    if contains_ref in mapping:
+                        misp_object.add_reference(
+                            mapping[contains_ref], 'contains'
+                        )
+                        continue
+                    contained_object_uuid = self._parse_file_observables(
+                        files, references, mapping,
+                        contains_ref, feature, observed_data
+                    )
+                    mapping[contains_ref] = contained_object_uuid
+                    misp_object.add_reference(
+                        contained_object_uuid, 'contains'
+                    )
+            return misp_object.uuid
+        for field in self._get_populated_properties(file_object):
+            if field in self._mapping.file_object_mapping:
+                attribute = self._mapping.file_object_mapping[field]
+                misp_attribute = self._add_misp_attribute(
+                    getattr(self, f'_handle_{feature}_attribute')(
+                        file_object, field, attribute['type'],
+                        observed_data.id
+                    ),
+                    confidence=getattr(observed_data, 'confidence', None)
+                )
+                return misp_attribute.uuid
+            if field in self._mapping.file_hashes_object_mapping:
+                attribute = self._mapping.file_hashes_object_mapping[field]
+                misp_attribute = self._add_misp_attribute(
+                    getattr(self, f'_handle_{feature}_attribute')(
+                        file_object, field, attribute['type'],
+                        observed_data.id
+                    ),
+                    confidence=getattr(observed_data, 'confidence', None)
+                )
+                return misp_attribute.uuid
 
     def _parse_file_pe_extension(
             self, extension: _PE_EXTENSION_TYPING, object_id: str,
@@ -1306,8 +1356,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 pe_object.add_reference(section_object.uuid, 'includes')
         return pe_object.uuid
 
-    def _parse_generic_observables(self, observed_data: _OBSERVED_DATA_TYPING,
-                                   feature: str, attribute_type: str,asset: str):
+    def _parse_generic_observables(
+            self, observed_data: _OBSERVED_DATA_TYPING, feature: str,
+            attribute_type: str, asset: str):
         observable_objects = dict(
             getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
         )
@@ -1750,12 +1801,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #
     ################################################################################
 
-    def _add_misp_attribute(self, attribute: dict, confidence: Optional[int] = None):
+    def _add_misp_attribute(
+            self, attribute: dict, confidence: Optional[int] = None) -> MISPAttribute:
         misp_attribute = MISPAttribute()
         misp_attribute.from_dict(**attribute)
         if confidence is not None:
             misp_attribute.add_tag(self._parse_confidence_level(confidence))
-        self.misp_event.add_attribute(**misp_attribute)
+        return self.misp_event.add_attribute(**misp_attribute)
 
     def _add_misp_object(self, misp_object: MISPObject,
                          confidence: Optional[int] = None) -> MISPObject:
