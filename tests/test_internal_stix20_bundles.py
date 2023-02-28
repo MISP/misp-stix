@@ -4718,9 +4718,9 @@ _LNK_OBSERVABLE_OBJECT = {
             "name": "oui",
             "parent_directory_ref": "1",
             "content_ref": "2",
-            "x_misp_lnk_access_time": "2021-01-01T00:00:00",
-            "x_misp_lnk_creation_time": "2017-10-01T08:00:00",
-            "x_misp_lnk_modification_time": "2020-10-25T16:22:00"
+            "accessed": "2021-01-01T00:00:00",
+            "created": "2017-10-01T08:00:00",
+            "modified": "2020-10-25T16:22:00"
         },
         "1": {
             "type": "directory",
@@ -6820,9 +6820,9 @@ class TestInternalSTIX20Bundles:
                 "file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802'",
                 "file:content_ref.mime_type = 'application/zip')",
                 "file:size = '35'",
-                "file:x_misp_lnk_creation_time = '2017-10-01T08:00:00'",
-                "file:x_misp_lnk_modification_time = '2020-10-25T16:22:00'",
-                "file:x_misp_lnk_access_time = '2021-01-01T00:00:00'"
+                "file:created = '2017-10-01T08:00:00'",
+                "file:modified = '2020-10-25T16:22:00'",
+                "file:accessed = '2021-01-01T00:00:00'"
             ]
         indicator['pattern'] = f"[{' AND '.join(pattern)}]"
         return cls.__assemble_bundle(indicator)
