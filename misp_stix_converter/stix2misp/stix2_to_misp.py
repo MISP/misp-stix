@@ -14,7 +14,6 @@ from .importparser import STIXtoMISPParser
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from collections import defaultdict
 from datetime import datetime
-from pathlib import Path
 from pymisp import (
     AbstractMISP, MISPEvent, MISPAttribute, MISPGalaxy, MISPGalaxyCluster,
     MISPObject, MISPSighting)
@@ -115,6 +114,10 @@ _MISP_FEATURES_TYPING = Union[
     MISPAttribute,
     MISPEvent,
     MISPObject
+]
+_OBSERVED_DATA_TYPING = Union[
+    ObservedData_v20,
+    ObservedData_v21
 ]
 _SDO_TYPING = Union[
     Indicator_v20,
@@ -223,6 +226,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                                  PROPERTIES                                  #
     ################################################################################
 
+    @classmethod
+    def generic_info_field(cls) -> str:
+        return f'STIX {cls.stix_version} Bundle imported with the MISP-STIX import feature.'
+
     @property
     def misp_event(self) -> MISPEvent:
         return self.__misp_event
@@ -310,6 +317,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._malware = {malware.id: malware}
 
     def _load_marking_definition(self, marking_definition: Union[MarkingDefinition_v20, MarkingDefinition_v21]):
+        if not hasattr(marking_definition, 'definition_type'):
+            if not hasattr(self, '_marking_definition'):
+                self._marking_definition = {}
+            return
         definition_type = marking_definition.definition_type
         definition = marking_definition.definition[definition_type]
         data_to_load = {
@@ -335,7 +346,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except AttributeError:
             self._observable = {observable.id: observable}
 
-    def _load_observed_data(self, observed_data: Union[ObservedData_v20, ObservedData_v21]):
+    def _load_observed_data(self, observed_data: _OBSERVED_DATA_TYPING):
         self._check_uuid(observed_data.id)
         try:
             self._observed_data[observed_data.id] = observed_data
@@ -585,7 +596,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 for galaxy in self._aggregate_galaxy_clusters(clusters):
                     self.misp_event.add_galaxy(galaxy)
 
-    def _parse_location_object(self, location: Location) -> MISPObject:
+    def _parse_location_object(self, location: Location, to_return: Optional[bool] = False) -> MISPObject:
         misp_object = self._create_misp_object('geolocation', location)
         if hasattr(location, 'description'):
             misp_object.comment = location.description
@@ -599,15 +610,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
             attribute.update(self._mapping.accuracy_radius_attribute)
             misp_object.add_attribute(**attribute)
         if hasattr(location, 'object_marking_refs'):
-            self._parse_markings(misp_object, location.object_marking_refs)
+            self._handle_object_marking_refs(
+                location.object_marking_refs, misp_object
+            )
+        if to_return:
+            return misp_object
         self._add_misp_object(misp_object)
-
-    def _parse_observed_data(self, observed_data_ref: str):
-        observed_data = self._get_stix_object(observed_data_ref)
-        if hasattr(observed_data, 'spec_version') and observed_data.spec_version == '2.1':
-            self._parse_observed_data_v21(observed_data)
-        else:
-            self._parse_observed_data_v20(observed_data)
 
     ################################################################################
     #                  MISP GALAXIES & CLUSTERS PARSING FUNCTIONS                  #
@@ -944,20 +952,30 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                       MISP FEATURES CREATION FUNCTIONS                       #
     ################################################################################
 
+    def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
+        attribute = self._parse_timeline(stix_object)
+        if hasattr(stix_object, 'description') and stix_object.description:
+            attribute['comment'] = stix_object.description
+        attribute.update(
+            self._sanitise_attribute_uuid(
+                stix_object.id, comment=attribute.get('comment')
+            )
+        )
+        if hasattr(stix_object, 'object_marking_refs'):
+            tags = tuple(self._parse_markings(stix_object.object_marking_refs))
+            attribute['Tag'] = [{'name': tag} for tag in tags]
+        return attribute
+
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
         misp_event.uuid = self._identifier.split('--')[1]
-        misp_event.info = f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
+        misp_event.info = self.generic_info_field
         return misp_event
 
     def _create_misp_event(self, stix_object: Union[Grouping, Report_v20, Report_v21]) -> MISPEvent:
         misp_event = MISPEvent(force_timestamps=True)
-        event_uuid = self._extract_uuid(stix_object.id)
-        if event_uuid in self.replacement_uuids:
-            self._sanitise_object_uuid(misp_event, event_uuid)
-        else:
-            misp_event.uuid = event_uuid
-        misp_event.info = stix_object.name
+        self._sanitise_object_uuid(misp_event, stix_object.id)
+        misp_event.info = stix_object.name if hasattr(stix_object, 'name') else self.generic_info_field
         misp_event.timestamp = self._timestamp_from_date(stix_object.modified)
         self._handle_misp_event_tags(misp_event, stix_object)
         return misp_event
@@ -981,13 +999,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             force_timestamps=True
         )
         if stix_object is not None:
-            object_uuid = self._extract_uuid(
-                stix_object['id'] if isinstance(stix_object, dict) else stix_object.id
-            )
-            if object_uuid in self.replacement_uuids:
-                self._sanitise_object_uuid(misp_object, object_uuid)
-            else:
-                misp_object.uuid = object_uuid
+            self._sanitise_object_uuid(misp_object, stix_object['id'])
             misp_object.update(self._parse_timeline(stix_object))
         return misp_object
 
@@ -1010,13 +1022,19 @@ class STIX2toMISPParser(STIXtoMISPParser):
         for label in (label for label in labels if label.lower() != 'threat-report'):
             misp_feature.add_tag(label)
 
+    def _handle_object_marking_refs(self, object_marking_refs: list, misp_object: MISPObject):
+        tags = self._parse_markings(object_marking_refs)
+        for attribute in misp_object.attributes:
+            for tag in tags:
+                attribute.add_tag(tag)
+
     @staticmethod
     def _parse_AS_value(number: Union[int, str]) -> str:
         if isinstance(number, int) or not number.startswith('AS'):
             return f'AS{number}'
         return number
 
-    def _parse_markings(self, misp_feature: Union[MISPAttribute, MISPObject], marking_refs: list):
+    def _parse_markings(self, marking_refs: list):
         for marking_ref in marking_refs:
             try:
                 marking_definition = self._get_stix_object(marking_ref)
@@ -1026,7 +1044,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             except ObjectRefLoadingError as error:
                 self._object_ref_loading_error(error)
                 continue
-            misp_feature.add_tag(marking_definition.name)
+            yield(marking_definition.name)
 
     def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
         misp_object = {'timestamp': self._timestamp_from_date(stix_object.modified)}

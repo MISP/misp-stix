@@ -325,7 +325,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         self.__objects_mapping = Mapping(**objects_mapping)
 
         # ATTRIBUTES DECLARATION
-        access_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-access-time'}
         account_id_attribute = {'type': 'text', 'object_relation': 'account-id'}
         account_name_attribute = {'type': 'text', 'object_relation': 'account-name'}
         address_family_attribute = {'type': 'text', 'object_relation': 'address-family'}
@@ -351,7 +350,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         email_header_attribute = {'type': 'email-header', 'object_relation': 'header'}
         eml_attribute = {'type': 'attachment', 'object_relation': 'eml'}
         employee_type_attribute = {'type': 'text', 'object_relation': 'employee-type'}
-        entropy_attribute = {'type': 'float', 'object_relation': 'entropy'}
         fake_process_name_attribute = {'type': 'boolean', 'object_relation': 'fake-process-name'}
         first_packet_seen_attribute = {'type': 'datetime', 'object_relation': 'first-packet-seen'}
         flow_count_attribute = {'type': 'counter', 'object_relation': 'flow-count'}
@@ -370,7 +368,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         id_attribute = {'type': 'text', 'object_relation': 'id'}
         image_attribute = {'type': 'filename', 'object_relation': 'image'}
         image_text_attribute = {'type': 'text', 'object_relation': 'image-text'}
-        imphash_attribute = {'type': 'imphash', 'object_relation': 'imphash'}
         integrity_level_attribute = {'type': 'text', 'object_relation': 'integrity-level'}
         ip_protocol_number_attribute = {'type': '', 'object_relation': 'ip-protocol-number'}
         ip_source_attribute = {'type': 'ip-src', 'object_relation': 'ip-src'}
@@ -381,10 +378,10 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         last_packet_seen_attribute = {'type': 'datetime', 'object_relation': 'last-packet-seen'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
+        lnk_access_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-access-time'}
         lnk_creation_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-creation-time'}
-        md5_attribute = {'type': 'md5', 'object_relation': 'md5'}
+        lnk_modification_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-modification-time'}
         mime_boundary_attribute = {'type': 'email-mime-boundary', 'object_relation': 'mime-boundary'}
-        modification_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-modification-time'}
         msg_attribute = {'type': 'attachment', 'object_relation': 'msg'}
         packet_count_attribute = {'type': 'counter', 'object_relation': 'packet-count'}
         parent_command_line_attribute = {'type': 'text', 'object_relation': 'parent-command-line'}
@@ -394,7 +391,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         parent_process_name_attribute = {'type': 'text', 'object_relation': 'parent-process-name'}
         parent_process_path_attribute = {'type': 'text', 'object_relation': 'parent-process-path'}
         password_attribute = {'type': 'text', 'object_relation': 'password'}
-        path_attribute = {'type': 'text', 'object_relation': 'path'}
         pattern_in_file_attribute = {'type': 'pattern-in-file', 'object_relation': 'pattern-in-file'}
         pem_attribute = {'type': 'text', 'object_relation': 'pem'}
         pgid_attribute = {'type': 'text', 'object_relation': 'pgid'}
@@ -406,39 +402,29 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         raw_base64_attribute = {'type': 'text', 'object_relation': 'raw-base64'}
         received_hostname_attribute = {'type': 'hostname', 'object_relation': 'received-header-hostname'}
         received_ip_attribute = {'type': 'ip-src', 'object_relation': 'received-header-ip'}
-        reply_to_attribute = {'type': 'email-reply-to', 'object_relation': 'reply-to'}
         reply_to_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'reply-to-display-name'}
         return_path_attribute = {'type': 'email-src', 'object_relation': 'return-path'}
         role_attribute = {'type': 'text', 'object_relation': 'role'}
         screenshot_attribute = {'type': 'attachment', 'object_relation': 'screenshot'}
         script_attribute = {'type': 'text', 'object_relation': 'script'}
-        sha1_attribute = {'type': 'sha1', 'object_relation': 'sha1'}
         sha224_attribute = {'type': 'sha224', 'object_relation': 'sha224'}
-        sha256_attribute = {'type': 'sha256', 'object_relation': 'sha256'}
         sha3_224_attribute = {'type': 'sha3-224', 'object_relation': 'sha3-224'}
-        sha3_256_attribute = {'type': 'sha3-256', 'object_relation': 'sha3-256'}
         sha3_384_attribute = {'type': 'sha3-384', 'object_relation': 'sha3-384'}
-        sha3_512_attribute = {'type': 'sha3-512', 'object_relation': 'sha3-512'}
         sha384_attribute = {'type': 'sha384', 'object_relation': 'sha384'}
-        sha512_attribute = {'type': 'sha512', 'object_relation': 'sha512'}
         src_port_attribute = {'type': 'port', 'object_relation': 'src-port'}
-        ssdeep_attribute = {'type': 'ssdeep', 'object_relation': 'ssdeep'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
         start_time_attribute = {'type': 'datetime', 'object_relation': 'start-time'}
         telfhash_attribute = {'type': 'telfhash', 'object_relation': 'telfhash'}
         text_attribute = {'type': 'text', 'object_relation': 'text'}
         thread_index_attribute = {'type': 'email-thread-index', 'object_relation': 'thread-index'}
-        tlsh_attribute = {'type': 'tlsh', 'object_relation': 'tlsh'}
         to_attribute = {'type': 'email-dst', 'object_relation': 'to'}
         to_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'to-display-name'}
-        type_attribute = {'type': 'text', 'object_relation': 'type'}
         username_attribute = {'type': 'text', 'object_relation': 'username'}
         user_avatar_attribute = {'type': 'attachment', 'object_relation': 'user-avatar'}
         user_creator_attribute = {'type': 'text', 'object_relation': 'user-creator'}
         user_process_attribute = {'type': 'text', 'object_relation': 'user-process'}
         verified_attribute = {'type': 'text', 'object_relation': 'verified'}
         vhash_attribute = {'type': 'vhash', 'object_relation': 'vhash'}
-        x_mailer_attribute = {'type': 'email-x-mailer', 'object_relation': 'x-mailer'}
         self.__dst_as_attribute = Mapping(
             **{'type': 'AS', 'object_relation': 'dst-as'}
         )
@@ -461,7 +447,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_appid = {'type': 'text', 'object_relation': 'appid'},
             x_misp_certificate = {'type': 'sha1', 'object_relation': 'certificate'},
             x_misp_domain = self.domain_attribute,
-            x_misp_sha256 = sha256_attribute
+            x_misp_sha256 = self.sha256_attribute
         )
         self.__annotation_object_mapping = Mapping(
             content = text_attribute,
@@ -470,7 +456,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_format = format_attribute,
             x_misp_modification_data = {'type': 'datetime', 'object_relation': 'modification-date'},
             x_misp_ref = {'type': 'link', 'object_relation': 'ref'},
-            x_misp_type = type_attribute
+            x_misp_type = self.type_attribute
         )
         self.__asn_object_mapping = Mapping(
             number = {'type': 'AS', 'object_relation': 'asn'},
@@ -499,7 +485,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_impact = {'type': 'text', 'object_relation': 'impact'},
             x_misp_objective = {'type': 'text', 'object_relation': 'objective'},
             x_misp_stage = {'type': 'text', 'object_relation': 'stage'},
-            x_misp_type = type_attribute
+            x_misp_type = self.type_attribute
         )
         self.__cpe_asset_object_mapping = Mapping(
             cpe = {'type': 'cpe', 'object_relation': 'cpe'},
@@ -524,7 +510,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_notification = {'type': 'text', 'object_relation': 'notification'},
             x_misp_origin = {'type': 'text', 'object_relation': 'origin'},
             x_misp_text = text_attribute,
-            x_misp_type = type_attribute
+            x_misp_type = self.type_attribute
         )
         self.__domain_ip_object_mapping = Mapping(
             value = self.domain_attribute,
@@ -535,16 +521,10 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_registration_date = {'type': 'datetime', 'object_relation': 'registration-date'},
             x_misp_text = text_attribute
         )
-        self.__email_additional_header_fields_mapping = Mapping(
-            **{
-                'Reply-To': reply_to_attribute,
-                'X-Mailer': x_mailer_attribute
-            }
-        )
         self.__email_indicator_object_mapping = Mapping(
             **{
-                'additional_header_fields.reply_to': reply_to_attribute,
-                'additional_header_fields.x_mailer': x_mailer_attribute,
+                'additional_header_fields.reply_to': self.reply_to_attribute,
+                'additional_header_fields.x_mailer': self.x_mailer_attribute,
                 'bcc_refs': {
                     'display_name': bcc_display_name_attribute,
                     'value': bcc_attribute
@@ -619,71 +599,77 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         self.__file_hashes_object_mapping = Mapping(
             **{
                 'AUTHENTIHASH': authentihash_attribute,
-                'IMPHASH': imphash_attribute,
-                'MD5': md5_attribute,
-                'SHA1': sha1_attribute,
-                'SHA-1': sha1_attribute,
+                'IMPHASH': self.imphash_attribute,
+                'MD5': self.md5_attribute,
+                'SHA1': self.sha1_attribute,
+                'SHA-1': self.sha1_attribute,
                 'SHA224': sha224_attribute,
-                'SHA256': sha256_attribute,
-                'SHA-256': sha256_attribute,
+                'SHA256': self.sha256_attribute,
+                'SHA-256': self.sha256_attribute,
                 'SHA3224': sha3_224_attribute,
-                'SHA3-256': sha3_256_attribute,
+                'SHA3-256': self.sha3_256_attribute,
                 'SHA3384': sha3_384_attribute,
-                'SHA3-512': sha3_512_attribute,
+                'SHA3-512': self.sha3_512_attribute,
                 'SHA384': sha384_attribute,
-                'SHA512': sha512_attribute,
-                'SHA-512': sha512_attribute,
-                'ssdeep': ssdeep_attribute,
-                'SSDEEP': ssdeep_attribute,
+                'SHA512': self.sha512_attribute,
+                'SHA-512': self.sha512_attribute,
+                'ssdeep': self.ssdeep_attribute,
+                'SSDEEP': self.ssdeep_attribute,
                 'TELFHASH': telfhash_attribute,
-                'TLSH': tlsh_attribute,
+                'TLSH': self.tlsh_attribute,
                 'VHASH': vhash_attribute
             }
         )
         self.__file_indicator_object_mapping = Mapping(
             **{
                 'hashes.AUTHENTIHASH': authentihash_attribute,
-                'hashes.IMPHASH': imphash_attribute,
-                'hashes.MD5': md5_attribute,
-                'hashes.SHA1': sha1_attribute,
+                'hashes.IMPHASH': self.imphash_attribute,
+                'hashes.MD5': self.md5_attribute,
+                'hashes.SHA1': self.sha1_attribute,
                 'hashes.SHA224': sha224_attribute,
-                'hashes.SHA256': sha256_attribute,
+                'hashes.SHA256': self.sha256_attribute,
                 'hashes.SHA3224': sha3_224_attribute,
-                'hashes.SHA3256': sha3_256_attribute,
+                'hashes.SHA3256': self.sha3_256_attribute,
                 'hashes.SHA3384': sha3_384_attribute,
-                'hashes.SHA3512': sha3_512_attribute,
+                'hashes.SHA3512': self.sha3_512_attribute,
                 'hashes.SHA384': sha384_attribute,
-                'hashes.SHA512': sha512_attribute,
-                'hashes.SSDEEP': ssdeep_attribute,
+                'hashes.SHA512': self.sha512_attribute,
+                'hashes.SSDEEP': self.ssdeep_attribute,
                 'hashes.TELFHASH': telfhash_attribute,
-                'hashes.TLSH': tlsh_attribute,
+                'hashes.TLSH': self.tlsh_attribute,
                 'hashes.VHASH': vhash_attribute,
                 'mime_type': self.mime_type_attribute,
                 'name': self.filename_attribute,
                 'name_enc': self.file_encoding_attribute,
-                'parent_directory_ref.path': path_attribute,
+                'parent_directory_ref.path': self.path_attribute,
                 'size': self.size_in_bytes_attribute,
                 'x_misp_certificate': certificate_attribute,
                 'x_misp_compilation_timestamp': compilation_timestamp_attribute,
-                'x_misp_entropy': entropy_attribute,
+                'x_misp_entropy': self.entropy_attribute,
                 'x_misp_fullpath': fullpath_attribute,
-                'x_misp_path': path_attribute,
+                'x_misp_path': self.path_attribute,
                 'x_misp_pattern_in_file': pattern_in_file_attribute,
                 'x_misp_state': state_attribute,
                 'x_misp_text': text_attribute
             }
         )
         self.__file_observable_object_mapping = Mapping(
+            accessed = self.access_time_attribute,
+            atime = self.access_time_attribute,
+            created = self.creation_time_attribute,
+            ctime = self.creation_time_attribute,
             mime_type = self.mime_type_attribute,
+            modified = self.modification_time_attribute,
+            mtime = self.modification_time_attribute,
             name = self.filename_attribute,
             name_enc = self.file_encoding_attribute,
             size = self.size_in_bytes_attribute,
             x_misp_attachment = attachment_attribute,
             x_misp_certificate = certificate_attribute,
             x_misp_compilation_timestamp = compilation_timestamp_attribute,
-            x_misp_entropy = entropy_attribute,
+            x_misp_entropy = self.entropy_attribute,
             x_misp_fullpath = fullpath_attribute,
-            x_misp_path = path_attribute,
+            x_misp_path = self.path_attribute,
             x_misp_pattern_in_file = pattern_in_file_attribute,
             x_misp_state = state_attribute,
             x_misp_text = text_attribute
@@ -799,32 +785,32 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_registration_number = {'type': 'text', 'object_relation': 'registration-number'}
         )
         __lnk_indicator_object_mapping = {
-            'hashes.MD5': md5_attribute,
-            'hashes.SHA1': sha1_attribute,
+            'hashes.MD5': self.md5_attribute,
+            'hashes.SHA1': self.sha1_attribute,
             'hashes.SHA224': sha224_attribute,
-            'hashes.SHA256': sha256_attribute,
+            'hashes.SHA256': self.sha256_attribute,
             'hashes.SHA384': sha384_attribute,
-            'hashes.SHA512': sha512_attribute,
-            'hashes.SSDEEP': ssdeep_attribute,
-            'hashes.TLSH': tlsh_attribute,
-            'parent_directory_ref.path': path_attribute
+            'hashes.SHA512': self.sha512_attribute,
+            'hashes.SSDEEP': self.ssdeep_attribute,
+            'hashes.TLSH': self.tlsh_attribute,
+            'parent_directory_ref.path': self.path_attribute
         }
         __lnk_object_mapping = Mapping(
             name = self.filename_attribute,
-            atime = access_time_attribute,
-            x_misp_lnk_access_time = access_time_attribute,
+            accessed = lnk_access_time_attribute,
+            atime = lnk_access_time_attribute,
+            created = lnk_creation_time_attribute,
             ctime = lnk_creation_time_attribute,
-            x_misp_lnk_creation_time = lnk_creation_time_attribute,
-            mtime = modification_time_attribute,
-            x_misp_lnk_modification_time = modification_time_attribute,
+            modified = lnk_modification_time_attribute,
+            mtime = lnk_modification_time_attribute,
             size = self.size_in_bytes_attribute,
             x_misp_fullpath = fullpath_attribute,
-            x_misp_path = path_attribute,
+            x_misp_path = self.path_attribute,
             x_misp_birth_droid_file_identifier = {'type': 'text', 'object_relation': 'birth-droid-file-identifier'},
             x_misp_birth_droid_volume_identifier = {'type': 'text', 'object_relation': 'birth-droid-volume-identifier'},
             x_misp_droid_file_identifier = {'type': 'text', 'object_relation': 'droid-file-identifier'},
             x_misp_droid_volume_identifier = {'type': 'text', 'object_relation': 'droid-volume-identifier'},
-            x_misp_entropy = entropy_attribute,
+            x_misp_entropy = self.entropy_attribute,
             x_misp_lnk_command_line_arguments = {'type': 'text', 'object_relation': 'lnk-command-line-arguments'},
             x_misp_lnk_description = {'type': 'text', 'object_relation': 'lnk-description'},
             x_misp_lnk_drive_serial_number = {'type': 'text', 'object_relation': 'lnk-drive-serial-number'},
@@ -973,9 +959,9 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_verified = {'type': 'boolean', 'object_relation': 'verified'},
         )
         self.__pe_object_mapping = Mapping(
-            imphash = imphash_attribute,
-            number_of_sections = {'type': 'counter', 'object_relation': 'number-sections'},
-            pe_type = type_attribute,
+            imphash = self.imphash_attribute,
+            number_of_sections = self.number_of_sections_attribute,
+            pe_type = self.type_attribute,
             x_misp_authentihash = authentihash_attribute,
             x_misp_company_name = {'type': 'text', 'object_relation': 'company-name'},
             x_misp_compilation_timestamp = compilation_timestamp_attribute,
@@ -997,7 +983,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_text = text_attribute
         )
         self.__pe_section_object_mapping = Mapping(
-            entropy = entropy_attribute,
+            entropy = self.entropy_attribute,
             name = self.name_attribute,
             size = self.size_in_bytes_attribute,
             x_misp_characteristic = {'type': 'text', 'object_relation': 'characteristic'},
@@ -1299,10 +1285,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def dst_as_attribute(self) -> dict:
         return self.__dst_as_attribute
-
-    @property
-    def email_additional_header_fields_mapping(self) -> dict:
-        return self.__email_additional_header_fields_mapping
 
     @property
     def email_indicator_object_mapping(self) -> dict:

@@ -26,23 +26,47 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
 
         # MAIN STIX OBJECTS MAPPING
         observable_mapping = {
-            'domain-name_network-traffic': '_parse_domain_network_traffic_observable',
-            'email-addr': '_parse_email_address_observable',
-            'mac-addr': '_parse_mac_address_observable',
-            'mutex': 'parse_mutex_observable',
-            'x509-certificate': 'parse_x509_observable',
-            'user-account': 'parse_user_account_observable',
-            'windows-registry-key': 'parse_regkey_observable'
+            'autonomous-system': 'as',
+            'directory': 'directory',
+            'domain-name': 'domain',
+            'domain-name_network-traffic': 'domain_network_traffic',
+            'domain-name_network-traffic_url': 'network_traffic',
+            'email-addr': 'email_address',
+            'mac-addr': 'mac_address',
+            'mutex': 'mutex',
+            'url': 'url',
+            'user-account': 'user_account',
+            'windows-registry-key': 'regkey',
+            'x509-certificate': 'x509'
         }
         observable_mapping.update(
             dict.fromkeys(
                 (
-                    'artifact_file',
-                    'artifact_directory_file',
-                    'directory_file',
-                    'file'
+                    'autonomous-system_ipv4-addr',
+                    'autonomous-system_ipv6-addr',
+                    'autonomous-system_ipv4-addr_ipv6-addr'
                 ),
-                '_parse_file_observable'
+                'asn'
+            )
+        )
+        observable_mapping.update(
+            dict.fromkeys(
+                (
+                    'domain-name_ipv4-addr',
+                    'domain-name_ipv6-addr',
+                    'domain-name_ipv4-addr_ipv6-addr'
+                ),
+                'domain_ip'
+            )
+        )
+        observable_mapping.update(
+            dict.fromkeys(
+                (
+                    'domain-name_ipv4-addr_network-traffic',
+                    'domain-name_ipv6-addr_network-traffic',
+                    'domain-name_ipv4-addr_ipv6-addr_network-traffic'
+                ),
+                'domain_ip_network_traffic'
             )
         )
         observable_mapping.update(
@@ -56,57 +80,18 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                     'email-message',
                     'email-message_file'
                 ),
-                '_parse_email_observable'
+                'email'
             )
         )
         observable_mapping.update(
             dict.fromkeys(
                 (
-                    'autonomous-system',
-                    'autonomous-system_ipv4-addr',
-                    'autonomous-system_ipv6-addr',
-                    'autonomous-system-ipv4-addr_ipv6-addr'
+                    'artifact_file',
+                    'artifact_directory_file',
+                    'directory_file',
+                    'file'
                 ),
-                '_parse_asn_observable'
-            )
-        )
-        observable_mapping.update(
-            dict.fromkeys(
-                (
-                    'domain-name',
-                    'domain-name_ipv4-addr',
-                    'domain-name_ipv6-addr',
-                    'domain-name_ipv4-addr_ipv6-addr'
-                ),
-                '_parse_domain_ip_observable'
-            )
-        )
-        observable_mapping.update(
-            dict.fromkeys(
-                (
-                    'domain-name_ipv4-addr_network-traffic',
-                    'domain-name_ipv6-addr_network-traffic',
-                    'domain-name_ipv4-addr_ipv6-addr_network-traffic'
-                ),
-                '_parse_domain_ip_network_traffic_observable'
-            )
-        )
-        observable_mapping.update(
-            dict.fromkeys(
-                (
-                    'domain-name_network-traffic_url',
-                    'url'
-                ),
-                '_parse_url_observable'
-            )
-        )
-        observable_mapping.update(
-            dict.fromkeys(
-                (
-                    'file_process',
-                    'process'
-                ),
-                '_parse_process_observable'
+                'file'
             )
         )
         observable_mapping.update(
@@ -115,7 +100,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                     'ipv4-addr',
                     'ipv6-addr'
                 ),
-                '_parse_ip_address_observable'
+                'ip_address'
             )
         )
         observable_mapping.update(
@@ -125,7 +110,16 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                     'ipv6-addr_network-traffic',
                     'ipv4-addr_ipv6-addr_network-traffic'
                 ),
-                '_parse_parse_ip_network_traffic_observable'
+                'ip_network_traffic'
+            )
+        )
+        observable_mapping.update(
+            dict.fromkeys(
+                (
+                    'file_process',
+                    'process'
+                ),
+                'process'
             )
         )
         self.__observable_mapping = Mapping(**observable_mapping)
@@ -230,6 +224,71 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             description = self.comment_attribute,
             name = self.yara_rule_name_attribute,
             pattern_version = self.version_attribute
+        )
+
+        # STIX OBSERVABLE OBJECTS TO MISP MAPPING
+        self.__directory_object_mapping = Mapping(
+            accessed = self.access_time_attribute,
+            atime = self.access_time_attribute,
+            created = self.creation_time_attribute,
+            ctime = self.creation_time_attribute,
+            modified = self.modification_time_attribute,
+            mtime = self.modification_time_attribute,
+            path = self.path_attribute,
+            path_enc = {'type': 'text', 'object_relaiton': 'path-encoding'}
+        )
+        self.__email_object_fields = (
+            'bcc_refs',
+            'cc_refs',
+            'body_multipart',
+            'date',
+            'from_ref'
+            'raw_email_ref'
+        )
+        self.__email_object_mapping = Mapping(
+            body = self.email_body_attribute,
+            date = self.send_date_attribute,
+            message_id = self.message_id_attribute,
+            subject = self.email_subject_attribute
+        )
+        self.__file_hashes_object_mapping = Mapping(
+            **{
+                'MD5': self.md5_attribute,
+                'SHA-1': self.sha1_attribute,
+                'SHA-256': self.sha256_attribute,
+                'SHA-512': self.sha512_attribute,
+                'SHA3-256': self.sha3_256_attribute,
+                'SHA3-512': self.sha3_512_attribute,
+                'SSDEEP': self.ssdeep_attribute,
+                'TLSH': self.tlsh_attribute
+            }
+        )
+        self.__file_object_fields = (
+            'contains_refs',
+            'name_enc',
+            'parent_directory_ref'
+        )
+        self.__file_object_mapping = Mapping(
+            accessed = self.access_time_attribute,
+            atime = self.access_time_attribute,
+            created = self.creation_time_attribute,
+            ctime = self.creation_time_attribute,
+            mime_type = self.mime_type_attribute,
+            modified = self.modification_time_attribute,
+            mtime = self.modification_time_attribute,
+            name = self.filename_attribute,
+            name_enc = self.file_encoding_attribute,
+            size = self.size_in_bytes_attribute
+        )
+        self.__pe_object_mapping = Mapping(
+            imphash = self.imphash_attribute,
+            number_of_sections = self.number_of_sections_attribute,
+            pe_type = self.type_attribute
+        )
+        self.__pe_section_object_mapping = Mapping(
+            entropy = self.entropy_attribute,
+            name = self.name_attribute,
+            size = self.size_in_bytes_attribute
         )
 
         # STIX PATTERN TO MISP MAPPING
@@ -356,6 +415,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__course_of_action_object_mapping
 
     @property
+    def directory_object_mapping(self) -> dict:
+        return self.__directory_object_mapping
+
+    @property
     def domain_ip_pattern_mapping(self) -> dict:
         return self.__domain_ip_pattern_mapping
 
@@ -366,6 +429,26 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def email_message_pattern_mapping(self) -> dict:
         return self.__email_message_pattern_mapping
+
+    @property
+    def email_object_fields(self) -> tuple:
+        return self.__email_object_fields
+
+    @property
+    def email_object_mapping(self) -> dict:
+        return self.__email_object_mapping
+
+    @property
+    def file_hashes_object_mapping(self) -> dict:
+        return self.__file_hashes_object_mapping
+
+    @property
+    def file_object_fields(self) -> tuple:
+        return self.__file_object_fields
+
+    @property
+    def file_object_mapping(self) -> dict:
+        return self.__file_object_mapping
 
     @property
     def file_pattern_mapping(self) -> dict:
@@ -398,6 +481,14 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def pattern_mapping(self) -> dict:
         return self.__pattern_mapping
+
+    @property
+    def pe_object_mapping(self) -> dict:
+        return self.__pe_object_mapping
+
+    @property
+    def pe_section_object_mapping(self) -> dict:
+        return self.__pe_section_object_mapping
 
     @property
     def process_pattern_mapping(self) -> dict:
