@@ -627,6 +627,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         fields = tuple(self._get_populated_properties(email_message))
         if len(fields) > 1:
             return True
+        length = 0
         for field, values in getattr(
             email_message, 'additional_header_fields', {}
         ).items():
