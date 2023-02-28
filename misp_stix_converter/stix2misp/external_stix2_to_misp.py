@@ -716,7 +716,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 main_objects[observable.type][reference] = observable
             else:
                 references[reference] = observable
-        return *(main_objects[maintype] for maintype in main_types), references
+        main_objects = [main_objects[maintype] for maintype in main_types]
+        return *main_objects, references
 
     def _filter_observable_object_refs(
             self, object_refs: list, *main_types: Tuple[str]) -> Tuple[dict]:
@@ -728,7 +729,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 main_objects[observable.type][reference] = observable
             else:
                 references[reference] = observable
-        return *(main_objects[maintype] for maintype in main_types), references
+        main_objects = [main_objects[maintype] for maintype in main_types]
+        return *main_objects, references
 
     def _force_observable_as_object(
             self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
