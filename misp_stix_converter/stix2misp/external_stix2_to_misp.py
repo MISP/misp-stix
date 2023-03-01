@@ -1578,7 +1578,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             misp_object: MISPObject, reference: str, observed_data_id: str):
         mapping = getattr(self._mapping, f'{feature}_object_mapping')
         for field, attr in mapping.items():
-            if field in observable_object:
+            if observable_object.get(field):
                 value = getattr(
                     observable_object, field, observable_object[field]
                 )
