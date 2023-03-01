@@ -310,6 +310,24 @@ class STIX2toMISPMapping:
         self.__x_mailer_attribute = Mapping(
             **{'type': 'email-x-mailer', 'object_relation': 'x-mailer'}
         )
+        self.__x509_md5_attribute = Mapping(
+            **{
+                'type': 'x509-fingerprint-md5',
+                'object_relation': 'x509-fingerprint-md5'
+            }
+        )
+        self.__x509_sha1_attribute = Mapping(
+            **{
+                'type': 'x509-fingerprint-sha1',
+                'object_relation': 'x509-fingerprint-sha1'
+            }
+        )
+        self.__x509_sha256_attribute = Mapping(
+            **{
+                'type': 'x509-fingerprint-sha256',
+                'object_relation': 'x509-fingerprint-sha256'
+            }
+        )
         self.__yara_attribute = Mapping(
             **{'type': 'yara', 'object_relation': 'yara'}
         )
@@ -805,6 +823,18 @@ class STIX2toMISPMapping:
     @property
     def x_mailer_attribute(self) -> dict:
         return self.__x_mailer_attribute
+
+    @property
+    def x509_md5_attribute(self) -> dict:
+        return self.__x509_md5_attribute
+
+    @property
+    def x509_sha1_attribute(self) -> dict:
+        return self.__x509_sha1_attribute
+
+    @property
+    def x509_sha256_attribute(self) -> dict:
+        return self.__x509_sha256_attribute
 
     @property
     def yara_attribute(self) -> dict:

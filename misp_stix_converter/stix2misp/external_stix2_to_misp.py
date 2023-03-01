@@ -18,8 +18,9 @@ from stix2.v20.observables import (
     DomainName as DomainName_v20, EmailAddress as EmailAddress_v20,
     EmailMessage as EmailMessage_v20, File as File_v20,
     IPv4Address as IPv4Address_v20, IPv6Address as IPv6Address_v20,
-    MACAddress as MACAddress_v20, Mutex as Mutex_v20, URL as URL_v20,
-    WindowsPEBinaryExt as WindowsPEBinaryExt_v20)
+    MACAddress as MACAddress_v20, Mutex as Mutex_v20, Process as Process_v20,
+    URL as URL_v20, WindowsPEBinaryExt as WindowsPEBinaryExt_v20,
+    X509Certificate as X509Certificate_v20)
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
     Vulnerability as Vulnerability_v20)
@@ -28,8 +29,9 @@ from stix2.v20.observables import (
     DomainName as DomainName_v21, EmailAddress as EmailAddress_v21,
     EmailMessage as EmailMessage_v21, File as File_v21,
     IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
-    MACAddress as MACAddress_v21, Mutex as Mutex_v21, URL as URL_v21,
-    WindowsPEBinaryExt as WindowsPEBinaryExt_v21)
+    MACAddress as MACAddress_v21, Mutex as Mutex_v21, Process as Process_v21,
+    URL as URL_v21, WindowsPEBinaryExt as WindowsPEBinaryExt_v21,
+    X509Certificate as X509Certificate_v21)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
     Indicator as Indicator_v21, Location, ObservedData as ObservedData_v21,
@@ -77,8 +79,10 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
     IPv6Address_v20, IPv6Address_v21,
     MACAddress_v20, MACAddress_v21,
     Mutex_v20, Mutex_v21,
+    Process_v20, Process_v21,
     URL_v20, URL_v21,
-    WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21
+    WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21,
+    X509Certificate_v20, X509Certificate_v21
 ]
 _IP_ADDRESS_TYPING = Union[
     IPv4Address_v20, IPv4Address_v21,
@@ -93,8 +97,14 @@ _MUTEX_TYPING = Union[
 _PE_EXTENSION_TYPING = Union[
     WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21
 ]
+_PROCESS_TYPING = Union[
+    Process_v20, Process_v21
+]
 _URL_TYPING = Union[
     URL_v20, URL_v21
+]
+_X509_TYPING = Union[
+    X509Certificate_v20, X509Certificate_v21
 ]
 
 
@@ -659,7 +669,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         }
 
     def _create_attribute_from_observable_object_with_id(
-            self, attribute_type: str, value:str,
+            self, attribute_type: str, value: str,
             observable_object_id: str, observed_data_id: str) -> dict:
         return {
             'type': attribute_type,
@@ -707,28 +717,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'comment': f'Original Observed Data ID: {observed_data_id}'
         }
 
+    @staticmethod
     def _filter_observable_objects(
-            self, observable_objects: list, *main_types: Tuple[str]) -> Tuple[dict]:
-        main_objects = defaultdict(dict)
-        references = {}
-        for reference, observable in observable_objects.items():
-            if observable.type in main_types:
-                main_objects[observable.type][reference] = observable
-            else:
-                references[reference] = observable
-        return *(main_objects[maintype] for maintype in main_types), references
-
-    def _filter_observable_object_refs(
-            self, object_refs: list, *main_types: Tuple[str]) -> Tuple[dict]:
-        main_objects = defaultdict(dict)
-        references = {}
-        for reference in object_refs:
-            observable = self._observable[reference]
-            if observable.type in main_types:
-                main_objects[observable.type][reference] = observable
-            else:
-                references[reference] = observable
-        return *(main_objects[maintype] for maintype in main_types), references
+            observable_objects: dict, *object_types: Tuple[str]):
+        for object_id, observable_object in observable_objects.items():
+            if observable_object.type in object_types:
+                yield object_id
 
     def _force_observable_as_object(
             self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
@@ -801,6 +795,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             attribute_type, value, observed_data_id
         )
 
+    def _has_observable_types(
+            self, observable_objects: dict, *object_types: Tuple[str]) -> bool:
+        object_ids = self._filter_observable_objects(
+            observable_objects, *object_types
+        )
+        return next(object_ids, None) is not None
+
     def _parse_as_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
         if len(getattr(observed_data, asset)) > 1:
@@ -862,30 +863,37 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_asn_observable_objects(
             self, observed_data: ObservedData_v21, asset: str):
-        AS, IPs = getattr(self, f'_filter_observable_{asset}')(
-            getattr(observed_data, asset), 'autonomous-system'
+        observable_objects = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
         )
-        if IPs:
-            self._parse_asn_observables(AS, IPs, observed_data)
+        if self._has_observable_types(
+                observable_objects, 'ipv4-addr', 'ipv6-addr'):
+            self._parse_asn_observables(observable_objects, observed_data)
         else:
-            self._parse_autonomous_system_observable_objects(AS, observed_data)
+            self._parse_autonomous_system_observable_objects(observable_objects, observed_data)
 
     def _parse_asn_observables(
-            self, autonomous_systems: dict, ip_addresses: dict,
-            observed_data: _OBSERVED_DATA_TYPING):
-        feature = 'observable' if len(autonomous_systems) > 1 else 'single_observable'
-        for object_id, autonomous_system in autonomous_systems.items():
+            self, observable_objects: dict, observed_data: _OBSERVED_DATA_TYPING):
+        as_ids = tuple(
+            self._filter_observable_objects(
+                observable_objects, 'autonomous-system'
+            )
+        )
+        feature = 'observable' if len(as_ids) > 1 else 'single_observable'
+        for as_id in as_ids:
+            autonomous_system = observable_objects[as_id]
             references = tuple(
-                ref for ref, ip_address in ip_addresses.items()
-                if object_id in getattr(ip_address, 'belongs_to_refs', [])
+                ref for ref, observable_object in observable_objects.items()
+                if observable_object.type in ('ipv4-addr', 'ipv6-addr')
+                and as_id in getattr(observable_object, 'belongs_to_refs', [])
             )
             if references:
-                reference = f"{object_id} - {' - '.join(sorted(references))}"
+                reference = f"{as_id} - {' - '.join(sorted(references))}"
                 misp_object = self._parse_asn_observable_object(
                     autonomous_system, reference, observed_data
                 )
                 for ip_id in references:
-                    ip_address = ip_addresses[ip_id]
+                    ip_address = observable_objects[ip_id]
                     misp_object.add_attribute(
                         'subnet-announced', ip_address.value,
                         **self._handle_observable_object_attribute(
@@ -899,7 +907,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
                 continue
             getattr(self, f'_parse_autonomous_system_{feature}_object')(
-                autonomous_system, observed_data, object_id
+                autonomous_system, observed_data, as_id
             )
 
     def _parse_autonomous_system_observable_objects(
@@ -980,10 +988,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             )
 
     def _parse_directory_observables(
-            self, object_id: str, directories: dict, files: dict,
-            references: dict, mapping: dict, feature: str,
-            observed_data: _OBSERVED_DATA_TYPING) -> str:
-        directory = directories[object_id]
+            self, object_id: str, observable_objects: dict, mapping: dict,
+            feature: str, observed_data: _OBSERVED_DATA_TYPING) -> str:
+        directory = observable_objects[object_id]
         misp_object = self._parse_directory_observable_object(
             directory, object_id, observed_data
         )
@@ -992,21 +999,16 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 if contains_ref in mapping:
                     misp_object.add_reference(mapping[contains_ref], 'contains')
                     continue
-                if contains_ref in directories:
-                    directory_uuid = self._parse_directory_observables(
-                        contains_ref, directories, files, references,
-                        mapping, feature, observed_data
-                    )
-                    mapping[contains_ref] = directory_uuid
-                    misp_object.add_reference(directory_uuid, 'contains')
-                    continue
-                if contains_ref in files:
-                    file_uuid = self._parse_file_observables(
-                        contains_ref, files, references, mapping,
+                if contains_ref in observable_objects:
+                    object_type = observable_objects[contains_ref].type
+                    contains_uuid = getattr(
+                        self, f'_parse_{object_type}_observables'
+                    )(
+                        contains_ref, observable_objects, mapping,
                         feature, observed_data
                     )
-                    mapping[contains_ref] = file_uuid
-                    misp_object.add_reference(file_uuid, 'contains')
+                    mapping[contains_ref] = contains_uuid
+                    misp_object.add_reference(contains_uuid, 'contains')
         return misp_object.uuid
 
     def _parse_domain_observable_objects(
@@ -1161,20 +1163,22 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_email_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
-        email_messages, references = getattr(
-            self, f'_filter_observable_{asset}'
-        )(
-            getattr(observed_data, asset), 'email-message'
+        observable_objects = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
         )
-        feature = 'observable' if len(email_messages) > 1 else 'single_observable'
-        for object_id, email_message in email_messages.items():
+        email_ids = tuple(
+            self._filter_observable_objects(observable_objects, 'email-message')
+        )
+        feature = 'observable' if len(email_ids) > 1 else 'single_observable'
+        for email_id in email_ids:
+            email_message = observable_objects[email_id]
             if self._force_observable_as_object(email_message, 'email'):
                 reference = getattr(
-                    email_message, 'id', f'{observed_data.id} - {object_id}'
+                    email_message, 'id', f'{observed_data.id} - {email_id}'
                 )
                 self._parse_email_observable_object(
-                    email_message, object_id, observed_data,
-                    references, reference
+                    email_message, email_id, observed_data,
+                    observable_objects, reference
                 )
                 continue
             for field in self._get_populated_properties(email_message):
@@ -1241,36 +1245,35 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_file_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
-        files, directories, references = getattr(
-            self, f'_filter_observable_{asset}'
-        )(
-            getattr(observed_data, asset), 'file', 'directory'
+        observable_objects = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
         )
-        feature = 'observable' if len(files) > 1 else 'single_observable'
+        file_ids = tuple(
+            self._filter_observable_objects(observable_objects, 'file')
+        )
+        feature = 'observable' if len(file_ids) > 1 else 'single_observable'
         mapping = {}
-        if directories:
-            for directory_id, in directories.keys():
-                if directory_id not in mapping:
-                    mapping[directory_id] = self._parse_directory_observables(
-                        directory_id, directories, files, references, mapping,
-                        feature, observed_data
-                    )
-        for file_id in files.keys():
-            if file_id not in mapping:
-                mapping[file_id] = self._parse_file_observables(
-                    file_id, files, references, mapping, feature, observed_data
+        for object_id, observable_object in observable_objects.items():
+            if object_id not in mapping:
+                object_type = observable_object.type
+                mapping[object_id] = getattr(
+                    self, f'_parse_{object_type}_observables'
+                )(
+                    object_id, observable_objects, mapping,
+                    feature, observed_data
                 )
 
     def _parse_file_observables(
-            self, object_id: str, files: dict, references: dict, mapping: dict,
+            self, object_id: str, observable_objects: dict, mapping: dict,
             feature: str, observed_data: _OBSERVED_DATA_TYPING) -> str:
-        file_object = files[object_id]
+        file_object = observable_objects[object_id]
         if self._force_observable_as_object(file_object, 'file'):
             reference = getattr(
                 file_object, 'id', f'{observed_data.id} - {object_id}'
             )
             misp_object = self._parse_file_observable_object(
-                file_object, object_id, references, reference, observed_data
+                file_object, object_id, observable_objects,
+                reference, observed_data
             )
             if hasattr(file_object, 'extensions'):
                 if 'windows-pebinary-ext' in file_object.extensions:
@@ -1283,7 +1286,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     )
             if hasattr(file_object, 'contains_refs'):
                 for contains_ref in file_object.contains_refs:
-                    if contains_ref not in files:
+                    if contains_ref not in observable_objects:
                         continue
                     if contains_ref in mapping:
                         misp_object.add_reference(
@@ -1291,8 +1294,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         )
                         continue
                     contained_object_uuid = self._parse_file_observables(
-                        files, references, mapping,
-                        contains_ref, feature, observed_data
+                        contains_ref, observable_objects, mapping,
+                        feature, observed_data
                     )
                     mapping[contains_ref] = contained_object_uuid
                     misp_object.add_reference(
@@ -1304,8 +1307,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute = self._mapping.file_object_mapping[field]
                 misp_attribute = self._add_misp_attribute(
                     getattr(self, f'_handle_{feature}_attribute')(
-                        file_object, field, attribute['type'],
-                        observed_data.id
+                        file_object, field, attribute['type'], observed_data.id
                     ),
                     confidence=getattr(observed_data, 'confidence', None)
                 )
@@ -1314,8 +1316,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute = self._mapping.file_hashes_object_mapping[field]
                 misp_attribute = self._add_misp_attribute(
                     getattr(self, f'_handle_{feature}_attribute')(
-                        file_object, field, attribute['type'],
-                        observed_data.id
+                        file_object, field, attribute['type'], observed_data.id
                     ),
                     confidence=getattr(observed_data, 'confidence', None)
                 )
@@ -1417,6 +1418,98 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 observed_data, 'name', 'mutex', asset
             )
 
+    def _parse_process_observable_object(
+            self, process: _PROCESS_TYPING, process_id: str,
+            observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
+        reference = getattr(process, 'id', f'{observed_data.id} - {process_id}')
+        misp_object = self._create_misp_object_from_observable(
+            'process', process, process_id, observed_data
+        )
+        self._populate_object_attributes_from_observable(
+            'process', process, misp_object, reference, observed_data.id
+        )
+        if hasattr(process, 'environment_variables'):
+            value = ' '.join(
+                f'{key} {value}' for key, value in
+                process.environment_variables.items()
+            )
+            misp_object.add_attribute(
+                'args', value,
+                **self._fill_observable_object_attribute(
+                    f'{reference} - args - {value}', observed_data.id
+                )
+            )
+        elif hasattr(process, 'arguments'):
+            value = ' '.join(process.arguments)
+            misp_object.add_attribute(
+                'args', value,
+                **self._fill_observable_object_attribute(
+                    f'{reference} - args - {value}', observed_data.id
+                )
+            )
+        return self._add_misp_object(
+            misp_object, confidence=getattr(observed_data, 'confidence', None)
+        )
+
+    def _parse_process_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        observable_objects = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
+        )
+        process_ids = tuple(
+            self._filter_observable_objects(observable_objects, 'process')
+        )
+        mapping = {}
+        for process_id in process_ids:
+            if process_id not in mapping:
+                mapping[process_id] = self._parse_process_observables(
+                    process_id, observable_objects, mapping, observed_data
+                )
+
+    def _parse_process_observables(
+            self, process_id: str, observable_objects: dict, mapping: dict,
+            observed_data: _OBSERVED_DATA_TYPING) -> str:
+        process = observable_objects[process_id]
+        misp_object = self._parse_process_observable_object(
+            process, process_id, observed_data
+        )
+        if hasattr(process, 'parent_ref'):
+            parent_ref = process.parent_ref
+            if parent_ref in observable_objects:
+                if parent_ref in mapping:
+                    misp_object.add_reference(mapping[parent_ref], 'child-of')
+                else:
+                    parent_uuid = self._parse_process_observables(
+                        parent_ref, observable_objects, mapping, observed_data
+                    )
+                    mapping[parent_ref] = parent_uuid
+                    misp_object.add_reference(parent_uuid, 'child-of')
+        if hasattr(process, 'child_refs'):
+            for child_ref in process.child_refs:
+                if child_ref not in observable_objects:
+                    continue
+                if child_ref in mapping:
+                    misp_object.add_reference(mapping[child_ref], 'parent-of')
+                    continue
+                child_uuid = self._parse_process_observables(
+                    child_ref, observable_objects, mapping, observed_data
+                )
+                mapping[child_ref] = child_uuid
+                misp_object.add_reference(child_uuid, 'parent-of')
+        if hasattr(process, 'image_ref'):
+            image_ref = process.image_ref
+            if image_ref in observable_objects:
+                if image_ref in mapping:
+                    misp_object.add_reference(mapping[image_ref], 'executes')
+                else:
+                    image_uuid = self._parse_file_observables(
+                        image_ref, observable_objects, mapping,
+                        'observable', observed_data
+                    )
+                    mapping[image_ref] = image_uuid
+                    misp_object.add_reference(image_uuid, 'executes')
+        return misp_object.uuid
+
     def _parse_url_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
         if len(getattr(observed_data, asset)) > 1:
@@ -1426,6 +1519,31 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         else:
             self._parse_generic_single_observable(
                 observed_data, 'value', 'url', asset
+            )
+
+    def _parse_x509_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        x509_objects = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
+        )
+        for object_id, x509_object in x509_objects.items():
+            reference = getattr(
+                x509_object, 'id', f'{observed_data.id} - {object_id}'
+            )
+            misp_object = self._create_misp_object_from_observable(
+                'x509-certificate', x509_object, object_id, observed_data
+            )
+            if hasattr(x509_object, 'hashes'):
+                self._populate_object_attributes_from_observable(
+                    'x509_hashes', x509_object.hashes, misp_object,
+                    reference, observed_data.id
+                )
+            self._populate_object_attributes_from_observable(
+                'x509', x509_object, misp_object, reference, observed_data.id
+            )
+            self._add_misp_object(
+                misp_object,
+                confidence=getattr(observed_data, 'confidence', None)
             )
 
     def _populate_object_attributes_from_observable(
@@ -1742,21 +1860,28 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if assertion != '=':
                 continue
             if 'hashes' in identifiers:
-                hash_type = identifiers[1].lower().replace('-', '')
-                attributes.append(
-                    {
-                        'type': f'x509-fingerprint-{hash_type}',
-                        'object_relation': f'x509-fingerprint-{hash_type}',
-                        'value': value
-                    }
-                )
+                if identifiers[1] in self._mapping.x509_hashes_object_mapping:
+                    hash_type = self._mapping.x509_hashes_object_mapping[
+                        identifiers[1]
+                    ]
+                    attributes.append(
+                        {
+                            'type': f'x509-fingerprint-{hash_type}',
+                            'object_relation': f'x509-fingerprint-{hash_type}',
+                            'value': value
+                        }
+                    )
                 continue
-            if identifiers[0] in self._mapping.x509_pattern_mapping:
+            if identifiers[0] in self._mapping.x509_object_mapping:
                 attribute = {'value': value}
-                attribute.update(self._mapping.x509_pattern_mapping[identifiers[0]])
+                attribute.update(
+                    self._mapping.x509_object_mapping[identifiers[0]]
+                )
                 attributes.append(attribute)
             else:
-                self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+                self._unmapped_pattern_warning(
+                    indicator.id, '.'.join(identifiers)
+                )
         if attributes:
             self._handle_import_case(indicator, attributes, 'x509')
         else:

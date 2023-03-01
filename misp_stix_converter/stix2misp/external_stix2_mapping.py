@@ -290,6 +290,35 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             name = self.name_attribute,
             size = self.size_in_bytes_attribute
         )
+        self.__process_object_mapping = Mapping(
+            command_line = self.command_line_attribute,
+            created = self.creation_time_attribute,
+            created_time = self.creation_time_attribute,
+            cwd = self.current_directory_attribute,
+            is_hidden = self.hidden_attribute,
+            name = self.name_attribute,
+            pid = self.pid_attribute
+        )
+        self.__x509_hashes_object_mapping = Mapping(
+            **{
+                'MD5': self.x509_md5_attribute,
+                'SHA-1': self.x509_sha1_attribute,
+                'SHA-256': self.x509_sha256_attribute
+            }
+        )
+        self.__x509_object_mapping = Mapping(
+            is_self_signed = self.is_self_signed_attribute,
+            issuer = self.issuer_attribute,
+            serial_number = self.serial_number_attribute,
+            signature_algorithm = self.signature_algorithm_attribute,
+            subject = self.subject_attribute,
+            subject_public_key_algorithm = self.pubkey_info_algorithm_attribute,
+            subject_public_key_exponent = self.pubkey_info_exponent_attribute,
+            subject_public_key_modulus = self.pubkey_info_modulus_attribute,
+            validity_not_after = self.validity_not_after_attribute,
+            validity_not_before = self.validity_not_before_attribute,
+            version = self.version_attribute
+        )
 
         # STIX PATTERN TO MISP MAPPING
         self.__domain_ip_pattern_mapping = Mapping(
@@ -338,19 +367,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             name = self.name_attribute,
             key = self.regkey_attribute,
             pid = self.pid_attribute
-        )
-        self.__x509_pattern_mapping = Mapping(
-            is_self_signed = self.is_self_signed_attribute,
-            issuer = self.issuer_attribute,
-            serial_number = self.serial_number_attribute,
-            signature_algorithm = self.signature_algorithm_attribute,
-            subject = self.subject_attribute,
-            subject_public_key_algorithm = self.pubkey_info_algorithm_attribute,
-            subject_public_key_exponent = self.pubkey_info_exponent_attribute,
-            subject_public_key_modulus = self.pubkey_info_modulus_attribute,
-            validity_not_after = self.validity_not_after_attribute,
-            validity_not_before = self.validity_not_before_attribute,
-            version = self.version_attribute
         )
 
         # MISP GALAXIES MAPPING
@@ -491,6 +507,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__pe_section_object_mapping
 
     @property
+    def process_object_mapping(self) -> dict:
+        return self.__process_object_mapping
+
+    @property
     def process_pattern_mapping(self) -> dict:
         return self.__process_pattern_mapping
 
@@ -507,8 +527,12 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__vulnerability_object_mapping
 
     @property
-    def x509_pattern_mapping(self) -> dict:
-        return self.__x509_pattern_mapping
+    def x509_hashes_object_mapping(self) -> dict:
+        return self.__x509_hashes_object_mapping
+
+    @property
+    def x509_object_mapping(self) -> dict:
+        return self.__x509_object_mapping
 
     @property
     def yara_object_mapping(self) -> dict:

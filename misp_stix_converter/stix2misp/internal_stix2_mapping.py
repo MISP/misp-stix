@@ -1190,9 +1190,9 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         )
         self.__x509_indicator_object_mapping = Mapping(
             **{
-                'hashes.MD5': {'type': 'x509-fingerprint-md5', 'object_relation': 'x509-fingerprint-md5'},
-                'hashes.SHA1': {'type': 'x509-fingerprint-sha1', 'object_relation': 'x509-fingerprint-sha1'},
-                'hashes.SHA256': {'type': 'x509-fingerprint-sha256', 'object_relation': 'x509-fingerprint-sha256'},
+                'hashes.MD5': self.x509_md5_attribute,
+                'hashes.SHA1': self.x509_sha1_attribute,
+                'hashes.SHA256': self.x509_sha256_attribute,
                 'is_self_signed': self.is_self_signed_attribute,
                 'issuer': self.issuer_attribute,
                 'serial_number': self.serial_number_attribute,
