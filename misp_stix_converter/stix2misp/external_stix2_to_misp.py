@@ -19,7 +19,8 @@ from stix2.v20.observables import (
     EmailMessage as EmailMessage_v20, File as File_v20,
     IPv4Address as IPv4Address_v20, IPv6Address as IPv6Address_v20,
     MACAddress as MACAddress_v20, Mutex as Mutex_v20, Process as Process_v20,
-    URL as URL_v20, WindowsPEBinaryExt as WindowsPEBinaryExt_v20)
+    URL as URL_v20, WindowsPEBinaryExt as WindowsPEBinaryExt_v20,
+    X509Certificate as X509Certificate_v20)
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
     Vulnerability as Vulnerability_v20)
@@ -29,7 +30,8 @@ from stix2.v20.observables import (
     EmailMessage as EmailMessage_v21, File as File_v21,
     IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
     MACAddress as MACAddress_v21, Mutex as Mutex_v21, Process as Process_v21,
-    URL as URL_v21, WindowsPEBinaryExt as WindowsPEBinaryExt_v21)
+    URL as URL_v21, WindowsPEBinaryExt as WindowsPEBinaryExt_v21,
+    X509Certificate as X509Certificate_v21)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
     Indicator as Indicator_v21, Location, ObservedData as ObservedData_v21,
@@ -79,7 +81,8 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
     Mutex_v20, Mutex_v21,
     Process_v20, Process_v21,
     URL_v20, URL_v21,
-    WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21
+    WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21,
+    X509Certificate_v20, X509Certificate_v21
 ]
 _IP_ADDRESS_TYPING = Union[
     IPv4Address_v20, IPv4Address_v21,
@@ -99,6 +102,9 @@ _PROCESS_TYPING = Union[
 ]
 _URL_TYPING = Union[
     URL_v20, URL_v21
+]
+_X509_TYPING = Union[
+    X509Certificate_v20, X509Certificate_v21
 ]
 
 
@@ -1515,6 +1521,31 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 observed_data, 'value', 'url', asset
             )
 
+    def _parse_x509_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        x509_objects = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
+        )
+        for object_id, x509_object in x509_objects.items():
+            reference = getattr(
+                x509_object, 'id', f'{observed_data.id} - {object_id}'
+            )
+            misp_object = self._create_misp_object_from_observable(
+                'x509-certificate', x509_object, object_id, observed_data
+            )
+            if hasattr(x509_object, 'hashes'):
+                self._populate_object_attributes_from_observable(
+                    'x509_hashes', x509_object.hashes, misp_object,
+                    reference, observed_data.id
+                )
+            self._populate_object_attributes_from_observable(
+                'x509', x509_object, misp_object, reference, observed_data.id
+            )
+            self._add_misp_object(
+                misp_object,
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+
     def _populate_object_attributes_from_observable(
             self, feature: str, observable_object: _OBSERVABLE_OBJECTS_TYPING,
             misp_object: MISPObject, reference: str, observed_data_id: str):
@@ -1829,21 +1860,28 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if assertion != '=':
                 continue
             if 'hashes' in identifiers:
-                hash_type = identifiers[1].lower().replace('-', '')
-                attributes.append(
-                    {
-                        'type': f'x509-fingerprint-{hash_type}',
-                        'object_relation': f'x509-fingerprint-{hash_type}',
-                        'value': value
-                    }
-                )
+                if identifiers[1] in self._mapping.x509_hashes_object_mapping:
+                    hash_type = self._mapping.x509_hashes_object_mapping[
+                        identifiers[1]
+                    ]
+                    attributes.append(
+                        {
+                            'type': f'x509-fingerprint-{hash_type}',
+                            'object_relation': f'x509-fingerprint-{hash_type}',
+                            'value': value
+                        }
+                    )
                 continue
-            if identifiers[0] in self._mapping.x509_pattern_mapping:
+            if identifiers[0] in self._mapping.x509_object_mapping:
                 attribute = {'value': value}
-                attribute.update(self._mapping.x509_pattern_mapping[identifiers[0]])
+                attribute.update(
+                    self._mapping.x509_object_mapping[identifiers[0]]
+                )
                 attributes.append(attribute)
             else:
-                self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
+                self._unmapped_pattern_warning(
+                    indicator.id, '.'.join(identifiers)
+                )
         if attributes:
             self._handle_import_case(indicator, attributes, 'x509')
         else:
