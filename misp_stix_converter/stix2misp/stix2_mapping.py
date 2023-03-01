@@ -112,6 +112,9 @@ class STIX2toMISPMapping:
         self.__access_time_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'access-time'}
         )
+        self.__account_type_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'account-type'}
+        )
         self.__accuracy_radius_attribute = Mapping(
             **{'type': 'float', 'object_relation': 'accuracy-radius'}
         )
@@ -122,6 +125,9 @@ class STIX2toMISPMapping:
             **{'type': 'text', 'object_relation': 'id'}
         )
         self.__attack_pattern_references_attribute = Mapping(**references_attribute)
+        self.__can_escalate_privs_attribute = Mapping(
+            **{'type': 'boolean', 'object_relation': 'can_escalate_privs'}
+        )
         self.__command_line_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'command-line'}
         )
@@ -131,6 +137,9 @@ class STIX2toMISPMapping:
         )
         self.__cookie_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'cookie'}
+        )
+        self.__created_attribute = Mapping(
+            **{'type': 'datetime', 'object_relation': 'created'}
         )
         self.__creation_time_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'creation-time'}
@@ -147,6 +156,12 @@ class STIX2toMISPMapping:
         self.__description_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'description'}
         )
+        self.__disabled_attribute = Mapping(
+            **{'type': 'boolean', 'object_relation': 'disabled'}
+        )
+        self.__display_name_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'display-name'}
+        )
         self.__domain_attribute = Mapping(
             **{'type': 'domain', 'object_relation': 'domain'}
         )
@@ -162,11 +177,17 @@ class STIX2toMISPMapping:
         self.__entropy_attribute = Mapping(
             **{'type': 'float', 'object_relation': 'entropy'}
         )
+        self.__expires_attribute = Mapping(
+            **{'type': 'datetime', 'object_relation': 'expires'}
+        )
         self.__file_encoding_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'file-encoding'}
         )
         self.__filename_attribute = Mapping(
             **{'type': 'filename', 'object_relation': 'filename'}
+        )
+        self.__first_login_attribute = Mapping(
+            **{'type': 'datetime', 'object_relation': 'first_login'}
         )
         self.__hidden_attribute = Mapping(
             **{'type': 'boolean', 'object_relation': 'hidden'}
@@ -180,8 +201,14 @@ class STIX2toMISPMapping:
         self.__is_self_signed_attribute = Mapping(
             **{'type': 'boolean', 'object_relation': 'self_signed'}
         )
+        self.__is_service_account_attribute = Mapping(
+            **{'type': 'boolean', 'object_relation': 'is_service_account'}
+        )
         self.__issuer_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'issuer'}
+        )
+        self.__last_login_attribute = Mapping(
+            **{'type': 'datetime', 'object_relation': 'last_login'}
         )
         self.__last_modified_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'last-modified'}
@@ -207,11 +234,20 @@ class STIX2toMISPMapping:
         self.__number_of_sections_attribute = Mapping(
             **{'type': 'counter', 'object_relation': 'number-sections'}
         )
+        self.__password_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'password'}
+        )
+        self.__password_last_changed_attribute = Mapping(
+            **{'type': 'datetime', 'object_relation': 'password_last_changed'}
+        )
         self.__path_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'path'}
         )
         self.__pid_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'pid'}
+        )
+        self.__privileged_attribute = Mapping(
+            **{'type': 'boolean', 'object_relation': 'privileged'}
         )
         self.__pubkey_info_algorithm_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'pubkey-info-algorithm'}
@@ -296,6 +332,12 @@ class STIX2toMISPMapping:
         )
         self.__user_agent_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'user-agent'}
+        )
+        self.__user_id_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'user-id'}
+        )
+        self.__username_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'username'}
         )
         self.__validity_not_after_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'validity-not-after'}
@@ -467,10 +509,20 @@ class STIX2toMISPMapping:
             description = comment_attribute,
             pattern_version = version_attribute
         )
+        self.__user_account_unix_extenstion_object_mapping = Mapping(
+            gid = {'type': 'text', 'object_relation': 'group-id'},
+            groups = {'type': 'text', 'object_relation': 'group'},
+            home_dir = {'type': 'text', 'object_relation': 'home_dir'},
+            shell = {'type': 'text', 'object_relation': 'shell'}
+        )
 
     @property
     def access_time_attribute(self) -> dict:
         return self.__access_time_attribute
+
+    @property
+    def account_type_attribute(self) -> dict:
+        return self.__account_type_attribute
 
     @property
     def accuracy_radius_attribute(self) -> dict:
@@ -501,6 +553,10 @@ class STIX2toMISPMapping:
         return self.__campaign_meta_mapping
 
     @property
+    def can_escalate_privs_attribute(self) -> dict:
+        return self.__can_escalate_privs_attribute
+
+    @property
     def command_line_attribute(self) -> dict:
         return self.__command_line_attribute
 
@@ -519,6 +575,10 @@ class STIX2toMISPMapping:
     @property
     def cookie_attribute(self) -> dict:
         return self.__cookie_attribute
+
+    @property
+    def created_attribute(self) -> dict:
+        return self.__created_attribute
 
     @property
     def creation_time_attribute(self) -> dict:
@@ -545,6 +605,14 @@ class STIX2toMISPMapping:
         return self.__description_attribute
 
     @property
+    def disabled_attribute(self) -> dict:
+        return self.__disabled_attribute
+
+    @property
+    def display_name_attribute(self) -> dict:
+        return self.__display_name_attribute
+
+    @property
     def domain_attribute(self) -> dict:
         return self.__domain_attribute
 
@@ -569,12 +637,20 @@ class STIX2toMISPMapping:
         return self.__entropy_attribute
 
     @property
+    def expires_attribute(self) -> dict:
+        return self.__expires_attribute
+
+    @property
     def file_encoding_attribute(self) -> dict:
         return self.__file_encoding_attribute
 
     @property
     def filename_attribute(self) -> dict:
         return self.__filename_attribute
+
+    @property
+    def first_login_attribute(self) -> dict:
+        return self.__first_login_attribute
 
     @property
     def hidden_attribute(self) -> dict:
@@ -597,8 +673,16 @@ class STIX2toMISPMapping:
         return self.__is_self_signed_attribute
 
     @property
+    def is_service_account_attribute(self) -> dict:
+        return self.__is_service_account_attribute
+
+    @property
     def issuer_attribute(self) -> dict:
         return self.__issuer_attribute
+
+    @property
+    def last_login_attribute(self) -> dict:
+        return self.__last_login_attribute
 
     @property
     def last_modified_attribute(self) -> dict:
@@ -649,12 +733,24 @@ class STIX2toMISPMapping:
         return self.__observable_object_types
 
     @property
+    def password_attribute(self) -> dict:
+        return self.__password_attribute
+
+    @property
+    def password_last_changed_attribute(self) -> dict:
+        return self.__password_last_changed_attribute
+
+    @property
     def path_attribute(self) -> dict:
         return self.__path_attribute
 
     @property
     def pid_attribute(self) -> dict:
         return self.__pid_attribute
+
+    @property
+    def privileged_attribute(self) -> dict:
+        return self.__privileged_attribute
 
     @property
     def pubkey_info_algorithm_attribute(self) -> dict:
@@ -801,8 +897,20 @@ class STIX2toMISPMapping:
         return self.__url_attribute
 
     @property
+    def user_account_unix_extension_object_mapping(self) -> dict:
+        return self.__user_account_unix_extenstion_object_mapping
+
+    @property
     def user_agent_attribute(self) -> dict:
         return self.__user_agent_attribute
+
+    @property
+    def user_id_attribute(self) -> dict:
+        return self.__user_id_attribute
+
+    @property
+    def username_attribute(self) -> dict:
+        return self.__username_attribute
 
     @property
     def validity_not_after_attribute(self) -> dict:

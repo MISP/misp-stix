@@ -299,6 +299,23 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             name = self.name_attribute,
             pid = self.pid_attribute
         )
+        self.__user_account_object_mapping = Mapping(
+            account_login = self.username_attribute,
+            account_type = self.account_type_attribute,
+            can_escalate_privs = self.can_escalate_privs_attribute,
+            credential = self.password_attribute,
+            display_name = self.display_name_attribute,
+            is_disabled = self.disabled_attribute,
+            is_privileged = self.privileged_attribute,
+            is_service_account = self.is_service_account_attribute,
+            user_id = self.user_id_attribute,
+            account_created = self.created_attribute,
+            account_expires = self.expires_attribute,
+            account_first_login = self.first_login_attribute,
+            account_last_login = self.last_login_attribute,
+            credential_last_changed = self.password_last_changed_attribute,
+            password_last_changed = self.password_last_changed_attribute
+        )
         self.__x509_hashes_object_mapping = Mapping(
             **{
                 'MD5': self.x509_md5_attribute,
@@ -521,6 +538,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def sigma_object_mapping(self) -> dict:
         return self.__sigma_object_mapping
+
+    @property
+    def user_account_object_mapping(self) -> dict:
+        return self.__user_account_object_mapping
 
     @property
     def vulnerability_object_mapping(self) -> dict:
