@@ -36,7 +36,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'mutex': 'mutex',
             'url': 'url',
             'user-account': 'user_account',
-            'windows-registry-key': 'regkey',
+            'windows-registry-key': 'registry_key',
             'x509-certificate': 'x509'
         }
         observable_mapping.update(
@@ -299,6 +299,15 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             name = self.name_attribute,
             pid = self.pid_attribute
         )
+        self.__registry_key_object_fields = (
+            'modified',
+            'modified_time'
+        )
+        self.__registry_key_object_mapping = Mapping(
+            key = self.regkey_attribute,
+            modified = self.last_modified_attribute,
+            modified_time = self.last_modified_attribute
+        )
         self.__user_account_object_mapping = Mapping(
             account_login = self.username_attribute,
             account_type = self.account_type_attribute,
@@ -530,6 +539,14 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def process_pattern_mapping(self) -> dict:
         return self.__process_pattern_mapping
+
+    @property
+    def registry_key_object_fields(self) -> tuple:
+        return self.__registry_key_object_fields
+
+    @property
+    def registry_key_object_mapping(self) -> dict:
+        return self.__registry_key_object_mapping
 
     @property
     def regkey_pattern_mapping(self) -> dict:

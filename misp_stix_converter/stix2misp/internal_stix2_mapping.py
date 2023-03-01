@@ -1063,11 +1063,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_hive = {'type': 'text', 'object_relation': 'hive'},
             x_misp_root_keys = {'type': 'text', 'object_relation': 'root-keys'}
         )
-        self.__registry_key_values_mapping = Mapping(
-            data = self.data_attribute,
-            data_type = self.data_type_attribute,
-            name = self.name_attribute
-        )
         self.__script_from_malware_object_mapping = Mapping(
             name = self.filename_attribute,
             description = comment_text_attribute,
@@ -1448,10 +1443,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def registry_key_object_mapping(self) -> dict:
         return self.__registry_key_object_mapping
-
-    @property
-    def registry_key_values_mapping(self) -> dict:
-        return self.__registry_key_values_mapping
 
     @property
     def script_from_malware_object_mapping(self) -> dict:
