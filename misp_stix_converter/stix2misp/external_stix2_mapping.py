@@ -290,6 +290,15 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             name = self.name_attribute,
             size = self.size_in_bytes_attribute
         )
+        self.__process_object_mapping = Mapping(
+            command_line = self.command_line_attribute,
+            created = self.creation_time_attribute,
+            created_time = self.creation_time_attribute,
+            cwd = self.current_directory_attribute,
+            is_hidden = self.hidden_attribute,
+            name = self.name_attribute,
+            pid = self.pid_attribute
+        )
 
         # STIX PATTERN TO MISP MAPPING
         self.__domain_ip_pattern_mapping = Mapping(
@@ -489,6 +498,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def pe_section_object_mapping(self) -> dict:
         return self.__pe_section_object_mapping
+
+    @property
+    def process_object_mapping(self) -> dict:
+        return self.__process_object_mapping
 
     @property
     def process_pattern_mapping(self) -> dict:

@@ -18,8 +18,8 @@ from stix2.v20.observables import (
     DomainName as DomainName_v20, EmailAddress as EmailAddress_v20,
     EmailMessage as EmailMessage_v20, File as File_v20,
     IPv4Address as IPv4Address_v20, IPv6Address as IPv6Address_v20,
-    MACAddress as MACAddress_v20, Mutex as Mutex_v20, URL as URL_v20,
-    WindowsPEBinaryExt as WindowsPEBinaryExt_v20)
+    MACAddress as MACAddress_v20, Mutex as Mutex_v20, Process as Process_v20,
+    URL as URL_v20, WindowsPEBinaryExt as WindowsPEBinaryExt_v20)
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
     Vulnerability as Vulnerability_v20)
@@ -28,8 +28,8 @@ from stix2.v20.observables import (
     DomainName as DomainName_v21, EmailAddress as EmailAddress_v21,
     EmailMessage as EmailMessage_v21, File as File_v21,
     IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
-    MACAddress as MACAddress_v21, Mutex as Mutex_v21, URL as URL_v21,
-    WindowsPEBinaryExt as WindowsPEBinaryExt_v21)
+    MACAddress as MACAddress_v21, Mutex as Mutex_v21, Process as Process_v21,
+    URL as URL_v21, WindowsPEBinaryExt as WindowsPEBinaryExt_v21)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
     Indicator as Indicator_v21, Location, ObservedData as ObservedData_v21,
@@ -77,6 +77,7 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
     IPv6Address_v20, IPv6Address_v21,
     MACAddress_v20, MACAddress_v21,
     Mutex_v20, Mutex_v21,
+    Process_v20, Process_v21,
     URL_v20, URL_v21,
     WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21
 ]
@@ -92,6 +93,9 @@ _MUTEX_TYPING = Union[
 ]
 _PE_EXTENSION_TYPING = Union[
     WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21
+]
+_PROCESS_TYPING = Union[
+    Process_v20, Process_v21
 ]
 _URL_TYPING = Union[
     URL_v20, URL_v21
@@ -1407,6 +1411,98 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._parse_generic_single_observable(
                 observed_data, 'name', 'mutex', asset
             )
+
+    def _parse_process_observable_object(
+            self, process: _PROCESS_TYPING, process_id: str,
+            observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
+        reference = getattr(process, 'id', f'{observed_data.id} - {process_id}')
+        misp_object = self._create_misp_object_from_observable(
+            'process', process, process_id, observed_data
+        )
+        self._populate_object_attributes_from_observable(
+            'process', process, misp_object, reference, observed_data.id
+        )
+        if hasattr(process, 'environment_variables'):
+            value = ' '.join(
+                f'{key} {value}' for key, value in
+                process.environment_variables.items()
+            )
+            misp_object.add_attribute(
+                'args', value,
+                **self._fill_observable_object_attribute(
+                    f'{reference} - args - {value}', observed_data.id
+                )
+            )
+        elif hasattr(process, 'arguments'):
+            value = ' '.join(process.arguments)
+            misp_object.add_attribute(
+                'args', value,
+                **self._fill_observable_object_attribute(
+                    f'{reference} - args - {value}', observed_data.id
+                )
+            )
+        return self._add_misp_object(
+            misp_object, confidence=getattr(observed_data, 'confidence', None)
+        )
+
+    def _parse_process_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        observable_objects = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
+        )
+        process_ids = tuple(
+            self._filter_observable_objects(observable_objects, 'process')
+        )
+        mapping = {}
+        for process_id in process_ids:
+            if process_id not in mapping:
+                mapping[process_id] = self._parse_process_observables(
+                    process_id, observable_objects, mapping, observed_data
+                )
+
+    def _parse_process_observables(
+            self, process_id: str, observable_objects: dict, mapping: dict,
+            observed_data: _OBSERVED_DATA_TYPING) -> str:
+        process = observable_objects[process_id]
+        misp_object = self._parse_process_observable_object(
+            process, process_id, observed_data
+        )
+        if hasattr(process, 'parent_ref'):
+            parent_ref = process.parent_ref
+            if parent_ref in observable_objects:
+                if parent_ref in mapping:
+                    misp_object.add_reference(mapping[parent_ref], 'child-of')
+                else:
+                    parent_uuid = self._parse_process_observables(
+                        parent_ref, observable_objects, mapping, observed_data
+                    )
+                    mapping[parent_ref] = parent_uuid
+                    misp_object.add_reference(parent_uuid, 'child-of')
+        if hasattr(process, 'child_refs'):
+            for child_ref in process.child_refs:
+                if child_ref not in observable_objects:
+                    continue
+                if child_ref in mapping:
+                    misp_object.add_reference(mapping[child_ref], 'parent-of')
+                    continue
+                child_uuid = self._parse_process_observables(
+                    child_ref, observable_objects, mapping, observed_data
+                )
+                mapping[child_ref] = child_uuid
+                misp_object.add_reference(child_uuid, 'parent-of')
+        if hasattr(process, 'image_ref'):
+            image_ref = process.image_ref
+            if image_ref in observable_objects:
+                if image_ref in mapping:
+                    misp_object.add_reference(mapping[image_ref], 'executes')
+                else:
+                    image_uuid = self._parse_file_observables(
+                        image_ref, observable_objects, mapping,
+                        'observable', observed_data
+                    )
+                    mapping[image_ref] = image_uuid
+                    misp_object.add_reference(image_uuid, 'executes')
+        return misp_object.uuid
 
     def _parse_url_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
