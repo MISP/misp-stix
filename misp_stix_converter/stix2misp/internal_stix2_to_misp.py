@@ -2314,7 +2314,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 feature = feature.split('.')[-1]
                 attribute = {'value': value}
                 attribute.update(
-                    self._mapping.user_account_unix_extension_mapping[feature.split('.')[-1]]
+                    self._mapping.user_account_unix_extension_object_mapping[
+                        feature.split('.')[-1]
+                    ]
                 )
                 misp_object.add_attribute(**attribute)
             elif feature in mapping:
