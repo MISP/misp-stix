@@ -504,6 +504,11 @@ class STIX2toMISPMapping:
         if 'location' in updates:
             location_object_mapping.update(updates['location'])
         self.__location_object_mapping = Mapping(**location_object_mapping)
+        self.__registry_key_values_object_mapping = Mapping(
+            data = self.data_attribute,
+            data_type = self.data_type_attribute,
+            name = self.name_attribute
+        )
         self.__suricata_object_mapping = Mapping(
             pattern = snort_attribute,
             description = comment_attribute,
@@ -775,6 +780,10 @@ class STIX2toMISPMapping:
     @property
     def regions_mapping(self) -> dict:
         return self.__regions_mapping
+
+    @property
+    def registry_key_values_object_mapping(self) -> dict:
+        return self.__registry_key_values_object_mapping
 
     @property
     def regkey_attribute(self) -> dict:

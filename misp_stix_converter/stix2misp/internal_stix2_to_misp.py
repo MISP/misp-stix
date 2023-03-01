@@ -1669,7 +1669,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         observable = getattr(self, f'_fetch_observables_{version}')(observed_data)
         if 'values' in observable:
             values = observable['values'][0]
-            for feature, mapping in self._mapping.registry_key_values_mapping.items():
+            for feature, mapping in self._mapping.registry_key_values_object_mapping.items():
                 if hasattr(values, feature):
                     attribute = {'value': getattr(values, feature)}
                     attribute.update(mapping)
@@ -2266,7 +2266,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_registry_key_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('registry-key', indicator)
         mapping = self._mapping.registry_key_object_mapping
-        values_mapping = self._mapping.registry_key_values_mapping
+        values_mapping = self._mapping.registry_key_values_object_mapping
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
             if feature in mapping:

@@ -20,6 +20,7 @@ from stix2.v20.observables import (
     IPv4Address as IPv4Address_v20, IPv6Address as IPv6Address_v20,
     MACAddress as MACAddress_v20, Mutex as Mutex_v20, Process as Process_v20,
     URL as URL_v20, WindowsPEBinaryExt as WindowsPEBinaryExt_v20,
+    WindowsRegistryKey as WindowsRegistryKey_v20,
     X509Certificate as X509Certificate_v20)
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
@@ -31,6 +32,7 @@ from stix2.v20.observables import (
     IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
     MACAddress as MACAddress_v21, Mutex as Mutex_v21, Process as Process_v21,
     URL as URL_v21, WindowsPEBinaryExt as WindowsPEBinaryExt_v21,
+    WindowsRegistryKey as WindowsRegistryKey_v21,
     X509Certificate as X509Certificate_v21)
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
@@ -82,6 +84,7 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
     Process_v20, Process_v21,
     URL_v20, URL_v21,
     WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21,
+    WindowsRegistryKey_v20, WindowsRegistryKey_v21,
     X509Certificate_v20, X509Certificate_v21
 ]
 _IP_ADDRESS_TYPING = Union[
@@ -99,6 +102,9 @@ _PE_EXTENSION_TYPING = Union[
 ]
 _PROCESS_TYPING = Union[
     Process_v20, Process_v21
+]
+_REGISTRY_KEY_TYPING = Union[
+    WindowsRegistryKey_v20, WindowsRegistryKey_v21
 ]
 _URL_TYPING = Union[
     URL_v20, URL_v21
@@ -655,6 +661,15 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if len(fields) > 1:
             return True
         return len(getattr(file_object, 'hashes', {})) > 1
+
+    def _check_registry_key_observable_fields(
+            self, registry_key: _REGISTRY_KEY_TYPING) -> bool:
+        if 'values' in registry_key.properties_populated():
+            if len(registry_key['values']) > 1:
+                return True
+            value = registry_key['values'][0]
+            return 'name' in value or 'data_type' in value
+        return False
 
     def _create_attribute_from_observable_object(
             self, attribute_type: str, value: str,
@@ -1509,6 +1524,82 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     mapping[image_ref] = image_uuid
                     misp_object.add_reference(image_uuid, 'executes')
         return misp_object.uuid
+
+    def _parse_registry_key_observable_object(
+            self, registry_key: _REGISTRY_KEY_TYPING, object_id: str,
+            observed_data: _OBSERVED_DATA_TYPING):
+        reference = getattr(
+            registry_key, 'id', f'{observed_data.id} - {object_id}'
+        )
+        misp_object = self._create_misp_object_from_observable(
+            'registry-key', registry_key, object_id, observed_data
+        )
+        self._populate_object_attributes_from_observable(
+            'registry_key', registry_key, misp_object,
+            reference, observed_data.id
+        )
+        if 'values' not in registry_key.properties_populated():
+            return self._add_misp_object(
+                misp_object,
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+        if len(registry_key['values']) == 1:
+            self._populate_object_attributes_from_observable(
+                'registry_key_values', registry_key['values'], misp_object,
+                reference, observed_data.id
+            )
+            return self._add_misp_object(
+                misp_object,
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+        registry_key_object = self._add_misp_object(
+            misp_object, confidence=getattr(observed_data, 'confidence', None)
+        )
+        for index, registry_value in enumerate(registry_key['values']):
+            value_reference = f'{reference} - values - {index}'
+            value_object = self._create_misp_object('registry-key-value')
+            value_object.update(self._parse_timeline(observed_data))
+            value_object.uuid = self._create_v5_uuid(value_reference)
+            value_object.comment = f'Original Observed Data ID: {observed_data.id}'
+            self._populate_object_attributes_from_observable(
+                'registry_key_values', registry_value, value_object,
+                value_reference, observed_data.id
+            )
+            self._add_misp_object(
+                value_object,
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+            registry_key_object.add_reference(value_object.uuid, 'contains')
+
+    def _parse_registry_key_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        registry_keys = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
+        )
+        feature = 'observable' if len(registry_keys) > 1 else 'single_observable'
+        for object_id, registry_key in registry_keys.items():
+            if self._force_observable_as_object(registry_key, 'registry_key'):
+                self._parse_registry_key_observable_object(
+                    registry_key, object_id, observed_data
+                )
+                continue
+            if hasattr(registry_key, 'values'):
+                self._add_misp_attribute(
+                    getattr(self, f'_handle_{feature}_special_attribute')(
+                        registry_key,
+                        f"{registry_key.key}|{registry_key.values[0]['data']}",
+                        'regkey|value', observed_data.id
+                    ),
+                    confidence=getattr(observed_data, 'confidence', None)
+                )
+                continue
+            # Potential exception here is the registry key object has no key
+            self._add_misp_attribute(
+                getattr(self, f'_handle_{feature}_attribute')(
+                    registry_key, 'key', 'regkey', observed_data.id
+                ),
+                confidence=getattr(observed_data, 'confidence', None)
+            )
 
     def _parse_url_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
