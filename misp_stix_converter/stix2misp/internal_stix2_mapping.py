@@ -374,7 +374,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         ip_version_attribute = {'type': 'counter', 'object_relation': 'ip_version'}
         is_ca_attribute = {'type': 'boolean', 'object_relation': 'is_ca'}
         language_attribute = {'type': 'text', 'object_relation': 'language'}
-        last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
         last_packet_seen_attribute = {'type': 'datetime', 'object_relation': 'last-packet-seen'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
@@ -390,7 +389,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         parent_pid_attribute = {'type': 'text', 'object_relation': 'parent-pid'}
         parent_process_name_attribute = {'type': 'text', 'object_relation': 'parent-process-name'}
         parent_process_path_attribute = {'type': 'text', 'object_relation': 'parent-process-path'}
-        password_attribute = {'type': 'text', 'object_relation': 'password'}
         pattern_in_file_attribute = {'type': 'pattern-in-file', 'object_relation': 'pattern-in-file'}
         pem_attribute = {'type': 'text', 'object_relation': 'pem'}
         pgid_attribute = {'type': 'text', 'object_relation': 'pgid'}
@@ -419,7 +417,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         thread_index_attribute = {'type': 'email-thread-index', 'object_relation': 'thread-index'}
         to_attribute = {'type': 'email-dst', 'object_relation': 'to'}
         to_display_name_attribute = {'type': 'email-dst-display-name', 'object_relation': 'to-display-name'}
-        username_attribute = {'type': 'text', 'object_relation': 'username'}
         user_avatar_attribute = {'type': 'attachment', 'object_relation': 'user-avatar'}
         user_creator_attribute = {'type': 'text', 'object_relation': 'user-creator'}
         user_process_attribute = {'type': 'text', 'object_relation': 'user-process'}
@@ -503,9 +500,9 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_update = {'type': 'text', 'object_relation': 'update'},
         )
         self.__credential_object_mapping = Mapping(
-            user_id = username_attribute,
-            credential = password_attribute,
-            x_misp_password = password_attribute,
+            user_id = self.username_attribute,
+            credential = self.password_attribute,
+            x_misp_password = self.password_attribute,
             x_misp_format = format_attribute,
             x_misp_notification = {'type': 'text', 'object_relation': 'notification'},
             x_misp_origin = {'type': 'text', 'object_relation': 'origin'},
@@ -698,7 +695,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         self.__gitlab_user_object_mapping = Mapping(
             user_id = id_attribute,
             display_name = self.name_attribute,
-            account_login = username_attribute,
+            account_login = self.username_attribute,
             x_misp_avatar_url = {'type': 'link', 'object_relation': 'avatar_url'},
             x_misp_state = {'type': 'text', 'object_relation': 'state'},
             x_misp_web_url = {'type': 'link', 'object_relation': 'web_url'}
@@ -748,7 +745,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
                 'x_misp_archive': archive_attribute,
                 'x_misp_image_text': image_text_attribute,
                 'x_misp_link': link_attribute,
-                'x_misp_username': username_attribute
+                'x_misp_username': self.username_attribute
             }
         )
         self.__image_observable_object_mapping = Mapping(
@@ -756,7 +753,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_archive = archive_attribute,
             x_misp_image_text = image_text_attribute,
             x_misp_link = link_attribute,
-            x_misp_username = username_attribute
+            x_misp_username = self.username_attribute
         )
         self.__ip_port_object_mapping = Mapping(
             dst_port = self.dst_port_attribute,
@@ -1093,7 +1090,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         )
         self.__telegram_account_object_mapping = Mapping(
             user_id = id_attribute,
-            account_login = username_attribute,
+            account_login = self.username_attribute,
             x_misp_first_name = {'type': 'text', 'object_relation': 'first_name'},
             x_misp_last_name = {'type': 'text', 'object_relation': 'last_name'},
             x_misp_phone = {'type': 'text', 'object_relation': 'phone'},
@@ -1148,31 +1145,25 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_tld = {'type': 'text', 'object_relation': 'tld'}
         )
         self.__user_account_object_mapping = Mapping(
-            account_login = username_attribute,
-            account_type = {'type': 'text', 'object_relation': 'account-type'},
-            can_escalate_privs = {'type': 'boolean', 'object_relation': 'can_escalate_privs'},
-            credential = password_attribute,
-            x_misp_password = password_attribute,
-            display_name = {'type': 'text', 'object_relation': 'display-name'},
-            is_disabled = {'type': 'boolean', 'object_relation': 'disabled'},
-            is_privileged = {'type': 'boolean', 'object_relation': 'privileged'},
-            is_service_account = {'type': 'boolean', 'object_relation': 'is_service_account'},
-            user_id = {'type': 'text', 'object_relation': 'user-id'},
+            account_login = self.username_attribute,
+            account_type = self.account_type_attribute,
+            can_escalate_privs = self.can_escalate_privs_attribute,
+            credential = self.password_attribute,
+            x_misp_password = self.password_attribute,
+            display_name = self.display_name_attribute,
+            is_disabled = self.disabled_attribute,
+            is_privileged = self.privileged_attribute,
+            is_service_account = self.is_service_account_attribute,
+            user_id = self.user_id_attribute,
             x_misp_description = self.description_attribute,
             x_misp_link = link_attribute,
             x_misp_user_avatar = user_avatar_attribute,
-            account_created = {'type': 'datetime', 'object_relation': 'created'},
-            account_expires = {'type': 'datetime', 'object_relation': 'expires'},
-            account_first_login = {'type': 'datetime', 'object_relation': 'first_login'},
-            account_last_login = {'type': 'datetime', 'object_relation': 'last_login'},
-            credential_last_changed = last_changed_attribute,
-            password_last_changed = last_changed_attribute
-        )
-        self.__user_account_unix_extenstion_mapping = Mapping(
-            gid = {'type': 'text', 'object_relation': 'group-id'},
-            groups = {'type': 'text', 'object_relation': 'group'},
-            home_dir = {'type': 'text', 'object_relation': 'home_dir'},
-            shell = {'type': 'text', 'object_relation': 'shell'}
+            account_created = self.created_attribute,
+            account_expires = self.expires_attribute,
+            account_first_login = self.first_login_attribute,
+            account_last_login = self.last_login_attribute,
+            credential_last_changed = self.password_last_changed_attribute,
+            password_last_changed = self.password_last_changed_attribute
         )
         self.__vulnerability_object_mapping = Mapping(
             description = self.description_attribute,
@@ -1497,10 +1488,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def user_account_object_mapping(self) -> dict:
         return self.__user_account_object_mapping
-
-    @property
-    def user_account_unix_extension_mapping(self) -> dict:
-        return self.__user_account_unix_extenstion_mapping
 
     @property
     def vulnerability_object_mapping(self) -> dict:

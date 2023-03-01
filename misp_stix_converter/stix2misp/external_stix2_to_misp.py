@@ -1521,6 +1521,33 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 observed_data, 'value', 'url', asset
             )
 
+    def _parse_user_account_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        user_accounts = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
+        )
+        for object_id, user_account in user_accounts.items():
+            reference = getattr(
+                user_account, 'id', f'{observed_data.id} - {object_id}'
+            )
+            misp_object = self._create_misp_object_from_observable(
+                'user-account', user_account, object_id, observed_data
+            )
+            self._populate_object_attributes_from_observable(
+                'user_account', user_account, misp_object,
+                reference, observed_data.id
+            )
+            if 'unix-account-ext' in getattr(user_account, 'extensions', {}):
+                self._populate_object_attributes_from_observable(
+                    'user_account_unix_extension',
+                    user_account.extensions['unix-account-ext'],
+                    misp_object, reference, observed_data.id
+                )
+            self._add_misp_object(
+                misp_object,
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+
     def _parse_x509_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
         x509_objects = dict(
