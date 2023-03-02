@@ -741,14 +741,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _force_observable_as_object(
             self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
-            object_type: str, references: Optional[dict] = None) -> bool:
+            object_type: str) -> bool:
         fields = getattr(self._mapping, f'{object_type}_object_fields')
         if any(hasattr(observable_object, field) for field in fields):
             return True
-        if references is not None:
-            return getattr(self, f'_check_{object_type}_observable_fields')(
-                observable_object, references
-            )
         return getattr(self, f'_check_{object_type}_observable_fields')(
             observable_object
         )
