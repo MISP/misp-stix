@@ -138,6 +138,9 @@ class STIX2toMISPMapping:
         self.__cookie_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'cookie'}
         )
+        self.__cpe_attribute = Mapping(
+            **{'type': 'cpe', 'object_relation': 'cpe'}
+        )
         self.__created_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'created'}
         )
@@ -206,6 +209,9 @@ class STIX2toMISPMapping:
         )
         self.__issuer_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'issuer'}
+        )
+        self.__language_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'language'}
         )
         self.__last_login_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'last_login'}
@@ -318,6 +324,9 @@ class STIX2toMISPMapping:
         self.__suricata_reference_attribute = Mapping(
             **{'type': 'link', 'object_relation': 'ref'}
         )
+        self.__swid_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'swid'}
+        )
         self.__tlsh_attribute = Mapping(
             **{'type': 'tlsh', 'object_relation': 'tlsh'}
         )
@@ -344,6 +353,9 @@ class STIX2toMISPMapping:
         )
         self.__validity_not_before_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'validity-not-before'}
+        )
+        self.__vendor_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'vendor'}
         )
         self.__version_attribute = Mapping(**version_attribute)
         self.__vulnerability_attribute = Mapping(
@@ -582,6 +594,10 @@ class STIX2toMISPMapping:
         return self.__cookie_attribute
 
     @property
+    def cpe_attribute(self) -> dict:
+        return self.__cpe_attribute
+
+    @property
     def created_attribute(self) -> dict:
         return self.__created_attribute
 
@@ -684,6 +700,10 @@ class STIX2toMISPMapping:
     @property
     def issuer_attribute(self) -> dict:
         return self.__issuer_attribute
+
+    @property
+    def language_attribute(self) -> dict:
+        return self.__language_attribute
 
     @property
     def last_login_attribute(self) -> dict:
@@ -878,6 +898,10 @@ class STIX2toMISPMapping:
         return self.__suricata_reference_attribute
 
     @property
+    def swid_attribute(self) -> dict:
+        return self.__swid_attribute
+
+    @property
     def threat_actor_meta_mapping(self) -> dict:
         return self.__threat_actor_meta_mapping
 
@@ -928,6 +952,10 @@ class STIX2toMISPMapping:
     @property
     def validity_not_before_attribute(self) -> dict:
         return self.__validity_not_before_attribute
+
+    @property
+    def vendor_attribute(self) -> dict:
+        return self.__vendor_attribute
 
     @property
     def version_attribute(self) -> dict:

@@ -1597,6 +1597,35 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 confidence=getattr(observed_data, 'confidence', None)
             )
 
+    def _parse_software_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        softwares = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
+        )
+        for object_id, software in softwares.items():
+            reference = getattr(
+                software, 'id', f'{observed_data.id} - {object_id}'
+            )
+            misp_object = self._create_misp_object_from_observable(
+                'software', software, object_id, observed_data
+            )
+            self._populate_object_attributes_from_observable(
+                'software', software, misp_object, reference, observed_data.id
+            )
+            if hasattr(software, 'languages'):
+                for index, language in enumerate(software.languages):
+                    misp_object.add_attribute(
+                        'language', language,
+                        **self._fill_observable_object_attribute(
+                            f'{reference} - languages - {index}',
+                            observed_data.id
+                        )
+                    )
+            self._add_misp_object(
+                misp_object,
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+
     def _parse_url_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
         if len(getattr(observed_data, asset)) > 1:

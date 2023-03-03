@@ -373,7 +373,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         ip_source_attribute = {'type': 'ip-src', 'object_relation': 'ip-src'}
         ip_version_attribute = {'type': 'counter', 'object_relation': 'ip_version'}
         is_ca_attribute = {'type': 'boolean', 'object_relation': 'is_ca'}
-        language_attribute = {'type': 'text', 'object_relation': 'language'}
         last_packet_seen_attribute = {'type': 'datetime', 'object_relation': 'last-packet-seen'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
@@ -485,11 +484,11 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_type = self.type_attribute
         )
         self.__cpe_asset_object_mapping = Mapping(
-            cpe = {'type': 'cpe', 'object_relation': 'cpe'},
-            languages = {'type': 'text', 'object_relation': 'language'},
+            cpe = self.cpe_attribute,
+            languages = self.language_attribute,
             name = {'type': 'text', 'object_relation': 'product'},
-            vendor = {'type': 'text', 'object_relation': 'vendor'},
-            version = {'type': 'text', 'object_relation': 'version'},
+            vendor = self.vendor_attribute,
+            version = self.version_attribute,
             x_misp_description = self.description_attribute,
             x_misp_other = {'type': 'text', 'object_relation': 'other'},
             x_misp_part = {'type': 'text', 'object_relation': 'part'},

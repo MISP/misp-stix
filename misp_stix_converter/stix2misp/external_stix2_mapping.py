@@ -34,6 +34,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'email-addr': 'email_address',
             'mac-addr': 'mac_address',
             'mutex': 'mutex',
+            'software': 'software',
             'url': 'url',
             'user-account': 'user_account',
             'windows-registry-key': 'registry_key',
@@ -308,6 +309,13 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             modified = self.last_modified_attribute,
             modified_time = self.last_modified_attribute
         )
+        self.__software_object_mapping = Mapping(
+            name = self.name_attribute,
+            cpe = self.cpe_attribute,
+            swid = self.swid_attribute,
+            vendor = self.vendor_attribute,
+            version = self.version_attribute
+        )
         self.__user_account_object_mapping = Mapping(
             account_login = self.username_attribute,
             account_type = self.account_type_attribute,
@@ -555,6 +563,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def sigma_object_mapping(self) -> dict:
         return self.__sigma_object_mapping
+
+    @property
+    def software_object_mapping(self) -> dict:
+        return self.__software_object_mapping
 
     @property
     def user_account_object_mapping(self) -> dict:
