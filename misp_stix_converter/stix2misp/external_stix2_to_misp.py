@@ -1022,6 +1022,93 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     misp_object.add_reference(contains_uuid, 'contains')
         return misp_object.uuid
 
+    def _parse_domain_ip_observables(
+            self, object_id: str, observable_objects: dict, mapping: dict,
+            feature: str, observed_data: _OBSERVED_DATA_TYPING) -> str:
+        domain = observable_objects.pop(object_id)
+        if hasattr(domain, 'resolves_to_refs'):
+            domain_reference = getattr(
+                domain, 'id', f'{observed_data.id} - {object_id}'
+            )
+            misp_object = self._create_misp_object_from_observable(
+                'domain-ip', domain, object_id, observed_data
+            )
+            misp_object.add_attribute(
+                'domain', domain.value,
+                **self._fill_observable_object_attribute(
+                    f'{domain_reference} - domain - {domain.value}',
+                    observed_data.id
+                )
+            )
+            references = {
+                ref: observable_objects[ref] for ref in domain.resolve_to_refs
+            }
+            for ip_id in self._filter_observable_objects(
+                    references, 'ipv4-addr', 'ipv6-addr'):
+                ip_address = references[ip_id]
+                ip_ref = getattr(ip_address, 'id', ip_id)
+                attribute = misp_object.add_attribute(
+                    'ip', ip_address.value,
+                    f'{domain_reference} - {ip_ref} - ip - {ip_address.value}',
+                    observed_data.id
+                )
+                mapping[ip_id] = attribute.uuid
+            self._add_misp_object(
+                misp_object,
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+            if any(ref.type == 'domain-name' for ref in references.values()):
+                for domain_id in self._filter_observable_objects(
+                        references, 'domain-name'):
+                    if domain_id in mapping:
+                        misp_object.add_reference(
+                            mapping[domain_id], 'resolves-to'
+                        )
+                        continue
+                    domain_uuid = self._parse_domain_ip_observables(
+                        domain_id, observable_objects, mapping,
+                        feature, observed_data
+                    )
+                    mapping[domain_id] = domain_uuid
+                    misp_object.add_reference(domain_uuid, 'resolves-to')
+            return misp_object.uuid
+        attribute = self._add_misp_attribute(
+            getattr(self, f'_handle_{feature}_attribute')(
+                domain, 'value', 'domain', observed_data.id, object_id
+            ),
+            confidence=getattr(observed_data, 'confidence', None)
+        )
+        return attribute.uuid
+
+    def _parse_domain_ip_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        observable_objects = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
+        )
+        domain_ids = tuple(
+            self._filter_observable_objects(observable_objects, 'domain-name')
+        )
+        feature = 'observable' if len(observable_objects) > 1 else 'single_observable'
+        mapping = {}
+        for domain_id in domain_ids:
+            if domain_id not in mapping:
+                self._parse_domain_ip_observables(
+                    domain_id, observable_objects, mapping,
+                    feature, observed_data
+                )
+        ip_ids = self._filter_observable_objects(
+            observable_objects, 'ipv4-addr', 'ipv6-addr'
+        )
+        for ip_id in ip_ids:
+            if ip_id not in mapping:
+                self._add_misp_attribute(
+                    getattr(self, f'_handle_{feature}_attribute')(
+                        observable_objects[ip_id], 'value', 'ip-dst',
+                        observed_data.id, ip_id
+                    ),
+                    confidence=getattr(observed_data, 'confidence', None)
+                )
+
     def _parse_domain_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
         if len(getattr(observed_data, asset)) > 1:
