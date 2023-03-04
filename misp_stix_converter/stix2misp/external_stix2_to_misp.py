@@ -1186,24 +1186,26 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_email_observable_object(
             self, email_message: _EMAIL_MESSAGE_TYPING, object_id: str,
-            observed_data: _OBSERVED_DATA_TYPING, references: dict,
-            reference: str):
+            observed_data: _OBSERVED_DATA_TYPING, observable_objects: dict):
+        reference = getattr(
+            email_message, 'id', f'{observed_data.id} - {object_id}'
+        )
         misp_object = self._create_misp_object_from_observable(
             'email', email_message, object_id, observed_data
         )
         self._populate_object_attributes_from_observable(
             'email', email_message, misp_object, reference, observed_data.id
         )
-        if getattr(email_message, 'from_ref', None) in references:
+        if getattr(email_message, 'from_ref', None) in observable_objects:
             self._parse_email_observable_object_reference(
-                misp_object, references[email_message.from_ref], 'from',
+                misp_object, observable_objects[email_message.from_ref], 'from',
                 email_message.from_ref, observed_data.id
             )
         for feature in ('to', 'cc', 'bcc'):
-            if getattr(email_message, f'{feature}_refs', None) in references:
+            if getattr(email_message, f'{feature}_refs', None) in observable_objects:
                 for address_ref in getattr(email_message, f'{feature}_refs'):
                     self._parse_email_observable_object_reference(
-                        misp_object, references[address_ref], feature,
+                        misp_object, observable_objects[address_ref], feature,
                         address_ref, observed_data.id
                     )
         if hasattr(email_message, 'additional_header_fields'):
@@ -1271,12 +1273,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for email_id in email_ids:
             email_message = observable_objects[email_id]
             if self._force_observable_as_object(email_message, 'email'):
-                reference = getattr(
-                    email_message, 'id', f'{observed_data.id} - {email_id}'
-                )
                 self._parse_email_observable_object(
-                    email_message, email_id, observed_data,
-                    observable_objects, reference
+                    email_message, email_id, observed_data, observable_objects
                 )
                 continue
             for field in self._get_populated_properties(email_message):
