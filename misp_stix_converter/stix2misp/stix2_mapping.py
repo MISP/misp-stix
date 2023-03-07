@@ -102,7 +102,13 @@ class STIX2toMISPMapping:
         )
 
         # ATTRIBUTES MAPPING DECLARATION
+        address_family_attribute = {
+            'type': 'text', 'object_relation': 'address-family'
+        }
         comment_attribute = {'type': 'comment', 'object_relation': 'comment'}
+        domain_family_attribute = {
+            'type': 'text', 'object_relation': 'domain-family'
+        }
         reference_attribute = {'type': 'link', 'object_relation': 'reference'}
         references_attribute = {'type': 'link', 'object_relation': 'references'}
         snort_attribute = {'type': 'snort', 'object_relation': 'suricata'}
@@ -118,6 +124,7 @@ class STIX2toMISPMapping:
         self.__accuracy_radius_attribute = Mapping(
             **{'type': 'float', 'object_relation': 'accuracy-radius'}
         )
+        self.__address_family_attribute = Mapping(**address_family_attribute)
         self.__args_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'args'}
         )
@@ -168,6 +175,13 @@ class STIX2toMISPMapping:
         self.__domain_attribute = Mapping(
             **{'type': 'domain', 'object_relation': 'domain'}
         )
+        self.__domain_family_attribute = Mapping(**domain_family_attribute)
+        self.__dst_bytes_count_attribute = Mapping(
+            **{'type': 'counter', 'object_relation': 'dst-bytes-count'}
+        )
+        self.__dst_packets_count_attribute = Mapping(
+            **{'type': 'counter', 'object_relation': 'dst-packets-count'}
+        )
         self.__dst_port_attribute = Mapping(
             **{'type': 'port', 'object_relation': 'dst-port'}
         )
@@ -191,6 +205,9 @@ class STIX2toMISPMapping:
         )
         self.__first_login_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'first_login'}
+        )
+        self.__first_packet_seen_attribute = Mapping(
+            **{'type': 'datetime', 'object_relation': 'first-packet-seen'}
         )
         self.__hidden_attribute = Mapping(
             **{'type': 'boolean', 'object_relation': 'hidden'}
@@ -218,6 +235,9 @@ class STIX2toMISPMapping:
         )
         self.__last_modified_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'last-modified'}
+        )
+        self.__last_packet_seen_attribute = Mapping(
+            **{'type': 'datetime', 'object_relation': 'last-packet-seen'}
         )
         self.__md5_attribute = Mapping(
             **{'type': 'md5', 'object_relation': 'md5'}
@@ -309,6 +329,12 @@ class STIX2toMISPMapping:
             **{'type': 'size-in-bytes', 'object_relation': 'size-in-bytes'}
         )
         self.__snort_attribute = Mapping(**snort_attribute)
+        self.__src_bytes_count_attribute = Mapping(
+            **{'type': 'counter', 'object_relation': 'src-bytes-count'}
+        )
+        self.__src_packets_count_attribute = Mapping(
+            **{'type': 'counter', 'object_relation': 'src-packets-count'}
+        )
         self.__src_port_attribute = Mapping(
             **{'type': 'port', 'object_relation': 'src-port'}
         )
@@ -492,11 +518,22 @@ class STIX2toMISPMapping:
         )
 
         # MISP OBJECTS MAPPING
-        self.__connection_protocols = {
-            "IP": "3", "ICMP": "3", "ARP": "3",
-            "TCP": "4", "UDP": "4",
-            "HTTP": "7", "HTTPS": "7", "FTP": "7"
-        }
+        connection_protocols = dict.fromkeys(('tcp', 'TCP', 'udp', 'UDP'), '4')
+        connection_protocols.update(
+            dict.fromkeys(
+                (
+                    'arp', 'icmp', 'ip', 'ipv4', 'ipv6',
+                    'ARP', 'ICMP', 'IP', 'IPV4', 'IPV6'
+                ),
+                '3'
+            )
+        )
+        connection_protocols.update(
+            dict.fromkeys(
+                ('http', 'HTTP', 'https', 'HTTPS', 'ftp', 'FTP'), '7'
+            )
+        )
+        self.__connection_protocols = Mapping(**connection_protocols)
         self.__email_additional_header_fields_mapping = Mapping(
             **{
                 'Reply-To': self.reply_to_attribute,
@@ -516,6 +553,11 @@ class STIX2toMISPMapping:
         if 'location' in updates:
             location_object_mapping.update(updates['location'])
         self.__location_object_mapping = Mapping(**location_object_mapping)
+        self.__network_socket_extension_mapping = Mapping(
+            address_family = address_family_attribute,
+            protocol_family = domain_family_attribute,
+            socket_type = {'type': 'text', 'object_relation': 'socket-type'}
+        )
         self.__registry_key_values_object_mapping = Mapping(
             data = self.data_attribute,
             data_type = self.data_type_attribute,
@@ -544,6 +586,10 @@ class STIX2toMISPMapping:
     @property
     def accuracy_radius_attribute(self) -> dict:
         return self.__accuracy_radius_attribute
+
+    @property
+    def address_family_attribute(self) -> dict:
+        return self.__address_family_attribute
 
     @property
     def args_attribute(self) -> dict:
@@ -638,6 +684,18 @@ class STIX2toMISPMapping:
         return self.__domain_attribute
 
     @property
+    def domain_family_attribute(self) -> dict:
+        return self.__domain_family_attribute
+
+    @property
+    def dst_bytes_count_attribute(self) -> dict:
+        return self.__dst_bytes_count_attribute
+
+    @property
+    def dst_packets_count_attribute(self) -> dict:
+        return self.__dst_packets_count_attribute
+
+    @property
     def dst_port_attribute(self) -> dict:
         return self.__dst_port_attribute
 
@@ -672,6 +730,10 @@ class STIX2toMISPMapping:
     @property
     def first_login_attribute(self) -> dict:
         return self.__first_login_attribute
+
+    @property
+    def first_packet_seen_attribute(self) -> dict:
+        return self.__first_packet_seen_attribute
 
     @property
     def hidden_attribute(self) -> dict:
@@ -714,6 +776,10 @@ class STIX2toMISPMapping:
         return self.__last_modified_attribute
 
     @property
+    def last_packet_seen_attribute(self) -> dict:
+        return self.__last_packet_seen_attribute
+
+    @property
     def location_object_mapping(self) -> dict:
         return self.__location_object_mapping
 
@@ -744,6 +810,10 @@ class STIX2toMISPMapping:
     @property
     def name_attribute(self) -> dict:
         return self.__name_attribute
+
+    @property
+    def network_socket_extension_mapping(self) -> dict:
+        return self.__network_socket_extension_mapping
 
     @property
     def number_of_sections_attribute(self) -> dict:
@@ -864,6 +934,14 @@ class STIX2toMISPMapping:
     @property
     def snort_attribute(self) -> dict:
         return self.__snort_attribute
+
+    @property
+    def src_bytes_count_attribute(self) -> dict:
+        return self.__src_bytes_count_attribute
+
+    @property
+    def src_packets_count_attribute(self) -> dict:
+        return self.__src_packets_count_attribute
 
     @property
     def src_port_attribute(self) -> dict:

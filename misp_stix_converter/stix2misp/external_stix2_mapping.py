@@ -63,9 +63,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         observable_mapping.update(
             dict.fromkeys(
                 (
-                    'domain-name_ipv4-addr_network-traffic',
-                    'domain-name_ipv6-addr_network-traffic',
-                    'domain-name_ipv4-addr_ipv6-addr_network-traffic'
                 ),
                 'domain_ip_network_traffic'
             )
@@ -107,11 +104,21 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         observable_mapping.update(
             dict.fromkeys(
                 (
+                    'domain-name_ipv4-addr_network-traffic',
+                    'domain-name_ipv6-addr_network-traffic',
+                    'domain-name_ipv4-addr_ipv6-addr_network-traffic',
+                    'domain-name_ipv4-addr_mac-addr_network-traffic',
+                    'domain-name_ipv6-addr_mac-addr_network-traffic',
+                    'domain-name_ipv4-addr_ipv6-addr_mac-addr_network-traffic',
+                    'mac-addr_network-traffic',
+                    'mac-addr_ipv4-addr_network-traffic',
+                    'mac-addr_ipv6-addr_network-traffic',
+                    'mac-addr_ipv4-addr_ipv6-addr_network-traffic',
                     'ipv4-addr_network-traffic',
                     'ipv6-addr_network-traffic',
                     'ipv4-addr_ipv6-addr_network-traffic'
                 ),
-                'ip_network_traffic'
+                'network_traffic'
             )
         )
         observable_mapping.update(
@@ -280,6 +287,38 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             name = self.filename_attribute,
             name_enc = self.file_encoding_attribute,
             size = self.size_in_bytes_attribute
+        )
+        self.__network_connection_object_reference_mapping = Mapping(
+            **{
+                'domain-name_dst': 'hostname-dst',
+                'domain-name_src': 'hostname-src',
+                'ipv4-addr_dst': 'ip-dst',
+                'ipv4-addr_src': 'ip-src',
+                'ipv6-addr_dst': 'ip-dst',
+                'ipv6-addr_src': 'ip-src',
+                'mac-address_dst': 'mac-dst',
+                'mac-address_src': 'mad-src'
+            }
+        )
+        self.__network_socket_object_reference_mapping = Mapping(
+            **{
+                'domain-name_dst': 'hostname-dst',
+                'domain-name_src': 'hostname-src',
+                'ipv4-addr_dst': 'ip-dst',
+                'ipv4-addr_src': 'ip-src',
+                'ipv6-addr_dst': 'ip-dst',
+                'ipv6-addr_src': 'ip-src'
+            }
+        )
+        self.__network_traffic_object_mapping = Mapping(
+            src_port = self.src_port_attribute,
+            dst_port = self.dst_port_attribute,
+            start = self.first_packet_seen_attribute,
+            end = self.last_packet_seen_attribute,
+            src_byte_count = self.src_bytes_count_attribute,
+            dst_byte_count = self.dst_bytes_count_attribute,
+            src_packets = self.src_packets_count_attribute,
+            dst_packets = self.dst_packets_count_attribute
         )
         self.__pe_object_mapping = Mapping(
             imphash = self.imphash_attribute,
@@ -519,6 +558,22 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def location_object_fields(self) -> tuple:
         return self.__location_object_fields
+
+    @property
+    def network_connection_object_reference_mapping(self) -> dict:
+        return self.__network_connection_object_reference_mapping
+
+    @property
+    def network_socket_extension_object_mapping(self) -> dict:
+        return self.__network_socket_extension_object_mapping
+
+    @property
+    def network_socket_object_reference_mapping(self) -> dict:
+        return self.__network_socket_object_reference_mapping
+
+    @property
+    def network_traffic_object_mapping(self) -> dict:
+        return self.__network_traffic_object_mapping
 
     @property
     def observable_mapping(self) -> dict:
