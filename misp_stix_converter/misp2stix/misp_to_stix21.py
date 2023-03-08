@@ -1500,13 +1500,33 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             if self._is_galaxy_parsed(object_refs, cluster):
                 continue
             location_id = f"location--{cluster['uuid']}"
-            location_args = self._create_galaxy_args(
-                cluster, galaxy['description'], galaxy['name'], location_id,
-                timestamp
-            )
+            location_args = {
+                'id': location_id,
+                'type': 'location',
+                'name': cluster['description'],
+                'description': f"{galaxy['description']} | {cluster['value']}",
+                'labels': self._create_galaxy_labels(galaxy['name'], cluster),
+                'interoperability': True
+            }
             location_args['country'] = cluster['meta']['ISO']
             location_args.update(
                 self._parse_meta_fields(cluster['meta'], 'location')
+            )
+            if timestamp is None:
+                if not cluster.get('timestamp'):
+                    location = self._create_location(location_args)
+                    self._append_SDO_without_refs(location)
+                    object_refs.append(location_id)
+                    ids[cluster['uuid']] = location_id
+                    continue
+                timestamp = self._datetime_from_timestamp(
+                    cluster.pop('timestamp')
+                )
+            location_args.update(
+                {
+                    'created': timestamp,
+                    'modified': timestamp
+                }
             )
             location = self._create_location(location_args)
             self._append_SDO_without_refs(location)

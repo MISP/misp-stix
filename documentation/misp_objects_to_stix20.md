@@ -1385,6 +1385,16 @@ For the rest of this documentation, we will then, in order to keep the content c
                 "type": "text",
                 "object_relation": "file-encoding",
                 "value": "UTF-8"
+            },
+            {
+                "type": "datetime",
+                "object_relation": "creation-time",
+                "value": "2021-10-25T16:22:00"
+            },
+            {
+                "type": "datetime",
+                "object_relation": "modification-time",
+                "value": "2022-10-25T16:22:00"
             }
         ]
     }
@@ -1398,7 +1408,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
           "created": "2020-10-25T16:22:00.000Z",
           "modified": "2020-10-25T16:22:00.000Z",
-          "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND file:name_enc = 'UTF-8' AND file:size = '35' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip') AND (file:content_ref.payload_bin = 'Tm9uLW1hbGljaW91cyBmaWxlCg==' AND file:content_ref.x_misp_filename = 'non')]",
+          "pattern": "[file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND file:name = 'oui' AND file:name_enc = 'UTF-8' AND file:size = '35' AND file:created = '2021-10-25T16:22:00' AND file:modified = '2022-10-25T16:22:00' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip') AND (file:content_ref.payload_bin = 'Tm9uLW1hbGljaW91cyBmaWxlCg==' AND file:content_ref.x_misp_filename = 'non')]",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
@@ -1448,6 +1458,8 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "size": 35,
                   "name": "oui",
                   "name_enc": "UTF-8",
+                  "created": "2021-10-25T16:22:00Z",
+                  "modified": "2022-10-25T16:22:00Z",
                   "parent_directory_ref": "1",
                   "content_ref": "2",
                   "x_misp_attachment": {
@@ -2358,6 +2370,66 @@ For the rest of this documentation, we will then, in order to keep the content c
       }
       ```
 
+- identity
+  - MISP
+    ```json
+    {
+        "name": "identity",
+        "description": "Identities can represent actual individuals, organizations, or groups as well as classes of individuals, organizations, systems or groups.",
+        "meta-category": "misc",
+        "uuid": "a54e32af-5569-4949-b1fe-ad75054cde45",
+        "timestamp": "1603642920",
+        "Attribute": [
+            {
+                "type": "text",
+                "object_relation": "name",
+                "value": "John Doe"
+            },
+            {
+                "type": "text",
+                "object_relation": "contact_information",
+                "value": "email-address: jdoe@email.com / phone-number: 0123456789"
+            },
+            {
+                "type": "text",
+                "object_relation": "description",
+                "value": "Unknown person"
+            },
+            {
+                "type": "text",
+                "object_relation": "identity_class",
+                "value": "individual"
+            },
+            {
+                "type": "text",
+                "object_relation": "roles",
+                "value": "Placeholder name"
+            }
+        ]
+    }
+    ```
+  - STIX
+    - Identity
+      ```json
+      {
+          "type": "identity",
+          "id": "identity--a54e32af-5569-4949-b1fe-ad75054cde45",
+          "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "name": "John Doe",
+          "description": "Unknown person",
+          "identity_class": "individual",
+          "contact_information": "email-address: jdoe@email.com / phone-number: 0123456789",
+          "labels": [
+              "misp:name=\"identity\"",
+              "misp:meta-category=\"misc\"",
+              "misp:to_ids=\"False\""
+          ],
+          "x_misp_roles": "Placeholder name"
+      }
+      ```
+
 - image
   - MISP
     ```json
@@ -2972,8 +3044,8 @@ For the rest of this documentation, we will then, in order to keep the content c
                   "src_port": 80,
                   "dst_port": 8080,
                   "protocols": [
-                      "tcp",
-                      "ip"
+                      "ip",
+                      "tcp"
                   ],
                   "extensions": {
                       "tcp-ext": {

@@ -5739,7 +5739,18 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
             location2.type,
             'location'
         )
-        self._check_galaxy_features(location1, country, timestamp)
+        cluster = country['GalaxyCluster'][0]
+        self.assertEqual(location1.id, f"{location1.type}--{cluster['uuid']}")
+        self.assertEqual(location1.created, timestamp)
+        self.assertEqual(location1.modified, timestamp)
+        self.assertEqual(location1.name, cluster['description'])
+        self.assertEqual(
+            location1.description,
+            f"{country['description']} | {cluster['value']}"
+        )
+        self.assertEqual(location1.labels[0], f'misp:galaxy-name="{country["name"]}"')
+        self.assertEqual(location1.labels[1], f'misp:galaxy-type="{country["type"]}"')
+        self._check_location_meta_fields(location1, cluster['meta'])
         cluster = region['GalaxyCluster'][0]
         self.assertEqual(location2.id, f"{location2.type}--{cluster['uuid']}")
         self.assertEqual(location2.created, timestamp)
@@ -5751,9 +5762,7 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
         )
         self.assertEqual(location2.labels[0], f'misp:galaxy-name="{region["name"]}"')
         self.assertEqual(location2.labels[1], f'misp:galaxy-type="{region["type"]}"')
-        getattr(self, f"_check_{location2.type.replace('-', '_')}_meta_fields")(
-            location2, cluster['meta']
-        )
+        self._check_location_meta_fields(location2, cluster['meta'])
         self.assertEqual(location2.region, region_value.lower().replace(' ', '-'))
 
     def _test_event_with_malware_galaxy(self, event):
