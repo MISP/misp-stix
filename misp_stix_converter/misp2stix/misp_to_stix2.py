@@ -2267,7 +2267,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 target_type = target_id.split('--')[0]
                 self._parse_galaxy_relationship(
                     source_id, target_id,
-                    self._mapping/relationship_specs[source_type].get(
+                    self._mapping.relationship_specs[source_type].get(
                         target_type, 'related-to'
                     ),
                     timestamp
