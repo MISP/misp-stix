@@ -6,7 +6,7 @@ from .stix1_mapping import MISPtoSTIX1Mapping
 from .stix20_mapping import MISPtoSTIX20Mapping
 from .stix21_mapping import MISPtoSTIX21Mapping
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pymisp import MISPAttribute, MISPObject
 from typing import Optional, Union
 
@@ -160,7 +160,7 @@ class MISPtoSTIXParser:
     def _datetime_from_timestamp(timestamp: Union[datetime, str]) -> datetime:
         if isinstance(timestamp, datetime):
             return timestamp
-        return datetime.utcfromtimestamp(int(timestamp))
+        return datetime.fromtimestamp(int(timestamp), timezone.utc)
 
     @staticmethod
     def _fetch_ids_flag(attributes: list) -> bool:
