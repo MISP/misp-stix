@@ -2261,19 +2261,17 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         source_type = source_id.split('--')[0]
         if source_type not in self._mapping.relationship_specs:
             for target_id in target_ids:
-                self._parse_galaxy_relationship(source_id, target_id, 'has', timestamp)
+                self._parse_galaxy_relationship(source_id, target_id, 'related-to', timestamp)
         else:
             for target_id in target_ids:
                 target_type = target_id.split('--')[0]
-                if target_type in self._mapping.relationship_specs[source_type]:
-                    self._parse_galaxy_relationship(
-                        source_id,
-                        target_id,
-                        self._mapping.relationship_specs[source_type][target_type],
-                        timestamp
-                    )
-                    continue
-                self._parse_galaxy_relationship(source_id, target_id, 'has', timestamp)
+                self._parse_galaxy_relationship(
+                    source_id, target_id,
+                    self._mapping/relationship_specs[source_type].get(
+                        target_type, 'related-to'
+                    ),
+                    timestamp
+                )
         self._handle_object_refs(target_ids)
 
     def _handle_external_references(self, values: list) -> list:

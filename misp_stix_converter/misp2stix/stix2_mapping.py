@@ -63,38 +63,57 @@ class MISPtoSTIX2Mapping:
         )
         self.__relationship_specs = Mapping(
             **{
-                'attack-pattern': Mapping(
-                    malware = 'uses',
-                    tool = 'uses',
-                    vulnerability = 'targets'
-                ),
-                'campaign': Mapping(
-                    **{
-                        'attack-pattern': 'uses',
-                        'intrusion-set': 'attributed-to',
-                        'malware': 'uses',
-                        'threat-actor': 'attributed-to',
-                        'tool': 'uses',
-                        'vulnerability': 'targets'
-                    }
-                ),
-                'course-of-action': Mapping(
-                    **{
-                        'attack-pattern': 'mitigates',
-                        'malware': 'mitigates',
-                        'tool': 'mitigates',
-                        'vulnerability': 'mitigates'
-                    }
-                ),
-                'indicator': Mapping(
-                    **{
-                        'attack-pattern': 'indicates',
-                        'intrusion-set': 'indicates',
-                        'malware': 'indicates',
-                        'threat-actor': 'indicates',
-                        'tool': 'indicates'
-                    }
-                )
+                'attack-pattern': {
+                    'identity': 'targets',
+                    'location': 'targets',
+                    'tool': 'uses',
+                    'vulnerability': 'targets'
+                },
+                'campaign': {
+                    'attack-pattern': 'uses',
+                    'identity': 'targets',
+                    'intrusion-set': 'attributed-to',
+                    'malware': 'uses',
+                    'threat-actor': 'attributed-to',
+                    'tool': 'uses',
+                    'vulnerability': 'targets'
+                },
+                'course-of-action': {
+                    'attack-pattern': 'mitigates',
+                    'tool': 'mitigates'
+                },
+                'indicator': {
+                    'attack-pattern': 'indicates',
+                    'campaign': 'indicates',
+                    'intrusion-set': 'indicates',
+                    'malware': 'indicates',
+                    'observed-data': 'based-on',
+                    'threat-actor': 'indicates',
+                    'tool': 'indicates'
+                },
+                'intrusion-set': {
+                    'attack-pattern': 'uses',
+                    'identity': 'targets',
+                    'malware': 'uses',
+                    'threat-actor': 'attributed-to',
+                    'tool': 'uses',
+                    'vulnerability': 'targets',
+                },
+                'malware': {
+                    'attack-pattern': 'uses',
+                    'intrusion-set': 'authored-by',
+                    'threat-actor': 'authored-by'
+                },
+                'threat-actor': {
+                    'attack-pattern': 'uses',
+                    'malware': 'uses',
+                    'tool': 'uses',
+                    'vulnerability': 'targets'
+                },
+                'tool': {
+                    'identity': 'targets',
+                    'location': 'targets'
+                }
             }
         )
         # ATTRIBUTES MAPPING
