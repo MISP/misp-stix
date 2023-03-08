@@ -1055,14 +1055,14 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         self.__script_from_malware_object_mapping = Mapping(
             name = self.filename_attribute,
             description = comment_text_attribute,
-            implementation_languages = language_attribute,
+            implementation_languages = self.language_attribute,
             x_misp_script = script_attribute,
             x_misp_state = state_attribute
         )
         self.__script_from_tool_object_mapping = Mapping(
             name = self.filename_attribute,
             description = comment_text_attribute,
-            x_misp_language = language_attribute,
+            x_misp_language = self.language_attribute,
             x_misp_script = script_attribute,
             x_misp_state = state_attribute
         )
