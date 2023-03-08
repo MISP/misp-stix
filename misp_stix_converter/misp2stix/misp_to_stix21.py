@@ -1517,7 +1517,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                     location = self._create_location(location_args)
                     self._append_SDO_without_refs(location)
                     object_refs.append(location_id)
-                    isd[cluster['uuid']] = location_id
+                    ids[cluster['uuid']] = location_id
                     continue
                 timestamp = self._datetime_from_timestamp(
                     cluster.pop('timestamp')
