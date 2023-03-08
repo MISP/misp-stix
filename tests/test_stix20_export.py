@@ -454,8 +454,8 @@ class TestSTIX20AttributesExport(TestSTIX20GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self._check_relationship_features(ap_relationship, indicator_ref, ap_ref, 'indicates', timestamp)
-        self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'has', timestamp)
-        self._check_relationship_features(custom_relationship, indicator_ref, custom_ref, 'has', timestamp)
+        self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'related-to', timestamp)
+        self._check_relationship_features(custom_relationship, indicator_ref, custom_ref, 'related-to', timestamp)
 
     def _test_embedded_non_indicator_attribute_galaxy(self, event):
         orgc = event['Orgc']
@@ -480,8 +480,8 @@ class TestSTIX20AttributesExport(TestSTIX20GenericExport):
         timestamp = attribute['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
-        self._check_relationship_features(ap_relationship, vulnerability_ref, ap_ref, 'has', timestamp)
-        self._check_relationship_features(coa_relationship, vulnerability_ref, coa_ref, 'has', timestamp)
+        self._check_relationship_features(ap_relationship, vulnerability_ref, ap_ref, 'related-to', timestamp)
+        self._check_relationship_features(coa_relationship, vulnerability_ref, coa_ref, 'related-to', timestamp)
 
     def _test_embedded_observable_attribute_galaxy(self, event):
         orgc = event['Orgc']
@@ -504,11 +504,7 @@ class TestSTIX20AttributesExport(TestSTIX20GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self._check_relationship_features(
-            relationship,
-            od_ref,
-            ap_ref,
-            'has',
-            timestamp
+            relationship, od_ref, ap_ref, 'related-to', timestamp
         )
 
     def _test_event_with_as_indicator_attribute(self, event):
@@ -2134,8 +2130,8 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self._check_relationship_features(malware_relationship, indicator_ref, malware_ref, 'indicates', timestamp)
-        self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'has', timestamp)
-        self._check_relationship_features(custom_relationship, indicator_ref, custom_ref, 'has', timestamp)
+        self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'related-to', timestamp)
+        self._check_relationship_features(custom_relationship, indicator_ref, custom_ref, 'related-to', timestamp)
 
     def _test_embedded_non_indicator_object_galaxy(self, event):
         orgc = event['Orgc']
@@ -2166,12 +2162,12 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         if not isinstance(coa_timestamp, datetime):
             coa_timestamp = self._datetime_from_timestamp(coa_timestamp)
         self._check_relationship_features(relationship1, o_coa_ref, ap_ref, 'mitigates', coa_timestamp)
-        self._check_relationship_features(relationship2, o_coa_ref, g_coa_ref, 'has', coa_timestamp)
+        self._check_relationship_features(relationship2, o_coa_ref, g_coa_ref, 'related-to', coa_timestamp)
         vulnerability_timestamp = vulnerability_object['timestamp']
         if not isinstance(vulnerability_timestamp, datetime):
             vulnerability_timestamp = self._datetime_from_timestamp(vulnerability_timestamp)
-        self._check_relationship_features(relationship3, vulnerability_ref, malware_ref, 'has', vulnerability_timestamp)
-        self._check_relationship_features(relationship4, vulnerability_ref, g_coa_ref, 'has', vulnerability_timestamp)
+        self._check_relationship_features(relationship3, vulnerability_ref, malware_ref, 'related-to', vulnerability_timestamp)
+        self._check_relationship_features(relationship4, vulnerability_ref, g_coa_ref, 'related-to', vulnerability_timestamp)
 
     def _test_embedded_object_galaxy_with_multiple_clusters(self, event):
         orgc = event['Orgc']
@@ -2194,8 +2190,8 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         object_timestamp = misp_object['timestamp']
         if not isinstance(object_timestamp, datetime):
             object_timestamp = self._datetime_from_timestamp(object_timestamp)
-        self._check_relationship_features(relationship1, observed_data_ref, malware1_ref, 'has', object_timestamp)
-        self._check_relationship_features(relationship2, observed_data_ref, malware2_ref, 'has', object_timestamp)
+        self._check_relationship_features(relationship1, observed_data_ref, malware1_ref, 'related-to', object_timestamp)
+        self._check_relationship_features(relationship2, observed_data_ref, malware2_ref, 'related-to', object_timestamp)
 
     def _test_embedded_observable_object_galaxy(self, event):
         orgc = event['Orgc']
@@ -2218,11 +2214,7 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self._check_relationship_features(
-            relationship,
-            observed_data_ref,
-            malware_ref,
-            'has',
-            timestamp
+            relationship, observed_data_ref, malware_ref, 'related-to', timestamp
         )
 
     def _test_event_with_android_app_indicator_objet(self, event):
