@@ -1804,12 +1804,12 @@ _TEST_FILE_OBJECT = {
         {
             "type": "datetime",
             "object_relation": "creation-time",
-            "value": "2021-10-25T16:22:00"
+            "value": "2021-10-25T16:22:00Z"
         },
         {
             "type": "datetime",
             "object_relation": "modification-time",
-            "value": "2022-10-25T16:22:00"
+            "value": "2022-10-25T16:22:00Z"
         }
     ]
 }
@@ -2508,7 +2508,7 @@ _TEST_REGISTRY_KEY_OBJECT = {
         {
             "type": "datetime",
             "object_relation": "last-modified",
-            "value": "2020-10-25T16:22:00"
+            "value": "2020-10-25T16:22:00Z"
         }
     ]
 }
@@ -2851,7 +2851,7 @@ _TEST_WHOIS_OBJECT = {
         {
             "type": "datetime",
             "object_relation": "modification-date",
-            "value": "2020-10-25T16:22:00"
+            "value": "2020-10-25T16:22:00Z"
         },
         {
             "type": "datetime",
@@ -4695,7 +4695,7 @@ def get_event_with_lnk_object():
                     {
                         "type": "datetime",
                         "object_relation": "lnk-modification-time",
-                        "value": "2020-10-25T16:22:00"
+                        "value": "2020-10-25T16:22:00Z"
                     },
                     {
                         "type": "datetime",
@@ -5189,7 +5189,7 @@ def get_event_with_user_account_object():
             {
                 "type": "datetime",
                 "object_relation": "password_last_changed",
-                "value": "2020-10-25T16:22:00"
+                "value": "2020-10-25T16:22:00Z"
             }
         ]
     )
