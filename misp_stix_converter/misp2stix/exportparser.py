@@ -152,9 +152,9 @@ class MISPtoSTIXParser:
         regex = '%Y-%m-%dT%H:%M:%S'
         if '.' in timestamp:
             regex = f'{regex}.%f'
-        if timestamp.endswith('Z'):
-            regex = f'{regex}Z'
-        return datetime.strptime(timestamp.split('+')[0], regex)
+        if timestamp.endswith('Z') or '+' in timestamp:
+            regex = f'{regex}%z'
+        return datetime.strptime(timestamp, regex)
 
     @staticmethod
     def _datetime_from_timestamp(timestamp: Union[datetime, str]) -> datetime:

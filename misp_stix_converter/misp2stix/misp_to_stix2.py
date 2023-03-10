@@ -3231,7 +3231,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if attributes.get(key):
                 timestamp = attributes.pop(key)
                 if not isinstance(timestamp, datetime):
-                    timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
+                    timestamp = self._datetime_from_str(timestamp)
                 user_account_args[feature] = timestamp
         extension = {}
         for key, feature in self._mapping.user_account_object_mapping['extension'].items():
@@ -3272,7 +3272,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if attributes.get(key):
                 timestamp = attributes.pop(key)
                 if not isinstance(timestamp, datetime):
-                    timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
+                    timestamp = self._datetime_from_str(timestamp)
                 x509_args[feature] = timestamp
         extension = []
         for key, feature in self._mapping.x509_object_mapping['extension'].items():
