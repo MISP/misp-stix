@@ -5121,12 +5121,12 @@ For the rest of this documentation, we will then, in order to keep the content c
   - MISP
     ```json
     {
+        "uuid": "4846cade-2492-4e7d-856e-2afcd282455b",
         "type": "telfhash",
         "category": "Payload delivery",
         "timestamp": "1603642920",
-        "comment": "TELFHASH test attribute",
         "value": "b1217492227645186ff295285cbc827216226b2323597f71ff36c8cc453b0e5f539d0b",
-        "uuid": "4846cade-2492-4e7d-856e-2afcd282455b"
+        "comment": "TELFHASH test attribute"
     }
     ```
   - STIX
