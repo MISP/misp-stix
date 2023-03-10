@@ -4319,10 +4319,12 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         )
         self.assertEqual(registry_key.type, 'windows-registry-key')
         self.assertEqual(registry_key.key, key)
-        modified_time = registry_key.modified_time
         if not isinstance(modified, datetime):
-            modified_time = self._datetime_to_str(modified_time)
-        self.assertEqual(modified_time, modified)
+            modified = self._datetime_from_str(modified)
+        self.assertEqual(
+            registry_key.modified_time.timestamp(),
+            modified.timestamp()
+        )
         self.assertEqual(registry_key.x_misp_hive, hive)
         registry_value = registry_key['values'][0]
         self.assertEqual(registry_value.data, data)
@@ -4339,7 +4341,6 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         timestamp = event['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
-        identity_id = self._check_identity_features(identity, orgc, timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         malware_ref, tool_ref = self._check_grouping_features(grouping, event, identity_id)
         language, comment, name, script, script_attachment, state = malware_script['Attribute']
@@ -4470,10 +4471,12 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(extension.groups, [group1['value'], group2['value']])
         self.assertEqual(extension.home_dir, home['value'])
         password_last_changed = plc['value']
-        credential_last_changed = user_account.credential_last_changed
         if not isinstance(password_last_changed, datetime):
-            credential_last_changed = self._datetime_to_str(credential_last_changed)
-        self.assertEqual(credential_last_changed, password_last_changed)
+            password_last_changed = self._datetime_from_str(password_last_changed)
+        self.assertEqual(
+            user_account.credential_last_changed.timestamp(),
+            password_last_changed.timestamp()
+        )
         self.assertEqual(user_account.x_misp_user_avatar['value'], user_avatar['value'])
         data = user_avatar['data']
         if not isinstance(data, str):
@@ -4531,14 +4534,18 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
         self.assertEqual(x509.serial_number, srlnmbr)
         self.assertEqual(x509.signature_algorithm, signalg)
         self.assertEqual(x509.issuer, issuer)
-        validity_not_before = x509.validity_not_before
         if not isinstance(vnb, datetime):
-            validity_not_before = self._datetime_to_str(validity_not_before)
-        self.assertEqual(validity_not_before, vnb)
-        validity_not_after = x509.validity_not_after
+            vnb = self._datetime_from_str(vnb)
+        self.assertEqual(
+            x509.validity_not_before.timestamp(),
+            vnb.timestamp()
+        )
         if not isinstance(vna, datetime):
-            validity_not_after = self._datetime_to_str(validity_not_after)
-        self.assertEqual(validity_not_after, vna)
+            vna = self._datetime_from_str(vna)
+        self.assertEqual(
+            x509.validity_not_after.timestamp(),
+            vna.timestamp()
+        )
         self.assertEqual(x509.subject, subject)
         self.assertEqual(x509.subject_public_key_algorithm, pia)
         self.assertEqual(x509.subject_public_key_modulus, pim)

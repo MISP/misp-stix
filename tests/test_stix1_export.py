@@ -87,7 +87,9 @@ class TestStix1Export(TestSTIX):
             if isinstance(timestamp, str):
                 self.assertEqual(
                     coa_taken.course_of_action.timestamp,
-                    datetime.utcfromtimestamp(int(timestamp))
+                    datetime.fromtimestamp(
+                        int(timestamp), timezone.utc
+                    )
                 )
             else:
                 self.assertEqual(coa_taken.course_of_action.timestamp, timestamp)
@@ -110,15 +112,23 @@ class TestStix1Export(TestSTIX):
             self.assertEqual(custom.name, attribute['object_relation'])
             value = attribute['value']
             if isinstance(value, datetime):
-                value = self._datetime_to_str(value)
+                self.assertEqual(
+                    self._datetime_from_str(custom.value).timestamp(),
+                    value.timestamp()
+                )
+                continue
             self.assertEqual(custom.value, value)
 
     def _check_custom_property(self, attribute, custom_properties):
         self.assertEqual(custom_properties.name, attribute['type'])
         value = attribute['value']
         if isinstance(value, datetime):
-            value = self._datetime_to_str(value)
-        self.assertEqual(custom_properties.value, value)
+            self.assertEqual(
+                self._datetime_from_str(custom_properties.value).timestamp(),
+                value.timestamp()
+            )
+        else:
+            self.assertEqual(custom_properties.value, value)
 
     def _check_destination_address(self, properties, category='ipv4-addr'):
         self.assertEqual(properties.category, category)
@@ -408,7 +418,9 @@ class TestStix1Export(TestSTIX):
             if isinstance(timestamp, str):
                 self.assertEqual(
                     related_ttp.item.timestamp,
-                    datetime.utcfromtimestamp(int(timestamp))
+                    datetime.fromtimestamp(
+                        int(timestamp), timezone.utc
+                    )
                 )
             else:
                 self.assertEqual(related_ttp.item.timestamp, timestamp)
@@ -429,7 +441,9 @@ class TestStix1Export(TestSTIX):
             if isinstance(timestamp, str):
                 self.assertEqual(
                     ttp.timestamp,
-                    datetime.utcfromtimestamp(int(timestamp))
+                    datetime.fromtimestamp(
+                        int(timestamp), timezone.utc
+                    )
                 )
             else:
                 self.assertEqual(ttp.timestamp, timestamp)
@@ -1056,7 +1070,9 @@ class TestStix1Export(TestSTIX):
         self.assertEqual(campaign.names[0], attribute['value'])
         timestamp = attribute['timestamp']
         if isinstance(timestamp, str):
-            timestamp = datetime.utcfromtimestamp(int(timestamp))
+            timestamp = datetime.fromtimestamp(
+                int(timestamp), timezone.utc
+            )
         self.assertEqual(campaign.timestamp, timestamp)
 
     def _test_event_with_custom_attributes(self, event):

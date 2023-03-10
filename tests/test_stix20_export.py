@@ -3138,10 +3138,12 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         registry_key = observable_objects['0']
         self.assertEqual(registry_key.type, 'windows-registry-key')
         self.assertEqual(registry_key.key, key)
-        modified = registry_key.modified
         if not isinstance(last_modified, datetime):
-            modified = self._datetime_to_str(modified)
-        self.assertEqual(modified, last_modified)
+            last_modified = self._datetime_from_str(last_modified)
+        self.assertEqual(
+            registry_key.modified.timestamp(),
+            last_modified.timestamp()
+        )
         self.assertEqual(registry_key.x_misp_hive, hive)
         registry_value = registry_key['values'][0]
         self.assertEqual(registry_value.data, data)
@@ -3279,10 +3281,12 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(extension.home_dir, home['value'])
         self.assertEqual(user_account.x_misp_password, passwd['value'])
         password_last_changed = plc['value']
-        credential_last_changed = user_account.password_last_changed
         if not isinstance(password_last_changed, datetime):
-            credential_last_changed = self._datetime_to_str(credential_last_changed)
-        self.assertEqual(credential_last_changed, password_last_changed)
+            password_last_changed = self._datetime_from_str(password_last_changed)
+        self.assertEqual(
+            user_account.password_last_changed.timestamp(),
+            password_last_changed.timestamp()
+        )
         self.assertEqual(user_account.x_misp_user_avatar['value'], user_avatar['value'])
         data = user_avatar['data']
         if not isinstance(data, str):
@@ -3331,14 +3335,18 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(x509.serial_number, srlnmbr)
         self.assertEqual(x509.signature_algorithm, signalg)
         self.assertEqual(x509.issuer, issuer)
-        validity_not_before = x509.validity_not_before
         if not isinstance(vnb, datetime):
-            validity_not_before = self._datetime_to_str(validity_not_before)
-        self.assertEqual(validity_not_before, vnb)
-        validity_not_after = x509.validity_not_after
+            vnb = self._datetime_from_str(vnb)
+        self.assertEqual(
+            x509.validity_not_before.timestamp(),
+            vnb.timestamp()
+        )
         if not isinstance(vna, datetime):
-            validity_not_after = self._datetime_to_str(validity_not_after)
-        self.assertEqual(validity_not_after, vna)
+            vna = self._datetime_from_str(vna)
+        self.assertEqual(
+            x509.validity_not_after.timestamp(),
+            vna.timestamp()
+        )
         self.assertEqual(x509.subject, subject)
         self.assertEqual(x509.subject_public_key_algorithm, pia)
         self.assertEqual(x509.subject_public_key_modulus, pim)
