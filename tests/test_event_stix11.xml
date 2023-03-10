@@ -68,7 +68,7 @@
                     <stix:Incident id="MISP:Incident-e2e6a6ea-f69b-4d93-8564-f51d67cafe51" timestamp="2020-10-25T16:22:00Z" xsi:type='incident:IncidentType'>
                         <incident:Title>MISP-STIX-Converter test event with AS attribute</incident:Title>
                         <incident:Time>
-                            <incident:Incident_Discovery precision="second">2020-10-25T00:00:00</incident:Incident_Discovery>
+                            <incident:Incident_Discovery precision="second">2020-10-25T00:00:00Z</incident:Incident_Discovery>
                         </incident:Time>
                         <incident:Reporter>
                             <stixCommon:Identity>
@@ -114,7 +114,7 @@
                     <stix:Incident id="MISP:Incident-d402185f-c129-4f65-8678-43edb2cee1cf" timestamp="2020-10-25T16:22:00Z" xsi:type='incident:IncidentType'>
                         <incident:Title>MISP-STIX-Converter test event with domain attribute</incident:Title>
                         <incident:Time>
-                            <incident:Incident_Discovery precision="second">2020-10-25T00:00:00</incident:Incident_Discovery>
+                            <incident:Incident_Discovery precision="second">2020-10-25T00:00:00Z</incident:Incident_Discovery>
                         </incident:Time>
                         <incident:Reporter>
                             <stixCommon:Identity>
