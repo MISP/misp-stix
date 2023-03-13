@@ -1366,10 +1366,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__network_connection_object_mapping
 
     @property
-    def network_socket_extension_mapping(self) -> dict:
-        return self.__network_socket_extension_mapping
-
-    @property
     def network_socket_object_mapping(self) -> dict:
         return self.__network_socket_object_mapping
 
