@@ -6,7 +6,7 @@ import os
 import unittest
 from base64 import b64encode
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from stix.core import STIXPackage
 from uuid import uuid5, UUID
@@ -268,8 +268,8 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(identity.id, identity_id)
         self.assertEqual(identity.name, orgc['name'])
         self.assertEqual(identity.identity_class, 'organization')
-        self.assertEqual(identity.created, timestamp)
-        self.assertEqual(identity.modified, timestamp)
+        self.assertEqual(identity.created.timestamp(), timestamp.timestamp())
+        self.assertEqual(identity.modified.timestamp(), timestamp.timestamp())
         return identity_id
 
     def _check_identities_from_sighting(self, identities, uuids, names):
@@ -552,7 +552,7 @@ class TestSTIX2Export(TestSTIX):
 
     @staticmethod
     def _datetime_from_timestamp(timestamp):
-        return datetime.utcfromtimestamp(int(timestamp))
+        return datetime.fromtimestamp(int(timestamp), timezone.utc)
 
     @staticmethod
     def _parse_AS_value(value):

@@ -346,6 +346,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | github-user | User Account Object |
 | gitlab-user | User Account Object |
 | http-request | Domain Name & IPv4/IPv6 Address & Network Traffic Objects |
+| identity | **Identity** |
 | image | Artifact & File Objects |
 | ip-port | IPv4/IPv6 Address & Network Traffic Objects |
 | legal-entity | **Identity** |
@@ -533,6 +534,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | github-user | User Account Object |
 | gitlab-user | User Account Object |
 | http-request | Domain Name & IPv4/IPv6 Address & Network Traffic Objects |
+| identity | **Identity** |
 | image | Artifact & File Objects |
 | ip-port | IPv4/IPv6 Address & Network Traffic Objects |
 | legal-entity | **Identity** |

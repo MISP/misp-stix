@@ -67,7 +67,7 @@
         </cybox:Observable>
     </stix:Observables>
     <stix:Indicators>
-        <stix:Indicator id="MISP:Indicator-4bb235a7-7d25-4aef-802f-2c6b45c5eceb" timestamp="2020-10-25T16:22:00" xsi:type='indicator:IndicatorType'>
+        <stix:Indicator id="MISP:Indicator-4bb235a7-7d25-4aef-802f-2c6b45c5eceb" timestamp="2020-10-25T16:22:00Z" xsi:type='indicator:IndicatorType'>
             <indicator:Title>Network activity: circl.lu (MISP Attribute)</indicator:Title>
             <indicator:Type xsi:type="stixVocabs:IndicatorTypeVocab-1.1">Domain Watchlist</indicator:Type>
             <indicator:Description>Domain test attribute</indicator:Description>
@@ -79,7 +79,7 @@
                     </cybox:Properties>
                 </cybox:Object>
             </indicator:Observable>
-            <indicator:Confidence timestamp="2020-10-25T16:22:00">
+            <indicator:Confidence timestamp="2020-10-25T16:22:00Z">
                 <stixCommon:Value>High</stixCommon:Value>
                 <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>
             </indicator:Confidence>
@@ -89,7 +89,7 @@
                 </stixCommon:Identity>
             </indicator:Producer>
         </stix:Indicator>
-        <stix:Indicator id="MISP:Indicator-726f90e2-2ad6-44a2-b345-c05e55e850e5" timestamp="2020-10-25T16:22:00" xsi:type='indicator:IndicatorType'>
+        <stix:Indicator id="MISP:Indicator-726f90e2-2ad6-44a2-b345-c05e55e850e5" timestamp="2020-10-25T16:22:00Z" xsi:type='indicator:IndicatorType'>
             <indicator:Title>Network activity: circl.lu|149.13.33.14 (MISP Attribute)</indicator:Title>
             <indicator:Type xsi:type="stixVocabs:IndicatorTypeVocab-1.1">Domain Watchlist</indicator:Type>
             <indicator:Description>Domain|ip test attribute</indicator:Description>
@@ -112,7 +112,7 @@
                     </cybox:Observable>
                 </cybox:Observable_Composition>
             </indicator:Observable>
-            <indicator:Confidence timestamp="2020-10-25T16:22:00">
+            <indicator:Confidence timestamp="2020-10-25T16:22:00Z">
                 <stixCommon:Value>High</stixCommon:Value>
                 <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>
             </indicator:Confidence>
@@ -122,7 +122,7 @@
                 </stixCommon:Identity>
             </indicator:Producer>
         </stix:Indicator>
-        <stix:Indicator id="MISP:Indicator-02de0847-dccf-481a-a96a-6a7654328658" timestamp="2020-10-25T16:22:00" xsi:type='indicator:IndicatorType'>
+        <stix:Indicator id="MISP:Indicator-02de0847-dccf-481a-a96a-6a7654328658" timestamp="2020-10-25T16:22:00Z" xsi:type='indicator:IndicatorType'>
             <indicator:Title>Payload delivery: test_file_name (MISP Attribute)</indicator:Title>
             <indicator:Type xsi:type="stixVocabs:IndicatorTypeVocab-1.1">File Hash Watchlist</indicator:Type>
             <indicator:Description>Filename test attribute</indicator:Description>
@@ -134,7 +134,7 @@
                     </cybox:Properties>
                 </cybox:Object>
             </indicator:Observable>
-            <indicator:Confidence timestamp="2020-10-25T16:22:00">
+            <indicator:Confidence timestamp="2020-10-25T16:22:00Z">
                 <stixCommon:Value>High</stixCommon:Value>
                 <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>
             </indicator:Confidence>

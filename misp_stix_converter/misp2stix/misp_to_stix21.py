@@ -1658,7 +1658,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'identity_class': 'organization',
             'interoperability': True
         }
-        return Identity(**identity_args)
+        return self._create_identity(identity_args)
 
     @staticmethod
     def _create_indicator(indicator_args: dict) -> Indicator:

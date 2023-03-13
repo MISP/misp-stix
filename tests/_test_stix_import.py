@@ -4,6 +4,7 @@
 import json
 from base64 import b64encode
 from collections import defaultdict
+from datetime import datetime
 from misp_stix_converter import (
     ExternalSTIX2toMISPMapping, ExternalSTIX2toMISPParser,
     InternalSTIX2toMISPParser)
@@ -46,6 +47,10 @@ class TestSTIX2Import(TestSTIX):
             category_label,
             f'misp:meta-category="{getattr(misp_object, "meta-category")}"'
         )
+
+    @staticmethod
+    def _datetime_to_str(datetime_value):
+        return datetime.strftime(datetime_value, '%Y-%m-%dT%H:%M:%SZ')
 
     @staticmethod
     def _get_data_value(data):
@@ -1403,7 +1408,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(first_seen.object_relation, 'first-seen')
         self.assertEqual(
             self._datetime_to_str(first_seen.value),
-            self._get_pattern_value(start)[:-1]
+            self._get_pattern_value(start)
         )
 
     def _check_ip_port_observable_object(self, attributes, observables):
@@ -1582,7 +1587,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(dst_port.value, self._get_pattern_value(_dst_port))
         self.assertEqual(first_seen.type, 'datetime')
         self.assertEqual(first_seen.object_relation, 'first-packet-seen')
-        self.assertEqual(self._datetime_to_str(first_seen.value), self._get_pattern_value(start)[:-1])
+        self.assertEqual(self._datetime_to_str(first_seen.value), self._get_pattern_value(start))
         self.assertEqual(tcp_flags.type, 'text')
         self.assertEqual(tcp_flags.object_relation, 'tcp-flags')
         self.assertEqual(tcp_flags.value, self._get_pattern_value(flags))

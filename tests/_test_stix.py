@@ -12,17 +12,13 @@ class TestSTIX(unittest.TestCase):
             self.assertEqual(reference, element)
 
     @staticmethod
-    def _datetime_to_str(datetime_value):
-        return datetime.strftime(datetime_value, '%Y-%m-%dT%H:%M:%S')
-
-    @staticmethod
     def _datetime_from_str(timestamp):
         regex = '%Y-%m-%dT%H:%M:%S'
         if '.' in timestamp:
             regex = f'{regex}.%f'
-        if timestamp.endswith('Z'):
-            regex = f'{regex}Z'
-        return datetime.strptime(timestamp.split('+')[0], regex)
+        if timestamp.endswith('Z') or '+' in timestamp:
+            regex = f'{regex}%z'
+        return datetime.strptime(timestamp, regex)
 
 
 class TestSTIX20(TestSTIX):
