@@ -10,8 +10,8 @@ from .importparser import _INDICATOR_TYPING
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
-    _IDENTITY_TYPING, _OBSERVED_DATA_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
-from collections import defaultdict
+    _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVED_DATA_TYPING,
+    _SDO_TYPING, _VULNERABILITY_TYPING)
 from pymisp import MISPAttribute, MISPGalaxy, MISPObject
 from stix2.v20.observables import (
     AutonomousSystem as AutonomousSystem_v20, Directory as Directory_v20,
@@ -24,8 +24,7 @@ from stix2.v20.observables import (
     WindowsRegistryKey as WindowsRegistryKey_v20,
     X509Certificate as X509Certificate_v20)
 from stix2.v20.sdo import (
-    AttackPattern as AttackPattern_v20, CourseOfAction as CourseOfAction_v20,
-    Vulnerability as Vulnerability_v20)
+    CourseOfAction as CourseOfAction_v20, Vulnerability as Vulnerability_v20)
 from stix2.v20.observables import (
     AutonomousSystem as AutonomousSystem_v21, Directory as Directory_v21,
     DomainName as DomainName_v21, EmailAddress as EmailAddress_v21,
@@ -37,9 +36,8 @@ from stix2.v20.observables import (
     WindowsRegistryKey as WindowsRegistryKey_v21,
     X509Certificate as X509Certificate_v21)
 from stix2.v21.sdo import (
-    AttackPattern as AttackPattern_v21, CourseOfAction as CourseOfAction_v21,
-    Indicator as Indicator_v21, Location, ObservedData as ObservedData_v21,
-    Vulnerability as Vulnerability_v21)
+    CourseOfAction as CourseOfAction_v21, Indicator as Indicator_v21, Location,
+    ObservedData as ObservedData_v21, Vulnerability as Vulnerability_v21)
 from stix2patterns.inspector import _PatternData as PatternData
 from typing import Optional, Tuple, Union
 
@@ -99,9 +97,6 @@ _MAC_ADDRESS_TYPING = Union[
 ]
 _MUTEX_TYPING = Union[
     Mutex_v20, Mutex_v21
-]
-_NETWORK_TRAFFIC_TYPING = Union[
-    NetworkTraffic_v20, NetworkTraffic_v21
 ]
 _PE_EXTENSION_TYPING = Union[
     WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21
