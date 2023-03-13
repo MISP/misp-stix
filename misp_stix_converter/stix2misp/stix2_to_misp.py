@@ -318,8 +318,6 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _load_marking_definition(self, marking_definition: Union[MarkingDefinition_v20, MarkingDefinition_v21]):
         if not hasattr(marking_definition, 'definition_type'):
-            if not hasattr(self, '_marking_definition'):
-                self._marking_definition = {}
             return
         definition_type = marking_definition.definition_type
         definition = marking_definition.definition[definition_type]
@@ -501,6 +499,8 @@ class STIX2toMISPParser(STIXtoMISPParser):
                     misp_event.add_tag(self._marking_definition[marking_ref])
                 except KeyError:
                     self._unknown_marking_ref_warning(marking_ref)
+                except AttributeError:
+                    self._unknown_marking_object_warning(marking_ref)
         if hasattr(stix_object, 'labels'):
             self._fetch_tags_from_labels(misp_event, stix_object.labels)
 
