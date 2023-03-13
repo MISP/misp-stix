@@ -166,6 +166,10 @@ class STIXtoMISPParser:
         message = f"MISP attribute type not mapped: {attribute_type}"
         self.__warnings[self._identifier].add(message)
 
+    def _unknown_marking_object_warning(self, marking_ref: str):
+        message = f"Unknown marking definition object referenced by id {marking_ref}"
+        self.__warnings[self._identifier].add(message)
+
     def _unknown_marking_ref_warning(self, marking_ref: str):
         message = f"Unknown marking ref: {marking_ref}"
         self.__warnings[self._identifier].add(message)

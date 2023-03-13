@@ -18,7 +18,8 @@ from stix2.v20.observables import (
     DomainName as DomainName_v20, EmailAddress as EmailAddress_v20,
     EmailMessage as EmailMessage_v20, File as File_v20,
     IPv4Address as IPv4Address_v20, IPv6Address as IPv6Address_v20,
-    MACAddress as MACAddress_v20, Mutex as Mutex_v20, Process as Process_v20,
+    MACAddress as MACAddress_v20, Mutex as Mutex_v20,
+    NetworkTraffic as NetworkTraffic_v20, Process as Process_v20,
     URL as URL_v20, WindowsPEBinaryExt as WindowsPEBinaryExt_v20,
     WindowsRegistryKey as WindowsRegistryKey_v20,
     X509Certificate as X509Certificate_v20)
@@ -30,7 +31,8 @@ from stix2.v20.observables import (
     DomainName as DomainName_v21, EmailAddress as EmailAddress_v21,
     EmailMessage as EmailMessage_v21, File as File_v21,
     IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
-    MACAddress as MACAddress_v21, Mutex as Mutex_v21, Process as Process_v21,
+    MACAddress as MACAddress_v21, Mutex as Mutex_v21,
+    NetworkTraffic as NetworkTraffic_v21, Process as Process_v21,
     URL as URL_v21, WindowsPEBinaryExt as WindowsPEBinaryExt_v21,
     WindowsRegistryKey as WindowsRegistryKey_v21,
     X509Certificate as X509Certificate_v21)
@@ -81,6 +83,7 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
     IPv6Address_v20, IPv6Address_v21,
     MACAddress_v20, MACAddress_v21,
     Mutex_v20, Mutex_v21,
+    NetworkTraffic_v20, NetworkTraffic_v21,
     Process_v20, Process_v21,
     URL_v20, URL_v21,
     WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21,
@@ -96,6 +99,9 @@ _MAC_ADDRESS_TYPING = Union[
 ]
 _MUTEX_TYPING = Union[
     Mutex_v20, Mutex_v21
+]
+_NETWORK_TRAFFIC_TYPING = Union[
+    NetworkTraffic_v20, NetworkTraffic_v21
 ]
 _PE_EXTENSION_TYPING = Union[
     WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21
@@ -741,14 +747,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _force_observable_as_object(
             self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
-            object_type: str, references: Optional[dict] = None) -> bool:
+            object_type: str) -> bool:
         fields = getattr(self._mapping, f'{object_type}_object_fields')
         if any(hasattr(observable_object, field) for field in fields):
             return True
-        if references is not None:
-            return getattr(self, f'_check_{object_type}_observable_fields')(
-                observable_object, references
-            )
         return getattr(self, f'_check_{object_type}_observable_fields')(
             observable_object
         )
@@ -1026,6 +1028,93 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     misp_object.add_reference(contains_uuid, 'contains')
         return misp_object.uuid
 
+    def _parse_domain_ip_observables(
+            self, object_id: str, observable_objects: dict, mapping: dict,
+            feature: str, observed_data: _OBSERVED_DATA_TYPING) -> str:
+        domain = observable_objects.pop(object_id)
+        if hasattr(domain, 'resolves_to_refs'):
+            domain_reference = getattr(
+                domain, 'id', f'{observed_data.id} - {object_id}'
+            )
+            misp_object = self._create_misp_object_from_observable(
+                'domain-ip', domain, object_id, observed_data
+            )
+            misp_object.add_attribute(
+                'domain', domain.value,
+                **self._fill_observable_object_attribute(
+                    f'{domain_reference} - domain - {domain.value}',
+                    observed_data.id
+                )
+            )
+            references = {
+                ref: observable_objects[ref] for ref in domain.resolve_to_refs
+            }
+            for ip_id in self._filter_observable_objects(
+                    references, 'ipv4-addr', 'ipv6-addr'):
+                ip_address = references[ip_id]
+                ip_ref = getattr(ip_address, 'id', ip_id)
+                attribute = misp_object.add_attribute(
+                    'ip', ip_address.value,
+                    f'{domain_reference} - {ip_ref} - ip - {ip_address.value}',
+                    observed_data.id
+                )
+                mapping[ip_id] = attribute.uuid
+            self._add_misp_object(
+                misp_object,
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+            if any(ref.type == 'domain-name' for ref in references.values()):
+                for domain_id in self._filter_observable_objects(
+                        references, 'domain-name'):
+                    if domain_id in mapping:
+                        misp_object.add_reference(
+                            mapping[domain_id], 'resolves-to'
+                        )
+                        continue
+                    domain_uuid = self._parse_domain_ip_observables(
+                        domain_id, observable_objects, mapping,
+                        feature, observed_data
+                    )
+                    mapping[domain_id] = domain_uuid
+                    misp_object.add_reference(domain_uuid, 'resolves-to')
+            return misp_object.uuid
+        attribute = self._add_misp_attribute(
+            getattr(self, f'_handle_{feature}_attribute')(
+                domain, 'value', 'domain', observed_data.id, object_id
+            ),
+            confidence=getattr(observed_data, 'confidence', None)
+        )
+        return attribute.uuid
+
+    def _parse_domain_ip_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        observable_objects = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
+        )
+        domain_ids = tuple(
+            self._filter_observable_objects(observable_objects, 'domain-name')
+        )
+        feature = 'observable' if len(observable_objects) > 1 else 'single_observable'
+        mapping = {}
+        for domain_id in domain_ids:
+            if domain_id not in mapping:
+                self._parse_domain_ip_observables(
+                    domain_id, observable_objects, mapping,
+                    feature, observed_data
+                )
+        ip_ids = self._filter_observable_objects(
+            observable_objects, 'ipv4-addr', 'ipv6-addr'
+        )
+        for ip_id in ip_ids:
+            if ip_id not in mapping:
+                self._add_misp_attribute(
+                    getattr(self, f'_handle_{feature}_attribute')(
+                        observable_objects[ip_id], 'value', 'ip-dst',
+                        observed_data.id, ip_id
+                    ),
+                    confidence=getattr(observed_data, 'confidence', None)
+                )
+
     def _parse_domain_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
         if len(getattr(observed_data, asset)) > 1:
@@ -1103,24 +1192,26 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_email_observable_object(
             self, email_message: _EMAIL_MESSAGE_TYPING, object_id: str,
-            observed_data: _OBSERVED_DATA_TYPING, references: dict,
-            reference: str):
+            observed_data: _OBSERVED_DATA_TYPING, observable_objects: dict):
+        reference = getattr(
+            email_message, 'id', f'{observed_data.id} - {object_id}'
+        )
         misp_object = self._create_misp_object_from_observable(
             'email', email_message, object_id, observed_data
         )
         self._populate_object_attributes_from_observable(
             'email', email_message, misp_object, reference, observed_data.id
         )
-        if getattr(email_message, 'from_ref', None) in references:
+        if getattr(email_message, 'from_ref', None) in observable_objects:
             self._parse_email_observable_object_reference(
-                misp_object, references[email_message.from_ref], 'from',
+                misp_object, observable_objects[email_message.from_ref], 'from',
                 email_message.from_ref, observed_data.id
             )
         for feature in ('to', 'cc', 'bcc'):
-            if getattr(email_message, f'{feature}_refs', None) in references:
+            if getattr(email_message, f'{feature}_refs', None) in observable_objects:
                 for address_ref in getattr(email_message, f'{feature}_refs'):
                     self._parse_email_observable_object_reference(
-                        misp_object, references[address_ref], feature,
+                        misp_object, observable_objects[address_ref], feature,
                         address_ref, observed_data.id
                     )
         if hasattr(email_message, 'additional_header_fields'):
@@ -1188,12 +1279,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for email_id in email_ids:
             email_message = observable_objects[email_id]
             if self._force_observable_as_object(email_message, 'email'):
-                reference = getattr(
-                    email_message, 'id', f'{observed_data.id} - {email_id}'
-                )
                 self._parse_email_observable_object(
-                    email_message, email_id, observed_data,
-                    observable_objects, reference
+                    email_message, email_id, observed_data, observable_objects
                 )
                 continue
             for field in self._get_populated_properties(email_message):
@@ -1433,6 +1520,159 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 observed_data, 'name', 'mutex', asset
             )
 
+    def _parse_network_connection_observable_object(
+            self, network_traffic: _NETWORK_TRAFFIC_TYPING, object_id: str,
+            observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
+        reference = getattr(
+            network_traffic, 'id', f'{observed_data.id} - {object_id}'
+        )
+        misp_object = self._parse_network_traffic_observable_object(
+            'network-connection', network_traffic, object_id,
+            observed_data, reference
+        )
+        for index, protocol in enumerate(network_traffic.protocols):
+            if protocol in self._mapping.connection_protocols:
+                layer = self._mapping.connection_protocols[protocol]
+                misp_object.add_attribute(
+                    f'layer{layer}-protocol', protocol,
+                    **self._fill_observable_object_attribute(
+                        f'{reference} - {index} - layer{layer}'
+                        f'-protocol - {protocol}',
+                        observed_data.id
+                    )
+                )
+        return misp_object
+
+    def _parse_network_socket_observable_object(
+            self, network_traffic: _NETWORK_TRAFFIC_TYPING, object_id: str,
+            observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
+        reference = getattr(
+            network_traffic, 'id', f'{observed_data.id} - {object_id}'
+        )
+        misp_object = self._parse_network_traffic_observable_object(
+            'network-socket', network_traffic, object_id,
+            observed_data, reference
+        )
+        socket_extension = network_traffic.extensions['socket-ext']
+        self._populate_object_attributes_from_observable(
+            'network_socket_extension', socket_extension,
+            misp_object, reference, observed_data.id
+        )
+        for index, protocol in enumerate(network_traffic.protocols):
+            misp_object.add_attribute(
+                'protocol', protocol,
+                **self._fill_observable_object_attribute(
+                    f'{reference} - {index} - protocol - {protocol}',
+                    observed_data.id
+                )
+            )
+        for feature in ('blocking', 'listening'):
+            if getattr(socket_extension, f'is_{feature}', False):
+                misp_object.add_attribute(
+                    'state', feature,
+                    **self._fill_observable_object_attribute(
+                        f'{reference} - state - {feature}',
+                        observed_data.id
+                    )
+                )
+        return misp_object
+
+    @staticmethod
+    def _parse_network_traffic_observable_fields(
+            network_traffic: _NETWORK_TRAFFIC_TYPING) -> str:
+        if getattr(network_traffic, 'extensions', {}).get('socket-ext'):
+            return 'network_socket'
+        return 'network_connection'
+
+    def _parse_network_traffic_observable_object(
+            self, name: str, network_traffic: _NETWORK_TRAFFIC_TYPING,
+            object_id: str, observed_data: _OBSERVED_DATA_TYPING,
+            reference: str) -> MISPObject:
+        misp_object = self._create_misp_object_from_observable(
+            name, network_traffic, object_id, observed_data
+        )
+        self._populate_object_attributes_from_observable(
+            name.replace('-', '_'), network_traffic, misp_object,
+            reference, observed_data.id
+        )
+        return misp_object
+
+    def _parse_network_traffic_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        observable_objects = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
+        )
+        network_traffic_ids = tuple(
+            self._filter_observable_objects(observable_objects, 'netork-traffic')
+        )
+        mapping = {}
+        for nt_id in network_traffic_ids:
+            if nt_id not in mapping:
+                mapping[nt_id] = self._parse_network_traffic_observables(
+                    nt_id, observable_objects, mapping, observed_data
+                )
+
+    def _parse_network_traffic_observables(
+            self, object_id: str, observable_objects: dict, mapping: dict,
+            observed_data: _OBSERVED_DATA_TYPING) -> str:
+        network_traffic = observable_objects[object_id]
+        name = self._parse_network_traffic_observable_fields(network_traffic)
+        misp_object = getattr(self, f'_parse_{name}_observable_object')(
+            network_traffic, object_id, observed_data
+        )
+        for asset in ('src', 'dst'):
+            if hasattr(network_traffic, f'{asset}_ref'):
+                referenced_id = getattr(network_traffic, f'{asset}_ref')
+                referenced_object = observable_objects[referenced_id]
+                reference = getattr(
+                    referenced_object, 'id',
+                    f'{observed_data.id} - {referenced_id}'
+                )
+                feature = f"{referenced_object.type.split('-')[0]}-{asset}"
+                reference_mapping = getattr(
+                    self._mapping,
+                    f'_{name}_object_reference_mapping'
+                )
+                if feature not in reference_mapping:
+                    continue
+                relation = reference_mapping[feature]
+                misp_object.add_attribute(
+                    relation, referenced_object.value,
+                    **self._fill_observable_object_attribute(
+                        f"{reference} - {relation} - {referenced_object.value}",
+
+                    )
+                )
+        misp_object = self._add_misp_object(
+            misp_object,
+            confidence=getattr(observed_data, 'confidence', None)
+        )
+        if hasattr(network_traffic, 'encapsulates_refs'):
+            for referenced_id in network_traffic.encapsulates_refs:
+                if referenced_id in mapping:
+                    misp_object.add_reference(
+                        mapping[referenced_id], 'encapsulates'
+                    )
+                    continue
+                referenced_uuid = self._parse_network_traffic_observables(
+                    referenced_id, observable_objects, mapping, observed_data
+                )
+                mapping[referenced_id] = referenced_uuid
+                misp_object.add_reference(referenced_uuid, 'encapsulates')
+        if hasattr(network_traffic, 'encapsulated_by_ref'):
+            referenced_id = network_traffic.encapsulated_by_ref
+            if referenced_id in mapping:
+                misp_object.add_reference(
+                    mapping[referenced_id], 'encapsulated-by'
+                )
+                return misp_object.uuid
+            referenced_uuid = self._parse_network_traffic_observables(
+                referenced_id, observable_objects, mapping, observed_data
+            )
+            mapping[referenced_id] = referenced_uuid
+            misp_object.add_reference(referenced_uuid, 'encapsulated-by')
+        return misp_object.uuid
+
     def _parse_process_observable_object(
             self, process: _PROCESS_TYPING, process_id: str,
             observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
@@ -1598,6 +1838,35 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 getattr(self, f'_handle_{feature}_attribute')(
                     registry_key, 'key', 'regkey', observed_data.id
                 ),
+                confidence=getattr(observed_data, 'confidence', None)
+            )
+
+    def _parse_software_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING, asset: str):
+        softwares = dict(
+            getattr(self, f'_fetch_observable_{asset}_with_id')(observed_data)
+        )
+        for object_id, software in softwares.items():
+            reference = getattr(
+                software, 'id', f'{observed_data.id} - {object_id}'
+            )
+            misp_object = self._create_misp_object_from_observable(
+                'software', software, object_id, observed_data
+            )
+            self._populate_object_attributes_from_observable(
+                'software', software, misp_object, reference, observed_data.id
+            )
+            if hasattr(software, 'languages'):
+                for index, language in enumerate(software.languages):
+                    misp_object.add_attribute(
+                        'language', language,
+                        **self._fill_observable_object_attribute(
+                            f'{reference} - languages - {index}',
+                            observed_data.id
+                        )
+                    )
+            self._add_misp_object(
+                misp_object,
                 confidence=getattr(observed_data, 'confidence', None)
             )
 

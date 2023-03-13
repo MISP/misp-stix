@@ -34,6 +34,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'email-addr': 'email_address',
             'mac-addr': 'mac_address',
             'mutex': 'mutex',
+            'software': 'software',
             'url': 'url',
             'user-account': 'user_account',
             'windows-registry-key': 'registry_key',
@@ -62,9 +63,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         observable_mapping.update(
             dict.fromkeys(
                 (
-                    'domain-name_ipv4-addr_network-traffic',
-                    'domain-name_ipv6-addr_network-traffic',
-                    'domain-name_ipv4-addr_ipv6-addr_network-traffic'
                 ),
                 'domain_ip_network_traffic'
             )
@@ -106,11 +104,21 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         observable_mapping.update(
             dict.fromkeys(
                 (
+                    'domain-name_ipv4-addr_network-traffic',
+                    'domain-name_ipv6-addr_network-traffic',
+                    'domain-name_ipv4-addr_ipv6-addr_network-traffic',
+                    'domain-name_ipv4-addr_mac-addr_network-traffic',
+                    'domain-name_ipv6-addr_mac-addr_network-traffic',
+                    'domain-name_ipv4-addr_ipv6-addr_mac-addr_network-traffic',
+                    'mac-addr_network-traffic',
+                    'mac-addr_ipv4-addr_network-traffic',
+                    'mac-addr_ipv6-addr_network-traffic',
+                    'mac-addr_ipv4-addr_ipv6-addr_network-traffic',
                     'ipv4-addr_network-traffic',
                     'ipv6-addr_network-traffic',
                     'ipv4-addr_ipv6-addr_network-traffic'
                 ),
-                'ip_network_traffic'
+                'network_traffic'
             )
         )
         observable_mapping.update(
@@ -280,6 +288,38 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             name_enc = self.file_encoding_attribute,
             size = self.size_in_bytes_attribute
         )
+        self.__network_connection_object_reference_mapping = Mapping(
+            **{
+                'domain-name_dst': 'hostname-dst',
+                'domain-name_src': 'hostname-src',
+                'ipv4-addr_dst': 'ip-dst',
+                'ipv4-addr_src': 'ip-src',
+                'ipv6-addr_dst': 'ip-dst',
+                'ipv6-addr_src': 'ip-src',
+                'mac-address_dst': 'mac-dst',
+                'mac-address_src': 'mad-src'
+            }
+        )
+        self.__network_socket_object_reference_mapping = Mapping(
+            **{
+                'domain-name_dst': 'hostname-dst',
+                'domain-name_src': 'hostname-src',
+                'ipv4-addr_dst': 'ip-dst',
+                'ipv4-addr_src': 'ip-src',
+                'ipv6-addr_dst': 'ip-dst',
+                'ipv6-addr_src': 'ip-src'
+            }
+        )
+        self.__network_traffic_object_mapping = Mapping(
+            src_port = self.src_port_attribute,
+            dst_port = self.dst_port_attribute,
+            start = self.first_packet_seen_attribute,
+            end = self.last_packet_seen_attribute,
+            src_byte_count = self.src_bytes_count_attribute,
+            dst_byte_count = self.dst_bytes_count_attribute,
+            src_packets = self.src_packets_count_attribute,
+            dst_packets = self.dst_packets_count_attribute
+        )
         self.__pe_object_mapping = Mapping(
             imphash = self.imphash_attribute,
             number_of_sections = self.number_of_sections_attribute,
@@ -307,6 +347,13 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             key = self.regkey_attribute,
             modified = self.last_modified_attribute,
             modified_time = self.last_modified_attribute
+        )
+        self.__software_object_mapping = Mapping(
+            name = self.name_attribute,
+            cpe = self.cpe_attribute,
+            swid = self.swid_attribute,
+            vendor = self.vendor_attribute,
+            version = self.version_attribute
         )
         self.__user_account_object_mapping = Mapping(
             account_login = self.username_attribute,
@@ -513,6 +560,22 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__location_object_fields
 
     @property
+    def network_connection_object_reference_mapping(self) -> dict:
+        return self.__network_connection_object_reference_mapping
+
+    @property
+    def network_socket_extension_object_mapping(self) -> dict:
+        return self.__network_socket_extension_object_mapping
+
+    @property
+    def network_socket_object_reference_mapping(self) -> dict:
+        return self.__network_socket_object_reference_mapping
+
+    @property
+    def network_traffic_object_mapping(self) -> dict:
+        return self.__network_traffic_object_mapping
+
+    @property
     def observable_mapping(self) -> dict:
         return self.__observable_mapping
 
@@ -555,6 +618,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def sigma_object_mapping(self) -> dict:
         return self.__sigma_object_mapping
+
+    @property
+    def software_object_mapping(self) -> dict:
+        return self.__software_object_mapping
 
     @property
     def user_account_object_mapping(self) -> dict:
