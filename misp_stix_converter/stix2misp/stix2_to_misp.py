@@ -6,6 +6,8 @@ import time
 from .exceptions import (
     ObjectRefLoadingError, ObjectTypeLoadingError, SynonymsResourceJSONError,
     UnavailableGalaxyResourcesError, UnavailableSynonymsResourceError,
+    UndefinedIndicatorError, UndefinedSTIXObjectError, UndefinedObservableError,
+    UnknownAttributeTypeError, UnknownObjectNameError,
     UnknownParsingFunctionError, UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import STIXtoMISPParser, _INDICATOR_TYPING
