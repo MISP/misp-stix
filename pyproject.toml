@@ -41,7 +41,7 @@ misp_stix_converter = 'misp_stix_converter:main'
 
 [tool.poetry.dependencies]
 python = "^3.8"
-pymisp = "^2.4.157"
+pymisp = { git = "https://github.com/MISP/PyMISP.git", branch = "main" }
 stix = "^1.2.0"
 cybox = "^2.1.0"
 mixbox = "^1.0.3"
@@ -53,5 +53,5 @@ flake8 = "^3.8.3"
 pytest = "^7.1.2"
 
 [build-system]
-requires = ["poetry_core>=1.0", "setuptools>=65.1.1"]
+requires = ["poetry_core>=1.2", "setuptools>=65.1.1"]
 build-backend = "poetry.core.masonry.api"
