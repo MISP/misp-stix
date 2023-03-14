@@ -2752,10 +2752,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_galaxy_args(self, cluster: Union[MISPGalaxyCluster, dict],
                             description: str, name: str, object_id: str,
                             timestamp: Optional[datetime] = None) -> dict:
+        object_type = object_id.split('--')[0]
+
+        value = cluster['value']
+        if object_type == "attack-pattern":
+            value = value.split(' - T')[0].strip()
+
         galaxy_args = {
             'id': object_id,
-            'type': object_id.split('--')[0],
-            'name': cluster['value'],
+            'type': object_type,
+            'name': value,
             'description': f"{description} | {cluster['description']}",
             'labels': self._create_galaxy_labels(name, cluster),
             'interoperability': True
