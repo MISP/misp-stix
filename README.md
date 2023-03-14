@@ -38,13 +38,15 @@ Package details at PyPI: [misp-stix](https://pypi.org/project/misp-stix/)
 
 ## Install the latest version from the repository for development purposes
 
-**Note**: poetry is required; e.g., "pip3 install poetry"
+**Note**: poetry is required; e.g., `pip3 install poetry`
 
 ```
 git clone https://github.com/MISP/misp-stix.git && cd misp-stix
 git submodule update --init
 poetry install
 ```
+
+If you already have poetry face any issue with it while installing or updating misp-stix with it, you can try `pip3 install -U poetry` to make sure you have a version >= 1.2
 
 ### Running the tests
 
