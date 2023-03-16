@@ -2601,7 +2601,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _create_sector_galaxy_args(
             self, cluster: Union[MISPGalaxyCluster, dict], description: str,
             name: str, timestamp: datetime) -> dict:
-        if cluster['description']:
+        if cluster.get('description'):
             description = cluster['description']
         sector_args = {
             'id': f"identity--{cluster['uuid']}",
