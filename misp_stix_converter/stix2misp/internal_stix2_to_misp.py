@@ -515,6 +515,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         )
         return cluster, stix_object.description
 
+    def _parse_identity_cluster(
+            self, identity: _IDENTITY_TYPING, description: Optional[str] = None,
+            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        identity_args = self._create_cluster_args(
+            identity, galaxy_type, description=description
+        )
+        return self._create_misp_galaxy_cluster(identity_args)
+
     def _parse_identity_object(
             self, identity: _IDENTITY_TYPING, name: str) -> MISPObject:
         misp_object = self._create_misp_object(name, identity)
