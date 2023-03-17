@@ -5694,6 +5694,19 @@ _SCRIPT_OBJECTS = [
         "x_misp_state": "Harmless"
     }
 ]
+_SECTOR_GALAXY = {
+    "type": "identity",
+    "id": "identity--75597b7f-54e8-4f14-88c9-e81485ece483",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "IT - Security",
+    "description": "Activity sectors",
+    "identity_class": "class",
+    "labels": [
+        "misp:galaxy-name=\"Sector\"",
+        "misp:galaxy-type=\"sector\""
+    ]
+}
 _THREAT_ACTOR_GALAXY = {
     "type": "threat-actor",
     "id": "threat-actor--11e17436-6ede-4733-8547-4ce0254ea19e",
@@ -6551,6 +6564,10 @@ class TestInternalSTIX20Bundles:
     @classmethod
     def get_bundle_with_malware_galaxy(cls):
         return cls.__assemble_bundle(_MALWARE_GALAXY)
+
+    @classmethod
+    def get_bundle_with_sector_galaxy(cls):
+        return cls.__assemble_bundle(_SECTOR_GALAXY)
 
     @classmethod
     def get_bundle_with_threat_actor_galaxy(cls):

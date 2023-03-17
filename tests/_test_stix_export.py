@@ -253,14 +253,18 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(stix_object.created, timestamp)
         self.assertEqual(stix_object.modified, timestamp)
         self.assertEqual(stix_object.name, cluster['value'])
-        self.assertEqual(
-            stix_object.description, f"{galaxy['description']} | {cluster['description']}"
-        )
+        description = galaxy['description']
+        if cluster.get('description'):
+            description = f"{description} | {cluster['description']}"
+        self.assertEqual(stix_object.description, description)
         self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
         self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
-        getattr(self, f"_check_{stix_object.type.replace('-', '_')}_meta_fields")(
-            stix_object, cluster['meta']
-        )
+        if cluster.get('meta'):
+            getattr(
+                self, f"_check_{stix_object.type.replace('-', '_')}_meta_fields"
+            )(
+                stix_object, cluster['meta']
+            )
 
     def _check_identity_features(self, identity, orgc, timestamp):
         identity_id = f"identity--{orgc['uuid']}"

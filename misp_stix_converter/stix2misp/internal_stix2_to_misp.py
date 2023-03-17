@@ -487,20 +487,41 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             galaxy_type, galaxy_name = self._extract_galaxy_labels(
                 stix_object.labels
             )
-            galaxy_description, cluster_description = stix_object.description.split(' | ')
-            object_type = stix_object.type.replace('-', '_')
+            cluster, galaxy_description = self._parse_galaxy_cluster(
+                stix_object, galaxy_type
+            )
             self._clusters[stix_object.id] = {
-                'cluster': getattr(self, f'_parse_{object_type}_cluster')(
-                    stix_object,
-                    description=cluster_description,
-                    galaxy_type=galaxy_type
-                ),
+                'cluster': cluster,
                 'used': {self.misp_event.uuid: False}
             }
             if galaxy_type not in self._galaxies:
                 self._galaxies[galaxy_type] = self._create_galaxy_args(
                     galaxy_description, galaxy_type, galaxy_name
                 )
+
+    def _parse_galaxy_cluster(self, stix_object: _GALAXY_OBJECTS_TYPING,
+                              galaxy_type: str) -> tuple:
+        object_type = stix_object.type.replace('-', '_')
+        if ' | ' in stix_object.description:
+            galaxy_desc, cluster_desc = stix_object.description.split(' | ')
+            cluster = getattr(self, f'_parse_{object_type}_cluster')(
+                stix_object,
+                description=cluster_desc,
+                galaxy_type=galaxy_type
+            )
+            return cluster, galaxy_desc
+        cluster = getattr(self, f'_parse_{object_type}_cluster')(
+            stix_object, galaxy_type=galaxy_type
+        )
+        return cluster, stix_object.description
+
+    def _parse_identity_cluster(
+            self, identity: _IDENTITY_TYPING, description: Optional[str] = None,
+            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        identity_args = self._create_cluster_args(
+            identity, galaxy_type, description=description
+        )
+        return self._create_misp_galaxy_cluster(identity_args)
 
     def _parse_identity_object(
             self, identity: _IDENTITY_TYPING, name: str) -> MISPObject:

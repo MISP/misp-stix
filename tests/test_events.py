@@ -915,6 +915,20 @@ _TEST_REGION_GALAXY = {
     ]
 }
 
+_TEST_SECTOR_GALAXY = {
+    "uuid": "e1bb134c-ae4d-11e7-8aa9-f78a37325439",
+    "name": "Sector",
+    "type": "sector",
+    "description": "Activity sectors",
+    "GalaxyCluster": [
+        {
+            "uuid": "75597b7f-54e8-4f14-88c9-e81485ece483",
+            "type": "sector",
+            "value": "IT - Security"
+        }
+    ]
+}
+
 _TEST_TEA_MATRIX_GALAXY = {
     "uuid": "c5f2dfb4-21a1-42d8-a452-1d3c36a204ff",
     "name": "Tea Matrix",
@@ -3133,6 +3147,14 @@ def get_event_with_malware_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_MALWARE_GALAXY)
+    ]
+    return event
+
+
+def get_event_with_sector_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_SECTOR_GALAXY)
     ]
     return event
 

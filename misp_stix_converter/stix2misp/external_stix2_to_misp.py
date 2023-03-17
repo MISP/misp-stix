@@ -289,8 +289,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 'used': {self.misp_event.uuid: False}
             }
 
-    def _parse_galaxy(self, object_ref: str) -> dict:
-        object_type = object_ref.split("--")[0]
+    def _parse_galaxy(
+            self, object_ref: str, object_type: Optional[str]=None) -> dict:
+        if object_type is None:
+            object_type = object_ref.split("--")[0]
         stix_object = self._get_stix_object(object_ref)
         name = stix_object.name
         if self.galaxies_as_tags:
@@ -325,6 +327,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         """
         identity = self._get_stix_object(identity_ref)
         if not hasattr(identity, 'identity_class'):
+            if identity.identity_class == 'class':
+                if identity_ref in self._clusters:
+                    self._clusters[identity_ref]['used'][self.misp_event.uuid] = False
+                else:
+                    self._clusters[identity_ref] = self._parse_galaxy(
+                        identity_ref, 'sector'
+                    )
             self._parse_identity_object(identity)
 
     def _parse_identity_object(self, identity: _IDENTITY_TYPING):

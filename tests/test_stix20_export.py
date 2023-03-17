@@ -4468,6 +4468,16 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
         self.assertEqual(malware.type, 'malware')
         self._check_galaxy_features(malware, galaxy, timestamp)
 
+    def _test_event_with_sector_galaxy(self, event):
+        galaxy = event['Galaxy'][0]
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(identity.type, 'identity')
+        self.assertEqual(identity.identity_class, 'class')
+        self._check_galaxy_features(identity, galaxy, timestamp)
+
     def _test_event_with_threat_actor_galaxy(self, event):
         galaxy = event['Galaxy'][0]
         timestamp = event['timestamp']
@@ -4545,6 +4555,14 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             summary = ', '.join(sorted(self._mapping_types.malware_types))
         )
 
+    def test_event_with_sector_galaxy(self):
+        event = get_event_with_sector_galaxy()
+        self._test_event_with_sector_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            identity = self.parser.stix_objects[-1]
+        )
+
     def test_event_with_threat_actor_galaxy(self):
         event = get_event_with_threat_actor_galaxy()
         self._test_event_with_threat_actor_galaxy(event['Event'])
@@ -4609,6 +4627,12 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_threat_actor_galaxy(misp_event)
+
+    def test_event_with_sector_galaxy(self):
+        event = get_event_with_sector_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_sector_galaxy(misp_event)
 
     def test_event_with_tool_galaxy(self):
         event = get_event_with_tool_galaxy()

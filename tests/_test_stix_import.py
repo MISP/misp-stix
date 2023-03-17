@@ -597,6 +597,13 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self.assertEqual(meta['is_family'], malware.is_family)
         self.assertEqual(meta['mitre_platforms'], malware.x_misp_mitre_platforms)
 
+    def _check_sector_galaxy(self, galaxy, identity):
+        cluster = galaxy.clusters[0]
+        self._assert_multiple_equal(galaxy.type, cluster.type, 'sector')
+        self.assertEqual(galaxy.name, 'Sector')
+        self.assertEqual(galaxy.description, identity.description)
+        self.assertEqual(cluster.value, identity.name)
+
     def _check_threat_actor_galaxy(self, galaxy, threat_actor):
         self._check_galaxy_fields(
             galaxy, threat_actor, 'threat-actor', 'Threat Actor'

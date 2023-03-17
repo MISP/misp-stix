@@ -269,7 +269,10 @@ class MISPtoSTIX2Mapping:
             'mitre-enterprise-attack-tool',
             'mitre-mobile-attack-tool'
         )
-        _cluster_to_stix_object = {'branded-vulnerability': 'vulnerability'}
+        _cluster_to_stix_object = {
+            'branded-vulnerability': 'vulnerability',
+            'sector': 'identity'
+        }
         _cluster_to_stix_object.update(
             dict.fromkeys(
                 _attack_pattern_types,
@@ -306,7 +309,10 @@ class MISPtoSTIX2Mapping:
                 'tool'
             )
         )
-        _galaxy_types_mapping = {'branded-vulnerability': '_parse_vulnerability_{}_galaxy'}
+        _galaxy_types_mapping = {
+            'branded-vulnerability': '_parse_vulnerability_{}_galaxy',
+            'sector': '_parse_sector_{}_galaxy'
+        }
         _galaxy_types_mapping.update(
             dict.fromkeys(
                 _attack_pattern_types,
