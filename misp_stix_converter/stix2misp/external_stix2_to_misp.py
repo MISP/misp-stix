@@ -2250,16 +2250,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 continue
             if 'hashes' in identifiers:
                 if identifiers[1] in self._mapping.x509_hashes_object_mapping:
-                    hash_type = self._mapping.x509_hashes_object_mapping[
-                        identifiers[1]
-                    ]
-                    attributes.append(
-                        {
-                            'type': f'x509-fingerprint-{hash_type}',
-                            'object_relation': f'x509-fingerprint-{hash_type}',
-                            'value': value
-                        }
+                    attribute = {'value': value}
+                    attribute.update(
+                        self._mapping.x509_hashes_object_mapping[
+                            identifiers[1]
+                        ]
                     )
+                    attributes.append(attribute)
                 continue
             if identifiers[0] in self._mapping.x509_object_mapping:
                 attribute = {'value': value}
