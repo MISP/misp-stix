@@ -28,10 +28,11 @@ class STIXtoMISPParser:
         self._identifier: str
         self._clusters: dict = {}
         if galaxies_as_tags:
+            self.__galaxy_feature = 'as_tags'
             self.__synonyms_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.json'
         else:
             self._galaxies: dict = {}
-        self.__galaxies_as_tags = galaxies_as_tags
+            self.__galaxy_feature = 'as_container'
         self.__replacement_uuids: dict = {}
         self.__errors: defaultdict = defaultdict(set)
         self.__warnings: defaultdict = defaultdict(set)
@@ -45,8 +46,8 @@ class STIXtoMISPParser:
         return self.__errors
 
     @property
-    def galaxies_as_tags(self) -> bool:
-        return self.__galaxies_as_tags
+    def galaxy_feature(self) -> bool:
+        return self.__galaxy_feature
 
     @property
     def replacement_uuids(self) -> dict:

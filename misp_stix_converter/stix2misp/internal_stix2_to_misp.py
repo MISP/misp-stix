@@ -475,29 +475,36 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
         if stix_object.id in self._clusters:
             self._clusters[stix_object.id]['used'][self.misp_event.uuid] = False
-        elif self.galaxies_as_tags:
-            galaxy_type = stix_object.labels[1].split('=')[1].strip('"')
-            self._clusters[stix_object.id] = {
-                'tag_names': [
-                    f'misp-galaxy:{galaxy_type}="{stix_object.name}"'
-                ],
-                'used': {self.misp_event.uuid: False}
-            }
         else:
-            galaxy_type, galaxy_name = self._extract_galaxy_labels(
-                stix_object.labels
+            feature = f'_parse_galaxy_{self.galaxy_feature}'
+            self._clusters[stix_object.id] = getattr(self, feature)(stix_object)
+
+    def _parse_galaxy_as_container(
+            self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
+        galaxy_type, galaxy_name = self._extract_galaxy_labels(
+            stix_object.labels
+        )
+        cluster, galaxy_description = self._parse_galaxy_cluster(
+            stix_object, galaxy_type
+        )
+        if galaxy_type not in self._galaxies:
+            self._galaxies[galaxy_type] = self._create_galaxy_args(
+                galaxy_description, galaxy_type, galaxy_name
             )
-            cluster, galaxy_description = self._parse_galaxy_cluster(
-                stix_object, galaxy_type
-            )
-            self._clusters[stix_object.id] = {
-                'cluster': cluster,
-                'used': {self.misp_event.uuid: False}
-            }
-            if galaxy_type not in self._galaxies:
-                self._galaxies[galaxy_type] = self._create_galaxy_args(
-                    galaxy_description, galaxy_type, galaxy_name
-                )
+        return {
+            'cluster': cluster,
+            'used': {self.misp_event.uuid: False}
+        }
+
+    def _parse_galaxy_as_tag_names(
+            self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
+        galaxy_type = stix_object.labels[1].split('=')[1].strip('"')
+        return {
+            'tag_names': [
+                f'misp-galaxy:{galaxy_type}="{stix_object.name}"'
+            ],
+            'used': {self.misp_event.uuid: False}
+        }
 
     def _parse_galaxy_cluster(self, stix_object: _GALAXY_OBJECTS_TYPING,
                               galaxy_type: str) -> tuple:
