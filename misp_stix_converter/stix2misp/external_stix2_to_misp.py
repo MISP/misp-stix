@@ -326,7 +326,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             object to parse
         """
         identity = self._get_stix_object(identity_ref)
-        if not hasattr(identity, 'identity_class'):
+        if hasattr(identity, 'identity_class'):
             if identity.identity_class == 'class':
                 if identity_ref in self._clusters:
                     self._clusters[identity_ref]['used'][self.misp_event.uuid] = False
@@ -334,6 +334,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     self._clusters[identity_ref] = self._parse_galaxy(
                         identity_ref, 'sector'
                     )
+        else:
             self._parse_identity_object(identity)
 
     def _parse_identity_object(self, identity: _IDENTITY_TYPING):
