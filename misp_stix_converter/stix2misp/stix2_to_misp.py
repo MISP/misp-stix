@@ -194,7 +194,9 @@ class STIX2toMISPParser(STIXtoMISPParser):
         try:
             feature = self._mapping.bundle_to_misp_mapping[str(self.__n_report)]
         except AttributeError:
-            sys.exit('No STIX content loaded, please run `load_stix_content` first.')
+            sys.exit(
+                'No STIX content loaded, please run `load_stix_content` first.'
+            )
         try:
             getattr(self, feature)()
         except (
@@ -207,7 +209,9 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def parse_stix_content(self, filename: str):
         try:
             with open(filename, 'rt', encoding='utf-8') as f:
-                bundle = stix2_parser(f.read(), allow_custom=True, interoperability=True)
+                bundle = stix2_parser(
+                    f.read(), allow_custom=True, interoperability=True
+                )
         except Exception as exception:
             sys.exit(exception)
         self.load_stix_bundle(bundle)
