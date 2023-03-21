@@ -75,70 +75,88 @@ class STIXtoMISPParser:
 
     def _attack_pattern_error(self, attack_pattern_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
-        message = f"Error with the Attack Pattern object with id {attack_pattern_id}: {tb}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error with the Attack Pattern object with id {attack_pattern_id}'
+            f': {tb}'
+        )
 
     def _attribute_from_pattern_parsing_error(self, indicator_id: str):
-        message = f"Error while parsing pattern from indicator with id {indicator_id}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error while parsing pattern from indicator with id {indicator_id}'
+        )
 
-    def _course_of_action_error(self, course_of_action_id: str, exception: Exception):
-        tb = self._parse_traceback(exception)
-        message = f"Error with the Course of Action object with id {course_of_action_id}: {tb}"
-        self.__errors[self._identifier].add(message)
+    def _course_of_action_error(
+            self, course_of_action_id: str, exception: Exception):
+        self.__errors[self._identifier].add(
+            'Error with the Course of Action object with id'
+            f'{course_of_action_id}: {self._parse_traceback(exception)}'
+        )
 
     def _critical_error(self, exception: Exception):
-        message = f'The Following exception was raised: {exception}'
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'The Following exception was raised: {exception}'
+        )
 
     def _identity_error(self, identity_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
-        message = f"Error with the Identity object with id {identity_id}: {tb}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error with the Identity object with id {identity_id}: {tb}'
+        )
 
     def _indicator_error(self, indicator_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
-        message = f"Error with the Indicator object with id {indicator_id}: {tb}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error with the Indicator object with id {indicator_id}: {tb}'
+        )
 
     def _intrusion_set_error(self, intrusion_set_id: str, exception: Exception):
-        tb = self._parse_traceback(exception)
-        message = f"Error with the Intrusion Set object with id {intrusion_set_id}: {tb}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error with the Intrusion Set object with id {intrusion_set_id}'
+            f': {self._parse_traceback(exception)}'
+        )
 
     def _location_error(self, location_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
-        message = f"Error with the Location object with id {location_id}: {tb}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error with the Location object with id {location_id}: {tb}'
+        )
 
     def _malware_error(self, malware_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
-        message = f"Error with the Malware object with id {malware_id}: {tb}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error with the Malware object with id {malware_id}: {tb}'
+        )
 
-    def _no_converted_content_from_pattern_warning(self, indicator: _INDICATOR_TYPING):
-        message = f"Indicator's (id: {indicator.id}) pattern: {indicator.pattern}"
+    def _no_converted_content_from_pattern_warning(
+            self, indicator: _INDICATOR_TYPING):
         self.__warnings[self._identifier].add(
-            f"No content to extract from the following {message}"
+            "No content to extract from the following Indicator's (id: "
+            f'{indicator.id}) pattern: {indicator.pattern}'
         )
 
     def _object_ref_loading_error(self, object_ref: str):
-        message = f"Error loading the STIX object with id {object_ref}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error loading the STIX object with id {object_ref}'
+        )
 
     def _object_type_loading_error(self, object_type: str):
-        message = f"Error loading the STIX object of type {object_type}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error loading the STIX object of type {object_type}'
+        )
 
-    def _observable_mapping_error(self, observed_data_id: str, observable_types: str):
-        types = f"containing the following types: {observable_types.__str__().replace('_', ', ')}"
-        message = f"Unable to map observable objects related to the Observed Data object with id {observed_data_id}"
-        self.__errors[self._identifier].add(f'{message}, {types}')
+    def _observable_mapping_error(
+            self, observed_data_id: str, observable_types: str):
+        self.__errors[self._identifier].add(
+            'Unable to map observable objects related to the Observed Data '
+            f'object with id {observed_data_id} containing the folowing types'
+            f": {observable_types.__str__().replace('_', ', ')}"
+        )
 
     def _observed_data_error(self, observed_data_id: str, exception: Exception):
-        tb = self._parse_traceback(exception)
-        message = f"Error with the Observed Data object with id {observed_data_id}: {tb}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error with the Observed Data object with id {observed_data_id}'
+            f': {self._parse_traceback(exception)}'
+        )
 
     @staticmethod
     def _parse_traceback(exception: Exception) -> str:
@@ -146,66 +164,83 @@ class STIXtoMISPParser:
         return f'{tb}{exception.__str__()}'
 
     def _threat_actor_error(self, threat_actor_id: str, exception: Exception):
-        tb = self._parse_traceback(exception)
-        message = f"Error with the Threat Actor object with id {threat_actor_id}: {tb}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error with the Threat Actor object with id {threat_actor_id}'
+            f': {self._parse_traceback(exception)}'
+        )
 
     def _tool_error(self, tool_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
-        message = f"Error with the Tool object with id {tool_id}: {tb}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error with the Tool object with id {tool_id}: {tb}'
+        )
 
     def _unable_to_load_stix_object_type_error(self, object_type: str):
-        message = f"Unable to load STIX object type: {object_type}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Unable to load STIX object type: {object_type}'
+        )
 
     def _undefined_object_error(self, object_id: str):
-        message = f"Unable to define the object identified with the id: {object_id}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Unable to define the object identified with the id: {object_id}'
+        )
 
     def _unknown_attribute_type_warning(self, attribute_type: str):
-        message = f"MISP attribute type not mapped: {attribute_type}"
-        self.__warnings[self._identifier].add(message)
+        self.__warnings[self._identifier].add(
+            f'MISP attribute type not mapped: {attribute_type}'
+        )
 
     def _unknown_marking_object_warning(self, marking_ref: str):
-        message = f"Unknown marking definition object referenced by id {marking_ref}"
-        self.__warnings[self._identifier].add(message)
+        self.__warnings[self._identifier].add(
+            f'Unknown marking definition object referenced by id {marking_ref}'
+        )
 
     def _unknown_marking_ref_warning(self, marking_ref: str):
-        message = f"Unknown marking ref: {marking_ref}"
-        self.__warnings[self._identifier].add(message)
+        self.__warnings[self._identifier].add(
+            f'Unknown marking ref: {marking_ref}'
+        )
 
     def _unknown_object_name_warning(self, name: str):
-        message = f"MISP object name not mapped: {name}"
-        self.__warnings[self._identifier].add(message)
+        self.__warnings[self._identifier].add(
+            f'MISP object name not mapped: {name}'
+        )
 
     def _unknown_parsing_function_error(self, feature: str):
-        message = f"Unknown STIX parsing function name: {feature}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Unknown STIX parsing function name: {feature}'
+        )
 
-    def _unknown_pattern_mapping_warning(self, indicator_id: str, observable_types: Union[list, str]):
+    def _unknown_pattern_mapping_warning(
+            self, indicator_id: str, observable_types: Union[list, str]):
         if not isinstance(observable_types, list):
             observable_types = observable_types.split('_')
-        types = f"containing the following types: {', '.join(observable_types)}"
-        message = f"Unable to map pattern from the indicator with id {indicator_id}, {types}"
-        self.__warnings[self._identifier].add(message)
+        self.__warnings[self._identifier].add(
+            f'Unable to map pattern from the Indicator with id {indicator_id}, '
+            f"containing the following types: {', '.join(observable_types)}"
+        )
 
     def _unknown_pattern_type_error(self, indicator_id: str, pattern_type: str):
-        message = f"Unknown pattern type in indicator with id {indicator_id}: {pattern_type}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Unknown pattern type in indicator with id {indicator_id}'
+            f': {pattern_type}'
+        )
 
     def _unknown_stix_object_type_error(self, object_type: str):
-        message = f"Unknown STIX object type: {object_type}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Unknown STIX object type: {object_type}'
+        )
 
     def _unmapped_pattern_warning(self, indicator_id: str, feature: str):
-        message = f"Unmapped pattern part in indicator with id {indicator_id}: {feature}"
-        self.__warnings[self._identifier].add(message)
+        self.__warnings[self._identifier].add(
+            f'Unmapped pattern part in indicator with id {indicator_id}'
+            f': {feature}'
+        )
 
     def _vulnerability_error(self, vulnerability_id: str, exception: Exception):
-        tb = self._parse_traceback(exception)
-        message = f"Error with the Vulnerability object with id {vulnerability_id}: {tb}"
-        self.__errors[self._identifier].add(message)
+        self.__errors[self._identifier].add(
+            f'Error with the Vulnerability object with id {vulnerability_id}'
+            f': {self._parse_traceback(exception)}'
+        )
 
     ################################################################################
     #           SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING FUNCTIONS.           #
