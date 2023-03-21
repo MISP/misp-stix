@@ -12,7 +12,7 @@ from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVED_DATA_TYPING,
     _SDO_TYPING, _VULNERABILITY_TYPING)
-from pymisp import MISPAttribute, MISPGalaxy, MISPObject
+from pymisp import MISPAttribute, MISPGalaxy, MISPGalaxyCluster, MISPObject
 from stix2.v20.observables import (
     AutonomousSystem as AutonomousSystem_v20, Directory as Directory_v20,
     DomainName as DomainName_v20, EmailAddress as EmailAddress_v20,
@@ -294,25 +294,34 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if object_type is None:
             object_type = object_ref.split("--")[0]
         stix_object = self._get_stix_object(object_ref)
-        name = stix_object.name
-        if self.galaxies_as_tags:
-            tag_names = self._check_existing_galaxy_name(name)
-            if tag_names is None:
-                tag_names = [
-                    f'misp-galaxy:{object_type}="{name}"'
-                ]
-            return {
-                'tag_names': tag_names,
-                'used': {self.misp_event.uuid: False}
-            }
+        feature = f'_parse_galaxy_{self.galaxy_feature}'
+        return getattr(self, feature)(stix_object, object_type)
+
+    def _parse_galaxy_as_container(self, stix_object: _GALAXY_OBJECTS_TYPING,
+                                   object_type: str) -> dict:
         if object_type not in self._galaxies:
-            self._galaxies[object_type] = self._create_galaxy_args(stix_object)
+            self._galaxies[object_type] = self._create_galaxy_args(
+                stix_object, object_type
+            )
         return {
             'cluster': getattr(
                 self, f"_parse_{object_type.replace('-', '_')}_cluster"
             )(
                 stix_object
             ),
+            'used': {self.misp_event.uuid: False}
+        }
+
+    def _parse_galaxy_as_tag_names(self, stix_object: _GALAXY_OBJECTS_TYPING,
+                                   object_type: str) -> dict:
+        name = stix_object.name
+        tag_names = self._check_existing_galaxy_name(name)
+        if tag_names is None:
+            tag_names = [
+                f'misp-galaxy:{object_type}="{name}"'
+            ]
+        return {
+            'tag_names': tag_names,
             'used': {self.misp_event.uuid: False}
         }
 
@@ -326,7 +335,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             object to parse
         """
         identity = self._get_stix_object(identity_ref)
-        if not hasattr(identity, 'identity_class'):
+        if hasattr(identity, 'identity_class'):
             if identity.identity_class == 'class':
                 if identity_ref in self._clusters:
                     self._clusters[identity_ref]['used'][self.misp_event.uuid] = False
@@ -334,6 +343,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     self._clusters[identity_ref] = self._parse_galaxy(
                         identity_ref, 'sector'
                     )
+        else:
             self._parse_identity_object(identity)
 
     def _parse_identity_object(self, identity: _IDENTITY_TYPING):
@@ -428,27 +438,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
             else:
                 feature = 'region' if not hasattr(location, 'country') else 'country'
-                if self.galaxies_as_tags:
-                    tag_names = self._check_existing_galaxy_name(location)
-                    if tag_names is None:
-                        tag_names = [
-                            f'misp-galaxy:{feature}="{location.name}"'
-                        ]
-                    self._clusters[location.id] = {
-                        'tag_names': tag_names,
-                        'used': {self.misp_event.uuid: False}
-                    }
-                else:
-                    self._clusters[location.id] = {
-                        'cluster': getattr(self, f'_parse_{feature}_cluster')(
-                            location
-                        ),
-                        'used': {self.misp_event.uuid: False}
-                    }
-                    if feature not in self._galaxies:
-                        self._galaxies[feature] = self._create_galaxy_args(
-                            location, galaxy_type=feature
-                        )
+                self._clusters[location_ref] = getattr(
+                    self, f'_parse_galaxy_{self.galaxy_feature}'
+                )(
+                    location, feature
+                )
 
     def _parse_malware(self, malware_ref: str):
         """
@@ -618,19 +612,23 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _create_galaxy_args(self, stix_object: _GALAXY_OBJECTS_TYPING,
                             galaxy_type: Optional[str] = None) -> MISPGalaxy:
+        if galaxy_type is None:
+            galaxy_type = stix_object.type
         galaxy_args = {
-            'type': stix_object.type if galaxy_type is None else galaxy_type
+            'type': galaxy_type
         }
-        galaxy_args.update(self._mapping.galaxy_name_mapping[galaxy_args['type']])
+        galaxy_args.update(
+            self._mapping.galaxy_name_mapping[galaxy_type]
+        )
         misp_galaxy = MISPGalaxy()
         misp_galaxy.from_dict(**galaxy_args)
         return misp_galaxy
 
-    def _parse_country_cluster(self, location: Location):
+    def _parse_country_cluster(self, location: Location) -> MISPGalaxyCluster:
         country_args = self._create_cluster_args(location, 'country')
         return self._create_misp_galaxy_cluster(country_args)
 
-    def _parse_region_cluster(self, location: Location):
+    def _parse_region_cluster(self, location: Location) -> MISPGalaxyCluster:
         region_args = self._create_cluster_args(
             location, 'region',
             cluster_value=self._parse_region_value(location)
@@ -2252,16 +2250,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 continue
             if 'hashes' in identifiers:
                 if identifiers[1] in self._mapping.x509_hashes_object_mapping:
-                    hash_type = self._mapping.x509_hashes_object_mapping[
-                        identifiers[1]
-                    ]
-                    attributes.append(
-                        {
-                            'type': f'x509-fingerprint-{hash_type}',
-                            'object_relation': f'x509-fingerprint-{hash_type}',
-                            'value': value
-                        }
+                    attribute = {'value': value}
+                    attribute.update(
+                        self._mapping.x509_hashes_object_mapping[
+                            identifiers[1]
+                        ]
                     )
+                    attributes.append(attribute)
                 continue
             if identifiers[0] in self._mapping.x509_object_mapping:
                 attribute = {'value': value}

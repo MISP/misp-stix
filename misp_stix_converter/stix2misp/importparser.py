@@ -28,10 +28,11 @@ class STIXtoMISPParser:
         self._identifier: str
         self._clusters: dict = {}
         if galaxies_as_tags:
+            self.__galaxy_feature = 'as_tags'
             self.__synonyms_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.json'
         else:
             self._galaxies: dict = {}
-        self.__galaxies_as_tags = galaxies_as_tags
+            self.__galaxy_feature = 'as_container'
         self.__replacement_uuids: dict = {}
         self.__errors: defaultdict = defaultdict(set)
         self.__warnings: defaultdict = defaultdict(set)
@@ -45,8 +46,8 @@ class STIXtoMISPParser:
         return self.__errors
 
     @property
-    def galaxies_as_tags(self) -> bool:
-        return self.__galaxies_as_tags
+    def galaxy_feature(self) -> bool:
+        return self.__galaxy_feature
 
     @property
     def replacement_uuids(self) -> dict:
@@ -234,7 +235,7 @@ class STIXtoMISPParser:
                 value = cluster['value']
                 tag_name = f'{cluster_type}="{value}"'
                 synonyms_mapping[value].append(tag_name)
-                if cluster.get('meta') is not None and cluster['meta'].get('synonyms') is not None:
+                if cluster.get('meta', {}).get('synonyms') is not None:
                     for synonym in cluster['meta']['synonyms']:
                         synonyms_mapping[synonym].append(tag_name)
         with open(self.synonyms_path, 'wt', encoding='utf-8') as f:
@@ -282,7 +283,8 @@ class STIXtoMISPParser:
     def _create_v5_uuid(value: str) -> UUID:
         return uuid5(_UUIDv4, value)
 
-    def _sanitise_attribute_uuid(self, object_id: str, comment: Optional[str] = None) -> dict:
+    def _sanitise_attribute_uuid(
+            self, object_id: str, comment: Optional[str] = None) -> dict:
         attribute_uuid = self._extract_uuid(object_id)
         attribute_comment = f'Original UUID was: {attribute_uuid}'
         if attribute_uuid in self.replacement_uuids:
@@ -299,8 +301,8 @@ class STIXtoMISPParser:
             }
         return {'uuid': attribute_uuid}
 
-    def _sanitise_object_uuid(self, misp_object: Union[MISPEvent, MISPObject],
-                              object_id: str):
+    def _sanitise_object_uuid(
+            self, misp_object: Union[MISPEvent, MISPObject], object_id: str):
         object_uuid = self._extract_uuid(object_id)
         if object_uuid in self.replacement_uuids:
             comment = f'Original UUID was: {object_uuid}'
