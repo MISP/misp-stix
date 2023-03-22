@@ -10,6 +10,7 @@ from pathlib import Path
 from pymisp import MISPEvent, MISPObject
 from stix2.v20.sdo import Indicator as Indicator_v20
 from stix2.v21.sdo import Indicator as Indicator_v21
+from types import GeneratorType
 from typing import Optional, Union
 from uuid import UUID, uuid5
 
@@ -211,12 +212,12 @@ class STIXtoMISPParser:
         )
 
     def _unknown_pattern_mapping_warning(
-            self, indicator_id: str, observable_types: Union[list, str]):
-        if not isinstance(observable_types, list):
-            observable_types = observable_types.split('_')
+            self, indicator_id: str, pattern_types: Union[GeneratorType, str]):
+        if not isinstance(pattern_types, GeneratorType):
+            pattern_types = pattern_types.split('_')
         self.__warnings[self._identifier].add(
             f'Unable to map pattern from the Indicator with id {indicator_id}, '
-            f"containing the following types: {', '.join(observable_types)}"
+            f"containing the following types: {', '.join(pattern_types)}"
         )
 
     def _unknown_pattern_type_error(self, indicator_id: str, pattern_type: str):

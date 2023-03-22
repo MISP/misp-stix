@@ -2002,9 +2002,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     attribute = {'value': value}
                     attribute.update(self._mapping.domain_ip_pattern_mapping[feature])
                     attributes.append(attribute)
-        types = [key for key in compiled_pattern.comparisons.keys() if key not in features]
-        if types:
-            self._unknown_pattern_mapping_warning(indicator.id, types)
+        if any(key not in features for key in pattern.comparisons.keys()):
+            self._unknown_pattern_mapping_warning(
+                indicator.id,
+                (
+                    key for key in pattern.comparisons.keys()
+                    if key not in features
+                )
+            )
         if attributes:
             self._handle_import_case(indicator, attributes, 'domain-ip')
         else:
@@ -2071,9 +2076,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     attributes.append(attribute)
                 else:
                     self._unmapped_pattern_warning(indicator.id, '.'.join(identifiers))
-        types = [key for key in compiled_pattern.comparisons.keys() if key != 'file']
-        if types:
-            self._unknown_pattern_mapping_warning(indicator.id, types)
+        if any(key != 'file' for key in pattern.comparisons.keys()):
+            self._unknown_pattern_mapping_warning(
+                indicator.id,
+                (key for key in pattern.comparisons.keys() if key != 'file')
+            )
         if attributes:
             self._handle_import_case(indicator, attributes, 'file')
         else:
@@ -2234,9 +2241,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute = {'value': value}
                 attribute.update(self._mapping.url_attribute)
                 attributes.append(attribute)
-        types = [key for key in compiled_pattern.comparisons.keys() if key != 'url']
-        if types:
-            self._unknown_pattern_mapping_warning(indicator.id, types)
+        if any(key != 'url' for key in pattern.comparisons.keys()):
+            self._unknown_pattern_mapping_warning(
+                indicator.id,
+                (key for key in pattern.comparisons.keys() if key != 'url')
+            )
         if attributes:
             self._handle_import_case(indicator, attributes, 'url')
         else:
