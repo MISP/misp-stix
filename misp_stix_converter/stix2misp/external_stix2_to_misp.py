@@ -1994,6 +1994,40 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         )
         self._add_misp_object(misp_object)
 
+    def _parse_asn_pattern(
+            self, pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for keys, assertion, value in pattern.comparisons['autonomous-system']:
+            if assertion != '=':
+                continue
+            field = keys[0]
+            if field not in self._mapping.asn_pattern_mapping:
+                self._unmapped_pattern_warning(indicator.id, field)
+                continue
+            attribute = {'value': f'AS{value}' if field == 'number' else value}
+            attribute.update(self._mapping.asn_pattern_mapping[field])
+            attributes.append(attribute)
+        features = ('ipv4-addr', 'ipv6-addr')
+        for feature in features:
+            if feature not in pattern.comparisons:
+                continue
+            for keys, assertion, value in pattern.comparisons[feature]:
+                if assertion != '=':
+                    continue
+                if keys[0] != 'value':
+                    self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
+                    continue
+                attribute = {'value': value}
+                attribute.update(self._mapping.subnet_announced_attribute)
+                attributes.append(attribute)
+        if 'asn' in (attr['object_relation'] for attr in attributes):
+            self._handle_import_case(
+                indicator, attributes, 'asn'
+            )
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
     def _parse_domain_ip_port_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []

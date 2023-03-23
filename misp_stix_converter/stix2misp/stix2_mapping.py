@@ -128,6 +128,9 @@ class STIX2toMISPMapping:
         self.__args_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'args'}
         )
+        self.__asn_attribute = Mapping(
+            **{'type': 'AS', 'object_relation': 'asn'}
+        )
         self.__attack_pattern_id_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'id'}
         )
@@ -343,6 +346,9 @@ class STIX2toMISPMapping:
         )
         self.__subject_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'subject'}
+        )
+        self.__subnet_announced_attribute = Mapping(
+            **{'type': 'ip-src', 'object_relation': 'subnet-announced'}
         )
         self.__summary_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'summary'}
@@ -594,6 +600,10 @@ class STIX2toMISPMapping:
     @property
     def args_attribute(self) -> dict:
         return self.__args_attribute
+
+    @property
+    def asn_attribute(self) -> dict:
+        return self.__asn_attribute
 
     @property
     def attack_pattern_id_attribute(self) -> dict:
@@ -962,6 +972,10 @@ class STIX2toMISPMapping:
     @property
     def subject_attribute(self) -> dict:
         return self.__subject_attribute
+
+    @property
+    def subnet_announced_attribute(self) -> dict:
+        return self.__subnet_announced_attribute
 
     @property
     def summary_attribute(self) -> dict:

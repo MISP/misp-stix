@@ -394,6 +394,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         )
 
         # STIX PATTERN TO MISP MAPPING
+        self.__asn_pattern_mapping = Mapping(
+            name = self.description_attribute,
+            number = self.asn_attribute
+        )
         self.__domain_ip_pattern_mapping = Mapping(
             **{
                 'domain-name': self.domain_attribute,
@@ -494,6 +498,9 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'postal_code',
             'street_address',
         )
+    @property
+    def asn_pattern_mapping(self) -> dict:
+        return self.__asn_pattern_mapping
 
     @property
     def attack_pattern_object_mapping(self) -> dict:
