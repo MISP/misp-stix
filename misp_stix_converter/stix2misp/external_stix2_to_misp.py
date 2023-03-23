@@ -2169,6 +2169,43 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
+    def _parse_network_traffic_pattern(
+            self, pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for keys, assertion, value in pattern.comparisons['network-traffic']:
+            if assertion != '=':
+                continue
+            field = keys[0]
+            if field == 'protocols':
+                if value in self._mapping.connection_protocols:
+                    layer = self._mapping.connection_protocols[value]
+                    attributes.append(
+                        {
+                            'type': f'layer{layer}-protocol',
+                            'object_relation': f'layer{layer}-protocol',
+                            'value': value
+                        }
+                    )
+                else:
+                    self._unknown_network_prococol_warning(value, indicator.id)
+                continue
+            if field in self._mapping.network_connection_pattern_mapping:
+                attribute = {'value': value}
+                attribute.update(
+                    self._mapping.network_connection_pattern_mapping[field]
+                )
+                attributes.append(attribute)
+            else:
+                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
+        if attributes:
+            self._handle_import_case(
+                indicator, attributes, 'network-connection',
+                'dst-port', 'src-port'
+            )
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
     def _parse_process_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []

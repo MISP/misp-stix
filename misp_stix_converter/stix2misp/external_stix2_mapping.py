@@ -428,6 +428,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             name_enc = self.file_encoding_attribute,
             size = self.size_in_bytes_attribute
         )
+        self.__network_connection_pattern_mapping = Mapping(
+            dst_port = self.dst_port_attribute,
+            src_port = self.src_port_attribute
+        )
         self.__process_pattern_mapping = Mapping(
             arguments = self.args_attribute,
             command_line = self.command_line_attribute,
@@ -565,6 +569,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def location_object_fields(self) -> tuple:
         return self.__location_object_fields
+
+    @property
+    def network_connection_pattern_mapping(self) -> dict:
+        return self.__network_connection_pattern_mapping
 
     @property
     def network_connection_object_reference_mapping(self) -> dict:
