@@ -2169,6 +2169,23 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
+    def _parse_mutex_pattern(
+            self, pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for keys, assertion, value in pattern.comparisons['mutex']:
+            if assertion != '=':
+                continue
+            field = keys[0]
+            if field == 'name':
+                attribute = {'value': value}
+                attribute.update(self._mapping.name_attribute)
+                attributes.append(attribute)
+        if attributes:
+            self._handle_import_case(indicator, attributes, 'mutex', 'name')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
     def _parse_network_traffic_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
