@@ -439,6 +439,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             created_time = self.creation_time_attribute,
             cwd = self.current_directory_attribute,
             is_hidden = self.hidden_attribute,
+            pid = self.pid_attribute
         )
         self.__regkey_pattern_mapping = Mapping(
             data = self.data_attribute,
@@ -446,8 +447,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             modified = self.last_modified_attribute,
             modified_time = self.last_modified_attribute,
             name = self.name_attribute,
-            key = self.regkey_attribute,
-            pid = self.pid_attribute
+            key = self.regkey_attribute
         )
 
         # MISP GALAXIES MAPPING
