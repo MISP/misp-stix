@@ -29,8 +29,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'autonomous-system': 'as',
             'directory': 'directory',
             'domain-name': 'domain',
-            'domain-name_network-traffic': 'domain_network_traffic',
-            'domain-name_network-traffic_url': 'network_traffic',
             'email-addr': 'email_address',
             'mac-addr': 'mac_address',
             'mutex': 'mutex',
@@ -58,13 +56,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                     'domain-name_ipv4-addr_ipv6-addr'
                 ),
                 'domain_ip'
-            )
-        )
-        observable_mapping.update(
-            dict.fromkeys(
-                (
-                ),
-                'domain_ip_network_traffic'
             )
         )
         observable_mapping.update(
@@ -110,6 +101,8 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                     'domain-name_ipv4-addr_mac-addr_network-traffic',
                     'domain-name_ipv6-addr_mac-addr_network-traffic',
                     'domain-name_ipv4-addr_ipv6-addr_mac-addr_network-traffic',
+                    'domain-name_network-traffic',
+                    'domain-name_network-traffic_url',
                     'mac-addr_network-traffic',
                     'mac-addr_ipv4-addr_network-traffic',
                     'mac-addr_ipv6-addr_network-traffic',
