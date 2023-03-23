@@ -201,6 +201,13 @@ class STIXtoMISPParser:
             f'Unknown marking ref: {marking_ref}'
         )
 
+    def _unknown_network_protocol_warning(
+            self, protocol: str, indicator_id: str):
+        self.__warnings[self._identifier].add(
+            f'Unknown network protocol: {protocol} in the patterning '
+            f'expression describing the Indicator with id {indicator_id}'
+        )
+
     def _unknown_object_name_warning(self, name: str):
         self.__warnings[self._identifier].add(
             f'MISP object name not mapped: {name}'
