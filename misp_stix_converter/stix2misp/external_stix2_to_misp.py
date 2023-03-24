@@ -2239,7 +2239,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if attributes:
             self._handle_import_case(
                 indicator, attributes, 'process',
-                'args', 'command-line', 'name', 'pid'
+                'args', 'command-line', 'current-directory', 'name', 'pid'
             )
         else:
             self._no_converted_content_from_pattern_warning(indicator)
