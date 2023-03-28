@@ -149,22 +149,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             has a matching object_relation field
         """
         if self._handle_object_forcing(attributes, force_object):
-            misp_object = self._create_misp_object(name, stix_object)
-            if hasattr(stix_object, 'object_marking_refs'):
-                tags = tuple(
-                    self._parse_markings(stix_object.object_marking_refs)
-                )
-                for attribute in attributes:
-                    misp_attribute = misp_object.add_attribute(**attribute)
-                    for tag in tags:
-                        misp_attribute.add_tag(tag)
-            else:
-                for attribute in attributes:
-                    misp_object.add_attribute(**attribute)
-            self._add_misp_object(
-                misp_object,
-                confidence=getattr(stix_object, 'confidence', None)
-            )
+            self._handle_object_case(stix_object, attributes, name)
         else:
             attribute = self._create_attribute_dict(stix_object)
             attribute.update(attributes[0])
@@ -172,6 +157,33 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute,
                 confidence=getattr(stix_object, 'confidence', None)
             )
+
+    def _handle_object_case(
+            self, stix_object: _SDO_TYPING, attributes: list, name: str):
+        """
+        The attributes we generated from data converted from STIX are considered
+        as part of an object template.
+
+        :param stix_object: The STIX object we convert to a MISP object
+        :param attributes: The attributes extracted from the STIX object
+        :param name: The MISP object name
+        """
+        misp_object = self._create_misp_object(name, stix_object)
+        if hasattr(stix_object, 'object_marking_refs'):
+            tags = tuple(
+                self._parse_markings(stix_object.object_marking_refs)
+            )
+            for attribute in attributes:
+                misp_attribute = misp_object.add_attribute(**attribute)
+                for tag in tags:
+                    misp_attribute.add_tag(tag)
+        else:
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
+        self._add_misp_object(
+            misp_object,
+            confidence=getattr(stix_object, 'confidence', None)
+        )
 
     @staticmethod
     def _handle_object_forcing(attributes: list, force_object: tuple) -> bool:
