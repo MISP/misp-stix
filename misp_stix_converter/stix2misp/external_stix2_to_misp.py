@@ -2391,6 +2391,29 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
+    def _parse_user_account_pattern(
+            self, pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for keys, assertion, value in pattern.comparisons['user-account']:
+            if assertion != '=':
+                continue
+            field = keys[-1 if 'unix-account-ext' in keys else 0]
+            if field in self._mapping.user_account_pattern_mapping:
+                attribute = {'value': value}
+                attribute.update(
+                    self._mapping.user_account_pattern_mapping[field]
+                )
+                attributes.append(attribute)
+            else:
+                self._unmapped_pattern_warning(
+                    indicator.id, '.'.join(keys)
+                )
+        if attributes:
+            self._handle_object_case(indicator, attributes, 'user-account')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
     def _parse_x509_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []

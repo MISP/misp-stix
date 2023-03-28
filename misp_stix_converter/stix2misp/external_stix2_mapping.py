@@ -442,6 +442,27 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             name = self.name_attribute,
             key = self.regkey_attribute
         )
+        self.__user_account_pattern_mapping = Mapping(
+            account_login = self.username_attribute,
+            account_type = self.account_type_attribute,
+            can_escalate_privs = self.can_escalate_privs_attribute,
+            credential = self.password_attribute,
+            display_name = self.display_name_attribute,
+            gid = self.group_id_attribute,
+            groups = self.groups_attribute,
+            home_dir = self.home_dir_attribute,
+            is_disabled = self.disabled_attribute,
+            is_privileged = self.privileged_attribute,
+            is_service_account = self.is_service_account_attribute,
+            shell = self.shell_attribute,
+            user_id = self.user_id_attribute,
+            account_created = self.created_attribute,
+            account_expires = self.expires_attribute,
+            account_first_login = self.first_login_attribute,
+            account_last_login = self.last_login_attribute,
+            credential_last_changed = self.password_last_changed_attribute,
+            password_last_changed = self.password_last_changed_attribute
+        )
 
         # MISP GALAXIES MAPPING
         self.__galaxy_name_mapping = Mapping(
@@ -634,6 +655,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def user_account_object_mapping(self) -> dict:
         return self.__user_account_object_mapping
+
+    @property
+    def user_account_pattern_mapping(self) -> dict:
+        return self.__user_account_pattern_mapping
 
     @property
     def vulnerability_object_mapping(self) -> dict:
