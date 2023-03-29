@@ -131,6 +131,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'mutex': '_parse_mutex_pattern',
             'network-traffic': '_parse_network_traffic_pattern',
             'process': '_parse_process_pattern',
+            'software': '_parse_software_pattern',
             'user-account': '_parse_user_account_pattern',
             'windows-registry-key': '_parse_regkey_pattern',
             'x509-certificate': '_parse_x509_pattern'
@@ -442,6 +443,14 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             name = self.name_attribute,
             key = self.regkey_attribute
         )
+        self.__software_pattern_mapping = Mapping(
+            name = self.name_attribute,
+            cpe = self.cpe_attribute,
+            languages = self.language_attribute,
+            swid = self.swid_attribute,
+            vendor = self.vendor_attribute,
+            version = self.version_attribute
+        )
         self.__user_account_pattern_mapping = Mapping(
             account_login = self.username_attribute,
             account_type = self.account_type_attribute,
@@ -651,6 +660,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def software_object_mapping(self) -> dict:
         return self.__software_object_mapping
+
+    @property
+    def software_pattern_mapping(self) -> dict:
+        return self.__software_pattern_mapping
 
     @property
     def user_account_object_mapping(self) -> dict:

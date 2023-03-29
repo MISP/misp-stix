@@ -2338,6 +2338,25 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             confidence=getattr(indicator, 'confidence', None)
         )
 
+    def _parse_software_pattern(
+            self, pattern: PatternData, indicator: _INDICATOR_TYPING):
+        attributes = []
+        for keys, assertion, value in pattern.comparisons['software']:
+            if assertion != '=':
+                continue
+            field = keys[0]
+            if field in self._mapping.software_pattern_mapping:
+                attribute = {'value': value}
+                attribute.update(self._mapping.software_pattern_mapping[field])
+                attributes.append(attribute)
+            else:
+                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
+        if attributes:
+            self._handle_object_case(indicator, attributes, 'software')
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
     def _parse_stix_pattern(self, indicator: _INDICATOR_TYPING):
         compiled_pattern = self._compile_stix_pattern(indicator)
         observable_types = '_'.join(sorted(compiled_pattern.comparisons.keys()))
