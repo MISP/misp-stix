@@ -128,6 +128,9 @@ class STIX2toMISPMapping:
         self.__args_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'args'}
         )
+        self.__asn_attribute = Mapping(
+            **{'type': 'AS', 'object_relation': 'asn'}
+        )
         self.__attack_pattern_id_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'id'}
         )
@@ -209,8 +212,17 @@ class STIX2toMISPMapping:
         self.__first_packet_seen_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'first-packet-seen'}
         )
+        self.__group_id_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'group-id'}
+        )
+        self.__groups_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'group'}
+        )
         self.__hidden_attribute = Mapping(
             **{'type': 'boolean', 'object_relation': 'hidden'}
+        )
+        self.__home_dir_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'home_dir'}
         )
         self.__imphash_attribute = Mapping(
             **{'type': 'imphash', 'object_relation': 'imphash'}
@@ -315,6 +327,9 @@ class STIX2toMISPMapping:
         self.__sha512_attribute = Mapping(
             **{'type': 'sha512', 'object_relation': 'sha512'}
         )
+        self.__shell_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'shell'}
+        )
         self.__sigma_attribute = Mapping(
             **{'type': 'sigma', 'object_relation': 'sigma'}
         )
@@ -343,6 +358,9 @@ class STIX2toMISPMapping:
         )
         self.__subject_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'subject'}
+        )
+        self.__subnet_announced_attribute = Mapping(
+            **{'type': 'ip-src', 'object_relation': 'subnet-announced'}
         )
         self.__summary_attribute = Mapping(
             **{'type': 'text', 'object_relation': 'summary'}
@@ -569,10 +587,10 @@ class STIX2toMISPMapping:
             pattern_version = version_attribute
         )
         self.__user_account_unix_extenstion_object_mapping = Mapping(
-            gid = {'type': 'text', 'object_relation': 'group-id'},
-            groups = {'type': 'text', 'object_relation': 'group'},
-            home_dir = {'type': 'text', 'object_relation': 'home_dir'},
-            shell = {'type': 'text', 'object_relation': 'shell'}
+            gid = self.group_id_attribute,
+            groups = self.groups_attribute,
+            home_dir = self.home_dir_attribute,
+            shell = self.shell_attribute
         )
 
     @property
@@ -594,6 +612,10 @@ class STIX2toMISPMapping:
     @property
     def args_attribute(self) -> dict:
         return self.__args_attribute
+
+    @property
+    def asn_attribute(self) -> dict:
+        return self.__asn_attribute
 
     @property
     def attack_pattern_id_attribute(self) -> dict:
@@ -736,8 +758,20 @@ class STIX2toMISPMapping:
         return self.__first_packet_seen_attribute
 
     @property
+    def group_id_attribute(self) -> dict:
+        return self.__group_id_attribute
+
+    @property
+    def groups_attribute(self) -> dict:
+        return self.__groups_attribute
+
+    @property
     def hidden_attribute(self) -> dict:
         return self.__hidden_attribute
+
+    @property
+    def home_dir_attribute(self) -> dict:
+        return self.__home_dir_attribute
 
     @property
     def imphash_attribute(self) -> dict:
@@ -912,6 +946,10 @@ class STIX2toMISPMapping:
         return self.__sha512_attribute
 
     @property
+    def shell_attribute(self) -> dict:
+        return self.__shell_attribute
+
+    @property
     def sigma_attribute(self) -> dict:
         return self.__sigma_attribute
 
@@ -962,6 +1000,10 @@ class STIX2toMISPMapping:
     @property
     def subject_attribute(self) -> dict:
         return self.__subject_attribute
+
+    @property
+    def subnet_announced_attribute(self) -> dict:
+        return self.__subnet_announced_attribute
 
     @property
     def summary_attribute(self) -> dict:

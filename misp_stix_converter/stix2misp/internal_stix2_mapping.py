@@ -450,7 +450,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_type = self.type_attribute
         )
         self.__asn_object_mapping = Mapping(
-            number = {'type': 'AS', 'object_relation': 'asn'},
+            number = self.asn_attribute,
             name = self.description_attribute,
             x_misp_country = {'type': 'text', 'object_relation': 'country'},
             x_misp_export = {'type': 'text', 'object_relation': 'export'},
