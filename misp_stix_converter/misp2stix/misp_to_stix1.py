@@ -43,7 +43,7 @@ from cybox.objects.win_registry_key_object import RegistryValue, RegistryValues,
 from cybox.objects.win_service_object import WinService
 from cybox.objects.win_user_account_object import WinGroup, WinGroupList, WinUser
 from cybox.objects.x509_certificate_object import X509Certificate, X509CertificateSignature, X509Cert, SubjectPublicKey, RSAPublicKey, Validity
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from stix.campaign import Campaign, Names
 from stix.coa import CourseOfAction
@@ -1079,7 +1079,7 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser):
 
     @staticmethod
     def _datetime_to_str(timestamp):
-        return datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S")
+        return datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
 
     def _sort_tags(self, tags: list) -> Tuple[dict, dict]:
         sorted_tags = defaultdict(list)
@@ -1215,10 +1215,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
             timestamp = timestamp
         )
         incident_time = Time()
-        date_value = self._misp_event['date']
-        if not isinstance(date_value, str):
-            date_value = datetime.strftime(date_value, '%m/%d/%Y')
-        incident_time.incident_discovery = date_value
+        incident_time.incident_discovery = self._handle_date_value()
         if self._is_published():
             incident_time.incident_reported = self._datetime_from_timestamp(self._misp_event['publish_timestamp'])
         incident.time = incident_time
@@ -2353,6 +2350,16 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
+
+    def _handle_date_value(self) -> datetime:
+        date_value = self._misp_event['date']
+        if isinstance(date_value, str):
+            return datetime.strptime(date_value, '%Y-%m-%d').replace(
+                tzinfo=timezone.utc
+            )
+        return datetime(
+            date_value.year, date_value.month, date_value.day
+        ).replace(tzinfo=timezone.utc)
 
     def _is_tlp_tag(self, tag: str) -> bool:
         if not tag.startswith('tlp:'):

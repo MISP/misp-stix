@@ -6,7 +6,7 @@ import os
 import unittest
 from base64 import b64encode
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from stix.core import STIXPackage
 from uuid import uuid5, UUID
@@ -253,14 +253,18 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(stix_object.created, timestamp)
         self.assertEqual(stix_object.modified, timestamp)
         self.assertEqual(stix_object.name, cluster['value'])
-        self.assertEqual(
-            stix_object.description, f"{galaxy['description']} | {cluster['description']}"
-        )
+        description = galaxy['description']
+        if cluster.get('description'):
+            description = f"{description} | {cluster['description']}"
+        self.assertEqual(stix_object.description, description)
         self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
         self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
-        getattr(self, f"_check_{stix_object.type.replace('-', '_')}_meta_fields")(
-            stix_object, cluster['meta']
-        )
+        if cluster.get('meta'):
+            getattr(
+                self, f"_check_{stix_object.type.replace('-', '_')}_meta_fields"
+            )(
+                stix_object, cluster['meta']
+            )
 
     def _check_identity_features(self, identity, orgc, timestamp):
         identity_id = f"identity--{orgc['uuid']}"
@@ -268,8 +272,8 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(identity.id, identity_id)
         self.assertEqual(identity.name, orgc['name'])
         self.assertEqual(identity.identity_class, 'organization')
-        self.assertEqual(identity.created, timestamp)
-        self.assertEqual(identity.modified, timestamp)
+        self.assertEqual(identity.created.timestamp(), timestamp.timestamp())
+        self.assertEqual(identity.modified.timestamp(), timestamp.timestamp())
         return identity_id
 
     def _check_identities_from_sighting(self, identities, uuids, names):
@@ -552,7 +556,7 @@ class TestSTIX2Export(TestSTIX):
 
     @staticmethod
     def _datetime_from_timestamp(timestamp):
-        return datetime.utcfromtimestamp(int(timestamp))
+        return datetime.fromtimestamp(int(timestamp), timezone.utc)
 
     @staticmethod
     def _parse_AS_value(value):

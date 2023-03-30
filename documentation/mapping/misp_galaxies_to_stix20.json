@@ -410,6 +410,36 @@
             }
         }
     },
+    "Sector": {
+        "MISP": {
+            "uuid": "e1bb134c-ae4d-11e7-8aa9-f78a37325439",
+            "name": "Sector",
+            "type": "sector",
+            "description": "Activity sectors",
+            "GalaxyCluster": [
+                {
+                    "uuid": "75597b7f-54e8-4f14-88c9-e81485ece483",
+                    "type": "sector",
+                    "value": "IT - Security"
+                }
+            ]
+        },
+        "STIX": {
+            "Identity": {
+                "type": "identity",
+                "id": "identity--75597b7f-54e8-4f14-88c9-e81485ece483",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "name": "IT - Security",
+                "description": "Activity sectors",
+                "identity_class": "class",
+                "labels": [
+                    "misp:galaxy-name=\"Sector\"",
+                    "misp:galaxy-type=\"sector\""
+                ]
+            }
+        }
+    },
     "Threat Actor": {
         "MISP": {
             "uuid": "698774c7-8022-42c4-917f-8d6e4f06ada3",

@@ -29,11 +29,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'autonomous-system': 'as',
             'directory': 'directory',
             'domain-name': 'domain',
-            'domain-name_network-traffic': 'domain_network_traffic',
-            'domain-name_network-traffic_url': 'network_traffic',
             'email-addr': 'email_address',
             'mac-addr': 'mac_address',
             'mutex': 'mutex',
+            'software': 'software',
             'url': 'url',
             'user-account': 'user_account',
             'windows-registry-key': 'registry_key',
@@ -57,16 +56,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                     'domain-name_ipv4-addr_ipv6-addr'
                 ),
                 'domain_ip'
-            )
-        )
-        observable_mapping.update(
-            dict.fromkeys(
-                (
-                    'domain-name_ipv4-addr_network-traffic',
-                    'domain-name_ipv6-addr_network-traffic',
-                    'domain-name_ipv4-addr_ipv6-addr_network-traffic'
-                ),
-                'domain_ip_network_traffic'
             )
         )
         observable_mapping.update(
@@ -106,11 +95,23 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         observable_mapping.update(
             dict.fromkeys(
                 (
+                    'domain-name_ipv4-addr_network-traffic',
+                    'domain-name_ipv6-addr_network-traffic',
+                    'domain-name_ipv4-addr_ipv6-addr_network-traffic',
+                    'domain-name_ipv4-addr_mac-addr_network-traffic',
+                    'domain-name_ipv6-addr_mac-addr_network-traffic',
+                    'domain-name_ipv4-addr_ipv6-addr_mac-addr_network-traffic',
+                    'domain-name_network-traffic',
+                    'domain-name_network-traffic_url',
+                    'mac-addr_network-traffic',
+                    'mac-addr_ipv4-addr_network-traffic',
+                    'mac-addr_ipv6-addr_network-traffic',
+                    'mac-addr_ipv4-addr_ipv6-addr_network-traffic',
                     'ipv4-addr_network-traffic',
                     'ipv6-addr_network-traffic',
                     'ipv4-addr_ipv6-addr_network-traffic'
                 ),
-                'ip_network_traffic'
+                'network_traffic'
             )
         )
         observable_mapping.update(
@@ -130,6 +131,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'mutex': '_parse_mutex_pattern',
             'network-traffic': '_parse_network_traffic_pattern',
             'process': '_parse_process_pattern',
+            'software': '_parse_software_pattern',
             'user-account': '_parse_user_account_pattern',
             'windows-registry-key': '_parse_regkey_pattern',
             'x509-certificate': '_parse_x509_pattern'
@@ -280,6 +282,38 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             name_enc = self.file_encoding_attribute,
             size = self.size_in_bytes_attribute
         )
+        self.__network_connection_object_reference_mapping = Mapping(
+            **{
+                'domain-name_dst': 'hostname-dst',
+                'domain-name_src': 'hostname-src',
+                'ipv4-addr_dst': 'ip-dst',
+                'ipv4-addr_src': 'ip-src',
+                'ipv6-addr_dst': 'ip-dst',
+                'ipv6-addr_src': 'ip-src',
+                'mac-address_dst': 'mac-dst',
+                'mac-address_src': 'mad-src'
+            }
+        )
+        self.__network_socket_object_reference_mapping = Mapping(
+            **{
+                'domain-name_dst': 'hostname-dst',
+                'domain-name_src': 'hostname-src',
+                'ipv4-addr_dst': 'ip-dst',
+                'ipv4-addr_src': 'ip-src',
+                'ipv6-addr_dst': 'ip-dst',
+                'ipv6-addr_src': 'ip-src'
+            }
+        )
+        self.__network_traffic_object_mapping = Mapping(
+            src_port = self.src_port_attribute,
+            dst_port = self.dst_port_attribute,
+            start = self.first_packet_seen_attribute,
+            end = self.last_packet_seen_attribute,
+            src_byte_count = self.src_bytes_count_attribute,
+            dst_byte_count = self.dst_bytes_count_attribute,
+            src_packets = self.src_packets_count_attribute,
+            dst_packets = self.dst_packets_count_attribute
+        )
         self.__pe_object_mapping = Mapping(
             imphash = self.imphash_attribute,
             number_of_sections = self.number_of_sections_attribute,
@@ -307,6 +341,13 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             key = self.regkey_attribute,
             modified = self.last_modified_attribute,
             modified_time = self.last_modified_attribute
+        )
+        self.__software_object_mapping = Mapping(
+            name = self.name_attribute,
+            cpe = self.cpe_attribute,
+            swid = self.swid_attribute,
+            vendor = self.vendor_attribute,
+            version = self.version_attribute
         )
         self.__user_account_object_mapping = Mapping(
             account_login = self.username_attribute,
@@ -347,6 +388,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         )
 
         # STIX PATTERN TO MISP MAPPING
+        self.__asn_pattern_mapping = Mapping(
+            name = self.description_attribute,
+            number = self.asn_attribute
+        )
         self.__domain_ip_pattern_mapping = Mapping(
             **{
                 'domain-name': self.domain_attribute,
@@ -377,6 +422,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             name_enc = self.file_encoding_attribute,
             size = self.size_in_bytes_attribute
         )
+        self.__network_connection_pattern_mapping = Mapping(
+            dst_port = self.dst_port_attribute,
+            src_port = self.src_port_attribute
+        )
         self.__process_pattern_mapping = Mapping(
             arguments = self.args_attribute,
             command_line = self.command_line_attribute,
@@ -384,6 +433,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             created_time = self.creation_time_attribute,
             cwd = self.current_directory_attribute,
             is_hidden = self.hidden_attribute,
+            pid = self.pid_attribute
         )
         self.__regkey_pattern_mapping = Mapping(
             data = self.data_attribute,
@@ -391,8 +441,36 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             modified = self.last_modified_attribute,
             modified_time = self.last_modified_attribute,
             name = self.name_attribute,
-            key = self.regkey_attribute,
-            pid = self.pid_attribute
+            key = self.regkey_attribute
+        )
+        self.__software_pattern_mapping = Mapping(
+            name = self.name_attribute,
+            cpe = self.cpe_attribute,
+            languages = self.language_attribute,
+            swid = self.swid_attribute,
+            vendor = self.vendor_attribute,
+            version = self.version_attribute
+        )
+        self.__user_account_pattern_mapping = Mapping(
+            account_login = self.username_attribute,
+            account_type = self.account_type_attribute,
+            can_escalate_privs = self.can_escalate_privs_attribute,
+            credential = self.password_attribute,
+            display_name = self.display_name_attribute,
+            gid = self.group_id_attribute,
+            groups = self.groups_attribute,
+            home_dir = self.home_dir_attribute,
+            is_disabled = self.disabled_attribute,
+            is_privileged = self.privileged_attribute,
+            is_service_account = self.is_service_account_attribute,
+            shell = self.shell_attribute,
+            user_id = self.user_id_attribute,
+            account_created = self.created_attribute,
+            account_expires = self.expires_attribute,
+            account_first_login = self.first_login_attribute,
+            account_last_login = self.last_login_attribute,
+            credential_last_changed = self.password_last_changed_attribute,
+            password_last_changed = self.password_last_changed_attribute
         )
 
         # MISP GALAXIES MAPPING
@@ -447,6 +525,9 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'postal_code',
             'street_address',
         )
+    @property
+    def asn_pattern_mapping(self) -> dict:
+        return self.__asn_pattern_mapping
 
     @property
     def attack_pattern_object_mapping(self) -> dict:
@@ -513,6 +594,26 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__location_object_fields
 
     @property
+    def network_connection_pattern_mapping(self) -> dict:
+        return self.__network_connection_pattern_mapping
+
+    @property
+    def network_connection_object_reference_mapping(self) -> dict:
+        return self.__network_connection_object_reference_mapping
+
+    @property
+    def network_socket_extension_object_mapping(self) -> dict:
+        return self.__network_socket_extension_object_mapping
+
+    @property
+    def network_socket_object_reference_mapping(self) -> dict:
+        return self.__network_socket_object_reference_mapping
+
+    @property
+    def network_traffic_object_mapping(self) -> dict:
+        return self.__network_traffic_object_mapping
+
+    @property
     def observable_mapping(self) -> dict:
         return self.__observable_mapping
 
@@ -557,8 +658,20 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__sigma_object_mapping
 
     @property
+    def software_object_mapping(self) -> dict:
+        return self.__software_object_mapping
+
+    @property
+    def software_pattern_mapping(self) -> dict:
+        return self.__software_pattern_mapping
+
+    @property
     def user_account_object_mapping(self) -> dict:
         return self.__user_account_object_mapping
+
+    @property
+    def user_account_pattern_mapping(self) -> dict:
+        return self.__user_account_pattern_mapping
 
     @property
     def vulnerability_object_mapping(self) -> dict:

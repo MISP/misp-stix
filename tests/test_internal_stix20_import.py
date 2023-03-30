@@ -1225,6 +1225,15 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_misp_event_features(event, report)
         self._check_malware_galaxy(event.galaxies[0], malware)
 
+    def test_stix20_bundle_with_sector_galaxy(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_sector_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, identity = bundle.objects
+        self._check_misp_event_features(event, report)
+        self._check_sector_galaxy(event.galaxies[0], identity)
+
     def test_stix20_bundle_with_threat_actor_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy()
         self.parser.load_stix_bundle(bundle)

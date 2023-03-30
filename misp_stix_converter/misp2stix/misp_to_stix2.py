@@ -2568,6 +2568,62 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _parse_synonyms_meta_field(meta_args: dict, values: list):
         meta_args['aliases'] = values
 
+    def _parse_sector_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+                             timestamp: Union[datetime, None]) -> list:
+        object_refs = []
+        ids = {}
+        for cluster in galaxy['GalaxyCluster']:
+            if self._is_galaxy_parsed(object_refs, cluster):
+                continue
+            sector_args = self._create_sector_galaxy_args(
+                cluster, galaxy['description'], galaxy['name'], timestamp
+            )
+            sector = self._create_identity(sector_args)
+            self._append_SDO_without_refs(sector)
+            object_refs.append(sector.id)
+            ids[cluster['uuid']] = sector.id
+        self.populate_unique_ids(ids)
+        return object_refs
+
+    def _parse_sector_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
+                                       object_id: str, timestamp: datetime):
+        object_refs = self._parse_sector_galaxy(galaxy, timestamp)
+        self._handle_attribute_galaxy_relationships(
+            object_id, object_refs, timestamp
+        )
+
+    def _parse_sector_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
+        object_refs = self._parse_sector_galaxy(
+            galaxy, self._datetime_from_timestamp(self._misp_event['timestamp'])
+        )
+        self._handle_object_refs(object_refs)
+
+    def _create_sector_galaxy_args(
+            self, cluster: Union[MISPGalaxyCluster, dict], description: str,
+            name: str, timestamp: datetime) -> dict:
+        if cluster.get('description'):
+            description = cluster['description']
+        sector_args = {
+            'id': f"identity--{cluster['uuid']}",
+            'type': 'identity',
+            'name': cluster['value'],
+            'identity_class': 'class',
+            'description': description,
+            'labels': self._create_galaxy_labels(name, cluster),
+            'interoperability': True
+        }
+        if timestamp is None:
+            if not cluster.get('timestamp'):
+                return sector_args
+            timestamp = self._datetime_from_timestamp(cluster['timestamp'])
+        sector_args.update(
+            {
+                'created': timestamp,
+                'modified': timestamp
+            }
+        )
+        return sector_args
+
     def _parse_threat_actor_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                              object_id: str, timestamp: datetime):
         object_refs = self._parse_threat_actor_galaxy(galaxy, timestamp)
@@ -3231,7 +3287,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if attributes.get(key):
                 timestamp = attributes.pop(key)
                 if not isinstance(timestamp, datetime):
-                    timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
+                    timestamp = self._datetime_from_str(timestamp)
                 user_account_args[feature] = timestamp
         extension = {}
         for key, feature in self._mapping.user_account_object_mapping['extension'].items():
@@ -3272,7 +3328,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             if attributes.get(key):
                 timestamp = attributes.pop(key)
                 if not isinstance(timestamp, datetime):
-                    timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
+                    timestamp = self._datetime_from_str(timestamp)
                 x509_args[feature] = timestamp
         extension = []
         for key, feature in self._mapping.x509_object_mapping['extension'].items():

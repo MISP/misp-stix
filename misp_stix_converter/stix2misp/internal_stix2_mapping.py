@@ -327,7 +327,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         # ATTRIBUTES DECLARATION
         account_id_attribute = {'type': 'text', 'object_relation': 'account-id'}
         account_name_attribute = {'type': 'text', 'object_relation': 'account-name'}
-        address_family_attribute = {'type': 'text', 'object_relation': 'address-family'}
         alias_attribute = {'type': 'text', 'object_relation': 'alias'}
         archive_attribute = {'type': 'link', 'object_relation': 'archive'}
         attachment_attribute = {'type': 'attachment', 'object_relation': 'attachment'}
@@ -345,13 +344,11 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         community_id_attribute = {'type': 'community-id', 'object_relation': 'community-id'}
         compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
         direction_attribute = {'type': 'text', 'object_relation': 'direction'}
-        domain_family_attribute = {'type': 'text', 'object_relation': 'domain-family'}
         email_attachment_attribute = {'type': 'email-attachment', 'object_relation': 'attachment'}
         email_header_attribute = {'type': 'email-header', 'object_relation': 'header'}
         eml_attribute = {'type': 'attachment', 'object_relation': 'eml'}
         employee_type_attribute = {'type': 'text', 'object_relation': 'employee-type'}
         fake_process_name_attribute = {'type': 'boolean', 'object_relation': 'fake-process-name'}
-        first_packet_seen_attribute = {'type': 'datetime', 'object_relation': 'first-packet-seen'}
         flow_count_attribute = {'type': 'counter', 'object_relation': 'flow-count'}
         followers_attribute = {'type': 'text', 'object_relation': 'followers'}
         following_attribute = {'type': 'text', 'object_relation': 'following'}
@@ -373,8 +370,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         ip_source_attribute = {'type': 'ip-src', 'object_relation': 'ip-src'}
         ip_version_attribute = {'type': 'counter', 'object_relation': 'ip_version'}
         is_ca_attribute = {'type': 'boolean', 'object_relation': 'is_ca'}
-        language_attribute = {'type': 'text', 'object_relation': 'language'}
-        last_packet_seen_attribute = {'type': 'datetime', 'object_relation': 'last-packet-seen'}
         likes_attribute = {'type': 'text', 'object_relation': 'likes'}
         link_attribute = {'type': 'link', 'object_relation': 'link'}
         lnk_access_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-access-time'}
@@ -409,7 +404,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         sha3_224_attribute = {'type': 'sha3-224', 'object_relation': 'sha3-224'}
         sha3_384_attribute = {'type': 'sha3-384', 'object_relation': 'sha3-384'}
         sha384_attribute = {'type': 'sha384', 'object_relation': 'sha384'}
-        src_port_attribute = {'type': 'port', 'object_relation': 'src-port'}
         state_attribute = {'type': 'text', 'object_relation': 'state'}
         start_time_attribute = {'type': 'datetime', 'object_relation': 'start-time'}
         telfhash_attribute = {'type': 'telfhash', 'object_relation': 'telfhash'}
@@ -456,7 +450,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_type = self.type_attribute
         )
         self.__asn_object_mapping = Mapping(
-            number = {'type': 'AS', 'object_relation': 'asn'},
+            number = self.asn_attribute,
             name = self.description_attribute,
             x_misp_country = {'type': 'text', 'object_relation': 'country'},
             x_misp_export = {'type': 'text', 'object_relation': 'export'},
@@ -485,11 +479,11 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_type = self.type_attribute
         )
         self.__cpe_asset_object_mapping = Mapping(
-            cpe = {'type': 'cpe', 'object_relation': 'cpe'},
-            languages = {'type': 'text', 'object_relation': 'language'},
+            cpe = self.cpe_attribute,
+            languages = self.language_attribute,
             name = {'type': 'text', 'object_relation': 'product'},
-            vendor = {'type': 'text', 'object_relation': 'vendor'},
-            version = {'type': 'text', 'object_relation': 'version'},
+            vendor = self.vendor_attribute,
+            version = self.version_attribute,
             x_misp_description = self.description_attribute,
             x_misp_other = {'type': 'text', 'object_relation': 'other'},
             x_misp_part = {'type': 'text', 'object_relation': 'part'},
@@ -757,7 +751,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         )
         self.__ip_port_object_mapping = Mapping(
             dst_port = self.dst_port_attribute,
-            src_port = src_port_attribute,
+            src_port = self.src_port_attribute,
             start = first_seen_attribute,
             end = last_seen_attribute,
             x_misp_AS = {'type': 'AS', 'object_relation': 'AS'},
@@ -836,9 +830,9 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         )
         self.__netflow_object_mapping = Mapping(
             dst_port = self.dst_port_attribute,
-            src_port = src_port_attribute,
-            start = first_packet_seen_attribute,
-            end = last_packet_seen_attribute,
+            src_port = self.src_port_attribute,
+            start = self.first_packet_seen_attribute,
+            end = self.last_packet_seen_attribute,
             src_byte_count = byte_count_attribute,
             src_packets = packet_count_attribute,
             x_misp_community_id = community_id_attribute,
@@ -850,9 +844,9 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         self.__netflow_pattern_object_mapping = Mapping(
             **{
                 'dst_port': self.dst_port_attribute,
-                'src_port': src_port_attribute,
-                'start': first_packet_seen_attribute,
-                'end': last_packet_seen_attribute,
+                'src_port': self.src_port_attribute,
+                'start': self.first_packet_seen_attribute,
+                'end': self.last_packet_seen_attribute,
                 'src_byte_count': byte_count_attribute,
                 'src_packets': packet_count_attribute,
                 'protocols[0]': self.protocol_attribute,
@@ -867,22 +861,17 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         )
         self.__network_connection_object_mapping = Mapping(
             dst_port = self.dst_port_attribute,
-            src_port = src_port_attribute,
-            start = first_packet_seen_attribute,
+            src_port = self.src_port_attribute,
+            start = self.first_packet_seen_attribute,
             x_misp_community_id = community_id_attribute,
             x_misp_hostname_dst = hostname_dst_attribute,
             x_misp_hostname_src = hostname_src_attribute
         )
-        self.__network_socket_extension_mapping = Mapping(
-            address_family = address_family_attribute,
-            protocol_family = domain_family_attribute,
-            socket_type = {'type': 'text', 'object_relation': 'socket-type'}
-        )
         self.__network_socket_object_mapping = Mapping(
             dst_port = self.dst_port_attribute,
-            src_port = src_port_attribute,
-            x_misp_address_family = address_family_attribute,
-            x_misp_domain_family = domain_family_attribute,
+            src_port = self.src_port_attribute,
+            x_misp_address_family = self.address_family_attribute,
+            x_misp_domain_family = self.domain_family_attribute,
             x_misp_filename = self.filename_attribute,
             x_misp_hostname_dst = hostname_dst_attribute,
             x_misp_hostname_src = hostname_src_attribute,
@@ -1066,14 +1055,14 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         self.__script_from_malware_object_mapping = Mapping(
             name = self.filename_attribute,
             description = comment_text_attribute,
-            implementation_languages = language_attribute,
+            implementation_languages = self.language_attribute,
             x_misp_script = script_attribute,
             x_misp_state = state_attribute
         )
         self.__script_from_tool_object_mapping = Mapping(
             name = self.filename_attribute,
             description = comment_text_attribute,
-            x_misp_language = language_attribute,
+            x_misp_language = self.language_attribute,
             x_misp_script = script_attribute,
             x_misp_state = state_attribute
         )
@@ -1375,10 +1364,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def network_connection_object_mapping(self) -> dict:
         return self.__network_connection_object_mapping
-
-    @property
-    def network_socket_extension_mapping(self) -> dict:
-        return self.__network_socket_extension_mapping
 
     @property
     def network_socket_object_mapping(self) -> dict:
