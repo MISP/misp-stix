@@ -230,6 +230,12 @@ class STIX2toMISPMapping:
         self.__ip_attribute = Mapping(
             **{'type': 'ip-dst', 'object_relation': 'ip'}
         )
+        self.__ip_dst_attribute = Mapping(
+            **{'type': 'ip-dst', 'object_relation': 'ip-dst'}
+        )
+        self.__ip_src_attribute = Mapping(
+            **{'type': 'ip-src', 'object_relation': 'ip-src'}
+        )
         self.__is_self_signed_attribute = Mapping(
             **{'type': 'boolean', 'object_relation': 'self_signed'}
         )
@@ -784,6 +790,14 @@ class STIX2toMISPMapping:
     @property
     def ip_attribute(self) -> dict:
         return self.__ip_attribute
+
+    @property
+    def ip_dst_attribute(self) -> dict:
+        return self.__ip_dst_attribute
+
+    @property
+    def ip_src_attribute(self) -> dict:
+        return self.__ip_src_attribute
 
     @property
     def is_self_signed_attribute(self) -> dict:
