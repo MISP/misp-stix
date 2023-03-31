@@ -603,16 +603,15 @@ class STIX2toMISPParser(STIXtoMISPParser):
             misp_object.comment = location.description
         for feature, attribute in self._mapping.location_object_mapping.items():
             if hasattr(location, feature):
-                misp_attribute = {'value': getattr(location, feature)}
-                misp_attribute.update(attribute)
-                misp_object.add_attribute(**misp_attribute)
+                misp_object.add_attribute(
+                    **{'value': getattr(location, feature), **attribute}
+                )
         if hasattr(location, 'precision'):
-            attribute = {'value': float(location.precision) / 1000}
-            attribute.update(self._mapping.accuracy_radius_attribute)
-            misp_object.add_attribute(**attribute)
-        if hasattr(location, 'object_marking_refs'):
-            self._handle_object_marking_refs(
-                location.object_marking_refs, misp_object
+            misp_object.add_attribute(
+                **{
+                    'value': float(location.precision) / 1000,
+                    **self._mapping.accuracy_radius_attribute
+                }
             )
         if to_return:
             return misp_object
