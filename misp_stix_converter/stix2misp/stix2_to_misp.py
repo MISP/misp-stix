@@ -615,7 +615,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             )
         if to_return:
             return misp_object
-        self._add_misp_object(misp_object)
+        self._add_misp_object(misp_object, location)
 
     ################################################################################
     #                  MISP GALAXIES & CLUSTERS PARSING FUNCTIONS                  #
@@ -980,6 +980,25 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                       MISP FEATURES CREATION FUNCTIONS                       #
     ################################################################################
 
+    def _add_misp_attribute(self, attribute: dict,
+                            stix_object: _SDO_TYPING) -> MISPAttribute:
+        misp_attribute = MISPAttribute()
+        misp_attribute.from_dict(**attribute)
+        tags = tuple(self._handle_tags_from_stix_fields(stix_object))
+        if tags:
+            for tag in tags:
+                misp_attribute.add_tag(tag)
+        return self.misp_event.add_attribute(**misp_attribute)
+
+    def _add_misp_object(self, misp_object: MISPObject,
+                         stix_object: _SDO_TYPING) -> MISPObject:
+        tags = tuple(self._handle_tags_from_stix_fields(stix_object))
+        if tags:
+            for attribute in misp_object.attributes:
+                for tag in tags:
+                    attribute.add_tag(tag)
+        return self.misp_event.add_object(misp_object)
+
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = self._parse_timeline(stix_object)
         if hasattr(stix_object, 'description') and stix_object.description:
@@ -989,9 +1008,6 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 stix_object.id, comment=attribute.get('comment')
             )
         )
-        if hasattr(stix_object, 'object_marking_refs'):
-            tags = tuple(self._parse_markings(stix_object.object_marking_refs))
-            attribute['Tag'] = [{'name': tag} for tag in tags]
         return attribute
 
     def _create_generic_event(self) -> MISPEvent:
@@ -1034,6 +1050,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
             misp_object.update(self._parse_timeline(stix_object))
         return misp_object
 
+    def _handle_tags_from_stix_fields(self, stix_object: _SDO_TYPING):
+        if hasattr(stix_object, 'confidence'):
+            yield self._parse_confidence_level(stix_object.confidence)
+        if hasattr(stix_object, 'object_marking_refs'):
+            yield from self._parse_markings(stix_object.object_marking_refs)
+
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
@@ -1057,18 +1079,23 @@ class STIX2toMISPParser(STIXtoMISPParser):
                       if label.lower() != 'threat-report'):
             misp_feature.add_tag(label)
 
-    def _handle_object_marking_refs(
-            self, object_marking_refs: list, misp_object: MISPObject):
-        tags = self._parse_markings(object_marking_refs)
-        for attribute in misp_object.attributes:
-            for tag in tags:
-                attribute.add_tag(tag)
-
     @staticmethod
     def _parse_AS_value(number: Union[int, str]) -> str:
         if isinstance(number, int) or not number.startswith('AS'):
             return f'AS{number}'
         return number
+
+    @staticmethod
+    def _parse_confidence_level(confidence_level: int) -> str:
+        if confidence_level == 100:
+            return 'misp:confidence-level="completely-confident"'
+        if confidence_level >= 75:
+            return 'misp:confidence-level="usually-confident"'
+        if confidence_level >= 50:
+            return 'misp:confidence-level="fairly-confident"'
+        if confidence_level >= 25:
+            return 'misp:confidence-level="rarely-confident"'
+        return 'misp:confidence-level="unconfident"'
 
     def _parse_markings(self, marking_refs: list):
         for marking_ref in marking_refs:
