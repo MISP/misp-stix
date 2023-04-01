@@ -40,6 +40,7 @@ class STIX2toMISPMapping:
                 'observed-data': ('first_observed', 'last_observed')
             }
         )
+        self.__mac_address_pattern = '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
 
     def _declare_mapping(self, updates: Optional[dict]={}):
         SROs = ('opinion', 'relationship', 'sighting', 'x-misp-opinion')
@@ -229,6 +230,12 @@ class STIX2toMISPMapping:
         )
         self.__ip_attribute = Mapping(
             **{'type': 'ip-dst', 'object_relation': 'ip'}
+        )
+        self.__ip_dst_attribute = Mapping(
+            **{'type': 'ip-dst', 'object_relation': 'ip-dst'}
+        )
+        self.__ip_src_attribute = Mapping(
+            **{'type': 'ip-src', 'object_relation': 'ip-src'}
         )
         self.__is_self_signed_attribute = Mapping(
             **{'type': 'boolean', 'object_relation': 'self_signed'}
@@ -786,6 +793,14 @@ class STIX2toMISPMapping:
         return self.__ip_attribute
 
     @property
+    def ip_dst_attribute(self) -> dict:
+        return self.__ip_dst_attribute
+
+    @property
+    def ip_src_attribute(self) -> dict:
+        return self.__ip_src_attribute
+
+    @property
     def is_self_signed_attribute(self) -> dict:
         return self.__is_self_signed_attribute
 
@@ -816,6 +831,10 @@ class STIX2toMISPMapping:
     @property
     def location_object_mapping(self) -> dict:
         return self.__location_object_mapping
+
+    @property
+    def mac_address_pattern(self) -> str:
+        return self.__mac_address_pattern
 
     @property
     def malware_meta_mapping(self) -> dict:

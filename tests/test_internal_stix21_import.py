@@ -2132,7 +2132,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
         _, grouping, indicator = bundle.objects
-        section_object, pe_object, file_object = self._check_misp_event_features_from_grouping(event, grouping)
+        file_object, pe_object, section_object = self._check_misp_event_features_from_grouping(event, grouping)
         file_pattern, pe_pattern, section_pattern = self._get_parsed_file_and_pe_pattern(
             self._check_indicator_object(file_object, indicator)
         )
@@ -2166,7 +2166,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
         _, grouping, observed_data, observable = bundle.objects
-        section_object, pe_object, file_object = self._check_misp_event_features_from_grouping(event, grouping)
+        file_object, pe_object, section_object = self._check_misp_event_features_from_grouping(event, grouping)
         file_ref = self._check_observed_data_object(file_object, observed_data)[0]
         self._assert_multiple_equal(
             file_object.uuid,

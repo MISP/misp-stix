@@ -359,9 +359,16 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         from_domain_attribute = {'type': 'domain', 'object_relation': 'from-domain'}
         guid_attribute = {'type': 'text', 'object_relation': 'guid'}
         header_attribute = {'type': 'text', 'object_relation': 'header'}
+        self.__host_attribute = Mapping(
+            **{'type': 'hostname', 'object_relation': 'host'}
+        )
         hostname_attribute = {'type': 'hostname', 'object_relation': 'hostname'}
-        hostname_dst_attribute = {'type': 'hostname', 'object_relation': 'hostname-dst'}
-        hostname_src_attribute = {'type': 'hostname', 'object_relation': 'hostname-src'}
+        self.__hostname_dst_attribute = Mapping(
+            **{'type': 'hostname', 'object_relation': 'hostname-dst'}
+        )
+        self.__hostname_src_attribute = Mapping(
+            **{'type': 'hostname', 'object_relation': 'hostname-src'}
+        )
         id_attribute = {'type': 'text', 'object_relation': 'id'}
         image_attribute = {'type': 'filename', 'object_relation': 'image'}
         image_text_attribute = {'type': 'text', 'object_relation': 'image-text'}
@@ -864,8 +871,8 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             src_port = self.src_port_attribute,
             start = self.first_packet_seen_attribute,
             x_misp_community_id = community_id_attribute,
-            x_misp_hostname_dst = hostname_dst_attribute,
-            x_misp_hostname_src = hostname_src_attribute
+            x_misp_hostname_dst = self.hostname_dst_attribute,
+            x_misp_hostname_src = self.hostname_src_attribute
         )
         self.__network_socket_object_mapping = Mapping(
             dst_port = self.dst_port_attribute,
@@ -873,8 +880,8 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_address_family = self.address_family_attribute,
             x_misp_domain_family = self.domain_family_attribute,
             x_misp_filename = self.filename_attribute,
-            x_misp_hostname_dst = hostname_dst_attribute,
-            x_misp_hostname_src = hostname_src_attribute,
+            x_misp_hostname_dst = self.hostname_dst_attribute,
+            x_misp_hostname_src = self.hostname_src_attribute,
             x_misp_option = {'type': 'text', 'object_relation': 'option'}
         )
         self.__news_agency_contact_information_mapping = Mapping(
@@ -1117,7 +1124,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_domain_without_tld = {'type': 'text', 'object_relation': 'domain_without_tld'},
             x_misp_first_seen = first_seen_attribute,
             x_misp_fragment = {'type': 'text', 'object_relation': 'fragment'},
-            x_misp_host = {'type': 'hostname', 'object_relation': 'host'},
+            x_misp_host = self.host_attribute,
             x_misp_ip = self.ip_attribute,
             x_misp_last_seen = last_seen_attribute,
             x_misp_port = port_attribute,
@@ -1296,6 +1303,18 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def gitlab_user_object_mapping(self) -> dict:
         return self.__gitlab_user_object_mapping
+
+    @property
+    def host_attribute(self) -> dict:
+        return self.__host_attribute
+
+    @property
+    def hostname_dst_attribute(self) -> dict:
+        return self.__hostname_dst_attribute
+
+    @property
+    def hostname_src_attribute(self) -> dict:
+        return self.__hostname_src_attribute
 
     @property
     def http_request_extension_mapping(self) -> dict:
