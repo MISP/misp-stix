@@ -424,9 +424,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_attack_pattern_reference(
             self, reference: _EXTERNAL_REFERENCE_TYPING) -> dict:
         if reference.source_name == 'url':
-            attribute = {'value': reference.url}
-            attribute.update(self._mapping.attack_pattern_references_attribute)
-            return attribute
+            return {
+                'value': reference.url,
+                **self._mapping.attack_pattern_references_attribute
+            }
         external_id = reference.external_id
         return {
             'value': external_id.split('-')[1]
@@ -681,13 +682,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _attribute_from_attachment_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute.update(
-            self._attribute_from_attachment_observable(
-                tuple(observed_data.objects.values())
-            )
+        self._add_misp_attribute(
+            dict(
+                self._create_attribute_dict(observed_data),
+                **self._attribute_from_attachment_observable(
+                    tuple(observed_data.objects.values())
+                )
+            ),
+            observed_data
         )
-        self._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_attachment_observable_v21(
             self, observed_data: ObservedData_v21):
@@ -904,13 +907,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _attribute_from_malware_sample_observable_v20(
             self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute.update(
-            self._attribute_from_malware_sample_observable(
-                observed_data.objects.values()
-            )
+        self._add_misp_attribute(
+            dict(
+                self._create_attribute_dict(observed_data),
+                **self._attribute_from_malware_sample_observable(
+                    observed_data.objects.values()
+                )
+            ),
+            observed_data
         )
-        self._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_malware_sample_observable_v21(
             self, observed_data: ObservedData_v21):
@@ -1417,9 +1422,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                                 )
             elif observable.type == 'domain-name':
                 attribute = {
-                    'type': 'hostname',
-                    'object_relation': 'host',
-                    'value': observable.value
+                    'value': observable.value,
+                    **self._mapping.host_attribute
                 }
                 if hasattr(observable, 'id'):
                     attribute.update(
@@ -1467,16 +1471,14 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     if hasattr(observable, 'x_misp_url'):
                         misp_object.add_attribute(
                             **{
-                                'type': 'url',
-                                'object_relation': 'url',
-                                'value': observable.x_misp_url
+                                'value': observable.x_misp_url,
+                                **self._mapping.url_attribute
                             }
                         )
                 elif hasattr(observable, 'url'):
                     attribute = {
-                        'type': 'url',
-                        'object_relation': 'url',
-                        'value': observable.url
+                        'value': observable.url,
+                        **self._mapping.url_attribute
                     }
                     if hasattr(observable, 'id'):
                         attribute.update(
@@ -1812,10 +1814,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     )
                 if reference.type == 'domain-name':
                     attribute.update(
-                        {
-                            'type': 'hostname',
-                            'object_relation': f'hostname-{feature}'
-                        }
+                        getattr(self._mapping, f'hostname_{feature}_attribute')
                     )
                     misp_object.add_attribute(**attribute)
                     continue
@@ -2427,7 +2426,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
             if pattern.startswith('('):
-                reference = self._parse_http_request_reference(feature, value)
+                reference = dict(
+                    self._parse_http_request_reference(feature, value)
+                )
                 continue
             if pattern.endswith(')'):
                 reference.update(
@@ -2578,7 +2579,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
             if pattern.startswith('('):
-                reference = self._parse_network_reference(feature, value)
+                reference = dict(self._parse_network_reference(feature, value))
                 continue
             if pattern.endswith(')'):
                 reference.update(
@@ -2742,14 +2743,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     )
         self._add_misp_object(misp_object, indicator)
 
-    @staticmethod
-    def _parse_http_request_reference(feature: str, value: str) -> dict:
+    def _parse_http_request_reference(self, feature: str, value: str) -> dict:
         if feature.split('.')[1] == 'value':
             return {'value': value}
         if value == 'domain-name':
-            return {'type': 'hostname', 'object_relation': 'host'}
-        relation = f"ip-{feature.split('_')[0]}"
-        return {'type': relation, 'object_relation': relation}
+            return self._mapping.host_attribute
+        return getattr(self._mapping, f"ip_{feature.split('_')[0]}_attribute")
 
     def _parse_http_request_values(
             self, misp_object: MISPObject, uri: str, url: str):
@@ -2795,17 +2794,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 }
             )
 
-    @staticmethod
-    def _parse_network_reference(feature: str, value: str) -> dict:
+    def _parse_network_reference(self, feature: str, value: str) -> dict:
         if feature.split('.')[1] == 'value':
             return {'value': value}
+        feature = feature.split('_')[0]
         if value == 'domain-name':
-            return {
-                'type': 'hostname',
-                'object_relation': f"hostname-{feature.split('_')[0]}"
-            }
-        relation = f"ip-{feature.split('_')[0]}"
-        return {'type': relation, 'object_relation': relation}
+            return getattr(self._mapping, f'hostname_{feature}_attribute')
+        return getattr(self._mapping, f'ip_{feature}_attribute')
 
     def _parse_network_socket_pattern(
             self, misp_object: MISPObject, feature: str, value: str):
