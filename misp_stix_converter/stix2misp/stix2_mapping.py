@@ -40,6 +40,7 @@ class STIX2toMISPMapping:
                 'observed-data': ('first_observed', 'last_observed')
             }
         )
+        self.__mac_address_pattern = '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
 
     def _declare_mapping(self, updates: Optional[dict]={}):
         SROs = ('opinion', 'relationship', 'sighting', 'x-misp-opinion')
@@ -830,6 +831,10 @@ class STIX2toMISPMapping:
     @property
     def location_object_mapping(self) -> dict:
         return self.__location_object_mapping
+
+    @property
+    def mac_address_pattern(self) -> str:
+        return self.__mac_address_pattern
 
     @property
     def malware_meta_mapping(self) -> dict:

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import ipaddress
+import re
 from .exceptions import (
     InvalidSTIXPatternError, UnknownParsingFunctionError,
     UnknownObservableMappingError, UnknownPatternMappingError,
@@ -2160,42 +2162,90 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
-    def _parse_network_traffic_pattern(
+    def _parse_network_connection_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
-        attributes = []
+        misp_object = self._create_misp_object('network-connection', indicator)
         for keys, assertion, value in pattern.comparisons['network-traffic']:
             if assertion != '=':
                 continue
-            field = keys[0]
-            if field == 'protocols':
+            if 'protocols' in keys:
                 if value in self._mapping.connection_protocols:
                     layer = self._mapping.connection_protocols[value]
-                    attributes.append(
-                        {
-                            'type': f'layer{layer}-protocol',
-                            'object_relation': f'layer{layer}-protocol',
-                            'value': value
-                        }
+                    misp_object.add_attribute(
+                        f'layer{layer}-protocol', value
                     )
                 else:
-                    self._unknown_network_prococol_warning(value, indicator.id)
+                    self._unknown_network_protocol_warning(
+                        value, indicator.id
+                    )
                 continue
-            if field in self._mapping.network_connection_pattern_mapping:
-                attribute = {'value': value}
-                attribute.update(
-                    self._mapping.network_connection_pattern_mapping[field]
-                )
-                attributes.append(attribute)
-            else:
-                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
-        if attributes:
-            self._handle_import_case(
-                indicator, attributes, 'network-connection',
-                'dst-port', 'src-port'
+            self._parse_network_traffic_attribute(
+                misp_object, keys, value, indicator.id
             )
+        if misp_object.attributes:
+            self._add_misp_object(misp_object, indicator)
         else:
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
+
+    def _parse_network_socket_pattern(
+            self, pattern: PatternData, indicator: _INDICATOR_TYPING):
+        extension = []
+        misp_object = self._create_misp_object('network-socket', indicator)
+        for keys, assertion, value in pattern.comparisons['network-traffic']:
+            if assertion != '=':
+                continue
+            if 'socket-ext' in keys:
+                field = keys[-1]
+                relation = self._mapping.network_socket_extension_mapping[field]
+                misp_object.add_attribute(relation, value)
+                continue
+            if 'protocols' in keys:
+                misp_object.add_attribute('protocol', value)
+                continue
+            self._parse_network_traffic_attribute(
+                misp_object, keys, value, indicator.id
+            )
+        self._add_misp_object(misp_object, indicator)
+
+    def _parse_network_traffic_attribute(
+            self, misp_object: MISPObject, keys: list,
+            value: str, indicator_id: str):
+        field = keys[0]
+        if any(field == f'{feature}_ref' for feature in ('src', 'dst')):
+            misp_object.add_attribute(
+                *self._parse_network_traffic_reference(
+                    field.split('_')[0], value
+                )
+            )
+            return
+        if field in self._mapping.network_traffic_object_mapping:
+            misp_object.add_attribute(
+                **{
+                    'value': value,
+                    **self._mapping.network_traffic_object_mapping[field]
+                }
+            )
+        else:
+            self._unmapped_pattern_warning(indicator_id, '.'.join(keys))
+
+    def _parse_network_traffic_pattern(
+            self, pattern: PatternData, indicator: _INDICATOR_TYPING):
+        if any('socket-ext' in keys for keys, *_ in
+               pattern.comparisons['network-traffic']):
+            self._parse_network_socket_pattern(pattern, indicator)
+        else:
+            self._parse_network_connection_pattern(pattern, indicator)
+
+    def _parse_network_traffic_reference(
+            self, feature: str, value: str) -> Tuple[str]:
+        if re.match(self._mapping.mac_address_pattern, value):
+            return f'mac-{feature}', value
+        try:
+            ipaddress.ip_interface(value)
+            return f'ip-{feature}', value
+        except ValueError:
+            return f'hostname-{feature}', value
 
     def _parse_process_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
