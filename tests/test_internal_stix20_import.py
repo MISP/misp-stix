@@ -1690,7 +1690,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
         _, report, indicator = bundle.objects
-        section_object, pe_object, file_object = self._check_misp_event_features(event, report)
+        file_object, pe_object, section_object = self._check_misp_event_features(event, report)
         file_pattern, pe_pattern, section_pattern = self._get_parsed_file_and_pe_pattern(
             self._check_indicator_object(file_object, indicator)
         )
@@ -1724,7 +1724,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
         _, report, observed_data = bundle.objects
-        section_object, pe_object, file_object = self._check_misp_event_features(event, report)
+        file_object, pe_object, section_object = self._check_misp_event_features(event, report)
         observable = self._check_observed_data_object(file_object, observed_data)['0']
         self.assertEqual(pe_object.name, 'pe')
         self.assertEqual(
