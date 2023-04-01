@@ -1304,7 +1304,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 if field == 'additional_header_fields':
                     header_fields = email_message.additional_header_fields
                     if 'Reply-To' in header_fields:
-                        self._add_attribute(
+                        self._add_misp_attribute(
                             getattr(self, f'_handle_{feature}_attribute')(
                                 header_fields, 'Reply-To', 'email-reply-to',
                                 observed_data.id
@@ -1313,7 +1313,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         )
                         break
                     if 'X-Mailer' in header_fields:
-                        self._add_attribute(
+                        self._add_misp_attribute(
                             getattr(self, f'_handle_{feature}_attribute')(
                                 header_fields, 'X-Mailer', 'email-x-mailer',
                                 observed_data.id
