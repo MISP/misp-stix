@@ -1227,9 +1227,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_file_extension_observable(
             self, extension: _EXTENSION_TYPING,
             observed_data: _OBSERVED_DATA_TYPING) -> str:
-        timestamp = self._timestamp_from_date(observed_data.modified)
-        pe_object = self._create_misp_object('pe')
-        pe_object.timestamp = timestamp
+        pe_object = self._create_misp_object('pe', observed_data)
         if hasattr(extension, 'optional_header'):
             pe_object.add_attribute(
                 **{
@@ -1249,8 +1247,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         misp_object = self._add_misp_object(pe_object, observed_data)
         if hasattr(extension, 'sections'):
             for section in extension.sections:
-                section_object = self._create_misp_object('pe-section')
-                section_object.timestamp = timestamp
+                section_object = self._create_misp_object(
+                    'pe-section', observed_data
+                )
                 for feature, mapping in self._mapping.pe_section_object_mapping.items():
                     if hasattr(section, feature):
                         section_object.add_attribute(
@@ -2301,9 +2300,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _object_from_file_extension_pattern(
             self, extension: dict, indicator: _INDICATOR_TYPING) -> str:
-        timestamp = self._timestamp_from_date(indicator.modified)
-        pe_object = self._create_misp_object('pe')
-        pe_object.timestamp = timestamp
+        pe_object = self._create_misp_object('pe', indicator)
         if 'address_of_entry_point' in extension['pe']:
             pe_object.add_attribute(
                 **{
@@ -2322,8 +2319,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
         misp_object = self._add_misp_object(pe_object, indicator)
         for section in extension.get('sections').values():
-            section_object = self._create_misp_object('pe-section')
-            section_object.timestamp = timestamp
+            section_object = self._create_misp_object(
+                'pe-section', indicator
+            )
             for feature, value in section.items():
                 if feature in self._mapping.pe_section_object_mapping:
                     section_object.add_attribute(

@@ -1020,8 +1020,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self, stix_object: _GROUPING_REPORT_TYPING) -> MISPEvent:
         misp_event = MISPEvent(force_timestamps=True)
         self._sanitise_object_uuid(misp_event, stix_object.id)
-        misp_event.info = getattr(stix_object, 'name', self.generic_info_field)
-        misp_event.timestamp = self._timestamp_from_date(stix_object.modified)
+        misp_event.from_dict(
+            info=getattr(stix_object, 'name', self.generic_info_field),
+            timestamp=self._timestamp_from_date(stix_object.modified)
+        )
         self._handle_misp_event_tags(misp_event, stix_object)
         return misp_event
 
