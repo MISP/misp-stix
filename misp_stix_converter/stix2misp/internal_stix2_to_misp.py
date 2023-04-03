@@ -233,7 +233,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         name = custom_object.x_misp_name
         misp_object = self._create_misp_object(name)
         misp_object.category = custom_object.x_misp_meta_category
-        misp_object.update(self._parse_timeline(custom_object))
+        misp_object.from_dict(**self._parse_timeline(custom_object))
         if hasattr(custom_object, 'x_misp_comment'):
             misp_object.comment = custom_object.x_misp_comment
         self._sanitise_object_uuid(misp_object, custom_object.id)

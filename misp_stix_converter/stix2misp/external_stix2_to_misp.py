@@ -14,6 +14,7 @@ from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVED_DATA_TYPING,
     _SDO_TYPING, _VULNERABILITY_TYPING)
+from collections import defaultdict
 from pymisp import MISPGalaxy, MISPGalaxyCluster, MISPObject
 from stix2.v20.observables import (
     AutonomousSystem as AutonomousSystem_v20, Directory as Directory_v20,
@@ -1785,9 +1786,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for index, registry_value in enumerate(registry_key['values']):
             value_reference = f'{reference} - values - {index}'
             value_object = self._create_misp_object('registry-key-value')
-            value_object.update(self._parse_timeline(observed_data))
-            value_object.uuid = self._create_v5_uuid(value_reference)
-            value_object.comment = f'Original Observed Data ID: {observed_data.id}'
+            value_object.from_dict(
+                uuid=self._create_v5_uuid(value_reference),
+                comment=f'Original Observed Data ID: {observed_data.id}',
+                **self._parse_timeline(observed_data)
+            )
             self._populate_object_attributes_from_observable(
                 'registry_key_values', registry_value, value_object,
                 value_reference, observed_data.id
@@ -2546,18 +2549,18 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
         misp_object = self._create_misp_object(name)
         self._sanitise_object_uuid(misp_object, observable_object_id)
-        misp_object.update(self._parse_timeline(observed_data))
+        misp_object.from_dict(**self._parse_timeline(observed_data))
         return misp_object
 
     def _create_misp_object_from_observable_without_id(
             self, name: str, object_id: str,
             observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
         misp_object = self._create_misp_object(name)
-        misp_object.update(self._parse_timeline(observed_data))
-        misp_object.uuid = self._create_v5_uuid(
-            f'{observed_data.id} - {object_id}'
+        misp_object.from_dict(
+            uuid=self._create_v5_uuid(f'{observed_data.id} - {object_id}'),
+            comment=f'Original Observed Data ID: {observed_data.id}',
+            **self._parse_timeline(observed_data)
         )
-        misp_object.comment = f'Original Observed Data ID: {observed_data.id}'
         return misp_object
 
     def _create_misp_object_from_single_observable(
