@@ -79,13 +79,3 @@ class TestSTIX21(TestSTIX):
         self.assertEqual(grouping.created, timestamp)
         self.assertEqual(grouping.modified, timestamp)
         return grouping.object_refs
-
-    def _check_misp_event_features_from_grouping(self, event, grouping):
-        self.assertEqual(event.uuid, grouping.id.split('--')[1])
-        self.assertEqual(event.info, grouping.name)
-        self._assert_multiple_equal(
-            event.timestamp,
-            self._timestamp_from_datetime(grouping.created),
-            self._timestamp_from_datetime(grouping.modified)
-        )
-        return (*event.objects, *event.attributes)
