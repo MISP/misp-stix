@@ -1020,8 +1020,10 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self, stix_object: _GROUPING_REPORT_TYPING) -> MISPEvent:
         misp_event = MISPEvent(force_timestamps=True)
         self._sanitise_object_uuid(misp_event, stix_object.id)
-        misp_event.info = getattr(stix_object, 'name', self.generic_info_field)
-        misp_event.timestamp = self._timestamp_from_date(stix_object.modified)
+        misp_event.from_dict(
+            info=getattr(stix_object, 'name', self.generic_info_field),
+            timestamp=self._timestamp_from_date(stix_object.modified)
+        )
         self._handle_misp_event_tags(misp_event, stix_object)
         return misp_event
 
@@ -1047,7 +1049,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         )
         if stix_object is not None:
             self._sanitise_object_uuid(misp_object, stix_object['id'])
-            misp_object.update(self._parse_timeline(stix_object))
+            misp_object.from_dict(**self._parse_timeline(stix_object))
         return misp_object
 
     def _handle_tags_from_stix_fields(self, stix_object: _SDO_TYPING):
