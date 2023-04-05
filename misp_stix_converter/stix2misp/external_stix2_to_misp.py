@@ -2198,15 +2198,15 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_network_socket_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
-        extension = []
         misp_object = self._create_misp_object('network-socket', indicator)
         for keys, assertion, value in pattern.comparisons['network-traffic']:
             if assertion != '=':
                 continue
             if 'socket-ext' in keys:
-                field = keys[-1]
-                relation = self._mapping.network_socket_extension_mapping[field]
-                misp_object.add_attribute(relation, value)
+                misp_object.add_attribute(
+                    self._mapping.network_socket_extension_mapping[keys[-1]],
+                    value
+                )
                 continue
             if 'protocols' in keys:
                 misp_object.add_attribute('protocol', value)
@@ -2239,8 +2239,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_network_traffic_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
-        if any('socket-ext' in keys for keys, *_ in
-               pattern.comparisons['network-traffic']):
+        if 'socket-ext' in indicator.pattern:
             self._parse_network_socket_pattern(pattern, indicator)
         else:
             self._parse_network_connection_pattern(pattern, indicator)
