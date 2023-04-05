@@ -1440,6 +1440,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._populate_object_attributes_from_observable(
             'pe', extension, misp_object, reference, observed_data.id
         )
+        if hasattr(extension, 'optional_header'):
+            self._populate_object_attributes_from_observable(
+                'pe_optional_header', extension, misp_object,
+                reference, observed_data.id
+            )
         pe_object = self._add_misp_object(misp_object, observed_data)
         if hasattr(extension, 'sections'):
             for section_id, section in enumerate(extension.sections):

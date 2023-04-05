@@ -319,6 +319,9 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             number_of_sections = self.number_of_sections_attribute,
             pe_type = self.type_attribute
         )
+        self.__pe_optional_header_object_mapping = Mapping(
+            address_of_entry_point = self.entrypoint_address_attribute
+        )
         self.__pe_section_object_mapping = Mapping(
             entropy = self.entropy_attribute,
             name = self.name_attribute,
@@ -628,6 +631,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def pe_object_mapping(self) -> dict:
         return self.__pe_object_mapping
+
+    @property
+    def pe_optional_header_object_mapping(self) -> dict:
+        return self.__pe_optional_header_object_mapping
 
     @property
     def pe_section_object_mapping(self) -> dict:
