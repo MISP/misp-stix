@@ -1232,9 +1232,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if hasattr(extension, 'optional_header'):
             pe_object.add_attribute(
                 **{
-                    'type': 'text',
-                    'object_relation': 'entrypoint-address',
-                    'value': extension.optional_header.address_of_entry_point
+                    'value': extension.optional_header.address_of_entry_point,
+                    **self._mapping.entrypoint_address_attribute
                 }
             )
         for feature, mapping in self._mapping.pe_object_mapping.items():
@@ -2305,9 +2304,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if 'address_of_entry_point' in extension['pe']:
             pe_object.add_attribute(
                 **{
-                    'type': 'text',
-                    'object_relation': 'entrypoint-address',
-                    'value': extension['pe']['address_of_entry_point']
+                    'value': extension['pe']['address_of_entry_point'],
+                    **self._mapping.entrypoint_address_attribute
                 }
             )
         for feature, value in extension['pe'].items():

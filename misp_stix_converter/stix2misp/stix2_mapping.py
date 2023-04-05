@@ -198,6 +198,9 @@ class STIX2toMISPMapping:
         self.__entropy_attribute = Mapping(
             **{'type': 'float', 'object_relation': 'entropy'}
         )
+        self.__entrypoint_address_attribute = Mapping(
+            **{'type': 'text', 'object_relation': 'entrypoint-address'}
+        )
         self.__expires_attribute = Mapping(
             **{'type': 'datetime', 'object_relation': 'expires'}
         )
@@ -743,6 +746,10 @@ class STIX2toMISPMapping:
     @property
     def entropy_attribute(self) -> dict:
         return self.__entropy_attribute
+
+    @property
+    def entrypoint_address_attribute(self) -> dict:
+        return self.__entrypoint_address_attribute
 
     @property
     def expires_attribute(self) -> dict:
