@@ -2006,6 +2006,28 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
+    def _parse_directory_pattern(
+            self, pattern: PatternData, indicator: _INDICATOR_TYPING):
+        misp_object = self._create_misp_object('directory', indicator)
+        for keys, assertion, value in pattern.comparisons['directory']:
+            if assertion != '=':
+                continue
+            field = keys[0]
+            if field in self._mapping.directory_object_mapping:
+                misp_object.add_attribute(
+                    **{
+                        'value': value,
+                        **self._mapping.directory_object_mapping[field]
+                    }
+                )
+            else:
+                self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
+        if misp_object.attributes:
+            self._add_misp_object(misp_object, indicator)
+        else:
+            self._no_converted_content_from_pattern_warning(indicator)
+            self._create_stix_pattern_object(indicator)
+
     def _parse_domain_ip_port_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
