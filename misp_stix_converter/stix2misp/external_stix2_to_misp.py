@@ -2412,9 +2412,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         compiled_pattern = self._compile_stix_pattern(indicator)
         observable_types = '_'.join(sorted(compiled_pattern.comparisons.keys()))
         try:
-            feature = self._mapping.pattern_mapping[observable_types]
+            mapping = self._mapping.pattern_mapping[observable_types]
         except KeyError:
             raise UnknownPatternMappingError(observable_types)
+        feature = f'_parse_{mapping}_pattern'
         try:
             parser = getattr(self, feature)
         except AttributeError:
