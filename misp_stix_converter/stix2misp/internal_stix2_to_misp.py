@@ -1227,13 +1227,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_file_extension_observable(
             self, extension: _EXTENSION_TYPING,
             observed_data: _OBSERVED_DATA_TYPING) -> str:
-        pe_object = self._create_misp_object('pe', observed_data)
+        pe_object = self._create_misp_object('pe')
+        pe_object.from_dict(**self._parse_timeline(observed_data))
         if hasattr(extension, 'optional_header'):
             pe_object.add_attribute(
                 **{
-                    'type': 'text',
-                    'object_relation': 'entrypoint-address',
-                    'value': extension.optional_header.address_of_entry_point
+                    'value': extension.optional_header.address_of_entry_point,
+                    **self._mapping.entrypoint_address_attribute
                 }
             )
         for feature, mapping in self._mapping.pe_object_mapping.items():
@@ -1247,9 +1247,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         misp_object = self._add_misp_object(pe_object, observed_data)
         if hasattr(extension, 'sections'):
             for section in extension.sections:
-                section_object = self._create_misp_object(
-                    'pe-section', observed_data
-                )
+                section_object = self._create_misp_object('pe-section')
+                section_object.from_dict(**self._parse_timeline(observed_data))
                 for feature, mapping in self._mapping.pe_section_object_mapping.items():
                     if hasattr(section, feature):
                         section_object.add_attribute(
@@ -2300,13 +2299,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _object_from_file_extension_pattern(
             self, extension: dict, indicator: _INDICATOR_TYPING) -> str:
-        pe_object = self._create_misp_object('pe', indicator)
+        pe_object = self._create_misp_object('pe')
+        pe_object.from_dict(**self._parse_timeline(indicator))
         if 'address_of_entry_point' in extension['pe']:
             pe_object.add_attribute(
                 **{
-                    'type': 'text',
-                    'object_relation': 'entrypoint-address',
-                    'value': extension['pe']['address_of_entry_point']
+                    'value': extension['pe']['address_of_entry_point'],
+                    **self._mapping.entrypoint_address_attribute
                 }
             )
         for feature, value in extension['pe'].items():
@@ -2319,9 +2318,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
         misp_object = self._add_misp_object(pe_object, indicator)
         for section in extension.get('sections').values():
-            section_object = self._create_misp_object(
-                'pe-section', indicator
-            )
+            section_object = self._create_misp_object('pe-section')
+            section_object.from_dict(**self._parse_timeline(indicator))
             for feature, value in section.items():
                 if feature in self._mapping.pe_section_object_mapping:
                     section_object.add_attribute(

@@ -125,28 +125,18 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         )
         self.__observable_mapping = Mapping(**observable_mapping)
         pattern_mapping = {
-            'email-addr': '_parse_email_address_pattern',
-            'email-message': '_parse_email_message_pattern',
-            'mac-addr': '_parse_mac_address_pattern',
-            'mutex': '_parse_mutex_pattern',
-            'network-traffic': '_parse_network_traffic_pattern',
-            'process': '_parse_process_pattern',
-            'software': '_parse_software_pattern',
-            'user-account': '_parse_user_account_pattern',
-            'windows-registry-key': '_parse_regkey_pattern',
-            'x509-certificate': '_parse_x509_pattern'
+            'directory': 'directory',
+            'email-addr': 'email_address',
+            'email-message': 'email_message',
+            'mac-addr': 'mac_address',
+            'mutex': 'mutex',
+            'network-traffic': 'network_traffic',
+            'process': 'process',
+            'software': 'software',
+            'user-account': 'user_account',
+            'windows-registry-key': 'regkey',
+            'x509-certificate': 'x509'
         }
-        pattern_mapping.update(
-            dict.fromkeys(
-                (
-                    'artifact_file',
-                    'directory',
-                    'directory_file',
-                    'file'
-                ),
-                '_parse_file_pattern'
-            )
-        )
         pattern_mapping.update(
             dict.fromkeys(
                 (
@@ -155,7 +145,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                     'autonomous-system_ipv6-addr',
                     'autonomous-system_ipv4-addr_ipv6-addr'
                 ),
-                '_parse_asn_pattern'
+                'asn'
             )
         )
         pattern_mapping.update(
@@ -167,7 +157,38 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                     'domain-name_ipv4-addr_ipv6-addr',
                     'domain-name_network-traffic'
                 ),
-                '_parse_domain_ip_port_pattern'
+                'domain_ip_port'
+            )
+        )
+        pattern_mapping.update(
+            dict.fromkeys(
+                (
+                    'artifact_file',
+                    'directory_file',
+                    'file'
+                ),
+                'file'
+            )
+        )
+        pattern_mapping.update(
+            dict.fromkeys(
+                (
+                    'ipv4-addr',
+                    'ipv6-addr',
+                    'ipv4-addr_ipv6-addr'
+                ),
+                'ip_address'
+            )
+        )
+        pattern_mapping.update(
+            dict.fromkeys(
+                (
+                    'ipv4-addr_ipv6-addr_process',
+                    'ipv4-addr_process',
+                    'ipv6-addr_process',
+                    'process'
+                ),
+                'process'
             )
         )
         pattern_mapping.update(
@@ -179,17 +200,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                     'domain-name_network-traffic_url',
                     'url'
                 ),
-                '_parse_url_pattern'
-            )
-        )
-        pattern_mapping.update(
-            dict.fromkeys(
-                (
-                    'ipv4-addr',
-                    'ipv6-addr',
-                    'ipv4-addr_ipv6-addr'
-                ),
-                '_parse_ip_address_pattern'
+                'url'
             )
         )
         self.__pattern_mapping = Mapping(**pattern_mapping)
@@ -318,6 +329,9 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             imphash = self.imphash_attribute,
             number_of_sections = self.number_of_sections_attribute,
             pe_type = self.type_attribute
+        )
+        self.__pe_optional_header_object_mapping = Mapping(
+            address_of_entry_point = self.entrypoint_address_attribute
         )
         self.__pe_section_object_mapping = Mapping(
             entropy = self.entropy_attribute,
@@ -628,6 +642,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @property
     def pe_object_mapping(self) -> dict:
         return self.__pe_object_mapping
+
+    @property
+    def pe_optional_header_object_mapping(self) -> dict:
+        return self.__pe_optional_header_object_mapping
 
     @property
     def pe_section_object_mapping(self) -> dict:
