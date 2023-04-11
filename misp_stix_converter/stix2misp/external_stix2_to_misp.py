@@ -2111,47 +2111,129 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
-    def _parse_file_pattern(
+    def _parse_file_and_pe_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
-        attributes = []
-        if 'file' in pattern.comparisons:
-            for keys, assertion, value in pattern.comparisons['file']:
-                if assertion != '=':
-                    continue
-                if 'hashes' in keys:
-                    hash_type = keys[1].lower().replace('-', '')
-                    attributes.append(
-                        {
-                            'type': hash_type,
-                            'object_relation': hash_type,
-                            'value': value
+        file_object = self._create_misp_object('file', indicator)
+        sections_attributes = defaultdict(list)
+        pe_object = self._create_misp_object('pe')
+        pe_object.from_dict(**self._parse_timeline(indicator))
+        for keys, assertion, value in pattern.comparisons['file']:
+            if assertion != '=':
+                continue
+            if 'windows-pebinary-ext' in keys:
+                if 'sections' in keys:
+                    if 'hashes' in keys:
+                        _, _, _, index, _, hash_type = keys
+                        if hash_type in self._mapping.file_hashes_object_mapping:
+                            sections_attributes[index.strip('[]')].append(
+                                {
+                                    'value': value,
+                                    **self._mapping.file_hashes_object_mapping[
+                                        hash_type
+                                    ]
+                                }
+                            )
+                        else:
+                            self._unmapped_pattern_warning(
+                                indicator.id, '.'.join(keys)
+                            )
+                        continue
+                    _, _, _, index, feature = keys
+                    if feature in self._mapping.pe_section_object_mapping:
+                        sections_attributes[index.strip('[]')].append(
+                            {
+                                'value': value,
+                                **self._mapping.pe_section_object_mapping[
+                                    feature
+                                ]
+                            }
+                        )
+                field = keys[-1]
+                if field in self._mapping.pe_object_mapping:
+                    pe_object.add_attribute(
+                        **{
+                            'value': value,
+                            **self._mapping.pe_object_mapping[field]
                         }
                     )
                     continue
-                field = keys[0]
-                if field in self._mapping.file_pattern_mapping:
-                    attributes.append(
-                        {
+                if field in self._mapping.pe_optional_header_object_mapping:
+                    pe_object.add_attribute(
+                        **{
                             'value': value,
-                            **self._mapping.file_pattern_mapping[field]
+                            **self._mapping.pe_optional_header_object_mapping[
+                                field
+                            ]
                         }
                     )
                 else:
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
-        if any(key != 'file' for key in pattern.comparisons.keys()):
-            self._unknown_pattern_mapping_warning(
-                indicator.id,
-                (key for key in pattern.comparisons.keys() if key != 'file')
-            )
-        if attributes:
-            self._handle_import_case(
-                indicator, attributes, 'file',
-                'access-time', 'compilation-timestamp', 'creation-time',
-                'file-encoding', 'fullpath', 'modification-time', 'path'
-            )
+                continue
+            attribute = self._parse_file_attribute(keys, value, indicator.id)
+            if attribute is not None:
+                file_object.add_attribute(**attribute)
+        if pe_object.attributes or sections_attributes:
+            if file_object.attributes:
+                misp_file_object = self._add_misp_object(file_object, indicator)
+                misp_pe_object = self._add_misp_object(pe_object, indicator)
+                misp_file_object.add_reference(misp_pe_object.uuid, 'includes')
+                for section in sections_attributes.values():
+                    section_object = self._create_misp_object(
+                        'pe-section', indicator
+                    )
+                    for attribute in section:
+                        section_object.add_attribute(**attribute)
+                    self._add_misp_object(section_object, indicator)
+                    misp_pe_object.add_reference(
+                        section_object.uuid, 'includes'
+                    )
         else:
-            self._no_converted_content_from_pattern_warning(indicator)
-            self._create_stix_pattern_object(indicator)
+            if file_object.attributes:
+                self._add_misp_object(file_object, indicator)
+            else:
+                self._no_converted_content_from_pattern_warning(indicator)
+                self._create_stix_pattern_object(indicator)
+
+    def _parse_file_attribute(
+            self, keys: list, value: str, indicator_id: str) -> dict:
+        if 'hashes' in keys:
+            hash_type = keys[1].lower().replace('-', '')
+            return {
+                'value': value,
+                **getattr(self._mapping, f'{hash_type}_attribute')
+            }
+        field = keys[0]
+        if field in self._mapping.file_pattern_mapping:
+            return {
+                'value': value,
+                **self._mapping.file_pattern_mapping[field]
+            }
+        else:
+            self._unmapped_pattern_warning(indicator_id, '.'.join(keys))
+
+    def _parse_file_pattern(
+            self, pattern: PatternData, indicator: _INDICATOR_TYPING):
+        if 'windows-pebinary-ext' in indicator.pattern:
+            self._parse_file_and_pe_pattern(pattern, indicator)
+        else:
+            attributes = []
+            for keys, assertion, value in pattern.comparisons['file']:
+                if assertion != '=':
+                    continue
+                attribute = self._parse_file_attribute(
+                    keys, value, indicator.id
+                )
+                if attribute is not None:
+                    attributes.append(attribute)
+            if attributes:
+                self._handle_import_case(
+                    indicator, attributes, 'file',
+                    'access-time', 'compilation-timestamp', 'creation-time',
+                    'file-encoding', 'fullpath', 'modification-time', 'path'
+                )
+            else:
+                self._no_converted_content_from_pattern_warning(indicator)
+                self._create_stix_pattern_object(indicator)
 
     def _parse_ip_address_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
