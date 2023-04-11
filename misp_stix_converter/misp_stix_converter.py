@@ -29,7 +29,7 @@ from stix2.base import STIXJSONEncoder
 from stix2.parsing import parse as stix2_parser
 from stix2.v20 import Bundle as Bundle_v20
 from stix2.v21 import Bundle as Bundle_v21
-from typing import List, Union
+from typing import List, Optional, Union
 from uuid import uuid4
 
 _cybox_features = (
@@ -426,7 +426,10 @@ def misp_collection_to_stix2_1(
 
 def misp_to_stix1(
         filename: _files_type, return_format: str, version: str,
-        namespace=_default_namespace, org=_default_org):
+        namespace=_default_namespace, org=_default_org,
+        output_filename: Optional[_files_type]=None):
+    if output_filename is None:
+        output_filename = f'{filename}.out'
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
     package = _create_stix_package(org, version)
@@ -438,22 +441,28 @@ def misp_to_stix1(
     else:
         package.add_related_package(parser.stix_package)
     return _write_raw_stix(
-        package, f'{filename}.out', namespace, org, return_format
+        package, output_filename, namespace, org, return_format
     )
 
 
-def misp_to_stix2_0(filename: _files_type):
+def misp_to_stix2_0(
+        filename: _files_type, output_filename: Optional[_files_type]=None):
+    if output_filename is None:
+        output_filename = f'{filename}.out'
     parser = MISPtoSTIX20Parser()
     parser.parse_json_content(filename)
-    with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+    with open(output_filename, 'wt', encoding='utf-8') as f:
         f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
     return 1
 
 
-def misp_to_stix2_1(filename: _files_type):
+def misp_to_stix2_1(
+        filename: _files_type, output_filename: Optional[_files_type]=None):
+    if output_filename is None:
+        output_filename = f'{filename}.out'
     parser = MISPtoSTIX21Parser()
     parser.parse_json_content(filename)
-    with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+    with open(output_filename, 'wt', encoding='utf-8') as f:
         f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
     return 1
 
@@ -462,7 +471,8 @@ def misp_to_stix2_1(filename: _files_type):
 #                         STIX to MISP MAIN FUNCTIONS.                         #
 ################################################################################
 
-def stix_1_to_misp(filename):
+def stix_1_to_misp(
+        filename: _files_type, output_filename: Optional[_files_type]=None):
     event = _load_stix_event(filename)
     if isinstance(event, str):
         return event
@@ -471,12 +481,15 @@ def stix_1_to_misp(filename):
     stix_parser = InternalSTIX1toMISPParser() if from_misp else ExternalSTIX1toMISPParser()
     stix_parser.load_event()
     stix_parser.build_misp_event(event)
-    with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+    if output_filename is None:
+        output_filename = f'{filename}.out'
+    with open(output_filename, 'wt', encoding='utf-8') as f:
         f.write(stix_parser.misp_event.to_json(indent=4))
     return 1
 
 
-def stix_2_to_misp(filename: _files_type):
+def stix_2_to_misp(
+        filename: _files_type, output_filename: Optional[_files_type]=None):
     with open(filename, 'rt', encoding='utf-8') as f:
         bundle = stix2_parser(
             f.read(), allow_custom=True, interoperability=True
@@ -484,7 +497,9 @@ def stix_2_to_misp(filename: _files_type):
     stix_parser = InternalSTIX2toMISPParser() if _from_misp(bundle.objects) else ExternalSTIX2toMISPParser()
     stix_parser.load_stix_bundle(bundle)
     stix_parser.parse_stix_bundle()
-    with open(f'{filename}.out', 'wt', encoding='utf-8') as f:
+    if output_filename is None:
+        output_filename = f'{filename}.out'
+    with open(output_filename, 'wt', encoding='utf-8') as f:
         f.write(stix_parser.misp_event.to_json(indent=4))
     return 1
 
