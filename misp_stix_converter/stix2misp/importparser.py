@@ -29,7 +29,7 @@ class STIXtoMISPParser:
         self._identifier: str
         self._clusters: dict = {}
         if galaxies_as_tags:
-            self.__galaxy_feature = 'as_tags'
+            self.__galaxy_feature = 'as_tag_names'
             self.__synonyms_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.json'
         else:
             self._galaxies: dict = {}
