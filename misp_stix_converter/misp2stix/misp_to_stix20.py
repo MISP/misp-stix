@@ -190,7 +190,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 }
             )
         if sighting.get('source', ''):
-            opinion_args['x-misp-source'] = sighting['source']
+            opinion_args['x_misp_source'] = sighting['source']
         getattr(self, self._results_handling_function)(CustomOpinion(**opinion_args))
 
     def _handle_unpublished_report(self, report_args: dict) -> Report:
