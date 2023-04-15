@@ -222,9 +222,9 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                                  PROPERTIES                                  #
     ################################################################################
 
-    @classmethod
-    def generic_info_field(cls) -> str:
-        return f'STIX {cls.stix_version} Bundle imported with the MISP-STIX import feature.'
+    @property
+    def generic_info_field(self) -> str:
+        return f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
 
     @property
     def misp_event(self) -> MISPEvent:
@@ -318,14 +318,11 @@ class STIX2toMISPParser(STIXtoMISPParser):
             return
         definition_type = marking_definition.definition_type
         definition = marking_definition.definition[definition_type]
-        data_to_load = {
-            'tag_name': f"{definition_type}:{definition}",
-            'used': False
-        }
+        tag = f"{definition_type}:{definition}"
         try:
-            self._marking_definition[marking_definition.id] = data_to_load
+            self._marking_definition[marking_definition.id] = tag
         except AttributeError:
-            self._marking_definition = {marking_definition.id: data_to_load}
+            self._marking_definition = {marking_definition.id: tag}
 
     def _load_note(self, note: Note):
         self._check_uuid(note.id)
