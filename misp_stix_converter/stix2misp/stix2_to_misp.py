@@ -222,9 +222,9 @@ class STIX2toMISPParser(STIXtoMISPParser):
     #                                  PROPERTIES                                  #
     ################################################################################
 
-    @classmethod
-    def generic_info_field(cls) -> str:
-        return f'STIX {cls.stix_version} Bundle imported with the MISP-STIX import feature.'
+    @property
+    def generic_info_field(self) -> str:
+        return f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
 
     @property
     def misp_event(self) -> MISPEvent:
