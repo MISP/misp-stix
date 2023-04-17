@@ -311,7 +311,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_galaxy_as_container(self, stix_object: _GALAXY_OBJECTS_TYPING,
                                    object_type: str) -> dict:
         if object_type not in self._galaxies:
-            self._galaxies[object_type] = self._create_galaxy_args(
+            self._create_galaxy_args(
                 stix_object, object_type
             )
         return {
@@ -619,26 +619,30 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 'used': {self.misp_event.uuid: False}
             }
             if 'vulnerability' not in self._galaxies:
-                self._galaxies['vulnerability'] = self._create_galaxy_args(
-                    vulnerability
-                )
+                self._create_galaxy_args(vulnerability)
 
     ################################################################################
     #                 STIX Domain Objects (SDOs) PARSING FUNCTIONS                 #
     ################################################################################
 
     def _create_galaxy_args(self, stix_object: _GALAXY_OBJECTS_TYPING,
-                            galaxy_type: Optional[str] = None) -> MISPGalaxy:
+                            galaxy_type: Optional[str] = None):
+        misp_galaxy = MISPGalaxy()
         if galaxy_type is None:
             galaxy_type = stix_object.type
-        misp_galaxy = MISPGalaxy()
+        mapping = self._mapping.galaxy_name_mapping[galaxy_type]
+        version = getattr(stix_object, 'spec_version', '2.0')
+        galaxy_type = f'stix-{version}-{galaxy_type}'
+        name = f"STIX {version} {mapping['name']}"
         misp_galaxy.from_dict(
             **{
-                'type': galaxy_type,
-                **self._mapping.galaxy_name_mapping[galaxy_type]
+                'type': galaxy_type, 'name': name,
+                'description': mapping['description'],
+                'uuid': self._create_v5_uuid(name),
+                'version': version
             }
         )
-        return misp_galaxy
+        self._galaxies[galaxy_type] = misp_galaxy
 
     def _parse_country_cluster(self, location: Location) -> MISPGalaxyCluster:
         country_args = self._create_cluster_args(location, 'country')

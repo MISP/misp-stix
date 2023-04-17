@@ -224,7 +224,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 'used': {self.misp_event.uuid: False}
             }
             if galaxy_type not in self._galaxies:
-                self._galaxies[galaxy_type] = self._create_galaxy_args(
+                self._create_galaxy_args(
                     galaxy_description, galaxy_type, custom_galaxy.x_misp_name
                 )
 
@@ -402,7 +402,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 'description': description
             }
         )
-        return misp_galaxy
+        self._galaxies[galaxy_type] = misp_galaxy
 
     def _parse_attack_pattern_object(
             self, attack_pattern: _ATTACK_PATTERN_TYPING):
@@ -484,7 +484,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             stix_object, galaxy_type
         )
         if galaxy_type not in self._galaxies:
-            self._galaxies[galaxy_type] = self._create_galaxy_args(
+            self._create_galaxy_args(
                 galaxy_description, galaxy_type, galaxy_name
             )
         return {
