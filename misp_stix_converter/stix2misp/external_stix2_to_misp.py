@@ -1961,7 +1961,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             **{
                 'type': 'text',
                 'object_relation': 'version',
-                'value': f"stix {getattr(indicator, 'spec_version', '2.0'}"
+                'value': f"stix {getattr(indicator, 'spec_version', '2.0')}"
             }
         )
         misp_object.add_attribute(
