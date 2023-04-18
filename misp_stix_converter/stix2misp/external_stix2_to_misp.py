@@ -631,15 +631,18 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if galaxy_type is None:
             galaxy_type = stix_object.type
         mapping = self._mapping.galaxy_name_mapping[galaxy_type]
-        version = getattr(stix_object, 'spec_version', '2.0')
-        galaxy_type = f'stix-{version}-{galaxy_type}'
-        name = f"STIX {version} {mapping['name']}"
+        name = mapping['name']
+        galaxy_args = {'description': mapping['description']}
+        if galaxy_type not in ('country', 'region'):
+            version = getattr(stix_object, 'spec_version', '2.0')
+            name = f"STIX {version} {name}"
+            galaxy_args.update(
+                {'uuid': self._create_v5_uuid(name), 'version': version}
+            )
+            galaxy_type = f'stix-{version}-{galaxy_type}'
         misp_galaxy.from_dict(
             **{
-                'type': galaxy_type, 'name': name,
-                'description': mapping['description'],
-                'uuid': self._create_v5_uuid(name),
-                'version': version
+                'type': galaxy_type, 'name': name, **galaxy_args
             }
         )
         self._galaxies[galaxy_type] = misp_galaxy
