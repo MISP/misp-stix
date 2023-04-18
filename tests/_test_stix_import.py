@@ -4,7 +4,6 @@
 import json
 from base64 import b64encode
 from collections import defaultdict
-from datetime import datetime
 from misp_stix_converter import (
     ExternalSTIX2toMISPMapping, ExternalSTIX2toMISPParser,
     InternalSTIX2toMISPParser)
