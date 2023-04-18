@@ -329,16 +329,13 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         galaxy = galaxies[0]
         self.assertEqual(len(galaxy.clusters), 1)
         cluster = galaxy.clusters[0]
+        version = getattr(stix_object, 'spec_version', '2.0')
         self._assert_multiple_equal(
-            galaxy.type, cluster.type, stix_object.type
+            galaxy.type, cluster.type, f'stix-{version}-{stix_object.type}'
         )
-        self.assertEqual(
-            galaxy.name, self._galaxy_name_mapping[stix_object.type]['name']
-        )
-        self.assertEqual(
-            galaxy.description,
-            self._galaxy_name_mapping[stix_object.type]['description']
-        )
+        mapping = self._galaxy_name_mapping[stix_object.type]
+        self.assertEqual(galaxy.name, f"STIX {version} {mapping['name']}")
+        self.assertEqual(galaxy.description, mapping['description'])
         self.assertEqual(cluster.value, stix_object.name)
         if hasattr(stix_object, 'description'):
             self.assertEqual(cluster.description, stix_object.description)

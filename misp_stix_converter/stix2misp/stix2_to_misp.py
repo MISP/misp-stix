@@ -626,29 +626,33 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 misp_galaxy.clusters.append(cluster)
             yield misp_galaxy
 
-    @staticmethod
-    def _create_cluster_args(stix_object: _GALAXY_OBJECTS_TYPING,
+    def _create_cluster_args(self, stix_object: _GALAXY_OBJECTS_TYPING,
                              galaxy_type: Union[None, str],
                              description: Optional[str] = None,
                              cluster_value: Optional[str] = None) -> dict:
-        if galaxy_type is None:
-            galaxy_type = stix_object.type
-        if cluster_value is None:
-            cluster_value = stix_object.name
-        if description is not None:
-            return {
-                'type': galaxy_type,
-                'value': cluster_value,
-                'description': description
-            }
+        value = cluster_value or stix_object.name
         cluster_args = {
-            'type': galaxy_type,
-            'value': cluster_value
+            'uuid': self._sanitise_uuid(stix_object.id), 'value': value
         }
+        if galaxy_type is None:
+            version = getattr(stix_object, 'spec_version', '2.0')
+            name = self._mapping.galaxy_name_mapping[stix_object.type]['name']
+            name = f'STIX {version} {name}'
+            cluster_args.update(
+                {
+                    'version': version,
+                    'collection_uuid': self._create_v5_uuid(name)
+                }
+            )
+            galaxy_type = f'stix-{version}-{stix_object.type}'
+        cluster_args['type'] = galaxy_type
+        if description is not None:
+            cluster_args['description'] = description
+            return cluster_args
         if hasattr(stix_object, 'description'):
             cluster_args['description'] = stix_object.description
             return cluster_args
-        cluster_args['description'] = cluster_value.capitalize()
+        cluster_args['description'] = value.capitalize()
         return cluster_args
 
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
