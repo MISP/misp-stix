@@ -637,7 +637,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             version = getattr(stix_object, 'spec_version', '2.0')
             name = f"STIX {version} {name}"
             galaxy_args.update(
-                {'uuid': self._create_v5_uuid(name), 'version': version}
+                {
+                    'uuid': self._create_v5_uuid(name),
+                    'version': version.strip('.')
+                }
             )
             galaxy_type = f'stix-{version}-{galaxy_type}'
         misp_galaxy.from_dict(
