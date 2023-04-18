@@ -639,7 +639,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             galaxy_args.update(
                 {
                     'uuid': self._create_v5_uuid(name),
-                    'version': version.strip('.')
+                    'version': ''.join(version.split('.'))
                 }
             )
             galaxy_type = f'stix-{version}-{galaxy_type}'

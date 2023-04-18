@@ -640,7 +640,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
             name = f'STIX {version} {name}'
             cluster_args.update(
                 {
-                    'version': version.strip('.'),
+                    'version': ''.join(version.split('.')),
                     'collection_uuid': self._create_v5_uuid(name)
                 }
             )
