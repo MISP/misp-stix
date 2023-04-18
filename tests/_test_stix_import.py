@@ -334,7 +334,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             galaxy.type, cluster.type, f'stix-{version}-{stix_object.type}'
         )
         self._assert_multiple_equal(
-            galaxy.version, cluster.version, version.strip('.')
+            galaxy.version, cluster.version, ''.join(version.split('.'))
         )
         mapping = self._galaxy_name_mapping[stix_object.type]
         self._assert_multiple_equal(
