@@ -630,9 +630,9 @@ class STIX2toMISPParser(STIXtoMISPParser):
                              galaxy_type: Union[None, str],
                              description: Optional[str] = None,
                              cluster_value: Optional[str] = None) -> dict:
+        value = cluster_value or stix_object.name
         cluster_args = {
-            'uuid': self._sanitise_uuid(stix_object.id),
-            'value': cluster_value or stix_object.name
+            'uuid': self._sanitise_uuid(stix_object.id), 'value': value
         }
         if galaxy_type is None:
             version = getattr(stix_object, 'spec_version', '2.0')
@@ -652,7 +652,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         if hasattr(stix_object, 'description'):
             cluster_args['description'] = stix_object.description
             return cluster_args
-        cluster_args['description'] = cluster_value.capitalize()
+        cluster_args['description'] = value.capitalize()
         return cluster_args
 
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
