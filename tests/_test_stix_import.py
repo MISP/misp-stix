@@ -7,7 +7,7 @@ from collections import defaultdict
 from misp_stix_converter import (
     ExternalSTIX2toMISPMapping, ExternalSTIX2toMISPParser,
     InternalSTIX2toMISPParser)
-from uuid import UUID
+from uuid import UUID, uuid5
 from ._test_stix import TestSTIX
 from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
 
@@ -328,11 +328,19 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         galaxy = galaxies[0]
         self.assertEqual(len(galaxy.clusters), 1)
         cluster = galaxy.clusters[0]
+        self.assertEqual(cluster.uuid, stix_object.id.split('--')[1])
         version = getattr(stix_object, 'spec_version', '2.0')
         self._assert_multiple_equal(
             galaxy.type, cluster.type, f'stix-{version}-{stix_object.type}'
         )
+        self._assert_multiple_equal(
+            galaxy.version, cluster.version, version.strip('.')
+        )
         mapping = self._galaxy_name_mapping[stix_object.type]
+        self._assert_multiple_equal(
+            galaxy.uuid, cluster.collection_uuid,
+            uuid5(self._UUIDv4, galaxy.name)
+        )
         self.assertEqual(galaxy.name, f"STIX {version} {mapping['name']}")
         self.assertEqual(galaxy.description, mapping['description'])
         self.assertEqual(cluster.value, stix_object.name)
