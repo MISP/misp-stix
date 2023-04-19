@@ -632,14 +632,17 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             galaxy_type = stix_object.type
         mapping = self._mapping.galaxy_name_mapping[galaxy_type]
         name = mapping['name']
-        galaxy_args = {'description': mapping['description']}
+        galaxy_args = {
+            'description': mapping['description'], 'namespace': 'stix'
+        }
         if galaxy_type not in ('country', 'region'):
             version = getattr(stix_object, 'spec_version', '2.0')
             name = f"STIX {version} {name}"
             galaxy_args.update(
                 {
                     'uuid': self._create_v5_uuid(name),
-                    'version': ''.join(version.split('.'))
+                    'version': ''.join(version.split('.')),
+                    'icon': mapping['icon']
                 }
             )
             galaxy_type = f'stix-{version}-{galaxy_type}'
