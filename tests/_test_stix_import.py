@@ -27,6 +27,7 @@ class TestSTIX2Import(TestSTIX):
     def _check_misp_event_features(self, event, report, published=False):
         self.assertEqual(event.uuid, report.id.split('--')[1])
         self.assertEqual(event.info, report.name)
+        self.assertEqual(event.distribution, 0)
         self._assert_multiple_equal(
             event.timestamp,
             report.created,
@@ -38,6 +39,7 @@ class TestSTIX2Import(TestSTIX):
     def _check_misp_event_features_from_grouping(self, event, grouping):
         self.assertEqual(event.uuid, grouping.id.split('--')[1])
         self.assertEqual(event.info, grouping.name)
+        self.assertEqual(event.distribution, 0)
         self._assert_multiple_equal(
             event.timestamp,
             grouping.created,

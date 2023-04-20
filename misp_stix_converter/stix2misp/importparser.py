@@ -25,9 +25,10 @@ _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
 
 class STIXtoMISPParser:
-    def __init__(self, galaxies_as_tags: bool):
+    def __init__(self, distribution: int, galaxies_as_tags: bool):
         self._identifier: str
         self._clusters: dict = {}
+        self.__distribution = distribution
         if galaxies_as_tags:
             self.__galaxy_feature = 'as_tag_names'
             self.__synonyms_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.json'
@@ -41,6 +42,10 @@ class STIXtoMISPParser:
     ################################################################################
     #                                  PROPERTIES                                  #
     ################################################################################
+
+    @property
+    def distribution(self) -> int:
+        return self.__distribution
 
     @property
     def errors(self) -> dict:
