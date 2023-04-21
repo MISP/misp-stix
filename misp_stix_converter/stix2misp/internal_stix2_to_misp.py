@@ -60,8 +60,9 @@ _SCRIPT_TYPING = Union[
 
 class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def __init__(self, distribution: Optional[int] = 0,
+                 sharing_group_id: Optional[int] = None,
                  galaxies_as_tags: Optional[bool] = False):
-        super().__init__(distribution, galaxies_as_tags)
+        super().__init__(distribution, sharing_group_id, galaxies_as_tags)
         self._mapping = InternalSTIX2toMISPMapping()
 
     ################################################################################

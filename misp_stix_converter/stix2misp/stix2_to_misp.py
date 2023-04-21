@@ -138,8 +138,9 @@ _VULNERABILITY_TYPING = Union[
 
 
 class STIX2toMISPParser(STIXtoMISPParser):
-    def __init__(self, distribution: int, galaxies_as_tags: bool):
-        super().__init__(distribution, galaxies_as_tags)
+    def __init__(self, distribution: int, sharing_group_id: Union[int, None],
+                 galaxies_as_tags: bool):
+        super().__init__(distribution, sharing_group_id, galaxies_as_tags)
         self._creators: set = set()
         self._mapping: Union[
             ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping
@@ -1013,22 +1014,28 @@ class STIX2toMISPParser(STIXtoMISPParser):
 
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
-        misp_event.from_dict(
-            uuid=self._identifier.split('--')[1],
-            info=self.generic_info_field,
-            distribution=self.distribution
-        )
+        event_args = {
+            'uuid': self._identifier.split('--')[1],
+            'info': self.generic_info_field,
+            'distribution': self.distribution
+        }
+        if self.distribution == 4 and self.sharing_group_id is not None:
+            event_args['sharing_group_id'] = self.sharing_group_id
+        misp_event.from_dict(**event_args)
         return misp_event
 
     def _create_misp_event(
             self, stix_object: _GROUPING_REPORT_TYPING) -> MISPEvent:
         misp_event = MISPEvent(force_timestamps=True)
         self._sanitise_object_uuid(misp_event, stix_object.id)
-        misp_event.from_dict(
-            info=getattr(stix_object, 'name', self.generic_info_field),
-            distribution=self.distribution,
-            timestamp=self._timestamp_from_date(stix_object.modified)
-        )
+        event_args = {
+            'info': getattr(stix_object, 'name', self.generic_info_field),
+            'distribution': self.distribution,
+            'timestamp': self._timestamp_from_date(stix_object.modified)
+        }
+        if self.distribution == 4 and self.sharing_group_id is not None:
+            event_args['sharing_group_id'] = self.sharing_group_id
+        misp_event.from_dict(**event_args)
         self._handle_misp_event_tags(misp_event, stix_object)
         return misp_event
 
