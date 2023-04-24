@@ -111,7 +111,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._identifier = self._misp_event['uuid']
         self.__object_refs = []
         self.__relationships = []
-        self._set_identity()
+        orgc = self._misp_event.get('Orgc', {})
+        if any(orgc.get(feature) is None for feature in ('name', 'uuid')):
+            self._handle_default_identity()
+        else:
+            self.__identity_id = f"identity--{orgc['uuid']}"
+            if self.__identity_id not in self.unique_ids:
+                self.__ids[self.__identity_id] = self.__identity_id
+                identity = self._create_identity_object(orgc['name'])
+                self._append_SDO_without_refs(identity)
+                self.__index += 1
         self._parse_event_data()
         report = self._generate_event_report()
         self.__objects.insert(self.__index, report)
@@ -2903,16 +2912,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         if markings:
             self._handle_markings(identity_args, markings)
         return identity_args
-
-    def _set_identity(self) -> int:
-        orgc = self._misp_event['Orgc']
-        orgc_id = orgc['uuid']
-        self.__identity_id = f"identity--{orgc_id}"
-        if self.__identity_id not in self.unique_ids:
-            self.__ids[self.__identity_id] = self.__identity_id
-            identity = self._create_identity_object(orgc['name'])
-            self._append_SDO_without_refs(identity)
-            self.__index += 1
 
     ################################################################################
     #                     OBSERVABLE OBJECT PARSING FUNCTIONS.                     #
