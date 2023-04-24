@@ -1541,9 +1541,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         self._handle_attribute_galaxy_relationships(object_id, object_refs, timestamp)
 
     def _parse_location_event_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
-        object_refs = self._parse_location_galaxy(
-            galaxy, self._datetime_from_timestamp(self._misp_event['timestamp'])
-        )
+        object_refs = self._parse_location_galaxy(galaxy, self.event_timestamp)
         self._handle_object_refs(object_refs)
 
     def _parse_location_galaxy(self, galaxy: Union[MISPGalaxy, dict],
@@ -1648,12 +1646,11 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
         return Identity(**identity_args)
 
     def _create_identity_object(self, orgname: str) -> Identity:
-        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
         identity_args = {
             'type': 'identity',
             'id': self.identity_id,
-            'created': timestamp,
-            'modified': timestamp,
+            'created': self.event_timestamp,
+            'modified': self.event_timestamp,
             'name': orgname,
             'identity_class': 'organization',
             'interoperability': True
