@@ -21,6 +21,7 @@ _label_fields = ('type', 'category', 'to_ids')
 _misp_time_fields = ('first_seen', 'last_seen')
 _object_attributes_additional_fields = ('category', 'comment', 'to_ids', 'uuid')
 _object_attributes_fields = ('type', 'object_relation', 'value')
+_special_characters = (' ', '.')
 _stix_time_fields = {
     'indicator': ('valid_from', 'valid_until'),
     'observed-data': ('first_observed', 'last_observed')
@@ -112,16 +113,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self.__event_timestamp = self._handle_event_timestamp()
         self.__object_refs = []
         self.__relationships = []
-        orgc = self._misp_event.get('Orgc', {})
-        if any(orgc.get(feature) is None for feature in ('name', 'uuid')):
-            self._handle_default_identity()
-        else:
-            self.__identity_id = f"identity--{orgc['uuid']}"
-            if self.__identity_id not in self.unique_ids:
-                self.__ids[self.__identity_id] = self.__identity_id
-                identity = self._create_identity_object(orgc['name'])
-                self._append_SDO_without_refs(identity)
-                self.__index += 1
+        self._handle_identity_from_event()
         self._parse_event_data()
         report = self._generate_event_report()
         self.__objects.insert(self.__index, report)
@@ -129,13 +121,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     def _define_stix_object_id(self, feature: str, misp_object: Union[MISPObject, dict]) -> str:
         return f"{feature}--{misp_object['uuid']}"
 
-    def _handle_default_identity(self) -> str:
-        identity_id = self._mapping.misp_identity_args['id']
-        if identity_id not in self.unique_ids:
+    def _handle_default_identity(self):
+        self.__identity_id = self._mapping.misp_identity_args['id']
+        if self.identity_id not in self.unique_ids:
             identity = self._create_identity(self._mapping.misp_identity_args)
             self._append_SDO_without_refs(identity)
-            self.__ids[identity_id] = identity_id
-        return identity_id
+            self.__ids[self.identity_id] = self.identity_id
 
     def _handle_event_timestamp(self) -> datetime:
         event_timestamp = self._misp_event.get('timestamp')
@@ -143,21 +134,37 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             return self._datetime_from_timestamp(event_timestamp)
         return datetime.now()
 
+    def _handle_identity_from_event(self) -> str:
+        orgc = self._misp_event.get('Orgc', {})
+        if any(orgc.get(feature) is None for feature in ('name', 'uuid')):
+            if not orgc:
+                self._missing_orgc_error()
+            else:
+                self._missing_orgc_field_error(orgc)
+            self._handle_default_identity()
+        else:
+            self.__identity_id = f"identity--{orgc['uuid']}"
+            if self.identity_id not in self.unique_ids:
+                self.__ids[self.identity_id] = self.identity_id
+                identity = self._create_identity_object(orgc['name'])
+                self._append_SDO_without_refs(identity)
+                self.__index += 1
+
     def _handle_identity_from_feed(self, event: dict) -> str:
         if 'Orgc' in event:
-            identity_id = f"identity--{event['Orgc']['uuid']}"
-            if identity_id not in self.unique_ids:
+            self.__identity_id = f"identity--{event['Orgc']['uuid']}"
+            if self.identity_id not in self.unique_ids:
                 identity_args = {
                     'type': 'identity',
-                    'id': identity_id,
+                    'id': self.identity_id,
                     'name': event['Orgc']['name'],
                     'identity_class': 'organization'
                 }
                 identity = self._create_identity(identity_args)
                 self._append_SDO_without_refs(identity)
-                self.__ids[identity_id] = identity_id
-            return identity_id
-        return self._handle_default_identity()
+                self.__ids[self.identity_id] = self.identity_id
+        else:
+            self._handle_default_identity()
 
     def _initiate_attributes_parsing(self):
         self.__objects = []
@@ -254,7 +261,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
 
     def _generate_event_report(self):
         report_args = {
-            'name': self._misp_event['info'],
+            'name': self._misp_event.get(
+                'info',
+                f'MISP Event exported to STIX {self._version} with misp-stix.'
+            ),
             'created': self.event_timestamp,
             'modified': self.event_timestamp,
             'labels': [
@@ -2574,7 +2584,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     meta_args, values if isinstance(values, list) else [values]
                 )
             else:
-                feature = key.replace(' ', '_').replace('-', '_')
+                feature = self._sanitise_meta_field(key)#, strict=True)
                 meta_args[f"x_misp_{feature}"] = values
         if any(key.startswith('x_misp_') for key in meta_args.keys()):
             meta_args['allow_custom'] = True
@@ -2808,7 +2818,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'interoperability': True
         }
         if cluster.get('meta'):
-            custom_args['x_misp_meta'] = cluster['meta']
+            custom_args['x_misp_meta'] = {
+                self._sanitise_meta_field(key): value for key, value
+                in cluster['meta'].items()
+            }
         if timestamp is None:
             if not cluster.get('timestamp'):
                 return custom_args
@@ -3605,6 +3618,15 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     }
                 )
             self.__relationships.append(relationship)
+
+    @staticmethod
+    def _sanitise_meta_field(key: str, strict: Optional[bool] = False) -> str:
+        for special_character in _special_characters:
+            if special_character in key:
+                key = key.replace(special_character, '_')
+        if strict and '-' in key:
+            return key.replace('-', '_')
+        return key
 
     def _sanitize_registry_key_value(self, value: str) -> str:
         sanitized = self._sanitize_value(value.strip()).replace('\\', '\\\\')
