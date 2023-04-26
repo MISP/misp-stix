@@ -170,7 +170,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self.__objects = []
         self.__object_refs = []
         self.__relationships = []
-        self.__identity_id = self._handle_default_identity()
+        self._handle_default_identity()
         self.__initiated = True
 
     def _initiate_events_parsing(self):
