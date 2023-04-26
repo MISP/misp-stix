@@ -236,6 +236,17 @@ class MISPtoSTIXParser:
         message = f'{galaxy_type} galaxy in event not mapped.'
         self.__warnings[self._identifier].add(message)
 
+    def _missing_orgc_error(self):
+        self.__errors[self._identifier].append(f'Missing Orgc field.')
+
+    def _missing_orgc_field_error(self, orgc: dict):
+        missing = (field for field in ('name', 'uuid') if field not in orgc)
+        self.__errors[self._identifier].append(
+            f"Error with the Orgc field missing its {' and '.join(missing)}"
+            f"{'values' if len(missing) > 1 else 'value'}. Please make sure"
+            f" both the name and uuid values are provided."
+        )
+
     def _object_error(self, misp_object: dict, exception: Exception):
         features = f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
         tb = self._parse_traceback(exception)
