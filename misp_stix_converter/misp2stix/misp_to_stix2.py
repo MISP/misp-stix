@@ -271,7 +271,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 'Threat-Report',
                 'misp:tool="MISP-STIX-Converter"'
             ],
-            'created_by_ref': self.__identity_id,
+            'created_by_ref': self.identity_id,
             'interoperability': True
         }
         markings = self._handle_event_tags_and_galaxies()
@@ -404,7 +404,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'type': 'indicator',
             'labels': self._create_labels(attribute),
             'kill_chain_phases': self._create_killchain(attribute['category']),
-            'created_by_ref': self.__identity_id,
+            'created_by_ref': self.identity_id,
             'interoperability': True
         }
         if indicator_args is not None:
@@ -432,7 +432,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'type': 'observed-data',
             'labels': self._create_labels(attribute),
             'number_observed': 1,
-            'created_by_ref': self.__identity_id,
+            'created_by_ref': self.identity_id,
             'allow_custom': True,
             'interoperability': True
         }
@@ -501,7 +501,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'id': campaign_id,
             'type': 'campaign',
             'name': attribute['value'],
-            'created_by_ref': self.__identity_id,
+            'created_by_ref': self.identity_id,
             'labels': self._create_labels(attribute),
             'interoperability': True,
             'created': timestamp,
@@ -526,7 +526,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'created': timestamp,
             'modified': timestamp,
             'labels': self._create_labels(attribute),
-            'created_by_ref': self.__identity_id,
+            'created_by_ref': self.identity_id,
             'x_misp_value': attribute['value'],
             'x_misp_type': attribute['type'],
             'x_misp_category': attribute['category'],
@@ -846,7 +846,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'type': 'vulnerability',
             'name': attribute['value'],
             'external_references': [self._get_vulnerability_references(attribute['value'])],
-            'created_by_ref': self.__identity_id,
+            'created_by_ref': self.identity_id,
             'labels': self._create_labels(attribute),
             'interoperability': True,
             'created': timestamp,
@@ -935,7 +935,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                     misp_object,
                     to_ids=self._fetch_ids_flag(misp_object['Attribute'])
                 ),
-                'created_by_ref': self.__identity_id,
+                'created_by_ref': self.identity_id,
                 'created': timestamp,
                 'modified': timestamp,
                 'interoperability': True
@@ -965,7 +965,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'type': 'indicator',
             'labels': self._create_object_labels(misp_object, to_ids=True),
             'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
-            'created_by_ref': self.__identity_id,
+            'created_by_ref': self.identity_id,
             'pattern': f'[{" AND ".join(pattern)}]',
             'allow_custom': True,
             'interoperability': True
@@ -995,7 +995,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'type': 'observed-data',
             'labels': self._create_object_labels(misp_object, to_ids=False),
             'number_observed': 1,
-            'created_by_ref': self.__identity_id,
+            'created_by_ref': self.identity_id,
             'allow_custom': True,
             'interoperability': True
         }
@@ -1264,7 +1264,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             'created': timestamp,
             'modified': timestamp,
             'labels': self._create_object_labels(misp_object),
-            'created_by_ref': self.__identity_id,
+            'created_by_ref': self.identity_id,
             'x_misp_name': misp_object['name'],
             'x_misp_meta_category': misp_object['meta-category'],
             'x_misp_attributes': [
@@ -2920,7 +2920,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
                 misp_object,
                 to_ids=self._fetch_ids_flag(misp_object['Attribute'])
             ),
-            'created_by_ref': self.__identity_id,
+            'created_by_ref': self.identity_id,
             'interoperability': True,
             'identity_class': identity_class,
         }
