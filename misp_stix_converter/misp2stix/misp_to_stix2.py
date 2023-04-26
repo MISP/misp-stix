@@ -75,7 +75,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
         self._identifier = 'attribute feed'
         if not self.__initiated:
             self._initiate_feed_parsing()
-        self.__identity_id = self._handle_identity_from_feed(attribute.get('Event', {}))
+        self._handle_identity_from_feed(attribute.get('Event', {}))
         if 'Attribute' in attribute:
             attribute = attribute['Attribute']
         self._resolve_attribute(attribute)
