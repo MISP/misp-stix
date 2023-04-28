@@ -69,8 +69,8 @@ class CustomMispObject():
     [
         ('id', IDProperty('x-misp-galaxy-cluster')),
         ('labels', ListProperty(StringProperty, required=True)),
-        ('created', TimestampProperty(required=True, precision='millisecond')),
-        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        ('created', TimestampProperty(precision='millisecond')),
+        ('modified', TimestampProperty(precision='millisecond')),
         ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.1')),
         ('x_misp_name', StringProperty(required=True)),
         ('x_misp_type', StringProperty(required=True)),
