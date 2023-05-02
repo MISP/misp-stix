@@ -12,9 +12,9 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
         cluster_to_stix_object = {}
         galaxy_types_mapping = {}
         for galaxy_type in self.generic_galaxy_types:
-            key = f'stix-2.1-{galaxy_type}'
+            key = f'stix-2.0-{galaxy_type}'
             cluster_to_stix_object[key] = galaxy_type
-            feature = f'_parse_{galaxy_type}_{{}}_galaxy'
+            feature = f"_parse_{galaxy_type.replace('-', '_')}_{{}}_galaxy"
             galaxy_types_mapping[key] = feature
         self._declare_attributes_mapping(
             galaxy_updates={
