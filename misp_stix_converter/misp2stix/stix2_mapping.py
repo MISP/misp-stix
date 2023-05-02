@@ -50,6 +50,10 @@ class MISPtoSTIX2Mapping:
             'mitre-pre-attack',
             'reference_from_CAPEC'
         )
+        self.__generic_galaxy_types = (
+            'attack-pattern', 'campaign', 'course-of-actiion', 'intrusion-set',
+            'malware', 'threat-actor', 'tool', 'vulnerability'
+        )
 
     def _declare_attributes_mapping(self, attribute_updates: Optional[dict]=None,
                                     galaxy_updates: Optional[dict]=None):
@@ -436,6 +440,7 @@ class MISPtoSTIX2Mapping:
             'reddit-account': '_parse_account_object_with_attachment',
             'registry-key': '_parse_registry_key_object',
             'script': '_parse_script_object',
+            'stix2-pattern': '_parse_stix_pattern_object',
             'telegram-account': '_parse_account_object',
             'twitter-account': '_parse_account_object_with_attachment',
             'url': '_parse_url_object',
@@ -899,6 +904,13 @@ class MISPtoSTIX2Mapping:
             "SOCK_RDM",
             "SOCK_SEQPACKET"
         )
+        self.__stix_pattern_object_mapping = Mapping(
+            **{
+                'comment': 'description',
+                'stix2-pattern': 'pattern',
+                'version': 'pattern_version'
+            }
+        )
         self.__telegram_account_object_mapping = Mapping(
             id = 'user_id',
             username = 'account_login'
@@ -1141,6 +1153,10 @@ class MISPtoSTIX2Mapping:
         return self.__galaxy_types_mapping
 
     @property
+    def generic_galaxy_types(self) -> tuple:
+        return self.__generic_galaxy_types
+
+    @property
     def github_user_data_fields(self) -> tuple:
         return self.__github_user_data_fields
 
@@ -1371,6 +1387,10 @@ class MISPtoSTIX2Mapping:
     @property
     def source_names(self) -> tuple:
         return self.__source_names
+
+    @property
+    def stix_pattern_object_mapping(self) -> dict:
+        return self.__stix_pattern_object_mapping
 
     @property
     def telegram_account_object_mapping(self) -> dict:

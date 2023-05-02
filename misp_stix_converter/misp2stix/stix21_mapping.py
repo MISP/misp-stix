@@ -22,19 +22,25 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
                 '_parse_patterning_language_attribute'
             )
         )
-        v21_specific_galaxy_mapping = {
-            'cluster_to_stix_object': {
-                'country': 'location',
-                'region': 'location'
-            },
-            'galaxy_types_mapping': {
-                'country': '_parse_location_{}_galaxy',
-                'region': '_parse_location_{}_galaxy'
-            }
+        cluster_to_stix_object = {
+            'country': 'location',
+            'region': 'location'
         }
+        galaxy_types_mapping = {
+            'country': '_parse_location_{}_galaxy',
+            'region': '_parse_location_{}_galaxy'
+        }
+        for galaxy_type in self.generic_galaxy_types:
+            key = f'stix-2.0-{galaxy_type}'
+            cluster_to_stix_object[key] = galaxy_type
+            feature = f"_parse_{galaxy_type.replace('-', '_')}_{{}}_galaxy"
+            galaxy_types_mapping[key] = feature
         self._declare_attributes_mapping(
             attribute_updates=v21_specific_attribute_mapping,
-            galaxy_updates=v21_specific_galaxy_mapping
+            galaxy_updates={
+                'cluster_to_stix_object': cluster_to_stix_object,
+                'galaxy_types_mapping': galaxy_types_mapping
+            }
         )
         self.__confidence_tags = {
             'misp:confidence-level="completely-confident"': 100,

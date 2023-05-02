@@ -9,7 +9,19 @@ from stix2.v20.common import TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED
 class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     def __init__(self):
         super().__init__()
-        self._declare_attributes_mapping()
+        cluster_to_stix_object = {}
+        galaxy_types_mapping = {}
+        for galaxy_type in self.generic_galaxy_types:
+            key = f'stix-2.0-{galaxy_type}'
+            cluster_to_stix_object[key] = galaxy_type
+            feature = f"_parse_{galaxy_type.replace('-', '_')}_{{}}_galaxy"
+            galaxy_types_mapping[key] = feature
+        self._declare_attributes_mapping(
+            galaxy_updates={
+                'cluster_to_stix_object': cluster_to_stix_object,
+                'galaxy_types_mapping': galaxy_types_mapping
+            }
+        )
         self.__malware_sample_additional_observable_values = {"mime_type": "application/zip"}
         self.__malware_sample_additional_pattern_values = "file:content_ref.mime_type = 'application/zip'"
         self.__tlp_markings = Mapping(
