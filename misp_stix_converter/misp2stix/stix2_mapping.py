@@ -50,6 +50,10 @@ class MISPtoSTIX2Mapping:
             'mitre-pre-attack',
             'reference_from_CAPEC'
         )
+        self.__generic_galaxy_types = (
+            'attack-pattern', 'campaign', 'course-of-actiion', 'intrusion-set',
+            'malware', 'threat-actor', 'tool', 'vulnerability'
+        )
 
     def _declare_attributes_mapping(self, attribute_updates: Optional[dict]=None,
                                     galaxy_updates: Optional[dict]=None):
@@ -1139,6 +1143,10 @@ class MISPtoSTIX2Mapping:
     @property
     def galaxy_types_mapping(self) -> dict:
         return self.__galaxy_types_mapping
+
+    @property
+    def generic_galaxy_types(self) -> tuple:
+        return self.__generic_galaxy_types
 
     @property
     def github_user_data_fields(self) -> tuple:
