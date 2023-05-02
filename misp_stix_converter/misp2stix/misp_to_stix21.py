@@ -668,37 +668,6 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _handle_file_observable_objects(self, args: dict, objects: list):
         objects.insert(0, self._create_file_object(args))
 
-    def _handle_patterning_object_indicator(self, misp_object: Union[MISPObject, dict], indicator_args: dict):
-        indicator_id = getattr(self, self._id_parsing_function['object'])(
-            'indicator', misp_object
-        )
-        indicator_args.update(
-            {
-                'id': indicator_id,
-                'type': 'indicator',
-                'labels': self._create_object_labels(misp_object, to_ids=True),
-                'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
-                'created_by_ref': self.identity_id,
-                'allow_custom': True,
-                'interoperability': True
-            }
-        )
-        indicator_args.update(self._handle_indicator_time_fields(misp_object))
-        markings = self._handle_object_tags_and_galaxies(
-            misp_object,
-            indicator_id,
-            indicator_args['modified']
-        )
-        if markings:
-            self._handle_markings(indicator_args, markings)
-        if misp_object.get('ObjectReference'):
-            self._parse_object_relationships(
-                misp_object['ObjectReference'],
-                indicator_id,
-                indicator_args['modified']
-            )
-        self._append_SDO(Indicator(**indicator_args))
-
     def _parse_account_object_observable(self, misp_object: Union[MISPObject, dict], account_type: str):
         account_args = self._parse_account_args(misp_object['Attribute'], account_type)
         account_args['id'] = getattr(self, self._id_parsing_function['object'])(
@@ -1661,12 +1630,9 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
     def _create_indicator(indicator_args: dict) -> Indicator:
         indicator_args['spec_version'] = '2.1'
         if indicator_args.get('pattern_type') is None:
-            indicator_args.update(
-                {
-                    "pattern_type": "stix",
-                    "pattern_version": "2.1",
-                }
-            )
+            indicator_args['pattern_type'] = 'stix'
+        if indicator_args.get('pattern_version') is None:
+            indicator_args['pattern_version'] = '2.1'
         return Indicator(**indicator_args)
 
     @staticmethod

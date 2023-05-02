@@ -2003,6 +2003,18 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
             object_args.update(self._handle_observable_multiple_properties_with_data(attributes, misp_object['name']))
         self._handle_non_indicator_object(misp_object, object_args, object_type, killchain=True)
 
+    def _parse_stix_pattern_object(self, misp_object: Union[MISPObject, dict]):
+        indicator_args = {}
+        for attribute in misp_object['Attribute']:
+            relation = attribute['object_relation']
+            if relation in self._mapping.stix_pattern_object_mapping:
+                feature = self._mapping.stix_pattern_object_mapping[relation]
+                if relation == 'version':
+                    indicator_args[feature] = attribute['value'].strip('stixSTIX ')
+                    continue
+                indicator_args[feature] = attribute['value']
+        self._handle_patterning_object_indicator(misp_object, indicator_args)
+
     def _parse_url_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'url'
@@ -3411,6 +3423,37 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser):
     @staticmethod
     def _create_regkey_pattern(key: str) -> str:
         return f"windows-registry-key:key = '{key}'"
+
+    def _handle_patterning_object_indicator(self, misp_object: Union[MISPObject, dict], indicator_args: dict):
+        indicator_id = getattr(self, self._id_parsing_function['object'])(
+            'indicator', misp_object
+        )
+        indicator_args.update(
+            {
+                'id': indicator_id,
+                'type': 'indicator',
+                'labels': self._create_object_labels(misp_object, to_ids=True),
+                'kill_chain_phases': self._create_killchain(misp_object['meta-category']),
+                'created_by_ref': self.identity_id,
+                'allow_custom': True,
+                'interoperability': True
+            }
+        )
+        indicator_args.update(self._handle_indicator_time_fields(misp_object))
+        markings = self._handle_object_tags_and_galaxies(
+            misp_object,
+            indicator_id,
+            indicator_args['modified']
+        )
+        if markings:
+            self._handle_markings(indicator_args, markings)
+        if misp_object.get('ObjectReference'):
+            self._parse_object_relationships(
+                misp_object['ObjectReference'],
+                indicator_id,
+                indicator_args['modified']
+            )
+        self._append_SDO(self._create_indicator(indicator_args))
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #

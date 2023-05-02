@@ -440,6 +440,7 @@ class MISPtoSTIX2Mapping:
             'reddit-account': '_parse_account_object_with_attachment',
             'registry-key': '_parse_registry_key_object',
             'script': '_parse_script_object',
+            'stix2-pattern': '_parse_stix_pattern_object',
             'telegram-account': '_parse_account_object',
             'twitter-account': '_parse_account_object_with_attachment',
             'url': '_parse_url_object',
@@ -902,6 +903,13 @@ class MISPtoSTIX2Mapping:
             "SOCK_RAW",
             "SOCK_RDM",
             "SOCK_SEQPACKET"
+        )
+        self.__stix_pattern_object_mapping = Mapping(
+            **{
+                'comment': 'description',
+                'stix2-pattern': 'pattern',
+                'version': 'pattern_version'
+            }
         )
         self.__telegram_account_object_mapping = Mapping(
             id = 'user_id',
@@ -1379,6 +1387,10 @@ class MISPtoSTIX2Mapping:
     @property
     def source_names(self) -> tuple:
         return self.__source_names
+
+    @property
+    def stix_pattern_object_mapping(self) -> dict:
+        return self.__stix_pattern_object_mapping
 
     @property
     def telegram_account_object_mapping(self) -> dict:
