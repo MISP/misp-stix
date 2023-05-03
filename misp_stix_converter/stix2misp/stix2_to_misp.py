@@ -12,6 +12,7 @@ from .exceptions import (
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import STIXtoMISPParser, _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
+from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
 from pymisp import (
@@ -137,7 +138,7 @@ _VULNERABILITY_TYPING = Union[
 ]
 
 
-class STIX2toMISPParser(STIXtoMISPParser):
+class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def __init__(self, distribution: int, sharing_group_id: Union[int, None],
                  galaxies_as_tags: bool):
         super().__init__(distribution, sharing_group_id, galaxies_as_tags)

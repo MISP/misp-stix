@@ -6,6 +6,7 @@ import json
 import os
 import re
 from .exportparser import MISPtoSTIXParser
+from abc import ABCMeta
 from base64 import b64encode
 from collections import defaultdict
 from datetime import datetime
@@ -32,7 +33,7 @@ class InvalidHashValueError(Exception):
     pass
 
 
-class MISPtoSTIX2Parser(MISPtoSTIXParser):
+class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def __init__(self, interoperability: bool):
         super().__init__()
         self.__ids: dict = {}

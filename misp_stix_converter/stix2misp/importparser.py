@@ -5,6 +5,7 @@ import json
 import subprocess
 import traceback
 from .exceptions import UnavailableGalaxyResourcesError
+from abc import ABCMeta
 from collections import defaultdict
 from pathlib import Path
 from pymisp import MISPEvent, MISPObject
@@ -24,7 +25,7 @@ _RFC_VERSIONS = (1, 3, 4, 5)
 _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
 
-class STIXtoMISPParser:
+class STIXtoMISPParser(metaclass=ABCMeta):
     def __init__(self, distribution: int, sharing_group_id: Union[int, None],
                  galaxies_as_tags: bool):
         self._identifier: str

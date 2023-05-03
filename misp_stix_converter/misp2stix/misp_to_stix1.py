@@ -6,6 +6,7 @@ import re
 import socket
 from .stix1_mapping import MISPtoSTIX1Mapping
 from .exportparser import MISPtoSTIXParser
+from abc import ABCMeta
 from base64 import b64encode
 from collections import defaultdict
 from cybox.core import Observable, ObservableComposition, RelatedObject
@@ -87,7 +88,7 @@ _OBSERVABLE_OBJECT_TYPES = Union[
 ]
 
 
-class MISPtoSTIX1Parser(MISPtoSTIXParser):
+class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def __init__(self, orgname: str, version: str):
         super().__init__()
         self._orgname = orgname

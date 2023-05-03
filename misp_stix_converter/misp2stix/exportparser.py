@@ -5,13 +5,14 @@ import traceback
 from .stix1_mapping import MISPtoSTIX1Mapping
 from .stix20_mapping import MISPtoSTIX20Mapping
 from .stix21_mapping import MISPtoSTIX21Mapping
+from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime, timezone
 from pymisp import MISPAttribute, MISPObject
 from typing import Optional, Union
 
 
-class MISPtoSTIXParser:
+class MISPtoSTIXParser(metaclass=ABCMeta):
     __composite_separators = ('|', '_')
     __published_fields = ('published', 'publish_timestamp')
     __PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
