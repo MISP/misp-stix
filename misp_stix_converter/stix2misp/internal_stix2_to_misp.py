@@ -13,8 +13,7 @@ from .stix2_to_misp import (
     _OBSERVED_DATA_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from collections import defaultdict
 from copy import deepcopy
-from datetime import datetime
-from pymisp import MISPAttribute, MISPGalaxy, MISPGalaxyCluster, MISPObject, MISPSighting
+from pymisp import MISPGalaxy, MISPGalaxyCluster, MISPObject, MISPSighting
 from stix2.v20.common import ExternalReference as ExternalReference_v20
 from stix2.v20.observables import (
     Process as Process_v20, WindowsPEBinaryExt as WindowsExtension_v20)
