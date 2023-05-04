@@ -1264,7 +1264,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                         section_object.add_attribute(
                             **{
                                 'value': hash_value,
-                                **self._mapping.file_hashes_object_mapping[
+                                **self._mapping.file_hashes_mapping[
                                     hash_type
                                 ]
                             }
@@ -1287,7 +1287,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     file_object.add_attribute(
                         **{
                             'value': value,
-                            **self._mapping.file_hashes_object_mapping[
+                            **self._mapping.file_hashes_mapping[
                                 hash_type
                             ]
                         }
@@ -1557,7 +1557,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     misp_object.add_attribute(
                         **{
                             'value': value,
-                            **self._mapping.file_hashes_object_mapping[
+                            **self._mapping.file_hashes_mapping[
                                 hash_type
                             ]
                         }
@@ -1951,7 +1951,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         )
         if 'values' in observable:
             values = observable['values'][0]
-            for feature, mapping in self._mapping.registry_key_values_object_mapping.items():
+            for feature, mapping in self._mapping.registry_key_values_mapping.items():
                 if hasattr(values, feature):
                     misp_object.add_attribute(
                         **{'value': getattr(values, feature), **mapping}
@@ -2041,7 +2041,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     )
         if getattr(observable, 'extensions', {}).get('unix-account-ext'):
             unix_extension = observable.extensions['unix-account-ext']
-            for feature, mapping in self._mapping.user_account_unix_extension_object_mapping.items():
+            for feature, mapping in self._mapping.user_account_unix_extension_mapping.items():
                 if hasattr(unix_extension, feature):
                     self._populate_object_attributes(
                         misp_object,
@@ -2334,7 +2334,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 section_object.add_attribute(
                     **{
                         'value': value,
-                        **self._mapping.file_hashes_object_mapping[feature]
+                        **self._mapping.file_hashes_mapping[feature]
                     }
                 )
             self._add_misp_object(section_object, indicator)
@@ -2651,7 +2651,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _object_from_registry_key_indicator(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('registry-key', indicator)
         mapping = self._mapping.registry_key_object_mapping
-        values_mapping = self._mapping.registry_key_values_object_mapping
+        values_mapping = self._mapping.registry_key_values_mapping
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
             if feature in mapping:
@@ -2705,10 +2705,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 misp_object.add_attribute(
                     **{
                         'value': value,
-                        **getattr(
-                            self._mapping,
-                            'user_account_unix_extension_object_mapping'
-                        )[
+                        **self._mapping.user_account_unix_extension_mapping[
                             feature.split('.')[-1]
                         ]
                     }

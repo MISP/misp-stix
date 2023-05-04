@@ -1018,7 +1018,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'directory', directory, object_id, observed_data
         )
         self._populate_object_attributes_from_observable(
-            'directory', directory, misp_object, reference, observed_data.id
+            'directory_object_mapping', directory, misp_object,
+            reference, observed_data.id
         )
         return self._add_misp_object(misp_object, observed_data)
 
@@ -1225,7 +1226,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'email', email_message, object_id, observed_data
         )
         self._populate_object_attributes_from_observable(
-            'email', email_message, misp_object, reference, observed_data.id
+            'email_object_mapping', email_message, misp_object,
+            reference, observed_data.id
         )
         if getattr(email_message, 'from_ref', None) in observable_objects:
             self._parse_email_observable_object_reference(
@@ -1347,11 +1349,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'file', file_object, object_id, observed_data
         )
         self._populate_object_attributes_from_observable(
-            'file', file_object, misp_object, reference, observed_data.id
+            'file_object_mapping', file_object, misp_object,
+            reference, observed_data.id
         )
         if hasattr(file_object, 'hashes'):
             self._populate_object_attributes_from_observable(
-                'file_hashes', file_object.hashes, misp_object,
+                'file_hashes_mapping', file_object.hashes, misp_object,
                 reference, observed_data.id
             )
         if hasattr(file_object, 'parent_directory_ref'):
@@ -1435,8 +1438,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     observed_data
                 )
                 return misp_attribute.uuid
-            if field in self._mapping.file_hashes_object_mapping:
-                attribute = self._mapping.file_hashes_object_mapping[field]
+            if field in self._mapping.file_hashes_mapping:
+                attribute = self._mapping.file_hashes_mapping[field]
                 misp_attribute = self._add_misp_attribute(
                     getattr(self, f'_handle_{feature}_attribute')(
                         file_object, field, attribute['type'], observed_data.id
@@ -1453,11 +1456,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'pe', reference, observed_data
         )
         self._populate_object_attributes_from_observable(
-            'pe', extension, misp_object, reference, observed_data.id
+            'pe_object_mapping', extension, misp_object, reference, observed_data.id
         )
         if hasattr(extension, 'optional_header'):
             self._populate_object_attributes_from_observable(
-                'pe_optional_header', extension, misp_object,
+                'pe_optional_header_mapping', extension, misp_object,
                 reference, observed_data.id
             )
         pe_object = self._add_misp_object(misp_object, observed_data)
@@ -1468,12 +1471,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     'pe-section', section_reference, observed_data
                 )
                 self._populate_object_attributes_from_observable(
-                    'pe_section', section, section_object,
+                    'pe_section_object_mapping', section, section_object,
                     section_reference, observed_data.id
                 )
                 if hasattr(section, 'hashes'):
                     self._populate_object_attributes_from_observable(
-                        'file_hashes', section.hashes, section_object,
+                        'file_hashes_mapping', section.hashes, section_object,
                         section_reference, observed_data.id
                     )
                 self._add_misp_object(section_object, observed_data)
@@ -1576,7 +1579,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         )
         socket_extension = network_traffic.extensions['socket-ext']
         self._populate_object_attributes_from_observable(
-            'network_socket_extension', socket_extension,
+            'network_socket_extension_mapping', socket_extension,
             misp_object, reference, observed_data.id
         )
         for index, protocol in enumerate(network_traffic.protocols):
@@ -1613,8 +1616,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             name, network_traffic, object_id, observed_data
         )
         self._populate_object_attributes_from_observable(
-            name.replace('-', '_'), network_traffic, misp_object,
-            reference, observed_data.id
+            f"{name.replace('-', '_')}_object_mapping", network_traffic,
+            misp_object, reference, observed_data.id
         )
         return misp_object
 
@@ -1699,7 +1702,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'process', process, process_id, observed_data
         )
         self._populate_object_attributes_from_observable(
-            'process', process, misp_object, reference, observed_data.id
+            'process_object_mapping', process, misp_object,
+            reference, observed_data.id
         )
         if hasattr(process, 'environment_variables'):
             value = ' '.join(
@@ -1791,14 +1795,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'registry-key', registry_key, object_id, observed_data
         )
         self._populate_object_attributes_from_observable(
-            'registry_key', registry_key, misp_object,
+            'registry_key_object_mapping', registry_key, misp_object,
             reference, observed_data.id
         )
         if 'values' not in registry_key.properties_populated():
             return self._add_misp_object(misp_object, observed_data)
         if len(registry_key['values']) == 1:
             self._populate_object_attributes_from_observable(
-                'registry_key_values', registry_key['values'], misp_object,
+                'registry_key_values_mapping', registry_key['values'], misp_object,
                 reference, observed_data.id
             )
             return self._add_misp_object(misp_object, observed_data)
@@ -1812,7 +1816,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 **self._parse_timeline(observed_data)
             )
             self._populate_object_attributes_from_observable(
-                'registry_key_values', registry_value, value_object,
+                'registry_key_values_mapping', registry_value, value_object,
                 value_reference, observed_data.id
             )
             self._add_misp_object(value_object, observed_data)
@@ -1861,7 +1865,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 'software', software, object_id, observed_data
             )
             self._populate_object_attributes_from_observable(
-                'software', software, misp_object, reference, observed_data.id
+                'software_object_mapping', software, misp_object, reference, observed_data.id
             )
             if hasattr(software, 'languages'):
                 for index, language in enumerate(software.languages):
@@ -1898,12 +1902,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 'user-account', user_account, object_id, observed_data
             )
             self._populate_object_attributes_from_observable(
-                'user_account', user_account, misp_object,
+                'user_account_object_mapping', user_account, misp_object,
                 reference, observed_data.id
             )
             if 'unix-account-ext' in getattr(user_account, 'extensions', {}):
                 self._populate_object_attributes_from_observable(
-                    'user_account_unix_extension',
+                    'user_account_unix_extension_mapping',
                     user_account.extensions['unix-account-ext'],
                     misp_object, reference, observed_data.id
                 )
@@ -1923,18 +1927,19 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             )
             if hasattr(x509_object, 'hashes'):
                 self._populate_object_attributes_from_observable(
-                    'x509_hashes', x509_object.hashes, misp_object,
+                    'x509_hashes_mapping', x509_object.hashes, misp_object,
                     reference, observed_data.id
                 )
             self._populate_object_attributes_from_observable(
-                'x509', x509_object, misp_object, reference, observed_data.id
+                'x509_object_mapping', x509_object, misp_object,
+                reference, observed_data.id
             )
             self._add_misp_object(misp_object, observed_data)
 
     def _populate_object_attributes_from_observable(
             self, feature: str, observable_object: _OBSERVABLE_OBJECTS_TYPING,
             misp_object: MISPObject, reference: str, observed_data_id: str):
-        mapping = getattr(self._mapping, f'{feature}_object_mapping')
+        mapping = getattr(self._mapping, feature)
         for field, attribute in mapping.items():
             if observable_object.get(field):
                 value = getattr(
@@ -2139,11 +2144,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 if 'sections' in keys:
                     if 'hashes' in keys:
                         _, _, _, index, _, hash_type = keys
-                        if hash_type in self._mapping.file_hashes_object_mapping:
+                        if hash_type in self._mapping.file_hashes_mapping:
                             sections_attributes[index.strip('[]')].append(
                                 {
                                     'value': value,
-                                    **self._mapping.file_hashes_object_mapping[
+                                    **self._mapping.file_hashes_mapping[
                                         hash_type
                                     ]
                                 }
@@ -2172,13 +2177,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         }
                     )
                     continue
-                if field in self._mapping.pe_optional_header_object_mapping:
+                if field in self._mapping.pe_optional_header_mapping:
                     pe_object.add_attribute(
                         **{
                             'value': value,
-                            **self._mapping.pe_optional_header_object_mapping[
-                                field
-                            ]
+                            **self._mapping.pe_optional_header_mapping[field]
                         }
                     )
                 else:
@@ -2588,11 +2591,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 continue
             if 'hashes' in keys:
                 field = keys[1]
-                if field in self._mapping.x509_hashes_object_mapping:
+                if field in self._mapping.x509_hashes_mapping:
                     attributes.append(
                         {
                             'value': value,
-                            **self._mapping.x509_hashes_object_mapping[field]
+                            **self._mapping.x509_hashes_mapping[field]
                         }
                     )
                 continue

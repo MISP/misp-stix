@@ -586,7 +586,7 @@ class STIX2toMISPMapping:
             protocol_family = domain_family_attribute,
             socket_type = {'type': 'text', 'object_relation': 'socket-type'}
         )
-        self.__registry_key_values_object_mapping = Mapping(
+        self.__registry_key_values_mapping = Mapping(
             data = self.data_attribute,
             data_type = self.data_type_attribute,
             name = self.name_attribute
@@ -596,7 +596,7 @@ class STIX2toMISPMapping:
             description = comment_attribute,
             pattern_version = version_attribute
         )
-        self.__user_account_unix_extenstion_object_mapping = Mapping(
+        self.__user_account_unix_extenstion_mapping = Mapping(
             gid = self.group_id_attribute,
             groups = self.groups_attribute,
             home_dir = self.home_dir_attribute,
@@ -932,8 +932,8 @@ class STIX2toMISPMapping:
         return self.__regions_mapping
 
     @property
-    def registry_key_values_object_mapping(self) -> dict:
-        return self.__registry_key_values_object_mapping
+    def registry_key_values_mapping(self) -> dict:
+        return self.__registry_key_values_mapping
 
     @property
     def regkey_attribute(self) -> dict:
@@ -1076,8 +1076,8 @@ class STIX2toMISPMapping:
         return self.__url_attribute
 
     @property
-    def user_account_unix_extension_object_mapping(self) -> dict:
-        return self.__user_account_unix_extenstion_object_mapping
+    def user_account_unix_extension_mapping(self) -> dict:
+        return self.__user_account_unix_extenstion_mapping
 
     @property
     def user_agent_attribute(self) -> dict:

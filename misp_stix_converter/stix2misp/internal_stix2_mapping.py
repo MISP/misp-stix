@@ -594,7 +594,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             x_misp_url = self.url_attribute,
             x_misp_user_avatar = user_avatar_attribute
         )
-        self.__file_hashes_object_mapping = Mapping(
+        self.__file_hashes_mapping = Mapping(
             **{
                 'AUTHENTIHASH': authentihash_attribute,
                 'IMPHASH': self.imphash_attribute,
@@ -1285,8 +1285,8 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__facebook_account_object_mapping
 
     @property
-    def file_hashes_object_mapping(self) -> dict:
-        return self.__file_hashes_object_mapping
+    def file_hashes_mapping(self) -> dict:
+        return self.__file_hashes_mapping
 
     @property
     def file_indicator_object_mapping(self) -> dict:

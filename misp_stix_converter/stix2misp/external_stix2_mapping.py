@@ -264,7 +264,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             message_id = self.message_id_attribute,
             subject = self.email_subject_attribute
         )
-        self.__file_hashes_object_mapping = Mapping(
+        self.__file_hashes_mapping = Mapping(
             **{
                 'MD5': self.md5_attribute,
                 'SHA-1': self.sha1_attribute,
@@ -330,7 +330,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             number_of_sections = self.number_of_sections_attribute,
             pe_type = self.type_attribute
         )
-        self.__pe_optional_header_object_mapping = Mapping(
+        self.__pe_optional_header_mapping = Mapping(
             address_of_entry_point = self.entrypoint_address_attribute
         )
         self.__pe_section_object_mapping = Mapping(
@@ -380,7 +380,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             credential_last_changed = self.password_last_changed_attribute,
             password_last_changed = self.password_last_changed_attribute
         )
-        self.__x509_hashes_object_mapping = Mapping(
+        self.__x509_hashes_mapping = Mapping(
             **{
                 'MD5': self.x509_md5_attribute,
                 'SHA-1': self.x509_sha1_attribute,
@@ -588,8 +588,8 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__email_object_mapping
 
     @property
-    def file_hashes_object_mapping(self) -> dict:
-        return self.__file_hashes_object_mapping
+    def file_hashes_mapping(self) -> dict:
+        return self.__file_hashes_mapping
 
     @property
     def file_object_fields(self) -> tuple:
@@ -628,10 +628,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__network_connection_object_reference_mapping
 
     @property
-    def network_socket_extension_object_mapping(self) -> dict:
-        return self.__network_socket_extension_object_mapping
-
-    @property
     def network_socket_object_reference_mapping(self) -> dict:
         return self.__network_socket_object_reference_mapping
 
@@ -656,8 +652,8 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__pe_object_mapping
 
     @property
-    def pe_optional_header_object_mapping(self) -> dict:
-        return self.__pe_optional_header_object_mapping
+    def pe_optional_header_mapping(self) -> dict:
+        return self.__pe_optional_header_mapping
 
     @property
     def pe_section_object_mapping(self) -> dict:
@@ -708,8 +704,8 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return self.__vulnerability_object_mapping
 
     @property
-    def x509_hashes_object_mapping(self) -> dict:
-        return self.__x509_hashes_object_mapping
+    def x509_hashes_mapping(self) -> dict:
+        return self.__x509_hashes_mapping
 
     @property
     def x509_object_mapping(self) -> dict:
