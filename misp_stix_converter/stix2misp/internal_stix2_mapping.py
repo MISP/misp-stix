@@ -386,43 +386,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_registration_date = {'type': 'datetime', 'object_relation': 'registration-date'},
         x_misp_text = __text_attribute
     )
-    __email_indicator_object_mapping = Mapping(
-        **{
-            'additional_header_fields.reply_to': STIX2toMISPMapping.reply_to_attribute(),
-            'additional_header_fields.x_mailer': STIX2toMISPMapping.x_mailer_attribute(),
-            'bcc_refs': {
-                'display_name': __bcc_display_name_attribute,
-                'value': __bcc_attribute
-            },
-            'body': STIX2toMISPMapping.email_body_attribute(),
-            'cc_refs': {
-                'display_name': __cc_display_name_attribute,
-                'value': __cc_attribute
-            },
-            'date': STIX2toMISPMapping.send_date_attribute(),
-            'from_ref.display_name': __from_display_name_attribute,
-            'from_ref.value': __from_attribute,
-            'message_id': STIX2toMISPMapping.message_id_attribute(),
-            'subject': STIX2toMISPMapping.email_subject_attribute(),
-            'to_refs': {
-                'display_name': __to_display_name_attribute,
-                'value': __to_attribute
-            },
-            'x_misp_attachment': __email_attachment_attribute,
-            'x_misp_from_domain': __from_domain_attribute,
-            'x_misp_ip_src': __ip_source_attribute,
-            'x_misp_message_id': STIX2toMISPMapping.message_id_attribute(),
-            'x_misp_mime_boundary': __mime_boundary_attribute,
-            'x_misp_received_header_hostname': __received_hostname_attribute,
-            'x_misp_received_header_ip': __received_ip_attribute,
-            'x_misp_reply_to_display_name': __reply_to_display_name_attribute,
-            'x_misp_return_path': __return_path_attribute,
-            'x_misp_screenshot': __screenshot_attribute,
-            'x_misp_thread_index': __thread_index_attribute,
-            'x_misp_user_agent': STIX2toMISPMapping.user_agent_attribute()
-        }
-    )
-    __email_observable_object_mapping = Mapping(
+    __email_object_mapping = Mapping(
         body = STIX2toMISPMapping.email_body_attribute(),
         date = STIX2toMISPMapping.send_date_attribute(),
         message_id = STIX2toMISPMapping.message_id_attribute(),
@@ -439,6 +403,27 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_screenshot = __screenshot_attribute,
         x_misp_thread_index = __thread_index_attribute,
         x_misp_user_agent = STIX2toMISPMapping.user_agent_attribute()
+    )
+    __email_pattern_mapping = Mapping(
+        **{
+            'additional_header_fields.reply_to': STIX2toMISPMapping.reply_to_attribute(),
+            'additional_header_fields.x_mailer': STIX2toMISPMapping.x_mailer_attribute(),
+            'bcc_refs': {
+                'display_name': __bcc_display_name_attribute,
+                'value': __bcc_attribute
+            },
+            'cc_refs': {
+                'display_name': __cc_display_name_attribute,
+                'value': __cc_attribute
+            },
+            'from_ref.display_name': __from_display_name_attribute,
+            'from_ref.value': __from_attribute,
+            'to_refs': {
+                'display_name': __to_display_name_attribute,
+                'value': __to_attribute
+            },
+            **__email_object_mapping
+        }
     )
     __employee_object_mapping = Mapping(
         name = {'type': 'full-name', 'object_relation': 'full-name'},
@@ -485,7 +470,28 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'VHASH': __vhash_attribute
         }
     )
-    __file_indicator_object_mapping = Mapping(
+    __file_object_mapping = Mapping(
+        accessed = STIX2toMISPMapping.access_time_attribute(),
+        atime = STIX2toMISPMapping.access_time_attribute(),
+        created = STIX2toMISPMapping.creation_time_attribute(),
+        ctime = STIX2toMISPMapping.creation_time_attribute(),
+        mime_type = STIX2toMISPMapping.mime_type_attribute(),
+        modified = STIX2toMISPMapping.modification_time_attribute(),
+        mtime = STIX2toMISPMapping.modification_time_attribute(),
+        name = STIX2toMISPMapping.filename_attribute(),
+        name_enc = STIX2toMISPMapping.file_encoding_attribute(),
+        size = STIX2toMISPMapping.size_in_bytes_attribute(),
+        x_misp_attachment = __attachment_attribute,
+        x_misp_certificate = __certificate_attribute,
+        x_misp_compilation_timestamp = __compilation_timestamp_attribute,
+        x_misp_entropy = STIX2toMISPMapping.entropy_attribute(),
+        x_misp_fullpath = __fullpath_attribute,
+        x_misp_path = STIX2toMISPMapping.path_attribute(),
+        x_misp_pattern_in_file = __pattern_in_file_attribute,
+        x_misp_state = __state_attribute,
+        x_misp_text = __text_attribute
+    )
+    __file_pattern_mapping = Mapping(
         **{
             'hashes.AUTHENTIHASH': __authentihash_attribute,
             'hashes.IMPHASH': STIX2toMISPMapping.imphash_attribute(),
@@ -517,27 +523,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'x_misp_state': __state_attribute,
             'x_misp_text': __text_attribute
         }
-    )
-    __file_observable_object_mapping = Mapping(
-        accessed = STIX2toMISPMapping.access_time_attribute(),
-        atime = STIX2toMISPMapping.access_time_attribute(),
-        created = STIX2toMISPMapping.creation_time_attribute(),
-        ctime = STIX2toMISPMapping.creation_time_attribute(),
-        mime_type = STIX2toMISPMapping.mime_type_attribute(),
-        modified = STIX2toMISPMapping.modification_time_attribute(),
-        mtime = STIX2toMISPMapping.modification_time_attribute(),
-        name = STIX2toMISPMapping.filename_attribute(),
-        name_enc = STIX2toMISPMapping.file_encoding_attribute(),
-        size = STIX2toMISPMapping.size_in_bytes_attribute(),
-        x_misp_attachment = __attachment_attribute,
-        x_misp_certificate = __certificate_attribute,
-        x_misp_compilation_timestamp = __compilation_timestamp_attribute,
-        x_misp_entropy = STIX2toMISPMapping.entropy_attribute(),
-        x_misp_fullpath = __fullpath_attribute,
-        x_misp_path = STIX2toMISPMapping.path_attribute(),
-        x_misp_pattern_in_file = __pattern_in_file_attribute,
-        x_misp_state = __state_attribute,
-        x_misp_text = __text_attribute
     )
     __github_user_object_mapping = Mapping(
         user_id = __id_attribute,
@@ -581,7 +566,16 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __http_ext = "extensions.'http-request-ext'"
-    __http_request_indicator_object_mapping = Mapping(
+    __http_request_object_mapping = Mapping(
+        x_misp_basicauth_password = __basicauth_password_attribute,
+        x_misp_basicauth_user = __basicauth_user_attribute,
+        x_misp_header = __header_attribute,
+        x_misp_proxy_password = __proxy_password_attribute,
+        x_misp_proxy_user = __proxy_user_attribute,
+        x_misp_text = __text_attribute,
+        x_misp_url = STIX2toMISPMapping.url_attribute()
+    )
+    __http_request_pattern_mapping = Mapping(
         **{
             f"{__http_ext}.request_method": STIX2toMISPMapping.method_attribute(),
             f"{__http_ext}.request_header.'Content-Type'": STIX2toMISPMapping.content_type_attribute(),
@@ -596,32 +590,19 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'x_misp_text': __text_attribute,
         }
     )
-    __http_request_observable_object_mapping = Mapping(
-        x_misp_basicauth_password = __basicauth_password_attribute,
-        x_misp_basicauth_user = __basicauth_user_attribute,
-        x_misp_header = __header_attribute,
-        x_misp_proxy_password = __proxy_password_attribute,
-        x_misp_proxy_user = __proxy_user_attribute,
-        x_misp_text = __text_attribute,
-        x_misp_url = STIX2toMISPMapping.url_attribute()
-    )
-    __image_indicator_object_mapping = Mapping(
-        **{
-            'name': STIX2toMISPMapping.filename_attribute(),
-            'content_ref.url': STIX2toMISPMapping.url_attribute(),
-            'content_ref.x_misp_url': STIX2toMISPMapping.url_attribute(),
-            'x_misp_archive': __archive_attribute,
-            'x_misp_image_text': __image_text_attribute,
-            'x_misp_link': __link_attribute,
-            'x_misp_username': STIX2toMISPMapping.username_attribute()
-        }
-    )
-    __image_observable_object_mapping = Mapping(
+    __image_object_mapping = Mapping(
         name = STIX2toMISPMapping.filename_attribute(),
         x_misp_archive = __archive_attribute,
         x_misp_image_text = __image_text_attribute,
         x_misp_link = __link_attribute,
         x_misp_username = STIX2toMISPMapping.username_attribute()
+    )
+    __image_pattern_mapping = Mapping(
+        **{
+            'content_ref.url': STIX2toMISPMapping.url_attribute(),
+            'content_ref.x_misp_url': STIX2toMISPMapping.url_attribute(),
+            **__image_object_mapping
+        }
     )
     __ip_port_object_mapping = Mapping(
         dst_port = STIX2toMISPMapping.dst_port_attribute(),
@@ -649,7 +630,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_legal_form = {'type': 'text', 'object_relation': 'legal-form'},
         x_misp_registration_number = {'type': 'text', 'object_relation': 'registration-number'}
     )
-    __lnk_observable_object_mapping = Mapping(
+    __lnk_object_mapping = Mapping(
         name = STIX2toMISPMapping.filename_attribute(),
         accessed = __lnk_access_time_attribute,
         atime = __lnk_access_time_attribute,
@@ -683,7 +664,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_state = __state_attribute,
         x_misp_text = __text_attribute
     )
-    __lnk_indicator_object_mapping = Mapping(
+    __lnk_pattern_mapping = Mapping(
         **{
             'hashes.MD5': STIX2toMISPMapping.md5_attribute(),
             'hashes.SHA1': STIX2toMISPMapping.sha1_attribute(),
@@ -694,7 +675,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'hashes.SSDEEP': STIX2toMISPMapping.ssdeep_attribute(),
             'hashes.TLSH': STIX2toMISPMapping.tlsh_attribute(),
             'parent_directory_ref.path': STIX2toMISPMapping.path_attribute(),
-            **__lnk_observable_object_mapping
+            **__lnk_object_mapping
         }
     )
     __location_object_mapping = Mapping(
@@ -725,25 +706,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'type': 'text', 'object_relation': 'operating-system'
         }
     )
-    __netflow_indicator_object_mapping = Mapping(
-        **{
-            'dst_port': STIX2toMISPMapping.dst_port_attribute(),
-            'src_port': STIX2toMISPMapping.src_port_attribute(),
-            'start': STIX2toMISPMapping.first_packet_seen_attribute(),
-            'end': STIX2toMISPMapping.last_packet_seen_attribute(),
-            'src_byte_count': __byte_count_attribute,
-            'src_packets': __packet_count_attribute,
-            'protocols[0]': __protocol_attribute,
-            "extensions.'icmp-ext'.icmp_type_hex": __icmp_type_attribute,
-            "extensions.'tcp-ext'.src_flags_hex": __tcp_flags_attribute,
-            'x_misp_community_id': __community_id_attribute,
-            'x_misp_direction': __direction_attribute,
-            'x_misp_flow_count': __flow_count_attribute,
-            'x_misp_ip_protocol_number': __ip_protocol_number_attribute,
-            'x_misp_ip_version': __ip_version_attribute
-        }
-    )
-    __netflow_observable_object_mapping = Mapping(
+    __netflow_object_mapping = Mapping(
         dst_port = STIX2toMISPMapping.dst_port_attribute(),
         src_port = STIX2toMISPMapping.src_port_attribute(),
         start = STIX2toMISPMapping.first_packet_seen_attribute(),
@@ -755,6 +718,14 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_flow_count = __flow_count_attribute,
         x_misp_ip_protocol_number = __ip_protocol_number_attribute,
         x_misp_ip_version = __ip_version_attribute
+    )
+    __netflow_pattern_mapping = Mapping(
+        **{
+            'protocols[0]': __protocol_attribute,
+            "extensions.'icmp-ext'.icmp_type_hex": __icmp_type_attribute,
+            "extensions.'tcp-ext'.src_flags_hex": __tcp_flags_attribute,
+            **__netflow_object_mapping
+        }
     )
     __network_connection_object_mapping = Mapping(
         dst_port = STIX2toMISPMapping.dst_port_attribute(),
@@ -875,40 +846,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_virtual_address = {'type': 'hex', 'object_relation': 'virtual_address'},
         x_misp_virtual_size = {'type': 'size-in-bytes', 'object_relation': 'virtual_size'}
     )
-    __process_indicator_object_mapping = Mapping(
-        **{
-            'arguments': STIX2toMISPMapping.args_attribute(),
-            'command_line': STIX2toMISPMapping.command_line_attribute(),
-            'created': STIX2toMISPMapping.creation_time_attribute(),
-            'created_time': STIX2toMISPMapping.creation_time_attribute(),
-            'cwd': STIX2toMISPMapping.current_directory_attribute(),
-            'is_hidden': STIX2toMISPMapping.hidden_attribute(),
-            'name': STIX2toMISPMapping.name_attribute(),
-            'binary_ref.name': __image_attribute,
-            'image_ref.name': __image_attribute,
-            'parent_ref.command_line': __parent_command_line_attribute,
-            'parent_ref.name': __parent_process_name_attribute,
-            'parent_ref.pid': __parent_pid_attribute,
-            'parent_ref.binary_ref.name': __parent_image_attribute,
-            'parent_ref.image_ref.name': __parent_image_attribute,
-            'parent_ref.x_misp_guid': __parent_guid_attribute,
-            'parent_ref.x_misp_process_name': __parent_process_name_attribute,
-            'parent_ref.x_misp_process_path': __parent_process_path_attribute,
-            'pid': STIX2toMISPMapping.pid_attribute(),
-            'x_misp_args': STIX2toMISPMapping.args_attribute(),
-            'x_misp_fake_process_name': __fake_process_name_attribute,
-            'x_misp_guid': __guid_attribute,
-            'x_misp_integrity_level': __integrity_level_attribute,
-            'x_misp_name': STIX2toMISPMapping.name_attribute(),
-            'x_misp_pgid': __pgid_attribute,
-            'x_misp_port': __port_attribute,
-            'x_misp_process_state': __process_state_attribute,
-            'x_misp_start_time': __start_time_attribute,
-            'x_misp_user_creator': __user_creator_attribute,
-            'x_misp_user_process': __user_process_attribute
-        }
-    )
-    __process_observable_object_mapping = Mapping(
+    __process_object_mapping = Mapping(
         arguments = STIX2toMISPMapping.args_attribute(),
         x_misp_args = STIX2toMISPMapping.args_attribute(),
         command_line = STIX2toMISPMapping.command_line_attribute(),
@@ -928,6 +866,21 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_start_time = __start_time_attribute,
         x_misp_user_creator = __user_creator_attribute,
         x_misp_user_process = __user_process_attribute
+    )
+    __process_pattern_mapping = Mapping(
+        **{
+            'binary_ref.name': __image_attribute,
+            'image_ref.name': __image_attribute,
+            'parent_ref.command_line': __parent_command_line_attribute,
+            'parent_ref.name': __parent_process_name_attribute,
+            'parent_ref.pid': __parent_pid_attribute,
+            'parent_ref.binary_ref.name': __parent_image_attribute,
+            'parent_ref.image_ref.name': __parent_image_attribute,
+            'parent_ref.x_misp_guid': __parent_guid_attribute,
+            'parent_ref.x_misp_process_name': __parent_process_name_attribute,
+            'parent_ref.x_misp_process_path': __parent_process_path_attribute,
+            **__process_object_mapping
+        }
     )
     __reddit_account_object_mapping = Mapping(
         user_id = __account_id_attribute,
@@ -1060,30 +1013,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'object_relation': 'vulnerable-configuration'
         }
     )
-    __x509_indicator_object_mapping = Mapping(
-        **{
-            'hashes.MD5': STIX2toMISPMapping.x509_md5_attribute(),
-            'hashes.SHA1': STIX2toMISPMapping.x509_sha1_attribute(),
-            'hashes.SHA256': STIX2toMISPMapping.x509_sha256_attribute(),
-            'is_self_signed': STIX2toMISPMapping.is_self_signed_attribute(),
-            'issuer': STIX2toMISPMapping.issuer_attribute(),
-            'serial_number': STIX2toMISPMapping.serial_number_attribute(),
-            'signature_algorithm': STIX2toMISPMapping.signature_algorithm_attribute(),
-            'subject': STIX2toMISPMapping.subject_attribute(),
-            'subject_public_key_algorithm': STIX2toMISPMapping.pubkey_info_algorithm_attribute(),
-            'subject_public_key_exponent': STIX2toMISPMapping.pubkey_info_exponent_attribute(),
-            'subject_public_key_modulus': STIX2toMISPMapping.pubkey_info_modulus_attribute(),
-            'validity_not_after': STIX2toMISPMapping.validity_not_after_attribute(),
-            'validity_not_before': STIX2toMISPMapping.validity_not_before_attribute(),
-            'version': STIX2toMISPMapping.version_attribute(),
-            'x_misp_is_ca': __is_ca_attribute,
-            'x_misp_pem': __pem_attribute,
-            'x_misp_pubkey_info_size': __pubkey_info_size_attribute,
-            'x_misp_raw_base64': __raw_base64_attribute,
-            'x_misp_text': __text_attribute
-        }
-    )
-    __x509_observable_object_mapping = Mapping(
+    __x509_object_mapping = Mapping(
         is_self_signed = STIX2toMISPMapping.is_self_signed_attribute(),
         issuer = STIX2toMISPMapping.issuer_attribute(),
         serial_number = STIX2toMISPMapping.serial_number_attribute(),
@@ -1100,6 +1030,14 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_pubkey_info_size = __pubkey_info_size_attribute,
         x_misp_raw_base64 = __raw_base64_attribute,
         x_misp_text = __text_attribute
+    )
+    __x509_pattern_mapping = Mapping(
+        **{
+            'hashes.MD5': STIX2toMISPMapping.x509_md5_attribute(),
+            'hashes.SHA1': STIX2toMISPMapping.x509_sha1_attribute(),
+            'hashes.SHA256': STIX2toMISPMapping.x509_sha256_attribute(),
+            **__x509_object_mapping
+        }
     )
     __x509_subject_alternative_name_mapping = Mapping(
         **{
@@ -1119,24 +1057,24 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     )
 
     @classmethod
-    def android_app_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__android_app_object_mapping.get(field)
+    def android_app_object_mapping(cls) -> dict:
+        return cls.__android_app_object_mapping
 
     @classmethod
-    def android_app_observable_object_mapping(cls) -> dict:
-        return cls.__android_app_object_mapping
+    def android_app_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__android_app_object_mapping.get(field)
 
     @classmethod
     def annotation_object_mapping(cls) -> dict:
         return cls.__annotation_object_mapping
 
     @classmethod
-    def asn_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__asn_object_mapping.get(field)
+    def asn_object_mapping(cls) -> dict:
+        return cls.__asn_object_mapping
 
     @classmethod
-    def asn_observable_object_mapping(cls) -> dict:
-        return cls.__asn_object_mapping
+    def asn_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__asn_object_mapping.get(field)
 
     @classmethod
     def attack_pattern_object_mapping(cls) -> dict:
@@ -1151,80 +1089,80 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__course_of_action_object_mapping
 
     @classmethod
-    def cpe_asset_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__cpe_asset_object_mapping.get(field)
-
-    @classmethod
-    def cpe_asset_observable_object_mapping(cls) -> dict:
+    def cpe_asset_object_mapping(cls) -> dict:
         return cls.__cpe_asset_object_mapping
 
     @classmethod
-    def credential_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__credential_object_mapping.get(field)
+    def cpe_asset_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__cpe_asset_object_mapping.get(field)
 
     @classmethod
-    def credential_observable_object_mapping(cls) -> dict:
+    def credential_object_mapping(cls) -> dict:
         return cls.__credential_object_mapping
 
     @classmethod
-    def domain_ip_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__domain_ip_object_mapping.get(field)
+    def credential_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__credential_object_mapping.get(field)
 
     @classmethod
-    def domain_ip_observable_object_mapping(cls) -> dict:
+    def domain_ip_object_mapping(cls) -> dict:
         return cls.__domain_ip_object_mapping
+
+    @classmethod
+    def domain_ip_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__domain_ip_object_mapping.get(field)
 
     @classmethod
     def dst_as_attribute(cls) -> dict:
         return cls.__dst_as_attribute
 
     @classmethod
-    def email_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__email_indicator_object_mapping.get(field)
+    def email_object_mapping(cls) -> dict:
+        return cls.__email_object_mapping
 
     @classmethod
-    def email_observable_object_mapping(cls) -> dict:
-        return cls.__email_observable_object_mapping
+    def email_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__email_pattern_mapping.get(field)
 
     @classmethod
     def employee_object_mapping(cls) -> dict:
         return cls.__employee_object_mapping
 
     @classmethod
-    def facebook_account_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__facebook_account_object_mapping.get(field)
+    def facebook_account_object_mapping(cls) -> dict:
+        return cls.__facebook_account_object_mapping
 
     @classmethod
-    def facebook_account_observable_object_mapping(cls) -> dict:
-        return cls.__facebook_account_object_mapping
+    def facebook_account_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__facebook_account_object_mapping.get(field)
 
     @classmethod
     def file_hashes_mapping(cls, field) -> Union[dict, None]:
         return cls.__file_hashes_mapping.get(field)
 
     @classmethod
-    def file_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__file_indicator_object_mapping.get(field)
+    def file_object_mapping(cls) -> dict:
+        return cls.__file_object_mapping
 
     @classmethod
-    def file_observable_object_mapping(cls) -> dict:
-        return cls.__file_observable_object_mapping
+    def file_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__file_pattern_mapping.get(field)
 
     @classmethod
-    def github_user_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__github_user_object_mapping.get(field)
-
-    @classmethod
-    def github_user_observable_object_mapping(cls) -> dict:
+    def github_user_object_mapping(cls) -> dict:
         return cls.__github_user_object_mapping
 
     @classmethod
-    def gitlab_user_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__gitlab_user_object_mapping.get(field)
+    def github_user_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__github_user_object_mapping.get(field)
 
     @classmethod
-    def gitlab_user_observable_object_mapping(cls) -> dict:
+    def gitlab_user_object_mapping(cls) -> dict:
         return cls.__gitlab_user_object_mapping
+
+    @classmethod
+    def gitlab_user_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__gitlab_user_object_mapping.get(field)
 
     @classmethod
     def host_attribute(cls) -> dict:
@@ -1247,36 +1185,36 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__http_request_header_mapping
 
     @classmethod
-    def http_request_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__http_request_indicator_object_mapping.get(field)
+    def http_request_object_mapping(cls) -> dict:
+        return cls.__http_request_object_mapping
 
     @classmethod
-    def http_request_observable_object_mapping(cls) -> dict:
-        return cls.__http_request_observable_object_mapping
+    def http_request_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__http_request_pattern_mapping.get(field)
 
     @classmethod
     def icmp_type_attribute(cls) -> dict:
         return cls.__icmp_type_attribute
 
     @classmethod
-    def image_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__image_indicator_object_mapping.get(field)
+    def image_object_mapping(cls) -> dict:
+        return cls.__image_object_mapping
 
     @classmethod
-    def image_observable_object_mapping(cls) -> dict:
-        return cls.__image_observable_object_mapping
+    def image_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__image_pattern_mapping.get(field)
 
     @classmethod
     def indicator_attributes_mapping(cls, field) -> Union[str, None]:
         return cls.__indicator_attributes_mapping.get(field)
 
     @classmethod
-    def ip_port_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__ip_port_object_mapping.get(field)
+    def ip_port_object_mapping(cls) -> dict:
+        return cls.__ip_port_object_mapping
 
     @classmethod
-    def ip_port_observable_object_mapping(cls) -> dict:
-        return cls.__ip_port_object_mapping
+    def ip_port_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__ip_port_object_mapping.get(field)
 
     @classmethod
     def legal_entity_contact_information_mapping(cls, field) -> Union[dict, None]:
@@ -1287,48 +1225,48 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__legal_entity_object_mapping
 
     @classmethod
-    def lnk_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__lnk_indicator_object_mapping.get(field)
+    def lnk_object_mapping(cls) -> dict:
+        return cls.__lnk_object_mapping
 
     @classmethod
-    def lnk_observable_object_mapping(cls) -> dict:
-        return cls.__lnk_observable_object_mapping
+    def lnk_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__lnk_pattern_mapping.get(field)
 
     @classmethod
     def location_object_mapping(cls) -> dict:
         return cls.__location_object_mapping
 
     @classmethod
-    def mutex_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__mutex_object_mapping.get(field)
-
-    @classmethod
-    def mutex_observable_object_mapping(cls) -> dict:
+    def mutex_object_mapping(cls) -> dict:
         return cls.__mutex_object_mapping
 
     @classmethod
-    def netflow_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__netflow_indicator_object_mapping.get(field)
+    def mutex_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__mutex_object_mapping.get(field)
 
     @classmethod
-    def netflow_observable_object_mapping(cls) -> dict:
-        return cls.__netflow_observable_object_mapping
+    def netflow_object_mapping(cls) -> dict:
+        return cls.__netflow_object_mapping
 
     @classmethod
-    def network_connection_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__network_connection_object_mapping.get(field)
+    def netflow_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__netflow_pattern_mapping.get(field)
 
     @classmethod
-    def network_connection_observable_object_mapping(cls) -> dict:
+    def network_connection_object_mapping(cls) -> dict:
         return cls.__network_connection_object_mapping
 
     @classmethod
-    def network_socket_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__network_socket_object_mapping.get(field)
+    def network_connection_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__network_connection_object_mapping.get(field)
 
     @classmethod
-    def network_socket_observable_object_mapping(cls) -> dict:
+    def network_socket_object_mapping(cls) -> dict:
         return cls.__network_socket_object_mapping
+
+    @classmethod
+    def network_socket_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__network_socket_object_mapping.get(field)
 
     @classmethod
     def news_agency_contact_information_mapping(cls, field) -> Union[dict, None]:
@@ -1359,56 +1297,56 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__parent_process_object_mapping
 
     @classmethod
-    def parler_account_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__parler_account_object_mapping.get(field)
-
-    @classmethod
-    def parler_account_observable_object_mapping(cls) -> dict:
+    def parler_account_object_mapping(cls) -> dict:
         return cls.__parler_account_object_mapping
 
     @classmethod
-    def pe_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__pe_object_mapping.get(field)
+    def parler_account_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__parler_account_object_mapping.get(field)
 
     @classmethod
-    def pe_observable_object_mapping(cls) -> dict:
+    def pe_object_mapping(cls) -> dict:
         return cls.__pe_object_mapping
 
     @classmethod
-    def pe_section_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__pe_section_object_mapping.get(field)
+    def pe_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__pe_object_mapping.get(field)
 
     @classmethod
-    def pe_section_observable_object_mapping(cls) -> dict:
+    def pe_section_object_mapping(cls) -> dict:
         return cls.__pe_section_object_mapping
 
     @classmethod
-    def process_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__process_indicator_object_mapping.get(field)
+    def pe_section_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__pe_section_object_mapping.get(field)
 
     @classmethod
-    def process_observable_object_mapping(cls) -> dict:
-        return cls.__process_observable_object_mapping
+    def process_object_mapping(cls) -> dict:
+        return cls.__process_object_mapping
+
+    @classmethod
+    def process_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__process_pattern_mapping.get(field)
 
     @classmethod
     def protocol_attribute(cls) -> dict:
         return cls.__protocol_attribute
 
     @classmethod
-    def reddit_account_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__reddit_account_object_mapping.get(field)
-
-    @classmethod
-    def reddit_account_observable_object_mapping(cls) -> dict:
+    def reddit_account_object_mapping(cls) -> dict:
         return cls.__reddit_account_object_mapping
 
     @classmethod
-    def registry_key_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__registry_key_object_mapping.get(field)
+    def reddit_account_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__reddit_account_object_mapping.get(field)
 
     @classmethod
-    def registry_key_observable_object_mapping(cls) -> dict:
+    def registry_key_object_mapping(cls) -> dict:
         return cls.__registry_key_object_mapping
+
+    @classmethod
+    def registry_key_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__registry_key_object_mapping.get(field)
 
     @classmethod
     def script_from_malware_object_mapping(cls) -> dict:
@@ -1431,48 +1369,48 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__tcp_flags_attribute
 
     @classmethod
-    def telegram_account_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__telegram_account_object_mapping.get(field)
-
-    @classmethod
-    def telegram_account_observable_object_mapping(cls) -> dict:
+    def telegram_account_object_mapping(cls) -> dict:
         return cls.__telegram_account_object_mapping
 
     @classmethod
-    def twitter_account_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__twitter_account_object_mapping.get(field)
+    def telegram_account_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__telegram_account_object_mapping.get(field)
 
     @classmethod
-    def twitter_account_observable_object_mapping(cls) -> dict:
+    def twitter_account_object_mapping(cls) -> dict:
         return cls.__twitter_account_object_mapping
 
     @classmethod
-    def url_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__url_object_mapping.get(field)
+    def twitter_account_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__twitter_account_object_mapping.get(field)
 
     @classmethod
-    def url_observable_object_mapping(cls) -> dict:
+    def url_object_mapping(cls) -> dict:
         return cls.__url_object_mapping
 
     @classmethod
-    def user_account_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__user_account_object_mapping.get(field)
+    def url_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__url_object_mapping.get(field)
 
     @classmethod
-    def user_account_observable_object_mapping(cls) -> dict:
+    def user_account_object_mapping(cls) -> dict:
         return cls.__user_account_object_mapping
+
+    @classmethod
+    def user_account_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__user_account_object_mapping.get(field)
 
     @classmethod
     def vulnerability_object_mapping(cls) -> dict:
         return cls.__vulnerability_object_mapping
 
     @classmethod
-    def x509_indicator_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__x509_indicator_object_mapping.get(field)
+    def x509_object_mapping(cls) -> dict:
+        return cls.__x509_object_mapping
 
     @classmethod
-    def x509_observable_object_mapping(cls) -> dict:
-        return cls.__x509_observable_object_mapping
+    def x509_pattern_mapping(cls, field) -> Union[dict, None]:
+        return cls.__x509_pattern_mapping.get(field)
 
     @classmethod
     def x509_subject_alternative_name_mapping(cls, field) -> Union[dict, None]:
