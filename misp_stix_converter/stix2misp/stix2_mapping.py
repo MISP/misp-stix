@@ -43,7 +43,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     )
     __mac_address_pattern = '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
 
-    # def _declare_mapping(self, updates: Optional[dict]={}):
     __SROs = ('opinion', 'relationship', 'sighting', 'x-misp-opinion')
     __object_type_refs_to_skip = __observable_object_types + __SROs
     __stix_object_loading_mapping = Mapping(
@@ -102,8 +101,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         }
     )
 
-        # ATTRIBUTES MAPPING DECLARATION
-
     # SINGLE ATTRIBUTES MAPPING
     __access_time_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'access-time'}
@@ -129,9 +126,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     __attack_pattern_id_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'id'}
     )
-    # __attack_pattern_references_attribute = Mapping(
-    #     **{'type': 'link', 'object_relation': 'references'}
-    # )
     __can_escalate_privs_attribute = Mapping(
         **{'type': 'boolean', 'object_relation': 'can_escalate_privs'}
     )
@@ -654,10 +648,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     @classmethod
     def attack_pattern_meta_mapping(cls) -> dict:
         return cls.__attack_pattern_meta_mapping
-
-    # @classmethod
-    # def attack_pattern_references_attribute(cls) -> dict:
-    #     return cls.__attack_pattern_references_attribute
 
     @classmethod
     def bundle_to_misp_mapping(cls, field: str) -> Union[str, None]:

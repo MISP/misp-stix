@@ -441,7 +441,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         if reference.source_name == 'url':
             return {
                 'value': reference.url,
-                **self._mapping.attack_pattern_references_attribute()
+                **self._mapping.references_attribute()
             }
         external_id = reference.external_id
         return {
