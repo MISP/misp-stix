@@ -178,9 +178,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 object_type = stix_object['type']
             if object_type in ('grouping', 'report'):
                 n_report += 1
-            try:
-                feature = self._mapping.stix_object_loading_mapping[object_type]
-            except KeyError:
+            feature = self._mapping.stix_object_loading_mapping(object_type)
+            if feature is None:
                 self._unable_to_load_stix_object_type_error(object_type)
                 continue
             if hasattr(stix_object, 'created_by_ref'):
@@ -194,7 +193,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def parse_stix_bundle(self, single_event: Optional[bool] = False):
         self.__single_event = single_event
         try:
-            feature = self._mapping.bundle_to_misp_mapping[str(self.__n_report)]
+            feature = self._mapping.bundle_to_misp_mapping(str(self.__n_report))
         except AttributeError:
             sys.exit(
                 'No STIX content loaded, please run `load_stix_content` first.'
@@ -451,7 +450,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
             object_type = object_ref.split('--')[0]
-            if object_type in self._mapping.object_type_refs_to_skip:
+            if object_type in self._mapping.object_type_refs_to_skip():
                 continue
             try:
                 self._handle_object(object_type, object_ref)
@@ -461,9 +460,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._unknown_parsing_function_error(error)
 
     def _handle_object(self, object_type: str, object_ref: str):
-        try:
-            feature = self._mapping.stix_to_misp_mapping[object_type]
-        except KeyError:
+        feature = self._mapping.stix_to_misp_mapping(object_type)
+        if feature is None:
             raise UnknownStixObjectTypeError(object_type)
         try:
             parser = getattr(self, feature)
@@ -600,7 +598,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         misp_object = self._create_misp_object('geolocation', location)
         if hasattr(location, 'description'):
             misp_object.comment = location.description
-        for feature, attribute in self._mapping.location_object_mapping.items():
+        for feature, attribute in self._mapping.location_object_mapping().items():
             if hasattr(location, feature):
                 misp_object.add_attribute(
                     **{'value': getattr(location, feature), **attribute}
@@ -609,7 +607,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             misp_object.add_attribute(
                 **{
                     'value': float(location.precision) / 1000,
-                    **self._mapping.accuracy_radius_attribute
+                    **self._mapping.accuracy_radius_attribute()
                 }
             )
         if to_return:
@@ -638,8 +636,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         }
         if galaxy_type is None:
             version = getattr(stix_object, 'spec_version', '2.0')
-            name = self._mapping.galaxy_name_mapping[stix_object.type]['name']
-            name = f'STIX {version} {name}'
+            mapping = self._mapping.galaxy_name_mapping(stix_object.type)
+            name = f"STIX {version} {mapping['name']}"
             cluster_args.update(
                 {
                     'version': ''.join(version.split('.')),
@@ -660,7 +658,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
         for key, value in stix_object.items():
             if key.startswith('x_misp_'):
-                separator = '-' if key in self._mapping.dash_meta_fields else '_'
+                separator = '-' if key in self._mapping.dash_meta_fields() else '_'
                 yield separator.join(key.split('_')[2:]), value
 
     @staticmethod
@@ -696,7 +694,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
         if hasattr(self._mapping, mapping):
             meta = {}
-            for feature, field in getattr(self._mapping, mapping).items():
+            for feature, field in getattr(self._mapping, mapping)().items():
                 if hasattr(stix_object, feature):
                     meta[field] = getattr(stix_object, feature)
             meta.update(dict(self._extract_custom_fields(stix_object)))
@@ -1129,8 +1127,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             'timestamp': self._timestamp_from_date(stix_object.modified)
         }
         object_type = stix_object.type
-        if object_type in self._mapping.timeline_mapping:
-            first, last = self._mapping.timeline_mapping[object_type]
+        if self._mapping.timeline_mapping(object_type) is not None:
+            first, last = self._mapping.timeline_mapping(object_type)
             if not self._skip_first_seen_last_seen(stix_object):
                 if hasattr(stix_object, first) and getattr(stix_object, first):
                     misp_object['first_seen'] = getattr(stix_object, first)

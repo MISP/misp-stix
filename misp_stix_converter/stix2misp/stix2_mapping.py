@@ -908,11 +908,11 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__name_attribute
 
     @classmethod
-    def network_socket_extension_indicator_mapping(cls, field) -> Union[dict, None]:
+    def network_socket_extension_pattern_mapping(cls, field) -> Union[dict, None]:
         return cls.__network_socket_extension_mapping.get(field)
 
     @classmethod
-    def network_socket_extension_observable_mapping(cls) -> dict:
+    def network_socket_extension_object_mapping(cls) -> dict:
         return cls.__network_socket_extension_mapping
 
     @classmethod
@@ -980,11 +980,11 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__regions_mapping.get(field, default_value)
 
     @classmethod
-    def registry_key_values_indicator_mapping(cls, field) -> Union[dict, None]:
+    def registry_key_values_pattern_mapping(cls, field) -> Union[dict, None]:
         return cls.__registry_key_values_mapping.get(field)
 
     @classmethod
-    def registry_key_values_observable_mapping(cls) -> dict:
+    def registry_key_values_object_mapping(cls) -> dict:
         return cls.__registry_key_values_mapping
 
     @classmethod
@@ -1132,11 +1132,11 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__url_attribute
 
     @classmethod
-    def user_account_unix_extension_indicator_mapping(cls, field) -> Union[dict, None]:
+    def user_account_unix_extension_pattern_mapping(cls, field) -> Union[dict, None]:
         return cls.__user_account_unix_extention_mapping.get(field)
 
     @classmethod
-    def user_account_unix_extension_observable_mapping(cls) -> dict:
+    def user_account_unix_extension_object_mapping(cls) -> dict:
         return cls.__user_account_unix_extention_mapping
 
     @classmethod
