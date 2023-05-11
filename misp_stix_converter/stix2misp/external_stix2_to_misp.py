@@ -1436,7 +1436,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     observed_data
                 )
                 return misp_attribute.uuid
-            attribute = self._mapping.file_hashes_mapping(field)
+            attribute = self._mapping.file_hashes_object_mapping(field)
             if attribute is not None:
                 misp_attribute = self._add_misp_attribute(
                     getattr(self, f'_handle_{feature}_attribute')(
