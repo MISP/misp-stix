@@ -120,7 +120,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'process': 'process',
             'software': 'software',
             'user-account': 'user_account',
-            'windows-registry-key': 'regkey',
+            'windows-registry-key': 'registry_key',
             'x509-certificate': 'x509',
             **dict.fromkeys(
                 (
