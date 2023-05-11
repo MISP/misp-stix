@@ -81,7 +81,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'attack-pattern': '_parse_attack_pattern',
             'campaign': '_parse_campaign',
             'course-of-action': '_parse_course_of_action',
-            'grouping': '_parse_grouping',
             'identity': '_parse_identity',
             'indicator': '_parse_indicator',
             'intrusion-set': '_parse_intrusion_set',
@@ -90,7 +89,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'marking-definition': '_parse_marking_definition',
             'note': '_parse_note',
             'observed-data': '_parse_observed_data',
-            'report': '_parse_report',
             'sighting': '_parse_sighting',
             'threat-actor': '_parse_threat_actor',
             'tool': '_parse_tool',
@@ -357,7 +355,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     __sigma_attribute = Mapping(
         **{'type': 'sigma', 'object_relation': 'sigma'}
     )
-    # __sigma_reference_attribute = Mapping(**reference_attribute)
     __sigma_rule_name_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'sigma-rule-name'}
     )
@@ -460,7 +457,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     __yara_attribute = Mapping(
         **{'type': 'yara', 'object_relation': 'yara'}
     )
-    # __yara_reference_attribute = Mapping(**reference_attribute)
     __yara_rule_name_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'yara-rule-name'}
     )
