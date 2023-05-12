@@ -123,7 +123,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                  sharing_group_id: Optional[int] = None,
                  galaxies_as_tags: Optional[bool] = False):
         super().__init__(distribution, sharing_group_id, galaxies_as_tags)
-        self._mapping = ExternalSTIX2toMISPMapping()
+        self._mapping = ExternalSTIX2toMISPMapping
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
@@ -131,7 +131,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _get_attributes_from_generic_SDO(
             self, stix_object: _GENERIC_SDO_TYPING, mapping: str):
-        for feature, attribute in getattr(self._mapping, mapping).items():
+        for feature, attribute in getattr(self._mapping, mapping)().items():
             if hasattr(stix_object, feature):
                 yield {'value': getattr(stix_object, feature), **attribute}
 
@@ -200,10 +200,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         :raises: Exception when the observable types are not known
         """
         to_call = '_'.join(sorted(observable_mapping))
-        try:
-            return self._mapping.observable_mapping[to_call]
-        except KeyError:
+        mapping = self._mapping.observable_mapping(to_call)
+        if mapping is None:
             raise UnknownObservableMappingError(to_call)
+        return mapping
 
     def _handle_pattern_mapping(self, indicator: _INDICATOR_TYPING) -> str:
         """
@@ -368,10 +368,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         :param identity: The Identity object to parse
         """
         misp_object = self._create_misp_object('identity', identity)
-        for feature in self._mapping.identity_object_single_fields:
+        for feature in self._mapping.identity_object_single_fields():
             if hasattr(identity, feature):
                 misp_object.add_attribute(feature, getattr(identity, feature))
-        for feature in self._mapping.identity_object_multiple_fields:
+        for feature in self._mapping.identity_object_multiple_fields():
             if hasattr(identity, feature):
                 for value in getattr(identity, feature):
                     misp_object.add_attribute(feature, value)
@@ -434,7 +434,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._clusters[location_ref]['used'][self.misp_event.uuid] = False
         else:
             location = self._get_stix_object(location_ref)
-            if any(hasattr(location, feature) for feature in self._mapping.location_object_fields):
+            if any(hasattr(location, feature) for feature in self._mapping.location_object_fields()):
                 misp_object = self._parse_location_object(
                     location, to_return=True
                 )
@@ -587,14 +587,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     attributes.append(
                         {
                             'value': reference['url'],
-                            **self._mapping.references_attribute
+                            **self._mapping.references_attribute()
                         }
                     )
             if len(external_ids) == 1:
                 attributes.append(
                     {
                         'value': list(external_ids)[0],
-                        **self._mapping.vulnerability_attribute
+                        **self._mapping.vulnerability_attribute()
                     }
                 )
             else:
@@ -603,14 +603,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         attributes.append(
                             {
                                 'value': external_id,
-                                **self._mapping.vulnerability_attribute
+                                **self._mapping.vulnerability_attribute()
                             }
                         )
                         continue
                     attributes.append(
                         {
                             'value': external_id,
-                            **self._mapping.reference_attribute
+                            **self._mapping.reference_attribute()
                         }
                     )
         if attributes:
@@ -632,12 +632,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         misp_galaxy = MISPGalaxy()
         if galaxy_type is None:
             galaxy_type = stix_object.type
-        mapping = self._mapping.galaxy_name_mapping[galaxy_type]
+        mapping = self._mapping.galaxy_name_mapping(galaxy_type)
         name = mapping['name']
         galaxy_args = {
             'description': mapping['description'], 'namespace': 'stix'
         }
-        if galaxy_type not in ('country', 'region'):
+        if galaxy_type not in ('country', 'region', 'sector'):
             version = getattr(stix_object, 'spec_version', '2.0')
             name = f"STIX {version} {name}"
             galaxy_args.update(
@@ -668,9 +668,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_region_value(self, location: Location) -> str:
         if hasattr(location, 'region'):
-            return self._mapping.regions_mapping.get(
-                location.region, location.name
-            )
+            return self._mapping.regions_mapping(location.region, location.name)
         return location.name
 
     ################################################################################
@@ -686,7 +684,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for field, values in getattr(
             email_message, 'additional_header_fields', {}
         ).items():
-            if field in self._mapping.email_additional_header_fields_mapping:
+            if field in self._mapping.email_additional_header_fields_mapping():
                 length += len(values) if isinstance(values, list) else 1
         return length > 1
 
@@ -694,7 +692,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if 'windows-pebinary-ext' in getattr(file_object, 'extensions', {}):
             return True
         fields = [
-            field for field in self._mapping.file_object_mapping
+            field for field in self._mapping.file_object_mapping()
             if hasattr(file_object, field)
         ]
         if len(fields) > 1:
@@ -781,7 +779,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _force_observable_as_object(
             self, observable_object: _OBSERVABLE_OBJECTS_TYPING,
             object_type: str) -> bool:
-        fields = getattr(self._mapping, f'{object_type}_object_fields')
+        fields = getattr(self._mapping, f'{object_type}_object_fields')()
         if any(hasattr(observable_object, field) for field in fields):
             return True
         return getattr(self, f'_check_{object_type}_observable_fields')(
@@ -1242,7 +1240,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         address_ref, observed_data.id
                     )
         if hasattr(email_message, 'additional_header_fields'):
-            for field, mapping in self._mapping.email_additional_header_fields_mapping.items():
+            for field, mapping in self._mapping.email_additional_header_fields_mapping().items():
                 if field not in email_message.additional_header_fields:
                     continue
                 relation = mapping['object_relation']
@@ -1309,8 +1307,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
                 continue
             for field in self._get_populated_properties(email_message):
-                if field in self._mapping.email_object_mapping:
-                    attribute = self._mapping.email_object_mapping[field]
+                attribute = self._mapping.email_object_mapping(field)
+                if attribute is not None:
                     self._add_misp_attribute(
                         getattr(self, f'_handle_{feature}_attribute')(
                             email_message, field, attribute['type'],
@@ -1354,7 +1352,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         )
         if hasattr(file_object, 'hashes'):
             self._populate_object_attributes_from_observable(
-                'file_hashes_mapping', file_object.hashes, misp_object,
+                'file_hashes_object_mapping', file_object.hashes, misp_object,
                 reference, observed_data.id
             )
         if hasattr(file_object, 'parent_directory_ref'):
@@ -1429,8 +1427,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     )
             return misp_object.uuid
         for field in self._get_populated_properties(file_object):
-            if field in self._mapping.file_object_mapping:
-                attribute = self._mapping.file_object_mapping[field]
+            attribute = self._mapping.file_object_mapping(field)
+            if attribute is not None:
                 misp_attribute = self._add_misp_attribute(
                     getattr(self, f'_handle_{feature}_attribute')(
                         file_object, field, attribute['type'], observed_data.id
@@ -1438,8 +1436,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     observed_data
                 )
                 return misp_attribute.uuid
-            if field in self._mapping.file_hashes_mapping:
-                attribute = self._mapping.file_hashes_mapping[field]
+            attribute = self._mapping.file_hashes_object_mapping(field)
+            if attribute is not None:
                 misp_attribute = self._add_misp_attribute(
                     getattr(self, f'_handle_{feature}_attribute')(
                         file_object, field, attribute['type'], observed_data.id
@@ -1456,11 +1454,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'pe', reference, observed_data
         )
         self._populate_object_attributes_from_observable(
-            'pe_object_mapping', extension, misp_object, reference, observed_data.id
+            'pe_object_mapping', extension, misp_object,
+            reference, observed_data.id
         )
         if hasattr(extension, 'optional_header'):
             self._populate_object_attributes_from_observable(
-                'pe_optional_header_mapping', extension, misp_object,
+                'pe_optional_header_object_mapping', extension, misp_object,
                 reference, observed_data.id
             )
         pe_object = self._add_misp_object(misp_object, observed_data)
@@ -1476,7 +1475,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
                 if hasattr(section, 'hashes'):
                     self._populate_object_attributes_from_observable(
-                        'file_hashes_mapping', section.hashes, section_object,
+                        'file_hashes_object_mapping', section.hashes, section_object,
                         section_reference, observed_data.id
                     )
                 self._add_misp_object(section_object, observed_data)
@@ -1555,8 +1554,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             observed_data, reference
         )
         for index, protocol in enumerate(network_traffic.protocols):
-            if protocol in self._mapping.connection_protocols:
-                layer = self._mapping.connection_protocols[protocol]
+            layer = self._mapping.connection_protocols(protocol)
+            if layer is not None:
                 misp_object.add_attribute(
                     f'layer{layer}-protocol', protocol,
                     **self._fill_observable_object_attribute(
@@ -1579,7 +1578,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         )
         socket_extension = network_traffic.extensions['socket-ext']
         self._populate_object_attributes_from_observable(
-            'network_socket_extension_mapping', socket_extension,
+            'network_socket_extension_object_mapping', socket_extension,
             misp_object, reference, observed_data.id
         )
         for index, protocol in enumerate(network_traffic.protocols):
@@ -1616,7 +1615,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             name, network_traffic, object_id, observed_data
         )
         self._populate_object_attributes_from_observable(
-            f"{name.replace('-', '_')}_object_mapping", network_traffic,
+            'network_traffic_object_mapping', network_traffic,
             misp_object, reference, observed_data.id
         )
         return misp_object
@@ -1652,14 +1651,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     referenced_object, 'id',
                     f'{observed_data.id} - {referenced_id}'
                 )
-                feature = f"{referenced_object.type.split('-')[0]}-{asset}"
-                reference_mapping = getattr(
-                    self._mapping,
-                    f'_{name}_object_reference_mapping'
+                relation = getattr(
+                    self._mapping, f'{name}_object_reference_mapping'
+                )(
+                    f"{referenced_object.type.split('-')[0]}-{asset}"
                 )
-                if feature not in reference_mapping:
+                if relation is None:
                     continue
-                relation = reference_mapping[feature]
                 misp_object.add_attribute(
                     relation, referenced_object.value,
                     **self._fill_observable_object_attribute(
@@ -1802,8 +1800,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             return self._add_misp_object(misp_object, observed_data)
         if len(registry_key['values']) == 1:
             self._populate_object_attributes_from_observable(
-                'registry_key_values_mapping', registry_key['values'], misp_object,
-                reference, observed_data.id
+                'registry_key_values_object_mapping', registry_key['values'],
+                misp_object, reference, observed_data.id
             )
             return self._add_misp_object(misp_object, observed_data)
         registry_key_object = self._add_misp_object(misp_object, observed_data)
@@ -1816,8 +1814,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 **self._parse_timeline(observed_data)
             )
             self._populate_object_attributes_from_observable(
-                'registry_key_values_mapping', registry_value, value_object,
-                value_reference, observed_data.id
+                'registry_key_values_object_mapping', registry_value,
+                value_object, value_reference, observed_data.id
             )
             self._add_misp_object(value_object, observed_data)
             registry_key_object.add_reference(value_object.uuid, 'contains')
@@ -1865,7 +1863,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 'software', software, object_id, observed_data
             )
             self._populate_object_attributes_from_observable(
-                'software_object_mapping', software, misp_object, reference, observed_data.id
+                'software_object_mapping', software, misp_object,
+                reference, observed_data.id
             )
             if hasattr(software, 'languages'):
                 for index, language in enumerate(software.languages):
@@ -1907,7 +1906,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             )
             if 'unix-account-ext' in getattr(user_account, 'extensions', {}):
                 self._populate_object_attributes_from_observable(
-                    'user_account_unix_extension_mapping',
+                    'user_account_unix_extension_object_mapping',
                     user_account.extensions['unix-account-ext'],
                     misp_object, reference, observed_data.id
                 )
@@ -1927,8 +1926,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             )
             if hasattr(x509_object, 'hashes'):
                 self._populate_object_attributes_from_observable(
-                    'x509_hashes_mapping', x509_object.hashes, misp_object,
-                    reference, observed_data.id
+                    'x509_hashes_object_mapping', x509_object.hashes,
+                    misp_object, reference, observed_data.id
                 )
             self._populate_object_attributes_from_observable(
                 'x509_object_mapping', x509_object, misp_object,
@@ -1939,8 +1938,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _populate_object_attributes_from_observable(
             self, feature: str, observable_object: _OBSERVABLE_OBJECTS_TYPING,
             misp_object: MISPObject, reference: str, observed_data_id: str):
-        mapping = getattr(self._mapping, feature)
-        for field, attribute in mapping.items():
+        for field, attribute in getattr(self._mapping, feature)().items():
             if observable_object.get(field):
                 value = getattr(
                     observable_object, field, observable_object[field]
@@ -1996,13 +1994,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if assertion != '=':
                 continue
             field = keys[0]
-            if field not in self._mapping.asn_pattern_mapping:
+            attribute = self._mapping.asn_pattern_mapping(field)
+            if attribute is None:
                 self._unmapped_pattern_warning(indicator.id, field)
                 continue
             attributes.append(
                 {
                     'value': f'AS{value}' if field == 'number' else value,
-                    **self._mapping.asn_pattern_mapping[field]
+                    **attribute
                 }
             )
         features = ('ipv4-addr', 'ipv6-addr')
@@ -2016,7 +2015,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
                 attributes.append(
-                    {'value': value, **self._mapping.subnet_announced_attribute}
+                    {
+                        'value': value,
+                        **self._mapping.subnet_announced_attribute()
+                    }
                 )
         if 'asn' in (attr['object_relation'] for attr in attributes):
             self._handle_import_case(
@@ -2032,14 +2034,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for keys, assertion, value in pattern.comparisons['directory']:
             if assertion != '=':
                 continue
-            field = keys[0]
-            if field in self._mapping.directory_object_mapping:
-                misp_object.add_attribute(
-                    **{
-                        'value': value,
-                        **self._mapping.directory_object_mapping[field]
-                    }
-                )
+            attribute = self._mapping.directory_pattern_mapping(keys[0])
+            if attribute is not None:
+                misp_object.add_attribute(**{'value': value, **attribute})
             else:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
         if misp_object.attributes:
@@ -2064,7 +2061,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 attributes.append(
                     {
                         'value': value,
-                        **self._mapping.domain_ip_pattern_mapping[feature]
+                        **self._mapping.domain_ip_pattern_mapping(feature)
                     }
                 )
         if any(key not in features for key in pattern.comparisons.keys()):
@@ -2090,14 +2087,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for keys, assertion, value in pattern.comparisons['email-addr']:
             if assertion != '=':
                 continue
-            field = keys[0]
-            if field in self._mapping.email_address_pattern_mapping:
-                attributes.append(
-                    {
-                        'value': value,
-                        **self._mapping.email_address_pattern_mapping[field]
-                    }
-                )
+            attribute = self._mapping.email_address_pattern_mapping(keys[0])
+            if attribute is not None:
+                attributes.append({'value': value, **attribute})
             else:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
         if attributes:
@@ -2112,14 +2104,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for keys, assertion, value in pattern.comparisons['email-message']:
             if assertion != '=':
                 continue
-            field = keys[0]
-            if field in self._mapping.email_message_pattern_mapping:
-                attributes.append(
-                    {
-                        'value': value,
-                        **self._mapping.email_message_pattern_mapping[field]
-                    }
-                )
+            attribute = self._mapping.email_message_pattern_mapping(keys[0])
+            if attribute is not None:
+                attributes.append({'value': value, **attribute})
             else:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
         if attributes:
@@ -2144,14 +2131,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 if 'sections' in keys:
                     if 'hashes' in keys:
                         _, _, _, index, _, hash_type = keys
-                        if hash_type in self._mapping.file_hashes_mapping:
+                        attribute = self._mapping.file_hashes_pattern_mapping(hash_type)
+                        if attribute is not None:
                             sections_attributes[index.strip('[]')].append(
-                                {
-                                    'value': value,
-                                    **self._mapping.file_hashes_mapping[
-                                        hash_type
-                                    ]
-                                }
+                                {'value': value, **attribute}
                             )
                         else:
                             self._unmapped_pattern_warning(
@@ -2159,31 +2142,19 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                             )
                         continue
                     _, _, _, index, feature = keys
-                    if feature in self._mapping.pe_section_object_mapping:
+                    attribute = self._mapping.pe_section_pattern_mapping(feature)
+                    if attribute is not None:
                         sections_attributes[index.strip('[]')].append(
-                            {
-                                'value': value,
-                                **self._mapping.pe_section_object_mapping[
-                                    feature
-                                ]
-                            }
+                            {'value': value, **attribute}
                         )
-                field = keys[-1]
-                if field in self._mapping.pe_object_mapping:
-                    pe_object.add_attribute(
-                        **{
-                            'value': value,
-                            **self._mapping.pe_object_mapping[field]
-                        }
-                    )
                     continue
-                if field in self._mapping.pe_optional_header_mapping:
-                    pe_object.add_attribute(
-                        **{
-                            'value': value,
-                            **self._mapping.pe_optional_header_mapping[field]
-                        }
-                    )
+                attribute = self._mapping.pe_pattern_mapping(keys[-1])
+                if attribute is not None:
+                    pe_object.add_attribute(**{'value': value, **attribute})
+                    continue
+                attribute = self._mapping.pe_optional_header_pattern_mapping(keys[-1])
+                if attribute is not None:
+                    pe_object.add_attribute(**{'value': value, **attribute})
                 else:
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
@@ -2218,14 +2189,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             hash_type = keys[1].lower().replace('-', '')
             return {
                 'value': value,
-                **getattr(self._mapping, f'{hash_type}_attribute')
+                **getattr(self._mapping, f'{hash_type}_attribute')()
             }
-        field = keys[0]
-        if field in self._mapping.file_pattern_mapping:
-            return {
-                'value': value,
-                **self._mapping.file_pattern_mapping[field]
-            }
+        attribute = self._mapping.file_pattern_mapping(keys[0])
+        if attribute is not None:
+            return {'value': value, **attribute}
         else:
             self._unmapped_pattern_warning(indicator_id, '.'.join(keys))
 
@@ -2267,7 +2235,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         )
                         continue
                     attributes.append(
-                        {'value': value, **self._mapping.ip_attribute}
+                        {'value': value, **self._mapping.ip_attribute()}
                     )
         if attributes:
             self._handle_import_case(indicator, attributes, 'ip-port')
@@ -2284,7 +2252,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             field = keys[0]
             if field == 'name':
                 attributes.append(
-                    {'value': value, **self._mapping.name_attribute}
+                    {'value': value, **self._mapping.name_attribute()}
                 )
         if attributes:
             self._handle_import_case(indicator, attributes, 'mutex', 'name')
@@ -2299,8 +2267,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if assertion != '=':
                 continue
             if 'protocols' in keys:
-                if value in self._mapping.connection_protocols:
-                    layer = self._mapping.connection_protocols[value]
+                layer = self._mapping.connection_protocols(value)
+                if layer is not None:
                     misp_object.add_attribute(
                         f'layer{layer}-protocol', value
                     )
@@ -2325,10 +2293,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if assertion != '=':
                 continue
             if 'socket-ext' in keys:
-                misp_object.add_attribute(
-                    self._mapping.network_socket_extension_mapping[keys[-1]],
-                    value
-                )
+                attribute = self._mapping.network_socket_extension_pattern_mapping(keys[-1])
+                if attribute is not None:
+                    misp_object.add_attribute(**{'value': value, **attribute})
+                else:
+                    self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                 continue
             if 'protocols' in keys:
                 misp_object.add_attribute('protocol', value)
@@ -2349,13 +2318,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
             )
             return
-        if field in self._mapping.network_traffic_object_mapping:
-            misp_object.add_attribute(
-                **{
-                    'value': value,
-                    **self._mapping.network_traffic_object_mapping[field]
-                }
-            )
+        attribute = self._mapping.network_traffic_pattern_mapping(field)
+        if attribute is not None:
+            misp_object.add_attribute(**{'value': value, **attribute})
         else:
             self._unmapped_pattern_warning(indicator_id, '.'.join(keys))
 
@@ -2368,7 +2333,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_network_traffic_reference(
             self, feature: str, value: str) -> Tuple[str]:
-        if re.match(self._mapping.mac_address_pattern, value):
+        if re.match(self._mapping.mac_address_pattern(), value):
             return f'mac-{feature}', value
         try:
             ipaddress.ip_interface(value)
@@ -2382,14 +2347,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for keys, assertion, value in pattern.comparisons['process']:
             if assertion != '=':
                 continue
-            field = keys[0]
-            if field in self._mapping.process_pattern_mapping:
-                attributes.append(
-                    {
-                        'value': value,
-                        **self._mapping.process_pattern_mapping[field]
-                    }
-                )
+            attribute = self._mapping.process_pattern_mapping(keys[0])
+            if attribute is not None:
+                attributes.append({'value': value, **attribute})
             else:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
         if attributes:
@@ -2401,20 +2361,17 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
 
-    def _parse_regkey_pattern(
+    def _parse_registry_key_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
         for keys, assertion, value in pattern.comparisons['windows-registry-key']:
             if assertion != '=':
                 continue
-            field = keys[-1 if 'values' in keys else 0]
-            if field in self._mapping.regkey_pattern_mapping:
-                attributes.append(
-                    {
-                        'value': value,
-                        **self._mapping.regkey_pattern_mapping[field]
-                    }
-                )
+            attribute = self._mapping.registry_key_pattern_mapping(
+                keys[-1 if 'values' in keys else 0]
+            )
+            if attribute is not None:
+                attributes.append({'value': value, **attribute})
             else:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
         if attributes:
@@ -2429,7 +2386,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_sigma_pattern(self, indicator: Indicator_v21):
         if hasattr(indicator, 'name') or hasattr(indicator, 'external_references'):
             attributes = []
-            for feature, mapping in self._mapping.sigma_object_mapping.items():
+            for feature, mapping in self._mapping.sigma_object_mapping().items():
                 if hasattr(indicator, feature):
                     attributes.append(
                         {'value': getattr(indicator, feature), **mapping}
@@ -2440,7 +2397,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         continue
                     attribute = {
                         'value': reference.url,
-                        **self._mapping.sigma_reference_attribute
+                        **self._mapping.sigma_reference_attribute()
                     }
                     if hasattr(reference, 'description'):
                         attribute['comment'] = reference.description
@@ -2470,7 +2427,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._add_misp_attribute(
                 {
                     'value': indicator.pattern,
-                    **self._mapping.sigma_attribute,
+                    **self._mapping.sigma_attribute(),
                     **self._create_attribute_dict(indicator)
                 },
                 indicator
@@ -2480,7 +2437,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._add_misp_attribute(
             {
                 'value': indicator.pattern,
-                **self._mapping.snort_attribute,
+                **self._mapping.snort_attribute(),
                 **self._create_attribute_dict(indicator)
             },
             indicator
@@ -2492,14 +2449,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for keys, assertion, value in pattern.comparisons['software']:
             if assertion != '=':
                 continue
-            field = keys[0]
-            if field in self._mapping.software_pattern_mapping:
-                attributes.append(
-                    {
-                        'value': value,
-                        **self._mapping.software_pattern_mapping[field]
-                    }
-                )
+            attribute = self._mapping.software_pattern_mapping(keys[0])
+            if attribute is not None:
+                attributes.append({'value': value, **attribute})
             else:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
         if attributes:
@@ -2511,9 +2463,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_stix_pattern(self, indicator: _INDICATOR_TYPING):
         compiled_pattern = self._compile_stix_pattern(indicator)
         observable_types = '_'.join(sorted(compiled_pattern.comparisons.keys()))
-        try:
-            mapping = self._mapping.pattern_mapping[observable_types]
-        except KeyError:
+        mapping = self._mapping.pattern_mapping(observable_types)
+        if mapping is None:
             raise UnknownPatternMappingError(observable_types)
         feature = f'_parse_{mapping}_pattern'
         try:
@@ -2524,7 +2475,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_suricata_pattern(self, indicator: Indicator_v21):
         misp_object = self._create_misp_object('suricata', indicator)
-        for feature, mapping in self._mapping.suricata_object_mapping.items():
+        for feature, mapping in self._mapping.suricata_object_mapping().items():
             if hasattr(indicator, feature):
                 misp_object.add_attribute(
                     **{'value': getattr(indicator, feature), **mapping}
@@ -2546,7 +2497,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
                 attributes.append(
-                    {'value': value, **self._mapping.url_attribute}
+                    {'value': value, **self._mapping.url_attribute()}
                 )
         if any(key != 'url' for key in pattern.comparisons.keys()):
             self._unknown_pattern_mapping_warning(
@@ -2565,14 +2516,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for keys, assertion, value in pattern.comparisons['user-account']:
             if assertion != '=':
                 continue
-            field = keys[-1 if 'unix-account-ext' in keys else 0]
-            if field in self._mapping.user_account_pattern_mapping:
-                attributes.append(
-                    {
-                        'value': value,
-                        **self._mapping.user_account_pattern_mapping[field]
-                    }
-                )
+            attribute = self._mapping.user_account_pattern_mapping(
+                keys[-1 if 'unix-account-ext' in keys else 0]
+            )
+            if attribute is not None:
+                attributes.append({'value': value, **attribute})
             else:
                 self._unmapped_pattern_warning(
                     indicator.id, '.'.join(keys)
@@ -2590,23 +2538,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if assertion != '=':
                 continue
             if 'hashes' in keys:
-                field = keys[1]
-                if field in self._mapping.x509_hashes_mapping:
-                    attributes.append(
-                        {
-                            'value': value,
-                            **self._mapping.x509_hashes_mapping[field]
-                        }
-                    )
+                attribute = self._mapping.x509_hashes_pattern_mapping(keys[1])
+                if attribute is not None:
+                    attributes.append({'value': value, **attribute})
                 continue
-            field = keys[0]
-            if field in self._mapping.x509_object_mapping:
-                attributes.append(
-                    {
-                        'value': value,
-                        **self._mapping.x509_object_mapping[field]
-                    }
-                )
+            attribute = self._mapping.x509_pattern_mapping(keys[0])
+            if attribute is not None:
+                attributes.append({'value': value, **attribute})
             else:
                 self._unmapped_pattern_warning(
                     indicator.id, '.'.join(keys)
@@ -2626,7 +2564,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_yara_pattern(self, indicator: Indicator_v21):
         if hasattr(indicator, 'pattern_version'):
             misp_object = self._create_misp_object('yara', indicator)
-            for feature, mapping in self._mapping.yara_object_mapping.items():
+            for feature, mapping in self._mapping.yara_object_mapping().items():
                 if hasattr(indicator, feature):
                     misp_object.add_attribute(
                         **{'value': getattr(indicator, feature), **mapping}
@@ -2637,7 +2575,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         continue
                     attribute = {
                         'value': reference.url,
-                        **self._mapping.yara_reference_attribute
+                        **self._mapping.yara_reference_attribute()
                     }
                     if hasattr(reference, 'description'):
                         attribute['comment'] = reference.description
@@ -2647,7 +2585,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._add_misp_attribute(
                 {
                     'value': indicator.pattern,
-                    **self._mapping.yara_attribute,
+                    **self._mapping.yara_attribute(),
                     **self._create_attribute_dict(indicator)
                 },
                 indicator
@@ -2727,7 +2665,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 yield field
 
     def _is_pattern_too_complex(self, pattern: str) -> bool:
-        if any(keyword in pattern for keyword in self._mapping.pattern_forbidden_relations):
+        if any(keyword in pattern for keyword in self._mapping.pattern_forbidden_relations()):
             return True
         if all(keyword in pattern for keyword in (' AND ', ' OR ')):
             return True
