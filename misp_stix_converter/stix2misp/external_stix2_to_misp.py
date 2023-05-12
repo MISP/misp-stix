@@ -1991,7 +1991,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
         for keys, assertion, value in pattern.comparisons['autonomous-system']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion != '=':
                 continue
             field = keys[0]
             attribute = self._mapping.asn_pattern_mapping(field)
