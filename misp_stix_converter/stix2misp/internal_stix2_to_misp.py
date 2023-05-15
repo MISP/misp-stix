@@ -673,6 +673,25 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #
     ################################################################################
 
+    def _attribute_from_address_observable_v20(
+            self, observed_data: ObservedData_v20):
+        attribute = self._create_attribute_dict(observed_data)
+        for observable_object in observed_data.objects.values():
+            if '-addr' in observable_object.type:
+                attribute['value'] = observable_object.value
+                break
+        self._add_misp_attribute(attribute, observed_data)
+
+    def _attribute_from_address_observable_v21(
+            self, observed_data: ObservedData_v21):
+        attribute = self._create_attribute_dict(observed_data)
+        for reference in observed_data.object_refs:
+            if '-addr' in reference:
+                observable = self._fetch_observables(reference)
+                attribute['value'] = observable.value
+                break
+        self._add_misp_attribute(attribute, observed_data)
+
     def _attribute_from_AS_observable_v20(self, observed_data: ObservedData_v20):
         attribute = self._create_attribute_dict(observed_data)
         observable = observed_data.objects['0']
@@ -982,19 +1001,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         attribute = self._create_attribute_dict(observed_data)
         observable = self._fetch_observables(observed_data.object_refs)
         attribute['value'] = f"{observable.key}|{observable['values'][0].data}"
-        self._add_misp_attribute(attribute, observed_data)
-
-    def _attribute_from_second_observable_v20(
-            self, observed_data: ObservedData_v20):
-        attribute = self._create_attribute_dict(observed_data)
-        attribute['value'] = observed_data.objects['1'].value
-        self._add_misp_attribute(attribute, observed_data)
-
-    def _attribute_from_second_observable_v21(
-            self, observed_data: ObservedData_v21):
-        attribute = self._create_attribute_dict(observed_data)
-        observable = self._fetch_observables(observed_data.object_refs[1])
-        attribute['value'] = observable.value
         self._add_misp_attribute(attribute, observed_data)
 
     def _object_from_account_with_attachment_observable(
