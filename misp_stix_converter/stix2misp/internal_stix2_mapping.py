@@ -136,7 +136,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
                 (
                     'email-dst', 'email-src', 'ip-src', 'ip-dst'
                 ),
-                '_attribute_from_second'
+                '_attribute_from_address'
             )
         }
     )
