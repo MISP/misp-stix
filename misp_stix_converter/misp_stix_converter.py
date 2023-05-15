@@ -38,7 +38,7 @@ _cybox_features = (
 _default_namespace = 'https://misp-project.org'
 _default_org = 'MISP'
 _files_type = Union[Path, str]
-_MISP_STIX_tag = 'misp:tool="MISP-STIX-Converter"'
+_MISP_STIX_tags = ('misp:tool="MISP-STIX-Converter"', 'misp:tool="misp2stix2"')
 _STIX1_default_format = 'xml'
 _STIX1_default_version = '1.1.1'
 _STIX1_features = (
@@ -525,7 +525,7 @@ def _create_stix_package(orgname: str, version: str) -> STIXPackage:
 
 def _from_misp(stix_objects):
     for stix_object in stix_objects:
-        if stix_object['type'] in _STIX2_event_types and _MISP_STIX_tag in stix_object.get('labels', []):
+        if stix_object['type'] in _STIX2_event_types and any(tag in stix_object.get('labels', []) for tag in _MISP_STIX_tags):
             return True
     return False
 
