@@ -62,14 +62,18 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
     def _check_attribute_confidence_tags(self, stix_object, attribute):
         self.assertEqual(
             stix_object.confidence,
-            self.parser._mapping.confidence_tags[attribute['Tag'][-1]['name']]
+            self.parser._mapping.confidence_tags(
+                attribute['Tag'][-1]['name']
+            )
         )
         self.assertEqual(stix_object.labels[-2:], [tag['name'] for tag in attribute['Tag'][1:]])
 
     def _check_object_confidence_tags(self, stix_object, misp_object):
         self.assertEqual(
             stix_object.confidence,
-            self.parser._mapping.confidence_tags[misp_object['Attribute'][2]['Tag'][0]['name']]
+            self.parser._mapping.confidence_tags(
+                misp_object['Attribute'][2]['Tag'][0]['name']
+            )
         )
         self.assertEqual(
             set(stix_object.labels[-2:]),
@@ -123,7 +127,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         _, grouping, indicator, campaign, vulnerability, observed_data, _, marking = stix_objects
         self.assertEqual(
             grouping.confidence,
-            self.parser._mapping.confidence_tags[confidence_tags[1]['name']]
+            self.parser._mapping.confidence_tags(confidence_tags[1]['name'])
         )
         self.assertEqual(grouping.labels[-2:], [tag['name'] for tag in confidence_tags])
         self._assert_multiple_equal(
@@ -199,7 +203,7 @@ class TestSTIX21EventExport(TestSTIX21GenericExport):
         _, grouping, indicator, coa, observed_data, _, marking = stix_objects
         self._assert_multiple_equal(
             grouping.confidence,
-            self.parser._mapping.confidence_tags[confidence_tags[1]['name']]
+            self.parser._mapping.confidence_tags(confidence_tags[1]['name'])
         )
         self.assertEqual(grouping.labels[-2:], [tag['name'] for tag in confidence_tags])
         self._assert_multiple_equal(
@@ -5812,7 +5816,7 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
 
 
 class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
-    _mapping_types = MISPtoSTIX21Mapping()
+    _mapping_types = MISPtoSTIX21Mapping
 
     def test_event_with_attack_pattern_galaxy(self):
         event = get_event_with_attack_pattern_galaxy()
@@ -5821,7 +5825,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
             galaxy = event['Event']['Galaxy'][0],
             attack_pattern = self.parser.stix_objects[-1],
             summary = ', '.join(
-                sorted(self._mapping_types.attack_pattern_types)
+                sorted(self._mapping_types.attack_pattern_types())
             )
         )
 
@@ -5832,7 +5836,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
             galaxy = event['Event']['Galaxy'][0],
             course_of_action = self.parser.stix_objects[-1],
             summary = ', '.join(
-                sorted(self._mapping_types.course_of_action_types)
+                sorted(self._mapping_types.course_of_action_types())
             )
         )
 
@@ -5847,7 +5851,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
             galaxy = event['Event']['Galaxy'][0],
             intrusion_set = self.parser.stix_objects[-1],
             summary = ', '.join(
-                sorted(self._mapping_types.intrusion_set_types)
+                sorted(self._mapping_types.intrusion_set_types())
             )
         )
 
@@ -5866,7 +5870,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             malware = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.malware_types))
+            summary = ', '.join(sorted(self._mapping_types.malware_types()))
         )
 
     def test_event_with_sector_galaxy(self):
@@ -5883,7 +5887,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             threat_actor = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.threat_actor_types))
+            summary = ', '.join(sorted(self._mapping_types.threat_actor_types()))
         )
 
     def test_event_with_tool_galaxy(self):
@@ -5892,7 +5896,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             tool = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.tool_types))
+            summary = ', '.join(sorted(self._mapping_types.tool_types()))
         )
 
     def test_event_with_vulnerability_galaxy(self):
@@ -5901,7 +5905,7 @@ class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             vulnerability = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.vulnerability_types))
+            summary = ', '.join(sorted(self._mapping_types.vulnerability_types()))
         )
 
     def test_attribute_with_attack_pattern_galaxy(self):
@@ -6181,12 +6185,12 @@ class TestFeedSTIX21MISPExport(TestFeedSTIX21Export):
         self.assertEqual(len(bundle.objects), 3)
         identity2, indicator3, indicator4 = bundle.objects
         self._assert_multiple_equal(
-            self.parser._mapping.misp_identity_args['id'],
+            self.parser._mapping.misp_identity_args()['id'],
             identity1.id,
             identity2.id
         )
         self._assert_multiple_equal(
-            self.parser._mapping.misp_identity_args['name'],
+            self.parser._mapping.misp_identity_args()['name'],
             identity1.name,
             identity2.name
         )
