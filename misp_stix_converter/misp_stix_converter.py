@@ -26,7 +26,8 @@ from stix.core import (
     STIXHeader, STIXPackage)
 from stix.core.ttps import TTPs
 from stix2.base import STIXJSONEncoder
-from stix2.parsing import parse as stix2_parser
+from stix2.exceptions import InvalidValueError
+from stix2.parsing import parse as stix2_parser, ParseError
 from stix2.v20 import Bundle as Bundle_v20
 from stix2.v21 import Bundle as Bundle_v21
 from typing import List, Optional, Union
@@ -490,11 +491,15 @@ def stix_1_to_misp(
 
 def stix_2_to_misp(
         filename: _files_type, output_filename: Optional[_files_type]=None):
-    with open(filename, 'rt', encoding='utf-8') as f:
-        bundle = stix2_parser(
-            f.read(), allow_custom=True, interoperability=True
-        )
-    stix_parser = InternalSTIX2toMISPParser() if _from_misp(bundle.objects) else ExternalSTIX2toMISPParser()
+    try:
+        with open(filename, 'rt', encoding='utf-8') as f:
+            bundle = stix2_parser(
+                f.read(), allow_custom=True, interoperability=True
+            )
+    except (ParseError, InvalidValueError) as error:
+        return {'errors': [error.__str__()]}
+    from_misp = _from_misp(bundle.objects)
+    stix_parser = InternalSTIX2toMISPParser() if from_misp else ExternalSTIX2toMISPParser()
     stix_parser.load_stix_bundle(bundle)
     stix_parser.parse_stix_bundle()
     if output_filename is None:
