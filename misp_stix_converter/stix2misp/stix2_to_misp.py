@@ -49,6 +49,7 @@ from typing import Optional, Union
 
 _LOADED_FEATURES = (
     '_attack_pattern',
+    '_campaign',
     '_course_of_action',
     '_custom_attribute',
     '_custom_object',
