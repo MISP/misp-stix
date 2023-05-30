@@ -1832,11 +1832,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     registry_key, object_id, observed_data
                 )
                 continue
-            if hasattr(registry_key, 'values'):
+            if 'values' in registry_key.properties_populated():
                 self._add_misp_attribute(
                     getattr(self, f'_handle_{feature}_special_attribute')(
                         registry_key,
-                        f"{registry_key.key}|{registry_key.values[0]['data']}",
+                        f"{registry_key.key}|{registry_key['values'][0]['data']}",
                         'regkey|value', observed_data.id
                     ),
                     observed_data
