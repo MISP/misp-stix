@@ -489,7 +489,7 @@ def stix_1_to_misp(
     return 1
 
 
-def stix_2_to_misp(filename: _files_type,
+def stix_2_to_misp(filename: _files_type, debug: Optional[bool] = False,
                    distribution: Optional[int] = 0,
                    galaxies_as_tags: Optional[bool] = False,
                    output_dir: Optional[_files_type]=None,
@@ -511,10 +511,11 @@ def stix_2_to_misp(filename: _files_type,
     stix_parser.load_stix_bundle(bundle)
     stix_parser.parse_stix_bundle(single_event)
     traceback = {'success': 1}
-    for feature in ('errors', 'warnings'):
-        brol = getattr(stix_parser, feature)
-        if brol:
-            traceback[feature] = brol
+    if debug:
+        for feature in ('errors', 'warnings'):
+            brol = getattr(stix_parser, feature)
+            if brol:
+                traceback[feature] = brol
     if output_dir is None:
         output_dir = filename.parent
     if stix_parser.single_event:
