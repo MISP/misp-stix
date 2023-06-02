@@ -489,24 +489,48 @@ def stix_1_to_misp(
     return 1
 
 
-def stix_2_to_misp(
-        filename: _files_type, output_filename: Optional[_files_type]=None):
+def stix_2_to_misp(filename: _files_type,
+                   distribution: Optional[int] = 0,
+                   galaxies_as_tags: Optional[bool] = False,
+                   output_dir: Optional[_files_type]=None,
+                   output_name: Optional[_files_type]=None,
+                   sharing_group_id: Optional[int] = None,
+                   single_event: Optional[bool] = False):
+    if isinstance(filename, str):
+        filename = Path(filename).resolve()
     try:
         with open(filename, 'rt', encoding='utf-8') as f:
             bundle = stix2_parser(
                 f.read(), allow_custom=True, interoperability=True
             )
     except (ParseError, InvalidValueError) as error:
-        return {'errors': [error.__str__()]}
+        return {'errors': [f'{filename} -  {error.__str__()}']}
     from_misp = _from_misp(bundle.objects)
-    stix_parser = InternalSTIX2toMISPParser() if from_misp else ExternalSTIX2toMISPParser()
+    parser = InternalSTIX2toMISPParser if from_misp else ExternalSTIX2toMISPParser
+    stix_parser = parser(distribution, sharing_group_id, galaxies_as_tags)
     stix_parser.load_stix_bundle(bundle)
-    stix_parser.parse_stix_bundle()
-    if output_filename is None:
-        output_filename = f'{filename}.out'
-    with open(output_filename, 'wt', encoding='utf-8') as f:
-        f.write(stix_parser.misp_event.to_json(indent=4))
-    return 1
+    stix_parser.parse_stix_bundle(single_event)
+    traceback = {'success': 1}
+    for feature in ('errors', 'warnings'):
+        brol = getattr(stix_parser, feature)
+        if brol:
+            traceback[feature] = brol
+    if output_dir is None:
+        output_dir = filename.parent
+    if stix_parser.single_event:
+        if output_name is None:
+            output_name = output_dir / f'{filename.name}.out'
+        with open(output_name, 'wt', encoding='utf-8') as f:
+            f.write(stix_parser.misp_event.to_json(indent=4))
+        traceback['results'] = [output_name]
+        return traceback
+    traceback['results'] = []
+    for misp_event in stix_parser.misp_events:
+        output = output_dir / f'{filename.name}.{misp_event.uuid}.misp.out'
+        with open(output, 'wt', encoding='utf-8') as f:
+            f.write(misp_event.to_json(indent=4))
+        traceback['results'].append(output)
+    return traceback
 
 
 ################################################################################
