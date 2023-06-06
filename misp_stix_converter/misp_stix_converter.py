@@ -396,9 +396,10 @@ def misp_event_collection_to_stix1(
     traceback = defaultdict(list)
     parser = MISPtoSTIX1EventsParser(org, version)
     if single_output:
-        name = _check_output(
+        name = _check_filename(
             Path(__file__).resolve().parent / 'tmp',
-            f'{package.id_}.stix1.{return_format}', output_dir
+            f'{package.id_}.stix1.{return_format}',
+            output_dir, output_name
         )
         if in_memory:
             package = _create_stix_package(org, version)
@@ -416,6 +417,7 @@ def misp_event_collection_to_stix1(
                     traceback['fails'].append(f'{filename} - {exception.__str__()}')
             if any(filename not in traceback.get('fails', []) for filename in input_files):
                 _write_raw_stix(package, name, *_write_args)
+                traceback.update(_generate_traceback(debug, parser, name))
             return traceback
         header, separator, footer = stix1_framing(
             namespace, org, return_format, version
