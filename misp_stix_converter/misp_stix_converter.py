@@ -393,8 +393,21 @@ def misp_event_collection_to_stix1(
     if org != _default_org:
         org = re.sub('[\W]+', '', org.replace(" ", "_"))
     _write_args = (namespace, org, return_format)
-    traceback = defaultdict(list)
     parser = MISPtoSTIX1EventsParser(org, version)
+    if len(input_files) == 1:
+        filename = input_files[0]
+        try:
+            if not isinstance(filename, Path):
+                filename = Path(filename).resolve()
+            parser.parse_json_content(filename)
+            name = _check_filename(
+                filename.parent, f'{filename.name}.out', output_dir, output_name
+            )
+            _write_raw_stix(parser.stix_package, name, *_write_args)
+            return _generate_traceback(debug, parser, name)
+        except Exception as exception:
+            return {'fails': f'{filename} - {exception.__str__()}'}
+    traceback = defaultdict(list)
     if single_output:
         name = _check_filename(
             Path(__file__).resolve().parent / 'tmp',
