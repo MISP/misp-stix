@@ -48,7 +48,9 @@ _STIX1_features = (
 )
 _STIX1_valid_formats = ('json', 'xml')
 _STIX1_valid_versions = ('1.1.1', '1.2')
+_STIX2_default_version = '2.1'
 _STIX2_event_types = ('grouping', 'report')
+_STIX2_valid_versions = ('2.0', '2.1')
 
 
 ################################################################################
@@ -477,62 +479,111 @@ def misp_event_collection_to_stix1(
     return traceback
 
 
-def misp_collection_to_stix2_0(
-        output_filename: _files_type, *input_files: List[_files_type],
-        in_memory: bool=False):
-    parser = MISPtoSTIX20Parser()
-    if in_memory or len(input_files) == 1:
-        for filename in input_files:
+def misp_collection_to_stix2(
+        input_files: List[_files_type], debug: Optional[bool] = False,
+        version: Optional[str] = _STIX2_default_version,
+        in_memory: Optional[bool] = False,
+        single_output: Optional[bool] = False,
+        output_dir: Optional[_files_type] = None,
+        output_name: Optional[_files_type] = None):
+    if version not in _STIX2_valid_versions:
+        version = _STIX2_default_version
+    parser = MISPtoSTIX21Parser() if version == '2.1' else MISPtoSTIX20Parser()
+    if len(input_files) == 1:
+        try:
+            if not isinstance(filename, Path):
+                filename = Path(filename).resolve()
             parser.parse_json_content(filename)
-        objects = parser.stix_objects
-        with open(output_filename, 'wt', encoding='utf-8') as f:
-            f.write(
-                json.dumps(Bundle_v20(objects), cls=STIXJSONEncoder, indent=4)
+            name = _check_filename(
+                filename.parent, f'{filename.name}.out', output_dir, output_name
             )
-        return 1
-    with open(output_filename, 'wt', encoding='utf-8') as f:
-        f.write(
-            f'{json.dumps(Bundle_v20(), cls=STIXJSONEncoder, indent=4)[:-2]},'
-            '\n    "objects": [\n'
+            with open(name, 'wt', encoding='utf-8') as f:
+                f.write(parser.bundle.serialize(indent=4))
+            return _generate_traceback(debug, parser, name)
+        except Exception as exception:
+            return {'fails': f'{filename} - {exception.__str__()}'}
+    traceback = defaultdict(list)
+    if single_output:
+        if in_memory:
+            for filename in input_files:
+                try:
+                    if not isinstance(filename, Path):
+                        filename = Path(filename).resolve()
+                    parser.parse_json_content(filename)
+                except Exception as exception:
+                    traceback['fails'].append(f'{filename} - {exception.__str__()}')
+            if any(filename not in traceback.get('fails', []) for filename in input_files):
+                bundle = parser.bundle
+                name = _check_filename(
+                    Path(__file__).resolve().parent / 'tmp',
+                    f"{bundle.id.split('--'[1])}.stix"
+                    f"{version.replace('.', '')}.json",
+                    output_dir, output_name
+                )
+                with open(name, 'wt', encoding='utf-8') as f:
+                    f.write(bundle.serialize(indent=4))
+                traceback.update(_generate_traceback(debug, parser, name))
+            return traceback
+        bundle = Bundle_v21() if version == '2.1' else Bundle_v20()
+        name = _check_filename(
+            Path(__file__).resolve().parent / 'tmp',
+            f"{bundle.id.split('--')[1]}.stix{version.replace('.', '')}.json",
+            output_dir, output_name
         )
-    for filename in input_files[:-1]:
-        parser.parse_json_content(filename)
-        with open(output_filename, 'at', encoding='utf-8') as f:
-            f.write(f'{json.dumps([parser.fetch_stix_objects], cls=STIXJSONEncoder, indent=4)[8:-8]},\n')
-    parser.parse_json_content(input_files[-1])
-    with open(output_filename, 'at', encoding='utf-8') as f:
-        footer = '    ]\n}'
-        f.write(f'{json.dumps([parser.stix_objects], cls=STIXJSONEncoder, indent=4)[8:-8]}\n{footer}')
-    return 1
-
-
-def misp_collection_to_stix2_1(
-        output_filename: _files_type, *input_files: List[_files_type],
-        in_memory: bool=False):
-    parser = MISPtoSTIX21Parser()
-    if in_memory or len(input_files) == 1:
-        for filename in input_files:
+        with open(name, 'wt', encoding='utf-8') as f:
+            f.write(f'{bundle.serialize(indent=4)[:-2]},\n    "objects": [\n')
+        written = False
+        try:
+            filename = input_files[0]
+            if not isinstance(filename, Path):
+                filename = Path(filename).resolve()
             parser.parse_json_content(filename)
-        objects = parser.stix_objects
-        with open(output_filename, 'wt', encoding='utf-8') as f:
-            f.write(
-                json.dumps(Bundle_v21(objects), cls=STIXJSONEncoder, indent=4)
+            stix_objects = json.dumps(
+                [parser.fetch_stix_objects], cls=STIXJSONEncoder, indent=4
             )
-        return 1
-    with open(output_filename, 'wt', encoding='utf-8') as f:
-        f.write(
-            f'{json.dumps(Bundle_v21(), cls=STIXJSONEncoder, indent=4)[:-2]},'
-            '\n    "objects": [\n'
-        )
-    for filename in input_files[:-1]:
-        parser.parse_json_content(filename)
-        with open(output_filename, 'at', encoding='utf-8') as f:
-            f.write(f'{json.dumps([parser.fetch_stix_objects], cls=STIXJSONEncoder, indent=4)[8:-8]},\n')
-    parser.parse_json_content(input_files[-1])
-    with open(output_filename, 'at', encoding='utf-8') as f:
-        footer = '    ]\n}'
-        f.write(f'{json.dumps([parser.stix_objects], cls=STIXJSONEncoder, indent=4)[8:-8]}\n{footer}')
-    return 1
+            with open(name, 'at', encoding='utf-8') as f:
+                f.write(stix_objects[8:-8])
+            written = True
+        except Exception as exception:
+            traceback['fails'].append(f'{filename} - {exception.__str__()}')
+        for filename in input_files[1:]:
+            try:
+                if not isinstance(filename, Path):
+                    filename = Path(filename).resolve()
+                parser.parse_json_content(filename)
+                stix_objects = json.dumps(
+                    [parser.fetch_stix_objects], cls=STIXJSONEncoder, indent=4
+                )
+                separator = ',\n' if written else ''
+                with open(name, 'at', encoding='utf-8') as f:
+                    f.write(f"{separator}{stix_objects[8:-8]}")
+                written = True
+            except Exception as exception:
+                traceback['fails'].append(f'{filename} - {exception.__str__()}')
+        if written:
+            with open(name, 'at', encoding='utf-8') as f:
+                f.write('    ]\n}')
+            traceback.update(_generate_traceback(debug, parser, name))
+        else:
+            name.remove()
+        return traceback
+    output_names = []
+    for filename in input_files:
+        try:
+            if not isinstance(filename, Path):
+                filename = Path(filename).resolve()
+            parser.parse_json_content(filename)
+            name = _check_output(
+                filename.parent, f'{filename.name}.out', output_dir
+            )
+            with open(name, 'wt', encoding='utf-8') as f:
+                f.write(parser.bundle.serialize(indent=4))
+            output_names.append(name)
+        except Exception as exception:
+            traceback['fails'].append(f'{filename} - {exception.__str__()}')
+    if output_names:
+        traceback.update(_generate_traceback(debug, parser, *output_names))
+    return traceback
 
 
 def misp_to_stix1(
@@ -565,26 +616,25 @@ def misp_to_stix1(
         return {'fails': f'{filename} - {exception.__str__()}'}
 
 
-def misp_to_stix2_0(
-        filename: _files_type, output_filename: Optional[_files_type]=None):
-    if output_filename is None:
-        output_filename = f'{filename}.out'
-    parser = MISPtoSTIX20Parser()
-    parser.parse_json_content(filename)
-    with open(output_filename, 'wt', encoding='utf-8') as f:
-        f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
-    return 1
-
-
-def misp_to_stix2_1(
-        filename: _files_type, output_filename: Optional[_files_type]=None):
-    if output_filename is None:
-        output_filename = f'{filename}.out'
-    parser = MISPtoSTIX21Parser()
-    parser.parse_json_content(filename)
-    with open(output_filename, 'wt', encoding='utf-8') as f:
-        f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
-    return 1
+def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,
+                  version: Optional[str] = _STIX2_default_version,
+                  output_dir: Optional[_files_type] = None,
+                  output_name: Optional[_files_type] = None):
+    if version not in _STIX2_valid_versions:
+        version = _STIX2_default_version
+    parser = MISPtoSTIX21Parser() if version == '2.1' else MISPtoSTIX20Parser()
+    try:
+        if not isinstance(filename, Path):
+            filename = Path(filename).resolve()
+        parser.parse_json_content(filename)
+        name = _check_filename(
+            filename.parent, f'{filename.name}.out', output_dir, output_name
+        )
+        with open(name, 'wt', encoding='utf-8') as f:
+            f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
+        return _generate_traceback(debug, parser, name)
+    except Exception as exception:
+        return {'fails': f'{filename} - {exception.__str__()}'}
 
 
 ################################################################################
@@ -977,27 +1027,15 @@ def _misp_to_stix(stix_args):
         return misp_event_collection_to_stix1(
             *stix_args.file, **collection_args, **stix1_args
         )
+    stix2_args = {
+        'debug': stix_args.debug, 'output_dir': stix_args.output_dir,
+        'output_name': stix_args.output_name, 'version': stix_args.version
+    }
     if len(stix_args.file) == 1:
-        filename = stix_args.file[0]
-        output_filename = _handle_output_filename(stix_args)
-        args = (filename, output_filename)
-        status = misp_to_stix2_0(*args) if stix_args.version == '2.0' else misp_to_stix2_1(*args)
-        if status != 1:
-            sys.exit(f'Error while processing {filename} - status code = {status}')
-        return output_filename
-    if stix_args.single_output:
-        output = stix_args.output_dir / f"{uuid4()}.stix{stix_args.version.replace('.', '')}.json"
-        method = misp_collection_to_stix2_0 if stix_args.version == '2.0' else misp_collection_to_stix2_1
-        status = method(
-            output,
-            *stix_args.file,
-            in_memory = not stix_args.tmp_files
-        )
-        if status != 1:
-            sys.exit(f'Error while processing your files - status code = {status}')
-        return output
-    method = misp_to_stix2_0 if stix_args.version == '2.0' else misp_to_stix2_1
-    return _process_files(stix_args, method)
+        return misp_to_stix2(stix_args.file[0])
+    return misp_collection_to_stix2(
+        stix_args.file, **collection_args, **stix2_args
+    )
 
 
 def _process_files(stix_args, method):
