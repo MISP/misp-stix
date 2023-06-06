@@ -306,7 +306,7 @@ def misp_attribute_collection_to_stix1(
                             package.add_ttp(ttp)
                 except Exception as exception:
                     traceback['fails'].append(f'{filename} - {exception.__str__()}')
-            if any(filename not in traceback['fails'] for filename in input_files):
+            if any(filename not in traceback.get('fails', []) for filename in input_files):
                 _write_raw_stix(
                     package, name, namespace, org, return_format
                 )
@@ -336,7 +336,7 @@ def misp_attribute_collection_to_stix1(
                             f.write(content)
             except Exception as exception:
                 traceback['fails'].append(f'{filename} - {exception.__str__()}')
-        if any(filename not in traceback['fails'] for filename in input_files):
+        if any(filename not in traceback.get('fails', []) for filename in input_files):
             header, _, footer = stix1_attributes_framing(
                 namespace, org, return_format, version
             )
