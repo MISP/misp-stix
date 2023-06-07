@@ -994,19 +994,19 @@ def _misp_to_stix(stix_args):
     }
     if stix_args.version in ('1.1.1', '1.2'):
         stix1_args = {
-            'return_format': stix_args.format, 'namespace': stix_args.namespace,
-            'in_memory': stix_args.in_memory, 'version': stix_args.version,
-            'output_dir': stix_args.output_dir, 'org': stix_args.org,
-            'output_name': stix_args.output_name, 'debug': stix_args.debug
+            'debug': stix_args.debug, 'return_format': stix_args.format,
+            'version': stix_args.version, 'namespace': stix_args.namespace,
+            'org': stix_args.org, 'output_dir': stix_args.output_dir,
+            'output_name': stix_args.output_name
         }
         if stix_args.level == 'attribute':
             return misp_attribute_collection_to_stix1(
-                *stix_args.file, **collection_args, **stix1_args
+                stix_args.file, **collection_args, **stix1_args
             )
         if len(stix_args.file) == 1:
             return misp_to_stix1(stix_args.file[0], **stix1_args)
         return misp_event_collection_to_stix1(
-            *stix_args.file, **collection_args, **stix1_args
+            stix_args.file, **collection_args, **stix1_args
         )
     stix2_args = {
         'debug': stix_args.debug, 'output_dir': stix_args.output_dir,
