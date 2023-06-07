@@ -679,28 +679,22 @@ def stix_2_to_misp(filename: _files_type, debug: Optional[bool] = False,
     stix_parser = parser(distribution, sharing_group_id, galaxies_as_tags)
     stix_parser.load_stix_bundle(bundle)
     stix_parser.parse_stix_bundle(single_event)
-    traceback = {'success': 1}
-    if debug:
-        for feature in ('errors', 'warnings'):
-            brol = getattr(stix_parser, feature)
-            if brol:
-                traceback[feature] = brol
     if output_dir is None:
         output_dir = filename.parent
     if stix_parser.single_event:
-        if output_name is None:
-            output_name = output_dir / f'{filename.name}.out'
-        with open(output_name, 'wt', encoding='utf-8') as f:
+        name = _check_filename(
+            filename.parent, f'{filename.name}.out', output_dir, output_name
+        )
+        with open(name, 'wt', encoding='utf-8') as f:
             f.write(stix_parser.misp_event.to_json(indent=4))
-        traceback['results'] = [output_name]
-        return traceback
-    traceback['results'] = []
+        return _generate_traceback(debug, parser, name)
+    output_names = []
     for misp_event in stix_parser.misp_events:
         output = output_dir / f'{filename.name}.{misp_event.uuid}.misp.out'
         with open(output, 'wt', encoding='utf-8') as f:
             f.write(misp_event.to_json(indent=4))
-        traceback['results'].append(output)
-    return traceback
+        output_names.append(output)
+    return _generate_traceback(debug, parser, *output_names)
 
 
 ################################################################################
@@ -987,24 +981,11 @@ def _write_raw_stix(
     else:
         with open(filename, 'wt', encoding='utf-8') as f:
             f.write(json.dumps(package.to_dict(), indent=4))
-    return 1
 
 
 ################################################################################
 #                            COMMAND LINE FUNCTIONS                            #
 ################################################################################
-
-def _handle_output_dir(stix_args, filename):
-    if stix_args.output_dir is None:
-        return f'{filename}.out'
-    return stix_args.output_dir / f'{filename.name}.out'
-
-
-def _handle_output_filename(stix_args):
-    if stix_args.output_name is None:
-        return f'{stix_args.file[0]}.out'
-    return stix_args.output_name
-
 
 def _misp_to_stix(stix_args):
     collection_args = {
@@ -1038,28 +1019,24 @@ def _misp_to_stix(stix_args):
     )
 
 
-def _process_files(stix_args, method):
-    results = []
-    for filename in stix_args.file:
-        output_filename = _handle_output_dir(stix_args, filename)
-        status = method(filename, output_filename=output_filename)
-        if status == 1:
-            results.append(output_filename)
-        else:
-            print(
-                f'Error while processing {filename} - status code = {status}',
-                file=sys.stderr
-            )
-    return results
-
-
 def _stix_to_misp(stix_args):
-    method = stix_2_to_misp if stix_args.version in ('2.0', '2.1') else stix_1_to_misp
-    if len(stix_args.file) == 1:
-        output_filename = _handle_output_filename(stix_args)
-        method(stix_args.file[0], output_filename=output_filename)
-        return output_filename
-    return _process_files(stix_args, method)
+    method = stix_2_to_misp if stix_args.version == '2' else stix_1_to_misp
+    results = defaultdict(list)
+    for filename in stix_args.file:
+        traceback = method(
+            filename, debug=stix_args.debug,
+            distribution=stix_args.distribution,
+            galaxies_as_tags=stix_args.galaxies_as_tags,
+            output_dir=stix_args.output_dir,
+            output_name=stix_args.output_name,
+            sharing_group_id=stix_args.sharing_group,
+            single_event=stix_args.single_output
+        )
+        if traceback.pop('success', 0) == 1:
+            results.update(traceback)
+            continue
+        results['fails'].extend(traceback['errors'])
+    return results
 
 
 ################################################################################
@@ -1086,16 +1063,6 @@ def _check_output(
     if output_dir.is_file():
         return output_dir
     return output_dir / default_name
-
-
-def _check_output_dir(default_dir: Path, output_dir: _files_type) -> Path:
-    if output_dir is None:
-        return default_dir
-    if not isinstance(output_dir, Path):
-        output_dir = Path(output_dir).resolve()
-    if output_dir.is_file():
-        return output_dir.parent
-    return output_dir
 
 
 def _generate_traceback(debug: bool, parser, *output_names: List[Path]) -> dict:
