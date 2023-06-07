@@ -480,7 +480,7 @@ def misp_event_collection_to_stix1(
 
 
 def misp_collection_to_stix2(
-        input_files: List[_files_type], debug: Optional[bool] = False,
+        *input_files: List[_files_type], debug: Optional[bool] = False,
         version: Optional[str] = _STIX2_default_version,
         in_memory: Optional[bool] = False,
         single_output: Optional[bool] = False,
@@ -490,6 +490,7 @@ def misp_collection_to_stix2(
         version = _STIX2_default_version
     parser = MISPtoSTIX21Parser() if version == '2.1' else MISPtoSTIX20Parser()
     if len(input_files) == 1:
+        filename = input_files[0]
         try:
             if not isinstance(filename, Path):
                 filename = Path(filename).resolve()
@@ -515,8 +516,8 @@ def misp_collection_to_stix2(
             if any(filename not in traceback.get('fails', []) for filename in input_files):
                 bundle = parser.bundle
                 name = _check_filename(
-                    Path(__file__).resolve().parent / 'tmp',
-                    f"{bundle.id.split('--'[1])}.stix"
+                    Path(__file__).resolve().parents[1] / 'tmp',
+                    f"{bundle.id.split('--')[1]}.stix"
                     f"{version.replace('.', '')}.json",
                     output_dir, output_name
                 )
@@ -526,7 +527,7 @@ def misp_collection_to_stix2(
             return traceback
         bundle = Bundle_v21() if version == '2.1' else Bundle_v20()
         name = _check_filename(
-            Path(__file__).resolve().parent / 'tmp',
+            Path(__file__).resolve().parents[1] / 'tmp',
             f"{bundle.id.split('--')[1]}.stix{version.replace('.', '')}.json",
             output_dir, output_name
         )
