@@ -1073,5 +1073,5 @@ def _generate_traceback(debug: bool, parser, *output_names: List[Path]) -> dict:
             brol = getattr(parser, feature)
             if brol:
                 traceback[feature] = brol
-    traceback['results'] = output_names
+    traceback['results'] = list(output_names)
     return traceback
