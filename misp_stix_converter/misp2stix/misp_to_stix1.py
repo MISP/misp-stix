@@ -4,8 +4,9 @@
 import json
 import re
 import socket
-from .stix1_mapping import MISPtoSTIX1Mapping
 from .exportparser import MISPtoSTIXParser
+from .framing import _create_stix_package as _stix_package
+from .stix1_mapping import MISPtoSTIX1Mapping
 from abc import ABCMeta
 from base64 import b64encode
 from collections import defaultdict
@@ -306,9 +307,9 @@ class MISPtoSTIX1Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         self._handle_attribute(attribute, observable)
 
     def _parse_hash_attribute(self, attribute: dict):
-        hash = self._parse_hash_value(attribute['type'], attribute['value'])
+        _hash = self._parse_hash_value(attribute['type'], attribute['value'])
         file_object = File()
-        file_object.add_hash(hash)
+        file_object.add_hash(_hash)
         observable = self._create_observable(file_object, attribute['uuid'], 'File')
         self._handle_attribute(attribute, observable)
 
@@ -1155,7 +1156,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         with open(filename, 'rt', encoding='utf-8') as f:
             json_content = json.loads(f.read())
         if json_content.get('response'):
-            package = STIXPackage()
+            package = _stix_package(self._orgname, self._version, header=False)
             for event in json_content['response']:
                 self.parse_misp_event(event)
                 package.add_related_package(self._stix_package)
