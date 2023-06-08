@@ -806,7 +806,7 @@ def _get_courses_of_action_header(return_format: str = 'xml') -> str:
 def _get_events(package: STIXPackage, return_format: str = 'xml') -> str:
     if return_format == 'xml':
         if package.related_packages is not None:
-            length = 96 + len(package.id_) + len(package.version)
+            length = 135 + len(package.id_) + len(package.version)
             return package.to_xml(include_namespaces=False).decode()[length:-82]
         content = '\n            '.join(
             package.to_xml(include_namespaces=False).decode().split('\n')
