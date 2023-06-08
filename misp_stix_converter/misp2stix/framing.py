@@ -87,8 +87,9 @@ def _stix_json_framing(stix_package: STIXPackage) -> tuple:
     return header, ', ', ']}}'
 
 
-def _create_stix_package(orgname: str, version: str,
-                         uuid: Optional[_UUID_typing] = None) -> STIXPackage:
+def _create_stix_package(
+        orgname: str, version: str,  header: Optional[bool] = True,
+        uuid: Optional[_UUID_typing] = None) -> STIXPackage:
     parsed_orgname = re.sub('[\W]+', '', orgname.replace(' ', '_'))
     if uuid is None:
         uuid = uuid4()
@@ -97,10 +98,11 @@ def _create_stix_package(orgname: str, version: str,
         timestamp=datetime.datetime.now()
     )
     stix_package.version = version
-    stix_header = STIXHeader()
-    stix_header.title = f"Export from {orgname}'s MISP"
-    stix_header.package_intents = 'Threat Report'
-    stix_package.stix_header = stix_header
+    if header:
+        stix_header = STIXHeader()
+        stix_header.title = f"Export from {orgname}'s MISP"
+        stix_header.package_intents = 'Threat Report'
+        stix_package.stix_header = stix_header
     return stix_package
 
 
