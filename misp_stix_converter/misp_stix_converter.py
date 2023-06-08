@@ -248,7 +248,7 @@ class AttributeCollectionHandler():
 
 
 def misp_attribute_collection_to_stix1(
-        input_files: List[_files_type], debug: Optional[bool] = False,
+        *input_files: List[_files_type], debug: Optional[bool] = False,
         return_format: Optional[str] = _STIX1_default_format,
         namespace: Optional[str] = _default_namespace,
         org: Optional[str] = _default_org,
@@ -378,7 +378,7 @@ def misp_attribute_collection_to_stix1(
 
 
 def misp_event_collection_to_stix1(
-        input_files: List[_files_type], debug: Optional[bool] = False,
+        *input_files: List[_files_type], debug: Optional[bool] = False,
         return_format: Optional[str] = _STIX1_default_format,
         namespace: Optional[str] = _default_namespace,
         org: Optional[str] = _default_org,
