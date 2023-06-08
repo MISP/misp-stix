@@ -117,6 +117,8 @@ def _stix_xml_framing(stix_package: STIXPackage, namespaces: dict) -> tuple:
     s_related = "stix:Related_Package"
     header = stix_package.to_xml(auto_namespace=False, ns_dict=namespaces, schemaloc_dict=SCHEMALOC_DICT)
     header = header.decode()
+    if header.endswith('/>\n'):
+        header = f'{header[:-3]}>\n'
     header = f"{header.replace(s_stix, '')}    <{s_related}s>\n        <{s_related}>\n"
     footer = f"        </{s_related}>\n    </{s_related}s>\n{s_stix}"
     separator = f"        </{s_related}>\n        <{s_related}>\n"
