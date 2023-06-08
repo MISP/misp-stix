@@ -7,23 +7,38 @@ import re
 from mixbox import idgen
 from mixbox.namespaces import Namespace
 from stix.core import STIXHeader, STIXPackage
-from typing import Optional
-from uuid import uuid4
+from typing import Optional, Union
+from uuid import uuid4, UUID
 from .stix1_mapping import NS_DICT, SCHEMALOC_DICT
 
 json_footer = ']}\n'
+_UUID_typing = Union[UUID, str]
 
 
-def stix1_attributes_framing(namespace: str, orgname: str, return_format: str, version: str) -> tuple:
-    stix_package = _stix_package(orgname, version)
+def stix1_attributes_framing(namespace: str, orgname: str, return_format: str,
+                             version: str) -> tuple:
+    stix_package = _create_stix_package(orgname, version)
+    return _stix1_attributes_framing(
+        namespace, orgname, return_format, stix_package
+    )
+
+
+def _stix1_attributes_framing(namespace: str, orgname: str, return_format: str,
+                              stix_package: STIXPackage) -> tuple:
     if return_format == 'xml':
         namespaces = _handle_namespaces(namespace, orgname)
         return _stix_xml_attributes_framing(stix_package, namespaces)
     return _stix_json_attributes_framing(stix_package)
 
 
-def stix1_framing(namespace: str, orgname: str, return_format: str, version: str) -> tuple:
-    stix_package = _stix_package(orgname, version)
+def stix1_framing(namespace: str, orgname: str, return_format: str,
+                  version: str) -> tuple:
+    stix_package = _create_stix_package(orgname, version)
+    return _stix1_framing(namespace, orgname, return_format, stix_package)
+
+
+def _stix1_framing(namespace: str, orgname: str, return_format: str,
+                   stix_package: STIXPackage) -> tuple:
     if return_format == 'xml':
         namespaces = _handle_namespaces(namespace, orgname)
         return _stix_xml_framing(stix_package, namespaces)
@@ -35,14 +50,14 @@ def stix_xml_separator():
     return f"        </{header}>\n        <{header}>\n"
 
 
-def stix20_framing(uuid: Optional[str] = None) -> tuple:
+def stix20_framing(uuid: Optional[_UUID_typing] = None) -> tuple:
     header = '{"type": "bundle", "spec_version": "2.0", "id":'
     if uuid is None:
         uuid = uuid4()
     return f'{header} "bundle--{uuid}", "objects": [', ', ', json_footer
 
 
-def stix21_framing(uuid: Optional[str] = None) -> tuple:
+def stix21_framing(uuid: Optional[_UUID_typing] = None) -> tuple:
     header = '{"type": "bundle", "id":'
     if uuid is None:
         uuid = uuid4()
@@ -72,7 +87,8 @@ def _stix_json_framing(stix_package: STIXPackage) -> tuple:
     return header, ', ', ']}}'
 
 
-def _stix_package(orgname: str, version: str, uuid: Optional[str] = None) -> STIXPackage:
+def _create_stix_package(orgname: str, version: str,
+                         uuid: Optional[_UUID_typing] = None) -> STIXPackage:
     parsed_orgname = re.sub('[\W]+', '', orgname.replace(' ', '_'))
     if uuid is None:
         uuid = uuid4()
