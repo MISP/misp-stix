@@ -5,7 +5,9 @@ import json
 import os
 import re
 import sys
-from .misp2stix.framing import stix1_attributes_framing, stix1_framing
+from .misp2stix.framing import (
+    _stix1_attributes_framing, _stix1_framing, _handle_namespaces,
+    _create_stix_package)
 from .misp2stix.misp_to_stix1 import (
     MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser)
 from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
@@ -22,8 +24,7 @@ from mixbox.namespaces import (
     Namespace, NamespaceNotFoundError, register_namespace)
 from pathlib import Path
 from stix.core import (
-    Campaigns, CoursesOfAction, Indicators, ThreatActors,
-    STIXHeader, STIXPackage)
+    Campaigns, CoursesOfAction, Indicators, ThreatActors, STIXPackage)
 from stix.core.ttps import TTPs
 from stix2.base import STIXJSONEncoder
 from stix2.exceptions import InvalidValueError
@@ -260,8 +261,6 @@ def misp_attribute_collection_to_stix1(
         return_format = _STIX1_default_format
     if version not in _STIX1_valid_versions:
         version = _STIX1_default_version
-    if org != _default_org:
-        org = re.sub('[\W]+', '', org.replace(" ", "_"))
     parser = MISPtoSTIX1AttributesParser(org, version)
     if len(input_files) == 1:
         try:
@@ -280,37 +279,37 @@ def misp_attribute_collection_to_stix1(
             return {'fails': [f'{filename} -  {exception.__str__()}']}
     traceback = defaultdict(list)
     if single_output:
+        stix_package = _create_stix_package(org, version)
+        name = _check_filename(
+            Path(__file__).resolve().parent / 'tmp',
+            f'{stix_package.id_}.stix1.{return_format}',
+            output_dir, output_name
+        )
         if in_memory:
-            package = _create_stix_package(org, version)
-            name = _check_filename(
-                Path(__file__).resolve().parent / 'tmp',
-                f'{package.id_}.stix1.{return_format}',
-                output_dir, output_name
-            )
             for filename in input_files:
                 try:
                     parser.parse_json_content(filename)
                     current = parser.stix_package
                     for campaign in current.campaigns:
-                        package.add_campaign(campaign)
+                        stix_package.add_campaign(campaign)
                     for course_of_action in current.courses_of_action:
-                        package.add_course_of_action(course_of_action)
+                        stix_package.add_course_of_action(course_of_action)
                     for exploit_target in current.exploit_targets:
-                        package.add_exploit_target(exploit_target)
+                        stix_package.add_exploit_target(exploit_target)
                     for indicator in current.indicators:
-                        package.add_indicator(indicator)
+                        stix_package.add_indicator(indicator)
                     for observable in current.observables:
-                        package.add_observable(observable)
+                        stix_package.add_observable(observable)
                     for threat_actor in current.threat_actors:
-                        package.add_threat_actor(threat_actor)
+                        stix_package.add_threat_actor(threat_actor)
                     if current.ttps is not None:
                         for ttp in current.ttps:
-                            package.add_ttp(ttp)
+                            stix_package.add_ttp(ttp)
                 except Exception as exception:
                     traceback['fails'].append(f'{filename} - {exception.__str__()}')
             if any(filename not in traceback.get('fails', []) for filename in input_files):
                 _write_raw_stix(
-                    package, name, namespace, org, return_format
+                    stix_package, name, namespace, org, return_format
                 )
                 traceback.update(_generate_traceback(debug, parser, name))
             return traceback
@@ -321,7 +320,7 @@ def misp_attribute_collection_to_stix1(
                 parser.parse_json_content(filename)
                 package = parser.stix_package
                 for feature in _STIX1_features:
-                    values = getattr(current, feature)
+                    values = getattr(package, feature)
                     if values:
                         content = globals()[f'_get_{feature}'](values, return_format)
                         if not content:
@@ -339,8 +338,8 @@ def misp_attribute_collection_to_stix1(
             except Exception as exception:
                 traceback['fails'].append(f'{filename} - {exception.__str__()}')
         if any(filename not in traceback.get('fails', []) for filename in input_files):
-            header, _, footer = stix1_attributes_framing(
-                namespace, org, return_format, version
+            header, _, footer = _stix1_attributes_framing(
+                namespace, org, return_format, stix_package
             )
             with open(name, 'wt', encoding='utf-8') as result:
                 result.write(header)
@@ -392,8 +391,6 @@ def misp_event_collection_to_stix1(
         return_format = _STIX1_default_format
     if version not in _STIX1_valid_versions:
         version = _STIX1_default_version
-    if org != _default_org:
-        org = re.sub('[\W]+', '', org.replace(" ", "_"))
     _write_args = (namespace, org, return_format)
     parser = MISPtoSTIX1EventsParser(org, version)
     if len(input_files) == 1:
@@ -411,13 +408,13 @@ def misp_event_collection_to_stix1(
             return {'fails': f'{filename} - {exception.__str__()}'}
     traceback = defaultdict(list)
     if single_output:
+        stix_package = _create_stix_package(org, version, header=False)
         name = _check_filename(
             Path(__file__).resolve().parent / 'tmp',
-            f'{package.id_}.stix1.{return_format}',
+            f'{stix_package.id_}.stix1.{return_format}',
             output_dir, output_name
         )
         if in_memory:
-            package = _create_stix_package(org, version)
             for filename in input_files:
                 try:
                     if not isinstance(filename, Path):
@@ -425,17 +422,17 @@ def misp_event_collection_to_stix1(
                     parser.parse_json_content(filename)
                     if parser.stix_package.related_packages is not None:
                         for related_package in parser.stix_package.related_packages:
-                            package.add_related_package(related_package)
+                            stix_package.add_related_package(related_package)
                     else:
-                        package.add_related_package(parser.stix_package)
+                        stix_package.add_related_package(parser.stix_package)
                 except Exception as exception:
                     traceback['fails'].append(f'{filename} - {exception.__str__()}')
             if any(filename not in traceback.get('fails', []) for filename in input_files):
-                _write_raw_stix(package, name, *_write_args)
+                _write_raw_stix(stix_package, name, *_write_args)
                 traceback.update(_generate_traceback(debug, parser, name))
             return traceback
-        header, separator, footer = stix1_framing(
-            namespace, org, return_format, version
+        header, separator, footer = _stix1_framing(
+            namespace, org, return_format, stix_package
         )
         filename = input_files[0]
         try:
@@ -599,8 +596,6 @@ def misp_to_stix1(
         return_format = _STIX1_default_format
     if version not in _STIX1_valid_versions:
         version = _STIX1_default_version
-    if org != _default_org:
-        org = re.sub('[\W]+', '', org.replace(" ", "_"))
     parser = MISPtoSTIX1EventsParser(org, version)
     try:
         if not isinstance(filename, Path):
@@ -696,21 +691,6 @@ def stix_2_to_misp(filename: _files_type, debug: Optional[bool] = False,
             f.write(misp_event.to_json(indent=4))
         output_names.append(output)
     return _generate_traceback(debug, parser, *output_names)
-
-
-################################################################################
-#                        STIX PACKAGE CREATION HELPERS.                        #
-################################################################################
-
-def _create_stix_package(orgname: str, version: str) -> STIXPackage:
-    package = STIXPackage()
-    package.version = version
-    header = STIXHeader()
-    header.title = f"Export from {orgname}'s MISP"
-    header.package_intents = "Threat Report"
-    package.stix_header = header
-    package.id_ = f"{orgname}:Package-{uuid4()}"
-    return package
 
 
 ################################################################################
@@ -965,12 +945,7 @@ def _write_raw_stix(
         package: STIXPackage, filename: _files_type, namespace: str,
         org: str, return_format: str) -> bool:
     if return_format == 'xml':
-        namespaces = namespaces = {namespace: org}
-        namespaces.update(NS_DICT)
-        try:
-            idgen.set_id_namespace(Namespace(namespace, org))
-        except TypeError:
-            idgen.set_id_namespace(Namespace(namespace, org, "MISP"))
+        namespaces = _handle_namespaces(namespace, org)
         with open(filename, 'wb') as f:
             f.write(
                 package.to_xml(
