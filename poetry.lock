@@ -32,14 +32,14 @@ tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pyte
 
 [[package]]
 name = "certifi"
-version = "2022.12.7"
+version = "2023.5.7"
 description = "Python package for providing Mozilla's CA Bundle."
 category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "certifi-2022.12.7-py3-none-any.whl", hash = "sha256:4ad3232f5e926d6718ec31cfc1fcadfde020920e278684144551c91769c7bc18"},
-    {file = "certifi-2022.12.7.tar.gz", hash = "sha256:35824b4c3a97115964b408844d64aa14db1cc518f6562e8d7261699d1350a9e3"},
+    {file = "certifi-2023.5.7-py3-none-any.whl", hash = "sha256:c6c2e98f5c7869efca1f8916fed228dd91539f9f1b444c314c06eef02980c716"},
+    {file = "certifi-2023.5.7.tar.gz", hash = "sha256:0f0d56dc5a6ad56fd4ba36484d6cc34451e1c6548c61daad8c320169f91eddc7"},
 ]
 
 [[package]]
@@ -158,21 +158,21 @@ python-dateutil = "*"
 
 [[package]]
 name = "deprecated"
-version = "1.2.13"
+version = "1.2.14"
 description = "Python @deprecated decorator to deprecate old python classes, functions or methods."
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
-    {file = "Deprecated-1.2.13-py2.py3-none-any.whl", hash = "sha256:64756e3e14c8c5eea9795d93c524551432a0be75629f8f29e67ab8caf076c76d"},
-    {file = "Deprecated-1.2.13.tar.gz", hash = "sha256:43ac5335da90c31c24ba028af536a91d41d53f9e6901ddb021bcc572ce44e38d"},
+    {file = "Deprecated-1.2.14-py2.py3-none-any.whl", hash = "sha256:6fac8b097794a90302bdbb17b9b815e732d3c4720583ff1b198499d78470466c"},
+    {file = "Deprecated-1.2.14.tar.gz", hash = "sha256:e5323eb936458dccc2582dc6f9c322c852a775a27065ff2b0c4970b9d53d01b3"},
 ]
 
 [package.dependencies]
 wrapt = ">=1.10,<2"
 
 [package.extras]
-dev = ["PyTest", "PyTest (<5)", "PyTest-Cov", "PyTest-Cov (<2.6)", "bump2version (<1)", "configparser (<5)", "importlib-metadata (<3)", "importlib-resources (<4)", "sphinx (<2)", "sphinxcontrib-websupport (<2)", "tox", "zipp (<2)"]
+dev = ["PyTest", "PyTest-Cov", "bump2version (<1)", "sphinx (<2)", "tox"]
 
 [[package]]
 name = "exceptiongroup"
@@ -494,14 +494,14 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "publicsuffixlist"
-version = "0.9.4"
+version = "0.10.0.20230608"
 description = "publicsuffixlist implement"
 category = "main"
 optional = false
 python-versions = ">=2.6"
 files = [
-    {file = "publicsuffixlist-0.9.4-py2.py3-none-any.whl", hash = "sha256:107fc6f729b042ef31dceb1573ef16547407c9034667724589aa9b20f9f23920"},
-    {file = "publicsuffixlist-0.9.4.tar.gz", hash = "sha256:0340e98f2ac656913c9c2b0a7ab109844f854be40e1977a22bff0ab0e72bdbfc"},
+    {file = "publicsuffixlist-0.10.0.20230608-py2.py3-none-any.whl", hash = "sha256:4b641e8367a45443165cf56fdab405faa67ca7a21bbe3e0449e1f2ed4f744836"},
+    {file = "publicsuffixlist-0.10.0.20230608.tar.gz", hash = "sha256:84cb4e189317d151aab86c50517fca48800b4f46ce459681132a194832cb0657"},
 ]
 
 [package.extras]
@@ -534,30 +534,30 @@ files = [
 
 [[package]]
 name = "pymisp"
-version = "2.4.170.1"
+version = "2.4.171"
 description = "Python API for MISP."
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "pymisp-2.4.170.1-py3-none-any.whl", hash = "sha256:f324b30940854b5aeac5d62028da444cd0ac23df808c54e448d7c97a30fbb207"},
-    {file = "pymisp-2.4.170.1.tar.gz", hash = "sha256:45c060a250a9cb275797b7c7dcc1ba7c6880ec1075fbf98e4ef273959ddf1a94"},
+    {file = "pymisp-2.4.171-py3-none-any.whl", hash = "sha256:9410f44cd811f91d523593b5353e0fd37057ba1b1cf856a4050454cbb8a5b788"},
+    {file = "pymisp-2.4.171.tar.gz", hash = "sha256:6dca1dd7be6e63c423eb48e84e587cb776db545de3385dc4875ecc55192a7863"},
 ]
 
 [package.dependencies]
 deprecated = ">=1.2.13,<2.0.0"
 jsonschema = ">=4.17.3,<5.0.0"
-publicsuffixlist = ">=0.9.4,<0.10.0"
+publicsuffixlist = ">=0.10.0.20230506,<0.11.0.0"
 python-dateutil = ">=2.8.2,<3.0.0"
-requests = ">=2.28.2,<3.0.0"
+requests = ">=2.30.0,<3.0.0"
 
 [package.extras]
-brotli = ["urllib3[brotli] (>=1.26.15,<2.0.0)"]
+brotli = ["urllib3[brotli]"]
 docs = ["recommonmark (>=0.7.1,<0.8.0)", "sphinx-autodoc-typehints (>=1.23.0,<2.0.0)"]
-email = ["RTFDE (>=0.0.2,<0.0.3)", "extract_msg (==0.40)", "oletools (>=0.60.1,<0.61.0)"]
+email = ["RTFDE (>=0.0.2,<0.0.3)", "extract_msg (>=0.41.1,<0.42.0)", "oletools (>=0.60.1,<0.61.0)"]
 fileobjects = ["lief (>=0.13.0,<0.14.0)", "pydeep2 (>=0.5.1,<0.6.0)", "python-magic (>=0.4.27,<0.5.0)"]
-openioc = ["beautifulsoup4 (==4.11.1)"]
-pdfexport = ["reportlab (>=3.6.12,<4.0.0)"]
+openioc = ["beautifulsoup4 (>=4.12.2,<5.0.0)"]
+pdfexport = ["reportlab (>=4.0.0,<5.0.0)"]
 url = ["pyfaup (>=1.2,<2.0)"]
 virustotal = ["validators (>=0.20.0,<0.21.0)"]
 
@@ -650,21 +650,21 @@ files = [
 
 [[package]]
 name = "requests"
-version = "2.28.2"
+version = "2.31.0"
 description = "Python HTTP for Humans."
 category = "main"
 optional = false
-python-versions = ">=3.7, <4"
+python-versions = ">=3.7"
 files = [
-    {file = "requests-2.28.2-py3-none-any.whl", hash = "sha256:64299f4909223da747622c030b781c0d7811e359c37124b4bd368fb8c6518baa"},
-    {file = "requests-2.28.2.tar.gz", hash = "sha256:98b1b2782e3c6c4904938b84c0eb932721069dfdb9134313beff7c83c2df24bf"},
+    {file = "requests-2.31.0-py3-none-any.whl", hash = "sha256:58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"},
+    {file = "requests-2.31.0.tar.gz", hash = "sha256:942c5a758f98d790eaed1a29cb6eefc7ffb0d1cf7af05c3d2791656dbd6ad1e1"},
 ]
 
 [package.dependencies]
 certifi = ">=2017.4.17"
 charset-normalizer = ">=2,<4"
 idna = ">=2.5,<4"
-urllib3 = ">=1.21.1,<1.27"
+urllib3 = ">=1.21.1,<3"
 
 [package.extras]
 socks = ["PySocks (>=1.5.6,!=1.5.7)"]
@@ -830,20 +830,21 @@ files = [
 
 [[package]]
 name = "urllib3"
-version = "1.26.15"
+version = "2.0.3"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 category = "main"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
+python-versions = ">=3.7"
 files = [
-    {file = "urllib3-1.26.15-py2.py3-none-any.whl", hash = "sha256:aa751d169e23c7479ce47a0cb0da579e3ede798f994f5816a74e4f4500dcea42"},
-    {file = "urllib3-1.26.15.tar.gz", hash = "sha256:8a388717b9476f934a21484e8c8e61875ab60644d29b9b39e11e4b9dc1c6b305"},
+    {file = "urllib3-2.0.3-py3-none-any.whl", hash = "sha256:48e7fafa40319d358848e1bc6809b208340fafe2096f1725d05d67443d0483d1"},
+    {file = "urllib3-2.0.3.tar.gz", hash = "sha256:bee28b5e56addb8226c96f7f13ac28cb4c301dd5ea8a6ca179c0b9835e032825"},
 ]
 
 [package.extras]
-brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)", "brotlipy (>=0.6.0)"]
-secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "ipaddress", "pyOpenSSL (>=0.14)", "urllib3-secure-extra"]
-socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
+brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)"]
+secure = ["certifi", "cryptography (>=1.9)", "idna (>=2.0.0)", "pyopenssl (>=17.1.0)", "urllib3-secure-extra"]
+socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
+zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "weakrefmethod"

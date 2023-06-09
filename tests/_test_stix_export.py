@@ -25,15 +25,15 @@ class TestCollectionSTIXExport(unittest.TestCase):
 
 
 class TestCollectionSTIX1Export(TestCollectionSTIXExport):
-    def _check_stix1_collection_export_results(self, to_test_name, reference_name):
-        to_test = STIXPackage.from_xml(str(self._current_path / to_test_name)).to_dict()
-        reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
+    def _check_stix1_collection_export_results(self, to_test_file, reference_file):
+        to_test = STIXPackage.from_xml(to_test_file).to_dict()
+        reference = STIXPackage.from_xml(reference_file).to_dict()
         self.__recursive_feature_tests(reference, to_test, exclude=('id', 'timestamp'))
 
-    def _check_stix1_export_results(self, to_test_name, reference_name):
-        to_test = STIXPackage.from_xml(str(self._current_path / to_test_name)).to_dict()
-        reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
-        self.__recursive_feature_tests(reference, to_test, exclude=('id',))
+    def _check_stix1_export_results(self, to_test_file, reference_file):
+        to_test = STIXPackage.from_xml(to_test_file).to_dict()
+        reference = STIXPackage.from_xml(reference_file).to_dict()
+        self.__recursive_feature_tests(reference, to_test, exclude=('id', 'timestamp'))
 
     def __check_observables(self, reference_observables, observables_to_test):
         for reference_observable, observable_to_test in zip(reference_observables, observables_to_test):
@@ -68,10 +68,10 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
 
 
 class TestCollectionSTIX2Export(TestCollectionSTIXExport):
-    def _check_stix2_results_export(self, to_test_name, reference_name):
-        with open(self._current_path / to_test_name, 'rt', encoding='utf-8') as f:
+    def _check_stix2_results_export(self, to_test_file, reference_file):
+        with open(to_test_file, 'rt', encoding='utf-8') as f:
             to_test = json.loads(f.read())
-        with open(self._current_path / reference_name, 'rt', encoding='utf-8') as f:
+        with open(reference_file, 'rt', encoding='utf-8') as f:
             reference = json.loads(f.read())
         self.assertEqual(reference['objects'], to_test['objects'])
 

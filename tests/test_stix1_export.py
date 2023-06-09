@@ -4127,122 +4127,162 @@ class TestSTIX12MISPExport(TestSTIX12Export):
 class TestCollectionStix1Export(TestCollectionSTIX1Export):
     def test_attribute_collection_export_11(self):
         name = 'test_attributes_collection'
-        to_test_name = f'{name}.json.out'
-        reference_name = f'{name}_stix11.xml'
-        output_file = self._current_path / to_test_name
+        output_file = self._current_path / f'{name}.json.out'
+        reference_file = self._current_path / f'{name}_stix11.xml'
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
         self.assertEqual(
             misp_attribute_collection_to_stix1(
-                output_file,
-                *input_files,
-                return_format='xml',
-                version='1.1.1',
-                in_memory=True
+                *input_files, return_format='xml', version='1.1.1',
+                in_memory=True, single_output=True, output_name=output_file
             ),
-            1
+            {'success': 1, 'results': [output_file]}
         )
-        self._check_stix1_export_results(to_test_name, reference_name)
+        self._check_stix1_export_results(output_file, reference_file)
         self.assertEqual(
             misp_attribute_collection_to_stix1(
-                output_file,
-                *input_files,
-                return_format='xml',
-                version='1.1.1'
+                *input_files, return_format='xml', version='1.1.1',
+                single_output=True, output_name=output_file
             ),
-            1
+            {'success': 1, 'results': [output_file]}
         )
-        self._check_stix1_export_results(to_test_name, reference_name)
+        self._check_stix1_export_results(output_file, reference_file)
 
     def test_attribute_collection_export_12(self):
         name = 'test_attributes_collection'
-        to_test_name = f'{name}.json.out'
-        reference_name = f'{name}_stix12.xml'
-        output_file = self._current_path / to_test_name
+        output_file = self._current_path / f'{name}.json.out'
+        reference_file = self._current_path / f'{name}_stix12.xml'
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
         self.assertEqual(
             misp_attribute_collection_to_stix1(
-                output_file,
-                *input_files,
-                return_format='xml',
-                version='1.2',
-                in_memory=True
+                *input_files, return_format='xml', version='1.2',
+                in_memory=True, single_output=True, output_name=output_file
             ),
-            1
+            {'success': 1, 'results': [output_file]}
         )
-        self._check_stix1_export_results(to_test_name, reference_name)
+        self._check_stix1_export_results(output_file, reference_file)
         self.assertEqual(
             misp_attribute_collection_to_stix1(
-                output_file,
-                *input_files,
-                return_format='xml',
-                version='1.2'
+                *input_files, return_format='xml', version='1.2',
+                single_output=True, output_name=output_file
             ),
-            1
+            {'success': 1, 'results': [output_file]}
         )
-        self._check_stix1_export_results(to_test_name, reference_name)
+        self._check_stix1_export_results(output_file, reference_file)
 
     def test_event_collection_export_11(self):
         name = 'test_events_collection'
-        to_test_name = f'{name}.json.out'
-        reference_name = f'{name}_stix11.xml'
-        output_file = self._current_path / to_test_name
+        output_file = self._current_path / f'{name}.json.out'
+        reference_file = self._current_path / f'{name}_stix11.xml'
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
         self.assertEqual(
             misp_event_collection_to_stix1(
-                output_file,
-                *input_files,
-                return_format='xml',
-                version='1.1.1'
+                *input_files, return_format='xml', version='1.1.1',
+                single_output=True, output_name=output_file
             ),
-            1
+            {'success': 1, 'results': [output_file]}
         )
-        self._check_stix1_collection_export_results(to_test_name, reference_name)
+        self._check_stix1_collection_export_results(output_file, reference_file)
         self.assertEqual(
             misp_event_collection_to_stix1(
-                output_file,
-                *input_files,
-                return_format='xml',
-                version='1.1.1',
-                in_memory=True
+                *input_files, return_format='xml', version='1.1.1',
+                in_memory=True, single_output=True, output_name=output_file
             ),
-            1
+            {'success': 1, 'results': [output_file]}
         )
-        self._check_stix1_collection_export_results(to_test_name, reference_name)
+        self._check_stix1_collection_export_results(output_file, reference_file)
+        self.assertEqual(
+            misp_event_collection_to_stix1(
+                *input_files, return_format='xml', version='1.1.1'
+            ),
+            {
+                'success': 1,
+                'results': [
+                    self._current_path / f'{name}_{n}.json.out' for n in (1, 2)
+                ]
+            }
+        )
+        for n in (1, 2):
+            with open(self._current_path / f'{name}_{n}.json.out', 'r') as i:
+                with open(f'ntm_collection{n}_11.xml', 'w') as o:
+                    o.write(i.read())
+            self._check_stix1_export_results(
+                self._current_path / f'{name}_{n}.json.out',
+                self._current_path / f'test_event{n}_stix11.xml'
+            )
 
     def test_event_collection_export_12(self):
         name = 'test_events_collection'
-        to_test_name = f'{name}.json.out'
-        reference_name = f'{name}_stix12.xml'
-        output_file = self._current_path / to_test_name
+        output_file = self._current_path / f'{name}.json.out'
+        reference_file = self._current_path / f'{name}_stix12.xml'
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
         self.assertEqual(
             misp_event_collection_to_stix1(
-                output_file,
-                *input_files,
-                return_format='xml',
-                version='1.2'
+                *input_files, return_format='xml', version='1.2',
+                single_output=True, output_name=output_file
             ),
-            1
+            {'success': 1, 'results': [output_file]}
         )
-        self._check_stix1_collection_export_results(to_test_name, reference_name)
+        self._check_stix1_collection_export_results(output_file, reference_file)
         self.assertEqual(
             misp_event_collection_to_stix1(
-                output_file,
-                *input_files,
-                return_format='xml',
-                version='1.2',
-                in_memory=True
+                *input_files, return_format='xml', version='1.2',
+                in_memory=True, single_output=True, output_name=output_file
             ),
-            1
+            {'success': 1, 'results': [output_file]}
         )
-        self._check_stix1_collection_export_results(to_test_name, reference_name)
+        self._check_stix1_collection_export_results(output_file, reference_file)
+        self.assertEqual(
+            misp_event_collection_to_stix1(
+                *input_files, return_format='xml', version='1.2'
+            ),
+            {
+                'success': 1,
+                'results': [
+                    self._current_path / f'{name}_{n}.json.out' for n in (1, 2)
+                ]
+            }
+        )
+        for n in (1, 2):
+            with open(self._current_path / f'{name}_{n}.json.out', 'r') as i:
+                with open(f'ntm_collection{n}_12.xml', 'w') as o:
+                    o.write(i.read())
+            self._check_stix1_export_results(
+                self._current_path / f'{name}_{n}.json.out',
+                self._current_path / f'test_event{n}_stix12.xml'
+            )
 
     def test_event_export_11(self):
         name = 'test_events_collection_1.json'
-        self.assertEqual(misp_to_stix1(self._current_path / name, 'xml', '1.1.1'), 1)
-        self._check_stix1_export_results(f'{name}.out', 'test_event_stix11.xml')
+        filename = self._current_path / name
+        output_file = self._current_path / f'{name}.out'
+        reference_file = self._current_path / 'test_event1_stix11.xml'
+        self.assertEqual(
+            misp_to_stix1(filename, return_format='xml', version='1.1.1'),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix1_export_results(output_file, reference_file)
+        self.assertEqual(
+            misp_event_collection_to_stix1(
+                filename, return_format='xml', version='1.1.1'
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix1_export_results(output_file, reference_file)
 
     def test_event_export_12(self):
         name = 'test_events_collection_1.json'
-        self.assertEqual(misp_to_stix1(self._current_path / name, 'xml', '1.2'), 1)
-        self._check_stix1_export_results(f'{name}.out', 'test_event_stix12.xml')
+        filename = self._current_path / name
+        output_file = self._current_path / f'{name}.out'
+        reference_file = self._current_path / 'test_event1_stix12.xml'
+        self.assertEqual(
+            misp_to_stix1(filename, return_format='xml', version='1.2'),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix1_export_results(output_file, reference_file)
+        self.assertEqual(
+            misp_event_collection_to_stix1(
+                filename, return_format='xml', version='1.2'
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix1_export_results(output_file, reference_file)

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json
-from uuid import uuid5
 from .test_external_stix21_bundles import TestExternalSTIX21Bundles
 from ._test_stix import TestSTIX21
 from ._test_stix_import import TestExternalSTIX2Import, TestSTIX21Import

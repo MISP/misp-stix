@@ -1307,7 +1307,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 )
                 continue
             for field in self._get_populated_properties(email_message):
-                attribute = self._mapping.email_object_mapping(field)
+                attribute = self._mapping.email_message_mapping(field)
                 if attribute is not None:
                     self._add_misp_attribute(
                         getattr(self, f'_handle_{feature}_attribute')(
@@ -1832,11 +1832,11 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     registry_key, object_id, observed_data
                 )
                 continue
-            if hasattr(registry_key, 'values'):
+            if 'values' in registry_key.properties_populated():
                 self._add_misp_attribute(
                     getattr(self, f'_handle_{feature}_special_attribute')(
                         registry_key,
-                        f"{registry_key.key}|{registry_key.values[0]['data']}",
+                        f"{registry_key.key}|{registry_key['values'][0]['data']}",
                         'regkey|value', observed_data.id
                     ),
                     observed_data
@@ -2104,7 +2104,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for keys, assertion, value in pattern.comparisons['email-message']:
             if assertion != '=':
                 continue
-            attribute = self._mapping.email_message_pattern_mapping(keys[0])
+            attribute = self._mapping.email_message_mapping(keys[0])
             if attribute is not None:
                 attributes.append({'value': value, **attribute})
             else:

@@ -49,6 +49,7 @@ from typing import Optional, Union
 
 _LOADED_FEATURES = (
     '_attack_pattern',
+    '_campaign',
     '_course_of_action',
     '_custom_attribute',
     '_custom_object',
@@ -207,7 +208,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         ) as error:
             self._critical_error(error)
 
-    def parse_stix_content(self, filename: str):
+    def parse_stix_content(self, filename: str, single_event: Optional[bool] = False):
         try:
             with open(filename, 'rt', encoding='utf-8') as f:
                 bundle = stix2_parser(
@@ -217,7 +218,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             sys.exit(exception)
         self.load_stix_bundle(bundle)
         del bundle
-        self.parse_stix_bundle()
+        self.parse_stix_bundle(single_event)
 
     ################################################################################
     #                                  PROPERTIES                                  #
@@ -500,11 +501,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._fetch_tags_from_labels(misp_event, stix_object.labels)
 
     def _misp_event_from_grouping(self, grouping: Grouping) -> MISPEvent:
+        self.__single_event = True
         misp_event = self._create_misp_event(grouping)
         misp_event.published = False
         return misp_event
 
     def _misp_event_from_report(self, report: _REPORT_TYPING) -> MISPEvent:
+        self.__single_event = True
         misp_event = self._create_misp_event(report)
         if report.published != report.modified:
             misp_event.published = True
@@ -545,6 +548,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self.__misp_events = events
 
     def _parse_bundle_with_no_report(self):
+        self.__single_event = True
         self.__misp_event = self._create_generic_event()
         for feature in _LOADED_FEATURES:
             if hasattr(self, feature):

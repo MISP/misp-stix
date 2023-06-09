@@ -22,7 +22,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         ' WITHIN '
     )
 
-        # MAIN STIX OBJECTS MAPPING
+    # MAIN STIX OBJECTS MAPPING
     __observable_mapping = Mapping(
         **{
             'autonomous-system': 'as',
@@ -534,7 +534,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__email_address_pattern_mapping.get(field)
 
     @classmethod
-    def email_message_pattern_mapping(cls, field) -> Union[dict, None]:
+    def email_message_mapping(cls, field) -> Union[dict, None]:
         return cls.__email_object_mapping.get(field)
 
     @classmethod
