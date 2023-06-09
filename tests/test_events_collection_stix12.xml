@@ -52,11 +52,7 @@
 	xmlns:xlink="http://www.w3.org/1999/xlink"
 	xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
 	xmlns:xs="http://www.w3.org/2001/XMLSchema"
-	 id="MISP:Package-0c467501-2514-462f-90d6-3ea04bb0e721" version="1.2" timestamp="2020-10-25T16:22:00Z">
-    <stix:STIX_Header>
-        <stix:Title>Export from MISP's MISP</stix:Title>
-        <stix:Package_Intent xsi:type="stixVocabs:PackageIntentVocab-1.0">Threat Report</stix:Package_Intent>
-    </stix:STIX_Header>
+	 id="MISP:STIXPackage-0c467501-2514-462f-90d6-3ea04bb0e721" version="1.2" timestamp="2020-10-25T16:22:00Z">
     <stix:Related_Packages>
         <stix:Related_Package>
             <stix:Package id="MISP:STIXPackage-e2e6a6ea-f69b-4d93-8564-f51d67cafe51" version="1.2" timestamp="2020-10-25T16:22:00Z">
