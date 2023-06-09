@@ -11,7 +11,7 @@ from .misp_stix_converter import (
 # STIX 1 special halpers
 from .misp_stix_converter import (
     _get_campaigns, _get_courses_of_action, _get_events, _get_indicators,
-    _get_observables, _get_threat_actors, _get_ttps)
+    _get_observables, _get_threat_actors, _get_ttps, _from_misp)
 # STIX 1 footers
 from .misp_stix_converter import (
     _get_campaigns_footer, _get_courses_of_action_footer, _get_indicators_footer,
