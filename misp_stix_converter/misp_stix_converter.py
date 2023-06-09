@@ -560,7 +560,7 @@ def misp_collection_to_stix2(
                 traceback['fails'].append(f'{filename} - {exception.__str__()}')
         if written:
             with open(name, 'at', encoding='utf-8') as f:
-                f.write('    ]\n}')
+                f.write('\n    ]\n}')
             traceback.update(_generate_traceback(debug, parser, name))
         else:
             name.remove()
