@@ -966,7 +966,7 @@ def _write_raw_stix(
 def _misp_to_stix(stix_args):
     collection_args = {
         'in_memory': stix_args.in_memory,
-        'single_ouput': stix_args.single_output
+        'single_output': stix_args.single_output
     }
     if stix_args.version in ('1.1.1', '1.2'):
         stix1_args = {
@@ -977,12 +977,12 @@ def _misp_to_stix(stix_args):
         }
         if stix_args.level == 'attribute':
             return misp_attribute_collection_to_stix1(
-                stix_args.file, **collection_args, **stix1_args
+                *stix_args.file, **collection_args, **stix1_args
             )
         if len(stix_args.file) == 1:
             return misp_to_stix1(stix_args.file[0], **stix1_args)
         return misp_event_collection_to_stix1(
-            stix_args.file, **collection_args, **stix1_args
+            *stix_args.file, **collection_args, **stix1_args
         )
     stix2_args = {
         'debug': stix_args.debug, 'output_dir': stix_args.output_dir,
@@ -991,7 +991,7 @@ def _misp_to_stix(stix_args):
     if len(stix_args.file) == 1:
         return misp_to_stix2(stix_args.file[0])
     return misp_collection_to_stix2(
-        stix_args.file, **collection_args, **stix2_args
+        *stix_args.file, **collection_args, **stix2_args
     )
 
 
