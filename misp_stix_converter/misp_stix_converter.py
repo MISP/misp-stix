@@ -405,7 +405,7 @@ def misp_event_collection_to_stix1(
             _write_raw_stix(parser.stix_package, name, *_write_args)
             return _generate_traceback(debug, parser, name)
         except Exception as exception:
-            return {'fails': f'{filename} - {exception.__str__()}'}
+            return {'fails': [f'{filename} - {exception.__str__()}']}
     traceback = defaultdict(list)
     if single_output:
         stix_package = _create_stix_package(org, version, header=False)
@@ -499,7 +499,7 @@ def misp_collection_to_stix2(
                 f.write(parser.bundle.serialize(indent=4))
             return _generate_traceback(debug, parser, name)
         except Exception as exception:
-            return {'fails': f'{filename} - {exception.__str__()}'}
+            return {'fails': [f'{filename} - {exception.__str__()}']}
     traceback = defaultdict(list)
     if single_output:
         if in_memory:
@@ -609,7 +609,7 @@ def misp_to_stix1(
         )
         return _generate_traceback(debug, parser, name)
     except Exception as exception:
-        return {'fails': f'{filename} - {exception.__str__()}'}
+        return {'fails': [f'{filename} - {exception.__str__()}']}
 
 
 def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,
@@ -630,7 +630,7 @@ def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,
             f.write(json.dumps(parser.bundle, cls=STIXJSONEncoder, indent=4))
         return _generate_traceback(debug, parser, name)
     except Exception as exception:
-        return {'fails': f'{filename} - {exception.__str__()}'}
+        return {'fails': [f'{filename} - {exception.__str__()}']}
 
 
 ################################################################################
