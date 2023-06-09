@@ -3,8 +3,8 @@
 
 from datetime import datetime
 from misp_stix_converter import (
-    MISPtoSTIX21Mapping, MISPtoSTIX21Parser, misp_collection_to_stix2_1,
-    misp_to_stix2_1)
+    MISPtoSTIX21Mapping, MISPtoSTIX21Parser, misp_collection_to_stix2,
+    misp_to_stix2)
 from pymisp import MISPAttribute, MISPEvent
 from .test_events import *
 from .update_documentation import (
@@ -6108,30 +6108,89 @@ class TestSTIX21MISPExportInteroperability(TestSTIX21ExportInteroperability):
 class TestCollectionSTIX21Export(TestCollectionSTIX2Export):
     def test_attributes_collection(self):
         name = 'test_attributes_collection'
-        to_test_name = f'{name}.json.out'
-        reference_name = f'{name}_stix21.json'
-        output_file = self._current_path / to_test_name
+        output_file = self._current_path / f'{name}.json.out'
+        reference_file = self._current_path / f'{name}_stix21.json'
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_collection_to_stix2_1(output_file, *input_files), 1)
-        self._check_stix2_results_export(to_test_name, reference_name)
-        self.assertEqual(misp_collection_to_stix2_1(output_file, *input_files, in_memory=True), 1)
-        self._check_stix2_results_export(to_test_name, reference_name)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.1', single_output=True,
+                output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.1', in_memory=True,
+                single_output=True, output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(*input_files, version='2.1'),
+            {
+                'success': 1,
+                'results': [
+                    self._current_path / f'{name}_{n}.json.out' for n in (1, 2)
+                ]
+            }
+        )
 
     def test_events_collection(self):
         name = 'test_events_collection'
-        to_test_name = f'{name}.json.out'
-        reference_name = f'{name}_stix21.json'
-        output_file = self._current_path / to_test_name
+        output_file = self._current_path / f'{name}.json.out'
+        reference_file = self._current_path / f'{name}_stix21.json'
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_collection_to_stix2_1(output_file, *input_files), 1)
-        self._check_stix2_results_export(to_test_name, reference_name)
-        self.assertEqual(misp_collection_to_stix2_1(output_file, *input_files, in_memory=True), 1)
-        self._check_stix2_results_export(to_test_name, reference_name)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.1', single_output=True,
+                output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.1', in_memory=True,
+                single_output=True, output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(*input_files, version='2.1'),
+            {
+                'success': 1,
+                'results': [
+                    self._current_path / f'{name}_{n}.json.out' for n in (1, 2)
+                ]
+            }
+        )
+        for n in (1, 2):
+            self._check_stix2_results_export(
+                self._current_path / f'{name}_{n}.json.out',
+                self._current_path / f'test_event{n}_stix21.json'
+            )
+
 
     def test_event_export(self):
         name = 'test_events_collection_1.json'
-        self.assertEqual(misp_to_stix2_1(self._current_path / name), 1)
-        self._check_stix2_results_export(f'{name}.out', 'test_event_stix21.json')
+        filename = self._current_path / name
+        output_file = self._current_path / f'{name}.out'
+        reference_file = self._current_path / 'test_event1_stix21.json'
+        self.assertEqual(
+            misp_to_stix2(filename, version='2.1'),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                filename, version='2.1'
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
 
 
 class TestFeedSTIX21Export(TestSTIX2Export):
