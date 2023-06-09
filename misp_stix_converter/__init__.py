@@ -5,9 +5,9 @@ from .misp_stix_mapping import Mapping
 from .misp2stix import *
 # Helpers
 from .misp_stix_converter import (
-    _from_misp, misp_attribute_collection_to_stix1, misp_collection_to_stix2_0,
-    misp_collection_to_stix2_1, misp_event_collection_to_stix1, misp_to_stix1,
-    misp_to_stix2_0, misp_to_stix2_1, stix_1_to_misp, stix_2_to_misp)
+    _from_misp, misp_attribute_collection_to_stix1, misp_collection_to_stix2,
+    misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2,
+    stix_1_to_misp, stix_2_to_misp)
 # STIX 1 special halpers
 from .misp_stix_converter import (
     _get_campaigns, _get_courses_of_action, _get_events, _get_indicators,
