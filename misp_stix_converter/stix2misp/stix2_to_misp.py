@@ -627,7 +627,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             misp_galaxy = MISPGalaxy()
             misp_galaxy.from_dict(**self._galaxies[galaxy_type])
             for cluster in clusters:
-                misp_galaxy.clusters.append(cluster)
+                misp_galaxy.add_galaxy_cluster(**cluster)
             yield misp_galaxy
 
     def _create_cluster_args(self, stix_object: _GALAXY_OBJECTS_TYPING,
