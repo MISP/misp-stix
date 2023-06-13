@@ -448,6 +448,17 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except KeyError:
             raise ObjectRefLoadingError(object_ref)
 
+    def _handle_contextual_data(self):
+        if hasattr(self, '_relationship'):
+            if hasattr(self, '_sighting'):
+                self._parse_relationships_and_sightings()
+            else:
+                self._parse_relationships()
+        elif hasattr(self, '_sighting'):
+            self._parse_sightings()
+        else:
+            getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
             object_type = object_ref.split('--')[0]
@@ -527,23 +538,20 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self._handle_object_refs(grouping.object_refs)
-            self._parse_SROs()
-            getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+            self._handle_contextual_data()
         else:
             events = []
             if hasattr(self, '_report') and self._report is not None:
                 for report in self._report.values():
                     self.__misp_event = self._misp_event_from_report(report)
                     self._handle_object_refs(report.object_refs)
-                    self._parse_SROs()
-                    getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+                    self._handle_contextual_data()
                     events.append(self.misp_event)
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self.__misp_event = self._misp_event_from_grouping(grouping)
                     self._handle_object_refs(grouping.object_refs)
-                    self._parse_SROs()
-                    getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+                    self._handle_contextual_data()
                     events.append(self.misp_event)
             self.__misp_events = events
 
@@ -560,8 +568,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                         self._unknown_stix_object_type_error(error)
                     except UnknownParsingFunctionError as error:
                         self._unknown_parsing_function_error(error)
-        self._parse_SROs()
-        getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+        self._handle_contextual_data()
 
     def _parse_bundle_with_single_report(self):
         if hasattr(self, '_report') and self._report is not None:
@@ -574,8 +581,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._handle_object_refs(grouping.object_refs)
         else:
             self._parse_bundle_with_no_report()
-        self._parse_SROs()
-        getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+        self._handle_contextual_data()
 
     def _parse_galaxies_as_container(self):
         clusters = defaultdict(list)
@@ -894,6 +900,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for sighting in self._sighting[attribute.uuid]:
             attribute.add_sighting(sighting)
 
+    def _parse_cluster_relationships(self, cluster: MISPGalaxyCluster):
+        for relationship in self._relationship[cluster.uuid]:
+            referenced_uuid = relationship['referenced_uuid']
+            if referenced_uuid in self._clusters:
+                cluster.add_cluster_relation(
+                    self._clusters[referenced_uuid]['cluster'].uuid,
+                    relationship['relationship_type']
+                )
+
     def _parse_object_relationships_as_container(self, misp_object: MISPObject):
         clusters = defaultdict(list)
         for relationship in self._relationship[misp_object.uuid]:
@@ -942,6 +957,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 )(
                     misp_object
                 )
+        getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+        if not self.galaxies_as_tags:
+            for galaxy in self.misp_event.galaxies:
+                for cluster in galaxy.clusters:
+                    if cluster.uuid in self._relationship:
+                        self._parse_cluster_relationships(cluster)
 
     def _parse_relationships_and_sightings(self):
         for attribute in self.misp_event.attributes:
@@ -963,6 +984,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 )
             if misp_object.uuid in self._sighting:
                 self._parse_object_sightings(misp_object)
+        getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+        if not self.galaxies_as_tags:
+            for galaxy in self.misp_event.galaxies:
+                for cluster in galaxy.glusters:
+                    if cluster.uuid in self._relationship:
+                        self._parse_cluster_relationships(cluster)
 
     def _parse_sightings(self):
         for attribute in self.misp_event.attributes:
@@ -971,15 +998,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for misp_object in self.misp_event.objects:
             if misp_object.uuid in self._sighting:
                 self._parse_object_sightings(misp_object)
-
-    def _parse_SROs(self):
-        if hasattr(self, '_relationship'):
-            if hasattr(self, '_sighting'):
-                self._parse_relationships_and_sightings()
-            else:
-                self._parse_relationships()
-        elif hasattr(self, '_sighting'):
-            self._parse_sightings()
+        getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
 
     ################################################################################
     #                       MISP FEATURES CREATION FUNCTIONS                       #
