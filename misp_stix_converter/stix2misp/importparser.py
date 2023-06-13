@@ -38,6 +38,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         else:
             self._galaxies: dict = {}
             self.__galaxy_feature = 'as_container'
+        self.__galaxies_as_tags = galaxies_as_tags
         self.__replacement_uuids: dict = {}
         self.__errors: defaultdict = defaultdict(set)
         self.__warnings: defaultdict = defaultdict(set)
@@ -53,6 +54,10 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     @property
     def errors(self) -> dict:
         return self.__errors
+
+    @property
+    def galaxies_as_tags(self) -> bool:
+        return self.__galaxies_as_tags
 
     @property
     def galaxy_feature(self) -> bool:
