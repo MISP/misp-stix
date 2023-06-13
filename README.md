@@ -236,10 +236,10 @@ from misp_stix_converter import misp_event_collection_to_stix1, misp_event_colle
 input_filenames = [filename for filename in Path(_PATH_TO_YOUR_MISP_FILES_).glob('*.json')]
 
 stix1_response = misp_event_collection_to_stix1(
-    output_filename, # path to the file where the results are going to be written
-    'xml', # STIX1 return format (XML or JSON)
-    '1.1.1', # STIX1 version (1.1.1 or 1.2)
-    *input_filenames
+    *input_filenames,
+    output_name=output_filename, # path to the file where the results are going to be written
+    return_format='xml', # STIX1 return format (XML or JSON)
+    version='1.1.1' # STIX1 version (1.1.1 or 1.2)
 )
 
 stix20_response = misp_event_collection_to_stix2(
