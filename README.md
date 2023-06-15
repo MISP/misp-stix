@@ -70,22 +70,75 @@ poetry run pytest tests/test_stix21_export.py
 ### Command-line Usage
 
 ```
-misp_stix_converter --version 2.1 -f tests/test_events_collection_1.json
+misp_stix_converter export --version 2.1 -f tests/test_events_collection_1.json
 ```
 
 #### Parameters
 
-- `--version`: STIX version
-- `--file`: Input file(s)
+```bash
+usage: misp_stix_converter [-h] [--debug] {export,import} ...
 
-Parameters specific to the case of multiple input file(s):
-- `--single_output`: In case of multiple input files, save the results in on single file
-- `--tmp_files`: Store temporary results in files before gathering the whole conversion result, instead of keeping it on memory
+Convert MISP <-> STIX
 
-Parameters specific to STIX 1 export:
-- `--feature`: MISP data structure level (attribute or event)
-- `--namespace`: Namespace to be used in the STIX 1 header
-- `--org`: Organisation name to be used in the STIX 1 header
+options:
+  -h, --help       show this help message and exit
+  --debug          Show errors and warnings
+
+Main feature:
+  {export,import}
+    export         Export MISP to STIX - try `misp_stix_converter export -h` for more help.
+    import         Import STIX to MISP - try `misp_stix_converter import -h` for more help.
+```
+
+##### Export parameters
+
+```bash
+usage: misp_stix_converter export [-h] -f FILE [FILE ...] -v {1.1.1,1.2,2.0,2.1} [-s] [-m] [--output_dir OUTPUT_DIR] [-o OUTPUT_NAME] [--level {attribute,event}] [--format {json,xml}] [-n NAMESPACE] [-org ORG]
+
+options:
+  -h, --help            show this help message and exit
+  -f FILE [FILE ...], --file FILE [FILE ...]
+                        Path to the file(s) to convert.
+  -v {1.1.1,1.2,2.0,2.1}, --version {1.1.1,1.2,2.0,2.1}
+                        STIX specific version.
+  -s, --single_output   Produce only one result file (in case of multiple input file).
+  -m, --in_memory       Store result in memory (in case of multiple result files) instead of storing it in tmp files.
+  --output_dir OUTPUT_DIR
+                        Output path - used in the case of multiple input files when the `single_output` argument is not used.
+  -o OUTPUT_NAME, --output_name OUTPUT_NAME
+                        Output file name - used in the case of a single input file or when the `single_output` argument is used.
+
+STIX 1 specific arguments:
+  --level {attribute,event}
+                        MISP data structure level.
+  --format {json,xml}   STIX 1 format.
+  -n NAMESPACE, --namespace NAMESPACE
+                        Namespace to be used in the STIX 1 header.
+  -org ORG              Organisation name to be used in the STIX 1 header.
+```
+
+##### Import parameters
+
+```bash
+usage: misp_stix_converter import [-h] -f FILE [FILE ...] -v {1,2} [-s] [-o OUTPUT_NAME] [--output_dir OUTPUT_DIR] [-d DISTRIBUTION] [-sg SHARING_GROUP] [--galaxies_as_tags]
+
+options:
+  -h, --help            show this help message and exit
+  -f FILE [FILE ...], --file FILE [FILE ...]
+                        Path to the file(s) to convert.
+  -v {1,2}, --version {1,2}
+                        STIX major version.
+  -s, --single_output   Produce only one MISP event per STIX file(in case of multiple Report, Grouping or Incident objects).
+  -o OUTPUT_NAME, --output_name OUTPUT_NAME
+                        Output file name - used in the case of a single input file or when the `single_output` argument is used.
+  --output_dir OUTPUT_DIR
+                        Output path - used in the case of multiple input files when the `single_output` argument is not used.
+  -d DISTRIBUTION, --distribution DISTRIBUTION
+                        Distribution level for the imported MIPS content.
+  -sg SHARING_GROUP, --sharing_group SHARING_GROUP
+                        Sharing group ID when distribution is 4.
+  --galaxies_as_tags    Import MISP Galaxies as tag names instead of the standard Galaxy format.
+```
 
 ### In Python scripts
 
@@ -115,7 +168,7 @@ response = misp_to_stix1(
     'xml', # return format (XML or JSON)
     '1.1.1' # STIX1 version (1.1.1 or 1.2)
 )
-# response = 1 if everything went well
+# if everything went well, response is a dictionary where `success` = 1
 ```
 The resulting STIX1 Package is then available in a `filename.out` file
 
@@ -145,13 +198,13 @@ bundle21 = parser21.bundle
 - Convert a MISP Event in STIX2 using directly its file name:
 
 ```python
-from misp_stix_converter import misp_to_stix2_0, misp_to_stix2_1
+from misp_stix_converter import misp_to_stix2
 
-response_20 = misp_to_stix2_0(filename)
-response_21 = misp_to_stix2_1(filename)
-# Again response_20 & response_21 should be 1 if everything went well
+response_20 = misp_to_stix2(filename, version='2.0')
+response_21 = misp_to_stix2(filename, version='2.1')
+# Again response_20 & response_21 have a `success` field equal to 1 if everything went well
 ```
-The resulting STIX2 Bundle is the available in a `filename.out` file
+The resulting STIX2 Bundle is the available in a `filename.out` file, or you can define the output name with the `output_name` argument.
 
 If you get some MISP collection of data, it is also possible to convert it straight into some STIX format:
 
@@ -178,28 +231,31 @@ bundle21 = parser21.bundle
 But in order to parse multiple data collections, you can also use the following helpers:
 
 ```python
-from misp_stix_converter import misp_event_collection_to_stix1, misp_event_collection_to_stix2_0, misp_event_collection_to_stix2_1
+from misp_stix_converter import misp_event_collection_to_stix1, misp_event_collection_to_stix2
 
 input_filenames = [filename for filename in Path(_PATH_TO_YOUR_MISP_FILES_).glob('*.json')]
 
 stix1_response = misp_event_collection_to_stix1(
-    output_filename, # path to the file where the results are going to be written
-    'xml', # STIX1 return format (XML or JSON)
-    '1.1.1', # STIX1 version (1.1.1 or 1.2)
-    *input_filenames
+    *input_filenames,
+    output_name=output_filename, # path to the file where the results are going to be written
+    return_format='xml', # STIX1 return format (XML or JSON)
+    version='1.1.1' # STIX1 version (1.1.1 or 1.2)
 )
 
-stix20_response = misp_event_collection_to_stix2_0(
-    output_filename, # path to the file where the results are going to be written
-    *input_filenames
+stix20_response = misp_event_collection_to_stix2(
+    *input_filenames,
+    version='2.0' # STIX 2 version
 )
 
 stix21_response = misp_event_collection_to_stix2_1(
-    output_filename, # path to the file where the results are going to be written
-    *input_filenames
+    *input_filenames,
+    version='2.1',
+    single_output=True, # For a single resulting file
+    output_name=output_file_name, # path to the file where the results are going to be written
+    in_memory=True # To keep results in memory before writing the full converted content at the end in the result file
 )
 ```
-Again, all the response variables should be `1` and the resulting STIX1 Package and STIX 2.0 & 2.1 Bundles are available in the specific output file names.
+Again, all the responses should have a `success` field equal to 1 and the resulting STIX1 Package and STIX 2.0 & 2.1 Bundles are available in the specific output file names.
 
 ### Samples and examples
 
@@ -216,8 +272,8 @@ You can find there all the different cases illustrated with examples.
 misp-stix is released under a BSD 2-Clause "Simplified" License allow easy reuse with other libraries.
 
 ~~~
-Copyright 2019-2022 Christian Studer
-Copyright 2019-2022 CIRCL - Computer Incident Response Center Luxembourg c/o "security made in Lëtzebuerg" (SMILE) g.i.e.
+Copyright 2019-2023 Christian Studer
+Copyright 2019-2023 CIRCL - Computer Incident Response Center Luxembourg c/o "security made in Lëtzebuerg" (SMILE) g.i.e.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 

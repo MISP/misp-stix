@@ -3,8 +3,8 @@
 
 from datetime import datetime
 from misp_stix_converter import (
-    MISPtoSTIX20Mapping, MISPtoSTIX20Parser, misp_collection_to_stix2_0,
-    misp_to_stix2_0)
+    MISPtoSTIX20Mapping, MISPtoSTIX20Parser, misp_collection_to_stix2,
+    misp_to_stix2)
 from pymisp import MISPAttribute, MISPEvent
 from .test_events import *
 from .update_documentation import (
@@ -4507,7 +4507,7 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
 
 
 class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
-    _mapping_types = MISPtoSTIX20Mapping()
+    _mapping_types = MISPtoSTIX20Mapping
 
     def test_event_with_attack_pattern_galaxy(self):
         event = get_event_with_attack_pattern_galaxy()
@@ -4516,7 +4516,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             galaxy = event['Event']['Galaxy'][0],
             attack_pattern = self.parser.stix_objects[-1],
             summary = ', '.join(
-                sorted(self._mapping_types.attack_pattern_types)
+                sorted(self._mapping_types.attack_pattern_types())
             )
         )
 
@@ -4527,7 +4527,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             galaxy = event['Event']['Galaxy'][0],
             course_of_action = self.parser.stix_objects[-1],
             summary = ', '.join(
-                sorted(self._mapping_types.course_of_action_types)
+                sorted(self._mapping_types.course_of_action_types())
             )
         )
 
@@ -4542,7 +4542,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             galaxy = event['Event']['Galaxy'][0],
             intrusion_set = self.parser.stix_objects[-1],
             summary = ', '.join(
-                sorted(self._mapping_types.intrusion_set_types)
+                sorted(self._mapping_types.intrusion_set_types())
             )
         )
 
@@ -4552,7 +4552,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             malware = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.malware_types))
+            summary = ', '.join(sorted(self._mapping_types.malware_types()))
         )
 
     def test_event_with_sector_galaxy(self):
@@ -4569,7 +4569,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             threat_actor = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.threat_actor_types))
+            summary = ', '.join(sorted(self._mapping_types.threat_actor_types()))
         )
 
     def test_event_with_tool_galaxy(self):
@@ -4578,7 +4578,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             tool = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.tool_types))
+            summary = ', '.join(sorted(self._mapping_types.tool_types()))
         )
 
     def test_event_with_vulnerability_galaxy(self):
@@ -4587,7 +4587,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             vulnerability = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.vulnerability_types))
+            summary = ', '.join(sorted(self._mapping_types.vulnerability_types()))
         )
 
 
@@ -4776,30 +4776,80 @@ class TestSTIX20MISPExportInteroperability(TestSTIX20ExportInteroperability):
 class TestCollectionSTIX20Export(TestCollectionSTIX2Export):
     def test_attributes_collection(self):
         name = 'test_attributes_collection'
-        to_test_name = f'{name}.json.out'
-        reference_name = f'{name}_stix20.json'
-        output_file = self._current_path / to_test_name
+        output_file = self._current_path / f'{name}.json.out'
+        reference_file = self._current_path / f'{name}_stix20.json'
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files), 1)
-        self._check_stix2_results_export(to_test_name, reference_name)
-        self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files, in_memory=True), 1)
-        self._check_stix2_results_export(to_test_name, reference_name)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.0', single_output=True,
+                output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.0', in_memory=True,
+                single_output=True, output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
 
     def test_events_collection(self):
         name = 'test_events_collection'
-        to_test_name = f'{name}.json.out'
-        reference_name = f'{name}_stix20.json'
-        output_file = self._current_path / to_test_name
+        output_file = self._current_path / f'{name}.json.out'
+        reference_file = self._current_path / f'{name}_stix20.json'
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files), 1)
-        self._check_stix2_results_export(to_test_name, reference_name)
-        self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files, in_memory=True), 1)
-        self._check_stix2_results_export(to_test_name, reference_name)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.0', single_output=True,
+                output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.0', in_memory=True,
+                single_output=True, output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(*input_files, version='2.0'),
+            {
+                'success': 1,
+                'results': [
+                    self._current_path / f'{name}_{n}.json.out' for n in (1, 2)
+                ]
+            }
+        )
+        for n in (1, 2):
+            self._check_stix2_results_export(
+                self._current_path / f'{name}_{n}.json.out',
+                self._current_path / f'test_event{n}_stix20.json'
+            )
+
 
     def test_event_export(self):
         name = 'test_events_collection_1.json'
-        self.assertEqual(misp_to_stix2_0(self._current_path / name), 1)
-        self._check_stix2_results_export(f'{name}.out', 'test_event_stix20.json')
+        filename = self._current_path / name
+        output_file = self._current_path / f'{name}.out'
+        reference_file = self._current_path / 'test_event1_stix20.json'
+        self.assertEqual(
+            misp_to_stix2(filename, version='2.0'),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                filename, version='2.0'
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
 
 
 class TestFeedSTIX20Export(TestSTIX2Export):
@@ -4853,12 +4903,12 @@ class TestFeedSTIX20MISPExport(TestFeedSTIX20Export):
         self.assertEqual(len(bundle.objects), 3)
         identity2, indicator3, indicator4 = bundle.objects
         self._assert_multiple_equal(
-            self.parser._mapping.misp_identity_args['id'],
+            self.parser._mapping.misp_identity_args()['id'],
             identity1.id,
             identity2.id
         )
         self._assert_multiple_equal(
-            self.parser._mapping.misp_identity_args['name'],
+            self.parser._mapping.misp_identity_args()['name'],
             identity1.name,
             identity2.name
         )

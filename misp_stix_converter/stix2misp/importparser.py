@@ -5,6 +5,7 @@ import json
 import subprocess
 import traceback
 from .exceptions import UnavailableGalaxyResourcesError
+from abc import ABCMeta
 from collections import defaultdict
 from pathlib import Path
 from pymisp import MISPEvent, MISPObject
@@ -24,16 +25,20 @@ _RFC_VERSIONS = (1, 3, 4, 5)
 _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
 
-class STIXtoMISPParser:
-    def __init__(self, galaxies_as_tags: bool):
+class STIXtoMISPParser(metaclass=ABCMeta):
+    def __init__(self, distribution: int, sharing_group_id: Union[int, None],
+                 galaxies_as_tags: bool):
         self._identifier: str
         self._clusters: dict = {}
+        self.__distribution = distribution
+        self.__sharing_group_id = sharing_group_id
         if galaxies_as_tags:
-            self.__galaxy_feature = 'as_tags'
+            self.__galaxy_feature = 'as_tag_names'
             self.__synonyms_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.json'
         else:
             self._galaxies: dict = {}
             self.__galaxy_feature = 'as_container'
+        self.__galaxies_as_tags = galaxies_as_tags
         self.__replacement_uuids: dict = {}
         self.__errors: defaultdict = defaultdict(set)
         self.__warnings: defaultdict = defaultdict(set)
@@ -43,8 +48,16 @@ class STIXtoMISPParser:
     ################################################################################
 
     @property
+    def distribution(self) -> int:
+        return self.__distribution
+
+    @property
     def errors(self) -> dict:
         return self.__errors
+
+    @property
+    def galaxies_as_tags(self) -> bool:
+        return self.__galaxies_as_tags
 
     @property
     def galaxy_feature(self) -> bool:
@@ -53,6 +66,10 @@ class STIXtoMISPParser:
     @property
     def replacement_uuids(self) -> dict:
         return self.__replacement_uuids
+
+    @property
+    def sharing_group_id(self) -> Union[int, None]:
+        return self.__sharing_group_id
 
     @property
     def synonyms_mapping(self) -> dict:

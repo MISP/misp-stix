@@ -12,6 +12,7 @@ from .exceptions import (
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import STIXtoMISPParser, _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
+from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
 from pymisp import (
@@ -48,6 +49,7 @@ from typing import Optional, Union
 
 _LOADED_FEATURES = (
     '_attack_pattern',
+    '_campaign',
     '_course_of_action',
     '_custom_attribute',
     '_custom_object',
@@ -137,9 +139,10 @@ _VULNERABILITY_TYPING = Union[
 ]
 
 
-class STIX2toMISPParser(STIXtoMISPParser):
-    def __init__(self, galaxies_as_tags: bool):
-        super().__init__(galaxies_as_tags)
+class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
+    def __init__(self, distribution: int, sharing_group_id: Union[int, None],
+                 galaxies_as_tags: bool):
+        super().__init__(distribution, sharing_group_id, galaxies_as_tags)
         self._creators: set = set()
         self._mapping: Union[
             ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping
@@ -176,9 +179,8 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 object_type = stix_object['type']
             if object_type in ('grouping', 'report'):
                 n_report += 1
-            try:
-                feature = self._mapping.stix_object_loading_mapping[object_type]
-            except KeyError:
+            feature = self._mapping.stix_object_loading_mapping(object_type)
+            if feature is None:
                 self._unable_to_load_stix_object_type_error(object_type)
                 continue
             if hasattr(stix_object, 'created_by_ref'):
@@ -192,7 +194,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
     def parse_stix_bundle(self, single_event: Optional[bool] = False):
         self.__single_event = single_event
         try:
-            feature = self._mapping.bundle_to_misp_mapping[str(self.__n_report)]
+            feature = self._mapping.bundle_to_misp_mapping(str(self.__n_report))
         except AttributeError:
             sys.exit(
                 'No STIX content loaded, please run `load_stix_content` first.'
@@ -206,7 +208,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         ) as error:
             self._critical_error(error)
 
-    def parse_stix_content(self, filename: str):
+    def parse_stix_content(self, filename: str, single_event: Optional[bool] = False):
         try:
             with open(filename, 'rt', encoding='utf-8') as f:
                 bundle = stix2_parser(
@@ -216,15 +218,15 @@ class STIX2toMISPParser(STIXtoMISPParser):
             sys.exit(exception)
         self.load_stix_bundle(bundle)
         del bundle
-        self.parse_stix_bundle()
+        self.parse_stix_bundle(single_event)
 
     ################################################################################
     #                                  PROPERTIES                                  #
     ################################################################################
 
-    @classmethod
-    def generic_info_field(cls) -> str:
-        return f'STIX {cls.stix_version} Bundle imported with the MISP-STIX import feature.'
+    @property
+    def generic_info_field(self) -> str:
+        return f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
 
     @property
     def misp_event(self) -> MISPEvent:
@@ -318,14 +320,11 @@ class STIX2toMISPParser(STIXtoMISPParser):
             return
         definition_type = marking_definition.definition_type
         definition = marking_definition.definition[definition_type]
-        data_to_load = {
-            'tag_name': f"{definition_type}:{definition}",
-            'used': False
-        }
+        tag = f"{definition_type}:{definition}"
         try:
-            self._marking_definition[marking_definition.id] = data_to_load
+            self._marking_definition[marking_definition.id] = tag
         except AttributeError:
-            self._marking_definition = {marking_definition.id: data_to_load}
+            self._marking_definition = {marking_definition.id: tag}
 
     def _load_note(self, note: Note):
         self._check_uuid(note.id)
@@ -449,10 +448,21 @@ class STIX2toMISPParser(STIXtoMISPParser):
         except KeyError:
             raise ObjectRefLoadingError(object_ref)
 
+    def _handle_contextual_data(self):
+        if hasattr(self, '_relationship'):
+            if hasattr(self, '_sighting'):
+                self._parse_relationships_and_sightings()
+            else:
+                self._parse_relationships()
+        elif hasattr(self, '_sighting'):
+            self._parse_sightings()
+        else:
+            getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
             object_type = object_ref.split('--')[0]
-            if object_type in self._mapping.object_type_refs_to_skip:
+            if object_type in self._mapping.object_type_refs_to_skip():
                 continue
             try:
                 self._handle_object(object_type, object_ref)
@@ -462,9 +472,8 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 self._unknown_parsing_function_error(error)
 
     def _handle_object(self, object_type: str, object_ref: str):
-        try:
-            feature = self._mapping.stix_to_misp_mapping[object_type]
-        except KeyError:
+        feature = self._mapping.stix_to_misp_mapping(object_type)
+        if feature is None:
             raise UnknownStixObjectTypeError(object_type)
         try:
             parser = getattr(self, feature)
@@ -503,11 +512,13 @@ class STIX2toMISPParser(STIXtoMISPParser):
             self._fetch_tags_from_labels(misp_event, stix_object.labels)
 
     def _misp_event_from_grouping(self, grouping: Grouping) -> MISPEvent:
+        self.__single_event = True
         misp_event = self._create_misp_event(grouping)
         misp_event.published = False
         return misp_event
 
     def _misp_event_from_report(self, report: _REPORT_TYPING) -> MISPEvent:
+        self.__single_event = True
         misp_event = self._create_misp_event(report)
         if report.published != report.modified:
             misp_event.published = True
@@ -527,27 +538,25 @@ class STIX2toMISPParser(STIXtoMISPParser):
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self._handle_object_refs(grouping.object_refs)
-            self._parse_SROs()
-            getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+            self._handle_contextual_data()
         else:
             events = []
             if hasattr(self, '_report') and self._report is not None:
                 for report in self._report.values():
                     self.__misp_event = self._misp_event_from_report(report)
                     self._handle_object_refs(report.object_refs)
-                    self._parse_SROs()
-                    getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+                    self._handle_contextual_data()
                     events.append(self.misp_event)
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self.__misp_event = self._misp_event_from_grouping(grouping)
                     self._handle_object_refs(grouping.object_refs)
-                    self._parse_SROs()
-                    getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+                    self._handle_contextual_data()
                     events.append(self.misp_event)
             self.__misp_events = events
 
     def _parse_bundle_with_no_report(self):
+        self.__single_event = True
         self.__misp_event = self._create_generic_event()
         for feature in _LOADED_FEATURES:
             if hasattr(self, feature):
@@ -559,8 +568,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                         self._unknown_stix_object_type_error(error)
                     except UnknownParsingFunctionError as error:
                         self._unknown_parsing_function_error(error)
-        self._parse_SROs()
-        getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+        self._handle_contextual_data()
 
     def _parse_bundle_with_single_report(self):
         if hasattr(self, '_report') and self._report is not None:
@@ -573,8 +581,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 self._handle_object_refs(grouping.object_refs)
         else:
             self._parse_bundle_with_no_report()
-        self._parse_SROs()
-        getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+        self._handle_contextual_data()
 
     def _parse_galaxies_as_container(self):
         clusters = defaultdict(list)
@@ -601,22 +608,21 @@ class STIX2toMISPParser(STIXtoMISPParser):
         misp_object = self._create_misp_object('geolocation', location)
         if hasattr(location, 'description'):
             misp_object.comment = location.description
-        for feature, attribute in self._mapping.location_object_mapping.items():
+        for feature, attribute in self._mapping.location_object_mapping().items():
             if hasattr(location, feature):
-                misp_attribute = {'value': getattr(location, feature)}
-                misp_attribute.update(attribute)
-                misp_object.add_attribute(**misp_attribute)
+                misp_object.add_attribute(
+                    **{'value': getattr(location, feature), **attribute}
+                )
         if hasattr(location, 'precision'):
-            attribute = {'value': float(location.precision) / 1000}
-            attribute.update(self._mapping.accuracy_radius_attribute)
-            misp_object.add_attribute(**attribute)
-        if hasattr(location, 'object_marking_refs'):
-            self._handle_object_marking_refs(
-                location.object_marking_refs, misp_object
+            misp_object.add_attribute(
+                **{
+                    'value': float(location.precision) / 1000,
+                    **self._mapping.accuracy_radius_attribute()
+                }
             )
         if to_return:
             return misp_object
-        self._add_misp_object(misp_object)
+        self._add_misp_object(misp_object, location)
 
     ################################################################################
     #                  MISP GALAXIES & CLUSTERS PARSING FUNCTIONS                  #
@@ -627,38 +633,42 @@ class STIX2toMISPParser(STIXtoMISPParser):
             misp_galaxy = MISPGalaxy()
             misp_galaxy.from_dict(**self._galaxies[galaxy_type])
             for cluster in clusters:
-                misp_galaxy.clusters.append(cluster)
+                misp_galaxy.add_galaxy_cluster(**cluster)
             yield misp_galaxy
 
-    @staticmethod
-    def _create_cluster_args(stix_object: _GALAXY_OBJECTS_TYPING,
+    def _create_cluster_args(self, stix_object: _GALAXY_OBJECTS_TYPING,
                              galaxy_type: Union[None, str],
                              description: Optional[str] = None,
                              cluster_value: Optional[str] = None) -> dict:
-        if galaxy_type is None:
-            galaxy_type = stix_object.type
-        if cluster_value is None:
-            cluster_value = stix_object.name
-        if description is not None:
-            return {
-                'type': galaxy_type,
-                'value': cluster_value,
-                'description': description
-            }
+        value = cluster_value or stix_object.name
         cluster_args = {
-            'type': galaxy_type,
-            'value': cluster_value
+            'uuid': self._sanitise_uuid(stix_object.id), 'value': value
         }
+        if galaxy_type is None:
+            version = getattr(stix_object, 'spec_version', '2.0')
+            mapping = self._mapping.galaxy_name_mapping(stix_object.type)
+            name = f"STIX {version} {mapping['name']}"
+            cluster_args.update(
+                {
+                    'version': ''.join(version.split('.')),
+                    'collection_uuid': self._create_v5_uuid(name)
+                }
+            )
+            galaxy_type = f'stix-{version}-{stix_object.type}'
+        cluster_args['type'] = galaxy_type
+        if description is not None:
+            cluster_args['description'] = description
+            return cluster_args
         if hasattr(stix_object, 'description'):
             cluster_args['description'] = stix_object.description
             return cluster_args
-        cluster_args['description'] = cluster_value.capitalize()
+        cluster_args['description'] = value.capitalize()
         return cluster_args
 
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
         for key, value in stix_object.items():
             if key.startswith('x_misp_'):
-                separator = '-' if key in self._mapping.dash_meta_fields else '_'
+                separator = '-' if key in self._mapping.dash_meta_fields() else '_'
                 yield separator.join(key.split('_')[2:]), value
 
     @staticmethod
@@ -694,7 +704,7 @@ class STIX2toMISPParser(STIXtoMISPParser):
         mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
         if hasattr(self._mapping, mapping):
             meta = {}
-            for feature, field in getattr(self._mapping, mapping).items():
+            for feature, field in getattr(self._mapping, mapping)().items():
                 if hasattr(stix_object, feature):
                     meta[field] = getattr(stix_object, feature)
             meta.update(dict(self._extract_custom_fields(stix_object)))
@@ -890,6 +900,15 @@ class STIX2toMISPParser(STIXtoMISPParser):
         for sighting in self._sighting[attribute.uuid]:
             attribute.add_sighting(sighting)
 
+    def _parse_cluster_relationships(self, cluster: MISPGalaxyCluster):
+        for relationship in self._relationship[cluster.uuid]:
+            referenced_uuid = relationship['referenced_uuid']
+            if referenced_uuid in self._clusters:
+                cluster.add_cluster_relation(
+                    self._clusters[referenced_uuid]['cluster'].uuid,
+                    relationship['relationship_type']
+                )
+
     def _parse_object_relationships_as_container(self, misp_object: MISPObject):
         clusters = defaultdict(list)
         for relationship in self._relationship[misp_object.uuid]:
@@ -938,6 +957,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 )(
                     misp_object
                 )
+        getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+        if not self.galaxies_as_tags:
+            for galaxy in self.misp_event.galaxies:
+                for cluster in galaxy.clusters:
+                    if cluster.uuid in self._relationship:
+                        self._parse_cluster_relationships(cluster)
 
     def _parse_relationships_and_sightings(self):
         for attribute in self.misp_event.attributes:
@@ -959,6 +984,12 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 )
             if misp_object.uuid in self._sighting:
                 self._parse_object_sightings(misp_object)
+        getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
+        if not self.galaxies_as_tags:
+            for galaxy in self.misp_event.galaxies:
+                for cluster in galaxy.glusters:
+                    if cluster.uuid in self._relationship:
+                        self._parse_cluster_relationships(cluster)
 
     def _parse_sightings(self):
         for attribute in self.misp_event.attributes:
@@ -967,19 +998,30 @@ class STIX2toMISPParser(STIXtoMISPParser):
         for misp_object in self.misp_event.objects:
             if misp_object.uuid in self._sighting:
                 self._parse_object_sightings(misp_object)
-
-    def _parse_SROs(self):
-        if hasattr(self, '_relationship'):
-            if hasattr(self, '_sighting'):
-                self._parse_relationships_and_sightings()
-            else:
-                self._parse_relationships()
-        elif hasattr(self, '_sighting'):
-            self._parse_sightings()
+        getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
 
     ################################################################################
     #                       MISP FEATURES CREATION FUNCTIONS                       #
     ################################################################################
+
+    def _add_misp_attribute(self, attribute: dict,
+                            stix_object: _SDO_TYPING) -> MISPAttribute:
+        misp_attribute = MISPAttribute()
+        misp_attribute.from_dict(**attribute)
+        tags = tuple(self._handle_tags_from_stix_fields(stix_object))
+        if tags:
+            for tag in tags:
+                misp_attribute.add_tag(tag)
+        return self.misp_event.add_attribute(**misp_attribute)
+
+    def _add_misp_object(self, misp_object: MISPObject,
+                         stix_object: _SDO_TYPING) -> MISPObject:
+        tags = tuple(self._handle_tags_from_stix_fields(stix_object))
+        if tags:
+            for attribute in misp_object.attributes:
+                for tag in tags:
+                    attribute.add_tag(tag)
+        return self.misp_event.add_object(misp_object)
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = self._parse_timeline(stix_object)
@@ -990,23 +1032,32 @@ class STIX2toMISPParser(STIXtoMISPParser):
                 stix_object.id, comment=attribute.get('comment')
             )
         )
-        if hasattr(stix_object, 'object_marking_refs'):
-            tags = tuple(self._parse_markings(stix_object.object_marking_refs))
-            attribute['Tag'] = [{'name': tag} for tag in tags]
         return attribute
 
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
-        misp_event.uuid = self._identifier.split('--')[1]
-        misp_event.info = self.generic_info_field
+        event_args = {
+            'uuid': self._identifier.split('--')[1],
+            'info': self.generic_info_field,
+            'distribution': self.distribution
+        }
+        if self.distribution == 4 and self.sharing_group_id is not None:
+            event_args['sharing_group_id'] = self.sharing_group_id
+        misp_event.from_dict(**event_args)
         return misp_event
 
     def _create_misp_event(
             self, stix_object: _GROUPING_REPORT_TYPING) -> MISPEvent:
         misp_event = MISPEvent(force_timestamps=True)
         self._sanitise_object_uuid(misp_event, stix_object.id)
-        misp_event.info = getattr(stix_object, 'name', self.generic_info_field)
-        misp_event.timestamp = self._timestamp_from_date(stix_object.modified)
+        event_args = {
+            'info': getattr(stix_object, 'name', self.generic_info_field),
+            'distribution': self.distribution,
+            'timestamp': self._timestamp_from_date(stix_object.modified)
+        }
+        if self.distribution == 4 and self.sharing_group_id is not None:
+            event_args['sharing_group_id'] = self.sharing_group_id
+        misp_event.from_dict(**event_args)
         self._handle_misp_event_tags(misp_event, stix_object)
         return misp_event
 
@@ -1032,8 +1083,14 @@ class STIX2toMISPParser(STIXtoMISPParser):
         )
         if stix_object is not None:
             self._sanitise_object_uuid(misp_object, stix_object['id'])
-            misp_object.update(self._parse_timeline(stix_object))
+            misp_object.from_dict(**self._parse_timeline(stix_object))
         return misp_object
+
+    def _handle_tags_from_stix_fields(self, stix_object: _SDO_TYPING):
+        if hasattr(stix_object, 'confidence'):
+            yield self._parse_confidence_level(stix_object.confidence)
+        if hasattr(stix_object, 'object_marking_refs'):
+            yield from self._parse_markings(stix_object.object_marking_refs)
 
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
@@ -1058,18 +1115,23 @@ class STIX2toMISPParser(STIXtoMISPParser):
                       if label.lower() != 'threat-report'):
             misp_feature.add_tag(label)
 
-    def _handle_object_marking_refs(
-            self, object_marking_refs: list, misp_object: MISPObject):
-        tags = self._parse_markings(object_marking_refs)
-        for attribute in misp_object.attributes:
-            for tag in tags:
-                attribute.add_tag(tag)
-
     @staticmethod
     def _parse_AS_value(number: Union[int, str]) -> str:
         if isinstance(number, int) or not number.startswith('AS'):
             return f'AS{number}'
         return number
+
+    @staticmethod
+    def _parse_confidence_level(confidence_level: int) -> str:
+        if confidence_level == 100:
+            return 'misp:confidence-level="completely-confident"'
+        if confidence_level >= 75:
+            return 'misp:confidence-level="usually-confident"'
+        if confidence_level >= 50:
+            return 'misp:confidence-level="fairly-confident"'
+        if confidence_level >= 25:
+            return 'misp:confidence-level="rarely-confident"'
+        return 'misp:confidence-level="unconfident"'
 
     def _parse_markings(self, marking_refs: list):
         for marking_ref in marking_refs:
@@ -1081,15 +1143,15 @@ class STIX2toMISPParser(STIXtoMISPParser):
             except ObjectRefLoadingError as error:
                 self._object_ref_loading_error(error)
                 continue
-            yield(marking_definition.name)
+            yield(marking_definition)
 
     def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
         misp_object = {
             'timestamp': self._timestamp_from_date(stix_object.modified)
         }
         object_type = stix_object.type
-        if object_type in self._mapping.timeline_mapping:
-            first, last = self._mapping.timeline_mapping[object_type]
+        if self._mapping.timeline_mapping(object_type) is not None:
+            first, last = self._mapping.timeline_mapping(object_type)
             if not self._skip_first_seen_last_seen(stix_object):
                 if hasattr(stix_object, first) and getattr(stix_object, first):
                     misp_object['first_seen'] = getattr(stix_object, first)
