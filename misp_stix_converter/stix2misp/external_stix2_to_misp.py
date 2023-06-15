@@ -129,6 +129,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
 
+    @staticmethod
+    def _fetch_identity_object_name(identity: _IDENTITY_TYPING) -> str:
+        if getattr(identity, 'identity_class', None) == 'organization':
+            return 'organization'
+        return 'identity'
+
     def _get_attributes_from_generic_SDO(
             self, stix_object: _GENERIC_SDO_TYPING, mapping: str):
         for feature, attribute in getattr(self._mapping, mapping)().items():
@@ -360,21 +366,48 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _parse_identity_object(self, identity: _IDENTITY_TYPING):
         """
-        Generic Identity object parsing function.
-        With the STIX Identity object, we extract the different fields and
-        generate a generic MISP identity object.
+        Generic STIX Identity object parsing function.
+        We start by defining the appropriate object name depending on some key
+        fields on the identity object, and extract the object attributes.
 
         :param identity: The Identity object to parse
         """
-        misp_object = self._create_misp_object('identity', identity)
+        name = self._fetch_identity_object_name(identity)
+        misp_object = self._create_misp_object(name, identity)
+        for feature, value in getattr(self, f'_parse_{name}_object_attributes')(identity):
+            misp_object.add_attribute(feature, value)
+        self._add_misp_object(misp_object, identity)
+
+    def _parse_identity_object_attributes(self, identity: _IDENTITY_TYPING):
+        """
+        MISP Identity object attributes extraction function.
+        We check different fields in the Identity object and return the
+        appropriate information to build object attributes from each field.
+
+        :param identity: The identity object to parse
+        """
         for feature in self._mapping.identity_object_single_fields():
             if hasattr(identity, feature):
-                misp_object.add_attribute(feature, getattr(identity, feature))
+                yield feature, getattr(identity, feature)
         for feature in self._mapping.identity_object_multiple_fields():
             if hasattr(identity, feature):
                 for value in getattr(identity, feature):
-                    misp_object.add_attribute(feature, value)
-        self._add_misp_object(misp_object, identity)
+                    yield feature, value
+
+    def _parse_organization_object_attributes(self, identity: _IDENTITY_TYPING):
+        """
+        MISP Organization object attributes extraction function.
+        We take the STIX Identity object to MISP Organization template mapping
+        in order to convert the given fields into object attributes
+
+        :param identity: The identity object to parse
+        """
+        for field, relation in self._mapping.organization_object_mapping().items():
+            if hasattr(identity, field):
+                yield relation, getattr(identity, field)
+        if hasattr(identity, 'roles'):
+            for role in identity.roles:
+                yield 'role', role
 
     def _parse_indicator(self, indicator_ref: str):
         """
