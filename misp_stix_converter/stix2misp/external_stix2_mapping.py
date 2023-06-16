@@ -198,6 +198,7 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         'contact_information'
     )
     __organization_object_mapping = Mapping(
+        contact_information = 'contact_information',
         description = 'description',
         name = 'name'
     )

@@ -405,9 +405,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for field, relation in self._mapping.organization_object_mapping().items():
             if hasattr(identity, field):
                 yield relation, getattr(identity, field)
-        if hasattr(identity, 'roles'):
-            for role in identity.roles:
-                yield 'role', role
+        for feature in ('roles', 'sectors'):
+            if hasattr(identity, feature):
+                for value in getattr(identity, feature):
+                    yield feature[:-1], value
 
     def _parse_indicator(self, indicator_ref: str):
         """
