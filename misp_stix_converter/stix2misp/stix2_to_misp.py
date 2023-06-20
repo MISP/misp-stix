@@ -353,7 +353,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._sighting['opinion'][opinion_ref] = opinion
         except AttributeError:
             self._sighting = defaultdict(lambda: defaultdict(list))
-            self._sighting['opinion'][sanitised_ref] = opinion
+            self._sighting['opinion'][opinion_ref] = opinion
         for object_ref in opinion.object_refs:
             sanitised_ref = self._sanitise_uuid(object_ref)
             self._sighting['opinion_refs'][sanitised_ref].append(opinion_ref)
