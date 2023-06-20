@@ -556,14 +556,27 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             mapping = getattr(
                 self._mapping, f'{feature}_contact_information_mapping'
             )
+            contact_information = []
             for contact_info in identity.contact_information.split(' / '):
-                object_relation, value = contact_info.split(': ')
+                if ': ' in contact_info:
+                    try:
+                        object_relation, value = contact_info.split(': ')
+                    except ValueError:
+                        contact_information.append(contact_info)
+                        continue
+                    attribute = mapping(object_relation)
+                    if attribute is not None:
+                        misp_object.add_attribute(
+                            **{
+                                'object_relation': object_relation,
+                                'value': value, **attribute
+                            }
+                        )
+                        continue
+                contact_information.append(contact_info)
+            if contact_information:
                 misp_object.add_attribute(
-                    **{
-                        'object_relation': object_relation,
-                        'value': value,
-                        **mapping(object_relation)
-                    }
+                    'contact_information', '; '.join(contact_information)
                 )
         return misp_object
 
