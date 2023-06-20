@@ -1603,42 +1603,6 @@ _BUNDLE_WITH_NO_REPORT = [
 ]
 _BUNDLE_WITH_SIGHTINGS = [
     {
-        "type": "identity",
-        "spec_version": "2.1",
-        "id": "identity--55f6ea5e-2c60-40e5-964f-47a8950d210f",
-        "created": "2022-07-11T14:11:39.134109Z",
-        "modified": "2022-07-11T14:11:39.134109Z",
-        "name": "CIRCL",
-        "identity_class": "organization"
-    },
-    {
-        "type": "identity",
-        "spec_version": "2.1",
-        "id": "identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183",
-        "created": "2022-07-11T14:11:39.134416Z",
-        "modified": "2022-07-11T14:11:39.134416Z",
-        "name": "E-Corp",
-        "identity_class": "organization"
-    },
-    {
-        "type": "identity",
-        "spec_version": "2.1",
-        "id": "identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90",
-        "created": "2022-07-11T14:11:39.134704Z",
-        "modified": "2022-07-11T14:11:39.134704Z",
-        "name": "Oscorp Industries",
-        "identity_class": "organization"
-    },
-    {
-        "type": "identity",
-        "spec_version": "2.1",
-        "id": "identity--91050751-c1c9-4944-a522-db6390cec15b",
-        "created": "2022-07-11T14:11:39.135147Z",
-        "modified": "2022-07-11T14:11:39.135147Z",
-        "name": "Umbrella Corporation",
-        "identity_class": "organization"
-    },
-    {
         "type": "grouping",
         "spec_version": "2.1",
         "id": "grouping--a6ef17d6-91cb-4a05-b10b-2f045daf874c",
@@ -1820,6 +1784,42 @@ _BUNDLE_WITH_SIGHTINGS = [
             "indicator--518b4bcb-a86b-4783-9457-391d548b605b"
         ],
         "x_misp_author_ref": "identity--91050751-c1c9-4944-a522-db6390cec15b"
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--55f6ea5e-2c60-40e5-964f-47a8950d210f",
+        "created": "2022-07-11T14:11:39.134109Z",
+        "modified": "2022-07-11T14:11:39.134109Z",
+        "name": "CIRCL",
+        "identity_class": "organization"
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183",
+        "created": "2022-07-11T14:11:39.134416Z",
+        "modified": "2022-07-11T14:11:39.134416Z",
+        "name": "E-Corp",
+        "identity_class": "organization"
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90",
+        "created": "2022-07-11T14:11:39.134704Z",
+        "modified": "2022-07-11T14:11:39.134704Z",
+        "name": "Oscorp Industries",
+        "identity_class": "organization"
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--91050751-c1c9-4944-a522-db6390cec15b",
+        "created": "2022-07-11T14:11:39.135147Z",
+        "modified": "2022-07-11T14:11:39.135147Z",
+        "name": "Umbrella Corporation",
+        "identity_class": "organization"
     }
 ]
 _CAMPAIGN_NAME_ATTRIBUTE = {
