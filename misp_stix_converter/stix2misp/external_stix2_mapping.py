@@ -197,6 +197,11 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         'identity_class',
         'contact_information'
     )
+    __organization_object_mapping = Mapping(
+        contact_information = 'contact_information',
+        description = 'description',
+        name = 'name'
+    )
     __sigma_object_mapping = Mapping(
         pattern = STIX2toMISPMapping.sigma_attribute(),
         description = STIX2toMISPMapping.comment_attribute(),
@@ -608,6 +613,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def observable_mapping(cls, field) -> Union[str, None]:
         return cls.__observable_mapping.get(field)
+
+    @classmethod
+    def organization_object_mapping(cls) -> dict:
+        return cls.__organization_object_mapping
 
     @classmethod
     def pattern_forbidden_relations(cls) -> tuple:

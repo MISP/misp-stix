@@ -105,10 +105,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         sighting.from_dict(**sighting_args)
         object_ref = self._sanitise_uuid(custom_object.object_ref)
         try:
-            self._sighting[object_ref].append(sighting)
+            self._sighting['custom_opinion'][object_ref].append(sighting)
         except AttributeError:
-            self._sighting = defaultdict(list)
-            self._sighting[object_ref].append(sighting)
+            self._sighting = defaultdict(lambda: defaultdict(list))
+            self._sighting['custom_opinion'][object_ref].append(sighting)
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #

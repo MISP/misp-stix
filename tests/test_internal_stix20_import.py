@@ -1141,7 +1141,8 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.assertEqual(sighting.Organisation['name'], identity.name)
         self.assertEqual(domain.uuid, indicator.id.split('--')[1])
         self.assertEqual(len(domain.sightings), 4)
-        stix_objects = (sighting3, opinion3, sighting4, opinion4)
+        stix_objects = (sighting3, sighting4, opinion3, opinion4)
+        identities = (identity1, identity3, identity2, identity4)
         for sighting, stix_object, identity in zip(domain.sightings, stix_objects, identities):
             self.assertEqual(sighting.date_sighting, self._timestamp_from_datetime(stix_object.modified))
             self.assertEqual(sighting.type, '0' if stix_object.type == 'sighting' else '1')
