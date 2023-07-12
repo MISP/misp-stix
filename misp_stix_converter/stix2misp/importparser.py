@@ -19,7 +19,7 @@ _INDICATOR_TYPING = Union[
     Indicator_v20,
     Indicator_v21
 ]
-_ROOT_PATH = Path(__file__).parents[1].resolve()
+_DATA_PATH = Path(__file__).parents[1].resolve() / 'data'
 
 _VALID_DISTRIBUTIONS = (0, 1, 2, 3, 4)
 _RFC_VERSIONS = (1, 3, 4, 5)
@@ -42,7 +42,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         )
         if self.galaxies_as_tags:
             self.__galaxy_feature = 'as_tag_names'
-            self.__synonyms_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.json'
+            self.__synonyms_path = _DATA_PATH / 'synonymsToTagNames.json'
         else:
             self._galaxies: dict = {}
             self.__galaxy_feature = 'as_container'
@@ -328,7 +328,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     ################################################################################
 
     def __galaxies_up_to_date(self) -> bool:
-        fingerprint_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.fingerprint'
+        fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
         if not fingerprint_path.exists():
             return False
         latest_fingerprint = self.__get_misp_galaxy_fingerprint()
@@ -339,7 +339,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         return fingerprint == latest_fingerprint
 
     def __generate_synonyms_mapping(self):
-        data_path = _ROOT_PATH / 'data' / 'misp-galaxy' / 'clusters'
+        data_path = _DATA_PATH / 'misp-galaxy' / 'clusters'
         if not data_path.exists():
             raise UnavailableGalaxyResourcesError(data_path)
         synonyms_mapping = defaultdict(list)
@@ -358,13 +358,13 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f.write(json.dumps(synonyms_mapping))
         latest_fingerprint = self.__get_misp_galaxy_fingerprint()
         if latest_fingerprint is not None:
-            fingerprint_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.fingerprint'
+            fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
             with open(fingerprint_path, 'wt', encoding='utf-8') as f:
                 f.write(latest_fingerprint)
 
     @staticmethod
     def __get_misp_galaxy_fingerprint():
-        galaxy_path = _ROOT_PATH / 'data' / 'misp-galaxy'
+        galaxy_path = _DATA_PATH / 'misp-galaxy'
         status = subprocess.Popen(
             [
                 'git',
