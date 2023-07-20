@@ -772,6 +772,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         name = STIX2toMISPMapping.name_attribute(),
         description = STIX2toMISPMapping.description_attribute(),
         roles = __role_attribute,
+        sectors = {'type': 'text', 'object_relation': 'sector'},
         x_misp_role = __role_attribute,
         x_misp_alias = __alias_attribute,
         x_misp_date_of_inception = {

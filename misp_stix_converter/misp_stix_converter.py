@@ -1009,7 +1009,8 @@ def _stix_to_misp(stix_args):
             single_event=stix_args.single_output
         )
         if traceback.pop('success', 0) == 1:
-            results.update(traceback)
+            for key, value in traceback.items():
+                results[key].extend(value)
             continue
         results['fails'].extend(traceback['errors'])
     return results

@@ -19,8 +19,9 @@ _INDICATOR_TYPING = Union[
     Indicator_v20,
     Indicator_v21
 ]
-_ROOT_PATH = Path(__file__).parents[1].resolve()
+_DATA_PATH = Path(__file__).parents[1].resolve() / 'data'
 
+_VALID_DISTRIBUTIONS = (0, 1, 2, 3, 4)
 _RFC_VERSIONS = (1, 3, 4, 5)
 _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
 
@@ -30,18 +31,53 @@ class STIXtoMISPParser(metaclass=ABCMeta):
                  galaxies_as_tags: bool):
         self._identifier: str
         self._clusters: dict = {}
-        self.__distribution = distribution
-        self.__sharing_group_id = sharing_group_id
-        if galaxies_as_tags:
+        self.__errors: defaultdict = defaultdict(set)
+        self.__warnings: defaultdict = defaultdict(set)
+        self.__distribution = self._sanitise_distribution(distribution)
+        self.__sharing_group_id = self._sanitise_sharing_group_id(
+            sharing_group_id
+        )
+        self.__galaxies_as_tags = self._sanitise_galaxies_as_tags(
+            galaxies_as_tags
+        )
+        if self.galaxies_as_tags:
             self.__galaxy_feature = 'as_tag_names'
-            self.__synonyms_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.json'
+            self.__synonyms_path = _DATA_PATH / 'synonymsToTagNames.json'
         else:
             self._galaxies: dict = {}
             self.__galaxy_feature = 'as_container'
-        self.__galaxies_as_tags = galaxies_as_tags
         self.__replacement_uuids: dict = {}
-        self.__errors: defaultdict = defaultdict(set)
-        self.__warnings: defaultdict = defaultdict(set)
+
+    def _sanitise_distribution(self, distribution: int) -> int:
+        try:
+            sanitised = int(distribution)
+        except (TypeError, ValueError) as error:
+            self._distribution_error(error)
+            return 0
+        if sanitised in _VALID_DISTRIBUTIONS:
+            return sanitised
+        self._distribution_value_error(sanitised)
+        return 0
+
+    def _sanitise_galaxies_as_tags(self, galaxies_as_tags: bool):
+        if isinstance(galaxies_as_tags, bool):
+            return galaxies_as_tags
+        if galaxies_as_tags in ('true', 'True', '1', 1):
+            return True
+        if galaxies_as_tags in ('false', 'False', '0', 0):
+            return False
+        self._galaxies_as_tags_error(galaxies_as_tags)
+        return False
+
+    def _sanitise_sharing_group_id(
+            self, sharing_group_id: Union[int, None]) -> Union[int, None]:
+        if sharing_group_id is None:
+            return None
+        try:
+            return int(sharing_group_id)
+        except (TypeError, ValueError) as error:
+            self._sharing_group_id_error(error)
+            return None
 
     ################################################################################
     #                                  PROPERTIES                                  #
@@ -115,6 +151,21 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f'The Following exception was raised: {exception}'
         )
 
+    def _distribution_error(self, exception: Exception):
+        self.__errors['init'].add(
+            f'Wrong distribution format: {exception}'
+        )
+
+    def _distribution_value_error(self, distribution: int):
+        self.__errors['init'].add(
+            f'Invalid distribution value: {distribution}'
+        )
+
+    def _galaxies_as_tags_error(self, galaxies_as_tags):
+        self.__errors['init'].add(
+            f'Invalid galaxies_as_tags flag: {galaxies_as_tags} (bool expected)'
+        )
+
     def _identity_error(self, identity_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         self.__errors[self._identifier].add(
@@ -180,6 +231,11 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     def _parse_traceback(exception: Exception) -> str:
         tb = ''.join(traceback.format_tb(exception.__traceback__))
         return f'{tb}{exception.__str__()}'
+
+    def _sharing_group_id_error(self, exception: Exception):
+        self.__errors['init'].add(
+            f'Wrong sharing group id format: {exception}'
+        )
 
     def _threat_actor_error(self, threat_actor_id: str, exception: Exception):
         self.__errors[self._identifier].add(
@@ -272,7 +328,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     ################################################################################
 
     def __galaxies_up_to_date(self) -> bool:
-        fingerprint_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.fingerprint'
+        fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
         if not fingerprint_path.exists():
             return False
         latest_fingerprint = self.__get_misp_galaxy_fingerprint()
@@ -283,7 +339,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         return fingerprint == latest_fingerprint
 
     def __generate_synonyms_mapping(self):
-        data_path = _ROOT_PATH / 'data' / 'misp-galaxy' / 'clusters'
+        data_path = _DATA_PATH / 'misp-galaxy' / 'clusters'
         if not data_path.exists():
             raise UnavailableGalaxyResourcesError(data_path)
         synonyms_mapping = defaultdict(list)
@@ -302,13 +358,13 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f.write(json.dumps(synonyms_mapping))
         latest_fingerprint = self.__get_misp_galaxy_fingerprint()
         if latest_fingerprint is not None:
-            fingerprint_path = _ROOT_PATH / 'data' / 'synonymsToTagNames.fingerprint'
+            fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
             with open(fingerprint_path, 'wt', encoding='utf-8') as f:
                 f.write(latest_fingerprint)
 
     @staticmethod
     def __get_misp_galaxy_fingerprint():
-        galaxy_path = _ROOT_PATH / 'data' / 'misp-galaxy'
+        galaxy_path = _DATA_PATH / 'misp-galaxy'
         status = subprocess.Popen(
             [
                 'git',

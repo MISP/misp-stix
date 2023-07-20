@@ -1586,7 +1586,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         observable_composition = self._create_observable_composition(
             observables,
             misp_object['uuid'],
-            name=misp_object['name']
+            name=misp_object['name'].replace('|', '-')
         )
         return observable_composition
 
@@ -1730,7 +1730,7 @@ class MISPtoSTIX1EventsParser(MISPtoSTIX1Parser):
         observable_composition = self._create_observable_composition(
             observables,
             misp_object['uuid'],
-            name=misp_object['name']
+            name=misp_object['name'].replace('|', '-')
         )
         return observable_composition
 
