@@ -2898,7 +2898,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     @staticmethod
     def _create_object_labels(misp_object: Union[MISPObject, dict], to_ids: Optional[bool] = None) -> list:
         labels = [
-            f'misp:name="{misp_object["name"]}"',
+            f'misp:name="{misp_object["name"].replace("|", "-")}"',
             f'misp:meta-category="{misp_object["meta-category"]}"'
         ]
         if to_ids is not None:
