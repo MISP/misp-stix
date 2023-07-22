@@ -501,10 +501,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
         :param observed_data: The Observed Data object
         """
-        observable_types = set()
-        for observable in observed_data.objects.values():
-            observable_types.add(observable.get('type') if type(observable) is dict else observable.type)
-
+        observable_types = set(
+            observable['type'] for observable in observed_data.objects.values()
+        )
         mapping = self._handle_observables_mapping(observable_types)
         feature = f'_parse_{mapping}_observable_objects'
         try:
