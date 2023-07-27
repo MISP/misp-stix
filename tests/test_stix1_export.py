@@ -4202,9 +4202,6 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
             }
         )
         for n in (1, 2):
-            with open(self._current_path / f'{name}_{n}.json.out', 'r') as i:
-                with open(f'ntm_collection{n}_11.xml', 'w') as o:
-                    o.write(i.read())
             self._check_stix1_export_results(
                 self._current_path / f'{name}_{n}.json.out',
                 self._current_path / f'test_event{n}_stix11.xml'
@@ -4243,9 +4240,6 @@ class TestCollectionStix1Export(TestCollectionSTIX1Export):
             }
         )
         for n in (1, 2):
-            with open(self._current_path / f'{name}_{n}.json.out', 'r') as i:
-                with open(f'ntm_collection{n}_12.xml', 'w') as o:
-                    o.write(i.read())
             self._check_stix1_export_results(
                 self._current_path / f'{name}_{n}.json.out',
                 self._current_path / f'test_event{n}_stix12.xml'
