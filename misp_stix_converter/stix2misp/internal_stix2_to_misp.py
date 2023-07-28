@@ -333,6 +333,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_note(self, note_ref: str):
         note = self._get_stix_object(note_ref)
         misp_object = self._create_misp_object('annotation', note)
+        self._sanitise_object_uuid(misp_object, note.id)
+        misp_object.from_dict(**self._parse_timeline(note))
         for feature, mapping in self._mapping.annotation_object_mapping().items():
             if hasattr(note, feature):
                 self._populate_object_attributes_with_data(

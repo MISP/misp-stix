@@ -28,7 +28,7 @@ from stix2.v20.observables import (
     X509Certificate as X509Certificate_v20)
 from stix2.v20.sdo import (
     CourseOfAction as CourseOfAction_v20, Vulnerability as Vulnerability_v20)
-from stix2.v20.observables import (
+from stix2.v21.observables import (
     AutonomousSystem as AutonomousSystem_v21, Directory as Directory_v21,
     DomainName as DomainName_v21, EmailAddress as EmailAddress_v21,
     EmailMessage as EmailMessage_v21, File as File_v21,
