@@ -8,12 +8,12 @@ from typing import Union
 
 class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     __external_id_to_source_name = Mapping(
-        CAPEC = 'capec',
-        CVE = 'cve',
-        CWE = 'cwe',
-        MOB = 'mitre-mobile-attack',
-        PRE = 'mitre-pre-attack',
-        REF = 'reference_from_CAPEC'
+        CAPEC='capec',
+        CVE='cve',
+        CWE='cwe',
+        MOB='mitre-mobile-attack',
+        PRE='mitre-pre-attack',
+        REF='reference_from_CAPEC'
     )
     __pe_section_hash_types = (
         'md5',
@@ -55,12 +55,12 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'malware', 'threat-actor', 'tool', 'vulnerability'
     )
     __misp_identity_args = Mapping(
-        id = 'identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f',
-        type = 'identity',
-        identity_class = 'organization',
-        name = 'MISP',
-        created = '2015-09-14T15:40:21Z',
-        modified = '2015-09-14T15:40:21Z'
+        id='identity--55f6ea65-aa10-4c5a-bf01-4f84950d210f',
+        type='identity',
+        identity_class='organization',
+        name='MISP',
+        created='2015-09-14T15:40:21Z',
+        modified='2015-09-14T15:40:21Z'
     )
     __relationship_specs = Mapping(
         **{
@@ -235,10 +235,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         }
     )
     __attack_pattern_meta_mapping = Mapping(
-        kill_chain = '_parse_kill_chain'
+        kill_chain='_parse_kill_chain'
     )
     __intrusion_set_meta_mapping = Mapping(
-        synonyms = '_parse_synonyms_meta_field'
+        synonyms='_parse_synonyms_meta_field'
     )
     __malware_meta_mapping = Mapping(
         **{
@@ -313,7 +313,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         "AF_NETBIOS", "AF_INET6", "AF_IRDA", "AF_BTH"
     )
     __android_app_object_mapping = Mapping(
-        name = 'name'
+        name='name'
     )
     __android_app_single_fields = (
         'name',
@@ -323,12 +323,12 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'description'
     )
     __attack_pattern_object_mapping = Mapping(
-        name = 'name',
-        summary = 'description'
+        name='name',
+        summary='description'
     )
     __attack_pattern_reference_mapping = Mapping(
-        id = ('capec', 'external_id'),
-        references = ('mitre-attack', 'url')
+        id=('capec', 'external_id'),
+        references=('mitre-attack', 'url')
     )
     __attack_pattern_single_fields = (
         'name',
@@ -339,11 +339,11 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'description'
     )
     __cpe_asset_object_mapping = Mapping(
-        cpe = 'cpe',
-        language = 'languages',
-        product = 'name',
-        vendor = 'vendor',
-        version = 'version'
+        cpe='cpe',
+        language='languages',
+        product='name',
+        vendor='vendor',
+        version='version'
     )
     __cpe_asset_single_fields = (
         'cpe',
@@ -363,9 +363,9 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         "PF_NETROM"
     )
     __domain_ip_object_mapping = Mapping(
-        domain = 'value',
-        hostname = 'value',
-        ip = 'resolves_to_refs[*].value'
+        domain='value',
+        hostname='value',
+        ip='resolves_to_refs[*].value'
     )
     __domain_ip_single_fields = (
         'first-seen',
@@ -467,9 +467,9 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'username'
     )
     __gitlab_user_object_mapping = Mapping(
-        id = 'user_id',
-        name = 'display_name',
-        username = 'account_login'
+        id='user_id',
+        name='display_name',
+        username='account_login'
     )
     __gitlab_user_single_fields = (
         'id',
@@ -477,17 +477,17 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'username'
     )
     __http_request_object_mapping = Mapping(
-        references = {
+        references={
             'ip-src': "src_ref.type = '{}' AND network-traffic:src_ref.value",
             'ip-dst': "dst_ref.type = '{}' AND network-traffic:dst_ref.value",
             'host': "dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value"
         },
-        request_extension = {
+        request_extension={
             'method': 'request_method',
             'uri': 'request_value',
             'url': 'request_value'
         },
-        request_header = {
+        request_header={
             'content-type': 'Content-Type',
             'cookie': 'Cookie',
             'referer': 'Referer',
@@ -526,20 +526,20 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'url'
     )
     __ip_port_object_mapping = Mapping(
-        ip_features = {
+        ip_features={
             'ip': "dst_ref.type = '{}' AND network-traffic:dst_ref.value",
             'ip-src': "src_ref.type = '{}' AND network-traffic:src_ref.value",
             'ip-dst': "dst_ref.type = '{}' AND network-traffic:dst_ref.value"
         },
-        domain_features = {
+        domain_features={
             'domain': "dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value",
             'hostname': "dst_ref.type = 'domain-name' AND network-traffic:dst_ref.value"
         },
-        features = {
+        features={
             'dst-port': "dst_port",
             'src-port': "src_port"
         },
-        timeline = {
+        timeline={
             'first-seen': "start",
             'last-seen': "end"
         }
@@ -557,9 +557,9 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'logo',
     )
     __legal_entity_object_mapping = Mapping(
-        business = 'sectors',
-        name = 'name',
-        text = 'description'
+        business='sectors',
+        name='name',
+        text='description'
     )
     __legal_entity_single_fields = (
         'name',
@@ -598,28 +598,28 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         *__lnk_hash_types
     )
     __netflow_object_mapping = Mapping(
-        features = {
+        features={
             'src-port': 'src_port',
             'dst-port': 'dst_port',
             'byte-count': 'src_byte_count',
             'packet-count': 'src_packets'
         },
-        timeline = {
+        timeline={
             'first-packet-seen': 'start',
             'last-packet-seen': 'end'
         },
-        extensions = {
+        extensions={
             'icmp-type': "extensions.'icmp-ext'.icmp_type_hex",
             'tcp-flags': "extensions.'tcp-ext'.src_flags_hex"
         }
     )
     __network_connection_mapping = Mapping(
-        features = {
+        features={
             'dst-port': 'dst_port',
             'first-packet-seen': 'start',
             'src-port': 'src_port'
         },
-        protocols = (
+        protocols=(
             'layer3-protocol',
             'layer4-protocol',
             'layer7-protocol'
@@ -640,7 +640,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'attachment',
     )
     __news_agency_object_mapping = Mapping(
-            name = 'name'
+            name='name'
         )
     __news_agency_single_fields = (
         'name',
@@ -671,12 +671,12 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'account-name'
     )
     __pe_object_mapping = Mapping(
-        features = {
+        features={
             'imphash': 'imphash',
             'number-sections': 'number_of_sections',
             'type': 'pe_type'
         },
-        header = {
+        header={
             'entrypoint-address': 'address_of_entry_point',
         }
     )
@@ -734,13 +734,13 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'filename'
     )
     __script_to_malware_mapping = Mapping(
-        comment = 'description',
-        filename = 'name',
-        language = 'implementation_languages'
+        comment='description',
+        filename='name',
+        language='implementation_languages'
     )
     __script_to_tool_mapping = Mapping(
-        comment = 'description',
-        filename = 'name'
+        comment='description',
+        filename='name'
     )
     __socket_type_enum_list = (
         "SOCK_STREAM",
@@ -757,8 +757,8 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         }
     )
     __telegram_account_object_mapping = Mapping(
-        id = 'user_id',
-        username = 'account_login'
+        id='user_id',
+        username='account_login'
     )
     __telegram_account_single_fields = (
         'id',
@@ -809,14 +809,14 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
         'x509-fingerprint-sha256'
     )
     __x509_object_mapping = Mapping(
-        extension = {
+        extension={
             'dns_names': 'DNS name',
             'email': 'email',
             'ip': 'IP',
             'rid': 'RID',
             'uri': 'URI'
         },
-        features = {
+        features={
             'issuer': 'issuer',
             'pubkey-info-algorithm': 'subject_public_key_algorithm',
             'pubkey-info-exponent': 'subject_public_key_exponent',
@@ -826,7 +826,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'subject': 'subject',
             'version': 'version'
         },
-        timeline = {
+        timeline={
             'validity-not-after': 'validity_not_after',
             'validity-not-before': 'validity_not_before'
         }

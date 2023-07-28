@@ -58,7 +58,7 @@ class MISPtoSTIXMapping:
     @classmethod
     def attack_pattern_types(cls) -> tuple:
         return cls.__attack_pattern_types
-    
+
     @classmethod
     def course_of_action_types(cls) -> tuple:
         return cls.__course_of_action_types

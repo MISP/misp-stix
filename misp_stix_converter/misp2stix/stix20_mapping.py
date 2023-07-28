@@ -34,7 +34,7 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
     # STIX 2.0 specific MISP OBJECTS MAPPING
     __objects_mapping = MISPtoSTIX2Mapping.objects_mapping()
     __credential_object_mapping = Mapping(
-        username = 'user_id'
+        username='user_id'
     )
     __email_object_mapping = Mapping(
         **{
@@ -48,7 +48,7 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
         }
     )
     __email_observable_mapping = Mapping(
-        subject = 'subject'
+        subject='subject'
     )
     __employee_object_mapping = Mapping(
         **{
@@ -71,11 +71,11 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
         }
     )
     __network_socket_mapping = Mapping(
-        features = {
+        features={
             'dst-port': 'dst_port',
             'src-port': 'src_port'
         },
-        extension = {
+        extension={
             'address-family': 'address_family',
             'domain-family': 'protocol_family',
             'socket-type': 'socket_type'
@@ -94,8 +94,8 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
         'src-port'
     )
     __organization_object_mapping = Mapping(
-        description = 'description',
-        name = 'name'
+        description='description',
+        name='name'
     )
     __person_object_mapping = Mapping(
         **{
@@ -104,7 +104,7 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
         }
     )
     __process_object_mapping = Mapping(
-        features = {
+        features={
             'args': 'arguments',
             'command-line': 'command_line',
             'creation-time': 'created',
@@ -113,7 +113,7 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
             'name': 'name',
             'pid': 'pid'
         },
-        parent = {
+        parent={
             'parent-command-line': 'command_line',
             'parent-image': 'binary_ref.name',
             'parent-pid': 'pid',
@@ -135,7 +135,7 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
         'pid'
     )
     __user_account_object_mapping = Mapping(
-        features = {
+        features={
             'account-type': 'account_type',
             'can_escalate_privs': 'can_escalate_privs',
             'disabled': 'is_disabled',
@@ -145,13 +145,13 @@ class MISPtoSTIX20Mapping(MISPtoSTIX2Mapping):
             'user-id': 'user_id',
             'username': 'account_login'
         },
-        extension = {
+        extension={
             'group': 'groups',
             'group-id': 'gid',
             'home_dir': 'home_dir',
             'shell': 'shell'
         },
-        timeline = {
+        timeline={
             'created': 'account_created',
             'expires': 'account_expires',
             'first_login': 'account_first_login',
