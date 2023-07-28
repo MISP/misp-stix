@@ -308,101 +308,101 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
 
     # STIX TO MISP OBJECTS MAPPING
     __android_app_object_mapping = Mapping(
-        name = STIX2toMISPMapping.name_attribute(),
-        x_misp_appid = {'type': 'text', 'object_relation': 'appid'},
-        x_misp_certificate = {'type': 'sha1', 'object_relation': 'certificate'},
-        x_misp_domain = STIX2toMISPMapping.domain_attribute(),
-        x_misp_sha256 = STIX2toMISPMapping.sha256_attribute()
+        name=STIX2toMISPMapping.name_attribute(),
+        x_misp_appid={'type': 'text', 'object_relation': 'appid'},
+        x_misp_certificate={'type': 'sha1', 'object_relation': 'certificate'},
+        x_misp_domain=STIX2toMISPMapping.domain_attribute(),
+        x_misp_sha256=STIX2toMISPMapping.sha256_attribute()
     )
     __annotation_object_mapping = Mapping(
-        content = __text_attribute,
-        x_misp_attachment = __attachment_attribute,
-        x_misp_creation_date = {'type': 'datetime', 'object_relation': 'creation-date'},
-        x_misp_format = __format_attribute,
-        x_misp_modification_data = {'type': 'datetime', 'object_relation': 'modification-date'},
-        x_misp_ref = {'type': 'link', 'object_relation': 'ref'},
-        x_misp_type = STIX2toMISPMapping.type_attribute()
+        content=__text_attribute,
+        x_misp_attachment=__attachment_attribute,
+        x_misp_creation_date={'type': 'datetime', 'object_relation': 'creation-date'},
+        x_misp_format=__format_attribute,
+        x_misp_modification_data={'type': 'datetime', 'object_relation': 'modification-date'},
+        x_misp_ref={'type': 'link', 'object_relation': 'ref'},
+        x_misp_type=STIX2toMISPMapping.type_attribute()
     )
     __asn_object_mapping = Mapping(
-        number = STIX2toMISPMapping.asn_attribute(),
-        name = STIX2toMISPMapping.description_attribute(),
-        x_misp_country = {'type': 'text', 'object_relation': 'country'},
-        x_misp_export = {'type': 'text', 'object_relation': 'export'},
-        x_misp_first_seen = __first_seen_attribute,
-        x_misp_import = {'type': 'text', 'object_relation': 'import'},
-        x_misp_last_seen = __last_seen_attribute,
-        x_misp_mp_export = {'type': 'text', 'object_relation': 'mp-export'},
-        x_misp_mp_import = {'type': 'text', 'object_relation': 'mp-import'},
-        x_misp_subnet_announced = {'type': 'ip-src', 'object_relation': 'subnet-announced'}
+        number=STIX2toMISPMapping.asn_attribute(),
+        name=STIX2toMISPMapping.description_attribute(),
+        x_misp_country={'type': 'text', 'object_relation': 'country'},
+        x_misp_export={'type': 'text', 'object_relation': 'export'},
+        x_misp_first_seen=__first_seen_attribute,
+        x_misp_import={'type': 'text', 'object_relation': 'import'},
+        x_misp_last_seen=__last_seen_attribute,
+        x_misp_mp_export={'type': 'text', 'object_relation': 'mp-export'},
+        x_misp_mp_import={'type': 'text', 'object_relation': 'mp-import'},
+        x_misp_subnet_announced={'type': 'ip-src', 'object_relation': 'subnet-announced'}
     )
     __attack_pattern_object_mapping = Mapping(
-        description = STIX2toMISPMapping.summary_attribute(),
-        name = STIX2toMISPMapping.name_attribute(),
-        x_misp_prerequisites = {'type': 'text', 'object_relation': 'prerequisites'},
-        x_misp_related_weakness = {'type': 'weakness', 'object_relation': 'related-weakness'},
-        x_misp_solutions = {'type': 'text', 'object_relation': 'solutions'}
+        description=STIX2toMISPMapping.summary_attribute(),
+        name=STIX2toMISPMapping.name_attribute(),
+        x_misp_prerequisites={'type': 'text', 'object_relation': 'prerequisites'},
+        x_misp_related_weakness={'type': 'weakness', 'object_relation': 'related-weakness'},
+        x_misp_solutions={'type': 'text', 'object_relation': 'solutions'}
     )
     __course_of_action_object_mapping = Mapping(
-        name = STIX2toMISPMapping.name_attribute(),
-        description = STIX2toMISPMapping.description_attribute(),
-        x_misp_cost = {'type': 'text', 'object_relation': 'cost'},
-        x_misp_efficacy = {'type': 'text', 'object_relation': 'efficacy'},
-        x_misp_impact = {'type': 'text', 'object_relation': 'impact'},
-        x_misp_objective = {'type': 'text', 'object_relation': 'objective'},
-        x_misp_stage = {'type': 'text', 'object_relation': 'stage'},
-        x_misp_type = STIX2toMISPMapping.type_attribute()
+        name=STIX2toMISPMapping.name_attribute(),
+        description=STIX2toMISPMapping.description_attribute(),
+        x_misp_cost={'type': 'text', 'object_relation': 'cost'},
+        x_misp_efficacy={'type': 'text', 'object_relation': 'efficacy'},
+        x_misp_impact={'type': 'text', 'object_relation': 'impact'},
+        x_misp_objective={'type': 'text', 'object_relation': 'objective'},
+        x_misp_stage={'type': 'text', 'object_relation': 'stage'},
+        x_misp_type=STIX2toMISPMapping.type_attribute()
     )
     __cpe_asset_object_mapping = Mapping(
-        cpe = STIX2toMISPMapping.cpe_attribute(),
-        languages = STIX2toMISPMapping.language_attribute(),
-        name = {'type': 'text', 'object_relation': 'product'},
-        vendor = STIX2toMISPMapping.vendor_attribute(),
-        version = STIX2toMISPMapping.version_attribute(),
-        x_misp_description = STIX2toMISPMapping.description_attribute(),
-        x_misp_other = {'type': 'text', 'object_relation': 'other'},
-        x_misp_part = {'type': 'text', 'object_relation': 'part'},
-        x_misp_product = {'type': 'text', 'object_relation': 'product'},
-        x_misp_sw_edition = {'type': 'text', 'object_relation': 'sw_edition'},
-        x_misp_target_hw = {'type': 'text', 'object_relation': 'target_hw'},
-        x_misp_target_sw = {'type': 'text', 'object_relation': 'target_sw'},
-        x_misp_update = {'type': 'text', 'object_relation': 'update'}
+        cpe=STIX2toMISPMapping.cpe_attribute(),
+        languages=STIX2toMISPMapping.language_attribute(),
+        name={'type': 'text', 'object_relation': 'product'},
+        vendor=STIX2toMISPMapping.vendor_attribute(),
+        version=STIX2toMISPMapping.version_attribute(),
+        x_misp_description=STIX2toMISPMapping.description_attribute(),
+        x_misp_other={'type': 'text', 'object_relation': 'other'},
+        x_misp_part={'type': 'text', 'object_relation': 'part'},
+        x_misp_product={'type': 'text', 'object_relation': 'product'},
+        x_misp_sw_edition={'type': 'text', 'object_relation': 'sw_edition'},
+        x_misp_target_hw={'type': 'text', 'object_relation': 'target_hw'},
+        x_misp_target_sw={'type': 'text', 'object_relation': 'target_sw'},
+        x_misp_update={'type': 'text', 'object_relation': 'update'}
     )
     __credential_object_mapping = Mapping(
-        user_id = STIX2toMISPMapping.username_attribute(),
-        credential = STIX2toMISPMapping.password_attribute(),
-        x_misp_password = STIX2toMISPMapping.password_attribute(),
-        x_misp_format = __format_attribute,
-        x_misp_notification = {'type': 'text', 'object_relation': 'notification'},
-        x_misp_origin = {'type': 'text', 'object_relation': 'origin'},
-        x_misp_text = __text_attribute,
-        x_misp_type = STIX2toMISPMapping.type_attribute()
+        user_id=STIX2toMISPMapping.username_attribute(),
+        credential=STIX2toMISPMapping.password_attribute(),
+        x_misp_password=STIX2toMISPMapping.password_attribute(),
+        x_misp_format=__format_attribute,
+        x_misp_notification={'type': 'text', 'object_relation': 'notification'},
+        x_misp_origin={'type': 'text', 'object_relation': 'origin'},
+        x_misp_text=__text_attribute,
+        x_misp_type=STIX2toMISPMapping.type_attribute()
     )
     __domain_ip_object_mapping = Mapping(
-        value = STIX2toMISPMapping.domain_attribute(),
-        x_misp_first_seen = __first_seen_attribute,
-        x_misp_hostname = __hostname_attribute,
-        x_misp_last_seen = __last_seen_attribute,
-        x_misp_port = __port_attribute,
-        x_misp_registration_date = {'type': 'datetime', 'object_relation': 'registration-date'},
-        x_misp_text = __text_attribute
+        value=STIX2toMISPMapping.domain_attribute(),
+        x_misp_first_seen=__first_seen_attribute,
+        x_misp_hostname=__hostname_attribute,
+        x_misp_last_seen=__last_seen_attribute,
+        x_misp_port=__port_attribute,
+        x_misp_registration_date={'type': 'datetime', 'object_relation': 'registration-date'},
+        x_misp_text=__text_attribute
     )
     __email_object_mapping = Mapping(
-        body = STIX2toMISPMapping.email_body_attribute(),
-        date = STIX2toMISPMapping.send_date_attribute(),
-        message_id = STIX2toMISPMapping.message_id_attribute(),
-        subject = STIX2toMISPMapping.email_subject_attribute(),
-        x_misp_attachment = __email_attachment_attribute,
-        x_misp_from_domain = __from_domain_attribute,
-        x_misp_ip_src = __ip_source_attribute,
-        x_misp_message_id = STIX2toMISPMapping.message_id_attribute(),
-        x_misp_mime_boundary = __mime_boundary_attribute,
-        x_misp_received_header_hostname = __received_hostname_attribute,
-        x_misp_received_header_ip = __received_ip_attribute,
-        x_misp_reply_to_display_name = __reply_to_display_name_attribute,
-        x_misp_return_path = __return_path_attribute,
-        x_misp_screenshot = __screenshot_attribute,
-        x_misp_thread_index = __thread_index_attribute,
-        x_misp_user_agent = STIX2toMISPMapping.user_agent_attribute()
+        body=STIX2toMISPMapping.email_body_attribute(),
+        date=STIX2toMISPMapping.send_date_attribute(),
+        message_id=STIX2toMISPMapping.message_id_attribute(),
+        subject=STIX2toMISPMapping.email_subject_attribute(),
+        x_misp_attachment=__email_attachment_attribute,
+        x_misp_from_domain=__from_domain_attribute,
+        x_misp_ip_src=__ip_source_attribute,
+        x_misp_message_id=STIX2toMISPMapping.message_id_attribute(),
+        x_misp_mime_boundary=__mime_boundary_attribute,
+        x_misp_received_header_hostname=__received_hostname_attribute,
+        x_misp_received_header_ip=__received_ip_attribute,
+        x_misp_reply_to_display_name=__reply_to_display_name_attribute,
+        x_misp_return_path=__return_path_attribute,
+        x_misp_screenshot=__screenshot_attribute,
+        x_misp_thread_index=__thread_index_attribute,
+        x_misp_user_agent=STIX2toMISPMapping.user_agent_attribute()
     )
     __email_pattern_mapping = Mapping(
         **{
@@ -426,25 +426,25 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __employee_object_mapping = Mapping(
-        name = {'type': 'full-name', 'object_relation': 'full-name'},
-        description = {'type': 'text', 'object_relation': 'text'},
-        roles = __employee_type_attribute,
-        x_misp_business_unit = {'type': 'target-org', 'object_relation': 'business_unit'},
-        x_misp_employee_type = __employee_type_attribute,
-        x_misp_first_name = {'type': 'first-name', 'object_relation': 'first-name'},
-        x_misp_last_name = {'type': 'last-name', 'object_relation': 'last-name'},
-        x_misp_primary_asset = {'type': 'target-machine', 'object_relation': 'primary-asset'},
-        x_misp_userid = {'type': 'target-user', 'object_relation': 'userid'}
+        name={'type': 'full-name', 'object_relation': 'full-name'},
+        description={'type': 'text', 'object_relation': 'text'},
+        roles=__employee_type_attribute,
+        x_misp_business_unit={'type': 'target-org', 'object_relation': 'business_unit'},
+        x_misp_employee_type=__employee_type_attribute,
+        x_misp_first_name={'type': 'first-name', 'object_relation': 'first-name'},
+        x_misp_last_name={'type': 'last-name', 'object_relation': 'last-name'},
+        x_misp_primary_asset={'type': 'target-machine', 'object_relation': 'primary-asset'},
+        x_misp_userid={'type': 'target-user', 'object_relation': 'userid'}
     )
     __facebook_account_object_mapping = Mapping(
-        user_id = __account_id_attribute,
-        account_login = __account_name_attribute,
-        x_misp_archive = __archive_attribute,
-        x_misp_attachment = __attachment_attribute,
-        x_misp_description = STIX2toMISPMapping.description_attribute(),
-        x_misp_link = __link_attribute,
-        x_misp_url = STIX2toMISPMapping.url_attribute(),
-        x_misp_user_avatar = __user_avatar_attribute
+        user_id=__account_id_attribute,
+        account_login=__account_name_attribute,
+        x_misp_archive=__archive_attribute,
+        x_misp_attachment=__attachment_attribute,
+        x_misp_description=STIX2toMISPMapping.description_attribute(),
+        x_misp_link=__link_attribute,
+        x_misp_url=STIX2toMISPMapping.url_attribute(),
+        x_misp_user_avatar=__user_avatar_attribute
     )
     __file_hashes_mapping = Mapping(
         **{
@@ -471,25 +471,25 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __file_object_mapping = Mapping(
-        accessed = STIX2toMISPMapping.access_time_attribute(),
-        atime = STIX2toMISPMapping.access_time_attribute(),
-        created = STIX2toMISPMapping.creation_time_attribute(),
-        ctime = STIX2toMISPMapping.creation_time_attribute(),
-        mime_type = STIX2toMISPMapping.mime_type_attribute(),
-        modified = STIX2toMISPMapping.modification_time_attribute(),
-        mtime = STIX2toMISPMapping.modification_time_attribute(),
-        name = STIX2toMISPMapping.filename_attribute(),
-        name_enc = STIX2toMISPMapping.file_encoding_attribute(),
-        size = STIX2toMISPMapping.size_in_bytes_attribute(),
-        x_misp_attachment = __attachment_attribute,
-        x_misp_certificate = __certificate_attribute,
-        x_misp_compilation_timestamp = __compilation_timestamp_attribute,
-        x_misp_entropy = STIX2toMISPMapping.entropy_attribute(),
-        x_misp_fullpath = __fullpath_attribute,
-        x_misp_path = STIX2toMISPMapping.path_attribute(),
-        x_misp_pattern_in_file = __pattern_in_file_attribute,
-        x_misp_state = __state_attribute,
-        x_misp_text = __text_attribute
+        accessed=STIX2toMISPMapping.access_time_attribute(),
+        atime=STIX2toMISPMapping.access_time_attribute(),
+        created=STIX2toMISPMapping.creation_time_attribute(),
+        ctime=STIX2toMISPMapping.creation_time_attribute(),
+        mime_type=STIX2toMISPMapping.mime_type_attribute(),
+        modified=STIX2toMISPMapping.modification_time_attribute(),
+        mtime=STIX2toMISPMapping.modification_time_attribute(),
+        name=STIX2toMISPMapping.filename_attribute(),
+        name_enc=STIX2toMISPMapping.file_encoding_attribute(),
+        size=STIX2toMISPMapping.size_in_bytes_attribute(),
+        x_misp_attachment=__attachment_attribute,
+        x_misp_certificate=__certificate_attribute,
+        x_misp_compilation_timestamp=__compilation_timestamp_attribute,
+        x_misp_entropy=STIX2toMISPMapping.entropy_attribute(),
+        x_misp_fullpath=__fullpath_attribute,
+        x_misp_path=STIX2toMISPMapping.path_attribute(),
+        x_misp_pattern_in_file=__pattern_in_file_attribute,
+        x_misp_state=__state_attribute,
+        x_misp_text=__text_attribute
     )
     __file_pattern_mapping = Mapping(
         **{
@@ -525,37 +525,37 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __github_user_object_mapping = Mapping(
-        user_id = __id_attribute,
-        account_login = {'type': 'github-username', 'object_relation': 'username'},
-        display_name = {'type': 'text', 'object_relation': 'user-fullname'},
-        x_misp_avatar_url = {'type': 'link', 'object_relation': 'avatar_url'},
-        x_misp_bio = __bio_attribute,
-        x_misp_blog = {'type': 'text', 'object_relation': 'blog'},
-        x_misp_company = {'type': 'text', 'object_relation': 'company'},
-        x_misp_follower = {'type': 'github-username', 'object_relation': 'follower'},
-        x_misp_following = {'type': 'github-username', 'object_relation': 'following'},
-        x_misp_link = __link_attribute,
-        x_misp_location = {'type': 'text', 'object_relation': 'location'},
-        x_misp_node_id = {'type': 'text', 'object_relation': 'node_id'},
-        x_misp_organisation = {'type': 'github-organisation', 'object_relation': 'organisation'},
-        x_misp_profile_image = {'type': 'attachment', 'object_relation': 'profile-image'},
-        x_misp_public_gists = {'type': 'text', 'object_relation': 'public_gists'},
-        x_misp_public_repos = {'type': 'text', 'object_relation': 'public_repos'},
-        x_misp_repository = {'type': 'github-repository', 'object_relation': 'repository'},
-        x_misp_twitter_username = {'type': 'text', 'object_relation': 'twitter_username'},
-        x_misp_verified = __verified_attribute
+        user_id=__id_attribute,
+        account_login={'type': 'github-username', 'object_relation': 'username'},
+        display_name={'type': 'text', 'object_relation': 'user-fullname'},
+        x_misp_avatar_url={'type': 'link', 'object_relation': 'avatar_url'},
+        x_misp_bio=__bio_attribute,
+        x_misp_blog={'type': 'text', 'object_relation': 'blog'},
+        x_misp_company={'type': 'text', 'object_relation': 'company'},
+        x_misp_follower={'type': 'github-username', 'object_relation': 'follower'},
+        x_misp_following={'type': 'github-username', 'object_relation': 'following'},
+        x_misp_link=__link_attribute,
+        x_misp_location={'type': 'text', 'object_relation': 'location'},
+        x_misp_node_id={'type': 'text', 'object_relation': 'node_id'},
+        x_misp_organisation={'type': 'github-organisation', 'object_relation': 'organisation'},
+        x_misp_profile_image={'type': 'attachment', 'object_relation': 'profile-image'},
+        x_misp_public_gists={'type': 'text', 'object_relation': 'public_gists'},
+        x_misp_public_repos={'type': 'text', 'object_relation': 'public_repos'},
+        x_misp_repository={'type': 'github-repository', 'object_relation': 'repository'},
+        x_misp_twitter_username={'type': 'text', 'object_relation': 'twitter_username'},
+        x_misp_verified=__verified_attribute
     )
     __gitlab_user_object_mapping = Mapping(
-        user_id = __id_attribute,
-        display_name = STIX2toMISPMapping.name_attribute(),
-        account_login = STIX2toMISPMapping.username_attribute(),
-        x_misp_avatar_url = {'type': 'link', 'object_relation': 'avatar_url'},
-        x_misp_state = {'type': 'text', 'object_relation': 'state'},
-        x_misp_web_url = {'type': 'link', 'object_relation': 'web_url'}
+        user_id=__id_attribute,
+        display_name=STIX2toMISPMapping.name_attribute(),
+        account_login=STIX2toMISPMapping.username_attribute(),
+        x_misp_avatar_url={'type': 'link', 'object_relation': 'avatar_url'},
+        x_misp_state={'type': 'text', 'object_relation': 'state'},
+        x_misp_web_url={'type': 'link', 'object_relation': 'web_url'}
     )
     __http_request_extension_mapping = Mapping(
-        request_method = STIX2toMISPMapping.method_attribute(),
-        request_value = STIX2toMISPMapping.uri_attribute()
+        request_method=STIX2toMISPMapping.method_attribute(),
+        request_value=STIX2toMISPMapping.uri_attribute()
     )
     __http_request_header_mapping = Mapping(
         **{
@@ -567,13 +567,13 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     )
     __http_ext = "extensions.'http-request-ext'"
     __http_request_object_mapping = Mapping(
-        x_misp_basicauth_password = __basicauth_password_attribute,
-        x_misp_basicauth_user = __basicauth_user_attribute,
-        x_misp_header = __header_attribute,
-        x_misp_proxy_password = __proxy_password_attribute,
-        x_misp_proxy_user = __proxy_user_attribute,
-        x_misp_text = __text_attribute,
-        x_misp_url = STIX2toMISPMapping.url_attribute()
+        x_misp_basicauth_password=__basicauth_password_attribute,
+        x_misp_basicauth_user=__basicauth_user_attribute,
+        x_misp_header=__header_attribute,
+        x_misp_proxy_password=__proxy_password_attribute,
+        x_misp_proxy_user=__proxy_user_attribute,
+        x_misp_text=__text_attribute,
+        x_misp_url=STIX2toMISPMapping.url_attribute()
     )
     __http_request_pattern_mapping = Mapping(
         **{
@@ -591,11 +591,11 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __image_object_mapping = Mapping(
-        name = STIX2toMISPMapping.filename_attribute(),
-        x_misp_archive = __archive_attribute,
-        x_misp_image_text = __image_text_attribute,
-        x_misp_link = __link_attribute,
-        x_misp_username = STIX2toMISPMapping.username_attribute()
+        name=STIX2toMISPMapping.filename_attribute(),
+        x_misp_archive=__archive_attribute,
+        x_misp_image_text=__image_text_attribute,
+        x_misp_link=__link_attribute,
+        x_misp_username=STIX2toMISPMapping.username_attribute()
     )
     __image_pattern_mapping = Mapping(
         **{
@@ -605,16 +605,16 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __ip_port_object_mapping = Mapping(
-        dst_port = STIX2toMISPMapping.dst_port_attribute(),
-        src_port = STIX2toMISPMapping.src_port_attribute(),
-        start = __first_seen_attribute,
-        end = __last_seen_attribute,
-        x_misp_AS = {'type': 'AS', 'object_relation': 'AS'},
-        x_misp_country_code = {'type': 'text', 'object_relation': 'country-code'},
-        x_misp_domain = STIX2toMISPMapping.domain_attribute(),
-        x_misp_hostname = __hostname_attribute,
-        x_misp_ip = STIX2toMISPMapping.ip_attribute(),
-        x_misp_text = __text_attribute
+        dst_port=STIX2toMISPMapping.dst_port_attribute(),
+        src_port=STIX2toMISPMapping.src_port_attribute(),
+        start=__first_seen_attribute,
+        end=__last_seen_attribute,
+        x_misp_AS={'type': 'AS', 'object_relation': 'AS'},
+        x_misp_country_code={'type': 'text', 'object_relation': 'country-code'},
+        x_misp_domain=STIX2toMISPMapping.domain_attribute(),
+        x_misp_hostname=__hostname_attribute,
+        x_misp_ip=STIX2toMISPMapping.ip_attribute(),
+        x_misp_text=__text_attribute
     )
     __legal_entity_contact_information_mapping = Mapping(
         **{
@@ -623,46 +623,46 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __legal_entity_object_mapping = Mapping(
-        name = STIX2toMISPMapping.name_attribute(),
-        description = __text_attribute,
-        sectors = {'type': 'text', 'object_relation': 'business'},
-        x_misp_commercial_name = {'type': 'text', 'object_relation': 'commercial-name'},
-        x_misp_legal_form = {'type': 'text', 'object_relation': 'legal-form'},
-        x_misp_registration_number = {'type': 'text', 'object_relation': 'registration-number'}
+        name=STIX2toMISPMapping.name_attribute(),
+        description=__text_attribute,
+        sectors={'type': 'text', 'object_relation': 'business'},
+        x_misp_commercial_name={'type': 'text', 'object_relation': 'commercial-name'},
+        x_misp_legal_form={'type': 'text', 'object_relation': 'legal-form'},
+        x_misp_registration_number={'type': 'text', 'object_relation': 'registration-number'}
     )
     __lnk_object_mapping = Mapping(
-        name = STIX2toMISPMapping.filename_attribute(),
-        accessed = __lnk_access_time_attribute,
-        atime = __lnk_access_time_attribute,
-        created = __lnk_creation_time_attribute,
-        ctime = __lnk_creation_time_attribute,
-        modified = __lnk_modification_time_attribute,
-        mtime = __lnk_modification_time_attribute,
-        size = STIX2toMISPMapping.size_in_bytes_attribute(),
-        x_misp_fullpath = __fullpath_attribute,
-        x_misp_path = STIX2toMISPMapping.path_attribute(),
-        x_misp_birth_droid_file_identifier = {'type': 'text', 'object_relation': 'birth-droid-file-identifier'},
-        x_misp_birth_droid_volume_identifier = {'type': 'text', 'object_relation': 'birth-droid-volume-identifier'},
-        x_misp_droid_file_identifier = {'type': 'text', 'object_relation': 'droid-file-identifier'},
-        x_misp_droid_volume_identifier = {'type': 'text', 'object_relation': 'droid-volume-identifier'},
-        x_misp_entropy = STIX2toMISPMapping.entropy_attribute(),
-        x_misp_lnk_command_line_arguments = {'type': 'text', 'object_relation': 'lnk-command-line-arguments'},
-        x_misp_lnk_description = {'type': 'text', 'object_relation': 'lnk-description'},
-        x_misp_lnk_drive_serial_number = {'type': 'text', 'object_relation': 'lnk-drive-serial-number'},
-        x_misp_lnk_drive_type = {'type': 'text', 'object_relation': 'lnk-drive-type'},
-        x_misp_lnk_file_attribute_flags = {'type': 'text', 'object_relation': 'lnk-file-attribute-flags'},
-        x_misp_lnk_file_size = {'type': 'size-in-bytes', 'object_relation': 'lnk-file-size'},
-        x_misp_lnk_hot_key_value = {'type': 'text', 'object_relation': 'lnk-hot-key-value'},
-        x_misp_lnk_icon_text = {'type': 'text', 'object_relation': 'lnk-icon-text'},
-        x_misp_lnk_local_path = {'type': 'text', 'object_relation': 'lnk-local-path'},
-        x_misp_lnk_relative_path = {'type': 'text', 'object_relation': 'lnk-relative-path'},
-        x_misp_lnk_show_window_value = {'type': 'text', 'object_relation': 'lnk-show-window-value'},
-        x_misp_lnk_volume_label = {'type': 'text', 'object_relation': 'lnk-volume-label'},
-        x_misp_lnk_working_directory = {'type': 'text', 'object_relation': 'lnk-working-directory'},
-        x_misp_machine_identifier = {'type': 'text', 'object_relation': 'machine-identifier'},
-        x_misp_pattern_in_file = __pattern_in_file_attribute,
-        x_misp_state = __state_attribute,
-        x_misp_text = __text_attribute
+        name=STIX2toMISPMapping.filename_attribute(),
+        accessed=__lnk_access_time_attribute,
+        atime=__lnk_access_time_attribute,
+        created=__lnk_creation_time_attribute,
+        ctime=__lnk_creation_time_attribute,
+        modified=__lnk_modification_time_attribute,
+        mtime=__lnk_modification_time_attribute,
+        size=STIX2toMISPMapping.size_in_bytes_attribute(),
+        x_misp_fullpath=__fullpath_attribute,
+        x_misp_path=STIX2toMISPMapping.path_attribute(),
+        x_misp_birth_droid_file_identifier={'type': 'text', 'object_relation': 'birth-droid-file-identifier'},
+        x_misp_birth_droid_volume_identifier={'type': 'text', 'object_relation': 'birth-droid-volume-identifier'},
+        x_misp_droid_file_identifier={'type': 'text', 'object_relation': 'droid-file-identifier'},
+        x_misp_droid_volume_identifier={'type': 'text', 'object_relation': 'droid-volume-identifier'},
+        x_misp_entropy=STIX2toMISPMapping.entropy_attribute(),
+        x_misp_lnk_command_line_arguments={'type': 'text', 'object_relation': 'lnk-command-line-arguments'},
+        x_misp_lnk_description={'type': 'text', 'object_relation': 'lnk-description'},
+        x_misp_lnk_drive_serial_number={'type': 'text', 'object_relation': 'lnk-drive-serial-number'},
+        x_misp_lnk_drive_type={'type': 'text', 'object_relation': 'lnk-drive-type'},
+        x_misp_lnk_file_attribute_flags={'type': 'text', 'object_relation': 'lnk-file-attribute-flags'},
+        x_misp_lnk_file_size={'type': 'size-in-bytes', 'object_relation': 'lnk-file-size'},
+        x_misp_lnk_hot_key_value={'type': 'text', 'object_relation': 'lnk-hot-key-value'},
+        x_misp_lnk_icon_text={'type': 'text', 'object_relation': 'lnk-icon-text'},
+        x_misp_lnk_local_path={'type': 'text', 'object_relation': 'lnk-local-path'},
+        x_misp_lnk_relative_path={'type': 'text', 'object_relation': 'lnk-relative-path'},
+        x_misp_lnk_show_window_value={'type': 'text', 'object_relation': 'lnk-show-window-value'},
+        x_misp_lnk_volume_label={'type': 'text', 'object_relation': 'lnk-volume-label'},
+        x_misp_lnk_working_directory={'type': 'text', 'object_relation': 'lnk-working-directory'},
+        x_misp_machine_identifier={'type': 'text', 'object_relation': 'machine-identifier'},
+        x_misp_pattern_in_file=__pattern_in_file_attribute,
+        x_misp_state=__state_attribute,
+        x_misp_text=__text_attribute
     )
     __lnk_pattern_mapping = Mapping(
         **{
@@ -679,45 +679,45 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __location_object_mapping = Mapping(
-        city = STIX2toMISPMapping.city_attribute(),
-        country = STIX2toMISPMapping.country_attribute(),
-        description = STIX2toMISPMapping.text_attribute(),
-        latitude = STIX2toMISPMapping.latitude_attribute(),
-        longitude = STIX2toMISPMapping.longitude_attribute(),
-        postal_code = STIX2toMISPMapping.zipcode_attribute(),
-        region = STIX2toMISPMapping.region_attribute(),
-        street_address = STIX2toMISPMapping.address_attribute(),
-        x_misp_altitude = {'type': 'float', 'object_relation': 'altitude'},
-        x_misp_country = {'type': 'text', 'object_relation': 'country'},
-        x_misp_epsg = {'type': 'text', 'object_relation': 'epsg'},
-        x_misp_first_seen = __first_seen_attribute,
-        x_misp_last_seen = __last_seen_attribute,
-        x_misp_neighborhood = {
+        city=STIX2toMISPMapping.city_attribute(),
+        country=STIX2toMISPMapping.country_attribute(),
+        description=STIX2toMISPMapping.text_attribute(),
+        latitude=STIX2toMISPMapping.latitude_attribute(),
+        longitude=STIX2toMISPMapping.longitude_attribute(),
+        postal_code=STIX2toMISPMapping.zipcode_attribute(),
+        region=STIX2toMISPMapping.region_attribute(),
+        street_address=STIX2toMISPMapping.address_attribute(),
+        x_misp_altitude={'type': 'float', 'object_relation': 'altitude'},
+        x_misp_country={'type': 'text', 'object_relation': 'country'},
+        x_misp_epsg={'type': 'text', 'object_relation': 'epsg'},
+        x_misp_first_seen=__first_seen_attribute,
+        x_misp_last_seen=__last_seen_attribute,
+        x_misp_neighborhood={
             'type': 'text', 'object_relation': 'neighborhood'
         },
-        x_misp_spacial_reference = {
+        x_misp_spacial_reference={
             'type': 'text', 'object_relation': 'spacial-reference'
         }
     )
     __mutex_object_mapping = Mapping(
-        name = STIX2toMISPMapping.name_attribute(),
-        x_misp_description = STIX2toMISPMapping.description_attribute(),
-        x_misp_operating_system = {
+        name=STIX2toMISPMapping.name_attribute(),
+        x_misp_description=STIX2toMISPMapping.description_attribute(),
+        x_misp_operating_system={
             'type': 'text', 'object_relation': 'operating-system'
         }
     )
     __netflow_object_mapping = Mapping(
-        dst_port = STIX2toMISPMapping.dst_port_attribute(),
-        src_port = STIX2toMISPMapping.src_port_attribute(),
-        start = STIX2toMISPMapping.first_packet_seen_attribute(),
-        end = STIX2toMISPMapping.last_packet_seen_attribute(),
-        src_byte_count = __byte_count_attribute,
-        src_packets = __packet_count_attribute,
-        x_misp_community_id = __community_id_attribute,
-        x_misp_direction = __direction_attribute,
-        x_misp_flow_count = __flow_count_attribute,
-        x_misp_ip_protocol_number = __ip_protocol_number_attribute,
-        x_misp_ip_version = __ip_version_attribute
+        dst_port=STIX2toMISPMapping.dst_port_attribute(),
+        src_port=STIX2toMISPMapping.src_port_attribute(),
+        start=STIX2toMISPMapping.first_packet_seen_attribute(),
+        end=STIX2toMISPMapping.last_packet_seen_attribute(),
+        src_byte_count=__byte_count_attribute,
+        src_packets=__packet_count_attribute,
+        x_misp_community_id=__community_id_attribute,
+        x_misp_direction=__direction_attribute,
+        x_misp_flow_count=__flow_count_attribute,
+        x_misp_ip_protocol_number=__ip_protocol_number_attribute,
+        x_misp_ip_version=__ip_version_attribute
     )
     __netflow_pattern_mapping = Mapping(
         **{
@@ -728,22 +728,22 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __network_connection_object_mapping = Mapping(
-        dst_port = STIX2toMISPMapping.dst_port_attribute(),
-        src_port = STIX2toMISPMapping.src_port_attribute(),
-        start = STIX2toMISPMapping.first_packet_seen_attribute(),
-        x_misp_community_id = __community_id_attribute,
-        x_misp_hostname_dst = __hostname_dst_attribute,
-        x_misp_hostname_src = __hostname_src_attribute
+        dst_port=STIX2toMISPMapping.dst_port_attribute(),
+        src_port=STIX2toMISPMapping.src_port_attribute(),
+        start=STIX2toMISPMapping.first_packet_seen_attribute(),
+        x_misp_community_id=__community_id_attribute,
+        x_misp_hostname_dst=__hostname_dst_attribute,
+        x_misp_hostname_src=__hostname_src_attribute
     )
     __network_socket_object_mapping = Mapping(
-        dst_port = STIX2toMISPMapping.dst_port_attribute(),
-        src_port = STIX2toMISPMapping.src_port_attribute(),
-        x_misp_address_family = STIX2toMISPMapping.address_family_attribute(),
-        x_misp_domain_family = STIX2toMISPMapping.domain_family_attribute(),
-        x_misp_filename = STIX2toMISPMapping.filename_attribute(),
-        x_misp_hostname_dst = __hostname_dst_attribute,
-        x_misp_hostname_src = __hostname_src_attribute,
-        x_misp_option = {'type': 'text', 'object_relation': 'option'}
+        dst_port=STIX2toMISPMapping.dst_port_attribute(),
+        src_port=STIX2toMISPMapping.src_port_attribute(),
+        x_misp_address_family=STIX2toMISPMapping.address_family_attribute(),
+        x_misp_domain_family=STIX2toMISPMapping.domain_family_attribute(),
+        x_misp_filename=STIX2toMISPMapping.filename_attribute(),
+        x_misp_hostname_dst=__hostname_dst_attribute,
+        x_misp_hostname_src=__hostname_src_attribute,
+        x_misp_option={'type': 'text', 'object_relation': 'option'}
     )
     __news_agency_contact_information_mapping = Mapping(
         **{
@@ -755,10 +755,10 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __news_agency_object_mapping = Mapping(
-        name = STIX2toMISPMapping.name_attribute(),
-        x_misp_alias = __alias_attribute,
-        x_misp_archive = __archive_attribute,
-        x_misp_url = STIX2toMISPMapping.url_attribute()
+        name=STIX2toMISPMapping.name_attribute(),
+        x_misp_alias=__alias_attribute,
+        x_misp_archive=__archive_attribute,
+        x_misp_url=STIX2toMISPMapping.url_attribute()
     )
     __organization_contact_information_mapping = Mapping(
         **{
@@ -769,104 +769,104 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __organization_object_mapping = Mapping(
-        name = STIX2toMISPMapping.name_attribute(),
-        description = STIX2toMISPMapping.description_attribute(),
-        roles = __role_attribute,
-        sectors = {'type': 'text', 'object_relation': 'sector'},
-        x_misp_role = __role_attribute,
-        x_misp_alias = __alias_attribute,
-        x_misp_date_of_inception = {
+        name=STIX2toMISPMapping.name_attribute(),
+        description=STIX2toMISPMapping.description_attribute(),
+        roles=__role_attribute,
+        sectors={'type': 'text', 'object_relation': 'sector'},
+        x_misp_role=__role_attribute,
+        x_misp_alias=__alias_attribute,
+        x_misp_date_of_inception={
             'type': 'datetime',
             'object_relation': 'date-of-inception'
         },
-        x_misp_type_of_organization = {
+        x_misp_type_of_organization={
             'type': 'text',
             'object_relation': 'type-of-organization'
         },
-        x_misp_VAT = {'type': 'text', 'object_relation': 'VAT'}
+        x_misp_VAT={'type': 'text', 'object_relation': 'VAT'}
     )
     __parent_process_object_mapping = Mapping(
-        command_line = __parent_command_line_attribute,
-        name = __parent_process_name_attribute,
-        x_misp_process_name = __parent_process_name_attribute,
-        pid = __parent_pid_attribute,
-        x_misp_guid = __parent_guid_attribute,
-        x_misp_process_path = __parent_process_path_attribute
+        command_line=__parent_command_line_attribute,
+        name=__parent_process_name_attribute,
+        x_misp_process_name=__parent_process_name_attribute,
+        pid=__parent_pid_attribute,
+        x_misp_guid=__parent_guid_attribute,
+        x_misp_process_path=__parent_process_path_attribute
     )
     __parler_account_object_mapping = Mapping(
-        user_id = __account_id_attribute,
-        account_login = __account_name_attribute,
-        x_misp_archive = __archive_attribute,
-        x_misp_attachment = __attachment_attribute,
-        x_misp_badge = {'type': 'link', 'object_relation': 'badge'},
-        x_misp_bio = __bio_attribute,
-        x_misp_comments = {'type': 'text', 'object_relation': 'comments'},
-        x_misp_cover_photo = {'type': 'attachment', 'object_relation': 'cover-photo'},
-        x_misp_followers = __followers_attribute,
-        x_misp_following = __following_attribute,
-        x_misp_human = {'type': 'boolean', 'object_relation': 'human'},
-        x_misp_interactions = {'type': 'float', 'object_relation': 'interactions'},
-        x_misp_likes = __likes_attribute,
-        x_misp_link = __link_attribute,
-        x_misp_posts = {'type': 'text', 'object_relation': 'posts'},
-        x_misp_profile_photo = {'type': 'attachment', 'object_relation': 'profile-photo'},
-        x_misp_url = STIX2toMISPMapping.url_attribute(),
-        x_misp_verified = {'type': 'boolean', 'object_relation': 'verified'},
+        user_id=__account_id_attribute,
+        account_login=__account_name_attribute,
+        x_misp_archive=__archive_attribute,
+        x_misp_attachment=__attachment_attribute,
+        x_misp_badge={'type': 'link', 'object_relation': 'badge'},
+        x_misp_bio=__bio_attribute,
+        x_misp_comments={'type': 'text', 'object_relation': 'comments'},
+        x_misp_cover_photo={'type': 'attachment', 'object_relation': 'cover-photo'},
+        x_misp_followers=__followers_attribute,
+        x_misp_following=__following_attribute,
+        x_misp_human={'type': 'boolean', 'object_relation': 'human'},
+        x_misp_interactions={'type': 'float', 'object_relation': 'interactions'},
+        x_misp_likes=__likes_attribute,
+        x_misp_link=__link_attribute,
+        x_misp_posts={'type': 'text', 'object_relation': 'posts'},
+        x_misp_profile_photo={'type': 'attachment', 'object_relation': 'profile-photo'},
+        x_misp_url=STIX2toMISPMapping.url_attribute(),
+        x_misp_verified={'type': 'boolean', 'object_relation': 'verified'},
     )
     __pe_object_mapping = Mapping(
-        imphash = STIX2toMISPMapping.imphash_attribute(),
-        number_of_sections = STIX2toMISPMapping.number_of_sections_attribute(),
-        pe_type = STIX2toMISPMapping.type_attribute(),
-        x_misp_authentihash = __authentihash_attribute,
-        x_misp_company_name = {'type': 'text', 'object_relation': 'company-name'},
-        x_misp_compilation_timestamp = __compilation_timestamp_attribute,
-        x_misp_entrypoint_section_at_position = {
+        imphash=STIX2toMISPMapping.imphash_attribute(),
+        number_of_sections=STIX2toMISPMapping.number_of_sections_attribute(),
+        pe_type=STIX2toMISPMapping.type_attribute(),
+        x_misp_authentihash=__authentihash_attribute,
+        x_misp_company_name={'type': 'text', 'object_relation': 'company-name'},
+        x_misp_compilation_timestamp=__compilation_timestamp_attribute,
+        x_misp_entrypoint_section_at_position={
             'type': 'text',
             'object_relation': 'entrypoint-section-at-position'
         },
-        x_misp_file_description = {'type': 'text', 'object_relation': 'file-description'},
-        x_misp_file_version = {'type': 'text', 'object_relation': 'file-version'},
-        x_misp_impfuzzy = {'type': 'impfuzzy', 'object_relation': 'impfuzzy'},
-        x_misp_internal_filename = {'type': 'filename', 'object_relation': 'internal-filename'},
-        x_misp_lang_id = {'type': 'text', 'object_relation': 'lang-id'},
-        x_misp_legal_copyright = {'type': 'text', 'object_relation': 'legal-copyright'},
-        x_misp_original_filename = {'type': 'filename', 'object_relation': 'original-filename'},
-        x_misp_pehash = {'type': 'pehash', 'object_relation': 'pehash'},
-        x_misp_product_name = {'type': 'text', 'object_relation': 'product-name'},
-        x_misp_product_version = {'type': 'text', 'object_relation': 'product-version'},
-        x_misp_richpe = {'type': 'md5', 'object_relation': 'richpe'},
-        x_misp_text = __text_attribute
+        x_misp_file_description={'type': 'text', 'object_relation': 'file-description'},
+        x_misp_file_version={'type': 'text', 'object_relation': 'file-version'},
+        x_misp_impfuzzy={'type': 'impfuzzy', 'object_relation': 'impfuzzy'},
+        x_misp_internal_filename={'type': 'filename', 'object_relation': 'internal-filename'},
+        x_misp_lang_id={'type': 'text', 'object_relation': 'lang-id'},
+        x_misp_legal_copyright={'type': 'text', 'object_relation': 'legal-copyright'},
+        x_misp_original_filename={'type': 'filename', 'object_relation': 'original-filename'},
+        x_misp_pehash={'type': 'pehash', 'object_relation': 'pehash'},
+        x_misp_product_name={'type': 'text', 'object_relation': 'product-name'},
+        x_misp_product_version={'type': 'text', 'object_relation': 'product-version'},
+        x_misp_richpe={'type': 'md5', 'object_relation': 'richpe'},
+        x_misp_text=__text_attribute
     )
     __pe_section_object_mapping = Mapping(
-        entropy = STIX2toMISPMapping.entropy_attribute(),
-        name = STIX2toMISPMapping.name_attribute(),
-        size = STIX2toMISPMapping.size_in_bytes_attribute(),
-        x_misp_characteristic = {'type': 'text', 'object_relation': 'characteristic'},
-        x_misp_offset = {'type': 'hex', 'object_relation': 'offset'},
-        x_misp_text = __text_attribute,
-        x_misp_virtual_address = {'type': 'hex', 'object_relation': 'virtual_address'},
-        x_misp_virtual_size = {'type': 'size-in-bytes', 'object_relation': 'virtual_size'}
+        entropy=STIX2toMISPMapping.entropy_attribute(),
+        name=STIX2toMISPMapping.name_attribute(),
+        size=STIX2toMISPMapping.size_in_bytes_attribute(),
+        x_misp_characteristic={'type': 'text', 'object_relation': 'characteristic'},
+        x_misp_offset={'type': 'hex', 'object_relation': 'offset'},
+        x_misp_text=__text_attribute,
+        x_misp_virtual_address={'type': 'hex', 'object_relation': 'virtual_address'},
+        x_misp_virtual_size={'type': 'size-in-bytes', 'object_relation': 'virtual_size'}
     )
     __process_object_mapping = Mapping(
-        arguments = STIX2toMISPMapping.args_attribute(),
-        x_misp_args = STIX2toMISPMapping.args_attribute(),
-        command_line = STIX2toMISPMapping.command_line_attribute(),
-        created = STIX2toMISPMapping.creation_time_attribute(),
-        created_time = STIX2toMISPMapping.creation_time_attribute(),
-        cwd = STIX2toMISPMapping.current_directory_attribute(),
-        is_hidden = STIX2toMISPMapping.hidden_attribute(),
-        name = STIX2toMISPMapping.name_attribute(),
-        x_misp_name = STIX2toMISPMapping.name_attribute(),
-        pid = STIX2toMISPMapping.pid_attribute(),
-        x_misp_fake_process_name = __fake_process_name_attribute,
-        x_misp_guid = __guid_attribute,
-        x_misp_integrity_level = __integrity_level_attribute,
-        x_misp_pgid = __pgid_attribute,
-        x_misp_port = __port_attribute,
-        x_misp_process_state = __process_state_attribute,
-        x_misp_start_time = __start_time_attribute,
-        x_misp_user_creator = __user_creator_attribute,
-        x_misp_user_process = __user_process_attribute
+        arguments=STIX2toMISPMapping.args_attribute(),
+        x_misp_args=STIX2toMISPMapping.args_attribute(),
+        command_line=STIX2toMISPMapping.command_line_attribute(),
+        created=STIX2toMISPMapping.creation_time_attribute(),
+        created_time=STIX2toMISPMapping.creation_time_attribute(),
+        cwd=STIX2toMISPMapping.current_directory_attribute(),
+        is_hidden=STIX2toMISPMapping.hidden_attribute(),
+        name=STIX2toMISPMapping.name_attribute(),
+        x_misp_name=STIX2toMISPMapping.name_attribute(),
+        pid=STIX2toMISPMapping.pid_attribute(),
+        x_misp_fake_process_name=__fake_process_name_attribute,
+        x_misp_guid=__guid_attribute,
+        x_misp_integrity_level=__integrity_level_attribute,
+        x_misp_pgid=__pgid_attribute,
+        x_misp_port=__port_attribute,
+        x_misp_process_state=__process_state_attribute,
+        x_misp_start_time=__start_time_attribute,
+        x_misp_user_creator=__user_creator_attribute,
+        x_misp_user_process=__user_process_attribute
     )
     __process_pattern_mapping = Mapping(
         **{
@@ -884,153 +884,153 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __reddit_account_object_mapping = Mapping(
-        user_id = __account_id_attribute,
-        account_login = __account_name_attribute,
-        x_misp_account_avatar = {'type': 'attachment', 'object_relation': 'account-avatar'},
-        x_misp_account_avatar_url = {'type': 'url', 'object_relation': 'account-avatar-url'},
-        x_misp_archive = __archive_attribute,
-        x_misp_attachment = __attachment_attribute,
-        x_misp_description = STIX2toMISPMapping.description_attribute(),
-        x_misp_link = __link_attribute,
-        x_misp_moderator_of = {'type': '', 'object_relation': 'moderator-of'},
-        x_misp_trophies = {'type': '', 'object_relation': 'trophies'},
-        x_misp_url = STIX2toMISPMapping.url_attribute()
+        user_id=__account_id_attribute,
+        account_login=__account_name_attribute,
+        x_misp_account_avatar={'type': 'attachment', 'object_relation': 'account-avatar'},
+        x_misp_account_avatar_url={'type': 'url', 'object_relation': 'account-avatar-url'},
+        x_misp_archive=__archive_attribute,
+        x_misp_attachment=__attachment_attribute,
+        x_misp_description=STIX2toMISPMapping.description_attribute(),
+        x_misp_link=__link_attribute,
+        x_misp_moderator_of={'type': '', 'object_relation': 'moderator-of'},
+        x_misp_trophies={'type': '', 'object_relation': 'trophies'},
+        x_misp_url=STIX2toMISPMapping.url_attribute()
     )
     __registry_key_object_mapping = Mapping(
-        key = STIX2toMISPMapping.regkey_attribute(),
-        modified = STIX2toMISPMapping.last_modified_attribute(),
-        modified_time = STIX2toMISPMapping.last_modified_attribute(),
-        x_misp_hive = {'type': 'text', 'object_relation': 'hive'},
-        x_misp_root_keys = {'type': 'text', 'object_relation': 'root-keys'}
+        key=STIX2toMISPMapping.regkey_attribute(),
+        modified=STIX2toMISPMapping.last_modified_attribute(),
+        modified_time=STIX2toMISPMapping.last_modified_attribute(),
+        x_misp_hive={'type': 'text', 'object_relation': 'hive'},
+        x_misp_root_keys={'type': 'text', 'object_relation': 'root-keys'}
     )
     __script_from_malware_object_mapping = Mapping(
-        name = STIX2toMISPMapping.filename_attribute(),
-        description = __comment_text_attribute,
-        implementation_languages = STIX2toMISPMapping.language_attribute(),
-        x_misp_script = __script_attribute,
-        x_misp_state = __state_attribute
+        name=STIX2toMISPMapping.filename_attribute(),
+        description=__comment_text_attribute,
+        implementation_languages=STIX2toMISPMapping.language_attribute(),
+        x_misp_script=__script_attribute,
+        x_misp_state=__state_attribute
     )
     __script_from_tool_object_mapping = Mapping(
-        name = STIX2toMISPMapping.filename_attribute(),
-        description = __comment_text_attribute,
-        x_misp_language = STIX2toMISPMapping.language_attribute(),
-        x_misp_script = __script_attribute,
-        x_misp_state = __state_attribute
+        name=STIX2toMISPMapping.filename_attribute(),
+        description=__comment_text_attribute,
+        x_misp_language=STIX2toMISPMapping.language_attribute(),
+        x_misp_script=__script_attribute,
+        x_misp_state=__state_attribute
     )
     __sigma_object_mapping = Mapping(
-        pattern = STIX2toMISPMapping.sigma_attribute(),
-        description = STIX2toMISPMapping.comment_attribute(),
-        name = STIX2toMISPMapping.sigma_rule_name_attribute(),
-        x_misp_context = {'type': 'text', 'object_relation': 'context'}
+        pattern=STIX2toMISPMapping.sigma_attribute(),
+        description=STIX2toMISPMapping.comment_attribute(),
+        name=STIX2toMISPMapping.sigma_rule_name_attribute(),
+        x_misp_context={'type': 'text', 'object_relation': 'context'}
     )
     __telegram_account_object_mapping = Mapping(
-        user_id = __id_attribute,
-        account_login = STIX2toMISPMapping.username_attribute(),
-        x_misp_first_name = {'type': 'text', 'object_relation': 'first_name'},
-        x_misp_last_name = {'type': 'text', 'object_relation': 'last_name'},
-        x_misp_phone = {'type': 'text', 'object_relation': 'phone'},
-        x_misp_verified = {'type': 'text', 'object_relation': 'verified'}
+        user_id=__id_attribute,
+        account_login=STIX2toMISPMapping.username_attribute(),
+        x_misp_first_name={'type': 'text', 'object_relation': 'first_name'},
+        x_misp_last_name={'type': 'text', 'object_relation': 'last_name'},
+        x_misp_phone={'type': 'text', 'object_relation': 'phone'},
+        x_misp_verified={'type': 'text', 'object_relation': 'verified'}
     )
     __twitter_account_object_mapping = Mapping(
-        user_id = __id_attribute,
-        account_login = STIX2toMISPMapping.name_attribute(),
-        display_name = {'type': 'text', 'object_relation': 'displayed-name'},
-        x_misp_archive = __archive_attribute,
-        x_misp_attachment = __attachment_attribute,
-        x_misp_bio = __bio_attribute,
-        x_misp_description = STIX2toMISPMapping.description_attribute(),
-        x_misp_embedded_link = {'type': 'url', 'object_relation': 'embedded-link'},
-        x_misp_embedded_safe_link = {'type': 'link', 'object_relation': 'embedded-safe-link'},
-        x_misp_followers = __followers_attribute,
-        x_misp_following = __following_attribute,
-        x_misp_hashtag = {'type': 'text', 'object_relation': 'hashtag'},
-        x_misp_joined_date = {'type': 'text', 'object_relation': 'joined-date'},
-        x_misp_likes = __likes_attribute,
-        x_misp_link = __link_attribute,
-        x_misp_listed = {'type': 'text', 'object_relation': 'listed'},
-        x_misp_location = {'type': 'text', 'object_relation': 'location'},
-        x_misp_media = {'type': 'text', 'object_relation': 'media'},
-        x_misp_private = {'type': 'text', 'object_relation': 'private'},
-        x_misp_profile_banner = {'type': 'attachment', 'object_relation': 'profile-banner'},
-        x_misp_profile_banner_url = {'type': 'url', 'object_relation': 'profile-banner-url'},
-        x_misp_profile_image = {'type': 'attachment', 'object_relation': 'profile-image'},
-        x_misp_profile_image_url = {'type': 'url', 'object_relation': 'profile-image-url'},
-        x_misp_tweets = {'type': 'text', 'object_relation': 'tweets'},
-        x_misp_twitter_followers = {'type': 'text', 'object_relation': 'twitter-followers'},
-        x_misp_twitter_following = {'type': 'text', 'object_relation': 'twitter-following'},
-        x_misp_url = STIX2toMISPMapping.url_attribute(),
-        x_misp_verified = __verified_attribute
+        user_id=__id_attribute,
+        account_login=STIX2toMISPMapping.name_attribute(),
+        display_name={'type': 'text', 'object_relation': 'displayed-name'},
+        x_misp_archive=__archive_attribute,
+        x_misp_attachment=__attachment_attribute,
+        x_misp_bio=__bio_attribute,
+        x_misp_description=STIX2toMISPMapping.description_attribute(),
+        x_misp_embedded_link={'type': 'url', 'object_relation': 'embedded-link'},
+        x_misp_embedded_safe_link={'type': 'link', 'object_relation': 'embedded-safe-link'},
+        x_misp_followers=__followers_attribute,
+        x_misp_following=__following_attribute,
+        x_misp_hashtag={'type': 'text', 'object_relation': 'hashtag'},
+        x_misp_joined_date={'type': 'text', 'object_relation': 'joined-date'},
+        x_misp_likes=__likes_attribute,
+        x_misp_link=__link_attribute,
+        x_misp_listed={'type': 'text', 'object_relation': 'listed'},
+        x_misp_location={'type': 'text', 'object_relation': 'location'},
+        x_misp_media={'type': 'text', 'object_relation': 'media'},
+        x_misp_private={'type': 'text', 'object_relation': 'private'},
+        x_misp_profile_banner={'type': 'attachment', 'object_relation': 'profile-banner'},
+        x_misp_profile_banner_url={'type': 'url', 'object_relation': 'profile-banner-url'},
+        x_misp_profile_image={'type': 'attachment', 'object_relation': 'profile-image'},
+        x_misp_profile_image_url={'type': 'url', 'object_relation': 'profile-image-url'},
+        x_misp_tweets={'type': 'text', 'object_relation': 'tweets'},
+        x_misp_twitter_followers={'type': 'text', 'object_relation': 'twitter-followers'},
+        x_misp_twitter_following={'type': 'text', 'object_relation': 'twitter-following'},
+        x_misp_url=STIX2toMISPMapping.url_attribute(),
+        x_misp_verified=__verified_attribute
     )
     __url_object_mapping = Mapping(
-        value = STIX2toMISPMapping.url_attribute(),
-        x_misp_credential = {'type': 'text', 'object_relation': 'credential'},
-        x_misp_domain = STIX2toMISPMapping.domain_attribute(),
-        x_misp_domain_without_tld = {'type': 'text', 'object_relation': 'domain_without_tld'},
-        x_misp_first_seen = __first_seen_attribute,
-        x_misp_fragment = {'type': 'text', 'object_relation': 'fragment'},
-        x_misp_host = __host_attribute,
-        x_misp_ip = STIX2toMISPMapping.ip_attribute(),
-        x_misp_last_seen = __last_seen_attribute,
-        x_misp_port = __port_attribute,
-        x_misp_query_string = {'type': 'text', 'object_relation': 'query_string'},
-        x_misp_resource_path = {'type': 'text', 'object_relation': 'resource_path'},
-        x_misp_scheme = {'type': 'text', 'object_relation': 'scheme'},
-        x_misp_subdomain = {'type': 'text', 'object_relation': 'subdomain'},
-        x_misp_text = __text_attribute,
-        x_misp_tld = {'type': 'text', 'object_relation': 'tld'}
+        value=STIX2toMISPMapping.url_attribute(),
+        x_misp_credential={'type': 'text', 'object_relation': 'credential'},
+        x_misp_domain=STIX2toMISPMapping.domain_attribute(),
+        x_misp_domain_without_tld={'type': 'text', 'object_relation': 'domain_without_tld'},
+        x_misp_first_seen=__first_seen_attribute,
+        x_misp_fragment={'type': 'text', 'object_relation': 'fragment'},
+        x_misp_host=__host_attribute,
+        x_misp_ip=STIX2toMISPMapping.ip_attribute(),
+        x_misp_last_seen=__last_seen_attribute,
+        x_misp_port=__port_attribute,
+        x_misp_query_string={'type': 'text', 'object_relation': 'query_string'},
+        x_misp_resource_path={'type': 'text', 'object_relation': 'resource_path'},
+        x_misp_scheme={'type': 'text', 'object_relation': 'scheme'},
+        x_misp_subdomain={'type': 'text', 'object_relation': 'subdomain'},
+        x_misp_text=__text_attribute,
+        x_misp_tld={'type': 'text', 'object_relation': 'tld'}
     )
     __user_account_object_mapping = Mapping(
-        account_login = STIX2toMISPMapping.username_attribute(),
-        account_type = STIX2toMISPMapping.account_type_attribute(),
-        can_escalate_privs = STIX2toMISPMapping.can_escalate_privs_attribute(),
-        credential = STIX2toMISPMapping.password_attribute(),
-        x_misp_password = STIX2toMISPMapping.password_attribute(),
-        display_name = STIX2toMISPMapping.display_name_attribute(),
-        is_disabled = STIX2toMISPMapping.disabled_attribute(),
-        is_privileged = STIX2toMISPMapping.privileged_attribute(),
-        is_service_account = STIX2toMISPMapping.is_service_account_attribute(),
-        user_id = STIX2toMISPMapping.user_id_attribute(),
-        x_misp_description = STIX2toMISPMapping.description_attribute(),
-        x_misp_link = __link_attribute,
-        x_misp_user_avatar = __user_avatar_attribute,
-        account_created = STIX2toMISPMapping.created_attribute(),
-        account_expires = STIX2toMISPMapping.expires_attribute(),
-        account_first_login = STIX2toMISPMapping.first_login_attribute(),
-        account_last_login = STIX2toMISPMapping.last_login_attribute(),
-        credential_last_changed = STIX2toMISPMapping.password_last_changed_attribute(),
-        password_last_changed = STIX2toMISPMapping.password_last_changed_attribute()
+        account_login=STIX2toMISPMapping.username_attribute(),
+        account_type=STIX2toMISPMapping.account_type_attribute(),
+        can_escalate_privs=STIX2toMISPMapping.can_escalate_privs_attribute(),
+        credential=STIX2toMISPMapping.password_attribute(),
+        x_misp_password=STIX2toMISPMapping.password_attribute(),
+        display_name=STIX2toMISPMapping.display_name_attribute(),
+        is_disabled=STIX2toMISPMapping.disabled_attribute(),
+        is_privileged=STIX2toMISPMapping.privileged_attribute(),
+        is_service_account=STIX2toMISPMapping.is_service_account_attribute(),
+        user_id=STIX2toMISPMapping.user_id_attribute(),
+        x_misp_description=STIX2toMISPMapping.description_attribute(),
+        x_misp_link=__link_attribute,
+        x_misp_user_avatar=__user_avatar_attribute,
+        account_created=STIX2toMISPMapping.created_attribute(),
+        account_expires=STIX2toMISPMapping.expires_attribute(),
+        account_first_login=STIX2toMISPMapping.first_login_attribute(),
+        account_last_login=STIX2toMISPMapping.last_login_attribute(),
+        credential_last_changed=STIX2toMISPMapping.password_last_changed_attribute(),
+        password_last_changed=STIX2toMISPMapping.password_last_changed_attribute()
     )
     __vulnerability_object_mapping = Mapping(
-        description = STIX2toMISPMapping.description_attribute(),
-        x_misp_created = {'type': 'datetime', 'object_relation': 'created'},
-        x_misp_credit = {'type': 'text', 'object_relation': 'credit'},
-        x_misp_cvss_score = {'type': 'float', 'object_relation': 'cvss-score'},
-        x_misp_modified = {'type': 'datetime', 'object_relation': 'modified'},
-        x_misp_published = {'type': 'datetime', 'object_relation': 'published'},
-        x_misp_state = {'type': 'text', 'object_relation': 'state'},
-        x_misp_summary = STIX2toMISPMapping.summary_attribute(),
-        x_misp_vulnerable_configuration = {
+        description=STIX2toMISPMapping.description_attribute(),
+        x_misp_created={'type': 'datetime', 'object_relation': 'created'},
+        x_misp_credit={'type': 'text', 'object_relation': 'credit'},
+        x_misp_cvss_score={'type': 'float', 'object_relation': 'cvss-score'},
+        x_misp_modified={'type': 'datetime', 'object_relation': 'modified'},
+        x_misp_published={'type': 'datetime', 'object_relation': 'published'},
+        x_misp_state={'type': 'text', 'object_relation': 'state'},
+        x_misp_summary=STIX2toMISPMapping.summary_attribute(),
+        x_misp_vulnerable_configuration={
             'type': 'cpe',
             'object_relation': 'vulnerable-configuration'
         }
     )
     __x509_object_mapping = Mapping(
-        is_self_signed = STIX2toMISPMapping.is_self_signed_attribute(),
-        issuer = STIX2toMISPMapping.issuer_attribute(),
-        serial_number = STIX2toMISPMapping.serial_number_attribute(),
-        signature_algorithm = STIX2toMISPMapping.signature_algorithm_attribute(),
-        subject = STIX2toMISPMapping.subject_attribute(),
-        subject_public_key_algorithm = STIX2toMISPMapping.pubkey_info_algorithm_attribute(),
-        subject_public_key_exponent = STIX2toMISPMapping.pubkey_info_exponent_attribute(),
-        subject_public_key_modulus = STIX2toMISPMapping.pubkey_info_modulus_attribute(),
-        validity_not_after = STIX2toMISPMapping.validity_not_after_attribute(),
-        validity_not_before = STIX2toMISPMapping.validity_not_before_attribute(),
-        version = STIX2toMISPMapping.version_attribute(),
-        x_misp_is_ca = __is_ca_attribute,
-        x_misp_pem = __pem_attribute,
-        x_misp_pubkey_info_size = __pubkey_info_size_attribute,
-        x_misp_raw_base64 = __raw_base64_attribute,
-        x_misp_text = __text_attribute
+        is_self_signed=STIX2toMISPMapping.is_self_signed_attribute(),
+        issuer=STIX2toMISPMapping.issuer_attribute(),
+        serial_number=STIX2toMISPMapping.serial_number_attribute(),
+        signature_algorithm=STIX2toMISPMapping.signature_algorithm_attribute(),
+        subject=STIX2toMISPMapping.subject_attribute(),
+        subject_public_key_algorithm=STIX2toMISPMapping.pubkey_info_algorithm_attribute(),
+        subject_public_key_exponent=STIX2toMISPMapping.pubkey_info_exponent_attribute(),
+        subject_public_key_modulus=STIX2toMISPMapping.pubkey_info_modulus_attribute(),
+        validity_not_after=STIX2toMISPMapping.validity_not_after_attribute(),
+        validity_not_before=STIX2toMISPMapping.validity_not_before_attribute(),
+        version=STIX2toMISPMapping.version_attribute(),
+        x_misp_is_ca=__is_ca_attribute,
+        x_misp_pem=__pem_attribute,
+        x_misp_pubkey_info_size=__pubkey_info_size_attribute,
+        x_misp_raw_base64=__raw_base64_attribute,
+        x_misp_text=__text_attribute
     )
     __x509_pattern_mapping = Mapping(
         **{
@@ -1050,11 +1050,11 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         }
     )
     __yara_object_mapping = Mapping(
-        pattern = STIX2toMISPMapping.yara_attribute(),
-        description = STIX2toMISPMapping.comment_attribute(),
-        name = STIX2toMISPMapping.yara_rule_name_attribute(),
-        pattern_version = STIX2toMISPMapping.version_attribute(),
-        x_misp_context = {'type': 'text', 'object_relation': 'context'}
+        pattern=STIX2toMISPMapping.yara_attribute(),
+        description=STIX2toMISPMapping.comment_attribute(),
+        name=STIX2toMISPMapping.yara_rule_name_attribute(),
+        pattern_version=STIX2toMISPMapping.version_attribute(),
+        x_misp_context={'type': 'text', 'object_relation': 'context'}
     )
 
     @classmethod

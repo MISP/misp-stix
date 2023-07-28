@@ -468,13 +468,13 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
 
     # MISP GALAXIES MAPPING
     __attack_pattern_meta_mapping = Mapping(
-        aliases = 'synonyms'
+        aliases='synonyms'
     )
     __campaign_meta_mapping = Mapping(
-        aliases = 'synonyms',
-        objective = 'objective'
+        aliases='synonyms',
+        objective='objective'
     )
-    __dash_meta_fields= (
+    __dash_meta_fields = (
         'x_misp_attribution_confidence',
         'x_misp_calling_code',
         'x_misp_cfr_suspected_state_sponsor',
@@ -500,21 +500,21 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         'x_misp_top_level_domain'
     )
     __intrusion_set_meta_mapping = Mapping(
-        aliases = 'synonyms',
-        goals = 'goals',
-        primary_motivation = 'primary_motivation',
-        resource_level = 'resource_level',
-        secondary_motivations = 'secondary_motivations'
+        aliases='synonyms',
+        goals='goals',
+        primary_motivation='primary_motivation',
+        resource_level='resource_level',
+        secondary_motivations='secondary_motivations'
     )
     __malware_meta_mapping = Mapping(
-        aliases = 'synonyms',
-        architecture_execution_envs = 'architecture_execution_envs',
-        capabilities = 'capabilities',
-        implementation_languages = 'implementation_languages',
-        is_family = 'is_family',
-        malware_types = 'malware_types',
-        operating_system_refs = 'operating_system_refs',
-        sample_refs = 'sample_refs'
+        aliases='synonyms',
+        architecture_execution_envs='architecture_execution_envs',
+        capabilities='capabilities',
+        implementation_languages='implementation_languages',
+        is_family='is_family',
+        malware_types='malware_types',
+        operating_system_refs='operating_system_refs',
+        sample_refs='sample_refs'
     )
     __regions_mapping = Mapping(
         **{
@@ -551,20 +551,20 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         }
     )
     __threat_actor_meta_mapping = Mapping(
-        aliases = 'synonyms',
-        goals = 'goals',
-        personal_motivations = 'personal_motivations',
-        primary_motivation = 'primary_motivation',
-        resource_level = 'resource_level',
-        roles = 'roles',
-        secondary_motivations = 'secondary_motivations',
-        sophistication = 'sophistication',
-        threat_actor_types = 'threat_actor_types'
+        aliases='synonyms',
+        goals='goals',
+        personal_motivations='personal_motivations',
+        primary_motivation='primary_motivation',
+        resource_level='resource_level',
+        roles='roles',
+        secondary_motivations='secondary_motivations',
+        sophistication='sophistication',
+        threat_actor_types='threat_actor_types'
     )
     __tool_meta_mapping = Mapping(
-        aliases = 'synonyms',
-        tool_types = 'tool_types',
-        tool_version = 'tool_version'
+        aliases='synonyms',
+        tool_types='tool_types',
+        tool_version='tool_version'
     )
 
     # MISP OBJECTS MAPPING
@@ -590,25 +590,25 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         }
     )
     __network_socket_extension_mapping = Mapping(
-        address_family = __address_family_attribute,
-        protocol_family = __domain_family_attribute,
-        socket_type = {'type': 'text', 'object_relation': 'socket-type'}
+        address_family=__address_family_attribute,
+        protocol_family=__domain_family_attribute,
+        socket_type={'type': 'text', 'object_relation': 'socket-type'}
     )
     __registry_key_values_mapping = Mapping(
-        data = __data_attribute,
-        data_type = __data_type_attribute,
-        name = __name_attribute
+        data=__data_attribute,
+        data_type=__data_type_attribute,
+        name=__name_attribute
     )
     __suricata_object_mapping = Mapping(
-        pattern = __snort_attribute,
-        description = __comment_attribute,
-        pattern_version = __version_attribute
+        pattern=__snort_attribute,
+        description=__comment_attribute,
+        pattern_version=__version_attribute
     )
     __user_account_unix_extention_mapping = Mapping(
-        gid = __group_id_attribute,
-        groups = __groups_attribute,
-        home_dir = __home_dir_attribute,
-        shell = __shell_attribute
+        gid=__group_id_attribute,
+        groups=__groups_attribute,
+        home_dir=__home_dir_attribute,
+        shell=__shell_attribute
     )
 
     @classmethod
@@ -826,7 +826,7 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     @classmethod
     def is_cls_signed_attribute(cls) -> dict:
         return cls.__is_cls_signed_attribute
-    
+
     @classmethod
     def is_self_signed_attribute(cls) -> dict:
         return cls.__is_self_signed_attribute
