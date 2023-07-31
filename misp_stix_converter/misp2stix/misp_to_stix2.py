@@ -2581,9 +2581,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         object_refs = self._parse_malware_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
-    def _parse_malware_types(self, meta_args: dict, values: list):
+    def _parse_malware_types(self, meta_args: dict, values: Union[list, str]):
         feature = 'malware_types' if self._version == '2.1' else 'labels'
-        meta_args[feature] = values
+        meta_args[feature] = values if isinstance(values, list) else [values]
 
     def _parse_meta_fields(self, cluster_meta: dict, object_type: str) -> dict:
         meta_args = defaultdict(list)
@@ -2707,6 +2707,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_threat_actor_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_threat_actor_galaxy(galaxy)
         self._handle_object_refs(object_refs)
+
+    def _parse_threat_actor_types(
+            self, meta_args: dict, values: Union[list, str]):
+        feature = 'threat_actor_types' if self._version == '2.1' else 'labels'
+        meta_args[feature] = values if isinstance(values, list) else [values]
 
     def _parse_tool_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                      object_id: str, timestamp: datetime):
