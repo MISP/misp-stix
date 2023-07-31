@@ -660,8 +660,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for reference in external_references:
             if reference.get('url'):
                 meta['refs'].append(reference['url'])
+            feature = 'aliases' if reference.get('source_name') == 'cve' else 'external_id'
             if reference.get('external_id'):
-                meta['external_id'].append(reference['external_id'])
+                meta[feature].append(reference['external_id'])
         if 'external_id' in meta and len(meta['external_id']) == 1:
             meta['external_id'] = meta.pop('external_id')[0]
         return meta
