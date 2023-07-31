@@ -260,6 +260,11 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'type': '_parse_tool_types'
         }
     )
+    __vulnerability_meta_mapping = Mapping(
+        **{
+            'aliases': '_parse_external_reference'
+        }
+    )
 
     # MISP OBJECTS MAPPING
     __objects_mapping = Mapping(
@@ -1252,6 +1257,10 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def user_account_single_fields(cls) -> tuple:
         return cls.__user_account_single_fields
+
+    @classmethod
+    def vulnerability_meta_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__vulnerability_meta_mapping.get(field)
 
     @classmethod
     def x509_hash_fields(cls) -> tuple:

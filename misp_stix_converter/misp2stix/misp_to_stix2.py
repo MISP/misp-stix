@@ -2482,7 +2482,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             'external_id': external_id
         }
 
-    def _parse_external_reference(self, meta_args: dict, feature: str, values: Union[list, str]):
+    def _parse_external_reference(
+            self, meta_args: dict, values: Union[list, str],
+            feature: Optional[str] = '_parse_external_id'):
         if isinstance(values, list):
             meta_args['external_references'].extend(
                 getattr(self, feature)(value) for value in values
@@ -2590,7 +2592,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for key, values in cluster_meta.items():
             feature = self._mapping.external_references_fields(key)
             if feature is not None:
-                self._parse_external_reference(meta_args, feature, values)
+                self._parse_external_reference(meta_args, values, feature)
                 continue
             feature = self._handle_meta_mapping(object_type, key)
             if feature is not None:
