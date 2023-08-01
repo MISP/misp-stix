@@ -1,4 +1,4 @@
-__version__ = '2.4.172'
+__version__ = '2.4.174'
 
 import argparse
 from .misp_stix_mapping import Mapping
