@@ -7361,9 +7361,6 @@ _VULNERABILITY_GALAXY = {
             "source_name": "cve",
             "external_id": "CVE-2015-0235"
         }
-    ],
-    "x_misp_aliases": [
-        "CVE-2015-0235"
     ]
 }
 _VULNERABILITY_OBJECT = {
