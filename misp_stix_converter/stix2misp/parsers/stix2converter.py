@@ -2,12 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from ..exceptions import (UndefinedSTIXObjectError, UnknownParsingFunctionError)
-from ..external_stix2_mapping import ExternalSTIX2toMISPMapping
-from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
-from ..internal_stix2_mapping import InternalSTIX2toMISPMapping
-from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
+from .abstractconverter import AbstractSTIXConverter
 from abc import ABCMeta
 from collections import defaultdict
+from datetime import datetime
 from pymisp import AbstractMISP, MISPGalaxy, MISPGalaxyCluster, MISPObject
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, Malware as Malware_v20)
@@ -22,15 +20,15 @@ _GALAXY_OBJECTS_TYPING = Union[
     Malware_v20, Malware_v21
 ]
 _MAIN_PARSER_TYPING = Union[
-    ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser
+    'ExternalSTIX2toMISPParser', 'InternalSTIX2toMISPParser'
 ]
 _SDO_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21
 ]
 
 
-class STIX2Parser(metaclass=ABCMeta):
-    def __init__(self, main: _MAIN_PARSER_TYPING):
+class STIX2Converter(AbstractSTIXConverter, metaclass=ABCMeta):
+    def _set_main_parser(self, main: _MAIN_PARSER_TYPING):
         self.__main_parser = main
     
     @property
@@ -63,7 +61,7 @@ class STIX2Parser(metaclass=ABCMeta):
         cluster = MISPGalaxyCluster()
         cluster.from_dict(**cluster_args)
         return cluster
-    
+
     def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
         clusters = self.main_parser._clusters
         if stix_object.id in clusters:
@@ -76,6 +74,10 @@ class STIX2Parser(metaclass=ABCMeta):
     ############################################################################
     #                             UTILITY METHODS                             #
     ############################################################################
+
+    @staticmethod
+    def _extract_uuid(object_id: str) -> str:
+        return object_id.split('--')[-1]
 
     @staticmethod
     def _handle_kill_chain_phases(kill_chain_phases: list) -> list:
@@ -93,22 +95,46 @@ class STIX2Parser(metaclass=ABCMeta):
         ]
         if meta_labels:
             meta['labels'] = meta_labels
-    
-    def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
-        mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
-        if hasattr(self._mapping, mapping):
-            meta = {}
-            for feature, field in getattr(self._mapping, mapping)().items():
-                if hasattr(stix_object, feature):
-                    meta[field] = getattr(stix_object, feature)
-            meta.update(dict(self._extract_custom_fields(stix_object)))
-            return meta
-        return dict(self._extract_custom_fields(stix_object))
-    
 
-class ExternalParser(STIX2Parser, metaclass=ABCMeta):
-    def __init__(self):
-        self._mapping = ExternalSTIX2toMISPMapping
+    def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
+        misp_object = {
+            'timestamp': self._timestamp_from_date(stix_object.modified)
+        }
+        object_type = stix_object.type
+        if self._mapping.timeline_mapping(object_type) is not None:
+            first, last = self._mapping.timeline_mapping(object_type)
+            if not self._skip_first_seen_last_seen(stix_object):
+                if hasattr(stix_object, first) and getattr(stix_object, first):
+                    misp_object['first_seen'] = getattr(stix_object, first)
+                if hasattr(stix_object, last) and getattr(stix_object, last):
+                    misp_object['last_seen'] = getattr(stix_object, last)
+        return misp_object
+
+    @staticmethod
+    def _skip_first_seen_last_seen(sdo: _SDO_TYPING) -> bool:
+        if sdo.type != 'indicator':
+            return sdo.modified == sdo.first_observed == sdo.last_observed
+        if sdo.valid_from != sdo.modified:
+            return False
+        if not hasattr(sdo, 'valid_until'):
+            return True
+        return sdo.valid_until == sdo.modified
+
+    @staticmethod
+    def _timestamp_from_date(date: datetime) -> int:
+        return int(date.timestamp())
+        # I keep it just in case
+        try:
+            return int(date.timestamp())
+        except AttributeError:
+            return int(
+                time.mktime(
+                    time.strptime(date.split('+')[0], "%Y-%m-%dT%H:%M:%S.%fZ")
+                )
+            )
+
+
+class ExternalConverter(STIX2Converter, metaclass=ABCMeta):
 
     def parse(self, stix_object_ref: str):
         stix_object = self.main_parser._get_stix_object(stix_object_ref)
@@ -117,6 +143,35 @@ class ExternalParser(STIX2Parser, metaclass=ABCMeta):
     ############################################################################
     #                         GALAXIES PARSING METHODS                         #
     ############################################################################
+
+    def _create_cluster_args(
+            self, stix_object: _GALAXY_OBJECTS_TYPING, galaxy_type: str,
+            description: Optional[str] = None,
+            cluster_value: Optional[str] = None) -> dict:
+        value = cluster_value or stix_object.name
+        cluster_args = {
+            'uuid': self._sanitise_uuid(stix_object.id), 'value': value
+        }
+        if galaxy_type is None:
+            version = getattr(stix_object, 'spec_version', '2.0')
+            mapping = self._mapping.galaxy_name_mapping(stix_object.type)
+            name = f"STIX {version} {mapping['name']}"
+            cluster_args.update(
+                {
+                    'version': ''.join(version.split('.')),
+                    'collection_uuid': self._create_v5_uuid(name)
+                }
+            )
+            galaxy_type = f'stix-{version}-{stix_object.type}'
+        cluster_args['type'] = galaxy_type
+        if description is not None:
+            cluster_args['description'] = description
+            return cluster_args
+        if hasattr(stix_object, 'description'):
+            cluster_args['description'] = stix_object.description
+            return cluster_args
+        cluster_args['description'] = value.capitalize()
+        return cluster_args
 
     def _create_galaxy_args(self, stix_object: _GALAXY_OBJECTS_TYPING,
                             galaxy_type: Optional[str] = None):
@@ -146,6 +201,15 @@ class ExternalParser(STIX2Parser, metaclass=ABCMeta):
         )
         self._galaxies[galaxy_type] = misp_galaxy
 
+    def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
+        mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
+        meta = {}
+        if hasattr(self._mapping, mapping):
+            for feature, field in getattr(self._mapping, mapping)().items():
+                if hasattr(stix_object, feature):
+                    meta[field] = getattr(stix_object, feature)
+        return meta
+
     def _parse_galaxy_as_container(self, stix_object: _GALAXY_OBJECTS_TYPING,
                                    object_type: Optional[str] = None) -> dict:
         if object_type is None:
@@ -158,7 +222,6 @@ class ExternalParser(STIX2Parser, metaclass=ABCMeta):
             'cluster': self._create_cluster(stix_object),
             'used': {self.main_parser.misp_event.uuid: False}
         }
-        
 
     ############################################################################
     #                             UTILITY METHODS.                             #
@@ -177,13 +240,29 @@ class ExternalParser(STIX2Parser, metaclass=ABCMeta):
         return meta
 
 
-class InternalParser(STIX2Parser, metaclass=ABCMeta):
-    def __init__(self):
-        self._mapping = InternalSTIX2toMISPMapping
+class InternalConverter(STIX2Converter, metaclass=ABCMeta):
 
     ############################################################################
     #                         GALAXIES PARSING METHODS                         #
     ############################################################################
+
+    def _create_cluster_args(
+            self, stix_object: _GALAXY_OBJECTS_TYPING, galaxy_type: str,
+            description: Optional[str] = None,
+            cluster_value: Optional[str] = None) -> dict:
+        value = cluster_value or stix_object.name
+        cluster_args = {
+            'uuid': self._sanitise_uuid(stix_object.id), 'value': value,
+            'type': galaxy_type
+        }
+        if description is not None:
+            cluster_args['description'] = description
+            return cluster_args
+        if hasattr(stix_object, 'description'):
+            cluster_args['description'] = stix_object.description
+            return cluster_args
+        cluster_args['description'] = value.capitalize()
+        return cluster_args
 
     def _create_galaxy_args(
             self, description: str, galaxy_type: str, galaxy_name: str):
@@ -196,6 +275,23 @@ class InternalParser(STIX2Parser, metaclass=ABCMeta):
             }
         )
         self.main_parser._galaxies[galaxy_type] = misp_galaxy
+
+    def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
+        for key, value in stix_object.items():
+            if key.startswith('x_misp_'):
+                separator = '-' if key in self._mapping.dash_meta_fields() else '_'
+                yield separator.join(key.split('_')[2:]), value
+
+    def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
+        mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
+        if hasattr(self._mapping, mapping):
+            meta = {}
+            for feature, field in getattr(self._mapping, mapping)().items():
+                if hasattr(stix_object, feature):
+                    meta[field] = getattr(stix_object, feature)
+            meta.update(dict(self._extract_custom_fields(stix_object)))
+            return meta
+        return dict(self._extract_custom_fields(stix_object))
 
     def _parse_galaxy_as_container(
             self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:

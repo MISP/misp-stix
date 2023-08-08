@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from ... import Mapping
 from ..exceptions import UnknownParsingFunctionError
-from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
-from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
-from .stix2parser import ExternalParser, InternalParser, STIX2Parser
+from .stix2mapping import (
+    ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
+from .stix2converter import ExternalConverter, InternalConverter, STIX2Converter
 from abc import ABCMeta
 from pymisp import MISPGalaxyCluster
 from stix2.v20.common import ExternalReference as ExternalReference_v20
@@ -20,13 +21,23 @@ _EXTERNAL_REFERENCE_TYPING = Union[
     ExternalReference_v20, ExternalReference_v21
 ]
 _MAIN_PARSER_TYPING = Union[
-    ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser
+    'ExternalSTIX2toMISPParser', 'InternalSTIX2toMISPParser'
 ]
 
 
-class AttackPatternParser(STIX2Parser, metaclass=ABCMeta):
+class AttackPatternMapping(STIX2Mapping, metaclass=ABCMeta):
+    __attack_pattern_meta_mapping = Mapping(
+        aliases='synonyms'
+    )
+
+    @classmethod
+    def attack_pattern_meta_mapping(cls) -> dict:
+        return cls.__attack_pattern_meta_mapping
+
+
+class AttackPatternConverter(STIX2Converter, metaclass=ABCMeta):
     def __init__(self, main: _MAIN_PARSER_TYPING):
-        super().__init__(main)
+        self._set_main_parser(main)
 
     def _create_cluster(self, attack_pattern: _ATTACK_PATTERN_TYPING,
                         description: Optional[str] = None,
@@ -48,21 +59,58 @@ class AttackPatternParser(STIX2Parser, metaclass=ABCMeta):
         if meta:
             attack_pattern_args['meta'] = meta
         return self._create_misp_galaxy_cluster(attack_pattern_args)
+    
+
+class ExternalAttackPatternMapping(AttackPatternMapping, ExternalSTIX2Mapping):
+    __attack_pattern_object_mapping = Mapping(
+        name=STIX2Mapping.name_attribute(),
+        description=STIX2Mapping.summary_attribute()
+    )
+
+    @classmethod
+    def attack_pattern_object_mapping(cls, field) -> Union[dict, None]:
+        return cls.__attack_pattern_object_mapping.get(field)
 
 
-class ExternalAttackPatternParser(AttackPatternParser, ExternalParser):
-    def __init__(self, main: ExternalSTIX2toMISPParser):
+class ExternalAttackPatternConverter(AttackPatternConverter, ExternalConverter):
+    def __init__(self, main: 'ExternalSTIX2toMISPParser'):
         super().__init__(main)
-        super(ExternalParser, self).__init__()
+        self._mapping = ExternalAttackPatternMapping
 
-    def parse(self, stix_object_ref: str):
-        super().parse(stix_object_ref)
+    def parse(self, attack_pattern_ref: str):
+        attack_pattern = self.main_parser._get_stix_object(attack_pattern_ref)
+        self._parse_galaxy(attack_pattern)
 
 
-class InternalAttackPatternParser(AttackPatternParser, InternalParser):
-    def __init__(self, main: InternalSTIX2toMISPParser):
+class InternalAttackPatternMapping(AttackPatternMapping, InternalSTIX2Mapping):
+    __attack_pattern_id_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'id'}
+    )
+    __attack_pattern_object_mapping = Mapping(
+        description=STIX2Mapping.summary_attribute(),
+        name=STIX2Mapping.name_attribute(),
+        x_misp_prerequisites={
+            'type': 'text', 'object_relation': 'prerequisites'
+        },
+        x_misp_related_weakness={
+            'type': 'weakness', 'object_relation': 'related-weakness'
+        },
+        x_misp_solutions={'type': 'text', 'object_relation': 'solutions'}
+    )
+
+    @classmethod
+    def attack_pattern_id_attribute(cls) -> dict:
+        return cls.__attack_pattern_id_attribute
+
+    @classmethod
+    def attack_pattern_object_mapping(cls) -> dict:
+        return cls.__attack_pattern_object_mapping
+
+
+class InternalAttackPatternConverter(AttackPatternConverter, InternalConverter):
+    def __init__(self, main: 'InternalSTIX2toMISPParser'):
         super().__init__(main)
-        super(InternalParser, self).__init__()
+        self._mapping = InternalAttackPatternMapping
 
     def parse(self, attack_pattern_ref: str):
         attack_pattern = self.main_parser._get_stix_object(attack_pattern_ref)
