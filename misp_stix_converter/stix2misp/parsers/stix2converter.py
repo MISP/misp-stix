@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from ..exceptions import (UndefinedSTIXObjectError, UnknownParsingFunctionError)
-from .abstractconverter import AbstractSTIXConverter
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
@@ -27,7 +26,7 @@ _SDO_TYPING = Union[
 ]
 
 
-class STIX2Converter(AbstractSTIXConverter, metaclass=ABCMeta):
+class STIX2Converter(metaclass=ABCMeta):
     def _set_main_parser(self, main: _MAIN_PARSER_TYPING):
         self.__main_parser = main
     
@@ -48,7 +47,9 @@ class STIX2Converter(AbstractSTIXConverter, metaclass=ABCMeta):
             force_timestamps=True
         )
         if stix_object is not None:
-            self._sanitise_object_uuid(misp_object, stix_object['id'])
+            self.main_parser._sanitise_object_uuid(
+                misp_object, stix_object['id']
+            )
             misp_object.from_dict(**self._parse_timeline(stix_object))
         return misp_object
 
@@ -150,7 +151,8 @@ class ExternalConverter(STIX2Converter, metaclass=ABCMeta):
             cluster_value: Optional[str] = None) -> dict:
         value = cluster_value or stix_object.name
         cluster_args = {
-            'uuid': self._sanitise_uuid(stix_object.id), 'value': value
+            'uuid': self.main_parser._sanitise_uuid(stix_object.id),
+            'value': value
         }
         if galaxy_type is None:
             version = getattr(stix_object, 'spec_version', '2.0')
@@ -159,7 +161,7 @@ class ExternalConverter(STIX2Converter, metaclass=ABCMeta):
             cluster_args.update(
                 {
                     'version': ''.join(version.split('.')),
-                    'collection_uuid': self._create_v5_uuid(name)
+                    'collection_uuid': self.main_parser._create_v5_uuid(name)
                 }
             )
             galaxy_type = f'stix-{version}-{stix_object.type}'
@@ -188,7 +190,7 @@ class ExternalConverter(STIX2Converter, metaclass=ABCMeta):
             name = f"STIX {version} {name}"
             galaxy_args.update(
                 {
-                    'uuid': self._create_v5_uuid(name),
+                    'uuid': self.main_parser._create_v5_uuid(name),
                     'version': ''.join(version.split('.')),
                     'icon': mapping['icon']
                 }
@@ -199,7 +201,7 @@ class ExternalConverter(STIX2Converter, metaclass=ABCMeta):
                 'type': galaxy_type, 'name': name, **galaxy_args
             }
         )
-        self._galaxies[galaxy_type] = misp_galaxy
+        self.main_parser._galaxies[galaxy_type] = misp_galaxy
 
     def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
         mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
@@ -252,8 +254,8 @@ class InternalConverter(STIX2Converter, metaclass=ABCMeta):
             cluster_value: Optional[str] = None) -> dict:
         value = cluster_value or stix_object.name
         cluster_args = {
-            'uuid': self._sanitise_uuid(stix_object.id), 'value': value,
-            'type': galaxy_type
+            'uuid': self.main_parser._sanitise_uuid(stix_object.id),
+            'value': value, 'type': galaxy_type
         }
         if description is not None:
             cluster_args['description'] = description
