@@ -12,7 +12,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     #                          MISP GALAXIES IMPORT TESTS                          #
     ################################################################################
 
-    def test_stix21_bundle_with_attack_pattern_galaxy(self):
+    def test_stix20_bundle_with_attack_pattern_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_attack_pattern_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -39,7 +39,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             [f'{killchain.kill_chain_name}:{killchain.phase_name}']
         )
 
-    def test_stix21_bundle_with_campaign_galaxy(self):
+    def test_stix20_bundle_with_campaign_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_campaign_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -54,7 +54,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_galaxy_features(attribute.galaxies, attribute_campaign)
         self.assertEqual(meta, {})
 
-    def test_stix21_bundle_with_course_of_action_galaxy(self):
+    def test_stix20_bundle_with_course_of_action_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_course_of_action_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -74,7 +74,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(meta['refs'], [url.url])
         self.assertEqual(meta['external_id'], external_id.external_id)
 
-    def test_stix21_bundle_with_intrusion_set_galaxy(self):
+    def test_stix20_bundle_with_intrusion_set_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_intrusion_set_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -93,7 +93,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(meta['resource_level'], attribute_is.resource_level)
         self.assertEqual(meta['primary_motivation'], attribute_is.primary_motivation)
 
-    def test_stix21_bundle_with_malware_galaxy(self):
+    def test_stix20_bundle_with_malware_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_malware_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -108,7 +108,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         meta = self._check_galaxy_features(attribute.galaxies, attribute_malware)
         self.assertEqual(meta['labels'], attribute_malware.labels)
 
-    def test_stix21_bundle_with_threat_actor_galaxy(self):
+    def test_stix20_bundle_with_threat_actor_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -131,7 +131,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(meta['primary_motivation'], attribute_ta.primary_motivation)
         self.assertEqual(meta['labels'], attribute_ta.labels)
 
-    def test_stix21_bundle_with_tool_galaxy(self):
+    def test_stix20_bundle_with_tool_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_tool_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -159,7 +159,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(meta['labels'], attribute_tool.labels)
 
-    def test_stix21_bundle_with_vulnerability_galaxy(self):
+    def test_stix20_bundle_with_vulnerability_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_vulnerability_galaxy()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
