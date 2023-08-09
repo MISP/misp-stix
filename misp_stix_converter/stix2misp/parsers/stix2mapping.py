@@ -8,6 +8,12 @@ from typing import Union
 
 class STIX2Mapping(metaclass=ABCMeta):
     # SINGLE ATTRIBUTES MAPPING
+    __filename_attribute = Mapping(
+        **{'type': 'filename', 'object_relation': 'filename'}
+    )
+    __language_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'language'}
+    )
     __name_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'name'}
     )
@@ -23,6 +29,14 @@ class STIX2Mapping(metaclass=ABCMeta):
             'observed-data': ('first_observed', 'last_observed')
         }
     )
+
+    @classmethod
+    def filename_attribute(cls) -> dict:
+        return cls.__filename_attribute
+
+    @classmethod
+    def language_attribute(cls) -> dict:
+        return cls.__language_attribute
 
     @classmethod
     def name_attribute(cls) -> dict:
@@ -105,6 +119,16 @@ class ExternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
 
 
 class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
+    __comment_text_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'comment'}
+    )
+    __script_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'script'}
+    )
+    __state_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'state'}
+    )
+
     __attributes_mapping = {
         'vulnerability': '_parse_vulnerability_attribute'
     }
@@ -186,9 +210,21 @@ class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__attributes_mapping.get(field)
 
     @classmethod
+    def comment_text_attribute(cls) -> dict:
+        return cls.__comment_text_attribute
+
+    @classmethod
     def dash_meta_fields(cls) -> tuple:
         return cls.__dash_meta_fields
 
     @classmethod
     def objects_mapping(cls, field: str) -> Union[str, None]:
         return cls.__objects_mapping.get(field)
+
+    @classmethod
+    def script_attribute(cls) -> dict:
+        return cls.__script_attribute
+
+    @classmethod
+    def state_attribute(cls) -> dict:
+        return cls.__state_attribute
