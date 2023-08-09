@@ -369,3 +369,12 @@ class InternalConverter(STIX2Converter, metaclass=ABCMeta):
             if to_call is not None:
                 return to_call
         raise UndefinedSTIXObjectError(object_id)
+
+    @staticmethod
+    def _populate_object_attributes(
+            misp_object: MISPObject, mapping: dict, values: Union[list, str]):
+        if isinstance(values, list):
+            for value in values:
+                misp_object.add_attribute(**{'value': value, **mapping})
+        else:
+            misp_object.add_attribute(**{'value': values, **mapping})
