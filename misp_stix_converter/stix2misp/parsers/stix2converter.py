@@ -77,10 +77,6 @@ class STIX2Converter(metaclass=ABCMeta):
     ############################################################################
 
     @staticmethod
-    def _extract_uuid(object_id: str) -> str:
-        return object_id.split('--')[-1]
-
-    @staticmethod
     def _handle_kill_chain_phases(kill_chain_phases: list) -> list:
         kill_chains = []
         for kill_chain in kill_chain_phases:
@@ -110,6 +106,15 @@ class STIX2Converter(metaclass=ABCMeta):
                 if hasattr(stix_object, last) and getattr(stix_object, last):
                     misp_object['last_seen'] = getattr(stix_object, last)
         return misp_object
+
+    @staticmethod
+    def _populate_object_attributes(
+            misp_object: MISPObject, mapping: dict, values: Union[list, str]):
+        if isinstance(values, list):
+            for value in values:
+                misp_object.add_attribute(**{'value': value, **mapping})
+        else:
+            misp_object.add_attribute(**{'value': values, **mapping})
 
     @staticmethod
     def _skip_first_seen_last_seen(sdo: _SDO_TYPING) -> bool:
@@ -369,12 +374,3 @@ class InternalConverter(STIX2Converter, metaclass=ABCMeta):
             if to_call is not None:
                 return to_call
         raise UndefinedSTIXObjectError(object_id)
-
-    @staticmethod
-    def _populate_object_attributes(
-            misp_object: MISPObject, mapping: dict, values: Union[list, str]):
-        if isinstance(values, list):
-            for value in values:
-                misp_object.add_attribute(**{'value': value, **mapping})
-        else:
-            misp_object.add_attribute(**{'value': values, **mapping})
