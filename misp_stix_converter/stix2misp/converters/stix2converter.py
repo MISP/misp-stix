@@ -140,7 +140,7 @@ class STIX2Converter(metaclass=ABCMeta):
             )
 
 
-class ExternalConverter(STIX2Converter, metaclass=ABCMeta):
+class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     def parse(self, stix_object_ref: str):
         stix_object = self.main_parser._get_stix_object(stix_object_ref)
@@ -247,7 +247,7 @@ class ExternalConverter(STIX2Converter, metaclass=ABCMeta):
         return meta
 
 
-class InternalConverter(STIX2Converter, metaclass=ABCMeta):
+class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     ############################################################################
     #                         GALAXIES PARSING METHODS                         #

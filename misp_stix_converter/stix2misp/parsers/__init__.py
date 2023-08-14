@@ -1,2 +1,0 @@
-from .stix2_attack_pattern_converter import ExternalAttackPatternConverter, InternalAttackPatternConverter # noqa
-from .stix2_malware_converter import ExternalMalwareConverter, InternalMalwareConverter # noqa

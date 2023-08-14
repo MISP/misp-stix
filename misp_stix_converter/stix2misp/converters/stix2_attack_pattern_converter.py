@@ -5,7 +5,8 @@ from ... import Mapping
 from ..exceptions import UnknownParsingFunctionError
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
-from .stix2converter import ExternalConverter, InternalConverter, STIX2Converter
+from .stix2converter import (
+    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter)
 from abc import ABCMeta
 from pymisp import MISPGalaxyCluster
 from stix2.v20.common import ExternalReference as ExternalReference_v20
@@ -25,7 +26,7 @@ _MAIN_PARSER_TYPING = Union[
 ]
 
 
-class AttackPatternMapping(STIX2Mapping, metaclass=ABCMeta):
+class STIX2AttackPatternMapping(STIX2Mapping, metaclass=ABCMeta):
     __attack_pattern_meta_mapping = Mapping(
         aliases='synonyms'
     )
@@ -35,7 +36,7 @@ class AttackPatternMapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__attack_pattern_meta_mapping
 
 
-class AttackPatternConverter(STIX2Converter, metaclass=ABCMeta):
+class STIX2AttackPatternConverter(STIX2Converter, metaclass=ABCMeta):
     def __init__(self, main: _MAIN_PARSER_TYPING):
         self._set_main_parser(main)
 
@@ -61,7 +62,8 @@ class AttackPatternConverter(STIX2Converter, metaclass=ABCMeta):
         return self._create_misp_galaxy_cluster(attack_pattern_args)
     
 
-class ExternalAttackPatternMapping(AttackPatternMapping, ExternalSTIX2Mapping):
+class ExternalSTIX2AttackPatternMapping(
+        STIX2AttackPatternMapping, ExternalSTIX2Mapping):
     __attack_pattern_object_mapping = Mapping(
         name=STIX2Mapping.name_attribute(),
         description=STIX2Mapping.summary_attribute()
@@ -72,17 +74,19 @@ class ExternalAttackPatternMapping(AttackPatternMapping, ExternalSTIX2Mapping):
         return cls.__attack_pattern_object_mapping.get(field)
 
 
-class ExternalAttackPatternConverter(AttackPatternConverter, ExternalConverter):
+class ExternalSTIX2AttackPatternConverter(
+        STIX2AttackPatternConverter, ExternalSTIX2Converter):
     def __init__(self, main: 'ExternalSTIX2toMISPParser'):
         super().__init__(main)
-        self._mapping = ExternalAttackPatternMapping
+        self._mapping = ExternalSTIX2AttackPatternMapping
 
     def parse(self, attack_pattern_ref: str):
         attack_pattern = self.main_parser._get_stix_object(attack_pattern_ref)
         self._parse_galaxy(attack_pattern)
 
 
-class InternalAttackPatternMapping(AttackPatternMapping, InternalSTIX2Mapping):
+class InternalSTIX2AttackPatternMapping(
+        STIX2AttackPatternMapping, InternalSTIX2Mapping):
     __attack_pattern_id_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'id'}
     )
@@ -107,10 +111,11 @@ class InternalAttackPatternMapping(AttackPatternMapping, InternalSTIX2Mapping):
         return cls.__attack_pattern_object_mapping
 
 
-class InternalAttackPatternConverter(AttackPatternConverter, InternalConverter):
+class InternalSTIX2AttackPatternConverter(
+        STIX2AttackPatternConverter, InternalSTIX2Converter):
     def __init__(self, main: 'InternalSTIX2toMISPParser'):
         super().__init__(main)
-        self._mapping = InternalAttackPatternMapping
+        self._mapping = InternalSTIX2AttackPatternMapping
 
     def parse(self, attack_pattern_ref: str):
         attack_pattern = self.main_parser._get_stix_object(attack_pattern_ref)
