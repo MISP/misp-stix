@@ -9,6 +9,8 @@ from .exceptions import (
     UnknownPatternTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import _INDICATOR_TYPING
+from .converters import (
+    ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareConverter)
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
@@ -124,6 +126,17 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                  galaxies_as_tags: Optional[bool] = False):
         super().__init__(distribution, sharing_group_id, galaxies_as_tags)
         self._mapping = ExternalSTIX2toMISPMapping
+        # parsers
+        self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
+        self._malware_parser: ExternalSTIX2MalwareConverter
+
+    def _set_attack_pattern_parser(self) -> ExternalSTIX2AttackPatternConverter:
+        self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
+        return self._attack_pattern_parser
+
+    def _set_malware_parser(self) -> ExternalSTIX2MalwareConverter:
+        self._malware_parser = ExternalSTIX2MalwareConverter(self)
+        return self._malware_parser
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
@@ -228,21 +241,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if self._is_pattern_too_complex(indicator.pattern):
             return '_create_stix_pattern_object'
         return '_parse_stix_pattern'
-
-    def _parse_attack_pattern(self, attack_pattern_ref: str):
-        """
-        AttackPattern object parsing function.
-        We check if the attack pattern already has been seen by looking at its
-        ID, otherwise we convert it as a MISP Galaxy Cluster.
-
-        :param attack_pattern_ref: The AttackPattern id
-        """
-        if attack_pattern_ref in self._clusters:
-            self._clusters[attack_pattern_ref]['used'][self.misp_event.uuid] = False
-        else:
-            self._clusters[attack_pattern_ref] = self._parse_galaxy(
-                attack_pattern_ref
-            )
 
     def _parse_campaign(self, campaign_ref: str):
         """
@@ -479,19 +477,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 )(
                     location, feature
                 )
-
-    def _parse_malware(self, malware_ref: str):
-        """
-        Malware object parsing function.
-        We check if the malware already has been seen by looking at its ID,
-        otherwise we convert it as a MISP Galaxy Cluster.
-
-        :param malware_ref: The Malware id
-        """
-        if malware_ref in self._clusters:
-            self._clusters[malware_ref]['used'][self.misp_event.uuid] = False
-        else:
-            self._clusters[malware_ref] = self._parse_galaxy(malware_ref)
 
     def _parse_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
         """

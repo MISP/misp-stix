@@ -7,6 +7,8 @@ from .exceptions import (
     UnknownObservableMappingError, UnknownParsingFunctionError)
 from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
+from .converters import (
+    InternalSTIX2AttackPatternConverter, InternalSTIX2MalwareConverter)
 from .stix2_to_misp import (
     STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
     _GALAXY_OBJECTS_TYPING, _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING,
@@ -63,6 +65,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                  galaxies_as_tags: Optional[bool] = False):
         super().__init__(distribution, sharing_group_id, galaxies_as_tags)
         self._mapping = InternalSTIX2toMISPMapping
+        # parsers
+        self._attack_pattern_parser: InternalSTIX2AttackPatternConverter
+        self._malware_parser: InternalSTIX2MalwareConverter
+
+    def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
+        self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
+        return self._attack_pattern_parser
+
+    def _set_malware_parser(self) -> InternalSTIX2MalwareConverter:
+        self._malware_parser = InternalSTIX2MalwareConverter(self)
+        return self._malware_parser
 
     ################################################################################
     #                        STIX OBJECTS LOADING FUNCTIONS                        #
@@ -168,20 +181,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             if to_call is not None:
                 return to_call
         raise UndefinedObservableError(object_id)
-
-    def _parse_attack_pattern(self, attack_pattern_ref: str):
-        attack_pattern = self._get_stix_object(attack_pattern_ref)
-        feature = self._handle_object_mapping(
-            attack_pattern.labels, attack_pattern.id
-        )
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(attack_pattern)
-        except Exception as exception:
-            self._attack_pattern_error(attack_pattern.id, exception)
 
     def _parse_campaign(self, campaign_ref: str):
         campaign = self._get_stix_object(campaign_ref)
@@ -318,18 +317,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except Exception as exception:
             self._location_error(location.id, exception)
 
-    def _parse_malware(self, malware_ref: str):
-        malware = self._get_stix_object(malware_ref)
-        feature = self._handle_object_mapping(malware.labels, malware.id)
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(malware)
-        except Exception as exception:
-            self._malware_error(malware.id, exception)
-
     def _parse_note(self, note_ref: str):
         note = self._get_stix_object(note_ref)
         misp_object = self._create_misp_object('annotation', note)
@@ -420,37 +407,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             }
         )
         self._galaxies[galaxy_type] = misp_galaxy
-
-    def _parse_attack_pattern_object(
-            self, attack_pattern: _ATTACK_PATTERN_TYPING):
-        misp_object = self._create_misp_object('attack-pattern', attack_pattern)
-        for key, mapping in self._mapping.attack_pattern_object_mapping().items():
-            if hasattr(attack_pattern, key):
-                self._populate_object_attributes(
-                    misp_object,
-                    mapping,
-                    getattr(attack_pattern, key)
-                )
-        if hasattr(attack_pattern, 'external_references'):
-            for reference in attack_pattern.external_references:
-                misp_object.add_attribute(
-                    **self._parse_attack_pattern_reference(reference)
-                )
-        self._add_misp_object(misp_object, attack_pattern)
-
-    def _parse_attack_pattern_reference(
-            self, reference: _EXTERNAL_REFERENCE_TYPING) -> dict:
-        if reference.source_name == 'url':
-            return {
-                'value': reference.url,
-                **self._mapping.references_attribute()
-            }
-        external_id = reference.external_id
-        return {
-            'value': external_id.split('-')[1]
-            if external_id.startswith('CAPEC-') else external_id,
-            **self._mapping.attack_pattern_id_attribute()
-        }
 
     def _parse_course_of_action_object(
             self, course_of_action: _COURSE_OF_ACTION_TYPING):

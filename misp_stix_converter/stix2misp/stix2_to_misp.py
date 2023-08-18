@@ -12,6 +12,9 @@ from .exceptions import (
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import STIXtoMISPParser, _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
+from .converters import (
+    ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareConverter,
+    InternalSTIX2AttackPatternConverter, InternalSTIX2MalwareConverter)
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
@@ -70,6 +73,9 @@ _OBSERVABLE_TYPES = Union[
     File, IPv4Address, IPv6Address, MACAddress, Mutex, NetworkTraffic_v21, Process,
     Software, URL, UserAccount, WindowsRegistryKey, X509Certificate
 ]
+_ATTACK_PATTERN_PARSER_TYPING = Union[
+    ExternalSTIX2AttackPatternConverter, InternalSTIX2AttackPatternConverter
+]
 _ATTACK_PATTERN_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21
 ]
@@ -98,6 +104,9 @@ _IDENTITY_TYPING = Union[
 ]
 _INTRUSION_SET_TYPING = Union[
     IntrusionSet_v20, IntrusionSet_v21
+]
+_MALWARE_PARSER_TYPING = Union[
+    ExternalSTIX2MalwareConverter, InternalSTIX2MalwareConverter
 ]
 _MALWARE_TYPING = Union[
     Malware_v20, Malware_v21
@@ -225,8 +234,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ################################################################################
 
     @property
+    def attack_pattern_parser(self) -> _ATTACK_PATTERN_PARSER_TYPING:
+        return getattr(
+            self, '_attack_pattern_parser', self._set_attack_pattern_parser()
+        )
+
+    @property
     def generic_info_field(self) -> str:
         return f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
+
+    @property
+    def malware_parser(self) -> _MALWARE_PARSER_TYPING:
+        return getattr(self, '_malware_parser', self._set_malware_parser())
 
     @property
     def misp_event(self) -> MISPEvent:
@@ -503,6 +522,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             misp_event.published = False
         return misp_event
 
+    def _parse_attack_pattern(self, attack_pattern_ref: str):
+        self.attack_pattern_parser.parse(attack_pattern_ref)
+
     def _parse_bundle_with_multiple_reports(self):
         if self.single_event:
             self.__misp_event = self._create_generic_event()
@@ -597,6 +619,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if to_return:
             return misp_object
         self._add_misp_object(misp_object, location)
+
+    def _parse_malware(self, malware_ref: str):
+        self.malware_parser.parse(malware_ref)
 
     ################################################################################
     #                  MISP GALAXIES & CLUSTERS PARSING FUNCTIONS                  #
