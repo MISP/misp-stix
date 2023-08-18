@@ -6,8 +6,10 @@ from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
 from pymisp import AbstractMISP, MISPGalaxy, MISPGalaxyCluster, MISPObject
+from stix2.v20.observables import Artifact as Artifact_v20, File as File_v20
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, Malware as Malware_v20)
+from stix2.v21.observables import Artifact as Artifact_v21, File as File_v21
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, Malware as Malware_v21)
 from typing import Optional, Tuple, Union
@@ -21,8 +23,13 @@ _GALAXY_OBJECTS_TYPING = Union[
 _MAIN_PARSER_TYPING = Union[
     'ExternalSTIX2toMISPParser', 'InternalSTIX2toMISPParser'
 ]
+_OBSERVABLE_TYPING = Union[
+    Artifact_v20, Artifact_v21,
+    File_v20, File_v21
+]
 _SDO_TYPING = Union[
-    AttackPattern_v20, AttackPattern_v21
+    AttackPattern_v20, AttackPattern_v21,
+    Malware_v20, Malware_v21
 ]
 
 
@@ -42,15 +49,27 @@ class STIX2Converter(metaclass=ABCMeta):
             self, name: str,
             stix_object: Optional[_SDO_TYPING] = None) -> MISPObject:
         misp_object = MISPObject(
-            name,
-            misp_objects_path_custom=_MISP_OBJECTS_PATH,
-            force_timestamps=True
+            name, force_timestamps=True,
+            misp_objects_path_custom=_MISP_OBJECTS_PATH
         )
         if stix_object is not None:
             self.main_parser._sanitise_object_uuid(
                 misp_object, stix_object['id']
             )
             misp_object.from_dict(**self._parse_timeline(stix_object))
+        return misp_object
+
+    def _create_misp_object_from_observable(
+            self, name: str, observable: _OBSERVABLE_TYPING,
+            stix_object: Optional[_SDO_TYPING] = None) -> MISPObject:
+        misp_object = MISPObject(
+            name, force_timestamps=True,
+            misp_objects_path_custom=_MISP_OBJECTS_PATH
+        )
+        self.main_parser._sanitise_object_uuid(
+            misp_object, observable.get('id') or stix_object['id']
+        )
+        misp_object.from_dict(**self._parse_timeline(stix_object))
         return misp_object
 
     ############################################################################

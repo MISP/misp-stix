@@ -8,21 +8,85 @@ from typing import Union
 
 class STIX2Mapping(metaclass=ABCMeta):
     # SINGLE ATTRIBUTES MAPPING
+    __access_time_attribute = Mapping(
+        **{'type': 'datetime', 'object_relation': 'access-time'}
+    )
+    __alias_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'alias'}
+    )
+    __creation_time_attribute = Mapping(
+        **{'type': 'datetime', 'object_relation': 'creation-time'}
+    )
+    __description_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'description'}
+    )
+    __entropy_attribute = Mapping(
+        **{'type': 'float', 'object_relation': 'entropy'}
+    )
+    __file_encoding_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'file-encoding'}
+    )
     __filename_attribute = Mapping(
         **{'type': 'filename', 'object_relation': 'filename'}
+    )
+    __imphash_attribute = Mapping(
+        **{'type': 'imphash', 'object_relation': 'imphash'}
     )
     __language_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'language'}
     )
+    __md5_attribute = Mapping(
+        **{'type': 'md5', 'object_relation': 'md5'}
+    )
+    __mime_type_attribute = Mapping(
+        **{'type': 'mime-type', 'object_relation': 'mimetype'}
+    )
+    __modification_time_attribute = Mapping(
+        **{'type': 'datetime', 'object_relation': 'modification-time'}
+    )
     __name_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'name'}
+    )
+    __path_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'path'}
     )
     __references_attribute = Mapping(
         **{'type': 'link', 'object_relation': 'references'}
     )
+    __sha1_attribute = Mapping(
+        **{'type': 'sha1', 'object_relation': 'sha1'}
+    )
+    __sha256_attribute = Mapping(
+        **{'type': 'sha256', 'object_relation': 'sha256'}
+    )
+    __sha3_256_attribute = Mapping(
+        **{'type': 'sha3-256', 'object_relation': 'sha3-256'}
+    )
+    __sha3_512_attribute = Mapping(
+        **{'type': 'sha3-512', 'object_relation': 'sha3-512'}
+    )
+    __sha512_attribute = Mapping(
+        **{'type': 'sha512', 'object_relation': 'sha512'}
+    )
+    __size_in_bytes_attribute = Mapping(
+        **{'type': 'size-in-bytes', 'object_relation': 'size-in-bytes'}
+    )
+    __ssdeep_attribute = Mapping(
+        **{'type': 'ssdeep', 'object_relation': 'ssdeep'}
+    )
     __summary_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'summary'}
     )
+    __text_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'text'}
+    )
+    __tlsh_attribute = Mapping(
+        **{'type': 'tlsh', 'object_relation': 'tlsh'}
+    )
+    __url_attribute = Mapping(
+        **{'type': 'url', 'object_relation': 'url'}
+    )
+
     __timeline_mapping = Mapping(
         **{
             'indicator': ('valid_from', 'valid_until'),
@@ -31,28 +95,112 @@ class STIX2Mapping(metaclass=ABCMeta):
     )
 
     @classmethod
+    def access_time_attribute(cls) -> dict:
+        return cls.__access_time_attribute
+
+    @classmethod
+    def alias_attribute(cls) -> dict:
+        return cls.__alias_attribute
+
+    @classmethod
+    def creation_time_attribute(cls) -> dict:
+        return cls.__creation_time_attribute
+
+    @classmethod
+    def description_attribute(cls) -> dict:
+        return cls.__description_attribute
+
+    @classmethod
+    def entropy_attribute(cls) -> dict:
+        return cls.__entropy_attribute
+
+    @classmethod
+    def file_encoding_attribute(cls) -> dict:
+        return cls.__file_encoding_attribute
+
+    @classmethod
     def filename_attribute(cls) -> dict:
         return cls.__filename_attribute
+
+    @classmethod
+    def imphash_attribute(cls) -> dict:
+        return cls.__imphash_attribute
 
     @classmethod
     def language_attribute(cls) -> dict:
         return cls.__language_attribute
 
     @classmethod
+    def md5_attribute(cls) -> dict:
+        return cls.__md5_attribute
+
+    @classmethod
+    def mime_type_attribute(cls) -> dict:
+        return cls.__mime_type_attribute
+
+    @classmethod
+    def modification_time_attribute(cls) -> dict:
+        return cls.__modification_time_attribute
+
+    @classmethod
     def name_attribute(cls) -> dict:
         return cls.__name_attribute
 
     @classmethod
+    def path_attribute(cls) -> dict:
+        return cls.__path_attribute
+
+    @classmethod
     def references_attribute(cls) -> dict:
         return cls.__references_attribute
-    
+
+    @classmethod
+    def sha1_attribute(cls) -> dict:
+        return cls.__sha1_attribute
+
+    @classmethod
+    def sha256_attribute(cls) -> dict:
+        return cls.__sha256_attribute
+
+    @classmethod
+    def sha3_256_attribute(cls) -> dict:
+        return cls.__sha3_256_attribute
+
+    @classmethod
+    def sha3_512_attribute(cls) -> dict:
+        return cls.__sha3_512_attribute
+
+    @classmethod
+    def sha512_attribute(cls) -> dict:
+        return cls.__sha512_attribute
+
+    @classmethod
+    def size_in_bytes_attribute(cls) -> dict:
+        return cls.__size_in_bytes_attribute
+
+    @classmethod
+    def ssdeep_attribute(cls) -> dict:
+        return cls.__ssdeep_attribute
+
     @classmethod
     def summary_attribute(cls) -> dict:
         return cls.__summary_attribute
-    
+
+    @classmethod
+    def text_attribute(cls) -> dict:
+        return cls.__text_attribute
+
     @classmethod
     def timeline_mapping(cls, field: str) -> Union[tuple, None]:
         return cls.__timeline_mapping.get(field)
+
+    @classmethod
+    def tlsh_attribute(cls) -> dict:
+        return cls.__tlsh_attribute
+
+    @classmethod
+    def url_attribute(cls) -> dict:
+        return cls.__url_attribute
 
 
 class ExternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
@@ -119,6 +267,9 @@ class ExternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
 
 
 class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
+    __attachment_attribute = Mapping(
+        **{'type': 'attachment', 'object_relation': 'attachment'}
+    )
     __comment_text_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'comment'}
     )
@@ -204,6 +355,10 @@ class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
             )
         }
     )
+
+    @classmethod
+    def attachment_attribute(cls) -> dict:
+        return cls.__attachment_attribute
 
     @classmethod
     def attributes_mapping(cls, field: str) -> Union[str, None]:
