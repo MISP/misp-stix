@@ -166,6 +166,9 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f'Invalid galaxies_as_tags flag: {galaxies_as_tags} (bool expected)'
         )
 
+    def _hash_type_error(self, hash_type: str):
+        self.__errors[self._identifier].add(f'Wrong hash type: {hash_type}')
+
     def _identity_error(self, identity_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         self.__errors[self._identifier].add(
