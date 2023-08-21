@@ -82,15 +82,6 @@ class STIX2Converter(metaclass=ABCMeta):
         cluster.from_dict(**cluster_args)
         return cluster
 
-    def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
-        clusters = self.main_parser._clusters
-        if stix_object.id in clusters:
-            misp_event_uuid = self.main_parser.misp_event.uuid
-            clusters[stix_object.id]['used'][misp_event_uuid] = False
-        else:
-            feature = f'_parse_galaxy_{self.main_parser.galaxy_feature}'
-            clusters[stix_object.id] = getattr(self, feature)(stix_object)
-
     ############################################################################
     #                             UTILITY METHODS                             #
     ############################################################################
@@ -236,16 +227,39 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
                     meta[field] = getattr(stix_object, feature)
         return meta
 
+    def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING,
+                      object_type: Optional[str] = None):
+        clusters = self.main_parser._clusters
+        if stix_object.id in clusters:
+            misp_event_uuid = self.main_parser.misp_event.uuid
+            clusters[stix_object.id]['used'][misp_event_uuid] = False
+        else:
+            feature = f'_parse_galaxy_{self.main_parser.galaxy_feature}'
+            clusters[stix_object.id] = getattr(self, feature)(
+                stix_object, object_type or stix_object.type
+            )
+
     def _parse_galaxy_as_container(self, stix_object: _GALAXY_OBJECTS_TYPING,
-                                   object_type: Optional[str] = None) -> dict:
-        if object_type is None:
-            object_type = stix_object.type
+                                   object_type: str) -> dict:
         if object_type not in self.main_parser._galaxies:
             self._create_galaxy_args(
                 stix_object, object_type
             )
         return {
             'cluster': self._create_cluster(stix_object),
+            'used': {self.main_parser.misp_event.uuid: False}
+        }
+
+    def _parse_galaxy_as_tag_names(self, stix_object: _GALAXY_OBJECTS_TYPING,
+                                   object_type: str) -> dict:
+        name = stix_object.name
+        tag_names = self.main_parser._check_existing_galaxy_name(name)
+        if tag_names is None:
+            tag_names = [
+                f'misp-galaxy:{object_type}="{name}"'
+            ]
+        return {
+            'tag_names': tag_names,
             'used': {self.main_parser.misp_event.uuid: False}
         }
 
@@ -319,6 +333,15 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             return meta
         return dict(self._extract_custom_fields(stix_object))
 
+    def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
+        clusters = self.main_parser._clusters
+        if stix_object.id in clusters:
+            misp_event_uuid = self.main_parser.misp_event.uuid
+            clusters[stix_object.id]['used'][misp_event_uuid] = False
+        else:
+            feature = f'_parse_galaxy_{self.main_parser.galaxy_feature}'
+            clusters[stix_object.id] = getattr(self, feature)(stix_object)
+
     def _parse_galaxy_as_container(
             self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
         galaxy_type, galaxy_name = self._extract_galaxy_labels(
@@ -334,6 +357,16 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         return {
             'cluster': cluster,
             'used': {self.main_parser.misp_event.uuid: False}
+        }
+
+    def _parse_galaxy_as_tag_names(
+            self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
+        galaxy_type = stix_object.labels[1].split('=')[1].strip('"')
+        return {
+            'tag_names': [
+                f'misp-galaxy:{galaxy_type}="{stix_object.name}"'
+            ],
+            'used': {self.misp_event.uuid: False}
         }
 
     def _parse_galaxy_cluster(
