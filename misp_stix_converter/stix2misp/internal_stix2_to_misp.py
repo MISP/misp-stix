@@ -8,7 +8,8 @@ from .exceptions import (
 from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .converters import (
-    InternalSTIX2AttackPatternConverter, InternalSTIX2MalwareConverter)
+    InternalSTIX2AttackPatternConverter, InternalSTIX2MalwareAnalysisConverter,
+    InternalSTIX2MalwareConverter)
 from .stix2_to_misp import (
     STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
     _GALAXY_OBJECTS_TYPING, _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING,
@@ -67,11 +68,16 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._mapping = InternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: InternalSTIX2AttackPatternConverter
+        self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
         self._malware_parser: InternalSTIX2MalwareConverter
 
     def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
         return self._attack_pattern_parser
+
+    def _set_malware_analysis_parser(self) -> InternalSTIX2MalwareAnalysisConverter:
+        self._malware_analysis_parser = InternalSTIX2MalwareAnalysisConverter(self)
+        return self._malware_analysis_parser
 
     def _set_malware_parser(self) -> InternalSTIX2MalwareConverter:
         self._malware_parser = InternalSTIX2MalwareConverter(self)
