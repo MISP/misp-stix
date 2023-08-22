@@ -33,6 +33,17 @@ from .stix2misp import STIX2PatternParser # noqa
 from pathlib import Path
 
 
+def _handle_return_message(traceback):
+    if isinstance(traceback, dict):
+        messages = []
+        for key, values in traceback.items():
+            messages.append(f'- {key}')
+            for value in values:
+                messages.append(f'  - {value}')
+        return '\n '.join(messages)
+    return '\n - '.join(traceback)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Convert MISP <-> STIX')
     parser.add_argument(
@@ -146,9 +157,9 @@ def main():
         traceback = stix_args.func(stix_args)
         for field in ('errors', 'warnings'):
             if field in traceback:
-                messages = '\n - '.join(traceback[field])
+                messages = _handle_return_message(traceback[field])
                 print(f'{field.capitalize()} encountered during the '
-                        f'{feature} conversion process:\n - {messages}')
+                        f'{feature} conversion process:\n {messages}')
         if 'fails' in traceback:
             fails = '\n - '.join(traceback['fails'])
             print('Failed parsing the following - and the related error '
