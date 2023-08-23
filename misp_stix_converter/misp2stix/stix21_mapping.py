@@ -55,9 +55,9 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
     __cluster_to_stix_object = Mapping(**__cluster_to_stix_object)
     __galaxy_types_mapping = Mapping(**__galaxy_types_mapping)
     __malware_sample_additional_observable_values = Mapping(
-        mime_type = "application/zip",
-        encryption_algorithm = "mime-type-indicated",
-        decryption_key = "infected"
+        mime_type="application/zip",
+        encryption_algorithm="mime-type-indicated",
+        decryption_key="infected"
     )
     __malware_sample_additional_pattern_values = ' AND '.join(
         f"file:content_ref.{key} = '{value}'"
@@ -87,8 +87,8 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         'text'
     )
     __credential_object_mapping = Mapping(
-        password = 'credential',
-        username = 'user_id'
+        password='credential',
+        username='user_id'
     )
     __email_object_mapping = Mapping(
         **{
@@ -134,14 +134,14 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         *MISPtoSTIX2Mapping.file_data_fields()
     )
     __geolocation_object_mapping = Mapping(
-        address = 'street_address',
-        city = 'city',
-        countrycode = 'country',
-        latitude = 'latitude',
-        longitude = 'longitude',
-        region = 'region',
-        text = 'description',
-        zipcode = 'postal_code'
+        address='street_address',
+        city='city',
+        countrycode='country',
+        latitude='latitude',
+        longitude='longitude',
+        region='region',
+        text='description',
+        zipcode='postal_code'
     )
     __http_request_uuid_fields = (
         'ip-src',
@@ -179,11 +179,11 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         'src-as'
     )
     __network_socket_mapping = Mapping(
-        features = {
+        features={
             'dst-port': 'dst_port',
             'src-port': 'src_port'
         },
-        extension = {
+        extension={
             'address-family': 'address_family',
             'socket-type': 'socket_type'
         }
@@ -206,9 +206,9 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         'ip-src'
     )
     __organization_object_mapping = Mapping(
-        description = 'description',
-        name = 'name',
-        role = 'roles'
+        description='description',
+        name='name',
+        role='roles'
     )
     __parent_process_fields = (
         'parent-pid',
@@ -222,14 +222,14 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         }
     )
     __process_object_mapping = Mapping(
-        features = {
+        features={
             'command-line': 'command_line',
             'creation-time': 'created',
             'current-directory': 'cwd',
             'hidden': 'is_hidden',
             'pid': 'pid'
         },
-        parent = {
+        parent={
             'parent-command-line': 'command_line',
             'parent-image': 'image_ref.name',
             'parent-pid': 'pid'
@@ -261,12 +261,12 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
         }
     )
     __suricata_object_mapping = Mapping(
-        comment = 'description',
-        suricata = 'pattern',
-        version = 'pattern_version'
+        comment='description',
+        suricata='pattern',
+        version='pattern_version'
     )
     __user_account_object_mapping = Mapping(
-        features = {
+        features={
             'account-type': 'account_type',
             'can_escalate_privs': 'can_escalate_privs',
             'disabled': 'is_disabled',
@@ -277,13 +277,13 @@ class MISPtoSTIX21Mapping(MISPtoSTIX2Mapping):
             'user-id': 'user_id',
             'username': 'account_login'
         },
-        extension = {
+        extension={
             'group': 'groups',
             'group-id': 'gid',
             'home_dir': 'home_dir',
             'shell': 'shell'
         },
-        timeline = {
+        timeline={
             'created': 'account_created',
             'expires': 'account_expires',
             'first_login': 'account_first_login',

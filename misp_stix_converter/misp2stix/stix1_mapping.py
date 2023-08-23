@@ -218,30 +218,30 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         }
     )
     __TLP_order = Mapping(
-        red = 4,
-        amber = 3,
-        green = 2,
-        white = 1
+        red=4,
+        amber=3,
+        green=2,
+        white=1
     )
     __misp_reghive = Mapping(
-        HKEY_CLASSES_ROOT = "HKEY_CLASSES_ROOT",
-        HKCR = "HKEY_CLASSES_ROOT",
-        HKEY_CURRENT_CONFIG = "HKEY_CURRENT_CONFIG",
-        HKCC = "HKEY_CURRENT_CONFIG",
-        HKEY_CURRENT_USER = "HKEY_CURRENT_USER",
-        HKCU = "HKEY_CURRENT_USER",
-        HKEY_LOCAL_MACHINE = "HKEY_LOCAL_MACHINE",
-        HKLM = "HKEY_LOCAL_MACHINE",
-        HKEY_USERS = "HKEY_USERS",
-        HKU = "HKEY_USERS",
-        HKEY_CURRENT_USER_LOCAL_SETTINGS = "HKEY_CURRENT_USER_LOCAL_SETTINGS",
-        HKCULS = "HKEY_CURRENT_USER_LOCAL_SETTINGS",
-        HKEY_PERFORMANCE_DATA = "HKEY_PERFORMANCE_DATA",
-        HKPD = "HKEY_PERFORMANCE_DATA",
-        HKEY_PERFORMANCE_NLSTEXT = "HKEY_PERFORMANCE_NLSTEXT",
-        HKPN = "HKEY_PERFORMANCE_NLSTEXT",
-        HKEY_PERFORMANCE_TEXT = "HKEY_PERFORMANCE_TEXT",
-        HKPT = "HKEY_PERFORMANCE_TEXT",
+        HKEY_CLASSES_ROOT="HKEY_CLASSES_ROOT",
+        HKCR="HKEY_CLASSES_ROOT",
+        HKEY_CURRENT_CONFIG="HKEY_CURRENT_CONFIG",
+        HKCC="HKEY_CURRENT_CONFIG",
+        HKEY_CURRENT_USER="HKEY_CURRENT_USER",
+        HKCU="HKEY_CURRENT_USER",
+        HKEY_LOCAL_MACHINE="HKEY_LOCAL_MACHINE",
+        HKLM="HKEY_LOCAL_MACHINE",
+        HKEY_USERS="HKEY_USERS",
+        HKU="HKEY_USERS",
+        HKEY_CURRENT_USER_LOCAL_SETTINGS="HKEY_CURRENT_USER_LOCAL_SETTINGS",
+        HKCULS="HKEY_CURRENT_USER_LOCAL_SETTINGS",
+        HKEY_PERFORMANCE_DATA="HKEY_PERFORMANCE_DATA",
+        HKPD="HKEY_PERFORMANCE_DATA",
+        HKEY_PERFORMANCE_NLSTEXT="HKEY_PERFORMANCE_NLSTEXT",
+        HKPN="HKEY_PERFORMANCE_NLSTEXT",
+        HKEY_PERFORMANCE_TEXT="HKEY_PERFORMANCE_TEXT",
+        HKPT="HKEY_PERFORMANCE_TEXT",
     )
     __status_mapping = Mapping(
         **{
@@ -424,23 +424,23 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         'description'
     )
     __attack_pattern_object_mapping = Mapping(
-        id = 'capec_id',
-        name = 'title',
-        summary = 'description'
+        id='capec_id',
+        name='title',
+        summary='description'
     )
     __course_of_action_object_mapping = Mapping(
-        name = 'title',
-        type = 'type_',
-        description = 'description',
-        objective = 'objective',
-        stage = 'stage',
-        cost = 'cost',
-        impact = 'impact',
-        efficacy = 'efficacy'
+        name='title',
+        type='type_',
+        description='description',
+        objective='objective',
+        stage='stage',
+        cost='cost',
+        impact='impact',
+        efficacy='efficacy'
     )
     __credential_object_mapping = Mapping(
-        username = 'username',
-        text = 'description'
+        username='username',
+        text='description'
     )
     __email_object_mapping = Mapping(
         **{
@@ -567,10 +567,10 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         'username'
     )
     __vulnerability_object_mapping = Mapping(
-        id = 'cve_id',
-        created = 'discovered_datetime',
-        summary = 'description',
-        published = 'published_datetime'
+        id='cve_id',
+        created='discovered_datetime',
+        summary='description',
+        published='published_datetime'
     )
     __vulnerability_single_fields = (
         'created',
@@ -579,8 +579,8 @@ class MISPtoSTIX1Mapping(MISPtoSTIXMapping):
         'summary'
     )
     __weakness_object_mapping = Mapping(
-        id = 'cwe_id',
-        description = 'description'
+        id='cwe_id',
+        description='description'
     )
     __whois_object_mapping = Mapping(
         **{
