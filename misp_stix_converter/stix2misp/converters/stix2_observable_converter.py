@@ -164,8 +164,11 @@ class STIX2SampleObservableConverter(metaclass=ABCMeta):
 
     def _parse_artifact_observable(
             self, artifact_ref: str, malware: Malware) -> MISPObject:
-        artifact = self.main_parser._observable[artifact_ref]
-        misp_object = self._main_converter._create_misp_object_from_observable(
+        observable = self.main_parser._observable[artifact_ref]
+        if observable['used']:
+            return observable['misp_object']
+        artifact = observable['observable']
+        artifact_object = self._main_converter._create_misp_object_from_observable(
             'artifact', artifact, malware
         )
         if hasattr(artifact, 'hashes'):
@@ -174,46 +177,62 @@ class STIX2SampleObservableConverter(metaclass=ABCMeta):
                 if attribute is None:
                     self.main_parser.hash_type_error(hash_type)
                     continue
-                misp_object.add_attribute(**{'value': value, **attribute})
+                artifact_object.add_attribute(**{'value': value, **attribute})
         for field, mapping in self._mapping.artifact_object_mapping().items():
             if hasattr(artifact, field):
                 self._maing_converter._populate_object_attributes(
-                    misp_object, mapping, getattr(artifact, field)
+                    artifact_object, mapping, getattr(artifact, field)
                 )
-        return self._main_parser._add_misp_object(misp_object, artifact)
+        misp_object = self._main_parser._add_misp_object(
+            artifact_object, artifact
+        )
+        observable.update({'used': True, 'misp_object': misp_object})
+        return misp_object
 
     def _parse_file_observable(
             self, file_ref: str, malware: Malware) -> MISPObject:
-        file_object = self.main_parser._observable[file_ref]
-        misp_object = self._main_converter._create_misp_object_from_observable(
-            'file', file_object, malware
+        observable = self.main_parser._observable[file_ref]
+        if observable['used']:
+            return observable['misp_object']
+        _file = observable['observable']
+        file_object = self._main_converter._create_misp_object_from_observable(
+            'file', _file, malware
         )
-        if hasattr(file_object, 'hashes'):
-            for hash_type, value in file_object.hashes.items():
+        if hasattr(_file, 'hashes'):
+            for hash_type, value in _file.hashes.items():
                 attribute = self._mapping.file_hashes_mapping(hash_type)
                 if attribute is None:
                     self.main_parser.hash_type_error(hash_type)
                     continue
-                misp_object.add_attribute(**{'value': value, **attribute})
+                file_object.add_attribute(**{'value': value, **attribute})
         for field, mapping in self._mapping.file_object_mapping().items():
-            if hasattr(file_object, field):
+            if hasattr(_file, field):
                 self._main_converter._populate_object_attributes(
-                    misp_object, mapping, getattr(file_object, field)
+                    file_object, mapping, getattr(_file, field)
                 )
-        return self.main_parser._add_misp_object(misp_object, file_object)
+        misp_object = self.main_parser._add_misp_object(file_object, _file)
+        observable.update({'used': True, 'misp_object': misp_object})
+        return misp_object
 
     def _parse_software_observable(
             self, software_ref: str, malware: Malware) -> MISPObject:
-        software = self.main_parser._observable[software_ref]
-        misp_object = self._main_converter._create_misp_object_from_observable(
+        observable = self.main_parser._observable[software_ref]
+        if observable['used']:
+            return observable['misp_object']
+        software = observable['observable']
+        software_object = self._main_converter._create_misp_object_from_observable(
             'software', software, malware
         )
         for field, mapping in self._mapping.software_object_mapping().items():
             if hasattr(software, field):
                 self._main_converter._populate_object_attributes(
-                    misp_object, mapping, getattr(software, field)
+                    software_object, mapping, getattr(software, field)
                 )
-        return self.main_parser._add_misp_object(misp_object, software)
+        misp_object = self.main_parser._add_misp_object(
+            software_object, software
+        )
+        observable.update({'used': True, 'misp_object': misp_object})
+        return misp_object
 
 
 class ExternalSTIX2SampleObservableConverter(STIX2SampleObservableConverter):
