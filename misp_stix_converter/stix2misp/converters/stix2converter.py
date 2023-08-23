@@ -12,7 +12,11 @@ from stix2.v20.sdo import (
 from stix2.v21.observables import Artifact as Artifact_v21, File as File_v21
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, Malware as Malware_v21)
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
+    from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
 
 _MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
 
@@ -36,7 +40,7 @@ _SDO_TYPING = Union[
 class STIX2Converter(metaclass=ABCMeta):
     def _set_main_parser(self, main: _MAIN_PARSER_TYPING):
         self.__main_parser = main
-    
+
     @property
     def main_parser(self) -> _MAIN_PARSER_TYPING:
         return self.__main_parser
@@ -380,8 +384,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             return cluster, galaxy_desc
         cluster = self._create_cluster(stix_object, galaxy_type=galaxy_type)
         return cluster, stix_object.description
-        
-    
+
     ############################################################################
     #                             UTILITY METHODS.                             #
     ############################################################################

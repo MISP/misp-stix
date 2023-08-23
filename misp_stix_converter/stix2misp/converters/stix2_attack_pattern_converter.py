@@ -13,7 +13,11 @@ from stix2.v20.common import ExternalReference as ExternalReference_v20
 from stix2.v20.sdo import AttackPattern as AttackPattern_v20
 from stix2.v21.common import ExternalReference as ExternalReference_v21
 from stix2.v21.sdo import AttackPattern as AttackPattern_v21
-from typing import Optional, Union
+from typing import Optional, TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
+    from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
 
 _ATTACK_PATTERN_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21
@@ -60,7 +64,7 @@ class STIX2AttackPatternConverter(STIX2Converter, metaclass=ABCMeta):
         if meta:
             attack_pattern_args['meta'] = meta
         return self._create_misp_galaxy_cluster(attack_pattern_args)
-    
+
 
 class ExternalSTIX2AttackPatternMapping(
         STIX2AttackPatternMapping, ExternalSTIX2Mapping):

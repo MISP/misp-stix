@@ -6,7 +6,11 @@ from .stix2mapping import InternalSTIX2Mapping, STIX2Mapping
 from abc import ABCMeta
 from pymisp import MISPObject
 from stix2.v21.sdo import Malware
-from typing import Union
+from typing import TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from .stix2_malware_converter import (
+        ExternalSTIX2MalwareConverter, InternalSTIX2MalwareConverter)
 
 _MAIN_CONVERTER_TYPING = Union[
     'ExternalSTIX2MalwareConverter', 'InternalSTIX2MalwareConverter'
