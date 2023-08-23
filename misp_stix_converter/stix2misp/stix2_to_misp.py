@@ -175,7 +175,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._location: dict
         self._malware: dict
         self._malware_analysis: dict
-        self._malware_analysis_parser: STIX2MalwareAnalysisConverter
+        self._malware_analysis_parser: _MALWARE_ANALYSIS_PARSER_TYPING
         self._marking_definition: dict
         self._note: dict
         self._observable: dict
@@ -1182,14 +1182,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
-
-    def _all_refs_parsed(self, object_refs: list) -> bool:
-        try:
-            return all(
-                object_ref in self._observable for object_ref in object_refs
-            )
-        except AttributeError:
-            return False
 
     @staticmethod
     def _extract_uuid(object_id: str) -> str:
