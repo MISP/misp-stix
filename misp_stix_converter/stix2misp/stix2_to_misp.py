@@ -12,6 +12,10 @@ from .exceptions import (
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import STIXtoMISPParser, _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
+from .converters import (
+    ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
+    ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
+    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter)
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
@@ -37,16 +41,18 @@ from stix2.v21.observables import (
     EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
     NetworkTraffic as NetworkTraffic_v21, Process, Software, URL, UserAccount,
     WindowsRegistryKey, X509Certificate)
+from stix2.v21.sdo import Grouping, MalwareAnalysis, Note, Opinion
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, Campaign as Campaign_v21,
-    CourseOfAction as CourseOfAction_v21, Grouping, Identity as Identity_v21,
+    CourseOfAction as CourseOfAction_v21, Identity as Identity_v21,
     Indicator as Indicator_v21, IntrusionSet as IntrusionSet_v21, Location,
-    Malware as Malware_v21, Note, ObservedData as ObservedData_v21, Opinion,
+    Malware as Malware_v21, ObservedData as ObservedData_v21,
     Report as Report_v21, ThreatActor as ThreatActor_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
 from stix2.v21.sro import Relationship as Relationship_v21, Sighting as Sighting_v21
 from typing import Optional, Union
 
+# Some constants
 _LOADED_FEATURES = (
     '_attack_pattern',
     '_campaign',
@@ -65,10 +71,15 @@ _LOADED_FEATURES = (
     '_vulnerability'
 )
 _MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
+
+# Typing
 _OBSERVABLE_TYPES = Union[
     Artifact, AutonomousSystem, Directory, DomainName, EmailAddress, EmailMessage,
     File, IPv4Address, IPv6Address, MACAddress, Mutex, NetworkTraffic_v21, Process,
     Software, URL, UserAccount, WindowsRegistryKey, X509Certificate
+]
+_ATTACK_PATTERN_PARSER_TYPING = Union[
+    ExternalSTIX2AttackPatternConverter, InternalSTIX2AttackPatternConverter
 ]
 _ATTACK_PATTERN_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21
@@ -98,6 +109,12 @@ _IDENTITY_TYPING = Union[
 ]
 _INTRUSION_SET_TYPING = Union[
     IntrusionSet_v20, IntrusionSet_v21
+]
+_MALWARE_ANALYSIS_PARSER_TYPING = Union[
+    ExternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareAnalysisConverter
+]
+_MALWARE_PARSER_TYPING = Union[
+    ExternalSTIX2MalwareConverter, InternalSTIX2MalwareConverter
 ]
 _MALWARE_TYPING = Union[
     Malware_v20, Malware_v21
@@ -157,6 +174,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._intrusion_set: dict
         self._location: dict
         self._malware: dict
+        self._malware_analysis: dict
+        self._malware_analysis_parser: _MALWARE_ANALYSIS_PARSER_TYPING
         self._marking_definition: dict
         self._note: dict
         self._observable: dict
@@ -225,8 +244,25 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ################################################################################
 
     @property
+    def attack_pattern_parser(self) -> _ATTACK_PATTERN_PARSER_TYPING:
+        return getattr(
+            self, '_attack_pattern_parser', self._set_attack_pattern_parser()
+        )
+
+    @property
     def generic_info_field(self) -> str:
         return f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
+
+    @property
+    def malware_analysis_parser(self) -> _MALWARE_ANALYSIS_PARSER_TYPING:
+        return getattr(
+            self, '_malware_analysis_parser',
+            self._set_malware_analysis_parser()
+        )
+
+    @property
+    def malware_parser(self) -> _MALWARE_PARSER_TYPING:
+        return getattr(self, '_malware_parser', self._set_malware_parser())
 
     @property
     def misp_event(self) -> MISPEvent:
@@ -314,6 +350,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._malware = {malware.id: malware}
 
+    def _load_malware_analysis(self, malware_analysis: MalwareAnalysis):
+        self._check_uuid(malware_analysis.id)
+        try:
+            self._malware_analysis[malware_analysis.id] = malware_analysis
+        except AttributeError:
+            self._malware_analysis = {malware_analysis.id: malware_analysis}
+
     def _load_marking_definition(
             self, marking_definition: _MARKING_DEFINITION_TYPING):
         if not hasattr(marking_definition, 'definition_type'):
@@ -335,10 +378,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _load_observable_object(self, observable: _OBSERVABLE_TYPES):
         self._check_uuid(observable.id)
+        to_load = {'used': False, 'observable': observable}
         try:
-            self._observable[observable.id] = observable
+            self._observable[observable.id] = to_load
         except AttributeError:
-            self._observable = {observable.id: observable}
+            self._observable = {observable.id: to_load}
 
     def _load_observed_data(self, observed_data: _OBSERVED_DATA_TYPING):
         self._check_uuid(observed_data.id)
@@ -503,6 +547,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             misp_event.published = False
         return misp_event
 
+    def _parse_attack_pattern(self, attack_pattern_ref: str):
+        self.attack_pattern_parser.parse(attack_pattern_ref)
+
     def _parse_bundle_with_multiple_reports(self):
         if self.single_event:
             self.__misp_event = self._create_generic_event()
@@ -597,6 +644,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if to_return:
             return misp_object
         self._add_misp_object(misp_object, location)
+
+    def _parse_malware(self, malware_ref: str):
+        self.malware_parser.parse(malware_ref)
+
+    def _parse_malware_analysis(self, malware_analysis_ref: str):
+        self.malware_analysis_parser.parse(malware_analysis_ref)
 
     ################################################################################
     #                  MISP GALAXIES & CLUSTERS PARSING FUNCTIONS                  #
@@ -1129,14 +1182,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ################################################################################
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
-
-    def _all_refs_parsed(self, object_refs: list) -> bool:
-        try:
-            return all(
-                object_ref in self._observable for object_ref in object_refs
-            )
-        except AttributeError:
-            return False
 
     @staticmethod
     def _extract_uuid(object_id: str) -> str:
