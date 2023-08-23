@@ -155,7 +155,18 @@ Since not all the fields of the galaxies and their clusters are exported into ST
                 "uuid": "2497ac92-e751-4391-82c6-1b86e34d0294",
                 "type": "mitre-course-of-action",
                 "value": "Automated Exfiltration Mitigation - T1020",
-                "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network"
+                "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+                "meta": {
+                    "external_id": "T1020",
+                    "refs": [
+                        "http://technet.microsoft.com/en-us/magazine/2008.06.srp.aspx",
+                        "http://www.sans.org/reading-room/whitepapers/application/application-whitelisting-panacea-propaganda-33599",
+                        "https://apps.nsa.gov/iaarchive/library/ia-guidance/tech-briefs/application-whitelisting-using-microsoft-applocker.cfm",
+                        "https://attack.mitre.org/mitigations/T1020",
+                        "https://blogs.jpcert.or.jp/en/2016/01/windows-commands-abused-by-attackers.html",
+                        "https://technet.microsoft.com/en-us/library/ee791851.aspx"
+                    ]
+                }
             }
         ]
     }
@@ -182,6 +193,36 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "labels": [
                 "misp:galaxy-name=\"Course of Action\"",
                 "misp:galaxy-type=\"mitre-course-of-action\""
+            ],
+            "external_references": [
+                {
+                    "source_name": "mitre-attack",
+                    "external_id": "T1020"
+                },
+                {
+                    "source_name": "url",
+                    "url": "http://technet.microsoft.com/en-us/magazine/2008.06.srp.aspx"
+                },
+                {
+                    "source_name": "url",
+                    "url": "http://www.sans.org/reading-room/whitepapers/application/application-whitelisting-panacea-propaganda-33599"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://apps.nsa.gov/iaarchive/library/ia-guidance/tech-briefs/application-whitelisting-using-microsoft-applocker.cfm"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://attack.mitre.org/mitigations/T1020"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://blogs.jpcert.or.jp/en/2016/01/windows-commands-abused-by-attackers.html"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://technet.microsoft.com/en-us/library/ee791851.aspx"
+                }
             ]
         }
     }
@@ -202,6 +243,11 @@ Since not all the fields of the galaxies and their clusters are exported into ST
                 "value": "APT16 - G0023",
                 "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
                 "meta": {
+                    "external_id": "G0023",
+                    "refs": [
+                        "https://attack.mitre.org/groups/G0023",
+                        "https://www.fireeye.com/blog/threat-research/2015/12/the-eps-awakens-part-two.html"
+                    ],
                     "synonyms": [
                         "APT16"
                     ]
@@ -238,6 +284,20 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "labels": [
                 "misp:galaxy-name=\"Intrusion Set\"",
                 "misp:galaxy-type=\"mitre-intrusion-set\""
+            ],
+            "external_references": [
+                {
+                    "source_name": "mitre-attack",
+                    "external_id": "G0023"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://attack.mitre.org/groups/G0023"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://www.fireeye.com/blog/threat-research/2015/12/the-eps-awakens-part-two.html"
+                }
             ]
         }
     }
@@ -258,6 +318,15 @@ Since not all the fields of the galaxies and their clusters are exported into ST
                 "value": "BISCUIT - S0017",
                 "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
                 "meta": {
+                    "external_id": "S0017",
+                    "mitre_platforms": [
+                        "Windows"
+                    ],
+                    "refs": [
+                        "https://attack.mitre.org/software/S0017",
+                        "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report-appendix.zip",
+                        "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report.pdf"
+                    ],
                     "synonyms": [
                         "BISCUIT"
                     ]
@@ -291,15 +360,94 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "modified": "2020-10-25T16:22:00.000Z",
             "name": "BISCUIT - S0017",
             "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-            "kill_chain_phases": [
-                {
-                    "kill_chain_name": "misp-category",
-                    "phase_name": "mitre-malware"
-                }
-            ],
             "labels": [
                 "misp:galaxy-name=\"Malware\"",
                 "misp:galaxy-type=\"mitre-malware\""
+            ],
+            "external_references": [
+                {
+                    "source_name": "mitre-attack",
+                    "external_id": "S0017"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://attack.mitre.org/software/S0017"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report-appendix.zip"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report.pdf"
+                }
+            ],
+            "x_misp_mitre_platforms": [
+                "Windows"
+            ],
+            "x_misp_synonyms": [
+                "BISCUIT"
+            ]
+        }
+    }
+    ```
+
+- Pre Attack - Attack Pattern
+  - MISP
+    ```json
+    {
+        "uuid": "c4e851fa-775f-11e7-8163-b774922098cd",
+        "name": "Pre Attack - Attack Pattern",
+        "type": "mitre-pre-attack-attack-pattern",
+        "description": "ATT&CK Tactic",
+        "GalaxyCluster": [
+            {
+                "uuid": "e042a41b-5ecf-4f3a-8f1f-1b528c534772",
+                "type": "mitre-pre-attack-attack-pattern",
+                "value": "Test malware in various execution environments - PRE-T1134",
+                "description": "Malware may perform differently on different platforms and different operating systems.",
+                "meta": {
+                    "external_id": "PRE-T1134",
+                    "kill_chain": [
+                        "mitre-pre-attack:pre-attack:test-capabilities"
+                    ],
+                    "refs": [
+                        "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
+                    ]
+                }
+            }
+        ]
+    }
+    ```
+  - STIX
+    ```json
+    {
+        "Attack Pattern": {
+            "type": "attack-pattern",
+            "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "Test malware in various execution environments - PRE-T1134",
+            "description": "ATT&CK Tactic | Malware may perform differently on different platforms and different operating systems.",
+            "kill_chain_phases": [
+                {
+                    "kill_chain_name": "mitre-pre-attack",
+                    "phase_name": "test-capabilities"
+                }
+            ],
+            "labels": [
+                "misp:galaxy-name=\"Pre Attack - Attack Pattern\"",
+                "misp:galaxy-type=\"mitre-pre-attack-attack-pattern\""
+            ],
+            "external_references": [
+                {
+                    "source_name": "mitre-pre-attack",
+                    "external_id": "PRE-T1134"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
+                }
             ]
         }
     }
@@ -359,6 +507,9 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "labels": [
                 "misp:galaxy-name=\"Threat Actor\"",
                 "misp:galaxy-type=\"threat-actor\""
+            ],
+            "x_misp_cfr_type_of_incident": [
+                "Denial of service"
             ]
         }
     }
@@ -379,7 +530,19 @@ Since not all the fields of the galaxies and their clusters are exported into ST
                 "value": "cmd - S0106",
                 "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
                 "meta": {
+                    "external_id": "S0106",
+                    "mitre_platforms": [
+                        "Windows"
+                    ],
+                    "refs": [
+                        "https://attack.mitre.org/software/S0106",
+                        "https://technet.microsoft.com/en-us/library/bb490880.aspx",
+                        "https://technet.microsoft.com/en-us/library/bb490886.aspx",
+                        "https://technet.microsoft.com/en-us/library/cc755121.aspx",
+                        "https://technet.microsoft.com/en-us/library/cc771049.aspx"
+                    ],
                     "synonyms": [
+                        "cmd",
                         "cmd.exe"
                     ]
                 }
@@ -412,15 +575,42 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "modified": "2020-10-25T16:22:00.000Z",
             "name": "cmd - S0106",
             "description": "Name of ATT&CK software | cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
-            "kill_chain_phases": [
-                {
-                    "kill_chain_name": "misp-category",
-                    "phase_name": "mitre-tool"
-                }
-            ],
             "labels": [
                 "misp:galaxy-name=\"Tool\"",
                 "misp:galaxy-type=\"mitre-tool\""
+            ],
+            "external_references": [
+                {
+                    "source_name": "mitre-attack",
+                    "external_id": "S0106"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://attack.mitre.org/software/S0106"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://technet.microsoft.com/en-us/library/bb490880.aspx"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://technet.microsoft.com/en-us/library/bb490886.aspx"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://technet.microsoft.com/en-us/library/cc755121.aspx"
+                },
+                {
+                    "source_name": "url",
+                    "url": "https://technet.microsoft.com/en-us/library/cc771049.aspx"
+                }
+            ],
+            "x_misp_mitre_platforms": [
+                "Windows"
+            ],
+            "x_misp_synonyms": [
+                "cmd",
+                "cmd.exe"
             ]
         }
     }

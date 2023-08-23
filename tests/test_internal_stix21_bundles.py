@@ -1603,42 +1603,6 @@ _BUNDLE_WITH_NO_REPORT = [
 ]
 _BUNDLE_WITH_SIGHTINGS = [
     {
-        "type": "identity",
-        "spec_version": "2.1",
-        "id": "identity--55f6ea5e-2c60-40e5-964f-47a8950d210f",
-        "created": "2022-07-11T14:11:39.134109Z",
-        "modified": "2022-07-11T14:11:39.134109Z",
-        "name": "CIRCL",
-        "identity_class": "organization"
-    },
-    {
-        "type": "identity",
-        "spec_version": "2.1",
-        "id": "identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183",
-        "created": "2022-07-11T14:11:39.134416Z",
-        "modified": "2022-07-11T14:11:39.134416Z",
-        "name": "E-Corp",
-        "identity_class": "organization"
-    },
-    {
-        "type": "identity",
-        "spec_version": "2.1",
-        "id": "identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90",
-        "created": "2022-07-11T14:11:39.134704Z",
-        "modified": "2022-07-11T14:11:39.134704Z",
-        "name": "Oscorp Industries",
-        "identity_class": "organization"
-    },
-    {
-        "type": "identity",
-        "spec_version": "2.1",
-        "id": "identity--91050751-c1c9-4944-a522-db6390cec15b",
-        "created": "2022-07-11T14:11:39.135147Z",
-        "modified": "2022-07-11T14:11:39.135147Z",
-        "name": "Umbrella Corporation",
-        "identity_class": "organization"
-    },
-    {
         "type": "grouping",
         "spec_version": "2.1",
         "id": "grouping--a6ef17d6-91cb-4a05-b10b-2f045daf874c",
@@ -1820,6 +1784,42 @@ _BUNDLE_WITH_SIGHTINGS = [
             "indicator--518b4bcb-a86b-4783-9457-391d548b605b"
         ],
         "x_misp_author_ref": "identity--91050751-c1c9-4944-a522-db6390cec15b"
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--55f6ea5e-2c60-40e5-964f-47a8950d210f",
+        "created": "2022-07-11T14:11:39.134109Z",
+        "modified": "2022-07-11T14:11:39.134109Z",
+        "name": "CIRCL",
+        "identity_class": "organization"
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--7b9774b7-528b-4b03-bbb8-a0dd9e546183",
+        "created": "2022-07-11T14:11:39.134416Z",
+        "modified": "2022-07-11T14:11:39.134416Z",
+        "name": "E-Corp",
+        "identity_class": "organization"
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--93d5d857-822c-4c53-ae81-a05ffcbd2a90",
+        "created": "2022-07-11T14:11:39.134704Z",
+        "modified": "2022-07-11T14:11:39.134704Z",
+        "name": "Oscorp Industries",
+        "identity_class": "organization"
+    },
+    {
+        "type": "identity",
+        "spec_version": "2.1",
+        "id": "identity--91050751-c1c9-4944-a522-db6390cec15b",
+        "created": "2022-07-11T14:11:39.135147Z",
+        "modified": "2022-07-11T14:11:39.135147Z",
+        "name": "Umbrella Corporation",
+        "identity_class": "organization"
     }
 ]
 _CAMPAIGN_NAME_ATTRIBUTE = {
@@ -3213,7 +3213,7 @@ _FILE_AND_PE_INDICATOR_OBJECT = {
     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.SHA256 = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:x_misp_entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_compilation_timestamp = '2019-03-16T12:31:22' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'windows-pebinary-ext'.x_misp_file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'windows-pebinary-ext'.x_misp_lang_id = '080904B0' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.x_misp_product_version = 'Release 0.71' AND file:extensions.'windows-pebinary-ext'.x_misp_company_name = 'Simoe Tatham' AND file:extensions.'windows-pebinary-ext'.x_misp_legal_copyright = 'Copyright \u00a9 1997-2019 Simon Tatham.' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA1 = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA256 = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA512 = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+    "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.SHA256 = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:x_misp_entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_compilation_timestamp = '2019-03-16T12:31:22Z' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'windows-pebinary-ext'.x_misp_file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'windows-pebinary-ext'.x_misp_lang_id = '080904B0' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.x_misp_product_version = 'Release 0.71' AND file:extensions.'windows-pebinary-ext'.x_misp_company_name = 'Simoe Tatham' AND file:extensions.'windows-pebinary-ext'.x_misp_legal_copyright = 'Copyright \u00a9 1997-2019 Simon Tatham.' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA1 = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA256 = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA512 = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
     "pattern_type": "stix",
     "pattern_version": "2.1",
     "valid_from": "2020-10-25T16:22:00Z",
@@ -3283,7 +3283,7 @@ _FILE_AND_PE_OBSERVABLE_OBJECT = [
                     }
                 ],
                 "x_misp_company_name": "Simoe Tatham",
-                "x_misp_compilation_timestamp": "2019-03-16T12:31:22",
+                "x_misp_compilation_timestamp": "2019-03-16T12:31:22Z",
                 "x_misp_file_description": "SSH, Telnet and Rlogin client",
                 "x_misp_file_version": "Release 0.71 (with embedded help)",
                 "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
@@ -6814,7 +6814,7 @@ _REGISTRY_KEY_INDICATOR_OBJECT = {
     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25T16:22:00' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:x_misp_hive = 'hklm']",
+    "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:modified_time = '2020-10-25T16:22:00Z' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:x_misp_hive = 'hklm']",
     "pattern_type": "stix",
     "pattern_version": "2.1",
     "valid_from": "2020-10-25T16:22:00Z",
@@ -7032,6 +7032,20 @@ _SCRIPT_OBJECTS = [
         "x_misp_state": "Harmless"
     }
 ]
+_SECTOR_GALAXY = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--75597b7f-54e8-4f14-88c9-e81485ece483",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "IT - Security",
+    "description": "Activity sectors",
+    "identity_class": "class",
+    "labels": [
+        "misp:galaxy-name=\"Sector\"",
+        "misp:galaxy-type=\"sector\""
+    ]
+}
 _SIZE_IN_BYTES_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -7380,9 +7394,9 @@ _VULNERABILITY_OBJECT = {
             "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
         }
     ],
-    "x_misp_created": "2017-10-13T07:29:00",
+    "x_misp_created": "2017-10-13T07:29:00Z",
     "x_misp_cvss_score": "6.8",
-    "x_misp_published": "2017-10-13T07:29:00"
+    "x_misp_published": "2017-10-13T07:29:00Z"
 }
 _X509_FINGERPRINT_INDICATOR_ATTRIBUTES = [
     {
@@ -7545,7 +7559,7 @@ _X509_INDICATOR_OBJECT = {
     "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00' AND x509-certificate:x_misp_pem = 'RawCertificateInPEMFormat']",
+    "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00Z' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00Z' AND x509-certificate:x_misp_pem = 'RawCertificateInPEMFormat']",
     "pattern_type": "stix",
     "pattern_version": "2.1",
     "valid_from": "2020-10-25T16:22:00Z",
@@ -8002,6 +8016,10 @@ class TestInternalSTIX21Bundles:
         return cls.__assemble_bundle(_MALWARE_GALAXY)
 
     @classmethod
+    def get_bundle_with_sector_galaxy(cls):
+        return cls.__assemble_bundle(_SECTOR_GALAXY)
+
+    @classmethod
     def get_bundle_with_threat_actor_galaxy(cls):
         return cls.__assemble_bundle(_THREAT_ACTOR_GALAXY)
 
@@ -8079,7 +8097,7 @@ class TestInternalSTIX21Bundles:
                 "user-account:credential = 'P4ssw0rd1234!'",
                 "user-account:user_id = 'iglocska'",
                 "user-account:account_login = 'iglocska'",
-                "user-account:credential_last_changed = '2020-10-25T16:22:00'",
+                "user-account:credential_last_changed = '2020-10-25T16:22:00Z'",
                 "user-account:extensions.'unix-account-ext'.groups = 'viktor-fan'",
                 "user-account:extensions.'unix-account-ext'.groups = 'donald-fan'",
                 "user-account:extensions.'unix-account-ext'.gid = '2004'",
@@ -8270,9 +8288,9 @@ class TestInternalSTIX21Bundles:
         indicator = deepcopy(_LNK_INDICATOR_OBJECT)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
             pattern = [
-                "file:atime = '2021-01-01T00:00:00'",
-                "file:ctime = '2017-10-01T08:00:00'",
-                "file:mtime = '2020-10-25T16:22:00'",
+                "file:atime = '2021-01-01T00:00:00Z'",
+                "file:ctime = '2017-10-01T08:00:00Z'",
+                "file:mtime = '2020-10-25T16:22:00Z'",
                 "file:name = 'oui'",
                 "file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp'",
                 "file:hashes.MD5 = '8764605c6f388c89096b534d33565802'",

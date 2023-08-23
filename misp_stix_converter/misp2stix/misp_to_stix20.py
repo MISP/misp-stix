@@ -67,8 +67,8 @@ class CustomMispObject:
     [
         ('id', IDProperty('x-misp-galaxy-cluster')),
         ('labels', ListProperty(StringProperty, required=True)),
-        ('created', TimestampProperty(required=True, precision='millisecond')),
-        ('modified', TimestampProperty(required=True, precision='millisecond')),
+        ('created', TimestampProperty(precision='millisecond')),
+        ('modified', TimestampProperty(precision='millisecond')),
         ('created_by_ref', ReferenceProperty(valid_types='identity', spec_version='2.0')),
         ('x_misp_name', StringProperty(required=True)),
         ('x_misp_type', StringProperty(required=True)),
@@ -119,7 +119,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def __init__(self, interoperability=False):
         super().__init__(interoperability)
         self._version = '2.0'
-        self._mapping = MISPtoSTIX20Mapping()
+        self._mapping = MISPtoSTIX20Mapping
 
     def _parse_event_data(self):
         if self._misp_event.get('Attribute'):
@@ -150,8 +150,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
             if marking in self._markings:
                 marking_ids.append(self._markings[marking]['marking'].id)
                 continue
-            if self._is_tlp_tag(marking):
-                marking_definition = deepcopy(self._mapping.tlp_markings[marking])
+            marking_definition = self._mapping.tlp_markings(marking)
+            if marking_definition is not None:
                 marking_id = marking_definition.id
                 if marking_id not in self.unique_ids:
                     self._markings[marking] = {
@@ -190,7 +190,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 }
             )
         if sighting.get('source', ''):
-            opinion_args['x-misp-source'] = sighting['source']
+            opinion_args['x_misp_source'] = sighting['source']
         getattr(self, self._results_handling_function)(CustomOpinion(**opinion_args))
 
     def _handle_unpublished_report(self, report_args: dict) -> Report:
@@ -606,7 +606,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_domain_ip_object_custom(self, misp_object: Union[MISPObject, dict]):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=self._mapping.domain_ip_single_fields
+            force_single=self._mapping.domain_ip_single_fields()
         )
         index = 1
         domain_args, observable_object, index = self._parse_domainip_ip_attributes(attributes, index)
@@ -617,7 +617,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_domain_ip_object_standard(self, misp_object: Union[MISPObject, dict]):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=self._mapping.domain_ip_single_fields
+            force_single=self._mapping.domain_ip_single_fields()
         )
         index = 0
         domain_args, observable_object, index = self._parse_domainip_ip_attributes(attributes, index)
@@ -656,7 +656,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_email_object_observable(self, misp_object: Union[MISPObject, dict]):
         attributes = self._extract_multiple_object_attributes_with_data(
             misp_object['Attribute'],
-            with_data=self._mapping.email_data_fields
+            with_data=self._mapping.email_data_fields()
         )
         observable_object: dict = {}
         email_message_args: defaultdict = defaultdict(dict)
@@ -690,9 +690,9 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                     references.append(str_index)
                     index += 1
                 email_message_args[f'{feature}_refs'] = references
-        if any(key in attributes for key in self._mapping.email_data_fields):
+        if any(key in attributes for key in self._mapping.email_data_fields()):
             body_multipart = []
-            for feature in self._mapping.email_data_fields:
+            for feature in self._mapping.email_data_fields():
                 if attributes.get(feature):
                     for value in attributes.pop(feature):
                         str_index = str(index)
@@ -731,8 +731,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_file_observable_object(self, misp_object: Union[MISPObject, dict]) -> tuple:
         attributes = self._extract_multiple_object_attributes_with_data(
             misp_object['Attribute'],
-            force_single=self._mapping.file_single_fields,
-            with_data=self._mapping.file_data_fields
+            force_single=self._mapping.file_single_fields(),
+            with_data=self._mapping.file_data_fields()
         )
         observable_object = {}
         file_args: defaultdict = defaultdict(dict)
@@ -775,7 +775,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_http_request_object_observable(self, misp_object: Union[MISPObject, dict]):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=self._mapping.http_request_single_fields
+            force_single=self._mapping.http_request_single_fields()
         )
         observable_object = {}
         network_traffic_args: defaultdict = defaultdict(dict)
@@ -812,7 +812,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_identity_object(self, misp_object: Union[MISPObject, dict]):
         identity_args = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=self._mapping.identity_single_fields
+            force_single=self._mapping.identity_single_fields()
         )
         if 'roles' in identity_args:
             roles = identity_args.pop('roles')
@@ -831,8 +831,8 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_image_object_observable(self, misp_object: Union[MISPObject, dict]):
         attributes = self._extract_multiple_object_attributes_with_data(
             misp_object['Attribute'],
-            force_single=self._mapping.image_single_fields,
-            with_data=self._mapping.image_data_fields
+            force_single=self._mapping.image_single_fields(),
+            with_data=self._mapping.image_data_fields()
         )
         artifact_args = self._parse_image_args(attributes)
         file_args = {}
@@ -854,7 +854,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_ip_port_object_observable(self, misp_object: Union[MISPObject, dict]):
         attributes = self._extract_multiple_object_attributes(
             misp_object['Attribute'],
-            force_single=self._mapping.ip_port_single_fields
+            force_single=self._mapping.ip_port_single_fields()
         )
         protocols = set()
         observable_object = {}
@@ -883,13 +883,13 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
     def _parse_lnk_object_observable(self, misp_object: Union[MISPObject, dict]):
         attributes = self._extract_multiple_object_attributes_with_data(
             misp_object['Attribute'],
-            force_single=self._mapping.lnk_single_fields,
-            with_data=self._mapping.lnk_data_fields
+            force_single=self._mapping.lnk_single_fields(),
+            with_data=self._mapping.lnk_data_fields()
         )
         observable_object = {}
         file_args: dict[str, Union[bool, dict, str]] = {}
         index = 1
-        for feature in self._mapping.lnk_path_fields:
+        for feature in self._mapping.lnk_path_fields():
             if attributes.get(feature):
                 str_index = str(index)
                 observable_object[str_index] = Directory(
@@ -998,7 +998,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         else:
             attributes = self._extract_multiple_object_attributes(
                 misp_object['Attribute'],
-                force_single=self._mapping.network_socket_single_fields
+                force_single=self._mapping.network_socket_single_fields()
             )
             network_traffic_args, observable_object = self._parse_network_references(attributes)
             if attributes:
@@ -1013,7 +1013,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         else:
             attributes = self._extract_multiple_object_attributes(
                 misp_object['Attribute'],
-                force_single=self._mapping.process_single_fields
+                force_single=self._mapping.process_single_fields()
             )
             observable_object = {}
             parent_attributes = self._extract_parent_process_attributes(attributes)
@@ -1028,7 +1028,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                     observable_object[str_index2] = File(name=parent_attributes.pop('parent-image'))
                     parent_args['binary_ref'] = str_index2
                     parent_args['_valid_refs'] = {str_index2: 'file'}
-                for key, feature in self._mapping.process_object_mapping['parent'].items():
+                for key, feature in self._mapping.process_object_mapping('parent').items():
                     if parent_attributes.get(key):
                         parent_args[feature] = parent_attributes.pop(key)
                 if parent_attributes:
@@ -1111,7 +1111,7 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
                 }
             )
         if malware_sample:
-            args.update(self._mapping.malware_sample_additional_observable_values)
+            args.update(self._mapping.malware_sample_additional_observable_values())
         return Artifact(**args)
 
     @staticmethod
@@ -1162,12 +1162,11 @@ class MISPtoSTIX20Parser(MISPtoSTIX2Parser):
         return Identity(**identity_args)
 
     def _create_identity_object(self, orgname: str) -> Identity:
-        timestamp = self._datetime_from_timestamp(self._misp_event['timestamp'])
         identity_args = {
             'type': 'identity',
             'id': self.identity_id,
-            'created': timestamp,
-            'modified': timestamp,
+            'created': self.event_timestamp,
+            'modified': self.event_timestamp,
             'name': orgname,
             'identity_class': 'organization',
             'interoperability': True

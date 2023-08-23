@@ -309,7 +309,7 @@
                         {
                             "uuid": "32946a3c-1f5b-4baf-a433-a285a6eb57b5",
                             "object_relation": "compilation-timestamp",
-                            "value": "2019-03-16T12:31:22",
+                            "value": "2019-03-16T12:31:22+00:00",
                             "type": "datetime",
                             "disable_correlation": false,
                             "to_ids": false,
@@ -502,7 +502,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.SHA256 = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:x_misp_entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_compilation_timestamp = '2019-03-16T12:31:22' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'windows-pebinary-ext'.x_misp_file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'windows-pebinary-ext'.x_misp_lang_id = '080904B0' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.x_misp_product_version = 'Release 0.71' AND file:extensions.'windows-pebinary-ext'.x_misp_company_name = 'Simoe Tatham' AND file:extensions.'windows-pebinary-ext'.x_misp_legal_copyright = 'Copyright \u00a9 1997-2019 Simon Tatham.' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA1 = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA256 = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA512 = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
+                "pattern": "[file:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND file:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND file:hashes.SHA256 = '3a3468fa89b2ab7cbfe5400858a8ec0066e9e8defa9a64c993b5f24210244df8' AND file:name = 'oui' AND file:size = '1234' AND file:x_misp_entropy = '1.234' AND file:extensions.'windows-pebinary-ext'.imphash = '23ea835ab4b9017c74dfb023d2301c99' AND file:extensions.'windows-pebinary-ext'.number_of_sections = '8' AND file:extensions.'windows-pebinary-ext'.pe_type = 'exe' AND file:extensions.'windows-pebinary-ext'.optional_header.address_of_entry_point = '5369222868' AND file:extensions.'windows-pebinary-ext'.x_misp_compilation_timestamp = '2019-03-16T12:31:22Z' AND file:extensions.'windows-pebinary-ext'.x_misp_original_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_internal_filename = 'PuTTy' AND file:extensions.'windows-pebinary-ext'.x_misp_file_description = 'SSH, Telnet and Rlogin client' AND file:extensions.'windows-pebinary-ext'.x_misp_file_version = 'Release 0.71 (with embedded help)' AND file:extensions.'windows-pebinary-ext'.x_misp_lang_id = '080904B0' AND file:extensions.'windows-pebinary-ext'.x_misp_product_name = 'PuTTy suite' AND file:extensions.'windows-pebinary-ext'.x_misp_product_version = 'Release 0.71' AND file:extensions.'windows-pebinary-ext'.x_misp_company_name = 'Simoe Tatham' AND file:extensions.'windows-pebinary-ext'.x_misp_legal_copyright = 'Copyright \u00a9 1997-2019 Simon Tatham.' AND file:extensions.'windows-pebinary-ext'.x_misp_impfuzzy = '192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt' AND file:extensions.'windows-pebinary-ext'.sections[0].entropy = '7.836462238824369' AND file:extensions.'windows-pebinary-ext'.sections[0].name = '.rsrc' AND file:extensions.'windows-pebinary-ext'.sections[0].size = '305152' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.MD5 = '8a2a5fc2ce56b3b04d58539a95390600' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA1 = '0aeb9def096e9f73e9460afe6f8783a32c7eabdf' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA256 = 'c6b3ac8303a72be90b0e47f69977e6f5665693d4ea0aa93e5c27b5c556c7cf9b' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SHA512 = '98fce208e6ed9612db53725fe03b73ab7cb1b487814d521c3c218273cad33891ce832c4f842c6f492d92df1e78414c82a00ddb91a1f8ec7d67325231a597a78f' AND file:extensions.'windows-pebinary-ext'.sections[0].hashes.SSDEEP = '6144:BvqbV6zoA5yJJ1entjx+UJlVshhKuqMrgyNhahL2uSvhM:BvuVy5UJUtwUJ/UjHSEuSvK']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
@@ -878,7 +878,7 @@
                                     }
                                 ],
                                 "x_misp_company_name": "Simoe Tatham",
-                                "x_misp_compilation_timestamp": "2019-03-16T12:31:22",
+                                "x_misp_compilation_timestamp": "2019-03-16T12:31:22Z",
                                 "x_misp_file_description": "SSH, Telnet and Rlogin client",
                                 "x_misp_file_version": "Release 0.71 (with embedded help)",
                                 "x_misp_impfuzzy": "192:8GMV5iqHKV+5RvUV5iqHKV+5RvAVDNNhwkCtRxwUQt63yf2y9sAkexSECI:vMVzB5R8VzB5R4XGtRxwUccc2y9scxt",
@@ -4051,7 +4051,7 @@
                     {
                         "uuid": "c332af1c-7e69-4fb4-bbd2-e339698aa3e4",
                         "object_relation": "lnk-creation-time",
-                        "value": "2017-10-01T08:00:00",
+                        "value": "2017-10-01T08:00:00+00:00",
                         "type": "datetime",
                         "category": "Other",
                         "disable_correlation": true,
@@ -4060,7 +4060,7 @@
                     {
                         "uuid": "b05844f5-b458-417f-a549-6487947d4b7a",
                         "object_relation": "lnk-modification-time",
-                        "value": "2020-10-25T16:22:00",
+                        "value": "2020-10-25T16:22:00+00:00",
                         "type": "datetime",
                         "category": "Other",
                         "disable_correlation": true,
@@ -4069,7 +4069,7 @@
                     {
                         "uuid": "133e6ab1-bca8-47c3-9d44-3cb82a477c68",
                         "object_relation": "lnk-access-time",
-                        "value": "2021-01-01T00:00:00",
+                        "value": "2021-01-01T00:00:00+00:00",
                         "type": "datetime",
                         "category": "Other",
                         "disable_correlation": true,
@@ -4097,7 +4097,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[file:name = 'oui' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip') AND file:size = '35' AND file:x_misp_lnk_creation_time = '2017-10-01T08:00:00' AND file:x_misp_lnk_modification_time = '2020-10-25T16:22:00' AND file:x_misp_lnk_access_time = '2021-01-01T00:00:00']",
+                "pattern": "[file:name = 'oui' AND file:parent_directory_ref.path = '/var/www/MISP/app/files/scripts/tmp' AND file:hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:hashes.SHA1 = '46aba99aa7158e4609aaa72b50990842fd22ae86' AND file:hashes.SHA256 = 'ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b' AND (file:content_ref.payload_bin = 'UEsDBAoACQAAAAaOU1EvUbi[...]AACAAIA2QAAAB8BAAAAAA==' AND file:content_ref.x_misp_filename = 'oui' AND file:content_ref.hashes.MD5 = '8764605c6f388c89096b534d33565802' AND file:content_ref.mime_type = 'application/zip') AND file:size = '35' AND file:created = '2017-10-01T08:00:00Z' AND file:modified = '2020-10-25T16:22:00Z' AND file:accessed = '2021-01-01T00:00:00Z']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
@@ -4160,7 +4160,7 @@
                     {
                         "uuid": "e0d46c82-38c6-4235-81a0-86004d642fb0",
                         "object_relation": "lnk-access-time",
-                        "value": "2021-01-01T00:00:00",
+                        "value": "2021-01-01T00:00:00+00:00",
                         "type": "datetime",
                         "category": "Other",
                         "disable_correlation": true,
@@ -4169,7 +4169,7 @@
                     {
                         "uuid": "ab190bab-5b1a-4cc0-8e90-97661f50fbe3",
                         "object_relation": "lnk-creation-time",
-                        "value": "2017-10-01T08:00:00",
+                        "value": "2017-10-01T08:00:00+00:00",
                         "type": "datetime",
                         "category": "Other",
                         "disable_correlation": true,
@@ -4178,7 +4178,7 @@
                     {
                         "uuid": "0cdc9350-3f78-4525-9ceb-5fa594e3ea50",
                         "object_relation": "lnk-modification-time",
-                        "value": "2020-10-25T16:22:00",
+                        "value": "2020-10-25T16:22:00+00:00",
                         "type": "datetime",
                         "category": "Other",
                         "disable_correlation": true,
@@ -4237,11 +4237,11 @@
                         },
                         "size": 35,
                         "name": "oui",
+                        "created": "2017-10-01T08:00:00Z",
+                        "modified": "2020-10-25T16:22:00Z",
+                        "accessed": "2021-01-01T00:00:00Z",
                         "parent_directory_ref": "1",
-                        "content_ref": "2",
-                        "x_misp_lnk_access_time": "2021-01-01T00:00:00",
-                        "x_misp_lnk_creation_time": "2017-10-01T08:00:00",
-                        "x_misp_lnk_modification_time": "2020-10-25T16:22:00"
+                        "content_ref": "2"
                     },
                     "1": {
                         "type": "directory",
@@ -6001,7 +6001,7 @@
                     {
                         "uuid": "8fa9f2d8-5ee3-4414-acf7-f349d164bb5b",
                         "object_relation": "last-modified",
-                        "value": "2020-10-25T16:22:00",
+                        "value": "2020-10-25T16:22:00+00:00",
                         "type": "datetime",
                         "category": "Other",
                         "disable_correlation": false,
@@ -6018,7 +6018,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:x_misp_hive = 'hklm' AND windows-registry-key:x_misp_last_modified = '2020-10-25T16:22:00']",
+                "pattern": "[windows-registry-key:key = 'hkey_local_machine\\\\system\\\\bar\\\\foo' AND windows-registry-key:values[0].data = '\\\\%DATA\\\\%\\\\qwertyuiop' AND windows-registry-key:values[0].data_type = 'REG_SZ' AND windows-registry-key:values[0].name = 'RegistryName' AND windows-registry-key:x_misp_hive = 'hklm' AND windows-registry-key:modified = '2020-10-25T16:22:00Z']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
@@ -6081,7 +6081,7 @@
                     {
                         "uuid": "7a7ac42c-2e8e-4459-933a-6075f24950f1",
                         "object_relation": "last-modified",
-                        "value": "2020-10-25T16:22:00",
+                        "value": "2020-10-25T16:22:00+00:00",
                         "type": "datetime",
                         "category": "Other",
                         "disable_correlation": false,
@@ -6121,8 +6121,8 @@
                                 "data_type": "REG_SZ"
                             }
                         ],
-                        "x_misp_hive": "hklm",
-                        "x_misp_last_modified": "2020-10-25T16:22:00"
+                        "modified": "2020-10-25T16:22:00Z",
+                        "x_misp_hive": "hklm"
                     }
                 },
                 "labels": [
@@ -6673,7 +6673,7 @@
                     {
                         "uuid": "6384a972-b2b6-4872-bad0-0a9d55bcadd3",
                         "object_relation": "password_last_changed",
-                        "value": "2020-10-25T16:22:00",
+                        "value": "2020-10-25T16:22:00+00:00",
                         "type": "datetime",
                         "disable_correlation": true,
                         "to_ids": false,
@@ -6745,7 +6745,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[user-account:account_type = 'unix' AND user-account:display_name = 'Code Monkey' AND user-account:user_id = 'iglocska' AND user-account:account_login = 'iglocska' AND user-account:password_last_changed = '2020-10-25T16:22:00' AND user-account:extensions.'unix-account-ext'.groups = 'viktor-fan' AND user-account:extensions.'unix-account-ext'.groups = 'donald-fan' AND user-account:extensions.'unix-account-ext'.gid = '2004' AND user-account:extensions.'unix-account-ext'.home_dir = '/home/iglocska' AND user-account:x_misp_password = 'P4ssw0rd1234!' AND user-account:x_misp_user_avatar.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_user_avatar.value = 'octocat.png']",
+                "pattern": "[user-account:account_type = 'unix' AND user-account:display_name = 'Code Monkey' AND user-account:user_id = 'iglocska' AND user-account:account_login = 'iglocska' AND user-account:password_last_changed = '2020-10-25T16:22:00Z' AND user-account:extensions.'unix-account-ext'.groups = 'viktor-fan' AND user-account:extensions.'unix-account-ext'.groups = 'donald-fan' AND user-account:extensions.'unix-account-ext'.gid = '2004' AND user-account:extensions.'unix-account-ext'.home_dir = '/home/iglocska' AND user-account:x_misp_password = 'P4ssw0rd1234!' AND user-account:x_misp_user_avatar.data = 'iVBORw0KGgoAAAANSUhEUgA[...]hIu9Wl1AAAAAElFTkSuQmCC' AND user-account:x_misp_user_avatar.value = 'octocat.png']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {
@@ -6965,7 +6965,7 @@
                     {
                         "uuid": "cde0298d-795d-4784-a162-70f33fede7d1",
                         "object_relation": "created",
-                        "value": "2017-10-13T07:29:00",
+                        "value": "2017-10-13T07:29:00+00:00",
                         "type": "datetime",
                         "disable_correlation": true,
                         "to_ids": false,
@@ -6983,7 +6983,7 @@
                     {
                         "uuid": "96d166e8-cdba-4b06-a2a6-39dfa6057ce9",
                         "object_relation": "published",
-                        "value": "2017-10-13T07:29:00",
+                        "value": "2017-10-13T07:29:00+00:00",
                         "type": "datetime",
                         "disable_correlation": true,
                         "to_ids": false,
@@ -7021,9 +7021,9 @@
                         "url": "https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2017-11774"
                     }
                 ],
-                "x_misp_created": "2017-10-13T07:29:00",
+                "x_misp_created": "2017-10-13T07:29:00Z",
                 "x_misp_cvss_score": "6.8",
-                "x_misp_published": "2017-10-13T07:29:00"
+                "x_misp_published": "2017-10-13T07:29:00Z"
             }
         }
     },
@@ -7130,7 +7130,7 @@
                     {
                         "uuid": "b1f3c95c-6c63-433c-ae0f-ee042b12f9f5",
                         "object_relation": "validity-not-after",
-                        "value": "2021-01-01T00:00:00",
+                        "value": "2021-01-01T00:00:00+00:00",
                         "type": "datetime",
                         "disable_correlation": true,
                         "to_ids": false,
@@ -7139,7 +7139,7 @@
                     {
                         "uuid": "28873b5c-b5e1-4c71-aaa4-25f6cdec4dc2",
                         "object_relation": "validity-not-before",
-                        "value": "2020-01-01T00:00:00",
+                        "value": "2020-01-01T00:00:00+00:00",
                         "type": "datetime",
                         "disable_correlation": true,
                         "to_ids": false,
@@ -7165,7 +7165,7 @@
                 "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00' AND x509-certificate:x_misp_pem = 'RawCertificateInPEMFormat']",
+                "pattern": "[x509-certificate:hashes.MD5 = 'b2a5abfeef9e36964281a31e17b57c97' AND x509-certificate:hashes.SHA1 = '5898fc860300e228dcd54c0b1045b5fa0dcda502' AND x509-certificate:issuer = 'Issuer Name' AND x509-certificate:subject_public_key_algorithm = 'PublicKeyAlgorithm' AND x509-certificate:subject_public_key_exponent = '2' AND x509-certificate:subject_public_key_modulus = 'C5' AND x509-certificate:serial_number = '1234567890' AND x509-certificate:signature_algorithm = 'SHA1_WITH_RSA_ENCRYPTION' AND x509-certificate:subject = 'CertificateSubject' AND x509-certificate:version = '1' AND x509-certificate:validity_not_after = '2021-01-01T00:00:00Z' AND x509-certificate:validity_not_before = '2020-01-01T00:00:00Z' AND x509-certificate:x_misp_pem = 'RawCertificateInPEMFormat']",
                 "valid_from": "2020-10-25T16:22:00Z",
                 "kill_chain_phases": [
                     {

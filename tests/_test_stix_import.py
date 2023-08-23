@@ -7,7 +7,7 @@ from collections import defaultdict
 from misp_stix_converter import (
     ExternalSTIX2toMISPMapping, ExternalSTIX2toMISPParser,
     InternalSTIX2toMISPParser)
-from uuid import UUID
+from uuid import UUID, uuid5
 from ._test_stix import TestSTIX
 from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
 
@@ -27,12 +27,24 @@ class TestSTIX2Import(TestSTIX):
     def _check_misp_event_features(self, event, report, published=False):
         self.assertEqual(event.uuid, report.id.split('--')[1])
         self.assertEqual(event.info, report.name)
+        self.assertEqual(event.distribution, 0)
         self._assert_multiple_equal(
             event.timestamp,
-            self._timestamp_from_datetime(report.created),
-            self._timestamp_from_datetime(report.modified)
+            report.created,
+            report.modified
         )
         self.assertEqual(event.published, published)
+        return (*event.objects, *event.attributes)
+
+    def _check_misp_event_features_from_grouping(self, event, grouping):
+        self.assertEqual(event.uuid, grouping.id.split('--')[1])
+        self.assertEqual(event.info, grouping.name)
+        self.assertEqual(event.distribution, 0)
+        self._assert_multiple_equal(
+            event.timestamp,
+            grouping.created,
+            grouping.modified
+        )
         return (*event.objects, *event.attributes)
 
     def _check_object_labels(self, misp_object, labels, to_ids=None):
@@ -318,16 +330,21 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         galaxy = galaxies[0]
         self.assertEqual(len(galaxy.clusters), 1)
         cluster = galaxy.clusters[0]
+        self.assertEqual(cluster.uuid, stix_object.id.split('--')[1])
+        version = getattr(stix_object, 'spec_version', '2.0')
         self._assert_multiple_equal(
-            galaxy.type, cluster.type, stix_object.type
+            galaxy.type, cluster.type, f'stix-{version}-{stix_object.type}'
         )
-        self.assertEqual(
-            galaxy.name, self._galaxy_name_mapping[stix_object.type]['name']
+        self._assert_multiple_equal(
+            galaxy.version, cluster.version, ''.join(version.split('.'))
         )
-        self.assertEqual(
-            galaxy.description,
-            self._galaxy_name_mapping[stix_object.type]['description']
+        mapping = self._galaxy_name_mapping(stix_object.type)
+        self._assert_multiple_equal(
+            galaxy.uuid, cluster.collection_uuid,
+            uuid5(self._UUIDv4, galaxy.name)
         )
+        self.assertEqual(galaxy.name, f"STIX {version} {mapping['name']}")
+        self.assertEqual(galaxy.description, mapping['description'])
         self.assertEqual(cluster.value, stix_object.name)
         if hasattr(stix_object, 'description'):
             self.assertEqual(cluster.description, stix_object.description)
@@ -374,10 +391,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
 
     def _check_indicator_object(self, misp_object, indicator):
         self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
-        self.assertEqual(
-            misp_object.timestamp,
-            self._timestamp_from_datetime(indicator.modified)
-        )
+        self.assertEqual(misp_object.timestamp, indicator.modified)
         self._check_object_labels(misp_object, indicator.labels, True)
         return indicator.pattern
 
@@ -596,6 +610,13 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self.assertEqual(meta['is_family'], malware.is_family)
         self.assertEqual(meta['mitre_platforms'], malware.x_misp_mitre_platforms)
 
+    def _check_sector_galaxy(self, galaxy, identity):
+        cluster = galaxy.clusters[0]
+        self._assert_multiple_equal(galaxy.type, cluster.type, 'sector')
+        self.assertEqual(galaxy.name, 'Sector')
+        self.assertEqual(galaxy.description, identity.description)
+        self.assertEqual(cluster.value, identity.name)
+
     def _check_threat_actor_galaxy(self, galaxy, threat_actor):
         self._check_galaxy_fields(
             galaxy, threat_actor, 'threat-actor', 'Threat Actor'
@@ -696,8 +717,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(misp_object.name, attack_pattern.type)
         self._assert_multiple_equal(
             misp_object.timestamp,
-            self._timestamp_from_datetime(attack_pattern.created),
-            self._timestamp_from_datetime(attack_pattern.modified)
+            attack_pattern.created,
+            attack_pattern.modified
         )
         self._check_object_labels(misp_object, attack_pattern.labels, False)
         summary, name, prerequisites, weakness1, weakness2, solution, capec_id = misp_object.attributes
@@ -717,8 +738,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(misp_object.name, course_of_action.type)
         self._assert_multiple_equal(
             misp_object.timestamp,
-            self._timestamp_from_datetime(course_of_action.created),
-            self._timestamp_from_datetime(course_of_action.modified)
+            course_of_action.created,
+            course_of_action.modified
         )
         self._check_object_labels(misp_object, course_of_action.labels, False)
         name, description, *attributes = misp_object.attributes
@@ -817,10 +838,7 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             getattr(misp_object, 'meta-category'),
             custom_object.x_misp_meta_category
         )
-        self.assertEqual(
-            misp_object.timestamp,
-            self._timestamp_from_datetime(custom_object.modified)
-        )
+        self.assertEqual(misp_object.timestamp, custom_object.modified)
         self.assertEqual(len(misp_object.attributes), len(custom_object.x_misp_attributes))
         for attribute, custom_attribute in zip(misp_object.attributes, custom_object.x_misp_attributes):
             self.assertEqual(attribute.type, custom_attribute['type'])
@@ -975,8 +993,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(misp_object.name, 'employee')
         self._assert_multiple_equal(
             misp_object.timestamp,
-            self._timestamp_from_datetime(identity.created),
-            self._timestamp_from_datetime(identity.modified)
+            identity.created,
+            identity.modified
         )
         self._check_object_labels(misp_object, identity.labels, False)
         name, description, employee_type, email = misp_object.attributes
@@ -1072,8 +1090,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(compilation.type, 'datetime')
         self.assertEqual(compilation.object_relation, 'compilation-timestamp')
         self.assertEqual(
-            self._datetime_to_str(compilation.value),
-            extension.x_misp_compilation_timestamp
+            compilation.value,
+            self._datetime_from_str(extension.x_misp_compilation_timestamp)
         )
         self.assertEqual(description.type, 'text')
         self.assertEqual(description.object_relation, 'file-description')
@@ -1402,8 +1420,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(first_seen.type, 'datetime')
         self.assertEqual(first_seen.object_relation, 'first-seen')
         self.assertEqual(
-            self._datetime_to_str(first_seen.value),
-            self._get_pattern_value(start)[:-1]
+            first_seen.value,
+            self._datetime_from_str(self._get_pattern_value(start))
         )
 
     def _check_ip_port_observable_object(self, attributes, observables):
@@ -1428,8 +1446,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(misp_object.name, 'legal-entity')
         self._assert_multiple_equal(
             misp_object.timestamp,
-            self._timestamp_from_datetime(identity.created),
-            self._timestamp_from_datetime(identity.modified)
+            identity.created,
+            identity.modified
         )
         self._check_object_labels(misp_object, identity.labels, False)
         name, description, business, registration_number, phone, website, logo = misp_object.attributes
@@ -1468,20 +1486,20 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(creation_time.type, 'datetime')
         self.assertEqual(creation_time.object_relation, 'lnk-creation-time')
         self.assertEqual(
-            self._datetime_to_str(creation_time.value),
-            self._get_pattern_value(ctime)
+            creation_time.value,
+            self._datetime_from_str(self._get_pattern_value(ctime))
         )
         self.assertEqual(modification_time.type, 'datetime')
         self.assertEqual(modification_time.object_relation, 'lnk-modification-time')
         self.assertEqual(
-            self._datetime_to_str(modification_time.value),
-            self._get_pattern_value(mtime)
+            modification_time.value,
+            self._datetime_from_str(self._get_pattern_value(mtime))
         )
         self.assertEqual(access_time.type, 'datetime')
         self.assertEqual(access_time.object_relation, 'lnk-access-time')
         self.assertEqual(
-            self._datetime_to_str(access_time.value),
-            self._get_pattern_value(atime)
+            access_time.value,
+            self._datetime_from_str(self._get_pattern_value(atime))
         )
         self.assertEqual(malware_sample.type, 'malware-sample')
         self.assertEqual(malware_sample.object_relation, 'malware-sample')
@@ -1582,7 +1600,10 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(dst_port.value, self._get_pattern_value(_dst_port))
         self.assertEqual(first_seen.type, 'datetime')
         self.assertEqual(first_seen.object_relation, 'first-packet-seen')
-        self.assertEqual(self._datetime_to_str(first_seen.value), self._get_pattern_value(start)[:-1])
+        self.assertEqual(
+            first_seen.value,
+            self._datetime_from_str(self._get_pattern_value(start))
+        )
         self.assertEqual(tcp_flags.type, 'text')
         self.assertEqual(tcp_flags.object_relation, 'tcp-flags')
         self.assertEqual(tcp_flags.value, self._get_pattern_value(flags))
@@ -1750,8 +1771,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(misp_object.name, 'news-agency')
         self._assert_multiple_equal(
             misp_object.timestamp,
-            self._timestamp_from_datetime(identity.created),
-            self._timestamp_from_datetime(identity.modified)
+            identity.created,
+            identity.modified
         )
         self._check_object_labels(misp_object, identity.labels, False)
         name, address, email, phone, attachment = misp_object.attributes
@@ -1771,8 +1792,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(misp_object.name, 'organization')
         self._assert_multiple_equal(
             misp_object.timestamp,
-            self._timestamp_from_datetime(identity.created),
-            self._timestamp_from_datetime(identity.modified)
+            identity.created,
+            identity.modified
         )
         self._check_object_labels(misp_object, identity.labels, False)
         name, description, role, alias, address, email, phone = misp_object.attributes
@@ -1845,8 +1866,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(compilation.type, 'datetime')
         self.assertEqual(compilation.object_relation, 'compilation-timestamp')
         self.assertEqual(
-            self._datetime_to_str(compilation.value),
-            self._get_pattern_value(_compilation)
+            compilation.value,
+            self._datetime_from_str(self._get_pattern_value(_compilation))
         )
         self.assertEqual(original.type, 'filename')
         self.assertEqual(original.object_relation, 'original-filename')
@@ -2036,8 +2057,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(last_modified.type, 'datetime')
         self.assertEqual(last_modified.object_relation, 'last-modified')
         self.assertEqual(
-            self._datetime_to_str(last_modified.value),
-            self._get_pattern_value(modified_time)
+            last_modified.value,
+            self._datetime_from_str(self._get_pattern_value(modified_time))
         )
 
     def _check_registry_key_observable_object(self, attributes, observable):
@@ -2066,8 +2087,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(misp_object.name, 'script')
         self._assert_multiple_equal(
             misp_object.timestamp,
-            self._timestamp_from_datetime(stix_object.created),
-            self._timestamp_from_datetime(stix_object.modified)
+            stix_object.created,
+            stix_object.modified
         )
         self._check_object_labels(misp_object, stix_object.labels, False)
         filename, comment, language, script, state, attachment = misp_object.attributes
@@ -2242,8 +2263,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(last_changed_a.type, 'datetime'),
         self.assertEqual(last_changed_a.object_relation, 'password_last_changed')
         self.assertEqual(
-            self._datetime_to_str(last_changed_a.value),
-            self._get_pattern_value(last_changed_p)
+            last_changed_a.value,
+            self._datetime_from_str(self._get_pattern_value(last_changed_p))
         )
         self.assertEqual(group1.type, 'text'),
         self.assertEqual(group1.object_relation, 'group')
@@ -2305,8 +2326,8 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(misp_object.name, vulnerability.type)
         self._assert_multiple_equal(
             misp_object.timestamp,
-            self._timestamp_from_datetime(vulnerability.created),
-            self._timestamp_from_datetime(vulnerability.modified)
+            vulnerability.created,
+            vulnerability.modified
         )
         self._check_object_labels(misp_object, vulnerability.labels, False)
         external_id, external_ref1, external_ref2 = vulnerability.external_references
@@ -2319,9 +2340,15 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(reference1.value, external_ref1.url)
         self.assertEqual(reference2.value, external_ref2.url)
         self.assertEqual(description.value, vulnerability.description)
-        self.assertEqual(self._datetime_to_str(created.value), vulnerability.x_misp_created)
+        self.assertEqual(
+            created.value,
+            self._datetime_from_str(vulnerability.x_misp_created)
+        )
         self.assertEqual(cvss_score.value, vulnerability.x_misp_cvss_score)
-        self.assertEqual(self._datetime_to_str(published.value), vulnerability.x_misp_published)
+        self.assertEqual(
+            published.value,
+            self._datetime_from_str(vulnerability.x_misp_published)
+        )
 
     def _check_x509_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 13)
@@ -2360,14 +2387,18 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(not_after.type, 'datetime')
         self.assertEqual(not_after.object_relation, 'validity-not-after')
         self.assertEqual(
-            self._datetime_to_str(not_after.value),
-            self._get_pattern_value(_not_after)
+            not_after.value,
+            self._datetime_from_str(
+                self._get_pattern_value(_not_after)
+            )
         )
         self.assertEqual(not_before.type, 'datetime')
         self.assertEqual(not_before.object_relation, 'validity-not-before')
         self.assertEqual(
-            self._datetime_to_str(not_before.value),
-            self._get_pattern_value(_not_before)
+            not_before.value,
+            self._datetime_from_str(
+                self._get_pattern_value(_not_before)
+            )
         )
         self.assertEqual(pem.type, 'text')
         self.assertEqual(pem.object_relation, 'pem')

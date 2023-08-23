@@ -28,8 +28,8 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.assertEqual(misp_object.uuid, observed_data.id.split('--')[1])
         self._assert_multiple_equal(
             misp_object.timestamp,
-            self._timestamp_from_datetime(observed_data.created),
-            self._timestamp_from_datetime(observed_data.modified)
+            observed_data.created,
+            observed_data.modified
         )
         self._check_object_labels(misp_object, observed_data.labels, False)
         return observed_data.objects
@@ -1141,7 +1141,8 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             self.assertEqual(sighting.Organisation['name'], identity.name)
         self.assertEqual(domain.uuid, indicator.id.split('--')[1])
         self.assertEqual(len(domain.sightings), 4)
-        stix_objects = (sighting3, opinion3, sighting4, opinion4)
+        stix_objects = (sighting3, sighting4, opinion3, opinion4)
+        identities = (identity1, identity3, identity2, identity4)
         for sighting, stix_object, identity in zip(domain.sightings, stix_objects, identities):
             self.assertEqual(sighting.date_sighting, self._timestamp_from_datetime(stix_object.modified))
             self.assertEqual(sighting.type, '0' if stix_object.type == 'sighting' else '1')
@@ -1224,6 +1225,15 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, malware = bundle.objects
         self._check_misp_event_features(event, report)
         self._check_malware_galaxy(event.galaxies[0], malware)
+
+    def test_stix20_bundle_with_sector_galaxy(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_sector_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, identity = bundle.objects
+        self._check_misp_event_features(event, report)
+        self._check_sector_galaxy(event.galaxies[0], identity)
 
     def test_stix20_bundle_with_threat_actor_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_threat_actor_galaxy()
@@ -1681,20 +1691,14 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
         _, report, indicator = bundle.objects
-        section_object, pe_object, file_object = self._check_misp_event_features(event, report)
+        file_object, pe_object, section_object = self._check_misp_event_features(event, report)
         file_pattern, pe_pattern, section_pattern = self._get_parsed_file_and_pe_pattern(
             self._check_indicator_object(file_object, indicator)
         )
         self.assertEqual(pe_object.name, 'pe')
-        self.assertEqual(
-            pe_object.timestamp,
-            self._timestamp_from_datetime(indicator.modified)
-        )
+        self.assertEqual(pe_object.timestamp, indicator.modified)
         self.assertEqual(section_object.name, 'pe-section')
-        self.assertEqual(
-            section_object.timestamp,
-            self._timestamp_from_datetime(indicator.modified)
-        )
+        self.assertEqual(section_object.timestamp, indicator.modified)
         self._check_single_file_indicator_object(file_object.attributes, file_pattern)
         self._check_pe_indicator_object(pe_object.attributes, pe_pattern)
         self._check_pe_section_indicator_object(section_object.attributes, section_pattern)
@@ -1715,18 +1719,12 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
         _, report, observed_data = bundle.objects
-        section_object, pe_object, file_object = self._check_misp_event_features(event, report)
+        file_object, pe_object, section_object = self._check_misp_event_features(event, report)
         observable = self._check_observed_data_object(file_object, observed_data)['0']
         self.assertEqual(pe_object.name, 'pe')
-        self.assertEqual(
-            pe_object.timestamp,
-            self._timestamp_from_datetime(observed_data.modified)
-        )
+        self.assertEqual(pe_object.timestamp, observed_data.modified)
         self.assertEqual(section_object.name, 'pe-section')
-        self.assertEqual(
-            section_object.timestamp,
-            self._timestamp_from_datetime(observed_data.modified)
-        )
+        self.assertEqual(section_object.timestamp, observed_data.modified)
         self._check_file_and_pe_observable_object(
             file_object.attributes,
             pe_object.attributes,
@@ -1901,22 +1899,13 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         file_object = observed_data.objects['0']
         self.assertEqual(atime.type, 'datetime')
         self.assertEqual(atime.object_relation, 'lnk-access-time')
-        self.assertEqual(
-            self._datetime_to_str(atime.value),
-            file_object.x_misp_lnk_access_time
-        )
+        self.assertEqual(atime.value, file_object.accessed)
         self.assertEqual(ctime.type, 'datetime')
         self.assertEqual(ctime.object_relation, 'lnk-creation-time')
-        self.assertEqual(
-            self._datetime_to_str(ctime.value),
-            file_object.x_misp_lnk_creation_time
-        )
+        self.assertEqual(ctime.value, file_object.created)
         self.assertEqual(mtime.type, 'datetime')
         self.assertEqual(mtime.object_relation, 'lnk-modification-time')
-        self.assertEqual(
-            self._datetime_to_str(mtime.value),
-            file_object.x_misp_lnk_modification_time
-        )
+        self.assertEqual(mtime.value, file_object.modified)
         self._populate_documentation(
             misp_object = json.loads(misp_object.to_json()),
             observed_data = observed_data

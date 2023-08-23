@@ -6,7 +6,7 @@ import os
 import unittest
 from base64 import b64encode
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from stix.core import STIXPackage
 from uuid import uuid5, UUID
@@ -25,15 +25,15 @@ class TestCollectionSTIXExport(unittest.TestCase):
 
 
 class TestCollectionSTIX1Export(TestCollectionSTIXExport):
-    def _check_stix1_collection_export_results(self, to_test_name, reference_name):
-        to_test = STIXPackage.from_xml(str(self._current_path / to_test_name)).to_dict()
-        reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
+    def _check_stix1_collection_export_results(self, to_test_file, reference_file):
+        to_test = STIXPackage.from_xml(to_test_file).to_dict()
+        reference = STIXPackage.from_xml(reference_file).to_dict()
         self.__recursive_feature_tests(reference, to_test, exclude=('id', 'timestamp'))
 
-    def _check_stix1_export_results(self, to_test_name, reference_name):
-        to_test = STIXPackage.from_xml(str(self._current_path / to_test_name)).to_dict()
-        reference = STIXPackage.from_xml(str(self._current_path / reference_name)).to_dict()
-        self.__recursive_feature_tests(reference, to_test, exclude=('id',))
+    def _check_stix1_export_results(self, to_test_file, reference_file):
+        to_test = STIXPackage.from_xml(to_test_file).to_dict()
+        reference = STIXPackage.from_xml(reference_file).to_dict()
+        self.__recursive_feature_tests(reference, to_test, exclude=('id', 'timestamp'))
 
     def __check_observables(self, reference_observables, observables_to_test):
         for reference_observable, observable_to_test in zip(reference_observables, observables_to_test):
@@ -68,10 +68,10 @@ class TestCollectionSTIX1Export(TestCollectionSTIXExport):
 
 
 class TestCollectionSTIX2Export(TestCollectionSTIXExport):
-    def _check_stix2_results_export(self, to_test_name, reference_name):
-        with open(self._current_path / to_test_name, 'rt', encoding='utf-8') as f:
+    def _check_stix2_results_export(self, to_test_file, reference_file):
+        with open(to_test_file, 'rt', encoding='utf-8') as f:
             to_test = json.loads(f.read())
-        with open(self._current_path / reference_name, 'rt', encoding='utf-8') as f:
+        with open(reference_file, 'rt', encoding='utf-8') as f:
             reference = json.loads(f.read())
         self.assertEqual(reference['objects'], to_test['objects'])
 
@@ -253,14 +253,18 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(stix_object.created, timestamp)
         self.assertEqual(stix_object.modified, timestamp)
         self.assertEqual(stix_object.name, cluster['value'])
-        self.assertEqual(
-            stix_object.description, f"{galaxy['description']} | {cluster['description']}"
-        )
+        description = galaxy['description']
+        if cluster.get('description'):
+            description = f"{description} | {cluster['description']}"
+        self.assertEqual(stix_object.description, description)
         self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
         self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
-        getattr(self, f"_check_{stix_object.type.replace('-', '_')}_meta_fields")(
-            stix_object, cluster['meta']
-        )
+        if cluster.get('meta'):
+            getattr(
+                self, f"_check_{stix_object.type.replace('-', '_')}_meta_fields"
+            )(
+                stix_object, cluster['meta']
+            )
 
     def _check_identity_features(self, identity, orgc, timestamp):
         identity_id = f"identity--{orgc['uuid']}"
@@ -268,8 +272,8 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(identity.id, identity_id)
         self.assertEqual(identity.name, orgc['name'])
         self.assertEqual(identity.identity_class, 'organization')
-        self.assertEqual(identity.created, timestamp)
-        self.assertEqual(identity.modified, timestamp)
+        self.assertEqual(identity.created.timestamp(), timestamp.timestamp())
+        self.assertEqual(identity.modified.timestamp(), timestamp.timestamp())
         return identity_id
 
     def _check_identities_from_sighting(self, identities, uuids, names):
@@ -552,7 +556,7 @@ class TestSTIX2Export(TestSTIX):
 
     @staticmethod
     def _datetime_from_timestamp(timestamp):
-        return datetime.utcfromtimestamp(int(timestamp))
+        return datetime.fromtimestamp(int(timestamp), timezone.utc)
 
     @staticmethod
     def _parse_AS_value(value):

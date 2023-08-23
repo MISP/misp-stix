@@ -52,23 +52,19 @@
 	xmlns:xlink="http://www.w3.org/1999/xlink"
 	xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
 	xmlns:xs="http://www.w3.org/2001/XMLSchema"
-	 id="MISP:Package-0c467501-2514-462f-90d6-3ea04bb0e721" version="1.1.1" timestamp="2020-10-25T16:22:00">
-    <stix:STIX_Header>
-        <stix:Title>Export from MISP's MISP</stix:Title>
-        <stix:Package_Intent xsi:type="stixVocabs:PackageIntentVocab-1.0">Threat Report</stix:Package_Intent>
-    </stix:STIX_Header>
+	 id="MISP:STIXPackage-0c467501-2514-462f-90d6-3ea04bb0e721" version="1.1.1" timestamp="2020-10-25T16:22:00Z">
     <stix:Related_Packages>
         <stix:Related_Package>
-            <stix:Package id="MISP:STIXPackage-e2e6a6ea-f69b-4d93-8564-f51d67cafe51" version="1.1.1" timestamp="2020-10-25T16:22:00">
+            <stix:Package id="MISP:STIXPackage-e2e6a6ea-f69b-4d93-8564-f51d67cafe51" version="1.1.1" timestamp="2020-10-25T16:22:00Z">
                 <stix:STIX_Header>
                     <stix:Title>Export from MISP-Project's MISP</stix:Title>
                     <stix:Package_Intent xsi:type="stixVocabs:PackageIntentVocab-1.0">Threat Report</stix:Package_Intent>
                 </stix:STIX_Header>
                 <stix:Incidents>
-                    <stix:Incident id="MISP:Incident-e2e6a6ea-f69b-4d93-8564-f51d67cafe51" timestamp="2020-10-25T16:22:00" xsi:type='incident:IncidentType'>
+                    <stix:Incident id="MISP:Incident-e2e6a6ea-f69b-4d93-8564-f51d67cafe51" timestamp="2020-10-25T16:22:00Z" xsi:type='incident:IncidentType'>
                         <incident:Title>MISP-STIX-Converter test event with AS attribute</incident:Title>
                         <incident:Time>
-                            <incident:Incident_Discovery precision="second">2020-10-25T00:00:00</incident:Incident_Discovery>
+                            <incident:Incident_Discovery precision="second">2020-10-25T00:00:00Z</incident:Incident_Discovery>
                         </incident:Time>
                         <incident:Reporter>
                             <stixCommon:Identity>
@@ -105,16 +101,16 @@
             </stix:Package>
         </stix:Related_Package>
         <stix:Related_Package>
-            <stix:Package id="MISP:STIXPackage-d402185f-c129-4f65-8678-43edb2cee1cf" version="1.1.1" timestamp="2020-10-25T16:22:00">
+            <stix:Package id="MISP:STIXPackage-d402185f-c129-4f65-8678-43edb2cee1cf" version="1.1.1" timestamp="2020-10-25T16:22:00Z">
                 <stix:STIX_Header>
                     <stix:Title>Export from MISP-Project's MISP</stix:Title>
                     <stix:Package_Intent xsi:type="stixVocabs:PackageIntentVocab-1.0">Threat Report</stix:Package_Intent>
                 </stix:STIX_Header>
                 <stix:Incidents>
-                    <stix:Incident id="MISP:Incident-d402185f-c129-4f65-8678-43edb2cee1cf" timestamp="2020-10-25T16:22:00" xsi:type='incident:IncidentType'>
+                    <stix:Incident id="MISP:Incident-d402185f-c129-4f65-8678-43edb2cee1cf" timestamp="2020-10-25T16:22:00Z" xsi:type='incident:IncidentType'>
                         <incident:Title>MISP-STIX-Converter test event with domain attribute</incident:Title>
                         <incident:Time>
-                            <incident:Incident_Discovery precision="second">2020-10-25T00:00:00</incident:Incident_Discovery>
+                            <incident:Incident_Discovery precision="second">2020-10-25T00:00:00Z</incident:Incident_Discovery>
                         </incident:Time>
                         <incident:Reporter>
                             <stixCommon:Identity>
@@ -124,7 +120,7 @@
                         <incident:Related_Indicators>
                             <incident:Related_Indicator>
                                 <stixCommon:Relationship>Network activity</stixCommon:Relationship>
-                                <stixCommon:Indicator id="MISP:Indicator-4bb235a7-7d25-4aef-802f-2c6b45c5eceb" timestamp="2020-10-25T16:22:00" xsi:type='indicator:IndicatorType'>
+                                <stixCommon:Indicator id="MISP:Indicator-4bb235a7-7d25-4aef-802f-2c6b45c5eceb" timestamp="2020-10-25T16:22:00Z" xsi:type='indicator:IndicatorType'>
                                     <indicator:Title>Network activity: circl.lu (MISP Attribute)</indicator:Title>
                                     <indicator:Type xsi:type="stixVocabs:IndicatorTypeVocab-1.1">Domain Watchlist</indicator:Type>
                                     <indicator:Description>Domain test attribute</indicator:Description>
@@ -136,7 +132,7 @@
                                             </cybox:Properties>
                                         </cybox:Object>
                                     </indicator:Observable>
-                                    <indicator:Confidence timestamp="2020-10-25T16:22:00">
+                                    <indicator:Confidence timestamp="2020-10-25T16:22:00Z">
                                         <stixCommon:Value>High</stixCommon:Value>
                                         <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>
                                     </indicator:Confidence>
@@ -166,16 +162,16 @@
             </stix:Package>
         </stix:Related_Package>
         <stix:Related_Package>
-            <stix:Package id="MISP:STIXPackage-50bf87fc-d134-499f-9e26-806cbe89ed37" version="1.1.1" timestamp="2020-10-25T16:22:00">
+            <stix:Package id="MISP:STIXPackage-50bf87fc-d134-499f-9e26-806cbe89ed37" version="1.1.1" timestamp="2020-10-25T16:22:00Z">
                 <stix:STIX_Header>
                     <stix:Title>Export from MISP-Project's MISP</stix:Title>
                     <stix:Package_Intent xsi:type="stixVocabs:PackageIntentVocab-1.0">Threat Report</stix:Package_Intent>
                 </stix:STIX_Header>
                 <stix:Incidents>
-                    <stix:Incident id="MISP:Incident-50bf87fc-d134-499f-9e26-806cbe89ed37" timestamp="2020-10-25T16:22:00" xsi:type='incident:IncidentType'>
+                    <stix:Incident id="MISP:Incident-50bf87fc-d134-499f-9e26-806cbe89ed37" timestamp="2020-10-25T16:22:00Z" xsi:type='incident:IncidentType'>
                         <incident:Title>MISP-STIX-Converter test event with domain|ip attribute</incident:Title>
                         <incident:Time>
-                            <incident:Incident_Discovery precision="second">2020-10-25T00:00:00</incident:Incident_Discovery>
+                            <incident:Incident_Discovery precision="second">2020-10-25T00:00:00Z</incident:Incident_Discovery>
                         </incident:Time>
                         <incident:Reporter>
                             <stixCommon:Identity>
@@ -185,7 +181,7 @@
                         <incident:Related_Indicators>
                             <incident:Related_Indicator>
                                 <stixCommon:Relationship>Network activity</stixCommon:Relationship>
-                                <stixCommon:Indicator id="MISP:Indicator-726f90e2-2ad6-44a2-b345-c05e55e850e5" timestamp="2020-10-25T16:22:00" xsi:type='indicator:IndicatorType'>
+                                <stixCommon:Indicator id="MISP:Indicator-726f90e2-2ad6-44a2-b345-c05e55e850e5" timestamp="2020-10-25T16:22:00Z" xsi:type='indicator:IndicatorType'>
                                     <indicator:Title>Network activity: circl.lu|149.13.33.14 (MISP Attribute)</indicator:Title>
                                     <indicator:Type xsi:type="stixVocabs:IndicatorTypeVocab-1.1">Domain Watchlist</indicator:Type>
                                     <indicator:Description>Domain|ip test attribute</indicator:Description>
@@ -208,7 +204,7 @@
                                             </cybox:Observable>
                                         </cybox:Observable_Composition>
                                     </indicator:Observable>
-                                    <indicator:Confidence timestamp="2020-10-25T16:22:00">
+                                    <indicator:Confidence timestamp="2020-10-25T16:22:00Z">
                                         <stixCommon:Value>High</stixCommon:Value>
                                         <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>
                                     </indicator:Confidence>
@@ -238,16 +234,16 @@
             </stix:Package>
         </stix:Related_Package>
         <stix:Related_Package>
-            <stix:Package id="MISP:STIXPackage-71356f2b-eefe-48db-a93a-4aa2233e3a59" version="1.1.1" timestamp="2020-10-25T16:22:00">
+            <stix:Package id="MISP:STIXPackage-71356f2b-eefe-48db-a93a-4aa2233e3a59" version="1.1.1" timestamp="2020-10-25T16:22:00Z">
                 <stix:STIX_Header>
                     <stix:Title>Export from MISP-Project's MISP</stix:Title>
                     <stix:Package_Intent xsi:type="stixVocabs:PackageIntentVocab-1.0">Threat Report</stix:Package_Intent>
                 </stix:STIX_Header>
                 <stix:Incidents>
-                    <stix:Incident id="MISP:Incident-71356f2b-eefe-48db-a93a-4aa2233e3a59" timestamp="2020-10-25T16:22:00" xsi:type='incident:IncidentType'>
+                    <stix:Incident id="MISP:Incident-71356f2b-eefe-48db-a93a-4aa2233e3a59" timestamp="2020-10-25T16:22:00Z" xsi:type='incident:IncidentType'>
                         <incident:Title>MISP-STIX-Converter test event with filename attribute</incident:Title>
                         <incident:Time>
-                            <incident:Incident_Discovery precision="second">2020-10-25T00:00:00</incident:Incident_Discovery>
+                            <incident:Incident_Discovery precision="second">2020-10-25T00:00:00Z</incident:Incident_Discovery>
                         </incident:Time>
                         <incident:Reporter>
                             <stixCommon:Identity>
@@ -257,7 +253,7 @@
                         <incident:Related_Indicators>
                             <incident:Related_Indicator>
                                 <stixCommon:Relationship>Payload delivery</stixCommon:Relationship>
-                                <stixCommon:Indicator id="MISP:Indicator-02de0847-dccf-481a-a96a-6a7654328658" timestamp="2020-10-25T16:22:00" xsi:type='indicator:IndicatorType'>
+                                <stixCommon:Indicator id="MISP:Indicator-02de0847-dccf-481a-a96a-6a7654328658" timestamp="2020-10-25T16:22:00Z" xsi:type='indicator:IndicatorType'>
                                     <indicator:Title>Payload delivery: test_file_name (MISP Attribute)</indicator:Title>
                                     <indicator:Type xsi:type="stixVocabs:IndicatorTypeVocab-1.1">File Hash Watchlist</indicator:Type>
                                     <indicator:Description>Filename test attribute</indicator:Description>
@@ -269,7 +265,7 @@
                                             </cybox:Properties>
                                         </cybox:Object>
                                     </indicator:Observable>
-                                    <indicator:Confidence timestamp="2020-10-25T16:22:00">
+                                    <indicator:Confidence timestamp="2020-10-25T16:22:00Z">
                                         <stixCommon:Value>High</stixCommon:Value>
                                         <stixCommon:Description>Derived from MISP's IDS flag. If an attribute is marked for IDS exports, the confidence will be high, otherwise none</stixCommon:Description>
                                     </indicator:Confidence>

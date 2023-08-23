@@ -915,6 +915,20 @@ _TEST_REGION_GALAXY = {
     ]
 }
 
+_TEST_SECTOR_GALAXY = {
+    "uuid": "e1bb134c-ae4d-11e7-8aa9-f78a37325439",
+    "name": "Sector",
+    "type": "sector",
+    "description": "Activity sectors",
+    "GalaxyCluster": [
+        {
+            "uuid": "75597b7f-54e8-4f14-88c9-e81485ece483",
+            "type": "sector",
+            "value": "IT - Security"
+        }
+    ]
+}
+
 _TEST_TEA_MATRIX_GALAXY = {
     "uuid": "c5f2dfb4-21a1-42d8-a452-1d3c36a204ff",
     "name": "Tea Matrix",
@@ -1800,6 +1814,16 @@ _TEST_FILE_OBJECT = {
             "type": "text",
             "object_relation": "file-encoding",
             "value": "UTF-8"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "creation-time",
+            "value": "2021-10-25T16:22:00Z"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "modification-time",
+            "value": "2022-10-25T16:22:00Z"
         }
     ]
 }
@@ -2229,7 +2253,7 @@ _TEST_PE_OBJECT = {
         {
             "type": "datetime",
             "object_relation": "compilation-timestamp",
-            "value": "2019-03-16T12:31:22"
+            "value": "2019-03-16T12:31:22Z"
         },
         {
             "type": "text",
@@ -2498,7 +2522,7 @@ _TEST_REGISTRY_KEY_OBJECT = {
         {
             "type": "datetime",
             "object_relation": "last-modified",
-            "value": "2020-10-25T16:22:00"
+            "value": "2020-10-25T16:22:00Z"
         }
     ]
 }
@@ -2761,12 +2785,12 @@ _TEST_VULNERABILITY_OBJECT = {
         {
             "type": "datetime",
             "object_relation": "created",
-            "value": "2017-10-13T07:29:00"
+            "value": "2017-10-13T07:29:00Z"
         },
         {
             "type": "datetime",
             "object_relation": "published",
-            "value": "2017-10-13T07:29:00"
+            "value": "2017-10-13T07:29:00Z"
         },
         {
             "type": "link",
@@ -2836,17 +2860,17 @@ _TEST_WHOIS_OBJECT = {
         {
             "type": "datetime",
             "object_relation": "creation-date",
-            "value": "2017-10-01T08:00:00"
+            "value": "2017-10-01T08:00:00Z"
         },
         {
             "type": "datetime",
             "object_relation": "modification-date",
-            "value": "2020-10-25T16:22:00"
+            "value": "2020-10-25T16:22:00Z"
         },
         {
             "type": "datetime",
             "object_relation": "expiration-date",
-            "value": "2021-01-01T00:00:00"
+            "value": "2021-01-01T00:00:00Z"
         },
         {
             "type": "domain",
@@ -2916,12 +2940,12 @@ _TEST_X509_OBJECT = {
         {
             "type": "datetime",
             "object_relation": "validity-not-before",
-            "value": "2020-01-01T00:00:00"
+            "value": "2020-01-01T00:00:00Z"
         },
         {
             "type": "datetime",
             "object_relation": "validity-not-after",
-            "value": "2021-01-01T00:00:00"
+            "value": "2021-01-01T00:00:00Z"
         },
         {
             "type": "text",
@@ -3123,6 +3147,14 @@ def get_event_with_malware_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_MALWARE_GALAXY)
+    ]
+    return event
+
+
+def get_event_with_sector_galaxy():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Galaxy'] = [
+        deepcopy(_TEST_SECTOR_GALAXY)
     ]
     return event
 
@@ -4680,17 +4712,17 @@ def get_event_with_lnk_object():
                     {
                         "type": "datetime",
                         "object_relation": "lnk-creation-time",
-                        "value": "2017-10-01T08:00:00"
+                        "value": "2017-10-01T08:00:00Z"
                     },
                     {
                         "type": "datetime",
                         "object_relation": "lnk-modification-time",
-                        "value": "2020-10-25T16:22:00"
+                        "value": "2020-10-25T16:22:00Z"
                     },
                     {
                         "type": "datetime",
                         "object_relation": "lnk-access-time",
-                        "value": "2021-01-01T00:00:00"
+                        "value": "2021-01-01T00:00:00Z"
                     }
                 ]
             }
@@ -5179,7 +5211,7 @@ def get_event_with_user_account_object():
             {
                 "type": "datetime",
                 "object_relation": "password_last_changed",
-                "value": "2020-10-25T16:22:00"
+                "value": "2020-10-25T16:22:00Z"
             }
         ]
     )

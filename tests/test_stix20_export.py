@@ -3,8 +3,8 @@
 
 from datetime import datetime
 from misp_stix_converter import (
-    MISPtoSTIX20Mapping, MISPtoSTIX20Parser, misp_collection_to_stix2_0,
-    misp_to_stix2_0)
+    MISPtoSTIX20Mapping, MISPtoSTIX20Parser, misp_collection_to_stix2,
+    misp_to_stix2)
 from pymisp import MISPAttribute, MISPEvent
 from .test_events import *
 from .update_documentation import (
@@ -454,8 +454,8 @@ class TestSTIX20AttributesExport(TestSTIX20GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self._check_relationship_features(ap_relationship, indicator_ref, ap_ref, 'indicates', timestamp)
-        self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'has', timestamp)
-        self._check_relationship_features(custom_relationship, indicator_ref, custom_ref, 'has', timestamp)
+        self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'related-to', timestamp)
+        self._check_relationship_features(custom_relationship, indicator_ref, custom_ref, 'related-to', timestamp)
 
     def _test_embedded_non_indicator_attribute_galaxy(self, event):
         orgc = event['Orgc']
@@ -480,8 +480,8 @@ class TestSTIX20AttributesExport(TestSTIX20GenericExport):
         timestamp = attribute['timestamp']
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
-        self._check_relationship_features(ap_relationship, vulnerability_ref, ap_ref, 'has', timestamp)
-        self._check_relationship_features(coa_relationship, vulnerability_ref, coa_ref, 'has', timestamp)
+        self._check_relationship_features(ap_relationship, vulnerability_ref, ap_ref, 'related-to', timestamp)
+        self._check_relationship_features(coa_relationship, vulnerability_ref, coa_ref, 'related-to', timestamp)
 
     def _test_embedded_observable_attribute_galaxy(self, event):
         orgc = event['Orgc']
@@ -504,11 +504,7 @@ class TestSTIX20AttributesExport(TestSTIX20GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self._check_relationship_features(
-            relationship,
-            od_ref,
-            ap_ref,
-            'has',
-            timestamp
+            relationship, od_ref, ap_ref, 'related-to', timestamp
         )
 
     def _test_event_with_as_indicator_attribute(self, event):
@@ -2134,8 +2130,8 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self._check_relationship_features(malware_relationship, indicator_ref, malware_ref, 'indicates', timestamp)
-        self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'has', timestamp)
-        self._check_relationship_features(custom_relationship, indicator_ref, custom_ref, 'has', timestamp)
+        self._check_relationship_features(coa_relationship, indicator_ref, coa_ref, 'related-to', timestamp)
+        self._check_relationship_features(custom_relationship, indicator_ref, custom_ref, 'related-to', timestamp)
 
     def _test_embedded_non_indicator_object_galaxy(self, event):
         orgc = event['Orgc']
@@ -2166,12 +2162,12 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         if not isinstance(coa_timestamp, datetime):
             coa_timestamp = self._datetime_from_timestamp(coa_timestamp)
         self._check_relationship_features(relationship1, o_coa_ref, ap_ref, 'mitigates', coa_timestamp)
-        self._check_relationship_features(relationship2, o_coa_ref, g_coa_ref, 'has', coa_timestamp)
+        self._check_relationship_features(relationship2, o_coa_ref, g_coa_ref, 'related-to', coa_timestamp)
         vulnerability_timestamp = vulnerability_object['timestamp']
         if not isinstance(vulnerability_timestamp, datetime):
             vulnerability_timestamp = self._datetime_from_timestamp(vulnerability_timestamp)
-        self._check_relationship_features(relationship3, vulnerability_ref, malware_ref, 'has', vulnerability_timestamp)
-        self._check_relationship_features(relationship4, vulnerability_ref, g_coa_ref, 'has', vulnerability_timestamp)
+        self._check_relationship_features(relationship3, vulnerability_ref, malware_ref, 'related-to', vulnerability_timestamp)
+        self._check_relationship_features(relationship4, vulnerability_ref, g_coa_ref, 'related-to', vulnerability_timestamp)
 
     def _test_embedded_object_galaxy_with_multiple_clusters(self, event):
         orgc = event['Orgc']
@@ -2194,8 +2190,8 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         object_timestamp = misp_object['timestamp']
         if not isinstance(object_timestamp, datetime):
             object_timestamp = self._datetime_from_timestamp(object_timestamp)
-        self._check_relationship_features(relationship1, observed_data_ref, malware1_ref, 'has', object_timestamp)
-        self._check_relationship_features(relationship2, observed_data_ref, malware2_ref, 'has', object_timestamp)
+        self._check_relationship_features(relationship1, observed_data_ref, malware1_ref, 'related-to', object_timestamp)
+        self._check_relationship_features(relationship2, observed_data_ref, malware2_ref, 'related-to', object_timestamp)
 
     def _test_embedded_observable_object_galaxy(self, event):
         orgc = event['Orgc']
@@ -2218,11 +2214,7 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         if not isinstance(timestamp, datetime):
             timestamp = self._datetime_from_timestamp(timestamp)
         self._check_relationship_features(
-            relationship,
-            observed_data_ref,
-            malware_ref,
-            'has',
-            timestamp
+            relationship, observed_data_ref, malware_ref, 'related-to', timestamp
         )
 
     def _test_event_with_android_app_indicator_objet(self, event):
@@ -2560,8 +2552,8 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
 
     def _test_event_with_file_indicator_object(self, event):
         attributes, pattern = self._run_indicator_from_object_tests(event)
-        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute['value'] for attribute in attributes)
-        md5_, sha1_, sha256_, filename_, encoding_, size_, path_, malware_sample_, attachment_ = self._reassemble_pattern(pattern[1:-1])
+        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding, creation, modification = (attribute['value'] for attribute in attributes)
+        md5_, sha1_, sha256_, filename_, encoding_, size_, ctime, mtime, path_, malware_sample_, attachment_ = self._reassemble_pattern(pattern[1:-1])
         self.assertEqual(md5_, f"file:hashes.MD5 = '{_md5}'")
         self.assertEqual(sha1_, f"file:hashes.SHA1 = '{_sha1}'")
         self.assertEqual(sha256_, f"file:hashes.SHA256 = '{_sha256}'")
@@ -2569,6 +2561,8 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(encoding_, f"file:name_enc = '{_encoding}'")
         self.assertEqual(path_, f"file:parent_directory_ref.path = '{_path}'")
         self.assertEqual(size_, f"file:size = '{_size}'")
+        self.assertEqual(ctime, f"file:created = '{creation}'")
+        self.assertEqual(mtime, f"file:modified = '{modification}'")
         ms_data, ms_filename, ms_md5, mime_type = malware_sample_.split(' AND ')
         data = attributes[0]['data']
         if not isinstance(data, str):
@@ -2587,12 +2581,18 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
 
     def _test_event_with_file_observable_object(self, event):
         attributes, observable_objects = self._run_observable_from_object_tests(event)
-        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding = (attribute['value'] for attribute in attributes)
+        _malware_sample, _filename, _md5, _sha1, _sha256, _size, _attachment, _path, _encoding, ctime, mtime = (attribute['value'] for attribute in attributes)
         _file = observable_objects['0']
         self.assertEqual(_file.type, 'file')
         self.assertEqual(_file.size, int(_size))
         self.assertEqual(_file.name, _filename)
         self.assertEqual(_file.name_enc, _encoding)
+        if isinstance(ctime, str):
+            ctime = self._datetime_from_str(ctime)
+        self.assertEqual(_file.created, ctime)
+        if isinstance(mtime, str):
+            mtime = self._datetime_from_str(mtime)
+        self.assertEqual(_file.modified, mtime)
         hashes = _file.hashes
         self.assertEqual(hashes['MD5'], _md5)
         self.assertEqual(hashes['SHA-1'], _sha1)
@@ -3138,10 +3138,12 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         registry_key = observable_objects['0']
         self.assertEqual(registry_key.type, 'windows-registry-key')
         self.assertEqual(registry_key.key, key)
-        modified = registry_key.modified
         if not isinstance(last_modified, datetime):
-            modified = self._datetime_to_str(modified)
-        self.assertEqual(modified, last_modified)
+            last_modified = self._datetime_from_str(last_modified)
+        self.assertEqual(
+            registry_key.modified.timestamp(),
+            last_modified.timestamp()
+        )
         self.assertEqual(registry_key.x_misp_hive, hive)
         registry_value = registry_key['values'][0]
         self.assertEqual(registry_value.data, data)
@@ -3279,10 +3281,12 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(extension.home_dir, home['value'])
         self.assertEqual(user_account.x_misp_password, passwd['value'])
         password_last_changed = plc['value']
-        credential_last_changed = user_account.password_last_changed
         if not isinstance(password_last_changed, datetime):
-            credential_last_changed = self._datetime_to_str(credential_last_changed)
-        self.assertEqual(credential_last_changed, password_last_changed)
+            password_last_changed = self._datetime_from_str(password_last_changed)
+        self.assertEqual(
+            user_account.password_last_changed.timestamp(),
+            password_last_changed.timestamp()
+        )
         self.assertEqual(user_account.x_misp_user_avatar['value'], user_avatar['value'])
         data = user_avatar['data']
         if not isinstance(data, str):
@@ -3331,14 +3335,18 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(x509.serial_number, srlnmbr)
         self.assertEqual(x509.signature_algorithm, signalg)
         self.assertEqual(x509.issuer, issuer)
-        validity_not_before = x509.validity_not_before
         if not isinstance(vnb, datetime):
-            validity_not_before = self._datetime_to_str(validity_not_before)
-        self.assertEqual(validity_not_before, vnb)
-        validity_not_after = x509.validity_not_after
+            vnb = self._datetime_from_str(vnb)
+        self.assertEqual(
+            x509.validity_not_before.timestamp(),
+            vnb.timestamp()
+        )
         if not isinstance(vna, datetime):
-            validity_not_after = self._datetime_to_str(validity_not_after)
-        self.assertEqual(validity_not_after, vna)
+            vna = self._datetime_from_str(vna)
+        self.assertEqual(
+            x509.validity_not_after.timestamp(),
+            vna.timestamp()
+        )
         self.assertEqual(x509.subject, subject)
         self.assertEqual(x509.subject_public_key_algorithm, pia)
         self.assertEqual(x509.subject_public_key_modulus, pim)
@@ -4460,6 +4468,16 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
         self.assertEqual(malware.type, 'malware')
         self._check_galaxy_features(malware, galaxy, timestamp)
 
+    def _test_event_with_sector_galaxy(self, event):
+        galaxy = event['Galaxy'][0]
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity = self._run_galaxy_tests(event, timestamp)
+        self.assertEqual(identity.type, 'identity')
+        self.assertEqual(identity.identity_class, 'class')
+        self._check_galaxy_features(identity, galaxy, timestamp)
+
     def _test_event_with_threat_actor_galaxy(self, event):
         galaxy = event['Galaxy'][0]
         timestamp = event['timestamp']
@@ -4489,7 +4507,7 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
 
 
 class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
-    _mapping_types = MISPtoSTIX20Mapping()
+    _mapping_types = MISPtoSTIX20Mapping
 
     def test_event_with_attack_pattern_galaxy(self):
         event = get_event_with_attack_pattern_galaxy()
@@ -4498,7 +4516,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             galaxy = event['Event']['Galaxy'][0],
             attack_pattern = self.parser.stix_objects[-1],
             summary = ', '.join(
-                sorted(self._mapping_types.attack_pattern_types)
+                sorted(self._mapping_types.attack_pattern_types())
             )
         )
 
@@ -4509,7 +4527,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             galaxy = event['Event']['Galaxy'][0],
             course_of_action = self.parser.stix_objects[-1],
             summary = ', '.join(
-                sorted(self._mapping_types.course_of_action_types)
+                sorted(self._mapping_types.course_of_action_types())
             )
         )
 
@@ -4524,7 +4542,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
             galaxy = event['Event']['Galaxy'][0],
             intrusion_set = self.parser.stix_objects[-1],
             summary = ', '.join(
-                sorted(self._mapping_types.intrusion_set_types)
+                sorted(self._mapping_types.intrusion_set_types())
             )
         )
 
@@ -4534,7 +4552,15 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             malware = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.malware_types))
+            summary = ', '.join(sorted(self._mapping_types.malware_types()))
+        )
+
+    def test_event_with_sector_galaxy(self):
+        event = get_event_with_sector_galaxy()
+        self._test_event_with_sector_galaxy(event['Event'])
+        self._populate_documentation(
+            galaxy = event['Event']['Galaxy'][0],
+            identity = self.parser.stix_objects[-1]
         )
 
     def test_event_with_threat_actor_galaxy(self):
@@ -4543,7 +4569,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             threat_actor = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.threat_actor_types))
+            summary = ', '.join(sorted(self._mapping_types.threat_actor_types()))
         )
 
     def test_event_with_tool_galaxy(self):
@@ -4552,7 +4578,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             tool = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.tool_types))
+            summary = ', '.join(sorted(self._mapping_types.tool_types()))
         )
 
     def test_event_with_vulnerability_galaxy(self):
@@ -4561,7 +4587,7 @@ class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
         self._populate_documentation(
             galaxy = event['Event']['Galaxy'][0],
             vulnerability = self.parser.stix_objects[-1],
-            summary = ', '.join(sorted(self._mapping_types.vulnerability_types))
+            summary = ', '.join(sorted(self._mapping_types.vulnerability_types()))
         )
 
 
@@ -4601,6 +4627,12 @@ class TestSTIX20MISPGalaxiesExport(TestSTIX20GalaxiesExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_threat_actor_galaxy(misp_event)
+
+    def test_event_with_sector_galaxy(self):
+        event = get_event_with_sector_galaxy()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_sector_galaxy(misp_event)
 
     def test_event_with_tool_galaxy(self):
         event = get_event_with_tool_galaxy()
@@ -4744,30 +4776,80 @@ class TestSTIX20MISPExportInteroperability(TestSTIX20ExportInteroperability):
 class TestCollectionSTIX20Export(TestCollectionSTIX2Export):
     def test_attributes_collection(self):
         name = 'test_attributes_collection'
-        to_test_name = f'{name}.json.out'
-        reference_name = f'{name}_stix20.json'
-        output_file = self._current_path / to_test_name
+        output_file = self._current_path / f'{name}.json.out'
+        reference_file = self._current_path / f'{name}_stix20.json'
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files), 1)
-        self._check_stix2_results_export(to_test_name, reference_name)
-        self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files, in_memory=True), 1)
-        self._check_stix2_results_export(to_test_name, reference_name)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.0', single_output=True,
+                output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.0', in_memory=True,
+                single_output=True, output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
 
     def test_events_collection(self):
         name = 'test_events_collection'
-        to_test_name = f'{name}.json.out'
-        reference_name = f'{name}_stix20.json'
-        output_file = self._current_path / to_test_name
+        output_file = self._current_path / f'{name}.json.out'
+        reference_file = self._current_path / f'{name}_stix20.json'
         input_files = [self._current_path / f'{name}_{n}.json' for n in (1, 2)]
-        self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files), 1)
-        self._check_stix2_results_export(to_test_name, reference_name)
-        self.assertEqual(misp_collection_to_stix2_0(output_file, *input_files, in_memory=True), 1)
-        self._check_stix2_results_export(to_test_name, reference_name)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.0', single_output=True,
+                output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                *input_files, version='2.0', in_memory=True,
+                single_output=True, output_name=output_file
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(*input_files, version='2.0'),
+            {
+                'success': 1,
+                'results': [
+                    self._current_path / f'{name}_{n}.json.out' for n in (1, 2)
+                ]
+            }
+        )
+        for n in (1, 2):
+            self._check_stix2_results_export(
+                self._current_path / f'{name}_{n}.json.out',
+                self._current_path / f'test_event{n}_stix20.json'
+            )
+
 
     def test_event_export(self):
         name = 'test_events_collection_1.json'
-        self.assertEqual(misp_to_stix2_0(self._current_path / name), 1)
-        self._check_stix2_results_export(f'{name}.out', 'test_event_stix20.json')
+        filename = self._current_path / name
+        output_file = self._current_path / f'{name}.out'
+        reference_file = self._current_path / 'test_event1_stix20.json'
+        self.assertEqual(
+            misp_to_stix2(filename, version='2.0'),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
+        self.assertEqual(
+            misp_collection_to_stix2(
+                filename, version='2.0'
+            ),
+            {'success': 1, 'results': [output_file]}
+        )
+        self._check_stix2_results_export(output_file, reference_file)
 
 
 class TestFeedSTIX20Export(TestSTIX2Export):
@@ -4821,12 +4903,12 @@ class TestFeedSTIX20MISPExport(TestFeedSTIX20Export):
         self.assertEqual(len(bundle.objects), 3)
         identity2, indicator3, indicator4 = bundle.objects
         self._assert_multiple_equal(
-            self.parser._mapping.misp_identity_args['id'],
+            self.parser._mapping.misp_identity_args()['id'],
             identity1.id,
             identity2.id
         )
         self._assert_multiple_equal(
-            self.parser._mapping.misp_identity_args['name'],
+            self.parser._mapping.misp_identity_args()['name'],
             identity1.name,
             identity2.name
         )

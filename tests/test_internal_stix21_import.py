@@ -28,8 +28,8 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(misp_object.uuid, observed_data.id.split('--')[1])
         self._assert_multiple_equal(
             misp_object.timestamp,
-            self._timestamp_from_datetime(observed_data.created),
-            self._timestamp_from_datetime(observed_data.modified)
+            observed_data.created,
+            observed_data.modified
         )
         self._check_object_labels(misp_object, observed_data.labels, False)
         return observed_data.object_refs
@@ -1382,9 +1382,9 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, identity1, identity2, identity3, identity4, report, *stix_objects = bundle.objects
+        _, grouping, *stix_objects, identity1, identity2, identity3, identity4 = bundle.objects
         identities = (identity1, identity2, identity3, identity4)
-        self.assertEqual(event.uuid, report.id.split('--')[1])
+        self.assertEqual(event.uuid, grouping.id.split('--')[1])
         self.assertEqual(len(event.attributes), 2)
         AS, domain  = event.attributes
         observed_data, _, sighting1, sighting2, opinion1, opinion2, indicator, sighting3, opinion3, sighting4, opinion4 = stix_objects
@@ -1398,7 +1398,8 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.assertEqual(sighting.Organisation['name'], identity.name)
         self.assertEqual(domain.uuid, indicator.id.split('--')[1])
         self.assertEqual(len(domain.sightings), 4)
-        stix_objects = (sighting3, opinion3, sighting4, opinion4)
+        stix_objects = (sighting3, sighting4, opinion3, opinion4)
+        identities = (identity1, identity3, identity2, identity4)
         for sighting, stix_object, identity in zip(domain.sightings, stix_objects, identities):
             self.assertEqual(sighting.date_sighting, self._timestamp_from_datetime(stix_object.modified))
             self.assertEqual(sighting.type, '0' if stix_object.type == 'sighting' else '1')
@@ -1510,6 +1511,15 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, malware = bundle.objects
         self._check_misp_event_features_from_grouping(event, grouping)
         self._check_malware_galaxy(event.galaxies[0], malware)
+
+    def test_stix21_bundle_with_sector_galaxy(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_sector_galaxy()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, identity = bundle.objects
+        self._check_misp_event_features_from_grouping(event, grouping)
+        self._check_sector_galaxy(event.galaxies[0], identity)
 
     def test_stix21_bundle_with_threat_actor_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_threat_actor_galaxy()
@@ -2123,20 +2133,14 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
         _, grouping, indicator = bundle.objects
-        section_object, pe_object, file_object = self._check_misp_event_features_from_grouping(event, grouping)
+        file_object, pe_object, section_object = self._check_misp_event_features_from_grouping(event, grouping)
         file_pattern, pe_pattern, section_pattern = self._get_parsed_file_and_pe_pattern(
             self._check_indicator_object(file_object, indicator)
         )
         self.assertEqual(pe_object.name, 'pe')
-        self.assertEqual(
-            pe_object.timestamp,
-            self._timestamp_from_datetime(indicator.modified)
-        )
+        self.assertEqual(pe_object.timestamp, indicator.modified)
         self.assertEqual(section_object.name, 'pe-section')
-        self.assertEqual(
-            section_object.timestamp,
-            self._timestamp_from_datetime(indicator.modified)
-        )
+        self.assertEqual(section_object.timestamp, indicator.modified)
         self._check_single_file_indicator_object(file_object.attributes, file_pattern)
         self._check_pe_indicator_object(pe_object.attributes, pe_pattern)
         self._check_pe_section_indicator_object(section_object.attributes, section_pattern)
@@ -2157,7 +2161,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
         _, grouping, observed_data, observable = bundle.objects
-        section_object, pe_object, file_object = self._check_misp_event_features_from_grouping(event, grouping)
+        file_object, pe_object, section_object = self._check_misp_event_features_from_grouping(event, grouping)
         file_ref = self._check_observed_data_object(file_object, observed_data)[0]
         self._assert_multiple_equal(
             file_object.uuid,
@@ -2165,15 +2169,9 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             file_ref.split('--')[1]
         )
         self.assertEqual(pe_object.name, 'pe')
-        self.assertEqual(
-            pe_object.timestamp,
-            self._timestamp_from_datetime(observed_data.modified)
-        )
+        self.assertEqual(pe_object.timestamp, observed_data.modified)
         self.assertEqual(section_object.name, 'pe-section')
-        self.assertEqual(
-            section_object.timestamp,
-            self._timestamp_from_datetime(observed_data.modified)
-        )
+        self.assertEqual(section_object.timestamp, observed_data.modified)
         self._check_file_and_pe_observable_object(
             file_object.attributes,
             pe_object.attributes,
@@ -2766,8 +2764,8 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(sigma.uuid, sigma_indicator.id.split('--')[1])
         self._assert_multiple_equal(
             sigma.timestamp,
-            self._timestamp_from_datetime(sigma_indicator.created),
-            self._timestamp_from_datetime(sigma_indicator.modified)
+            sigma_indicator.created,
+            sigma_indicator.modified
         )
         self._check_object_labels(sigma, sigma_indicator.labels, True)
         pattern, comment, name, context, reference = sigma.attributes
@@ -2785,8 +2783,8 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(suricata.uuid, suricata_indicator.id.split('--')[1])
         self._assert_multiple_equal(
             suricata.timestamp,
-            self._timestamp_from_datetime(suricata_indicator.created),
-            self._timestamp_from_datetime(suricata_indicator.modified)
+            suricata_indicator.created,
+            suricata_indicator.modified
         )
         self._check_object_labels(suricata, suricata_indicator.labels, True)
         pattern, comment, version, ref = suricata.attributes
@@ -2803,8 +2801,8 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(yara.uuid, yara_indicator.id.split('--')[1])
         self._assert_multiple_equal(
             yara.timestamp,
-            self._timestamp_from_datetime(yara_indicator.created),
-            self._timestamp_from_datetime(yara_indicator.modified)
+            yara_indicator.created,
+            yara_indicator.modified
         )
         self._check_object_labels(yara, yara_indicator.labels, True)
         pattern, comment, name, version = yara.attributes

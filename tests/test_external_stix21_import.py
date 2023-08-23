@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import json
-from uuid import uuid5
 from .test_external_stix21_bundles import TestExternalSTIX21Bundles
 from ._test_stix import TestSTIX21
 from ._test_stix_import import TestExternalSTIX2Import, TestSTIX21Import
@@ -21,11 +19,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         cluster = galaxy.clusters[0]
         self._assert_multiple_equal(galaxy.type, cluster.type, galaxy_type)
         self.assertEqual(
-            galaxy.name, self._galaxy_name_mapping[galaxy_type]['name']
+            galaxy.name, self._galaxy_name_mapping(galaxy_type)['name']
         )
         self.assertEqual(
             galaxy.description,
-            self._galaxy_name_mapping[galaxy_type]['description']
+            self._galaxy_name_mapping(galaxy_type)['description']
         )
         if cluster_value is None:
             self.assertEqual(cluster.value, stix_object.name)

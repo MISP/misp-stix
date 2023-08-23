@@ -12,17 +12,13 @@ class TestSTIX(unittest.TestCase):
             self.assertEqual(reference, element)
 
     @staticmethod
-    def _datetime_to_str(datetime_value):
-        return datetime.strftime(datetime_value, '%Y-%m-%dT%H:%M:%S')
-
-    @staticmethod
     def _datetime_from_str(timestamp):
         regex = '%Y-%m-%dT%H:%M:%S'
         if '.' in timestamp:
             regex = f'{regex}.%f'
-        if timestamp.endswith('Z'):
-            regex = f'{regex}Z'
-        return datetime.strptime(timestamp.split('+')[0], regex)
+        if timestamp.endswith('Z') or '+' in timestamp:
+            regex = f'{regex}%z'
+        return datetime.strptime(timestamp, regex)
 
 
 class TestSTIX20(TestSTIX):
@@ -83,13 +79,3 @@ class TestSTIX21(TestSTIX):
         self.assertEqual(grouping.created, timestamp)
         self.assertEqual(grouping.modified, timestamp)
         return grouping.object_refs
-
-    def _check_misp_event_features_from_grouping(self, event, grouping):
-        self.assertEqual(event.uuid, grouping.id.split('--')[1])
-        self.assertEqual(event.info, grouping.name)
-        self._assert_multiple_equal(
-            event.timestamp,
-            self._timestamp_from_datetime(grouping.created),
-            self._timestamp_from_datetime(grouping.modified)
-        )
-        return (*event.objects, *event.attributes)

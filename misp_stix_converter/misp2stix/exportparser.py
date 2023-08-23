@@ -5,13 +5,14 @@ import traceback
 from .stix1_mapping import MISPtoSTIX1Mapping
 from .stix20_mapping import MISPtoSTIX20Mapping
 from .stix21_mapping import MISPtoSTIX21Mapping
+from abc import ABCMeta
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pymisp import MISPAttribute, MISPObject
 from typing import Optional, Union
 
 
-class MISPtoSTIXParser:
+class MISPtoSTIXParser(metaclass=ABCMeta):
     __composite_separators = ('|', '_')
     __published_fields = ('published', 'publish_timestamp')
     __PE_RELATIONSHIP_TYPES = ('includes', 'included-in')
@@ -123,12 +124,9 @@ class MISPtoSTIXParser:
             tag_names: list = []
             for galaxy in self._misp_event['Galaxy']:
                 galaxy_type = galaxy['type']
-                if galaxy_type in self._mapping.cluster_to_stix_object:
-                    stix_type = self._mapping.cluster_to_stix_object[galaxy_type]
-                    getattr(
-                        self,
-                        f"_parse_{stix_type.replace('-', '_')}_event_galaxy"
-                    )(galaxy)
+                to_call = self._mapping.galaxy_types_mapping(galaxy_type)
+                if to_call is not None:
+                    getattr(self, to_call.format('event'))(galaxy)
                     tag_names.extend(self._quick_fetch_tag_names(galaxy))
                 else:
                     self._handle_undefined_event_galaxy(galaxy)
@@ -138,12 +136,9 @@ class MISPtoSTIXParser:
     def _parse_event_galaxies(self, galaxies: list):
         for galaxy in galaxies:
             galaxy_type = galaxy['type']
-            if galaxy_type in self._mapping.cluster_to_stix_object:
-                stix_type = self._mapping.cluster_to_stix_object[galaxy_type]
-                getattr(
-                    self,
-                    f"_parse_{stix_type.replace('-', '_')}_parent_galaxy"
-                )(galaxy)
+            to_call = self._mapping.galaxy_types_mapping(galaxy_type)
+            if to_call is not None:
+                getattr(self, to_call.format('parent'))(galaxy)
             else:
                 self._handle_undefined_parent_galaxy(galaxy)
 
@@ -158,15 +153,15 @@ class MISPtoSTIXParser:
         regex = '%Y-%m-%dT%H:%M:%S'
         if '.' in timestamp:
             regex = f'{regex}.%f'
-        if timestamp.endswith('Z'):
-            regex = f'{regex}Z'
-        return datetime.strptime(timestamp.split('+')[0], regex)
+        if timestamp.endswith('Z') or '+' in timestamp:
+            regex = f'{regex}%z'
+        return datetime.strptime(timestamp, regex)
 
     @staticmethod
     def _datetime_from_timestamp(timestamp: Union[datetime, str]) -> datetime:
         if isinstance(timestamp, datetime):
             return timestamp
-        return datetime.utcfromtimestamp(int(timestamp))
+        return datetime.fromtimestamp(int(timestamp), timezone.utc)
 
     @staticmethod
     def _fetch_ids_flag(attributes: list) -> bool:
@@ -241,6 +236,17 @@ class MISPtoSTIXParser:
     def _event_galaxy_not_mapped_warning(self, galaxy_type: str):
         message = f'{galaxy_type} galaxy in event not mapped.'
         self.__warnings[self._identifier].add(message)
+
+    def _missing_orgc_error(self):
+        self.__errors[self._identifier].append(f'Missing Orgc field.')
+
+    def _missing_orgc_field_error(self, orgc: dict):
+        missing = (field for field in ('name', 'uuid') if field not in orgc)
+        self.__errors[self._identifier].append(
+            f"Error with the Orgc field missing its {' and '.join(missing)}"
+            f"{'values' if len(missing) > 1 else 'value'}. Please make sure"
+            f" both the name and uuid values are provided."
+        )
 
     def _object_error(self, misp_object: dict, exception: Exception):
         features = f"{misp_object['name']} object (uuid: {misp_object['uuid']})"
