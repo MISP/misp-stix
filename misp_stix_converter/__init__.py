@@ -161,9 +161,9 @@ def main():
                 print(f'{field.capitalize()} encountered during the '
                         f'{feature} conversion process:\n {messages}')
         if 'fails' in traceback:
-            fails = '\n - '.join(traceback['fails'])
+            fails = _handle_return_message(traceback['fails'])
             print('Failed parsing the following - and the related error '
-                    f'message:\n - {fails}')
+                    f'message:\n {fails}')
         if 'results' in traceback:
             results = traceback['results']
             if isinstance(results, list):
