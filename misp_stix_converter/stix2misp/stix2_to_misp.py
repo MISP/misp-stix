@@ -52,6 +52,7 @@ from stix2.v21.sdo import (
 from stix2.v21.sro import Relationship as Relationship_v21, Sighting as Sighting_v21
 from typing import Optional, Union
 
+# Some constants
 _LOADED_FEATURES = (
     '_attack_pattern',
     '_campaign',
@@ -70,6 +71,8 @@ _LOADED_FEATURES = (
     '_vulnerability'
 )
 _MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
+
+# Typing
 _OBSERVABLE_TYPES = Union[
     Artifact, AutonomousSystem, Directory, DomainName, EmailAddress, EmailMessage,
     File, IPv4Address, IPv6Address, MACAddress, Mutex, NetworkTraffic_v21, Process,
@@ -375,10 +378,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _load_observable_object(self, observable: _OBSERVABLE_TYPES):
         self._check_uuid(observable.id)
+        to_load = {'used': False, 'observable': observable}
         try:
-            self._observable[observable.id] = observable
+            self._observable[observable.id] = to_load
         except AttributeError:
-            self._observable = {observable.id: observable}
+            self._observable = {observable.id: to_load}
 
     def _load_observed_data(self, observed_data: _OBSERVED_DATA_TYPING):
         self._check_uuid(observed_data.id)

@@ -768,12 +768,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _fetch_observable_object_refs(
             self, observed_data: _OBSERVED_DATA_TYPING):
         for reference in observed_data.object_refs:
-            yield self._observable[reference]
+            yield self._observable[reference]['observable']
 
     def _fetch_observable_object_refs_with_id(
             self, observed_data: _OBSERVED_DATA_TYPING):
         for reference in observed_data.object_refs:
-            yield reference, self._observable[reference]
+            yield reference, self._observable[reference]['observable']
 
     @staticmethod
     def _fetch_observable_objects(

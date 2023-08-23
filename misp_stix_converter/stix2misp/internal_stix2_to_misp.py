@@ -1082,7 +1082,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         parsed = []
         for object_ref in observed_data.object_refs:
             if object_ref.startswith('domain-name--'):
-                observable = self._observable[object_ref]
+                observable = self._observable[object_ref]['observable']
                 if self._has_domain_custom_fields(observable):
                     for feature, mapping in self._mapping.domain_ip_object_mapping().items():
                         if hasattr(observable, feature):
@@ -1104,7 +1104,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     for reference in observable.resolves_to_refs:
                         if reference in parsed:
                             continue
-                        address = self._observable[reference]
+                        address = self._observable[reference]['observable']
                         misp_object.add_attribute(
                             **{
                                 'value': address.value,
@@ -2861,10 +2861,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _fetch_observables(self, object_refs: Union[list, str]):
         if isinstance(object_refs, str):
-            return self._observable[object_refs]
+            return self._observable[object_refs]['observable']
         if len(object_refs) == 1:
-            return self._observable[object_refs[0]]
-        return tuple(self._observable[object_ref] for object_ref in object_refs)
+            return self._observable[object_refs[0]]['observable']
+        return tuple(
+            self._observable[object_ref]['observable']
+            for object_ref in object_refs
+        )
 
     @staticmethod
     def _fetch_observables_v20(observed_data: ObservedData_v20):
@@ -2880,7 +2883,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _fetch_observables_with_id_v21(
             self, observed_data: ObservedData_v21) -> dict:
-        return {ref: self._observable[ref] for ref in observed_data.object_refs}
+        return {
+            ref: self._observable[ref]['observable']
+            for ref in observed_data.object_refs
+        }
 
     @staticmethod
     def _handle_external_references(external_references: list) -> dict:
