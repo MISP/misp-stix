@@ -144,14 +144,14 @@ class STIX2Converter(metaclass=ABCMeta):
     def _timestamp_from_date(date: datetime) -> int:
         return int(date.timestamp())
         # I keep it just in case
-        try:
-            return int(date.timestamp())
-        except AttributeError:
-            return int(
-                time.mktime(
-                    time.strptime(date.split('+')[0], "%Y-%m-%dT%H:%M:%S.%fZ")
-                )
-            )
+        # try:
+        #     return int(date.timestamp())
+        # except AttributeError:
+        #     return int(
+        #         time.mktime(
+        #             time.strptime(date.split('+')[0], "%Y-%m-%dT%H:%M:%S.%fZ")
+        #         )
+        #     )
 
 
 class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
