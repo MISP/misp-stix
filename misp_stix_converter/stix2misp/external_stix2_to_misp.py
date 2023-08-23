@@ -28,7 +28,7 @@ from stix2.v20.observables import (
     X509Certificate as X509Certificate_v20)
 from stix2.v20.sdo import (
     CourseOfAction as CourseOfAction_v20, Vulnerability as Vulnerability_v20)
-from stix2.v20.observables import (
+from stix2.v21.observables import (
     AutonomousSystem as AutonomousSystem_v21, Directory as Directory_v21,
     DomainName as DomainName_v21, EmailAddress as EmailAddress_v21,
     EmailMessage as EmailMessage_v21, File as File_v21,
@@ -502,7 +502,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         :param observed_data: The Observed Data object
         """
         observable_types = set(
-            observable.type for observable in observed_data.objects.values()
+            observable['type'] for observable in observed_data.objects.values()
         )
         mapping = self._handle_observables_mapping(observable_types)
         feature = f'_parse_{mapping}_observable_objects'
@@ -2696,6 +2696,18 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for field in observable_object.properties_populated():
             if field not in _observable_skip_properties:
                 yield field
+
+    @staticmethod
+    def _handle_external_references(external_references: list) -> dict:
+        meta = defaultdict(list)
+        for reference in external_references:
+            if reference.get('url'):
+                meta['refs'].append(reference['url'])
+            if reference.get('external_id'):
+                meta['external_id'].append(reference['external_id'])
+        if 'external_id' in meta and len(meta['external_id']) == 1:
+            meta['external_id'] = meta.pop('external_id')[0]
+        return meta
 
     def _is_pattern_too_complex(self, pattern: str) -> bool:
         if any(keyword in pattern for keyword in self._mapping.pattern_forbidden_relations()):

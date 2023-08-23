@@ -1,4 +1,4 @@
-__version__ = '2.4.172'
+__version__ = '2.4.174'
 
 import argparse
 from .misp_stix_mapping import Mapping
@@ -24,6 +24,17 @@ from .misp_stix_converter import (
 from .misp_stix_converter import _misp_to_stix, _stix_to_misp
 from .stix2misp import *
 from pathlib import Path
+
+
+def _handle_return_message(traceback):
+    if isinstance(traceback, dict):
+        messages = []
+        for key, values in traceback.items():
+            messages.append(f'- {key}')
+            for value in values:
+                messages.append(f'  - {value}')
+        return '\n '.join(messages)
+    return '\n - '.join(traceback)
 
 
 def main():
@@ -139,9 +150,9 @@ def main():
         traceback = stix_args.func(stix_args)
         for field in ('errors', 'warnings'):
             if field in traceback:
-                messages = '\n - '.join(traceback[field])
+                messages = _handle_return_message(traceback[field])
                 print(f'{field.capitalize()} encountered during the '
-                        f'{feature} conversion process:\n - {messages}')
+                        f'{feature} conversion process:\n {messages}')
         if 'fails' in traceback:
             fails = '\n - '.join(traceback['fails'])
             print('Failed parsing the following - and the related error '

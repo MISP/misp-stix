@@ -2482,7 +2482,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             'external_id': external_id
         }
 
-    def _parse_external_reference(self, meta_args: dict, feature: str, values: Union[list, str]):
+    def _parse_external_reference(
+            self, meta_args: dict, values: Union[list, str],
+            feature: Optional[str] = '_parse_external_id'):
         if isinstance(values, list):
             meta_args['external_references'].extend(
                 getattr(self, feature)(value) for value in values
@@ -2581,16 +2583,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         object_refs = self._parse_malware_galaxy(galaxy)
         self._handle_object_refs(object_refs)
 
-    def _parse_malware_types(self, meta_args: dict, values: list):
+    def _parse_malware_types(self, meta_args: dict, values: Union[list, str]):
         feature = 'malware_types' if self._version == '2.1' else 'labels'
-        meta_args[feature] = values
+        meta_args[feature] = values if isinstance(values, list) else [values]
 
     def _parse_meta_fields(self, cluster_meta: dict, object_type: str) -> dict:
         meta_args = defaultdict(list)
         for key, values in cluster_meta.items():
             feature = self._mapping.external_references_fields(key)
             if feature is not None:
-                self._parse_external_reference(meta_args, feature, values)
+                self._parse_external_reference(meta_args, values, feature)
                 continue
             feature = self._handle_meta_mapping(object_type, key)
             if feature is not None:
@@ -2707,6 +2709,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_threat_actor_parent_galaxy(self, galaxy: Union[MISPGalaxy, dict]):
         object_refs = self._parse_threat_actor_galaxy(galaxy)
         self._handle_object_refs(object_refs)
+
+    def _parse_threat_actor_types(
+            self, meta_args: dict, values: Union[list, str]):
+        feature = 'threat_actor_types' if self._version == '2.1' else 'labels'
+        meta_args[feature] = values if isinstance(values, list) else [values]
 
     def _parse_tool_attribute_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                                      object_id: str, timestamp: datetime):
