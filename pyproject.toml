@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "misp-stix"
-version = "2.4.174"
+version = "2.4.175"
 description = "Python scripts used by MISP to export MISP format into STIX and to import STIX into MISP format."
 authors = ["Christian Studer <christian.studer@circl.lu>"]
 maintainers = ["Christian Studer <christian.studer@circl.lu>"]
