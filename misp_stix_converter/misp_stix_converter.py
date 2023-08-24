@@ -1016,6 +1016,12 @@ def _stix_to_misp(stix_args):
                     results[key].update(value)
             continue
         for field in ('errors', 'warnings'):
+            if field not in traceback:
+                continue
+            content = traceback[field]
+            if isinstance(content, list):
+                results['fails'][filename.name] = content
+                continue
             for identifier, values in traceback[field].items():
                 results['fails'][identifier] = tuple(values)
     if success:

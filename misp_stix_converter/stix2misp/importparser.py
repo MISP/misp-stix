@@ -79,9 +79,9 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             self._sharing_group_id_error(error)
             return None
 
-    ################################################################################
-    #                                  PROPERTIES                                  #
-    ################################################################################
+    ############################################################################
+    #                                PROPERTIES                                #
+    ############################################################################
 
     @property
     def distribution(self) -> int:
@@ -123,15 +123,16 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     def warnings(self) -> defaultdict:
         return self.__warnings
 
-    ################################################################################
-    #                    ERRORS AND WARNINGS HANDLING FUNCTIONS                    #
-    ################################################################################
+    ############################################################################
+    #                   ERRORS AND WARNINGS HANDLING METHODS                   #
+    ############################################################################
 
-    def _attack_pattern_error(self, attack_pattern_id: str, exception: Exception):
+    def _attack_pattern_error(
+            self, attack_pattern_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         self.__errors[self._identifier].add(
-            f'Error with the Attack Pattern object with id {attack_pattern_id}'
-            f': {tb}'
+            'Error parsing the Attack Pattern object with id '
+            f'{attack_pattern_id}: {tb}'
         )
 
     def _attribute_from_pattern_parsing_error(self, indicator_id: str):
@@ -142,7 +143,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     def _course_of_action_error(
             self, course_of_action_id: str, exception: Exception):
         self.__errors[self._identifier].add(
-            'Error with the Course of Action object with id'
+            'Error parsing the Course of Action object with id'
             f'{course_of_action_id}: {self._parse_traceback(exception)}'
         )
 
@@ -172,31 +173,31 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     def _identity_error(self, identity_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         self.__errors[self._identifier].add(
-            f'Error with the Identity object with id {identity_id}: {tb}'
+            f'Error parsing the Identity object with id {identity_id}: {tb}'
         )
 
     def _indicator_error(self, indicator_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         self.__errors[self._identifier].add(
-            f'Error with the Indicator object with id {indicator_id}: {tb}'
+            f'Error parsing the Indicator object with id {indicator_id}: {tb}'
         )
 
     def _intrusion_set_error(self, intrusion_set_id: str, exception: Exception):
         self.__errors[self._identifier].add(
-            f'Error with the Intrusion Set object with id {intrusion_set_id}'
+            f'Error parsing the Intrusion Set object with id {intrusion_set_id}'
             f': {self._parse_traceback(exception)}'
         )
 
     def _location_error(self, location_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         self.__errors[self._identifier].add(
-            f'Error with the Location object with id {location_id}: {tb}'
+            f'Error parsing the Location object with id {location_id}: {tb}'
         )
 
     def _malware_error(self, malware_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         self.__errors[self._identifier].add(
-            f'Error with the Malware object with id {malware_id}: {tb}'
+            f'Error parsing the Malware object with id {malware_id}: {tb}'
         )
 
     def _no_converted_content_from_pattern_warning(
@@ -226,7 +227,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
 
     def _observed_data_error(self, observed_data_id: str, exception: Exception):
         self.__errors[self._identifier].add(
-            f'Error with the Observed Data object with id {observed_data_id}'
+            f'Error parsing the Observed Data object with id {observed_data_id}'
             f': {self._parse_traceback(exception)}'
         )
 
@@ -242,14 +243,14 @@ class STIXtoMISPParser(metaclass=ABCMeta):
 
     def _threat_actor_error(self, threat_actor_id: str, exception: Exception):
         self.__errors[self._identifier].add(
-            f'Error with the Threat Actor object with id {threat_actor_id}'
+            f'Error parsing the Threat Actor object with id {threat_actor_id}'
             f': {self._parse_traceback(exception)}'
         )
 
     def _tool_error(self, tool_id: str, exception: Exception):
         tb = self._parse_traceback(exception)
         self.__errors[self._identifier].add(
-            f'Error with the Tool object with id {tool_id}: {tb}'
+            f'Error parsing the Tool object with id {tool_id}: {tb}'
         )
 
     def _unable_to_load_stix_object_type_error(self, object_type: str):
@@ -322,13 +323,13 @@ class STIXtoMISPParser(metaclass=ABCMeta):
 
     def _vulnerability_error(self, vulnerability_id: str, exception: Exception):
         self.__errors[self._identifier].add(
-            f'Error with the Vulnerability object with id {vulnerability_id}'
+            f'Error parsing the Vulnerability object with id {vulnerability_id}'
             f': {self._parse_traceback(exception)}'
         )
 
-    ################################################################################
-    #           SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING FUNCTIONS.           #
-    ################################################################################
+    ############################################################################
+    #          SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING METHODS.          #
+    ############################################################################
 
     def __galaxies_up_to_date(self) -> bool:
         fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
@@ -389,14 +390,16 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         with open(self.synonyms_path, 'rt', encoding='utf-8') as f:
             self.__synonyms_mapping = json.loads(f.read())
 
-    ################################################################################
-    #                      UUID SANITATION HANDLING FUNCTIONS                      #
-    ################################################################################
+    ############################################################################
+    #                     UUID SANITATION HANDLING METHODS                     #
+    ############################################################################
 
     def _check_uuid(self, object_id: str):
         object_uuid = self._extract_uuid(object_id)
         if UUID(object_uuid).version not in _RFC_VERSIONS and object_uuid not in self.replacement_uuids:
-            self.replacement_uuids[object_uuid] = self._create_v5_uuid(object_uuid)
+            self.replacement_uuids[object_uuid] = self._create_v5_uuid(
+                object_uuid
+            )
 
     @staticmethod
     def _create_v5_uuid(value: str) -> UUID:

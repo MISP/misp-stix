@@ -43,8 +43,9 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     )
     __mac_address_pattern = '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
 
-    __SROs = ('opinion', 'relationship', 'sighting', 'x-misp-opinion')
-    __object_type_refs_to_skip = __observable_object_types + __SROs
+    __object_type_refs_to_skip = (
+        'opinion', 'relationship', 'sighting', 'x-misp-opinion'
+    )
     __stix_object_loading_mapping = Mapping(
         **{
             'attack-pattern': '_load_attack_pattern',
