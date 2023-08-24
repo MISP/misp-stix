@@ -63,6 +63,7 @@ _LOADED_FEATURES = (
     '_indicator',
     '_intrusion_set',
     '_malware',
+    '_malware_analysis',
     '_note',
     '_observed_data',
     '_opinion',
@@ -125,11 +126,11 @@ _MARKING_DEFINITION_TYPING = Union[
 _MISP_FEATURES_TYPING = Union[
     MISPAttribute, MISPEvent, MISPObject
 ]
-_OBSERVED_DATA_TYPING = Union[
-    ObservedData_v20, ObservedData_v21
-]
 _NETWORK_TRAFFIC_TYPING = Union[
     NetworkTraffic_v20, NetworkTraffic_v21
+]
+_OBSERVED_DATA_TYPING = Union[
+    ObservedData_v20, ObservedData_v21
 ]
 _RELATIONSHIP_TYPING = Union[
     Relationship_v20, Relationship_v21
@@ -175,7 +176,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._location: dict
         self._malware: dict
         self._malware_analysis: dict
-        self._malware_analysis_parser: _MALWARE_ANALYSIS_PARSER_TYPING
         self._marking_definition: dict
         self._note: dict
         self._observable: dict
@@ -227,7 +227,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         ) as error:
             self._critical_error(error)
 
-    def parse_stix_content(self, filename: str, single_event: Optional[bool] = False):
+    def parse_stix_content(
+            self, filename: str, single_event: Optional[bool] = False):
         try:
             with open(filename, 'rt', encoding='utf-8') as f:
                 bundle = stix2_parser(
@@ -270,10 +271,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @property
     def misp_events(self) -> Union[list, MISPEvent]:
-        try:
-            return self.__misp_events
-        except AttributeError:
-            return self.__misp_event
+        return getattr(
+            self, '_STIX2toMISPParser__misp_events', self.__misp_event
+        )
 
     @property
     def single_event(self) -> bool:

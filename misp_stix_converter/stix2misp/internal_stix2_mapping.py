@@ -161,6 +161,7 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             'ip-port': '_object_from_ip_port',
             'legal-entity': '_parse_legal_entity_object',
             'lnk': '_object_from_lnk',
+            'malware': '_parse_malware_object',
             'mutex': '_object_from_mutex',
             'netflow': '_object_from_netflow',
             'network-connection': '_object_from_network_connection',
@@ -334,13 +335,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_mp_export={'type': 'text', 'object_relation': 'mp-export'},
         x_misp_mp_import={'type': 'text', 'object_relation': 'mp-import'},
         x_misp_subnet_announced={'type': 'ip-src', 'object_relation': 'subnet-announced'}
-    )
-    __attack_pattern_object_mapping = Mapping(
-        description=STIX2toMISPMapping.summary_attribute(),
-        name=STIX2toMISPMapping.name_attribute(),
-        x_misp_prerequisites={'type': 'text', 'object_relation': 'prerequisites'},
-        x_misp_related_weakness={'type': 'weakness', 'object_relation': 'related-weakness'},
-        x_misp_solutions={'type': 'text', 'object_relation': 'solutions'}
     )
     __course_of_action_object_mapping = Mapping(
         name=STIX2toMISPMapping.name_attribute(),
@@ -1076,10 +1070,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def asn_pattern_mapping(cls, field) -> Union[dict, None]:
         return cls.__asn_object_mapping.get(field)
-
-    @classmethod
-    def attack_pattern_object_mapping(cls) -> dict:
-        return cls.__attack_pattern_object_mapping
 
     @classmethod
     def attributes_mapping(cls, field) -> Union[str, None]:
