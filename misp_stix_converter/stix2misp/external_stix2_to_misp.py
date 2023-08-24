@@ -6,7 +6,7 @@ import re
 from .exceptions import (
     InvalidSTIXPatternError, UnknownParsingFunctionError,
     UnknownObservableMappingError, UnknownPatternMappingError,
-    UnknownPatternTypeError)
+    UnknownPatternTypeError, UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import _INDICATOR_TYPING
 from .converters import (
@@ -15,8 +15,8 @@ from .converters import (
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
-    _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVED_DATA_TYPING,
-    _SDO_TYPING, _VULNERABILITY_TYPING)
+    _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
+    _OBSERVED_DATA_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from collections import defaultdict
 from pymisp import MISPGalaxy, MISPGalaxyCluster, MISPObject
 from stix2.v20.observables import (
@@ -144,6 +144,18 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._malware_parser = ExternalSTIX2MalwareConverter(self)
         return self._malware_parser
 
+    ############################################################################
+    #                       STIX OBJECTS LOADING METHODS                       #
+    ############################################################################
+
+    def _load_observable_object(self, observable: _OBSERVABLE_TYPING):
+        self._check_uuid(observable.id)
+        to_load = {'used': {}, 'observable': observable}
+        try:
+            self._observable[observable.id] = to_load
+        except AttributeError:
+            self._observable = {observable.id: to_load}
+
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
@@ -213,6 +225,23 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if len(attributes) > 1:
             return True
         return attributes[0]['object_relation'] in force_object
+
+    def _handle_object_refs(self, object_refs: list):
+        for object_ref in object_refs:
+            object_type = object_ref.split('--')[0]
+            if object_type in self._mapping.object_type_refs_to_skip():
+                continue
+            if object_type in self._mapping.observable_object_types():
+                if self._observable.get(object_ref) is not None:
+                    observable = self._observable[object_ref]
+                    if self.misp_event.uuid not in observable['used']:
+                        observable['used'][self.misp_event.uuid] = False
+            try:
+                self._handle_object(object_type, object_ref)
+            except UnknownStixObjectTypeError as error:
+                self._unknown_stix_object_type_error(error)
+            except UnknownParsingFunctionError as error:
+                self._unknown_parsing_function_error(error)
 
     def _handle_observables_mapping(self, observable_mapping: set) -> str:
         """
@@ -457,6 +486,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._clusters[intrusion_set_ref] = self._parse_galaxy(
                 intrusion_set_ref
             )
+
+    def _parse_loaded_features(self):
+        if hasattr(self, '_observable'):
+            for observable in self._observable.values():
+                observable['used'][self.misp_event.uuid] = False
+        super()._parse_loaded_features()
 
     def _parse_location(self, location_ref: str):
         """
@@ -768,11 +803,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _fetch_observable_object_refs(
             self, observed_data: _OBSERVED_DATA_TYPING):
         for reference in observed_data.object_refs:
+            self._observable[reference]['used'][self.misp_event.uuid] = True
             yield self._observable[reference]['observable']
 
     def _fetch_observable_object_refs_with_id(
             self, observed_data: _OBSERVED_DATA_TYPING):
         for reference in observed_data.object_refs:
+            self._observable[reference]['used'][self.misp_event.uuid] = True
             yield reference, self._observable[reference]['observable']
 
     @staticmethod

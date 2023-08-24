@@ -4,15 +4,16 @@
 from .exceptions import (
     AttributeFromPatternParsingError, UndefinedSTIXObjectError,
     UndefinedIndicatorError, UndefinedObservableError,
-    UnknownObservableMappingError, UnknownParsingFunctionError)
+    UnknownObservableMappingError, UnknownParsingFunctionError,
+    UnknownStixObjectTypeError)
 from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .converters import (
     InternalSTIX2AttackPatternConverter, InternalSTIX2MalwareAnalysisConverter,
     InternalSTIX2MalwareConverter)
 from .stix2_to_misp import (
-    STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
-    _GALAXY_OBJECTS_TYPING, _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING,
+    STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
+    _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
     _OBSERVED_DATA_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from collections import defaultdict
 from copy import deepcopy
@@ -129,6 +130,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._sighting = defaultdict(lambda: defaultdict(list))
             self._sighting['custom_opinion'][object_ref].append(sighting)
 
+    def _load_observable_object(self, observable: _OBSERVABLE_TYPING):
+        self._check_uuid(observable.id)
+        try:
+            self._observable[observable.id] = observable
+        except AttributeError:
+            self._observable = {observable.id: observable}
+
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
@@ -169,6 +177,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             if to_call is not None:
                 return to_call
         raise UndefinedSTIXObjectError(object_id)
+
+    def _handle_object_refs(self, object_refs: list):
+        for object_ref in object_refs:
+            object_type = object_ref.split('--')[0]
+            if object_type in self._mapping.object_type_refs_to_skip():
+                continue
+            try:
+                self._handle_object(object_type, object_ref)
+            except UnknownStixObjectTypeError as error:
+                self._unknown_stix_object_type_error(error)
+            except UnknownParsingFunctionError as error:
+                self._unknown_parsing_function_error(error)
 
     def _handle_observable_object_mapping(
             self, labels: list, object_id: str) -> str:
@@ -1082,7 +1102,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         parsed = []
         for object_ref in observed_data.object_refs:
             if object_ref.startswith('domain-name--'):
-                observable = self._observable[object_ref]['observable']
+                observable = self._observable[object_ref]
                 if self._has_domain_custom_fields(observable):
                     for feature, mapping in self._mapping.domain_ip_object_mapping().items():
                         if hasattr(observable, feature):
@@ -1104,7 +1124,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     for reference in observable.resolves_to_refs:
                         if reference in parsed:
                             continue
-                        address = self._observable[reference]['observable']
+                        address = self._observable[reference]
                         misp_object.add_attribute(
                             **{
                                 'value': address.value,
@@ -2861,11 +2881,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _fetch_observables(self, object_refs: Union[list, str]):
         if isinstance(object_refs, str):
-            return self._observable[object_refs]['observable']
+            return self._observable[object_refs]
         if len(object_refs) == 1:
-            return self._observable[object_refs[0]]['observable']
+            return self._observable[object_refs[0]]
         return tuple(
-            self._observable[object_ref]['observable']
+            self._observable[object_ref]
             for object_ref in object_refs
         )
 
@@ -2884,7 +2904,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _fetch_observables_with_id_v21(
             self, observed_data: ObservedData_v21) -> dict:
         return {
-            ref: self._observable[ref]['observable']
+            ref: self._observable[ref]
             for ref in observed_data.object_refs
         }
 

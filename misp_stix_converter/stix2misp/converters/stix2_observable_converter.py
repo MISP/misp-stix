@@ -163,13 +163,17 @@ class STIX2SampleObservableConverter(metaclass=ABCMeta):
         self._main_converter = main
 
     @property
+    def event_uuid(self):
+        return self.main_parser.misp_event.uuid
+
+    @property
     def main_parser(self):
         return self._main_converter.main_parser
 
     def _parse_artifact_observable(
             self, artifact_ref: str, malware: Malware) -> MISPObject:
         observable = self.main_parser._observable[artifact_ref]
-        if observable['used']:
+        if observable['used'][self.event_uuid]:
             return observable['misp_object']
         artifact = observable['observable']
         artifact_object = self._main_converter._create_misp_object_from_observable(
@@ -187,16 +191,17 @@ class STIX2SampleObservableConverter(metaclass=ABCMeta):
                 self._maing_converter._populate_object_attributes(
                     artifact_object, mapping, getattr(artifact, field)
                 )
+        observable['used'][self.event_uuid] = True
         misp_object = self._main_parser._add_misp_object(
             artifact_object, artifact
         )
-        observable.update({'used': True, 'misp_object': misp_object})
+        observable['misp_object'] = misp_object
         return misp_object
 
     def _parse_file_observable(
             self, file_ref: str, malware: Malware) -> MISPObject:
         observable = self.main_parser._observable[file_ref]
-        if observable['used']:
+        if observable['used'][self.event_uuid]:
             return observable['misp_object']
         _file = observable['observable']
         file_object = self._main_converter._create_misp_object_from_observable(
@@ -214,14 +219,15 @@ class STIX2SampleObservableConverter(metaclass=ABCMeta):
                 self._main_converter._populate_object_attributes(
                     file_object, mapping, getattr(_file, field)
                 )
+        observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(file_object, _file)
-        observable.update({'used': True, 'misp_object': misp_object})
+        observable['misp_object'] = misp_object
         return misp_object
 
     def _parse_software_observable(
             self, software_ref: str, malware: Malware) -> MISPObject:
         observable = self.main_parser._observable[software_ref]
-        if observable['used']:
+        if observable['used'][self.event_uuid]:
             return observable['misp_object']
         software = observable['observable']
         software_object = self._main_converter._create_misp_object_from_observable(
@@ -232,10 +238,11 @@ class STIX2SampleObservableConverter(metaclass=ABCMeta):
                 self._main_converter._populate_object_attributes(
                     software_object, mapping, getattr(software, field)
                 )
+        observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
             software_object, software
         )
-        observable.update({'used': True, 'misp_object': misp_object})
+        observable['misp_object'] = misp_object
         return misp_object
 
 

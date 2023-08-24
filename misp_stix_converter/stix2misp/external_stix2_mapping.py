@@ -180,10 +180,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     )
 
     # MISP OBJECTS MAPPING
-    __attack_pattern_object_mapping = Mapping(
-        name=STIX2toMISPMapping.name_attribute(),
-        description=STIX2toMISPMapping.summary_attribute()
-    )
     __course_of_action_object_mapping = Mapping(
         name=STIX2toMISPMapping.name_attribute(),
         description=STIX2toMISPMapping.description_attribute()
@@ -513,10 +509,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def asn_pattern_mapping(cls, field) -> Union[dict, None]:
         return cls.__asn_pattern_mapping.get(field)
-
-    @classmethod
-    def attack_pattern_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__attack_pattern_object_mapping.get(field)
 
     @classmethod
     def course_of_action_object_mapping(cls) -> dict:
