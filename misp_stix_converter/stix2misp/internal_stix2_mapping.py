@@ -7,6 +7,10 @@ from typing import Union
 
 
 class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
+    __object_type_refs_to_skip = (
+        *STIX2toMISPMapping.object_type_refs_to_skip(),
+        *STIX2toMISPMapping.observable_object_types()
+    )
     __attributes_mapping = {
         'vulnerability': '_parse_vulnerability_attribute'
     }
@@ -1270,6 +1274,10 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def objects_mapping(cls, field) -> Union[str, None]:
         return cls.__objects_mapping.get(field)
+
+    @classmethod
+    def object_type_refs_to_skip(cls) -> tuple:
+        return cls.__object_type_refs_to_skip
 
     @classmethod
     def observable_attributes_mapping(cls, field) -> Union[str, None]:

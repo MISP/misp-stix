@@ -33,7 +33,8 @@ from stix2.v20.sdo import (
     Malware as Malware_v20, ObservedData as ObservedData_v20,
     Report as Report_v20, ThreatActor as ThreatActor_v20, Tool as Tool_v20,
     Vulnerability as Vulnerability_v20)
-from stix2.v20.sro import Relationship as Relationship_v20, Sighting as Sighting_v20
+from stix2.v20.sro import (
+    Relationship as Relationship_v20, Sighting as Sighting_v20)
 from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v21.common import MarkingDefinition as MarkingDefinition_v21
 from stix2.v21.observables import (
@@ -49,7 +50,8 @@ from stix2.v21.sdo import (
     Malware as Malware_v21, ObservedData as ObservedData_v21,
     Report as Report_v21, ThreatActor as ThreatActor_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
-from stix2.v21.sro import Relationship as Relationship_v21, Sighting as Sighting_v21
+from stix2.v21.sro import (
+    Relationship as Relationship_v21, Sighting as Sighting_v21)
 from typing import Optional, Union
 
 # Some constants
@@ -74,10 +76,11 @@ _LOADED_FEATURES = (
 _MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
 
 # Typing
-_OBSERVABLE_TYPES = Union[
-    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress, EmailMessage,
-    File, IPv4Address, IPv6Address, MACAddress, Mutex, NetworkTraffic_v21, Process,
-    Software, URL, UserAccount, WindowsRegistryKey, X509Certificate
+_OBSERVABLE_TYPING = Union[
+    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress,
+    EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
+    NetworkTraffic_v21, Process, Software, URL, UserAccount, WindowsRegistryKey,
+    X509Certificate
 ]
 _ATTACK_PATTERN_PARSER_TYPING = Union[
     ExternalSTIX2AttackPatternConverter, InternalSTIX2AttackPatternConverter
@@ -226,6 +229,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             UnavailableSynonymsResourceError
         ) as error:
             self._critical_error(error)
+        for feature in ('_grouping', 'report', *_LOADED_FEATURES):
+            if hasattr(self, feature):
+                setattr(self, feature, {})
 
     def parse_stix_content(
             self, filename: str, single_event: Optional[bool] = False):
@@ -376,14 +382,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._note = {note.id: note}
 
-    def _load_observable_object(self, observable: _OBSERVABLE_TYPES):
-        self._check_uuid(observable.id)
-        to_load = {'used': False, 'observable': observable}
-        try:
-            self._observable[observable.id] = to_load
-        except AttributeError:
-            self._observable = {observable.id: to_load}
-
     def _load_observed_data(self, observed_data: _OBSERVED_DATA_TYPING):
         self._check_uuid(observed_data.id)
         try:
@@ -466,7 +464,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except KeyError:
             raise ObjectRefLoadingError(object_ref)
 
-    def _handle_contextual_data(self):
+    def _handle_unparsed_content(self):
         if hasattr(self, '_relationship'):
             if hasattr(self, '_sighting'):
                 self._parse_relationships_and_sightings()
@@ -476,18 +474,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._parse_sightings()
         else:
             getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
-
-    def _handle_object_refs(self, object_refs: list):
-        for object_ref in object_refs:
-            object_type = object_ref.split('--')[0]
-            if object_type in self._mapping.object_type_refs_to_skip():
-                continue
-            try:
-                self._handle_object(object_type, object_ref)
-            except UnknownStixObjectTypeError as error:
-                self._unknown_stix_object_type_error(error)
-            except UnknownParsingFunctionError as error:
-                self._unknown_parsing_function_error(error)
 
     def _handle_object(self, object_type: str, object_ref: str):
         feature = self._mapping.stix_to_misp_mapping(object_type)
@@ -559,37 +545,28 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self._handle_object_refs(grouping.object_refs)
-            self._handle_contextual_data()
+            self._handle_unparsed_content()
         else:
             events = []
             if hasattr(self, '_report') and self._report is not None:
                 for report in self._report.values():
                     self.__misp_event = self._misp_event_from_report(report)
                     self._handle_object_refs(report.object_refs)
-                    self._handle_contextual_data()
+                    self._handle_unparsed_content()
                     events.append(self.misp_event)
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self.__misp_event = self._misp_event_from_grouping(grouping)
                     self._handle_object_refs(grouping.object_refs)
-                    self._handle_contextual_data()
+                    self._handle_unparsed_content()
                     events.append(self.misp_event)
             self.__misp_events = events
 
     def _parse_bundle_with_no_report(self):
         self.__single_event = True
         self.__misp_event = self._create_generic_event()
-        for feature in _LOADED_FEATURES:
-            if hasattr(self, feature):
-                for object_ref in getattr(self, feature):
-                    object_type = object_ref.split('--')[0]
-                    try:
-                        self._handle_object(object_type, object_ref)
-                    except UnknownStixObjectTypeError as error:
-                        self._unknown_stix_object_type_error(error)
-                    except UnknownParsingFunctionError as error:
-                        self._unknown_parsing_function_error(error)
-        self._handle_contextual_data()
+        self._parse_loaded_features()
+        self._handle_unparsed_content()
 
     def _parse_bundle_with_single_report(self):
         if hasattr(self, '_report') and self._report is not None:
@@ -602,7 +579,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._handle_object_refs(grouping.object_refs)
         else:
             self._parse_bundle_with_no_report()
-        self._handle_contextual_data()
+        self._handle_unparsed_content()
 
     def _parse_galaxies_as_container(self):
         clusters = defaultdict(list)
@@ -623,6 +600,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if not tags['used'][self.misp_event.uuid]:
                 for tag in tags['tag_names']:
                     self.misp_event.add_tag(tag)
+
+    def _parse_loaded_features(self):
+        for feature in _LOADED_FEATURES:
+            if hasattr(self, feature):
+                for object_ref in getattr(self, feature):
+                    object_type = object_ref.split('--')[0]
+                    try:
+                        self._handle_object(object_type, object_ref)
+                    except UnknownStixObjectTypeError as error:
+                        self._unknown_stix_object_type_error(error)
+                    except UnknownParsingFunctionError as error:
+                        self._unknown_parsing_function_error(error)
 
     def _parse_location_object(self, location: Location,
                                to_return: Optional[bool] = False) -> MISPObject:
