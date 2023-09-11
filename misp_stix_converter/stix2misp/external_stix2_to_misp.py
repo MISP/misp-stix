@@ -236,6 +236,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     observable = self._observable[object_ref]
                     if self.misp_event.uuid not in observable['used']:
                         observable['used'][self.misp_event.uuid] = False
+                continue
             try:
                 self._handle_object(object_type, object_ref)
             except UnknownStixObjectTypeError as error:
