@@ -179,7 +179,7 @@ _MALWARE_OBJECTS = [
     {
         "type": "malware",
         "spec_version": "2.1",
-        "is_family": False,
+        "is_family": True,
         "id": "malware--2485b844-4efe-4343-84c8-eb33312dd56f",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
@@ -195,7 +195,7 @@ _MALWARE_OBJECTS = [
     {
         "type": "malware",
         "spec_version": "2.1",
-        "is_family": False,
+        "is_family": True,
         "id": "malware--c0217091-9d3d-42a1-8952-ccc12d4ad8d0",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
         "created": "2020-10-25T16:22:00.000Z",
