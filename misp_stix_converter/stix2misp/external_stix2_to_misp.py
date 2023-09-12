@@ -11,7 +11,7 @@ from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import _INDICATOR_TYPING
 from .converters import (
     ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
-    ExternalSTIX2MalwareConverter)
+    ExternalSTIX2MalwareConverter, STIX2ObservableObjectConverter)
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
@@ -131,6 +131,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
         self._malware_analysis_parser: ExternalSTIX2MalwareAnalysisConverter
         self._malware_parser: ExternalSTIX2MalwareConverter
+        self._observable_object_parser: STIX2ObservableObjectConverter
+
+    @property
+    def observable_object_parser(self) -> STIX2ObservableObjectConverter:
+        return getattr(
+            self, '_observable_objects_parser',
+            self._set_observable_object_parser()
+        )
 
     def _set_attack_pattern_parser(self) -> ExternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
@@ -143,6 +151,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_malware_parser(self) -> ExternalSTIX2MalwareConverter:
         self._malware_parser = ExternalSTIX2MalwareConverter(self)
         return self._malware_parser
+
+    def _set_observable_object_parser(self) -> STIX2ObservableObjectConverter:
+        self._observable_object_parser = STIX2ObservableObjectConverter(self)
+        return self._observable_object_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
@@ -277,6 +289,33 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         if self._is_pattern_too_complex(indicator.pattern):
             return '_create_stix_pattern_object'
         return '_parse_stix_pattern'
+
+    def _handle_unparsed_content(self):
+        if not hasattr(self, '_observable'):
+            return super()._handle_unparsed_content()
+        unparsed_content = defaultdict(list)
+        for object_id, content in self._observable.items():
+            if content['used'][self.misp_event.uuid]:
+                continue
+            unparsed_content[content['observable'].type].append(object_id)
+        for observable_type in self._mapping.observable_object_types():
+            if observable_type not in unparsed_content:
+                continue
+            feature = self._mapping.observable_mapping(observable_type)
+            if feature is None:
+                self._observable_object_mapping_error(
+                    unparsed_content[observable_type][0]
+                )
+                continue
+            to_call = f'_parse_{feature}_observable'
+            for object_id in unparsed_content[observable_type]:
+                if self._observable[object_id]['used'][self.misp_event.uuid]:
+                    continue
+                try:
+                    getattr(self.observable_object_parser, to_call)(object_id)
+                except Exception as exception:
+                    self._observable_object_error(object_id, exception)
+        super()._handle_unparsed_content()
 
     def _parse_campaign(self, campaign_ref: str):
         """

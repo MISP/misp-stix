@@ -1228,6 +1228,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return misp_object
 
     @staticmethod
+    def _populate_object_attributes(
+            misp_object: MISPObject, mapping: dict, values: Union[list, str]):
+        if isinstance(values, list):
+            for value in values:
+                misp_object.add_attribute(**{'value': value, **mapping})
+        else:
+            misp_object.add_attribute(**{'value': values, **mapping})
+
+    @staticmethod
     def _sanitise_value(value: str) -> str:
         return value.replace('\\\\', '\\')
 
