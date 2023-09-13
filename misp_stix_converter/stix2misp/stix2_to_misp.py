@@ -939,6 +939,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     relationship['relationship_type']
                 )
 
+    def _parse_galaxy_relationships(self):
+        for galaxy in self.misp_event.galaxies:
+            for cluster in galaxy.clusters:
+                if cluster.uuid in self._relationship:
+                    self._parse_cluster_relationships(cluster)
+
     def _parse_object_custom_opinion(self, misp_object: MISPObject):
         for sighting in self._sighting['custom_opinion'][misp_object.uuid]:
             for attribute in misp_object.attributes:
@@ -1018,10 +1024,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 )
         getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
         if not self.galaxies_as_tags:
-            for galaxy in self.misp_event.galaxies:
-                for cluster in galaxy.clusters:
-                    if cluster.uuid in self._relationship:
-                        self._parse_cluster_relationships(cluster)
+            self._parse_galaxy_relationships()
 
     def _parse_relationships_and_sightings(self):
         for opinion_id, opinion in self._sighting['opinion'].items():
@@ -1045,10 +1048,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._handle_object_sightings(misp_object)
         getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
         if not self.galaxies_as_tags:
-            for galaxy in self.misp_event.galaxies:
-                for cluster in galaxy.glusters:
-                    if cluster.uuid in self._relationship:
-                        self._parse_cluster_relationships(cluster)
+            self._parse_galaxy_relationships()
 
     def _parse_sighting(self, sighting: _SIGHTING_TYPING) -> MISPSighting:
         misp_sighting = MISPSighting()
