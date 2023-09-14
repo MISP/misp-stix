@@ -893,6 +893,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         elif misp_object.uuid in self._sighting.get('custom_opinion', {}):
             self._parse_object_custom_opinions(misp_object)
 
+    def _handle_opposite_reference(
+            self, relationship_type: str, source_uuid: str, target_uuid: str):
+        sanitised_uuid = self._sanitise_uuid(target_uuid)
+        reference = (source_uuid, self.relationship_types[relationship_type])
+        self._relationship[sanitised_uuid].add(reference)
+
     def _parse_attribute_custom_opinions(self, attribute: MISPAttribute):
         for sighting in self._sighting['custom_opinion'][attribute.uuid]:
             attribute.add_sighting(sighting)
@@ -910,6 +916,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 cluster = self._clusters[referenced_uuid]['cluster']
                 clusters[cluster['type']].append(cluster)
                 self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+                continue
+            if relationship_type in self.relationship_types:
+                self._handle_opposite_reference(
+                    relationship_type, attribute.uuid, referenced_uuid
+                )
         if clusters:
             for galaxy in self._aggregate_galaxy_clusters(clusters):
                 attribute.add_galaxy(galaxy)
@@ -922,6 +933,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 for tag in self._clusters[referenced_uuid]['tag_names']:
                     attribute.add_tag(tag)
                 self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+                continue
+            if relationship_type in self.relationship_types:
+                self._handle_opposite_reference(
+                    relationship_type, attribute.uuid, referenced_uuid
+                )
 
     def _parse_attribute_sightings(self, attribute: MISPAttribute):
         for sighting in self._sighting['sighting'][attribute.uuid]:
