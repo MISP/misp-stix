@@ -982,6 +982,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     for tag in self._clusters[referenced_uuid]['tag_names']:
                         attribute.add_tag(tag)
                 self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+            else:
+                misp_object.add_reference(
+                    self._sanitise_uuid(referenced_uuid),
+                    relationship['relationship_type']
+                )
 
     def _parse_object_sightings(self, misp_object: MISPObject):
         for sighting in self._sighting['sighting'][misp_object.uuid]:
