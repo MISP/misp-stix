@@ -225,6 +225,17 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f": {observable_types.__str__().replace('_', ', ')}"
         )
 
+    def _observable_object_error(self, observable_id: str, exception: Exception):
+        self.__errors[self._identifier].add(
+            f'Error parsing the Observable object with id {observable_id}'
+            f': {self._parse_traceback(exception)}'
+        )
+
+    def _observable_object_mapping_error(self, observable_id: str):
+        self.__errors[self._identifier].add(
+            f'Unable to map observable object with id {observable_id}.'
+        )
+
     def _observed_data_error(self, observed_data_id: str, exception: Exception):
         self.__errors[self._identifier].add(
             f'Error parsing the Observed Data object with id {observed_data_id}'
