@@ -401,16 +401,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._sighting['opinion_refs'][sanitised_ref].append(opinion_ref)
 
     def _load_relationship(self, relationship: _RELATIONSHIP_TYPING):
-        reference = {
-            'referenced_uuid': relationship.target_ref,
-            'relationship_type': relationship.relationship_type
-        }
+        reference = (relationship.target_ref, relationship.relationship_type)
         source_uuid = self._sanitise_uuid(relationship.source_ref)
         try:
-            self._relationship[source_uuid].append(reference)
+            self._relationship[source_uuid].add(reference)
         except AttributeError:
-            self._relationship = defaultdict(list)
-            self._relationship[source_uuid].append(reference)
+            self._relationship = defaultdict(set)
+            self._relationship[source_uuid].add(reference)
 
     def _load_report(self, report: _REPORT_TYPING):
         self._check_uuid(report.id)
@@ -908,7 +905,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self, attribute: MISPAttribute):
         clusters = defaultdict(list)
         for relationship in self._relationship[attribute.uuid]:
-            referenced_uuid = relationship['referenced_uuid']
+            referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
                 cluster = self._clusters[referenced_uuid]['cluster']
                 clusters[cluster['type']].append(cluster)
@@ -920,7 +917,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_attribute_relationships_as_tag_names(
             self, attribute: MISPAttribute):
         for relationship in self._relationship[attribute.uuid]:
-            referenced_uuid = relationship['referenced_uuid']
+            referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
                 for tag in self._clusters[referenced_uuid]['tag_names']:
                     attribute.add_tag(tag)
@@ -932,11 +929,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_cluster_relationships(self, cluster: MISPGalaxyCluster):
         for relationship in self._relationship[cluster.uuid]:
-            referenced_uuid = relationship['referenced_uuid']
+            referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
                 cluster.add_cluster_relation(
                     self._clusters[referenced_uuid]['cluster'].uuid,
-                    relationship['relationship_type']
+                    relationship_type
                 )
 
     def _parse_galaxy_relationships(self):
@@ -959,15 +956,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_object_relationships_as_container(self, misp_object: MISPObject):
         clusters = defaultdict(list)
         for relationship in self._relationship[misp_object.uuid]:
-            referenced_uuid = relationship['referenced_uuid']
+            referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
                 cluster = self._clusters[referenced_uuid]['cluster']
                 clusters[cluster['type']].append(cluster)
                 self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
             else:
                 misp_object.add_reference(
-                    self._sanitise_uuid(referenced_uuid),
-                    relationship['relationship_type']
+                    self._sanitise_uuid(referenced_uuid), relationship_type
                 )
         if clusters:
             for galaxy in self._aggregate_galaxy_clusters(clusters):
@@ -976,7 +972,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_object_relationships_as_tag_names(self, misp_object: MISPObject):
         for relationship in self._relationship[misp_object.uuid]:
-            referenced_uuid = relationship['referenced_uuid']
+            referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
                 for attribute in misp_object.attributes:
                     for tag in self._clusters[referenced_uuid]['tag_names']:
@@ -984,8 +980,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
             else:
                 misp_object.add_reference(
-                    self._sanitise_uuid(referenced_uuid),
-                    relationship['relationship_type']
+                    self._sanitise_uuid(referenced_uuid), relationship_type
                 )
 
     def _parse_object_sightings(self, misp_object: MISPObject):
