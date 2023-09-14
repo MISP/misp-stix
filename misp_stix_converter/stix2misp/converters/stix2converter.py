@@ -27,10 +27,6 @@ _GALAXY_OBJECTS_TYPING = Union[
 _MAIN_PARSER_TYPING = Union[
     'ExternalSTIX2toMISPParser', 'InternalSTIX2toMISPParser'
 ]
-_OBSERVABLE_TYPING = Union[
-    Artifact_v20, Artifact_v21,
-    File_v20, File_v21
-]
 _SDO_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21,
     Malware_v20, Malware_v21
@@ -40,6 +36,10 @@ _SDO_TYPING = Union[
 class STIX2Converter(metaclass=ABCMeta):
     def _set_main_parser(self, main: _MAIN_PARSER_TYPING):
         self.__main_parser = main
+
+    @property
+    def event_uuid(self) -> str:
+        return self.main_parser.misp_event.uuid
 
     @property
     def main_parser(self) -> _MAIN_PARSER_TYPING:
@@ -61,19 +61,6 @@ class STIX2Converter(metaclass=ABCMeta):
                 misp_object, stix_object['id']
             )
             misp_object.from_dict(**self._parse_timeline(stix_object))
-        return misp_object
-
-    def _create_misp_object_from_observable(
-            self, name: str, observable: _OBSERVABLE_TYPING,
-            stix_object: Optional[_SDO_TYPING] = None) -> MISPObject:
-        misp_object = MISPObject(
-            name, force_timestamps=True,
-            misp_objects_path_custom=_MISP_OBJECTS_PATH
-        )
-        self.main_parser._sanitise_object_uuid(
-            misp_object, observable.get('id') or stix_object['id']
-        )
-        misp_object.from_dict(**self._parse_timeline(stix_object))
         return misp_object
 
     ############################################################################
@@ -120,15 +107,6 @@ class STIX2Converter(metaclass=ABCMeta):
                 if hasattr(stix_object, last) and getattr(stix_object, last):
                     misp_object['last_seen'] = getattr(stix_object, last)
         return misp_object
-
-    @staticmethod
-    def _populate_object_attributes(
-            misp_object: MISPObject, mapping: dict, values: Union[list, str]):
-        if isinstance(values, list):
-            for value in values:
-                misp_object.add_attribute(**{'value': value, **mapping})
-        else:
-            misp_object.add_attribute(**{'value': values, **mapping})
 
     @staticmethod
     def _skip_first_seen_last_seen(sdo: _SDO_TYPING) -> bool:
@@ -235,7 +213,7 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
                       object_type: Optional[str] = None):
         clusters = self.main_parser._clusters
         if stix_object.id in clusters:
-            misp_event_uuid = self.main_parser.misp_event.uuid
+            misp_event_uuid = self.event_uuid
             clusters[stix_object.id]['used'][misp_event_uuid] = False
         else:
             feature = f'_parse_galaxy_{self.main_parser.galaxy_feature}'
@@ -251,7 +229,7 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             )
         return {
             'cluster': self._create_cluster(stix_object),
-            'used': {self.main_parser.misp_event.uuid: False}
+            'used': {self.event_uuid: False}
         }
 
     def _parse_galaxy_as_tag_names(self, stix_object: _GALAXY_OBJECTS_TYPING,
@@ -264,7 +242,7 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             ]
         return {
             'tag_names': tag_names,
-            'used': {self.main_parser.misp_event.uuid: False}
+            'used': {self.event_uuid: False}
         }
 
     ############################################################################
@@ -340,7 +318,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
         clusters = self.main_parser._clusters
         if stix_object.id in clusters:
-            misp_event_uuid = self.main_parser.misp_event.uuid
+            misp_event_uuid = self.event_uuid
             clusters[stix_object.id]['used'][misp_event_uuid] = False
         else:
             feature = f'_parse_galaxy_{self.main_parser.galaxy_feature}'
@@ -360,7 +338,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             )
         return {
             'cluster': cluster,
-            'used': {self.main_parser.misp_event.uuid: False}
+            'used': {self.event_uuid: False}
         }
 
     def _parse_galaxy_as_tag_names(
@@ -370,7 +348,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             'tag_names': [
                 f'misp-galaxy:{galaxy_type}="{stix_object.name}"'
             ],
-            'used': {self.misp_event.uuid: False}
+            'used': {self.event_uuid: False}
         }
 
     def _parse_galaxy_cluster(
