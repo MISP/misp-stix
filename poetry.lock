@@ -915,6 +915,21 @@ mixbox = ">=1.0.4"
 python-dateutil = "*"
 
 [[package]]
+name = "stix-edh"
+version = "1.0.3"
+description = "An EDH marking extension API for python-stix."
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "stix_edh-1.0.3-py2.py3-none-any.whl", hash = "sha256:709483e53bbd8b77b0267f1cef9879d757f200f196149050b0a805e6b0623d9d"},
+]
+
+[package.dependencies]
+mixbox = ">=1.0.5"
+stix = ">=1.1.1.8,<1.2.1.0"
+
+[[package]]
 name = "stix2-patterns"
 version = "2.0.0"
 description = "Validate STIX 2 Patterns."
@@ -1080,4 +1095,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "a60bee72bae375c3e58607d169f2fc51f3060012f6bf0dff09efc3bc15818777"
+content-hash = "841c2ce9ba50c8c1cdde91e6bb68207c2ddae9a2cb514ab4a643ca87d6bd885f"
