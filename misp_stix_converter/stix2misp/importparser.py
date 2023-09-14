@@ -8,7 +8,7 @@ from .exceptions import UnavailableGalaxyResourcesError
 from abc import ABCMeta
 from collections import defaultdict
 from pathlib import Path
-from pymisp import MISPEvent, MISPObject
+from pymisp import AbstractMISP, MISPEvent, MISPObject
 from stix2.v20.sdo import Indicator as Indicator_v20
 from stix2.v21.sdo import Indicator as Indicator_v21
 from types import GeneratorType
@@ -30,6 +30,8 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     def __init__(self, distribution: int, sharing_group_id: Union[int, None],
                  galaxies_as_tags: bool):
         self._identifier: str
+        self.__relationship_types: dict
+
         self._clusters: dict = {}
         self.__errors: defaultdict = defaultdict(set)
         self.__warnings: defaultdict = defaultdict(set)
@@ -98,6 +100,14 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     @property
     def galaxy_feature(self) -> bool:
         return self.__galaxy_feature
+
+    @property
+    def relationship_types(self) -> dict:
+        try:
+            return self.__relationship_types
+        except AttributeError:
+            self.__get_relationship_types()
+            return self.__relationship_types
 
     @property
     def replacement_uuids(self) -> dict:
@@ -339,6 +349,21 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         )
 
     ############################################################################
+    #            MISP OBJECT RELATIONSHIPS MAPPING CREATION METHODS            #
+    ############################################################################
+
+    def __get_relationship_types(self):
+        relationships_path = Path(
+            AbstractMISP().resources_path / 'misp-objects' / 'relationships'
+        )
+        with open(relationships_path / 'definition.json', 'r') as f:
+            relationships = json.load(f)
+        self.__relationship_types = {
+            relationship['name']: relationship['opposite'] for relationship
+            in relationships['values'] if 'opposite' in relationship
+        }
+
+    ############################################################################
     #          SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING METHODS.          #
     ############################################################################
 
@@ -352,30 +377,6 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         with open(fingerprint_path, 'rt', encoding='utf-8') as f:
             fingerprint = f.read()
         return fingerprint == latest_fingerprint
-
-    def __generate_synonyms_mapping(self):
-        data_path = _DATA_PATH / 'misp-galaxy' / 'clusters'
-        if not data_path.exists():
-            raise UnavailableGalaxyResourcesError(data_path)
-        synonyms_mapping = defaultdict(list)
-        for filename in data_path.glob('*.json'):
-            with open(filename, 'rt', encoding='utf-8') as f:
-                cluster_definition = json.loads(f.read())
-            cluster_type = f"misp-galaxy:{cluster_definition['type']}"
-            for cluster in cluster_definition['values']:
-                value = cluster['value']
-                tag_name = f'{cluster_type}="{value}"'
-                synonyms_mapping[value].append(tag_name)
-                if cluster.get('meta', {}).get('synonyms') is not None:
-                    for synonym in cluster['meta']['synonyms']:
-                        synonyms_mapping[synonym].append(tag_name)
-        with open(self.synonyms_path, 'wt', encoding='utf-8') as f:
-            f.write(json.dumps(synonyms_mapping))
-        latest_fingerprint = self.__get_misp_galaxy_fingerprint()
-        if latest_fingerprint is not None:
-            fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
-            with open(fingerprint_path, 'wt', encoding='utf-8') as f:
-                f.write(latest_fingerprint)
 
     @staticmethod
     def __get_misp_galaxy_fingerprint():
@@ -397,7 +398,28 @@ class STIXtoMISPParser(metaclass=ABCMeta):
 
     def __get_synonyms_mapping(self):
         if not self.synonyms_path.exists() or not self.__galaxies_up_to_date():
-            self.__generate_synonyms_mapping()
+            data_path = _DATA_PATH / 'misp-galaxy' / 'clusters'
+            if not data_path.exists():
+                raise UnavailableGalaxyResourcesError(data_path)
+            synonyms_mapping = defaultdict(list)
+            for filename in data_path.glob('*.json'):
+                with open(filename, 'rt', encoding='utf-8') as f:
+                    cluster_definition = json.loads(f.read())
+                cluster_type = f"misp-galaxy:{cluster_definition['type']}"
+                for cluster in cluster_definition['values']:
+                    value = cluster['value']
+                    tag_name = f'{cluster_type}="{value}"'
+                    synonyms_mapping[value].append(tag_name)
+                    if cluster.get('meta', {}).get('synonyms') is not None:
+                        for synonym in cluster['meta']['synonyms']:
+                            synonyms_mapping[synonym].append(tag_name)
+            with open(self.synonyms_path, 'wt', encoding='utf-8') as f:
+                f.write(json.dumps(synonyms_mapping))
+            latest_fingerprint = self.__get_misp_galaxy_fingerprint()
+            if latest_fingerprint is not None:
+                fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
+                with open(fingerprint_path, 'wt', encoding='utf-8') as f:
+                    f.write(latest_fingerprint)
         with open(self.synonyms_path, 'rt', encoding='utf-8') as f:
             self.__synonyms_mapping = json.loads(f.read())
 
