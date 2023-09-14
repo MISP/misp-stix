@@ -44,7 +44,7 @@ jobs:
     - name: Test with pytest
       run: |
         poetry run pytest tests/test_stix*_export.py
-        poetry run pytest tests/test_internal_stix*_import.py
+        poetry run pytest tests/test_*ternal_stix*_import.py
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
