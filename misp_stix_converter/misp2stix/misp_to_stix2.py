@@ -349,6 +349,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     'type': 'sighting',
                     'sighting_of_ref': reference_id
                 }
+                if 'x-misp-' in reference_id:
+                    sighting_args['allow_custom'] = True
                 if sighting.get('date_sighting', ''):
                     date_sighting = self._datetime_from_timestamp(sighting['date_sighting'])
                     sighting_args.update(
