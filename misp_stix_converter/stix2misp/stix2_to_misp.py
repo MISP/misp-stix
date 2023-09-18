@@ -891,7 +891,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if object_uuid in self._sighting.get('opinion_refs', {}):
             self._parse_object_opinions(misp_object)
         elif misp_object.uuid in self._sighting.get('custom_opinion', {}):
-            self._parse_object_custom_opinions(misp_object)
+            self._parse_object_custom_opinion(misp_object)
 
     def _handle_opposite_reference(
             self, relationship_type: str, source_uuid: str, target_uuid: str):
