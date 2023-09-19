@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "misp-stix"
-version = "2.4.175"
+version = "2.4.176"
 description = "Python scripts used by MISP to export MISP format into STIX and to import STIX into MISP format."
 authors = ["Christian Studer <christian.studer@circl.lu>"]
 maintainers = ["Christian Studer <christian.studer@circl.lu>"]
@@ -46,6 +46,7 @@ stix = "^1.2.0"
 cybox = "^2.1.0"
 mixbox = "^1.0.3"
 maec = "^4.1.0"
+stix-edh = "1.0.3"
 misp-lib-stix2 = "^3.0.1"
 
 [tool.poetry.dev-dependencies]
