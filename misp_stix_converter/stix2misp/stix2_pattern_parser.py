@@ -10,14 +10,14 @@ from stix2patterns.v20.inspector import InspectionListener as inspector_v20
 from stix2patterns.v21.grammars.STIXPatternLexer import STIXPatternLexer as lexer_v21
 from stix2patterns.v21.grammars.STIXPatternParser import STIXPatternParser as parser_v21
 from stix2patterns.v21.inspector import InspectionListener as inspector_v21
-from typing import Optional, Union
-
-_VALID_VERSIONS = ('2.0', '2.1')
+from typing import Union
 
 
 class STIX2PatternParser:
-    def __init__(self, version: Optional[str]='2.1'):
-        self.__version = self.__set_version(version)
+    def __init__(self):
+        self.__pattern_data: dict
+        self.__valid: bool
+        self.__valid_versions = ('2.0', '2.1')
 
     @property
     def errors(self):
@@ -32,19 +32,13 @@ class STIX2PatternParser:
         return self.__valid
 
     @property
-    def version(self) -> str:
-        return self.__version
+    def valid_versions(self) -> tuple:
+        return self.__valid_versions
 
-    @version.setter
-    def version(self, version: str):
-        self.__version = self.__set_version(version)
-
-    def handle_indicator(self, indicator: Union[Indicator_v20, Indicator_v21, dict]):
-        self.version = indicator.get('spec_version', '2.0')
-        self.load_stix_pattern(indicator['pattern'])
-
-    def load_stix_pattern(self, pattern_str: str):
-        getattr(self, f'_load_stix_{self.version}_pattern')(pattern_str)
+    def handle_indicator(
+            self, indicator: Union[Indicator_v20, Indicator_v21, dict]):
+        version = self.__set_version(indicator.get('spec_version', '2.0'))
+        getattr(self, f'_load_stix_{version}_pattern')(indicator['pattern'])
 
     def _load_stix_20_pattern(self, pattern_str: str):
         pattern = InputStream(pattern_str)
@@ -97,9 +91,11 @@ class STIX2PatternParser:
     @staticmethod
     def __handle_value(features: list, assertion: str, value: str) -> list:
         return [
-            [feature if isinstance(feature, str) else '[*]' for feature in features],
-            assertion,
-            value.strip("'")
+            [
+                feature if isinstance(feature, str) else '[*]'
+                for feature in features
+            ],
+            assertion, value.strip("'")
         ]
 
     def __parse_err_listener(self, err_listener):
@@ -115,8 +111,7 @@ class STIX2PatternParser:
             ]
         self.__pattern_data = pattern_data
 
-    @staticmethod
-    def __set_version(version: str) -> str:
-        if version in _VALID_VERSIONS:
+    def __set_version(self, version: str) -> str:
+        if version in self.valid_versions:
             return version.replace('.', '')
         return '21'
