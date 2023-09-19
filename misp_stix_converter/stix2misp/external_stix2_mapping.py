@@ -15,7 +15,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         ' FOLLOWEDBY ',
         ' ISSUBSET ',
         ' ISSUPERSET',
-        ' LIKE ',
         ' MATCHES ',
         ' NOT ',
         ' REPEATS ',
