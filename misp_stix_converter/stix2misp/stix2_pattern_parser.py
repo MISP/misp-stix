@@ -1,3 +1,4 @@
+import ast
 import stix2patterns.v20.object_validator as validator_v20
 import stix2patterns.v21.object_validator as validator_v21
 from antlr4 import CommonTokenStream, InputStream, ParseTreeWalker
@@ -88,14 +89,14 @@ class STIX2PatternParser:
                 self.__set_pattern_data(pattern_data)
         self.__valid = self.__parse_err_listener(parseErrListener.err_strings)
 
-    @staticmethod
-    def __handle_value(features: list, assertion: str, value: str) -> list:
+    def __handle_value(
+            self, features: list, assertion: str, value: str) -> list:
         return [
             [
                 feature if isinstance(feature, str) else '[*]'
                 for feature in features
             ],
-            assertion, value.strip("'")
+            assertion, self.__validate_value(value)
         ]
 
     def __parse_err_listener(self, err_listener):
@@ -115,3 +116,10 @@ class STIX2PatternParser:
         if version in self.valid_versions:
             return version.replace('.', '')
         return '21'
+
+    @staticmethod
+    def __validate_value(value: str) -> Union[int, list, str, tuple]:
+        try:
+            return ast.literal_eval(value)
+        except ValueError:
+            return value
