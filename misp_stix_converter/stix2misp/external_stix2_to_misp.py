@@ -50,7 +50,7 @@ _observable_skip_properties = (
     'encryption_algorithm', 'extensions', 'id', 'is_encrypted', 'is_multipart',
     'magic_number_hex', 'received_lines', 'sender_ref', 'spec_version', 'type'
 )
-_valid_pattern_assertions = ('=', 'LIKE')
+_valid_pattern_assertions = ('=', 'IN', 'LIKE')
 
 # Typing definitions
 _AUTONOMOUS_SYSTEM_TYPING = Union[
@@ -2041,25 +2041,23 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 }
             )
         features = ('ipv4-addr', 'ipv6-addr')
+        mapping = self._mapping.subnet_announced_attribute()
         for feature in features:
             if feature not in pattern.comparisons:
                 continue
-            for keys, assertion, value in pattern.comparisons[feature]:
+            for keys, assertion, values in pattern.comparisons[feature]:
                 if assertion not in _valid_pattern_assertions:
                     continue
                 if keys[0] != 'value':
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
-                attributes.append(
-                    {
-                        'value': value,
-                        **self._mapping.subnet_announced_attribute()
-                    }
-                )
+                if isinstance(values, (list, tuple)):
+                    for value in values:
+                        attributes.append({'value': value, **mapping})
+                else:
+                    attributes.append({'value': values, **mapping})
         if 'asn' in (attr['object_relation'] for attr in attributes):
-            self._handle_import_case(
-                indicator, attributes, 'asn'
-            )
+            self._handle_import_case(indicator, attributes, 'asn')
         else:
             self._no_converted_content_from_pattern_warning(indicator)
             self._create_stix_pattern_object(indicator)
@@ -2088,18 +2086,18 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for feature in features:
             if feature not in pattern.comparisons:
                 continue
-            for keys, assertion, value in pattern.comparisons[feature]:
+            mapping = self._mapping.domain_ip_pattern_mapping(feature)
+            for keys, assertion, values in pattern.comparisons[feature]:
                 if assertion not in _valid_pattern_assertions:
                     continue
                 if keys[0] != 'value':
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
-                attributes.append(
-                    {
-                        'value': value,
-                        **self._mapping.domain_ip_pattern_mapping(feature)
-                    }
-                )
+                if isinstance(values, (list, tuple)):
+                    for value in values:
+                        attributes.append({'value': value, **mapping})
+                else:
+                    attributes.append({'value': values, **mapping})
         if any(key not in features for key in pattern.comparisons.keys()):
             self._unknown_pattern_mapping_warning(
                 indicator.id,
@@ -2120,12 +2118,16 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_email_address_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
-        for keys, assertion, value in pattern.comparisons['email-addr']:
+        for keys, assertion, values in pattern.comparisons['email-addr']:
             if assertion not in _valid_pattern_assertions:
                 continue
-            attribute = self._mapping.email_address_pattern_mapping(keys[0])
-            if attribute is not None:
-                attributes.append({'value': value, **attribute})
+            mapping = self._mapping.email_address_pattern_mapping(keys[0])
+            if mapping is not None:
+                if isinstance(values, (list, tuple)):
+                    for value in values:
+                        attributes.append({'value': value, **mapping})
+                else:
+                    attributes.append({'value': values, **mapping})
             else:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
         if attributes:
@@ -2703,6 +2705,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _is_pattern_too_complex(self, pattern: str) -> bool:
         if any(keyword in pattern for keyword in self._mapping.pattern_forbidden_relations()):
             return True
-        if all(keyword in pattern for keyword in (' AND ', ' OR ')):
+        if ' AND ' in pattern and ' OR ' in pattern:
             return True
         return False
