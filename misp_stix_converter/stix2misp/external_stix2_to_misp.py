@@ -2264,7 +2264,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         attributes = []
         for feature in ('ipv4-addr', 'ipv6-addr'):
             if feature in pattern.comparisons:
-                for keys, assertion, value in pattern.comparisons[feature]:
+                for keys, assertion, values in pattern.comparisons[feature]:
                     if assertion not in _valid_pattern_assertions:
                         continue
                     if keys[0] != 'value':
@@ -2272,9 +2272,15 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                             indicator.id, '.'.join(keys)
                         )
                         continue
-                    attributes.append(
-                        {'value': value, **self._mapping.ip_attribute()}
-                    )
+                    if isinstance(values, (list, tuple)):
+                        for value in values:
+                            attributes.append(
+                                {'value': value, **self._mapping.ip_attribute()}
+                            )
+                    else:
+                        attributes.append(
+                            {'value': values, **self._mapping.ip_attribute()}
+                        )
         if attributes:
             self._handle_import_case(indicator, attributes, 'ip-port')
         else:
