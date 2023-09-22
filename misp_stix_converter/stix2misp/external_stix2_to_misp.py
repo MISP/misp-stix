@@ -2106,14 +2106,18 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if not isinstance(values, tuple):
                 attributes.append(
                     {
-                        'value': f'AS{value}' if field == 'number' else value,
+                        'value': f'AS{values}' if field == 'number' else values,
                         **mapping
                     }
                 )
                 continue
             for value in values:
-                as_value = f'AS{value}' if field == 'number' else value
-                attributes.append({'value': as_value, **mapping})
+                attributes.append(
+                    {
+                        'value': f'AS{value}' if field == 'number' else value,
+                        **mapping
+                    }
+                )
         features = ('ipv4-addr', 'ipv6-addr')
         mapping = self._mapping.subnet_announced_attribute()
         for feature in features:
@@ -2437,10 +2441,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if assertion not in _valid_pattern_assertions:
                 continue
             if 'protocols' in keys:
-                layer = self._mapping.connection_protocols(value)
+                layer = self._mapping.connection_protocols(values)
                 if layer is None:
                     self._unknown_network_protocol_warning(
-                        value, indicator.id
+                        values, indicator.id
                     )
                     continue
                 if isinstance(values, tuple):
