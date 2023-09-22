@@ -118,7 +118,7 @@ class STIX2PatternParser:
         return '21'
 
     @staticmethod
-    def __validate_value(value: str) -> Union[int, list, str, tuple]:
+    def __validate_value(value: str) -> Union[int, str, tuple]:
         try:
             return ast.literal_eval(value)
         except ValueError:

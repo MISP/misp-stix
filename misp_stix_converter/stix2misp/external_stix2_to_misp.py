@@ -1989,11 +1989,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     }
                 )
 
-    ################################################################################
-    #                          PATTERNS PARSING FUNCTIONS                          #
-    ################################################################################
+    ############################################################################
+    #                         PATTERNS PARSING METHODS                         #
+    ############################################################################
 
-    def _compile_stix_pattern(self, indicator: _INDICATOR_TYPING) -> PatternData:
+    def _compile_stix_pattern(
+            self, indicator: _INDICATOR_TYPING) -> PatternData:
         try:
             self._pattern_parser.handle_indicator(indicator)
         except AttributeError:
@@ -2051,7 +2052,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 if keys[0] != 'value':
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
-                if isinstance(values, (list, tuple)):
+                if isinstance(values, tuple):
                     for value in values:
                         attributes.append({'value': value, **mapping})
                 else:
@@ -2093,7 +2094,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 if keys[0] != 'value':
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
                     continue
-                if isinstance(values, (list, tuple)):
+                if isinstance(values, tuple):
                     for value in values:
                         attributes.append({'value': value, **mapping})
                 else:
@@ -2123,7 +2124,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 continue
             mapping = self._mapping.email_address_pattern_mapping(keys[0])
             if mapping is not None:
-                if isinstance(values, (list, tuple)):
+                if isinstance(values, tuple):
                     for value in values:
                         attributes.append({'value': value, **mapping})
                 else:
@@ -2272,7 +2273,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                             indicator.id, '.'.join(keys)
                         )
                         continue
-                    if isinstance(values, (list, tuple)):
+                    if isinstance(values, tuple):
                         for value in values:
                             attributes.append(
                                 {'value': value, **self._mapping.ip_attribute()}
