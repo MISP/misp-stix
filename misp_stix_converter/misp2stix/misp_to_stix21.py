@@ -199,6 +199,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'type': 'opinion',
             'object_refs': [reference_id]
         }
+        if 'x-misp-' in reference_id:
+            opinion_args['allow_custom'] = True
         if sighting.get('date_sighting', ''):
             date_sighting = self._datetime_from_timestamp(sighting['date_sighting'])
             opinion_args.update(

@@ -1,4 +1,4 @@
-__version__ = '2.4.175'
+__version__ = '2.4.176'
 
 import argparse
 from .misp_stix_mapping import Mapping # noqa
@@ -13,7 +13,7 @@ from .misp_stix_converter import ( # noqa
     _from_misp, misp_attribute_collection_to_stix1, misp_collection_to_stix2,
     misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2,
     stix_1_to_misp, stix_2_to_misp)
-# STIX 1 special halpers
+# STIX 1 special helpers
 from .misp_stix_converter import ( # noqa
     _get_campaigns, _get_courses_of_action, _get_events, _get_indicators,
     _get_observables, _get_threat_actors, _get_ttps, _from_misp)
