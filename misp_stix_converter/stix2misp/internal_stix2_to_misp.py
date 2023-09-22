@@ -4,12 +4,16 @@
 from .exceptions import (
     AttributeFromPatternParsingError, UndefinedSTIXObjectError,
     UndefinedIndicatorError, UndefinedObservableError,
-    UnknownObservableMappingError, UnknownParsingFunctionError)
+    UnknownObservableMappingError, UnknownParsingFunctionError,
+    UnknownStixObjectTypeError)
 from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
+from .converters import (
+    InternalSTIX2AttackPatternConverter, InternalSTIX2MalwareAnalysisConverter,
+    InternalSTIX2MalwareConverter)
 from .stix2_to_misp import (
-    STIX2toMISPParser, _ATTACK_PATTERN_TYPING, _COURSE_OF_ACTION_TYPING,
-    _GALAXY_OBJECTS_TYPING, _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING,
+    STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
+    _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
     _OBSERVED_DATA_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from collections import defaultdict
 from copy import deepcopy
@@ -63,6 +67,22 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                  galaxies_as_tags: Optional[bool] = False):
         super().__init__(distribution, sharing_group_id, galaxies_as_tags)
         self._mapping = InternalSTIX2toMISPMapping
+        # parsers
+        self._attack_pattern_parser: InternalSTIX2AttackPatternConverter
+        self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
+        self._malware_parser: InternalSTIX2MalwareConverter
+
+    def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
+        self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
+        return self._attack_pattern_parser
+
+    def _set_malware_analysis_parser(self) -> InternalSTIX2MalwareAnalysisConverter:
+        self._malware_analysis_parser = InternalSTIX2MalwareAnalysisConverter(self)
+        return self._malware_analysis_parser
+
+    def _set_malware_parser(self) -> InternalSTIX2MalwareConverter:
+        self._malware_parser = InternalSTIX2MalwareConverter(self)
+        return self._malware_parser
 
     ################################################################################
     #                        STIX OBJECTS LOADING FUNCTIONS                        #
@@ -110,6 +130,13 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self._sighting = defaultdict(lambda: defaultdict(list))
             self._sighting['custom_opinion'][object_ref].append(sighting)
 
+    def _load_observable_object(self, observable: _OBSERVABLE_TYPING):
+        self._check_uuid(observable.id)
+        try:
+            self._observable[observable.id] = observable
+        except AttributeError:
+            self._observable = {observable.id: observable}
+
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
     ################################################################################
@@ -151,6 +178,18 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 return to_call
         raise UndefinedSTIXObjectError(object_id)
 
+    def _handle_object_refs(self, object_refs: list):
+        for object_ref in object_refs:
+            object_type = object_ref.split('--')[0]
+            if object_type in self._mapping.object_type_refs_to_skip():
+                continue
+            try:
+                self._handle_object(object_type, object_ref)
+            except UnknownStixObjectTypeError as error:
+                self._unknown_stix_object_type_error(error)
+            except UnknownParsingFunctionError as error:
+                self._unknown_parsing_function_error(error)
+
     def _handle_observable_object_mapping(
             self, labels: list, object_id: str) -> str:
         parsed_labels = {
@@ -168,20 +207,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             if to_call is not None:
                 return to_call
         raise UndefinedObservableError(object_id)
-
-    def _parse_attack_pattern(self, attack_pattern_ref: str):
-        attack_pattern = self._get_stix_object(attack_pattern_ref)
-        feature = self._handle_object_mapping(
-            attack_pattern.labels, attack_pattern.id
-        )
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(attack_pattern)
-        except Exception as exception:
-            self._attack_pattern_error(attack_pattern.id, exception)
 
     def _parse_campaign(self, campaign_ref: str):
         campaign = self._get_stix_object(campaign_ref)
@@ -318,18 +343,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except Exception as exception:
             self._location_error(location.id, exception)
 
-    def _parse_malware(self, malware_ref: str):
-        malware = self._get_stix_object(malware_ref)
-        feature = self._handle_object_mapping(malware.labels, malware.id)
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(malware)
-        except Exception as exception:
-            self._malware_error(malware.id, exception)
-
     def _parse_note(self, note_ref: str):
         note = self._get_stix_object(note_ref)
         misp_object = self._create_misp_object('annotation', note)
@@ -420,37 +433,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             }
         )
         self._galaxies[galaxy_type] = misp_galaxy
-
-    def _parse_attack_pattern_object(
-            self, attack_pattern: _ATTACK_PATTERN_TYPING):
-        misp_object = self._create_misp_object('attack-pattern', attack_pattern)
-        for key, mapping in self._mapping.attack_pattern_object_mapping().items():
-            if hasattr(attack_pattern, key):
-                self._populate_object_attributes(
-                    misp_object,
-                    mapping,
-                    getattr(attack_pattern, key)
-                )
-        if hasattr(attack_pattern, 'external_references'):
-            for reference in attack_pattern.external_references:
-                misp_object.add_attribute(
-                    **self._parse_attack_pattern_reference(reference)
-                )
-        self._add_misp_object(misp_object, attack_pattern)
-
-    def _parse_attack_pattern_reference(
-            self, reference: _EXTERNAL_REFERENCE_TYPING) -> dict:
-        if reference.source_name == 'url':
-            return {
-                'value': reference.url,
-                **self._mapping.references_attribute()
-            }
-        external_id = reference.external_id
-        return {
-            'value': external_id.split('-')[1]
-            if external_id.startswith('CAPEC-') else external_id,
-            **self._mapping.attack_pattern_id_attribute()
-        }
 
     def _parse_course_of_action_object(
             self, course_of_action: _COURSE_OF_ACTION_TYPING):
@@ -2902,7 +2884,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             return self._observable[object_refs]
         if len(object_refs) == 1:
             return self._observable[object_refs[0]]
-        return tuple(self._observable[object_ref] for object_ref in object_refs)
+        return tuple(
+            self._observable[object_ref]
+            for object_ref in object_refs
+        )
 
     @staticmethod
     def _fetch_observables_v20(observed_data: ObservedData_v20):
@@ -2918,7 +2903,23 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _fetch_observables_with_id_v21(
             self, observed_data: ObservedData_v21) -> dict:
-        return {ref: self._observable[ref] for ref in observed_data.object_refs}
+        return {
+            ref: self._observable[ref]
+            for ref in observed_data.object_refs
+        }
+
+    @staticmethod
+    def _handle_external_references(external_references: list) -> dict:
+        meta = defaultdict(list)
+        for reference in external_references:
+            if reference.get('url'):
+                meta['refs'].append(reference['url'])
+            feature = 'aliases' if reference.get('source_name') == 'cve' else 'external_id'
+            if reference.get('external_id'):
+                meta[feature].append(reference['external_id'])
+        if 'external_id' in meta and len(meta['external_id']) == 1:
+            meta['external_id'] = meta.pop('external_id')[0]
+        return meta
 
     def _has_domain_custom_fields(self, observable: DomainName) -> bool:
         for feature in self._mapping.domain_ip_object_mapping():

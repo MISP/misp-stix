@@ -648,10 +648,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
         meta = galaxy.clusters[0].meta
         self.assertEqual(
-            meta['external_id'],
+            meta['aliases'][0],
             vulnerability.external_references[0]['external_id']
         )
-        self.assertEqual(meta['aliases'], vulnerability.x_misp_aliases)
 
     ################################################################################
     #                       MISP OBJECTS CHECKING FUNCTIONS.                       #

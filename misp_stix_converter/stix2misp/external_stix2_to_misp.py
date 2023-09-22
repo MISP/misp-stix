@@ -6,14 +6,17 @@ import re
 from .exceptions import (
     InvalidSTIXPatternError, UnknownParsingFunctionError,
     UnknownObservableMappingError, UnknownPatternMappingError,
-    UnknownPatternTypeError)
+    UnknownPatternTypeError, UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import _INDICATOR_TYPING
+from .converters import (
+    ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
+    ExternalSTIX2MalwareConverter, STIX2ObservableObjectConverter)
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
-    _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVED_DATA_TYPING,
-    _SDO_TYPING, _VULNERABILITY_TYPING)
+    _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
+    _OBSERVED_DATA_TYPING, _SDO_TYPING, _VULNERABILITY_TYPING)
 from collections import defaultdict
 from pymisp import MISPGalaxy, MISPGalaxyCluster, MISPObject
 from stix2.v20.observables import (
@@ -28,7 +31,7 @@ from stix2.v20.observables import (
     X509Certificate as X509Certificate_v20)
 from stix2.v20.sdo import (
     CourseOfAction as CourseOfAction_v20, Vulnerability as Vulnerability_v20)
-from stix2.v20.observables import (
+from stix2.v21.observables import (
     AutonomousSystem as AutonomousSystem_v21, Directory as Directory_v21,
     DomainName as DomainName_v21, EmailAddress as EmailAddress_v21,
     EmailMessage as EmailMessage_v21, File as File_v21,
@@ -127,6 +130,46 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                  galaxies_as_tags: Optional[bool] = False):
         super().__init__(distribution, sharing_group_id, galaxies_as_tags)
         self._mapping = ExternalSTIX2toMISPMapping
+        # parsers
+        self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
+        self._malware_analysis_parser: ExternalSTIX2MalwareAnalysisConverter
+        self._malware_parser: ExternalSTIX2MalwareConverter
+        self._observable_object_parser: STIX2ObservableObjectConverter
+
+    @property
+    def observable_object_parser(self) -> STIX2ObservableObjectConverter:
+        return getattr(
+            self, '_observable_objects_parser',
+            self._set_observable_object_parser()
+        )
+
+    def _set_attack_pattern_parser(self) -> ExternalSTIX2AttackPatternConverter:
+        self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
+        return self._attack_pattern_parser
+
+    def _set_malware_analysis_parser(self) -> ExternalSTIX2MalwareAnalysisConverter:
+        self._malware_analysis_parser = ExternalSTIX2MalwareAnalysisConverter(self)
+        return self._malware_analysis_parser
+
+    def _set_malware_parser(self) -> ExternalSTIX2MalwareConverter:
+        self._malware_parser = ExternalSTIX2MalwareConverter(self)
+        return self._malware_parser
+
+    def _set_observable_object_parser(self) -> STIX2ObservableObjectConverter:
+        self._observable_object_parser = STIX2ObservableObjectConverter(self)
+        return self._observable_object_parser
+
+    ############################################################################
+    #                       STIX OBJECTS LOADING METHODS                       #
+    ############################################################################
+
+    def _load_observable_object(self, observable: _OBSERVABLE_TYPING):
+        self._check_uuid(observable.id)
+        to_load = {'used': {}, 'observable': observable}
+        try:
+            self._observable[observable.id] = to_load
+        except AttributeError:
+            self._observable = {observable.id: to_load}
 
     ################################################################################
     #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
@@ -198,6 +241,24 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             return True
         return attributes[0]['object_relation'] in force_object
 
+    def _handle_object_refs(self, object_refs: list):
+        for object_ref in object_refs:
+            object_type = object_ref.split('--')[0]
+            if object_type in self._mapping.object_type_refs_to_skip():
+                continue
+            if object_type in self._mapping.observable_object_types():
+                if self._observable.get(object_ref) is not None:
+                    observable = self._observable[object_ref]
+                    if self.misp_event.uuid not in observable['used']:
+                        observable['used'][self.misp_event.uuid] = False
+                continue
+            try:
+                self._handle_object(object_type, object_ref)
+            except UnknownStixObjectTypeError as error:
+                self._unknown_stix_object_type_error(error)
+            except UnknownParsingFunctionError as error:
+                self._unknown_parsing_function_error(error)
+
     def _handle_observables_mapping(self, observable_mapping: set) -> str:
         """
         Simple Observable object types handling function.
@@ -232,20 +293,32 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             return '_create_stix_pattern_object'
         return '_parse_stix_pattern'
 
-    def _parse_attack_pattern(self, attack_pattern_ref: str):
-        """
-        AttackPattern object parsing function.
-        We check if the attack pattern already has been seen by looking at its
-        ID, otherwise we convert it as a MISP Galaxy Cluster.
-
-        :param attack_pattern_ref: The AttackPattern id
-        """
-        if attack_pattern_ref in self._clusters:
-            self._clusters[attack_pattern_ref]['used'][self.misp_event.uuid] = False
-        else:
-            self._clusters[attack_pattern_ref] = self._parse_galaxy(
-                attack_pattern_ref
-            )
+    def _handle_unparsed_content(self):
+        if not hasattr(self, '_observable'):
+            return super()._handle_unparsed_content()
+        unparsed_content = defaultdict(list)
+        for object_id, content in self._observable.items():
+            if content['used'][self.misp_event.uuid]:
+                continue
+            unparsed_content[content['observable'].type].append(object_id)
+        for observable_type in self._mapping.observable_object_types():
+            if observable_type not in unparsed_content:
+                continue
+            feature = self._mapping.observable_mapping(observable_type)
+            if feature is None:
+                self._observable_object_mapping_error(
+                    unparsed_content[observable_type][0]
+                )
+                continue
+            to_call = f'_parse_{feature}_observable'
+            for object_id in unparsed_content[observable_type]:
+                if self._observable[object_id]['used'][self.misp_event.uuid]:
+                    continue
+                try:
+                    getattr(self.observable_object_parser, to_call)(object_id)
+                except Exception as exception:
+                    self._observable_object_error(object_id, exception)
+        super()._handle_unparsed_content()
 
     def _parse_campaign(self, campaign_ref: str):
         """
@@ -457,6 +530,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 intrusion_set_ref
             )
 
+    def _parse_loaded_features(self):
+        if hasattr(self, '_observable'):
+            for observable in self._observable.values():
+                observable['used'][self.misp_event.uuid] = False
+        super()._parse_loaded_features()
+
     def _parse_location(self, location_ref: str):
         """
         STIX 2.1 Location object parsing function. A geolocation MISP object is
@@ -483,19 +562,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     location, feature
                 )
 
-    def _parse_malware(self, malware_ref: str):
-        """
-        Malware object parsing function.
-        We check if the malware already has been seen by looking at its ID,
-        otherwise we convert it as a MISP Galaxy Cluster.
-
-        :param malware_ref: The Malware id
-        """
-        if malware_ref in self._clusters:
-            self._clusters[malware_ref]['used'][self.misp_event.uuid] = False
-        else:
-            self._clusters[malware_ref] = self._parse_galaxy(malware_ref)
-
     def _parse_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
         """
         Observed Data with embedded `objects` field parsing.
@@ -505,7 +571,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         :param observed_data: The Observed Data object
         """
         observable_types = set(
-            observable.type for observable in observed_data.objects.values()
+            observable['type'] for observable in observed_data.objects.values()
         )
         mapping = self._handle_observables_mapping(observable_types)
         feature = f'_parse_{mapping}_observable_objects'
@@ -780,12 +846,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _fetch_observable_object_refs(
             self, observed_data: _OBSERVED_DATA_TYPING):
         for reference in observed_data.object_refs:
-            yield self._observable[reference]
+            self._observable[reference]['used'][self.misp_event.uuid] = True
+            yield self._observable[reference]['observable']
 
     def _fetch_observable_object_refs_with_id(
             self, observed_data: _OBSERVED_DATA_TYPING):
         for reference in observed_data.object_refs:
-            yield reference, self._observable[reference]
+            self._observable[reference]['used'][self.misp_event.uuid] = True
+            yield reference, self._observable[reference]['observable']
 
     @staticmethod
     def _fetch_observable_objects(
@@ -2821,6 +2889,18 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         for field in observable_object.properties_populated():
             if field not in _observable_skip_properties:
                 yield field
+
+    @staticmethod
+    def _handle_external_references(external_references: list) -> dict:
+        meta = defaultdict(list)
+        for reference in external_references:
+            if reference.get('url'):
+                meta['refs'].append(reference['url'])
+            if reference.get('external_id'):
+                meta['external_id'].append(reference['external_id'])
+        if 'external_id' in meta and len(meta['external_id']) == 1:
+            meta['external_id'] = meta.pop('external_id')[0]
+        return meta
 
     def _is_pattern_too_complex(self, pattern: str) -> bool:
         if any(keyword in pattern for keyword in self._mapping.pattern_forbidden_relations()):

@@ -12,6 +12,10 @@ from .exceptions import (
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import STIXtoMISPParser, _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
+from .converters import (
+    ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
+    ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
+    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter)
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
@@ -29,7 +33,8 @@ from stix2.v20.sdo import (
     Malware as Malware_v20, ObservedData as ObservedData_v20,
     Report as Report_v20, ThreatActor as ThreatActor_v20, Tool as Tool_v20,
     Vulnerability as Vulnerability_v20)
-from stix2.v20.sro import Relationship as Relationship_v20, Sighting as Sighting_v20
+from stix2.v20.sro import (
+    Relationship as Relationship_v20, Sighting as Sighting_v20)
 from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v21.common import MarkingDefinition as MarkingDefinition_v21
 from stix2.v21.observables import (
@@ -37,16 +42,19 @@ from stix2.v21.observables import (
     EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
     NetworkTraffic as NetworkTraffic_v21, Process, Software, URL, UserAccount,
     WindowsRegistryKey, X509Certificate)
+from stix2.v21.sdo import Grouping, MalwareAnalysis, Note, Opinion
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, Campaign as Campaign_v21,
-    CourseOfAction as CourseOfAction_v21, Grouping, Identity as Identity_v21,
+    CourseOfAction as CourseOfAction_v21, Identity as Identity_v21,
     Indicator as Indicator_v21, IntrusionSet as IntrusionSet_v21, Location,
-    Malware as Malware_v21, Note, ObservedData as ObservedData_v21, Opinion,
+    Malware as Malware_v21, ObservedData as ObservedData_v21,
     Report as Report_v21, ThreatActor as ThreatActor_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
-from stix2.v21.sro import Relationship as Relationship_v21, Sighting as Sighting_v21
+from stix2.v21.sro import (
+    Relationship as Relationship_v21, Sighting as Sighting_v21)
 from typing import Optional, Union
 
+# Some constants
 _LOADED_FEATURES = (
     '_attack_pattern',
     '_campaign',
@@ -57,6 +65,7 @@ _LOADED_FEATURES = (
     '_indicator',
     '_intrusion_set',
     '_malware',
+    '_malware_analysis',
     '_note',
     '_observed_data',
     '_opinion',
@@ -65,10 +74,16 @@ _LOADED_FEATURES = (
     '_vulnerability'
 )
 _MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
-_OBSERVABLE_TYPES = Union[
-    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress, EmailMessage,
-    File, IPv4Address, IPv6Address, MACAddress, Mutex, NetworkTraffic_v21, Process,
-    Software, URL, UserAccount, WindowsRegistryKey, X509Certificate
+
+# Typing
+_OBSERVABLE_TYPING = Union[
+    Artifact, AutonomousSystem, Directory, DomainName, EmailAddress,
+    EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
+    NetworkTraffic_v21, Process, Software, URL, UserAccount, WindowsRegistryKey,
+    X509Certificate
+]
+_ATTACK_PATTERN_PARSER_TYPING = Union[
+    ExternalSTIX2AttackPatternConverter, InternalSTIX2AttackPatternConverter
 ]
 _ATTACK_PATTERN_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21
@@ -99,6 +114,12 @@ _IDENTITY_TYPING = Union[
 _INTRUSION_SET_TYPING = Union[
     IntrusionSet_v20, IntrusionSet_v21
 ]
+_MALWARE_ANALYSIS_PARSER_TYPING = Union[
+    ExternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareAnalysisConverter
+]
+_MALWARE_PARSER_TYPING = Union[
+    ExternalSTIX2MalwareConverter, InternalSTIX2MalwareConverter
+]
 _MALWARE_TYPING = Union[
     Malware_v20, Malware_v21
 ]
@@ -108,11 +129,11 @@ _MARKING_DEFINITION_TYPING = Union[
 _MISP_FEATURES_TYPING = Union[
     MISPAttribute, MISPEvent, MISPObject
 ]
-_OBSERVED_DATA_TYPING = Union[
-    ObservedData_v20, ObservedData_v21
-]
 _NETWORK_TRAFFIC_TYPING = Union[
     NetworkTraffic_v20, NetworkTraffic_v21
+]
+_OBSERVED_DATA_TYPING = Union[
+    ObservedData_v20, ObservedData_v21
 ]
 _RELATIONSHIP_TYPING = Union[
     Relationship_v20, Relationship_v21
@@ -157,6 +178,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._intrusion_set: dict
         self._location: dict
         self._malware: dict
+        self._malware_analysis: dict
         self._marking_definition: dict
         self._note: dict
         self._observable: dict
@@ -207,8 +229,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             UnavailableSynonymsResourceError
         ) as error:
             self._critical_error(error)
+        for feature in ('_grouping', 'report', *_LOADED_FEATURES):
+            if hasattr(self, feature):
+                setattr(self, feature, {})
 
-    def parse_stix_content(self, filename: str, single_event: Optional[bool] = False):
+    def parse_stix_content(
+            self, filename: str, single_event: Optional[bool] = False):
         try:
             with open(filename, 'rt', encoding='utf-8') as f:
                 bundle = stix2_parser(
@@ -225,8 +251,25 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ################################################################################
 
     @property
+    def attack_pattern_parser(self) -> _ATTACK_PATTERN_PARSER_TYPING:
+        return getattr(
+            self, '_attack_pattern_parser', self._set_attack_pattern_parser()
+        )
+
+    @property
     def generic_info_field(self) -> str:
         return f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
+
+    @property
+    def malware_analysis_parser(self) -> _MALWARE_ANALYSIS_PARSER_TYPING:
+        return getattr(
+            self, '_malware_analysis_parser',
+            self._set_malware_analysis_parser()
+        )
+
+    @property
+    def malware_parser(self) -> _MALWARE_PARSER_TYPING:
+        return getattr(self, '_malware_parser', self._set_malware_parser())
 
     @property
     def misp_event(self) -> MISPEvent:
@@ -234,10 +277,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @property
     def misp_events(self) -> Union[list, MISPEvent]:
-        try:
-            return self.__misp_events
-        except AttributeError:
-            return self.__misp_event
+        return getattr(
+            self, '_STIX2toMISPParser__misp_events', self.__misp_event
+        )
 
     @property
     def single_event(self) -> bool:
@@ -314,6 +356,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._malware = {malware.id: malware}
 
+    def _load_malware_analysis(self, malware_analysis: MalwareAnalysis):
+        self._check_uuid(malware_analysis.id)
+        try:
+            self._malware_analysis[malware_analysis.id] = malware_analysis
+        except AttributeError:
+            self._malware_analysis = {malware_analysis.id: malware_analysis}
+
     def _load_marking_definition(
             self, marking_definition: _MARKING_DEFINITION_TYPING):
         if not hasattr(marking_definition, 'definition_type'):
@@ -332,13 +381,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._note[note.id] = note
         except AttributeError:
             self._note = {note.id: note}
-
-    def _load_observable_object(self, observable: _OBSERVABLE_TYPES):
-        self._check_uuid(observable.id)
-        try:
-            self._observable[observable.id] = observable
-        except AttributeError:
-            self._observable = {observable.id: observable}
 
     def _load_observed_data(self, observed_data: _OBSERVED_DATA_TYPING):
         self._check_uuid(observed_data.id)
@@ -359,16 +401,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._sighting['opinion_refs'][sanitised_ref].append(opinion_ref)
 
     def _load_relationship(self, relationship: _RELATIONSHIP_TYPING):
-        reference = {
-            'referenced_uuid': relationship.target_ref,
-            'relationship_type': relationship.relationship_type
-        }
+        reference = (relationship.target_ref, relationship.relationship_type)
         source_uuid = self._sanitise_uuid(relationship.source_ref)
         try:
-            self._relationship[source_uuid].append(reference)
+            self._relationship[source_uuid].add(reference)
         except AttributeError:
-            self._relationship = defaultdict(list)
-            self._relationship[source_uuid].append(reference)
+            self._relationship = defaultdict(set)
+            self._relationship[source_uuid].add(reference)
 
     def _load_report(self, report: _REPORT_TYPING):
         self._check_uuid(report.id)
@@ -422,7 +461,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except KeyError:
             raise ObjectRefLoadingError(object_ref)
 
-    def _handle_contextual_data(self):
+    def _handle_unparsed_content(self):
         if hasattr(self, '_relationship'):
             if hasattr(self, '_sighting'):
                 self._parse_relationships_and_sightings()
@@ -432,18 +471,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._parse_sightings()
         else:
             getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
-
-    def _handle_object_refs(self, object_refs: list):
-        for object_ref in object_refs:
-            object_type = object_ref.split('--')[0]
-            if object_type in self._mapping.object_type_refs_to_skip():
-                continue
-            try:
-                self._handle_object(object_type, object_ref)
-            except UnknownStixObjectTypeError as error:
-                self._unknown_stix_object_type_error(error)
-            except UnknownParsingFunctionError as error:
-                self._unknown_parsing_function_error(error)
 
     def _handle_object(self, object_type: str, object_ref: str):
         feature = self._mapping.stix_to_misp_mapping(object_type)
@@ -503,6 +530,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             misp_event.published = False
         return misp_event
 
+    def _parse_attack_pattern(self, attack_pattern_ref: str):
+        self.attack_pattern_parser.parse(attack_pattern_ref)
+
     def _parse_bundle_with_multiple_reports(self):
         if self.single_event:
             self.__misp_event = self._create_generic_event()
@@ -512,37 +542,28 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self._handle_object_refs(grouping.object_refs)
-            self._handle_contextual_data()
+            self._handle_unparsed_content()
         else:
             events = []
             if hasattr(self, '_report') and self._report is not None:
                 for report in self._report.values():
                     self.__misp_event = self._misp_event_from_report(report)
                     self._handle_object_refs(report.object_refs)
-                    self._handle_contextual_data()
+                    self._handle_unparsed_content()
                     events.append(self.misp_event)
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self.__misp_event = self._misp_event_from_grouping(grouping)
                     self._handle_object_refs(grouping.object_refs)
-                    self._handle_contextual_data()
+                    self._handle_unparsed_content()
                     events.append(self.misp_event)
             self.__misp_events = events
 
     def _parse_bundle_with_no_report(self):
         self.__single_event = True
         self.__misp_event = self._create_generic_event()
-        for feature in _LOADED_FEATURES:
-            if hasattr(self, feature):
-                for object_ref in getattr(self, feature):
-                    object_type = object_ref.split('--')[0]
-                    try:
-                        self._handle_object(object_type, object_ref)
-                    except UnknownStixObjectTypeError as error:
-                        self._unknown_stix_object_type_error(error)
-                    except UnknownParsingFunctionError as error:
-                        self._unknown_parsing_function_error(error)
-        self._handle_contextual_data()
+        self._parse_loaded_features()
+        self._handle_unparsed_content()
 
     def _parse_bundle_with_single_report(self):
         if hasattr(self, '_report') and self._report is not None:
@@ -555,7 +576,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._handle_object_refs(grouping.object_refs)
         else:
             self._parse_bundle_with_no_report()
-        self._handle_contextual_data()
+        self._handle_unparsed_content()
 
     def _parse_galaxies_as_container(self):
         clusters = defaultdict(list)
@@ -577,6 +598,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 for tag in tags['tag_names']:
                     self.misp_event.add_tag(tag)
 
+    def _parse_loaded_features(self):
+        for feature in _LOADED_FEATURES:
+            if hasattr(self, feature):
+                for object_ref in getattr(self, feature):
+                    object_type = object_ref.split('--')[0]
+                    try:
+                        self._handle_object(object_type, object_ref)
+                    except UnknownStixObjectTypeError as error:
+                        self._unknown_stix_object_type_error(error)
+                    except UnknownParsingFunctionError as error:
+                        self._unknown_parsing_function_error(error)
+
     def _parse_location_object(self, location: Location,
                                to_return: Optional[bool] = False) -> MISPObject:
         misp_object = self._create_misp_object('geolocation', location)
@@ -597,6 +630,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if to_return:
             return misp_object
         self._add_misp_object(misp_object, location)
+
+    def _parse_malware(self, malware_ref: str):
+        self.malware_parser.parse(malware_ref)
+
+    def _parse_malware_analysis(self, malware_analysis_ref: str):
+        self.malware_analysis_parser.parse(malware_analysis_ref)
 
     ################################################################################
     #                  MISP GALAXIES & CLUSTERS PARSING FUNCTIONS                  #
@@ -653,18 +692,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 f'{kill_chain.kill_chain_name}:{kill_chain.phase_name}'
             )
         return kill_chains
-
-    @staticmethod
-    def _handle_external_references(external_references: list) -> dict:
-        meta = defaultdict(list)
-        for reference in external_references:
-            if reference.get('url'):
-                meta['refs'].append(reference['url'])
-            if reference.get('external_id'):
-                meta['external_id'].append(reference['external_id'])
-        if 'external_id' in meta and len(meta['external_id']) == 1:
-            meta['external_id'] = meta.pop('external_id')[0]
-        return meta
 
     @staticmethod
     def _handle_labels(meta: dict, labels: list):
@@ -866,6 +893,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         elif misp_object.uuid in self._sighting.get('custom_opinion', {}):
             self._parse_object_custom_opinion(misp_object)
 
+    def _handle_opposite_reference(
+            self, relationship_type: str, source_uuid: str, target_uuid: str):
+        sanitised_uuid = self._sanitise_uuid(target_uuid)
+        reference = (source_uuid, self.relationship_types[relationship_type])
+        self._relationship[sanitised_uuid].add(reference)
+
     def _parse_attribute_custom_opinions(self, attribute: MISPAttribute):
         for sighting in self._sighting['custom_opinion'][attribute.uuid]:
             attribute.add_sighting(sighting)
@@ -878,11 +911,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self, attribute: MISPAttribute):
         clusters = defaultdict(list)
         for relationship in self._relationship[attribute.uuid]:
-            referenced_uuid = relationship['referenced_uuid']
+            referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
                 cluster = self._clusters[referenced_uuid]['cluster']
                 clusters[cluster['type']].append(cluster)
                 self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+                continue
+            if relationship_type in self.relationship_types:
+                self._handle_opposite_reference(
+                    relationship_type, attribute.uuid, referenced_uuid
+                )
         if clusters:
             for galaxy in self._aggregate_galaxy_clusters(clusters):
                 attribute.add_galaxy(galaxy)
@@ -890,11 +928,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_attribute_relationships_as_tag_names(
             self, attribute: MISPAttribute):
         for relationship in self._relationship[attribute.uuid]:
-            referenced_uuid = relationship['referenced_uuid']
+            referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
                 for tag in self._clusters[referenced_uuid]['tag_names']:
                     attribute.add_tag(tag)
                 self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+                continue
+            if relationship_type in self.relationship_types:
+                self._handle_opposite_reference(
+                    relationship_type, attribute.uuid, referenced_uuid
+                )
 
     def _parse_attribute_sightings(self, attribute: MISPAttribute):
         for sighting in self._sighting['sighting'][attribute.uuid]:
@@ -902,12 +945,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_cluster_relationships(self, cluster: MISPGalaxyCluster):
         for relationship in self._relationship[cluster.uuid]:
-            referenced_uuid = relationship['referenced_uuid']
+            referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
                 cluster.add_cluster_relation(
                     self._clusters[referenced_uuid]['cluster'].uuid,
-                    relationship['relationship_type']
+                    relationship_type
                 )
+
+    def _parse_galaxy_relationships(self):
+        for galaxy in self.misp_event.galaxies:
+            for cluster in galaxy.clusters:
+                if cluster.uuid in self._relationship:
+                    self._parse_cluster_relationships(cluster)
 
     def _parse_object_custom_opinion(self, misp_object: MISPObject):
         for sighting in self._sighting['custom_opinion'][misp_object.uuid]:
@@ -923,15 +972,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_object_relationships_as_container(self, misp_object: MISPObject):
         clusters = defaultdict(list)
         for relationship in self._relationship[misp_object.uuid]:
-            referenced_uuid = relationship['referenced_uuid']
+            referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
                 cluster = self._clusters[referenced_uuid]['cluster']
                 clusters[cluster['type']].append(cluster)
                 self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
             else:
                 misp_object.add_reference(
-                    self._sanitise_uuid(referenced_uuid),
-                    relationship['relationship_type']
+                    self._sanitise_uuid(referenced_uuid), relationship_type
                 )
         if clusters:
             for galaxy in self._aggregate_galaxy_clusters(clusters):
@@ -940,12 +988,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_object_relationships_as_tag_names(self, misp_object: MISPObject):
         for relationship in self._relationship[misp_object.uuid]:
-            referenced_uuid = relationship['referenced_uuid']
+            referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
                 for attribute in misp_object.attributes:
                     for tag in self._clusters[referenced_uuid]['tag_names']:
                         attribute.add_tag(tag)
                 self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+            else:
+                misp_object.add_reference(
+                    self._sanitise_uuid(referenced_uuid), relationship_type
+                )
 
     def _parse_object_sightings(self, misp_object: MISPObject):
         for sighting in self._sighting['sighting'][misp_object.uuid]:
@@ -988,10 +1040,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 )
         getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
         if not self.galaxies_as_tags:
-            for galaxy in self.misp_event.galaxies:
-                for cluster in galaxy.clusters:
-                    if cluster.uuid in self._relationship:
-                        self._parse_cluster_relationships(cluster)
+            self._parse_galaxy_relationships()
 
     def _parse_relationships_and_sightings(self):
         for opinion_id, opinion in self._sighting['opinion'].items():
@@ -1015,10 +1064,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._handle_object_sightings(misp_object)
         getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
         if not self.galaxies_as_tags:
-            for galaxy in self.misp_event.galaxies:
-                for cluster in galaxy.glusters:
-                    if cluster.uuid in self._relationship:
-                        self._parse_cluster_relationships(cluster)
+            self._parse_galaxy_relationships()
 
     def _parse_sighting(self, sighting: _SIGHTING_TYPING) -> MISPSighting:
         misp_sighting = MISPSighting()
@@ -1142,14 +1188,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                              UTILITY FUNCTIONS.                              #
     ################################################################################
 
-    def _all_refs_parsed(self, object_refs: list) -> bool:
-        try:
-            return all(
-                object_ref in self._observable for object_ref in object_refs
-            )
-        except AttributeError:
-            return False
-
     @staticmethod
     def _extract_uuid(object_id: str) -> str:
         return object_id.split('--')[-1]
@@ -1204,6 +1242,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 if hasattr(stix_object, last) and getattr(stix_object, last):
                     misp_object['last_seen'] = getattr(stix_object, last)
         return misp_object
+
+    @staticmethod
+    def _populate_object_attributes(
+            misp_object: MISPObject, mapping: dict, values: Union[list, str]):
+        if isinstance(values, list):
+            for value in values:
+                misp_object.add_attribute(**{'value': value, **mapping})
+        else:
+            misp_object.add_attribute(**{'value': values, **mapping})
 
     @staticmethod
     def _sanitise_value(value: str) -> str:

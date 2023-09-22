@@ -683,14 +683,14 @@ def stix_2_to_misp(filename: _files_type, debug: Optional[bool] = False,
         )
         with open(name, 'wt', encoding='utf-8') as f:
             f.write(stix_parser.misp_event.to_json(indent=4))
-        return _generate_traceback(debug, parser, name)
+        return _generate_traceback(debug, stix_parser, name)
     output_names = []
     for misp_event in stix_parser.misp_events:
         output = output_dir / f'{filename.name}.{misp_event.uuid}.misp.out'
         with open(output, 'wt', encoding='utf-8') as f:
             f.write(misp_event.to_json(indent=4))
         output_names.append(output)
-    return _generate_traceback(debug, parser, *output_names)
+    return _generate_traceback(debug, stix_parser, *output_names)
 
 
 ################################################################################
@@ -997,7 +997,8 @@ def _misp_to_stix(stix_args):
 
 def _stix_to_misp(stix_args):
     method = stix_2_to_misp if stix_args.version == '2' else stix_1_to_misp
-    results = defaultdict(list)
+    results = defaultdict(dict)
+    success = []
     for filename in stix_args.file:
         traceback = method(
             filename, debug=stix_args.debug,
@@ -1009,10 +1010,22 @@ def _stix_to_misp(stix_args):
             single_event=stix_args.single_output
         )
         if traceback.pop('success', 0) == 1:
+            success.extend(traceback.pop('results'))
             for key, value in traceback.items():
-                results[key].extend(value)
+                if isinstance(value, dict):
+                    results[key].update(value)
             continue
-        results['fails'].extend(traceback['errors'])
+        for field in ('errors', 'warnings'):
+            if field not in traceback:
+                continue
+            content = traceback[field]
+            if isinstance(content, list):
+                results['fails'][filename.name] = content
+                continue
+            for identifier, values in traceback[field].items():
+                results['fails'][identifier] = tuple(values)
+    if success:
+        results['results'] = success
     return results
 
 

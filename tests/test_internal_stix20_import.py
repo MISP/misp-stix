@@ -1193,18 +1193,23 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, attack_pattern, course_of_action, _, malware, _, _ = bundle.objects
         attribute = self._check_misp_event_features(event, report)[0]
-        ap_galaxy, coa_galaxy = attribute.galaxies
-        self._check_galaxy_fields(
-            ap_galaxy, attack_pattern, 'mitre-attack-pattern', 'Attack Pattern'
-        )
-        self.assertEqual(
-            ap_galaxy.clusters[0].meta['external_id'],
-            attack_pattern.external_references[0].external_id
-        )
-        self._check_galaxy_fields(
-            coa_galaxy, course_of_action, 'mitre-course-of-action',
-            'Course of Action'
-        )
+        for galaxy in attribute.galaxies:
+            if galaxy['type'] == 'mitre-attack-pattern':
+                self._check_galaxy_fields(
+                    galaxy, attack_pattern, 'mitre-attack-pattern',
+                    'Attack Pattern'
+                )
+                self.assertEqual(
+                    galaxy.clusters[0].meta['external_id'],
+                    attack_pattern.external_references[0].external_id
+                )
+            elif galaxy['type'] == 'mitre-course-of-action':
+                self._check_galaxy_fields(
+                    galaxy, course_of_action, 'mitre-course-of-action',
+                    'Course of Action'
+                )
+            else:
+                self.fail(f"Wrong MISP Galaxy type: {galaxy['type']}")
         galaxy = event.galaxies[0]
         self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
 

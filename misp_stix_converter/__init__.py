@@ -1,29 +1,47 @@
-__version__ = '2.4.172'
+__version__ = '2.4.176'
 
 import argparse
-from .misp_stix_mapping import Mapping
-from .misp2stix import *
+from .misp_stix_mapping import Mapping # noqa
+from .misp2stix import MISPtoSTIX1AttributesParser, MISPtoSTIX1EventsParser # noqa
+from .misp2stix import MISPtoSTIX1Mapping # noqa
+from .misp2stix import MISPtoSTIX20Parser, MISPtoSTIX21Parser # noqa
+from .misp2stix import MISPtoSTIX20Mapping, MISPtoSTIX21Mapping # noqa
+from .misp2stix import stix1_attributes_framing, stix1_framing # noqa
+from .misp2stix import stix20_framing, stix21_framing # noqa
 # Helpers
-from .misp_stix_converter import (
+from .misp_stix_converter import ( # noqa
     _from_misp, misp_attribute_collection_to_stix1, misp_collection_to_stix2,
     misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2,
     stix_1_to_misp, stix_2_to_misp)
 # STIX 1 special helpers
-from .misp_stix_converter import (
+from .misp_stix_converter import ( # noqa
     _get_campaigns, _get_courses_of_action, _get_events, _get_indicators,
     _get_observables, _get_threat_actors, _get_ttps, _from_misp)
 # STIX 1 footers
-from .misp_stix_converter import (
+from .misp_stix_converter import ( # noqa
     _get_campaigns_footer, _get_courses_of_action_footer, _get_indicators_footer,
     _get_observables_footer, _get_threat_actors_footer, _get_ttps_footer)
 # STIX 1 headers
-from .misp_stix_converter import (
+from .misp_stix_converter import ( # noqa
     _get_campaigns_header, _get_courses_of_action_header, _get_indicators_header,
     _get_observables_header, _get_threat_actors_header, _get_ttps_header)
 # Command line methods
-from .misp_stix_converter import _misp_to_stix, _stix_to_misp
-from .stix2misp import *
+from .misp_stix_converter import _misp_to_stix, _stix_to_misp # noqa
+from .stix2misp import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser # noqa
+from .stix2misp import ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping # noqa
+from .stix2misp import STIX2PatternParser # noqa
 from pathlib import Path
+
+
+def _handle_return_message(traceback):
+    if isinstance(traceback, dict):
+        messages = []
+        for key, values in traceback.items():
+            messages.append(f'- {key}')
+            for value in values:
+                messages.append(f'  - {value}')
+        return '\n '.join(messages)
+    return '\n - '.join(traceback)
 
 
 def main():
@@ -139,13 +157,13 @@ def main():
         traceback = stix_args.func(stix_args)
         for field in ('errors', 'warnings'):
             if field in traceback:
-                messages = '\n - '.join(traceback[field])
+                messages = _handle_return_message(traceback[field])
                 print(f'{field.capitalize()} encountered during the '
-                        f'{feature} conversion process:\n - {messages}')
+                        f'{feature} conversion process:\n {messages}')
         if 'fails' in traceback:
-            fails = '\n - '.join(traceback['fails'])
+            fails = _handle_return_message(traceback['fails'])
             print('Failed parsing the following - and the related error '
-                    f'message:\n - {fails}')
+                    f'message:\n {fails}')
         if 'results' in traceback:
             results = traceback['results']
             if isinstance(results, list):
