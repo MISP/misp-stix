@@ -2027,20 +2027,25 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_asn_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
-        for keys, assertion, value in pattern.comparisons['autonomous-system']:
+        for keys, assertion, values in pattern.comparisons['autonomous-system']:
             if assertion not in _valid_pattern_assertions:
                 continue
             field = keys[0]
-            attribute = self._mapping.asn_pattern_mapping(field)
-            if attribute is None:
+            mapping = self._mapping.asn_pattern_mapping(field)
+            if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, field)
                 continue
-            attributes.append(
-                {
-                    'value': f'AS{value}' if field == 'number' else value,
-                    **attribute
-                }
-            )
+            if not isinstance(values, tuple):
+                attributes.append(
+                    {
+                        'value': f'AS{value}' if field == 'number' else value,
+                        **mapping
+                    }
+                )
+                continue
+            for value in values:
+                as_value = f'AS{value}' if field == 'number' else value
+                attributes.append({'value': as_value, **mapping})
         features = ('ipv4-addr', 'ipv6-addr')
         mapping = self._mapping.subnet_announced_attribute()
         for feature in features:
@@ -2066,14 +2071,18 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_directory_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('directory', indicator)
-        for keys, assertion, value in pattern.comparisons['directory']:
+        for keys, assertion, values in pattern.comparisons['directory']:
             if assertion not in _valid_pattern_assertions:
                 continue
-            attribute = self._mapping.directory_pattern_mapping(keys[0])
-            if attribute is not None:
-                misp_object.add_attribute(**{'value': value, **attribute})
-            else:
+            mapping = self._mapping.directory_pattern_mapping(keys[0])
+            if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
+                continue
+            if isinstance(values, tuple):
+                for value in values:
+                    misp_object.add_attribute(**{'value': value, **mapping})
+            else:
+                misp_object.add_attribute(**{'value': values, **mapping})
         if misp_object.attributes:
             self._add_misp_object(misp_object, indicator)
         else:
@@ -2123,14 +2132,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if assertion not in _valid_pattern_assertions:
                 continue
             mapping = self._mapping.email_address_pattern_mapping(keys[0])
-            if mapping is not None:
-                if isinstance(values, tuple):
-                    for value in values:
-                        attributes.append({'value': value, **mapping})
-                else:
-                    attributes.append({'value': values, **mapping})
-            else:
+            if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
+                continue
+            if isinstance(values, tuple):
+                for value in values:
+                    attributes.append({'value': value, **mapping})
+            else:
+                attributes.append({'value': values, **mapping})
         if attributes:
             self._handle_import_case(indicator, attributes, 'email')
         else:
@@ -2140,14 +2149,18 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_email_message_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
-        for keys, assertion, value in pattern.comparisons['email-message']:
+        for keys, assertion, values in pattern.comparisons['email-message']:
             if assertion not in _valid_pattern_assertions:
                 continue
-            attribute = self._mapping.email_message_mapping(keys[0])
-            if attribute is not None:
-                attributes.append({'value': value, **attribute})
-            else:
+            mapping = self._mapping.email_message_mapping(keys[0])
+            if mapping is None:
                 self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
+                continue
+            if isinstance(values, tuple):
+                for value in values:
+                    attributes.append({'value': value, **mapping})
+            else:
+                attributes.append({'value': values, **mapping})
         if attributes:
             self._handle_import_case(
                 indicator, attributes, 'email',
@@ -2160,52 +2173,82 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_file_and_pe_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         file_object = self._create_misp_object('file', indicator)
-        sections_attributes = defaultdict(list)
+        attributes = defaultdict(list)
         pe_object = self._create_misp_object('pe')
         pe_object.from_dict(**self._parse_timeline(indicator))
-        for keys, assertion, value in pattern.comparisons['file']:
+        for keys, assertion, values in pattern.comparisons['file']:
             if assertion not in _valid_pattern_assertions:
                 continue
             if 'windows-pebinary-ext' in keys:
                 if 'sections' in keys:
                     if 'hashes' in keys:
                         _, _, _, index, _, hash_type = keys
-                        attribute = self._mapping.file_hashes_pattern_mapping(hash_type)
-                        if attribute is not None:
-                            sections_attributes[index.strip('[]')].append(
-                                {'value': value, **attribute}
-                            )
-                        else:
+                        mapping = self._mapping.file_hashes_pattern_mapping(
+                            hash_type
+                        )
+                        if mapping is None:
                             self._unmapped_pattern_warning(
                                 indicator.id, '.'.join(keys)
                             )
+                            continue
+                        if isinstance(values, tuple):
+                            for value in values:
+                                attributes[index.strip('[]')].append(
+                                    {'value': value, **mapping}
+                                )
+                        else:
+                            attributes[index.strip('[]')].append(
+                                {'value': values, **mapping}
+                            )
                         continue
                     _, _, _, index, feature = keys
-                    attribute = self._mapping.pe_section_pattern_mapping(feature)
-                    if attribute is not None:
-                        sections_attributes[index.strip('[]')].append(
-                            {'value': value, **attribute}
+                    mapping = self._mapping.pe_section_pattern_mapping(feature)
+                    if mapping is None:
+                        self._unmapped_pattern_warning(
+                            indicator.id, '.'.join(keys)
+                        )
+                        continue
+                    if isinstance(values, tuple):
+                        for value in values:
+                            attributes[index.strip('[]')].append(
+                                {'value': value, **mapping}
+                            )
+                    else:
+                        attributes[index.strip('[]')].append(
+                            {'value': values, **mapping}
                         )
                     continue
-                attribute = self._mapping.pe_pattern_mapping(keys[-1])
-                if attribute is not None:
-                    pe_object.add_attribute(**{'value': value, **attribute})
+                mapping = self._mapping.pe_pattern_mapping(keys[-1])
+                if mapping is not None:
+                    if not isinstance(values, tuple):
+                        pe_object.add_attribute(**{'value': values, **mapping})
+                        continue
+                    for value in values:
+                        pe_object.add_attribute(**{'value': value, **mapping})
                     continue
-                attribute = self._mapping.pe_optional_header_pattern_mapping(keys[-1])
-                if attribute is not None:
-                    pe_object.add_attribute(**{'value': value, **attribute})
-                else:
+                mapping = self._mapping.pe_optional_header_pattern_mapping(
+                    keys[-1]
+                )
+                if mapping is None:
                     self._unmapped_pattern_warning(indicator.id, '.'.join(keys))
+                    continue
+                if isinstance(values, tuple):
+                    for value in values:
+                        pe_object.add_attribute(**{'value': value, **mapping})
+                else:
+                    pe_object.add_attribute(**{'value': values, **mapping})
                 continue
-            attribute = self._parse_file_attribute(keys, value, indicator.id)
-            if attribute is not None:
+            file_attributes = self._parse_file_attribute(
+                keys, values, indicator.id
+            )
+            for attribute in file_attributes:
                 file_object.add_attribute(**attribute)
-        if pe_object.attributes or sections_attributes:
+        if pe_object.attributes or attributes:
             if file_object.attributes:
                 misp_file_object = self._add_misp_object(file_object, indicator)
                 misp_pe_object = self._add_misp_object(pe_object, indicator)
                 misp_file_object.add_reference(misp_pe_object.uuid, 'includes')
-                for section in sections_attributes.values():
+                for section in attributes.values():
                     section_object = self._create_misp_object(
                         'pe-section', indicator
                     )
@@ -2222,19 +2265,27 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._no_converted_content_from_pattern_warning(indicator)
                 self._create_stix_pattern_object(indicator)
 
-    def _parse_file_attribute(
-            self, keys: list, value: str, indicator_id: str) -> dict:
+    def _parse_file_attribute(self, keys: list, values: Union[str, tuple],
+                              indicator_id: str) -> dict:
         if 'hashes' in keys:
-            hash_type = keys[1].lower().replace('-', '')
-            return {
-                'value': value,
-                **getattr(self._mapping, f'{hash_type}_attribute')()
-            }
-        attribute = self._mapping.file_pattern_mapping(keys[0])
-        if attribute is not None:
-            return {'value': value, **attribute}
+            mapping = getattr(
+                self._mapping, f"{keys[1].lower().replace('-', '')}_attribute"
+            )
+            if isinstance(values, tuple):
+                for value in values:
+                    yield {'value': value, **mapping}
+            else:
+                yield {'value': values, **mapping}
         else:
-            self._unmapped_pattern_warning(indicator_id, '.'.join(keys))
+            mapping = self._mapping.file_pattern_mapping(keys[0])
+            if mapping is not None:
+                if isinstance(values, tuple):
+                    for value in values:
+                        yield {'value': value, **mapping}
+                else:
+                    yield {'value': values, **mapping}
+            else:
+                self._unmapped_pattern_warning(indicator_id, '.'.join(keys))
 
     def _parse_file_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
@@ -2245,10 +2296,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             for keys, assertion, value in pattern.comparisons['file']:
                 if assertion not in _valid_pattern_assertions:
                     continue
-                attribute = self._parse_file_attribute(
+                file_attributes = self._parse_file_attribute(
                     keys, value, indicator.id
                 )
-                if attribute is not None:
+                for attribute in file_attributes:
                     attributes.append(attribute)
             if attributes:
                 self._handle_import_case(
@@ -2291,14 +2342,20 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_mutex_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
-        for keys, assertion, value in pattern.comparisons['mutex']:
+        for keys, assertion, values in pattern.comparisons['mutex']:
             if assertion not in _valid_pattern_assertions:
                 continue
             field = keys[0]
             if field == 'name':
-                attributes.append(
-                    {'value': value, **self._mapping.name_attribute()}
-                )
+                if isinstance(values, tuple):
+                    for value in values:
+                        attributes.append(
+                            {'value': value, **self._mapping.name_attribute()}
+                        )
+                else:
+                    attributes.append(
+                        {'value': values, **self._mapping.name_attribute()}
+                    )
         if attributes:
             self._handle_import_case(indicator, attributes, 'mutex', 'name')
         else:
