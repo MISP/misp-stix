@@ -155,6 +155,94 @@ class InternalSTIX2IndicatorMapping(
     __parent_image_attribute = {'type': 'filename', 'object_relation': 'parent-image'}
 
     # OBJECTS MAPPING
+    __email_pattern_mapping = Mapping(
+        **{
+            'additional_header_fields.reply_to': STIX2Mapping.reply_to_attribute(),
+            'additional_header_fields.x_mailer': STIX2Mapping.x_mailer_attribute(),
+            'bcc_refs': {
+                'display_name': {
+                    'type': 'email-dst-display-name',
+                    'object_relation': 'bcc-display-name'
+                },
+                'value': {'type': 'email-dst', 'object_relation': 'bcc'}
+            },
+            'cc_refs': {
+                'display_name': {
+                    'type': 'email-dst-display-name',
+                    'object_relation': 'cc-display-name'
+                },
+                'value': {'type': 'email-dst', 'object_relation': 'cc'}
+            },
+            'from_ref.display_name': {
+                'type': 'email-src-display-name',
+                'object_relation': 'from-display-name'
+            },
+            'from_ref.value': {'type': 'email-src', 'object_relation': 'from'},
+            'to_refs': {
+                'display_name': {
+                    'type': 'email-dst-display-name',
+                    'object_relation': 'to-display-name'
+                },
+                'value': {'type': 'email-dst', 'object_relation': 'to'}
+            },
+            **InternalSTIX2Mapping.email_object_mapping()
+        }
+    )
+    __file_pattern_mapping = Mapping(
+        **{
+            'hashes.AUTHENTIHASH': InternalSTIX2Mapping.authentihash_attribute(),
+            'hashes.IMPHASH': STIX2Mapping.imphash_attribute(),
+            'hashes.MD5': STIX2Mapping.md5_attribute(),
+            'hashes.SHA1': STIX2Mapping.sha1_attribute(),
+            'hashes.SHA224': InternalSTIX2Mapping.sha224_attribute(),
+            'hashes.SHA256': STIX2Mapping.sha256_attribute(),
+            'hashes.SHA3224': InternalSTIX2Mapping.sha3_224_attribute(),
+            'hashes.SHA3256': STIX2Mapping.sha3_256_attribute(),
+            'hashes.SHA3384': InternalSTIX2Mapping.sha3_384_attribute(),
+            'hashes.SHA3512': STIX2Mapping.sha3_512_attribute(),
+            'hashes.SHA384': InternalSTIX2Mapping.sha384_attribute(),
+            'hashes.SHA512': STIX2Mapping.sha512_attribute(),
+            'hashes.SSDEEP': STIX2Mapping.ssdeep_attribute(),
+            'hashes.TELFHASH': InternalSTIX2Mapping.telfhash_attribute(),
+            'hashes.TLSH': STIX2Mapping.tlsh_attribute(),
+            'hashes.VHASH': InternalSTIX2Mapping.vhash_attribute(),
+            'parent_directory_ref.path': STIX2Mapping.path_attribute(),
+            **InternalSTIX2Mapping.file_object_mapping()
+        }
+    )
+    __http_ext = "extensions.'http-request-ext'"
+    __header_ext = f'{__http_ext}.request_header'
+    __http_request_pattern_mapping = Mapping(
+        **{
+            f"{__http_ext}.request_method": STIX2Mapping.method_attribute(),
+            f"{__header_ext}.'Content-Type'": STIX2Mapping.content_type_attribute(),
+            f"{__header_ext}.'Cookie'": STIX2Mapping.cookie_attribute(),
+            f"{__header_ext}.'Referer'": STIX2Mapping.referer_attribute(),
+            f"{__header_ext}.'User-Agent'": STIX2Mapping.user_agent_attribute(),
+            **InternalSTIX2Mapping.http_request_object_mapping()
+        }
+    )
+    __image_pattern_mapping = Mapping(
+        **{
+            'content_ref.url': STIX2Mapping.url_attribute(),
+            'content_ref.x_misp_url': STIX2Mapping.url_attribute(),
+            **InternalSTIX2Mapping.image_object_mapping()
+        }
+    )
+    __lnk_pattern_mapping = Mapping(
+        **{
+            'hashes.MD5': STIX2Mapping.md5_attribute(),
+            'hashes.SHA1': STIX2Mapping.sha1_attribute(),
+            'hashes.SHA224': InternalSTIX2Mapping.sha224_attribute(),
+            'hashes.SHA256': STIX2Mapping.sha256_attribute(),
+            'hashes.SHA384': InternalSTIX2Mapping.sha384_attribute(),
+            'hashes.SHA512': STIX2Mapping.sha512_attribute(),
+            'hashes.SSDEEP': STIX2Mapping.ssdeep_attribute(),
+            'hashes.TLSH': STIX2Mapping.tlsh_attribute(),
+            'parent_directory_ref.path': STIX2Mapping.path_attribute(),
+            **InternalSTIX2Mapping.lnk_object_mapping()
+        }
+    )
     __netflow_pattern_mapping = Mapping(
         **{
             'protocols[0]': InternalSTIX2Mapping.protocol_attribute(),
@@ -209,12 +297,28 @@ class InternalSTIX2IndicatorMapping(
         return cls.domain_ip_object_mapping().get(field)
 
     @classmethod
+    def email_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.__email_pattern_mapping.get(field)
+
+    @classmethod
+    def file_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.__file_pattern_mapping.get(field)
+
+    @classmethod
+    def http_request_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.__http_request_pattern_mapping.get(field)
+
+    @classmethod
+    def image_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.__image_pattern_mapping.get(field)
+
+    @classmethod
     def ip_port_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.ip_port_object_mapping().get(field)
 
     @classmethod
     def lnk_pattern_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.lnk_object_mapping().get(field)
+        return cls.__lnk_pattern_mapping.get(field)
 
     @classmethod
     def mutex_pattern_mapping(cls, field: str) -> Union[dict, None]:
@@ -232,6 +336,14 @@ class InternalSTIX2IndicatorMapping(
     @classmethod
     def network_socket_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.network_socket_object_mapping().get(field)
+
+    @classmethod
+    def pe_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.pe_object_mapping().get(field)
+
+    @classmethod
+    def pe_section_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.pe_section_object_mapping().get(field)
 
     @classmethod
     def process_pattern_mapping(cls, field: str) -> Union[dict, None]:
@@ -491,7 +603,7 @@ class InternalSTIX2IndicatorConverter(
         if 'address_of_entry_point' in extension['pe']:
             pe_object.add_attribute(
                 **{
-                    'value': extension['pe']['address_of_entry_point'],
+                    'value': extension['pe'].pop('address_of_entry_point'),
                     **self._mapping.entrypoint_address_attribute()
                 }
             )
@@ -616,6 +728,7 @@ class InternalSTIX2IndicatorConverter(
                 continue
             if feature == request_value:
                 request_values.append(value)
+                continue
             misp_object.add_attribute(
                 **{
                     'value': value,
@@ -641,6 +754,8 @@ class InternalSTIX2IndicatorConverter(
         attachment = {'type': 'attachment', 'object_relation': 'attachment'}
         for pattern in indicator.pattern[1:-1].split(' AND '):
             feature, value = self._extract_features_from_pattern(pattern)
+            if feature == 'content_ref.mime_type':
+                continue
             if 'payload_bin' in feature:
                 attachment['data'] = value
                 continue
@@ -929,6 +1044,22 @@ class InternalSTIX2IndicatorConverter(
                 }
             )
         self.main_parser._add_misp_object(misp_object, indicator)
+
+    def _parse_http_request_reference(self, feature: str, value: str) -> dict:
+        if feature.split('.')[1] == 'value':
+            return {'value': value}
+        if value == 'domain-name':
+            return self._mapping.host_attribute()
+        return getattr(self._mapping, f"ip_{feature.split('_')[0]}_attribute")()
+
+    def _parse_http_request_values(
+            self, misp_object: MISPObject, uri: str, url: str):
+        uri_attribute = {'value': uri}
+        uri_attribute.update(self._mapping.uri_attribute())
+        misp_object.add_attribute(**uri_attribute)
+        url_attribute = {'value': url}
+        url_attribute.update(self._mapping.url_attribute())
+        misp_object.add_attribute(**url_attribute)
     
     def _parse_netflow_reference(
             self, reference: dict, feature: str, value: str):
