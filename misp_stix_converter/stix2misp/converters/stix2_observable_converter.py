@@ -88,82 +88,9 @@ class ExternalSTIX2ObservableMapping(STIX2ObservableMapping):
         return cls.__file_object_mapping
 
 
-class InternalSTIX2ObservableMapping(STIX2ObservableMapping):
-    # SINGLE ATTRIBUTES
-    __authentihash_attribute = {
-        'type': 'authentihash', 'object_relation': 'authentihash'
-    }
-    __sha224_attribute = {'type': 'sha224', 'object_relation': 'sha224'}
-    __sha3_224_attribute = {'type': 'sha3-224', 'object_relation': 'sha3-224'}
-    __sha3_384_attribute = {'type': 'sha3-384', 'object_relation': 'sha3-384'}
-    __sha384_attribute = {'type': 'sha384', 'object_relation': 'sha384'}
-    __telfhash_attribute = {'type': 'telfhash', 'object_relation': 'telfhash'}
-    __vhash_attribute = {'type': 'vhash', 'object_relation': 'vhash'}
-    __certificate_attribute = {
-        'type': 'x509-fingerprint-sha1', 'object_relation': 'certificate'
-    }
-    __compilation_timestamp_attribute = {
-        'type': 'datetime', 'object_relation': 'compilation-timestamp'
-    }
-    __fullpath_attribute = {'type': 'text', 'object_relation': 'fullpath'}
-    __pattern_in_file_attribute = {
-        'type': 'pattern-in-file', 'object_relation': 'pattern-in-file'
-    }
-
-    # OBJECTS MAPPING
-    __file_hashes_mapping = Mapping(
-        **{
-            'AUTHENTIHASH': __authentihash_attribute,
-            'IMPHASH': STIX2Mapping.imphash_attribute(),
-            'MD5': STIX2Mapping.md5_attribute(),
-            'SHA1': STIX2Mapping.sha1_attribute(),
-            'SHA-1': STIX2Mapping.sha1_attribute(),
-            'SHA224': __sha224_attribute,
-            'SHA256': STIX2Mapping.sha256_attribute(),
-            'SHA-256': STIX2Mapping.sha256_attribute(),
-            'SHA3224': __sha3_224_attribute,
-            'SHA3-256': STIX2Mapping.sha3_256_attribute(),
-            'SHA3384': __sha3_384_attribute,
-            'SHA3-512': STIX2Mapping.sha3_512_attribute(),
-            'SHA384': __sha384_attribute,
-            'SHA512': STIX2Mapping.sha512_attribute(),
-            'SHA-512': STIX2Mapping.sha512_attribute(),
-            'ssdeep': STIX2Mapping.ssdeep_attribute(),
-            'SSDEEP': STIX2Mapping.ssdeep_attribute(),
-            'TELFHASH': __telfhash_attribute,
-            'TLSH': STIX2Mapping.tlsh_attribute(),
-            'VHASH': __vhash_attribute
-        }
-    )
-    __file_object_mapping = Mapping(
-        accessed=STIX2Mapping.access_time_attribute(),
-        atime=STIX2Mapping.access_time_attribute(),
-        created=STIX2Mapping.creation_time_attribute(),
-        ctime=STIX2Mapping.creation_time_attribute(),
-        mime_type=STIX2Mapping.mime_type_attribute(),
-        modified=STIX2Mapping.modification_time_attribute(),
-        mtime=STIX2Mapping.modification_time_attribute(),
-        name=STIX2Mapping.filename_attribute(),
-        name_enc=STIX2Mapping.file_encoding_attribute(),
-        size=STIX2Mapping.size_in_bytes_attribute(),
-        x_misp_attachment=InternalSTIX2Mapping.attachment_attribute(),
-        x_misp_certificate=__certificate_attribute,
-        x_misp_compilation_timestamp=__compilation_timestamp_attribute,
-        x_misp_entropy=STIX2Mapping.entropy_attribute(),
-        x_misp_fullpath=__fullpath_attribute,
-        x_misp_path=STIX2Mapping.path_attribute(),
-        x_misp_pattern_in_file=__pattern_in_file_attribute,
-        x_misp_state=InternalSTIX2Mapping.state_attribute(),
-        x_misp_text=STIX2Mapping.text_attribute()
-    )
-
-    @classmethod
-    def file_hashes_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.__file_hashes_mapping.get(field)
-
-    @classmethod
-    def file_object_mapping(cls) -> dict:
-        return cls.__file_object_mapping
+class InternalSTIX2ObservableMapping(
+        STIX2ObservableMapping, InternalSTIX2Mapping):
+    pass
 
 
 class STIX2ObservableConverter:

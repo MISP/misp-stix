@@ -46,8 +46,19 @@ class STIX2Converter(metaclass=ABCMeta):
         return self.__main_parser
 
     ############################################################################
-    #                       MISP OBJBECT PARSING METHODS                       #
+    #                  MISP DATA STRUCTURES CREATION METHODS.                  #
     ############################################################################
+
+    def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
+        attribute = self._parse_timeline(stix_object)
+        if hasattr(stix_object, 'description') and stix_object.description:
+            attribute['comment'] = stix_object.description
+        attribute.update(
+            self.main_parser._sanitise_attribute_uuid(
+                stix_object.id, comment=attribute.get('comment')
+            )
+        )
+        return attribute
 
     def _create_misp_object(
             self, name: str,
@@ -62,10 +73,6 @@ class STIX2Converter(metaclass=ABCMeta):
             )
             misp_object.from_dict(**self._parse_timeline(stix_object))
         return misp_object
-
-    ############################################################################
-    #                         GALAXIES PARSING METHODS                         #
-    ############################################################################
 
     @staticmethod
     def _create_misp_galaxy_cluster(cluster_args: dict) -> MISPGalaxyCluster:
@@ -93,6 +100,12 @@ class STIX2Converter(metaclass=ABCMeta):
         ]
         if meta_labels:
             meta['labels'] = meta_labels
+
+    @staticmethod
+    def _parse_AS_value(number: Union[int, str]) -> str:
+        if isinstance(number, int) or not number.startswith('AS'):
+            return f'AS{number}'
+        return number
 
     def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
         misp_object = {
@@ -137,6 +150,9 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def parse(self, stix_object_ref: str):
         stix_object = self.main_parser._get_stix_object(stix_object_ref)
         self._parse_galaxy(stix_object)
+
+    def _create_attributes_dict(self, stix_object: _SDO_TYPING) -> dict:
+        return super()._create_attribute_dict(stix_object)
 
     ############################################################################
     #                         GALAXIES PARSING METHODS                         #
@@ -264,6 +280,20 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
 class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
+    def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
+        attribute = {}
+        tags = []
+        for label in stix_object.labels:
+            if label.startswith('misp:'):
+                feature, value = label.split('=')
+                attribute[feature.split(':')[-1]] = value.strip('"')
+            else:
+                tags.append({'name': label})
+        if tags:
+            attribute['Tag'] = tags
+        attribute.update(super()._create_attribute_dict(stix_object))
+        return attribute
+
     ############################################################################
     #                         GALAXIES PARSING METHODS                         #
     ############################################################################
@@ -389,7 +419,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             meta['external_id'] = meta.pop('external_id')[0]
         return meta
 
-    def _handle_object_mapping(self, labels: list, object_id: str) -> str:
+    def _handle_mapping_from_labels(self, labels: list, object_id: str) -> str:
         parsed_labels = {
             key: value.strip('"') for key, value
             in (label.split('=') for label in labels)
