@@ -289,8 +289,24 @@ class InternalSTIX2IndicatorMapping(
     )
 
     @classmethod
+    def android_app_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.android_app_object_mapping().get(field)
+
+    @classmethod
+    def asn_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.asn_object_mapping().get(field)
+
+    @classmethod
     def attributes_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__attributes_mapping.get(field)
+
+    @classmethod
+    def cpe_asset_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.cpe_asset_object_mapping().get(field)
+
+    @classmethod
+    def credential_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.credential_object_mapping().get(field)
 
     @classmethod
     def domain_ip_pattern_mapping(cls, field: str) -> Union[dict, None]:
@@ -301,8 +317,20 @@ class InternalSTIX2IndicatorMapping(
         return cls.__email_pattern_mapping.get(field)
 
     @classmethod
+    def facebook_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.facebook_account_object_mapping().get(field)
+
+    @classmethod
     def file_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__file_pattern_mapping.get(field)
+
+    @classmethod
+    def github_user_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.github_user_object_mapping().get(field)
+
+    @classmethod
+    def gitlab_user_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.gitlab_user_object_mapping().get(field)
 
     @classmethod
     def http_request_pattern_mapping(cls, field: str) -> Union[dict, None]:
@@ -338,6 +366,10 @@ class InternalSTIX2IndicatorMapping(
         return cls.network_socket_object_mapping().get(field)
 
     @classmethod
+    def parler_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.parler_account_object_mapping().get(field)
+
+    @classmethod
     def pe_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.pe_object_mapping().get(field)
 
@@ -348,6 +380,10 @@ class InternalSTIX2IndicatorMapping(
     @classmethod
     def process_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__process_pattern_mapping.get(field)
+
+    @classmethod
+    def reddit_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.reddit_account_object_mapping().get(field)
 
     @classmethod
     def registry_key_pattern_mapping(cls, field: str) -> Union[dict, None]:
@@ -363,8 +399,24 @@ class InternalSTIX2IndicatorMapping(
         return cls.__sigma_object_mapping
 
     @classmethod
+    def telegram_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.telegram_account_object_mapping().get(field)
+
+    @classmethod
+    def twitter_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.twitter_account_object_mapping().get(field)
+
+    @classmethod
+    def unix_user_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.unix_user_account_extention_mapping().get(field)
+
+    @classmethod
     def url_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.url_object_mapping().get(field)
+
+    @classmethod
+    def user_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.user_account_object_mapping().get(field)
 
     @classmethod
     def x509_pattern_mapping(cls, field: str) -> Union[dict, None]:
@@ -503,6 +555,8 @@ class InternalSTIX2IndicatorConverter(
         )
         for pattern in indicator.pattern[1:-1].split(' AND '):
             key, value = self._extract_features_from_pattern(pattern)
+            if key == 'account_type':
+                continue
             misp_object.add_attribute(**{'value': value, **mapping(key)})
         self.main_parser._add_misp_object(misp_object, indicator)
 
@@ -515,6 +569,8 @@ class InternalSTIX2IndicatorConverter(
         attachments: defaultdict = defaultdict(dict)
         for pattern in indicator.pattern[1:-1].split(' AND '):
             key, value = self._extract_features_from_pattern(pattern)
+            if key == 'account_type':
+                continue
             if key.startswith('x_misp_') and '.' in key:
                 feature, key = key.split('.')
                 attachments[feature][key] = value
