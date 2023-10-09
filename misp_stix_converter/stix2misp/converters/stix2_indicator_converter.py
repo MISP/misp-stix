@@ -1215,11 +1215,8 @@ class InternalSTIX2IndicatorMapping(
             },
             'from_ref.value': {'type': 'email-src', 'object_relation': 'from'},
             'to_refs': {
-                'display_name': {
-                    'type': 'email-dst-display-name',
-                    'object_relation': 'to-display-name'
-                },
-                'value': {'type': 'email-dst', 'object_relation': 'to'}
+                'display_name': STIX2IndicatorMapping.to_display_name_attribute(),
+                'value': STIX2IndicatorMapping.to_attribute()
             },
             **InternalSTIX2Mapping.email_object_mapping()
         }
@@ -1303,9 +1300,7 @@ class InternalSTIX2IndicatorMapping(
         }
     )
     __sigma_object_mapping = Mapping(
-        pattern=STIX2Mapping.sigma_attribute(),
-        description=STIX2Mapping.comment_attribute(),
-        name=STIX2Mapping.sigma_rule_name_attribute(),
+        **STIX2IndicatorMapping.sigma_object_mapping(),
         x_misp_context={'type': 'text', 'object_relation': 'context'}
     )
     __x509_pattern_mapping = Mapping(
@@ -1317,10 +1312,7 @@ class InternalSTIX2IndicatorMapping(
         }
     )
     __yara_object_mapping = Mapping(
-        pattern=STIX2Mapping.yara_attribute(),
-        description=STIX2Mapping.comment_attribute(),
-        name=STIX2Mapping.yara_rule_name_attribute(),
-        pattern_version=STIX2Mapping.version_attribute(),
+        **STIX2IndicatorMapping.yara_object_mapping(),
         x_misp_context={'type': 'text', 'object_relation': 'context'}
     )
 
@@ -1406,24 +1398,12 @@ class InternalSTIX2IndicatorMapping(
         return cls.parler_account_object_mapping().get(field)
 
     @classmethod
-    def pe_pattern_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.pe_object_mapping().get(field)
-
-    @classmethod
-    def pe_section_pattern_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.pe_section_object_mapping().get(field)
-
-    @classmethod
     def process_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__process_pattern_mapping.get(field)
 
     @classmethod
     def reddit_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.reddit_account_object_mapping().get(field)
-
-    @classmethod
-    def registry_key_pattern_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.registry_key_object_mapping().get(field)
 
     @classmethod
     def registry_key_values_pattern_mapping(
@@ -1444,7 +1424,7 @@ class InternalSTIX2IndicatorMapping(
 
     @classmethod
     def unix_user_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.unix_user_account_extention_mapping().get(field)
+        return cls.unix_user_account_extension_mapping().get(field)
 
     @classmethod
     def url_pattern_mapping(cls, field: str) -> Union[dict, None]:

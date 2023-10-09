@@ -11,9 +11,6 @@ class STIX2Mapping:
     __access_time_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'access-time'}
     )
-    __account_type_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'account-type'}
-    )
     __address_family_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'address-family'}
     )
@@ -25,9 +22,6 @@ class STIX2Mapping:
     )
     __asn_attribute = Mapping(
         **{'type': 'AS', 'object_relation': 'asn'}
-    )
-    __can_escalate_privs_attribute = Mapping(
-        **{'type': 'boolean', 'object_relation': 'can_escalate_privs'}
     )
     __command_line_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'command-line'}
@@ -44,9 +38,6 @@ class STIX2Mapping:
     __cpe_attribute = Mapping(
         **{'type': 'cpe', 'object_relation': 'cpe'}
     )
-    __created_attribute = Mapping(
-        **{'type': 'datetime', 'object_relation': 'created'}
-    )
     __creation_time_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'creation-time'}
     )
@@ -61,12 +52,6 @@ class STIX2Mapping:
     )
     __description_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'description'}
-    )
-    __disabled_attribute = Mapping(
-        **{'type': 'boolean', 'object_relation': 'disabled'}
-    )
-    __display_name_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'display-name'}
     )
     __domain_attribute = Mapping(
         **{'type': 'domain', 'object_relation': 'domain'}
@@ -89,17 +74,11 @@ class STIX2Mapping:
     __entrypoint_address_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'entrypoint-address'}
     )
-    __expires_attribute = Mapping(
-        **{'type': 'datetime', 'object_relation': 'expires'}
-    )
     __file_encoding_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'file-encoding'}
     )
     __filename_attribute = Mapping(
         **{'type': 'filename', 'object_relation': 'filename'}
-    )
-    __first_login_attribute = Mapping(
-        **{'type': 'datetime', 'object_relation': 'first_login'}
     )
     __first_packet_seen_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'first-packet-seen'}
@@ -119,23 +98,8 @@ class STIX2Mapping:
     __ip_src_attribute = Mapping(
         **{'type': 'ip-src', 'object_relation': 'ip-src'}
     )
-    __is_self_signed_attribute = Mapping(
-        **{'type': 'boolean', 'object_relation': 'self_signed'}
-    )
-    __is_service_account_attribute = Mapping(
-        **{'type': 'boolean', 'object_relation': 'is_service_account'}
-    )
-    __issuer_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'issuer'}
-    )
     __language_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'language'}
-    )
-    __last_login_attribute = Mapping(
-        **{'type': 'datetime', 'object_relation': 'last_login'}
-    )
-    __last_modified_attribute = Mapping(
-        **{'type': 'datetime', 'object_relation': 'last-modified'}
     )
     __last_packet_seen_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'last-packet-seen'}
@@ -158,32 +122,14 @@ class STIX2Mapping:
     __name_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'name'}
     )
-    __number_of_sections_attribute = Mapping(
-        **{'type': 'counter', 'object_relation': 'number-sections'}
-    )
     __password_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'password'}
-    )
-    __password_last_changed_attribute = Mapping(
-        **{'type': 'datetime', 'object_relation': 'password_last_changed'}
     )
     __path_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'path'}
     )
     __pid_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'pid'}
-    )
-    __privileged_attribute = Mapping(
-        **{'type': 'boolean', 'object_relation': 'privileged'}
-    )
-    __pubkey_info_algorithm_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'pubkey-info-algorithm'}
-    )
-    __pubkey_info_exponent_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'pubkey-info-exponent'}
-    )
-    __pubkey_info_modulus_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'pubkey-info-modulus'}
     )
     __reference_attribute = Mapping(
         **{'type': 'link', 'object_relation': 'reference'}
@@ -194,17 +140,11 @@ class STIX2Mapping:
     __referer_attribute = Mapping(
         **{'type': 'other', 'object_relation': 'referer'}
     )
-    __regkey_attribute = Mapping(
-        **{'type': 'regkey', 'object_relation': 'key'}
-    )
     __reply_to_attribute = Mapping(
         **{'type': 'email-reply-to', 'object_relation': 'reply-to'}
     )
     __send_date_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'send-date'}
-    )
-    __serial_number_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'serial-number'}
     )
     __sha1_attribute = Mapping(
         **{'type': 'sha1', 'object_relation': 'sha1'}
@@ -227,9 +167,6 @@ class STIX2Mapping:
     __sigma_rule_name_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'sigma-rule-name'}
     )
-    __signature_algorithm_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'signature_algorithm'}
-    )
     __size_in_bytes_attribute = Mapping(
         **{'type': 'size-in-bytes', 'object_relation': 'size-in-bytes'}
     )
@@ -242,8 +179,8 @@ class STIX2Mapping:
     __ssdeep_attribute = Mapping(
         **{'type': 'ssdeep', 'object_relation': 'ssdeep'}
     )
-    __subject_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'subject'}
+    __subnet_announced_attribute = Mapping(
+        **{'type': 'ip-src', 'object_relation': 'subnet-announced'}
     )
     __summary_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'summary'}
@@ -266,17 +203,8 @@ class STIX2Mapping:
     __user_agent_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'user-agent'}
     )
-    __user_id_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'user-id'}
-    )
     __username_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'username'}
-    )
-    __validity_not_after_attribute = Mapping(
-        **{'type': 'datetime', 'object_relation': 'validity-not-after'}
-    )
-    __validity_not_before_attribute = Mapping(
-        **{'type': 'datetime', 'object_relation': 'validity-not-before'}
     )
     __vendor_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'vendor'}
@@ -312,6 +240,10 @@ class STIX2Mapping:
         **{'type': 'text', 'object_relation': 'yara-rule-name'}
     )
 
+    # OBJECT ATTRIBUTES
+    __last_modified_attribute = {'type': 'datetime', 'object_relation': 'last-modified'}
+    __password_last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
+
     # MISP OBJECTS MAPPING
     __connection_protocols = Mapping(
         **{
@@ -328,21 +260,96 @@ class STIX2Mapping:
             )
         }
     )
+    __email_object_mapping = Mapping(
+        body=__email_body_attribute,
+        date=__send_date_attribute,
+        message_id=__message_id_attribute,
+        subject=__email_subject_attribute
+    )
+    __file_hashes_mapping = Mapping(
+        **{
+            'MD5': __md5_attribute,
+            'SHA-1': __sha1_attribute,
+            'SHA-256': __sha256_attribute,
+            'SHA-512': __sha512_attribute,
+            'SHA3-256': __sha3_256_attribute,
+            'SHA3-512': __sha3_512_attribute,
+            'SSDEEP': __ssdeep_attribute,
+            'TLSH': __tlsh_attribute
+        }
+    )
+    __file_object_mapping = Mapping(
+        accessed=__access_time_attribute,
+        atime=__access_time_attribute,
+        created=__creation_time_attribute,
+        ctime=__creation_time_attribute,
+        mime_type=__mime_type_attribute,
+        modified=__modification_time_attribute,
+        mtime=__modification_time_attribute,
+        name=__filename_attribute,
+        name_enc=__file_encoding_attribute,
+        size=__size_in_bytes_attribute
+    )
     __network_socket_extension_mapping = Mapping(
         address_family=__address_family_attribute,
         protocol_family=__domain_family_attribute,
         socket_type={'type': 'text', 'object_relation': 'socket-type'}
+    )
+    __pe_object_mapping = Mapping(
+        imphash=__imphash_attribute,
+        number_of_sections={'type': 'counter', 'object_relation': 'number-sections'},
+        pe_type=__type_attribute
+    )
+    __pe_section_object_mapping = Mapping(
+        entropy=__entropy_attribute,
+        name=__name_attribute,
+        size=__size_in_bytes_attribute
+    )
+    __registry_key_object_mapping = Mapping(
+        key={'type': 'regkey', 'object_relation': 'key'},
+        modified=__last_modified_attribute,
+        modified_time=__last_modified_attribute
     )
     __registry_key_values_mapping = Mapping(
         data=__data_attribute,
         data_type=__data_type_attribute,
         name=__name_attribute
     )
-    __unix_user_account_extention_mapping = Mapping(
+    __unix_user_account_extension_mapping = Mapping(
         gid={'type': 'text', 'object_relation': 'group-id'},
         groups={'type': 'text', 'object_relation': 'group'},
         home_dir={'type': 'text', 'object_relation': 'home_dir'},
         shell={'type': 'text', 'object_relation': 'shell'}
+    )
+    __user_account_object_mapping = Mapping(
+        account_login=__username_attribute,
+        account_type={'type': 'text', 'object_relation': 'account-type'},
+        can_escalate_privs={'type': 'boolean', 'object_relation': 'can_escalate_privs'},
+        credential=__password_attribute,
+        display_name={'type': 'text', 'object_relation': 'display-name'},
+        is_disabled={'type': 'boolean', 'object_relation': 'disabled'},
+        is_privileged={'type': 'boolean', 'object_relation': 'privileged'},
+        is_service_account={'type': 'boolean', 'object_relation': 'is_service_account'},
+        user_id={'type': 'text', 'object_relation': 'user-id'},
+        account_created={'type': 'datetime', 'object_relation': 'created'},
+        account_expires={'type': 'datetime', 'object_relation': 'expires'},
+        account_first_login={'type': 'datetime', 'object_relation': 'first_login'},
+        account_last_login={'type': 'datetime', 'object_relation': 'last_login'},
+        credential_last_changed=__password_last_changed_attribute,
+        password_last_changed=__password_last_changed_attribute
+    )
+    __x509_object_mapping = Mapping(
+        is_self_signed={'type': 'boolean', 'object_relation': 'self_signed'},
+        issuer={'type': 'text', 'object_relation': 'issuer'},
+        serial_number={'type': 'text', 'object_relation': 'serial-number'},
+        signature_algorithm={'type': 'text', 'object_relation': 'signature_algorithm'},
+        subject={'type': 'text', 'object_relation': 'subject'},
+        subject_public_key_algorithm={'type': 'text', 'object_relation': 'pubkey-info-algorithm'},
+        subject_public_key_exponent={'type': 'text', 'object_relation': 'pubkey-info-exponent'},
+        subject_public_key_modulus={'type': 'text', 'object_relation': 'pubkey-info-modulus'},
+        validity_not_after={'type': 'datetime', 'object_relation': 'validity-not-after'},
+        validity_not_before={'type': 'datetime', 'object_relation': 'validity-not-before'},
+        version=__version_attribute
     )
 
     __timeline_mapping = Mapping(
@@ -355,10 +362,6 @@ class STIX2Mapping:
     @classmethod
     def access_time_attribute(cls) -> dict:
         return cls.__access_time_attribute
-
-    @classmethod
-    def account_type_attribute(cls) -> dict:
-        return cls.__account_type_attribute
 
     @classmethod
     def address_family_attribute(cls) -> dict:
@@ -375,10 +378,6 @@ class STIX2Mapping:
     @classmethod
     def asn_attribute(cls) -> dict:
         return cls.__asn_attribute
-
-    @classmethod
-    def can_escalate_privs_attribute(cls) -> dict:
-        return cls.__can_escalate_privs_attribute
 
     @classmethod
     def command_line_attribute(cls) -> dict:
@@ -405,10 +404,6 @@ class STIX2Mapping:
         return cls.__cpe_attribute
 
     @classmethod
-    def created_attribute(cls) -> dict:
-        return cls.__created_attribute
-
-    @classmethod
     def creation_time_attribute(cls) -> dict:
         return cls.__creation_time_attribute
 
@@ -419,14 +414,6 @@ class STIX2Mapping:
     @classmethod
     def description_attribute(cls) -> dict:
         return cls.__description_attribute
-
-    @classmethod
-    def disabled_attribute(cls) -> dict:
-        return cls.__disabled_attribute
-
-    @classmethod
-    def display_name_attribute(cls) -> dict:
-        return cls.__display_name_attribute
 
     @classmethod
     def domain_attribute(cls) -> dict:
@@ -445,6 +432,10 @@ class STIX2Mapping:
         return cls.__email_body_attribute
 
     @classmethod
+    def email_object_mapping(cls) -> dict:
+        return cls.__email_object_mapping
+
+    @classmethod
     def email_subject_attribute(cls) -> dict:
         return cls.__email_subject_attribute
 
@@ -457,20 +448,20 @@ class STIX2Mapping:
         return cls.__entrypoint_address_attribute
 
     @classmethod
-    def expires_attribute(cls) -> dict:
-        return cls.__expires_attribute
-
-    @classmethod
     def file_encoding_attribute(cls) -> dict:
         return cls.__file_encoding_attribute
 
     @classmethod
-    def filename_attribute(cls) -> dict:
-        return cls.__filename_attribute
+    def file_hashes_mapping(cls) -> Union[dict, None]:
+        return cls.__file_hashes_mapping
 
     @classmethod
-    def first_login_attribute(cls) -> dict:
-        return cls.__first_login_attribute
+    def file_object_mapping(cls) -> dict:
+        return cls.__file_object_mapping
+
+    @classmethod
+    def filename_attribute(cls) -> dict:
+        return cls.__filename_attribute
 
     @classmethod
     def first_packet_seen_attribute(cls) -> dict:
@@ -497,28 +488,8 @@ class STIX2Mapping:
         return cls.__ip_src_attribute
 
     @classmethod
-    def is_self_signed_attribute(cls) -> dict:
-        return cls.__is_self_signed_attribute
-
-    @classmethod
-    def is_service_account_attribute(cls) -> dict:
-        return cls.__is_service_account_attribute
-
-    @classmethod
-    def issuer_attribute(cls) -> dict:
-        return cls.__issuer_attribute
-
-    @classmethod
     def language_attribute(cls) -> dict:
         return cls.__language_attribute
-
-    @classmethod
-    def last_login_attribute(cls) -> dict:
-        return cls.__last_login_attribute
-
-    @classmethod
-    def last_modified_attribute(cls) -> dict:
-        return cls.__last_modified_attribute
 
     @classmethod
     def last_packet_seen_attribute(cls) -> dict:
@@ -553,40 +524,24 @@ class STIX2Mapping:
         return cls.__network_socket_extension_mapping
 
     @classmethod
-    def number_of_sections_attribute(cls) -> dict:
-        return cls.__number_of_sections_attribute
-
-    @classmethod
     def password_attribute(cls) -> dict:
         return cls.__password_attribute
-
-    @classmethod
-    def password_last_changed_attribute(cls) -> dict:
-        return cls.__password_last_changed_attribute
 
     @classmethod
     def path_attribute(cls) -> dict:
         return cls.__path_attribute
 
     @classmethod
+    def pe_object_mapping(cls) -> dict:
+        return cls.__pe_object_mapping
+
+    @classmethod
+    def pe_section_object_mapping(cls) -> dict:
+        return cls.__pe_section_object_mapping
+
+    @classmethod
     def pid_attribute(cls) -> dict:
         return cls.__pid_attribute
-
-    @classmethod
-    def privileged_attribute(cls) -> dict:
-        return cls.__privileged_attribute
-
-    @classmethod
-    def pubkey_info_algorithm_attribute(cls) -> dict:
-        return cls.__pubkey_info_algorithm_attribute
-
-    @classmethod
-    def pubkey_info_exponent_attribute(cls) -> dict:
-        return cls.__pubkey_info_exponent_attribute
-
-    @classmethod
-    def pubkey_info_modulus_attribute(cls) -> dict:
-        return cls.__pubkey_info_modulus_attribute
 
     @classmethod
     def references_attribute(cls) -> dict:
@@ -597,12 +552,12 @@ class STIX2Mapping:
         return cls.__referer_attribute
 
     @classmethod
-    def registry_key_values_mapping(cls) -> dict:
-        return cls.__registry_key_values_mapping
+    def registry_key_object_mapping(cls) -> dict:
+        return cls.__registry_key_object_mapping
 
     @classmethod
-    def regkey_attribute(cls) -> dict:
-        return cls.__regkey_attribute
+    def registry_key_values_mapping(cls) -> dict:
+        return cls.__registry_key_values_mapping
 
     @classmethod
     def reply_to_attribute(cls) -> dict:
@@ -611,10 +566,6 @@ class STIX2Mapping:
     @classmethod
     def send_date_attribute(cls) -> dict:
         return cls.__send_date_attribute
-
-    @classmethod
-    def serial_number_attribute(cls) -> dict:
-        return cls.__serial_number_attribute
 
     @classmethod
     def sha1_attribute(cls) -> dict:
@@ -649,10 +600,6 @@ class STIX2Mapping:
         return cls.__sigma_rule_name_attribute
 
     @classmethod
-    def signature_algorithm_attribute(cls) -> dict:
-        return cls.__signature_algorithm_attribute
-
-    @classmethod
     def size_in_bytes_attribute(cls) -> dict:
         return cls.__size_in_bytes_attribute
 
@@ -669,8 +616,8 @@ class STIX2Mapping:
         return cls.__ssdeep_attribute
 
     @classmethod
-    def subject_attribute(cls) -> dict:
-        return cls.__subject_attribute
+    def subnet_announced_attribute(cls) -> dict:
+        return cls.__subnet_announced_attribute
 
     @classmethod
     def summary_attribute(cls) -> dict:
@@ -701,28 +648,20 @@ class STIX2Mapping:
         return cls.__url_attribute
 
     @classmethod
-    def unix_user_account_extention_mapping(cls) -> dict:
-        return cls.__unix_user_account_extention_mapping
+    def unix_user_account_extension_mapping(cls) -> dict:
+        return cls.__unix_user_account_extension_mapping
+
+    @classmethod
+    def user_account_object_mapping(cls) -> dict:
+        return cls.__user_account_object_mapping
 
     @classmethod
     def user_agent_attribute(cls) -> dict:
         return cls.__user_agent_attribute
 
     @classmethod
-    def user_id_attribute(cls) -> dict:
-        return cls.__user_id_attribute
-
-    @classmethod
     def username_attribute(cls) -> dict:
         return cls.__username_attribute
-
-    @classmethod
-    def validity_not_after_attribute(cls) -> dict:
-        return cls.__validity_not_after_attribute
-
-    @classmethod
-    def validity_not_before_attribute(cls) -> dict:
-        return cls.__validity_not_before_attribute
 
     @classmethod
     def vendor_attribute(cls) -> dict:
@@ -739,6 +678,10 @@ class STIX2Mapping:
     @classmethod
     def x509_md5_attribute(cls) -> dict:
         return cls.__x509_md5_attribute
+
+    @classmethod
+    def x509_object_mapping(cls) -> dict:
+        return cls.__x509_object_mapping
 
     @classmethod
     def x509_sha1_attribute(cls) -> dict:
@@ -762,6 +705,7 @@ class STIX2Mapping:
 
 
 class ExternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
+    # GALAXIES MAPPING
     __galaxy_name_mapping = Mapping(
         **{
             "attack-pattern": {
@@ -819,9 +763,63 @@ class ExternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
         }
     )
 
+    # MISP OBJECTS MAPPING
+    __directory_object_mapping = Mapping(
+        accessed=STIX2Mapping.access_time_attribute(),
+        atime=STIX2Mapping.access_time_attribute(),
+        created=STIX2Mapping.creation_time_attribute(),
+        ctime=STIX2Mapping.creation_time_attribute(),
+        modified=STIX2Mapping.modification_time_attribute(),
+        mtime=STIX2Mapping.modification_time_attribute(),
+        path=STIX2Mapping.path_attribute(),
+        path_enc={'type': 'text', 'object_relaiton': 'path-encoding'}
+    )
+    __network_traffic_object_mapping = Mapping(
+        src_port=STIX2Mapping.src_port_attribute(),
+        dst_port=STIX2Mapping.dst_port_attribute(),
+        start=STIX2Mapping.first_packet_seen_attribute(),
+        end=STIX2Mapping.last_packet_seen_attribute(),
+        src_byte_count={'type': 'counter', 'object_relation': 'src-bytes-count'},
+        dst_byte_count={'type': 'counter', 'object_relation': 'dst-bytes-count'},
+        src_packets={'type': 'counter', 'object_relation': 'src-packets-count'},
+        dst_packets={'type': 'counter', 'object_relation': 'dst-packets-count'}
+    )
+    __process_object_mapping = Mapping(
+        command_line=STIX2Mapping.command_line_attribute(),
+        created=STIX2Mapping.creation_time_attribute(),
+        created_time=STIX2Mapping.creation_time_attribute(),
+        cwd=STIX2Mapping.current_directory_attribute(),
+        is_hidden=STIX2Mapping.hidden_attribute(),
+        name=STIX2Mapping.name_attribute(),
+        pid=STIX2Mapping.pid_attribute()
+    )
+    __software_object_mapping = Mapping(
+        name=STIX2Mapping.name_attribute(),
+        cpe=STIX2Mapping.cpe_attribute(),
+        swid={'type': 'text', 'object_relation': 'swid'},
+        vendor=STIX2Mapping.vendor_attribute(),
+        version=STIX2Mapping.version_attribute()
+    )
+
+    @classmethod
+    def directory_object_mapping(cls) -> dict:
+        return cls.__directory_object_mapping
+
     @classmethod
     def galaxy_name_mapping(cls, field) -> Union[dict, None]:
         return cls.__galaxy_name_mapping.get(field)
+
+    @classmethod
+    def network_traffic_object_mapping(cls) -> dict:
+        return cls.__network_traffic_object_mapping
+
+    @classmethod
+    def process_object_mapping(cls) -> dict:
+        return cls.__process_object_mapping
+
+    @classmethod
+    def software_object_mapping(cls) -> dict:
+        return cls.__software_object_mapping
 
 
 class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
@@ -1066,10 +1064,7 @@ class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
         x_misp_text=STIX2Mapping.text_attribute()
     )
     __email_object_mapping = Mapping(
-        body=STIX2Mapping.email_body_attribute(),
-        date=STIX2Mapping.send_date_attribute(),
-        message_id=STIX2Mapping.message_id_attribute(),
-        subject=STIX2Mapping.email_subject_attribute(),
+        **STIX2Mapping.email_object_mapping(),
         x_misp_attachment={'type': 'email-attachment', 'object_relation': 'attachment'},
         x_misp_from_domain={'type': 'domain', 'object_relation': 'from-domain'},
         x_misp_ip_src=STIX2Mapping.ip_src_attribute(),
@@ -1094,40 +1089,22 @@ class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
         x_misp_user_avatar=__user_avatar_attribute
     )
     __file_hashes_mapping = Mapping(
-        **{
-            'AUTHENTIHASH': __authentihash_attribute,
-            'IMPHASH': STIX2Mapping.imphash_attribute(),
-            'MD5': STIX2Mapping.md5_attribute(),
-            'SHA1': STIX2Mapping.sha1_attribute(),
-            'SHA-1': STIX2Mapping.sha1_attribute(),
-            'SHA224': __sha224_attribute,
-            'SHA256': STIX2Mapping.sha256_attribute(),
-            'SHA-256': STIX2Mapping.sha256_attribute(),
-            'SHA3224': __sha3_224_attribute,
-            'SHA3-256': STIX2Mapping.sha3_256_attribute(),
-            'SHA3384': __sha3_384_attribute,
-            'SHA3-512': STIX2Mapping.sha3_512_attribute(),
-            'SHA384': __sha384_attribute,
-            'SHA512': STIX2Mapping.sha512_attribute(),
-            'SHA-512': STIX2Mapping.sha512_attribute(),
-            'ssdeep': STIX2Mapping.ssdeep_attribute(),
-            'SSDEEP': STIX2Mapping.ssdeep_attribute(),
-            'TELFHASH': __telfhash_attribute,
-            'TLSH': STIX2Mapping.tlsh_attribute(),
-            'VHASH': __vhash_attribute
-        }
+        **STIX2Mapping.file_hashes_mapping(),
+        AUTHENTIHASH=__authentihash_attribute,
+        IMPHASH=STIX2Mapping.imphash_attribute(),
+        SHA1=STIX2Mapping.sha1_attribute(),
+        SHA224=__sha224_attribute,
+        SHA256=STIX2Mapping.sha256_attribute(),
+        SHA3224=__sha3_224_attribute,
+        SHA3384=__sha3_384_attribute,
+        SHA384=__sha384_attribute,
+        SHA512=STIX2Mapping.sha512_attribute(),
+        ssdeep=STIX2Mapping.ssdeep_attribute(),
+        TELFHASH=__telfhash_attribute,
+        VHASH=__vhash_attribute
     )
     __file_object_mapping = Mapping(
-        accessed=STIX2Mapping.access_time_attribute(),
-        atime=STIX2Mapping.access_time_attribute(),
-        created=STIX2Mapping.creation_time_attribute(),
-        ctime=STIX2Mapping.creation_time_attribute(),
-        mime_type=STIX2Mapping.mime_type_attribute(),
-        modified=STIX2Mapping.modification_time_attribute(),
-        mtime=STIX2Mapping.modification_time_attribute(),
-        name=STIX2Mapping.filename_attribute(),
-        name_enc=STIX2Mapping.file_encoding_attribute(),
-        size=STIX2Mapping.size_in_bytes_attribute(),
+        **STIX2Mapping.file_object_mapping(),
         x_misp_attachment=__attachment_attribute,
         x_misp_certificate={'type': 'x509-fingerprint-sha1', 'object_relation': 'certificate'},
         x_misp_compilation_timestamp=__compilation_timestamp_attribute,
@@ -1246,7 +1223,7 @@ class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
         x_misp_community_id=__community_id_attribute,
         x_misp_direction={'type': 'text', 'object_relation': 'direction'},
         x_misp_flow_count={'type': 'counter', 'object_relation': 'flow-count'},
-        x_misp_ip_protocol_number={'type': '', 'object_relation': 'ip-protocol-number'},
+        x_misp_ip_protocol_number={'type': 'size-in-bytes', 'object_relation': 'ip-protocol-number'},
         x_misp_ip_version={'type': 'counter', 'object_relation': 'ip_version'}
     )
     __network_connection_object_mapping = Mapping(
@@ -1288,9 +1265,7 @@ class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
         x_misp_verified={'type': 'boolean', 'object_relation': 'verified'},
     )
     __pe_object_mapping = Mapping(
-        imphash=STIX2Mapping.imphash_attribute(),
-        number_of_sections=STIX2Mapping.number_of_sections_attribute(),
-        pe_type=STIX2Mapping.type_attribute(),
+        **STIX2Mapping.pe_object_mapping(),
         x_misp_authentihash=__authentihash_attribute,
         x_misp_company_name={'type': 'text', 'object_relation': 'company-name'},
         x_misp_compilation_timestamp=__compilation_timestamp_attribute,
@@ -1312,9 +1287,7 @@ class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
         x_misp_text=STIX2Mapping.text_attribute()
     )
     __pe_section_object_mapping = Mapping(
-        entropy=STIX2Mapping.entropy_attribute(),
-        name=STIX2Mapping.name_attribute(),
-        size=STIX2Mapping.size_in_bytes_attribute(),
+        **STIX2Mapping.pe_section_object_mapping(),
         x_misp_characteristic={'type': 'text', 'object_relation': 'characteristic'},
         x_misp_offset={'type': 'hex', 'object_relation': 'offset'},
         x_misp_text=STIX2Mapping.text_attribute(),
@@ -1356,9 +1329,7 @@ class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
         x_misp_url=STIX2Mapping.url_attribute()
     )
     __registry_key_object_mapping = Mapping(
-        key=STIX2Mapping.regkey_attribute(),
-        modified=STIX2Mapping.last_modified_attribute(),
-        modified_time=STIX2Mapping.last_modified_attribute(),
+        **STIX2Mapping.registry_key_object_mapping(),
         x_misp_hive={'type': 'text', 'object_relation': 'hive'},
         x_misp_root_keys={'type': 'text', 'object_relation': 'root-keys'}
     )
@@ -1419,38 +1390,14 @@ class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
         x_misp_tld={'type': 'text', 'object_relation': 'tld'}
     )
     __user_account_object_mapping = Mapping(
-        account_login=STIX2Mapping.username_attribute(),
-        account_type=STIX2Mapping.account_type_attribute(),
-        can_escalate_privs=STIX2Mapping.can_escalate_privs_attribute(),
-        credential=STIX2Mapping.password_attribute(),
+        **STIX2Mapping.user_account_object_mapping(),
         x_misp_password=STIX2Mapping.password_attribute(),
-        display_name=STIX2Mapping.display_name_attribute(),
-        is_disabled=STIX2Mapping.disabled_attribute(),
-        is_privileged=STIX2Mapping.privileged_attribute(),
-        is_service_account=STIX2Mapping.is_service_account_attribute(),
-        user_id=STIX2Mapping.user_id_attribute(),
         x_misp_description=STIX2Mapping.description_attribute(),
         x_misp_link=__link_attribute,
-        x_misp_user_avatar=__user_avatar_attribute,
-        account_created=STIX2Mapping.created_attribute(),
-        account_expires=STIX2Mapping.expires_attribute(),
-        account_first_login=STIX2Mapping.first_login_attribute(),
-        account_last_login=STIX2Mapping.last_login_attribute(),
-        credential_last_changed=STIX2Mapping.password_last_changed_attribute(),
-        password_last_changed=STIX2Mapping.password_last_changed_attribute()
+        x_misp_user_avatar=__user_avatar_attribute
     )
     __x509_object_mapping = Mapping(
-        is_self_signed=STIX2Mapping.is_self_signed_attribute(),
-        issuer=STIX2Mapping.issuer_attribute(),
-        serial_number=STIX2Mapping.serial_number_attribute(),
-        signature_algorithm=STIX2Mapping.signature_algorithm_attribute(),
-        subject=STIX2Mapping.subject_attribute(),
-        subject_public_key_algorithm=STIX2Mapping.pubkey_info_algorithm_attribute(),
-        subject_public_key_exponent=STIX2Mapping.pubkey_info_exponent_attribute(),
-        subject_public_key_modulus=STIX2Mapping.pubkey_info_modulus_attribute(),
-        validity_not_after=STIX2Mapping.validity_not_after_attribute(),
-        validity_not_before=STIX2Mapping.validity_not_before_attribute(),
-        version=STIX2Mapping.version_attribute(),
+        **STIX2Mapping.x509_object_mapping(),
         x_misp_is_ca={'type': 'boolean', 'object_relation': 'is_ca'},
         x_misp_pem={'type': 'text', 'object_relation': 'pem'},
         x_misp_pubkey_info_size={'type': 'text', 'object_relation': 'pubkey-info-size'},

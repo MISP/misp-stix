@@ -3,7 +3,8 @@
 
 from ... import Mapping
 from .stix2converter import STIX2Converter
-from .stix2mapping import InternalSTIX2Mapping, STIX2Mapping
+from .stix2mapping import (
+    ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
 from pymisp import AbstractMISP, MISPObject
 from stix2.v21.observables import Artifact, File, Software
@@ -53,39 +54,9 @@ class STIX2ObservableMapping(metaclass=ABCMeta):
         return cls.__software_object_mapping
 
 
-class ExternalSTIX2ObservableMapping(STIX2ObservableMapping):
-    __file_hashes_mapping = Mapping(
-        **{
-            'MD5': STIX2Mapping.md5_attribute(),
-            'SHA-1': STIX2Mapping.sha1_attribute(),
-            'SHA-256': STIX2Mapping.sha256_attribute(),
-            'SHA-512': STIX2Mapping.sha512_attribute(),
-            'SHA3-256': STIX2Mapping.sha3_256_attribute(),
-            'SHA3-512': STIX2Mapping.sha3_512_attribute(),
-            'SSDEEP': STIX2Mapping.ssdeep_attribute(),
-            'TLSH': STIX2Mapping.tlsh_attribute()
-        }
-    )
-    __file_object_mapping = Mapping(
-        accessed=STIX2Mapping.access_time_attribute(),
-        atime=STIX2Mapping.access_time_attribute(),
-        created=STIX2Mapping.creation_time_attribute(),
-        ctime=STIX2Mapping.creation_time_attribute(),
-        mime_type=STIX2Mapping.mime_type_attribute(),
-        modified=STIX2Mapping.modification_time_attribute(),
-        mtime=STIX2Mapping.modification_time_attribute(),
-        name=STIX2Mapping.filename_attribute(),
-        name_enc=STIX2Mapping.file_encoding_attribute(),
-        size=STIX2Mapping.size_in_bytes_attribute()
-    )
-
-    @classmethod
-    def file_hashes_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.__file_hashes_mapping.get(field)
-
-    @classmethod
-    def file_object_mapping(cls) -> dict:
-        return cls.__file_object_mapping
+class ExternalSTIX2ObservableMapping(
+        STIX2ObservableMapping, ExternalSTIX2Mapping):
+    pass
 
 
 class InternalSTIX2ObservableMapping(
