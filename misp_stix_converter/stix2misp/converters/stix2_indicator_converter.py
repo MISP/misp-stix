@@ -930,7 +930,7 @@ class ExternalSTIX2IndicatorConverter(
                         attribute['comment'] = reference.description
                     attributes.append(attribute)
             if len(attributes) == 1 and attributes[0]['type'] == 'sigma':
-                self._add_misp_attribute(
+                self.main_parser._add_misp_attribute(
                     dict(
                         self._create_attribute_dict(indicator), **attributes[0]
                     ),
@@ -951,7 +951,7 @@ class ExternalSTIX2IndicatorConverter(
                         misp_object.add_attribute(**attribute)
                 self.main_parser._add_misp_object(misp_object, indicator)
         else:
-            self._add_misp_attribute(
+            self.main_parser._add_misp_attribute(
                 {
                     'value': indicator.pattern,
                     **self._mapping.sigma_attribute(),
@@ -961,7 +961,7 @@ class ExternalSTIX2IndicatorConverter(
             )
 
     def _parse_snort_pattern(self, indicator: Indicator):
-        self._add_misp_attribute(
+        self.main_parser._add_misp_attribute(
             {
                 'value': indicator.pattern,
                 **self._mapping.snort_attribute(),
@@ -1134,7 +1134,7 @@ class ExternalSTIX2IndicatorConverter(
                     misp_object.add_attribute(**attribute)
             self.main_parser._add_misp_object(misp_object, indicator)
         else:
-            self._add_misp_attribute(
+            self.main_parser._add_misp_attribute(
                 {
                     'value': indicator.pattern,
                     **self._mapping.yara_attribute(),
