@@ -29,8 +29,6 @@ _MAIN_PARSER_TYPING = Union[
     'ExternalSTIX2toMISPParser', 'InternalSTIX2toMISPParser'
 ]
 
-_valid_pattern_assertions = ('=', 'IN', 'LIKE')
-
 
 class STIX2IndicatorMapping(STIX2Mapping, metaclass=ABCMeta):
     # SINGLE ATTRIBUTES MAPPING
@@ -114,7 +112,22 @@ class STIX2IndicatorConverter(STIX2Converter, metaclass=ABCMeta):
 class ExternalSTIX2IndicatorMapping(
         STIX2IndicatorMapping, ExternalSTIX2Mapping):
     __mac_address_pattern = '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
+    __pattern_forbidden_relations = (
+        ' < ',
+        ' <= ',
+        ' > ',
+        ' >= ',
+        ' FOLLOWEDBY ',
+        ' ISSUBSET ',
+        ' ISSUPERSET',
+        ' MATCHES ',
+        ' NOT ',
+        ' REPEATS ',
+        ' WITHIN '
+    )
+    __valid_pattern_assertions = ('=', 'IN', 'LIKE')
 
+    # MAIN MAPPING
     __pattern_mapping = Mapping(
         **{
             'directory': 'directory',
@@ -229,7 +242,7 @@ class ExternalSTIX2IndicatorMapping(
         return cls.__asn_pattern_mapping.get(field)
 
     @classmethod
-    def domain_ip_pattern(cls, field: str) -> Union[dict, None]:
+    def domain_ip_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__domain_ip_pattern_mapping.get(field)
 
     @classmethod
@@ -257,6 +270,10 @@ class ExternalSTIX2IndicatorMapping(
         return cls.network_traffic_object_mapping().get(field)
 
     @classmethod
+    def pattern_forbidden_relations(cls) -> tuple:
+        return cls.__pattern_forbidden_relations
+
+    @classmethod
     def pattern_mapping(cls, field: str) -> Union[str, None]:
         return cls.__pattern_mapping.get(field)
 
@@ -271,6 +288,10 @@ class ExternalSTIX2IndicatorMapping(
     @classmethod
     def user_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__user_account_pattern_mapping.get(field)
+
+    @classmethod
+    def valid_pattern_assertions(cls) -> tuple:
+        return cls.__valid_pattern_assertions
 
     @classmethod
     def x509_pattern_mapping(cls, field: str) -> Union[dict, None]:
@@ -300,6 +321,10 @@ class ExternalSTIX2IndicatorConverter(
         except InvalidSTIXPatternError as error:
             self.main_parser._invalid_stix_pattern_error(indicator.id, error)
             self._create_stix_pattern_object(indicator)
+
+    ############################################################################
+    #                   GENERIC INDICATORS HANDLING METHODS.                   #
+    ############################################################################
 
     def _create_stix_pattern_object(self, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('stix2-pattern', indicator)
@@ -344,11 +369,15 @@ class ExternalSTIX2IndicatorConverter(
             return '_create_stix_pattern_object'
         return '_parse_stix_pattern'
 
+    ############################################################################
+    #                        INDICATORS PARSING METHODS                        #
+    ############################################################################
+
     def _parse_asn_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
         for keys, assertion, values in pattern.comparisons['autonomous-system']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             field = keys[0]
             mapping = self._mapping.asn_pattern_mapping(field)
@@ -375,7 +404,7 @@ class ExternalSTIX2IndicatorConverter(
             if feature not in pattern.comparisons:
                 continue
             for keys, assertion, values in pattern.comparisons[feature]:
-                if assertion not in _valid_pattern_assertions:
+                if assertion not in self._mapping.valid_pattern_assertions():
                     continue
                 if keys[0] != 'value':
                     self.main_parser._unmapped_pattern_warning(
@@ -399,7 +428,7 @@ class ExternalSTIX2IndicatorConverter(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('directory', indicator)
         for keys, assertion, values in pattern.comparisons['directory']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             mapping = self._mapping.directory_pattern_mapping(keys[0])
             if mapping is None:
@@ -429,7 +458,7 @@ class ExternalSTIX2IndicatorConverter(
                 continue
             mapping = self._mapping.domain_ip_pattern_mapping(feature)
             for keys, assertion, values in pattern.comparisons[feature]:
-                if assertion not in _valid_pattern_assertions:
+                if assertion not in self._mapping.valid_pattern_assertions():
                     continue
                 if keys[0] != 'value':
                     self.main_parser._unmapped_pattern_warning(
@@ -464,7 +493,7 @@ class ExternalSTIX2IndicatorConverter(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
         for keys, assertion, values in pattern.comparisons['email-addr']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             mapping = self._mapping.email_address_pattern_mapping(keys[0])
             if mapping is None:
@@ -489,7 +518,7 @@ class ExternalSTIX2IndicatorConverter(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
         for keys, assertion, values in pattern.comparisons['email-message']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             mapping = self._mapping.email_message_mapping(keys[0])
             if mapping is None:
@@ -520,7 +549,7 @@ class ExternalSTIX2IndicatorConverter(
         pe_object = self._create_misp_object('pe')
         pe_object.from_dict(**self._parse_timeline(indicator))
         for keys, assertion, values in pattern.comparisons['file']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             if 'windows-pebinary-ext' in keys:
                 if 'sections' in keys:
@@ -640,7 +669,7 @@ class ExternalSTIX2IndicatorConverter(
         else:
             attributes = []
             for keys, assertion, value in pattern.comparisons['file']:
-                if assertion not in _valid_pattern_assertions:
+                if assertion not in self._mapping.valid_pattern_assertions():
                     continue
                 file_attributes = self._parse_file_attribute(
                     keys, value, indicator.id
@@ -665,7 +694,7 @@ class ExternalSTIX2IndicatorConverter(
         for feature in ('ipv4-addr', 'ipv6-addr'):
             if feature in pattern.comparisons:
                 for keys, assertion, values in pattern.comparisons[feature]:
-                    if assertion not in _valid_pattern_assertions:
+                    if assertion not in self._mapping.valid_pattern_assertions():
                         continue
                     if keys[0] != 'value':
                         self.main_parser._unmapped_pattern_warning(
@@ -693,7 +722,7 @@ class ExternalSTIX2IndicatorConverter(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
         for keys, assertion, values in pattern.comparisons['mutex']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             field = keys[0]
             if field == 'name':
@@ -718,7 +747,7 @@ class ExternalSTIX2IndicatorConverter(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('network-connection', indicator)
         for keys, assertion, values in pattern.comparisons['network-traffic']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             if 'protocols' in keys:
                 layer = self._mapping.connection_protocols(values)
@@ -750,7 +779,7 @@ class ExternalSTIX2IndicatorConverter(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         misp_object = self._create_misp_object('network-socket', indicator)
         for keys, assertion, values in pattern.comparisons['network-traffic']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             if 'socket-ext' in keys:
                 mapping = self._mapping.socket_extension_pattern_mapping(
@@ -833,7 +862,7 @@ class ExternalSTIX2IndicatorConverter(
         if any(feature != 'process' for feature in pattern.comparisons.keys()):
             print(f'Process with non process values: {pattern}')
         for keys, assertion, values in pattern.comparisons['process']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             mapping = self._mapping.process_pattern_mapping(keys[0])
             if mapping is None:
@@ -861,7 +890,7 @@ class ExternalSTIX2IndicatorConverter(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
         for keys, assertion, values in pattern.comparisons['windows-registry-key']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             mapping = self._mapping.registry_key_pattern_mapping(
                 keys[-1 if 'values' in keys else 0]
@@ -951,7 +980,7 @@ class ExternalSTIX2IndicatorConverter(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
         for keys, assertion, values in pattern.comparisons['software']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             mapping = self._mapping.software_pattern_mapping(keys[0])
             if mapping is None:
@@ -1003,7 +1032,7 @@ class ExternalSTIX2IndicatorConverter(
         attributes = []
         if 'url' in pattern.comparisons:
             for keys, assertion, values in pattern.comparisons['url']:
-                if assertion not in _valid_pattern_assertions:
+                if assertion not in self._mapping.valid_pattern_assertions():
                     continue
                 if keys[0] != 'value':
                     self.main_parser._unmapped_pattern_warning(
@@ -1036,7 +1065,7 @@ class ExternalSTIX2IndicatorConverter(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
         for keys, assertion, values in pattern.comparisons['user-account']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             mapping = self._mapping.user_account_pattern_mapping(
                 keys[-1 if 'unix-account-ext' in keys else 0]
@@ -1063,7 +1092,7 @@ class ExternalSTIX2IndicatorConverter(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
         for keys, assertion, values in pattern.comparisons['x509-certificate']:
-            if assertion not in _valid_pattern_assertions:
+            if assertion not in self._mapping.valid_pattern_assertions():
                 continue
             mapping = self._mapping.x509_pattern_mapping(
                 keys[1 if 'hashes' in keys else 0]
@@ -1119,6 +1148,17 @@ class ExternalSTIX2IndicatorConverter(
                 },
                 indicator
             )
+
+    ############################################################################
+    #                             UTILITY METHODS.                             #
+    ############################################################################
+
+    def _is_pattern_too_complex(self, pattern: str) -> bool:
+        forbidden_relations = any(
+            keyword in pattern for keyword
+            in self._mapping.pattern_forbidden_relations()
+        )
+        return forbidden_relations or (' AND ' in pattern and ' OR ' in pattern)
 
 
 class InternalSTIX2IndicatorMapping(
