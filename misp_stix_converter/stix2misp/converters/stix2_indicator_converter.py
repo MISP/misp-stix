@@ -254,10 +254,6 @@ class ExternalSTIX2IndicatorMapping(
         return cls.email_object_mapping().get(field)
 
     @classmethod
-    def file_hashes_pattern_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.file_hashes_mapping().get(field)
-
-    @classmethod
     def file_pattern_mapping(cls, field: str) -> Union[dict, None]:
         return cls.file_object_mapping().get(field)
 
@@ -555,9 +551,7 @@ class ExternalSTIX2IndicatorConverter(
                 if 'sections' in keys:
                     if 'hashes' in keys:
                         _, _, _, index, _, hash_type = keys
-                        mapping = self._mapping.file_hashes_pattern_mapping(
-                            hash_type
-                        )
+                        mapping = self._mapping.file_hashes_mapping(hash_type)
                         if mapping is None:
                             self.main_parser._unmapped_pattern_warning(
                                 indicator.id, '.'.join(keys)
@@ -647,10 +641,10 @@ class ExternalSTIX2IndicatorConverter(
 
     def _parse_file_attribute(self, keys: list, values: Union[str, tuple],
                               indicator_id: str) -> dict:
-        feature, index = ('file_hashes', 1) if 'hashes' in keys else ('file', 0)
-        mapping = getattr(self._mapping, f'{feature}_pattern_mapping')(
-            keys[index]
+        feature, index = (
+            ('file_hashes', 1) if 'hashes' in keys else ('file_pattern', 0)
         )
+        mapping = getattr(self._mapping, f'{feature}_mapping')(keys[index])
         if mapping is not None:
             if isinstance(values, tuple):
                 for value in values:

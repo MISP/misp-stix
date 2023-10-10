@@ -26,7 +26,7 @@ _OBSERVABLE_TYPING = Union[
 ]
 
 
-class STIX2ObservableMapping(metaclass=ABCMeta):
+class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
     __artifact_object_mapping = Mapping(
         decryption_key={'type': '', 'object_relation': 'decryption_key'},
         encyption_algorithm={

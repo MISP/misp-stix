@@ -266,7 +266,7 @@ class STIX2Mapping:
         message_id=__message_id_attribute,
         subject=__email_subject_attribute
     )
-    __file_hashes_mapping = Mapping(
+    __file_hashes = Mapping(
         **{
             'MD5': __md5_attribute,
             'SHA-1': __sha1_attribute,
@@ -452,8 +452,8 @@ class STIX2Mapping:
         return cls.__file_encoding_attribute
 
     @classmethod
-    def file_hashes_mapping(cls) -> Union[dict, None]:
-        return cls.__file_hashes_mapping
+    def file_hashes(cls) -> dict:
+        return cls.__file_hashes
 
     @classmethod
     def file_object_mapping(cls) -> dict:
@@ -704,7 +704,7 @@ class STIX2Mapping:
         return cls.__yara_rule_name_attribute
 
 
-class ExternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
+class ExternalSTIX2Mapping(STIX2Mapping):
     # GALAXIES MAPPING
     __galaxy_name_mapping = Mapping(
         **{
@@ -806,6 +806,10 @@ class ExternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__directory_object_mapping
 
     @classmethod
+    def file_hashes_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.file_hashes().get(field)
+
+    @classmethod
     def galaxy_name_mapping(cls, field) -> Union[dict, None]:
         return cls.__galaxy_name_mapping.get(field)
 
@@ -822,7 +826,7 @@ class ExternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__software_object_mapping
 
 
-class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
+class InternalSTIX2Mapping(STIX2Mapping):
     # SINGLE ATTRIBUTES
     __attachment_attribute = Mapping(
         **{'type': 'attachment', 'object_relation': 'attachment'}
@@ -1089,7 +1093,7 @@ class InternalSTIX2Mapping(STIX2Mapping, metaclass=ABCMeta):
         x_misp_user_avatar=__user_avatar_attribute
     )
     __file_hashes_mapping = Mapping(
-        **STIX2Mapping.file_hashes_mapping(),
+        **STIX2Mapping.file_hashes(),
         AUTHENTIHASH=__authentihash_attribute,
         IMPHASH=STIX2Mapping.imphash_attribute(),
         SHA1=STIX2Mapping.sha1_attribute(),
