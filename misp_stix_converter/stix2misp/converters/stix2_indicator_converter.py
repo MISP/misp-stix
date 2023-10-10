@@ -11,7 +11,8 @@ from ..exceptions import (
 from ..importparser import _INDICATOR_TYPING
 from ..stix2_pattern_parser import STIX2PatternParser
 from .stix2converter import (
-    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter)
+    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,
+    _MAIN_PARSER_TYPING)
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
@@ -24,10 +25,6 @@ from typing import TYPE_CHECKING, Tuple, Union
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
-
-_MAIN_PARSER_TYPING = Union[
-    'ExternalSTIX2toMISPParser', 'InternalSTIX2toMISPParser'
-]
 
 
 class STIX2IndicatorMapping(STIX2Mapping, metaclass=ABCMeta):

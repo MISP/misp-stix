@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ..exceptions import (UndefinedSTIXObjectError, UnknownParsingFunctionError)
+from ..exceptions import (
+    ObjectRefLoadingError, ObjectTypeLoadingError, UndefinedSTIXObjectError)
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
@@ -101,11 +102,43 @@ class STIX2Converter(metaclass=ABCMeta):
         if meta_labels:
             meta['labels'] = meta_labels
 
+    def _handle_tags_from_stix_fields(self, stix_object: _SDO_TYPING):
+        if hasattr(stix_object, 'confidence'):
+            yield self._parse_confidence_level(stix_object.confidence)
+        if hasattr(stix_object, 'object_marking_refs'):
+            yield from self._parse_markings(stix_object.object_marking_refs)
+
     @staticmethod
     def _parse_AS_value(number: Union[int, str]) -> str:
         if isinstance(number, int) or not number.startswith('AS'):
             return f'AS{number}'
         return number
+
+    @staticmethod
+    def _parse_confidence_level(confidence_level: int) -> str:
+        if confidence_level == 100:
+            return 'misp:confidence-level="completely-confident"'
+        if confidence_level >= 75:
+            return 'misp:confidence-level="usually-confident"'
+        if confidence_level >= 50:
+            return 'misp:confidence-level="fairly-confident"'
+        if confidence_level >= 25:
+            return 'misp:confidence-level="rarely-confident"'
+        return 'misp:confidence-level="unconfident"'
+
+    def _parse_markings(self, marking_refs: list):
+        for marking_ref in marking_refs:
+            try:
+                marking_definition = self.main_parser._get_stix_object(
+                    marking_ref
+                )
+            except ObjectTypeLoadingError as error:
+                self.main_parser._object_type_loading_error(error)
+                continue
+            except ObjectRefLoadingError as error:
+                self.main_parser._object_ref_loading_error(error)
+                continue
+            yield(marking_definition)
 
     def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
         misp_object = {
@@ -151,7 +184,7 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         stix_object = self.main_parser._get_stix_object(stix_object_ref)
         self._parse_galaxy(stix_object)
 
-    def _create_attributes_dict(self, stix_object: _SDO_TYPING) -> dict:
+    def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         return super()._create_attribute_dict(stix_object)
 
     ############################################################################
@@ -276,6 +309,38 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         if 'external_id' in meta and len(meta['external_id']) == 1:
             meta['external_id'] = meta.pop('external_id')[0]
         return meta
+
+    def _handle_import_case(self, stix_object: _SDO_TYPING, attributes: list,
+                            name: str, *force_object: Tuple[str]):
+        if self._handle_object_forcing(attributes, force_object):
+            self._handle_object_case(stix_object, attributes, name)
+        else:
+            self.main_parser._add_misp_attribute(
+                dict(
+                    self._create_attribute_dict(stix_object), **attributes[0]
+                ),
+                stix_object
+            )
+
+    @staticmethod
+    def _handle_object_forcing(attributes: list, force_object: tuple) -> bool:
+        if len(attributes) > 1:
+            return True
+        return attributes[0]['object_relation'] in force_object
+
+    def _handle_object_case(self, stix_object: _SDO_TYPING, attributes: list,
+                            name: str) -> MISPObject:
+        misp_object = self._create_misp_object(name, stix_object)
+        tags = tuple(self._handle_tags_from_stix_fields(stix_object))
+        if tags:
+            for attribute in attributes:
+                misp_attribute = misp_object.add_attribute(**attribute)
+                for tag in tags:
+                    misp_attribute.add_tag(tag)
+            return self.main_parser.misp_event.add_object(misp_object)
+        for attribute in attributes:
+            misp_object.add_attribute(**attribute)
+        return self.main_parser.misp_event.add_object(misp_object)
 
 
 class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
