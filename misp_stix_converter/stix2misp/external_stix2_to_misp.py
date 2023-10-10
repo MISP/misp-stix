@@ -2345,9 +2345,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             )
             if isinstance(values, tuple):
                 for value in values:
-                    yield {'value': value, **mapping}
+                    yield {'value': value, **mapping()}
             else:
-                yield {'value': values, **mapping}
+                yield {'value': values, **mapping()}
         else:
             mapping = self._mapping.file_pattern_mapping(keys[0])
             if mapping is not None:
