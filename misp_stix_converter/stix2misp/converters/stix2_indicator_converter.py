@@ -1458,12 +1458,12 @@ class InternalSTIX2IndicatorConverter(
             parser = getattr(self, f"{feature}_indicator")
         except AttributeError:
             raise UnknownParsingFunctionError(f"{feature}_indicator")
-        # try:
-        parser(indicator)
-        # except AttributeFromPatternParsingError as error:
-        #     self.main_parser._attribute_from_pattern_parsing_error(error)
-        # except Exception as exception:
-        #     self.main_parser._indicator_error(indicator.id, exception)
+        try:
+            parser(indicator)
+        except AttributeFromPatternParsingError as error:
+            self.main_parser._attribute_from_pattern_parsing_error(error)
+        except Exception as exception:
+            self.main_parser._indicator_error(indicator.id, exception)
 
     ############################################################################
     #                        ATTRIBUTES PARSING METHODS                        #
