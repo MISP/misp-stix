@@ -576,7 +576,7 @@ _ATTACK_PATTERN_GALAXY = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Test malware in various execution environments - PRE-T1134",
-    "description": "ATT&CK Tactic | Malware may perform differently on different platforms and different operating systems.",
+    "description": "Malware may perform differently on different platforms and different operating systems.",
     "kill_chain_phases": [
         {
             "kill_chain_name": "mitre-pre-attack",
@@ -637,7 +637,7 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Access Token Manipulation - T1134",
-        "description": "ATT&CK Tactic | Windows uses access tokens to determine the ownership of a running process.",
+        "description": "Windows uses access tokens to determine the ownership of a running process.",
         "labels": [
             "misp:galaxy-name=\"Attack Pattern\"",
             "misp:galaxy-type=\"mitre-attack-pattern\""
@@ -655,7 +655,7 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Automated Exfiltration Mitigation - T1020",
-        "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+        "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
         "labels": [
             "misp:galaxy-name=\"Course of Action\"",
             "misp:galaxy-type=\"mitre-course-of-action\""
@@ -688,7 +688,7 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "BISCUIT - S0017",
-        "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+        "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -761,7 +761,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Access Token Manipulation - T1134",
-        "description": "ATT&CK Tactic | Windows uses access tokens to determine the ownership of a running process.",
+        "description": "Windows uses access tokens to determine the ownership of a running process.",
         "labels": [
             "misp:galaxy-name=\"Attack Pattern\"",
             "misp:galaxy-type=\"mitre-attack-pattern\""
@@ -780,7 +780,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Automated Exfiltration Mitigation - T1020",
-        "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+        "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
         "labels": [
             "misp:galaxy-name=\"Course of Action\"",
             "misp:galaxy-type=\"mitre-course-of-action\""
@@ -814,7 +814,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "BISCUIT - S0017",
-        "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+        "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -1178,7 +1178,7 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "BISCUIT - S0017",
-        "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+        "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -1297,7 +1297,7 @@ _BUNDLE_WITH_NO_REPORT = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "BISCUIT - S0017",
-        "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+        "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -1524,7 +1524,7 @@ _COURSE_OF_ACTION_GALAXY = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Automated Exfiltration Mitigation - T1020",
-    "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+    "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
     "labels": [
         "misp:galaxy-name=\"Course of Action\"",
         "misp:galaxy-type=\"mitre-course-of-action\""
@@ -1759,7 +1759,7 @@ _CUSTOM_GALAXY = {
         "misp:galaxy-name=\"Tea Matrix\"",
         "misp:galaxy-type=\"tea-matrix\""
     ],
-    "x_misp_description": "Tea Matrix | Milk in tea",
+    "x_misp_description": "Milk in tea",
     "x_misp_name": "Tea Matrix",
     "x_misp_type": "tea-matrix",
     "x_misp_value": "Milk in tea"
@@ -4379,7 +4379,7 @@ _INTRUSION_SET_GALAXY = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "APT16 - G0023",
-    "description": "Name of ATT&CK Group | APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
+    "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
     "aliases": [
         "APT16"
     ],
@@ -4787,7 +4787,7 @@ _MALWARE_GALAXY = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "BISCUIT - S0017",
-    "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+    "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
     "labels": [
         "misp:galaxy-name=\"Malware\"",
         "misp:galaxy-type=\"mitre-malware\""
@@ -5713,7 +5713,7 @@ _THREAT_ACTOR_GALAXY = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Cutting Kitten",
-    "description": "Threat actors are characteristics of malicious actors. | These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
+    "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
     "aliases": [
         "Ghambar"
     ],
@@ -5731,7 +5731,7 @@ _TOOL_GALAXY = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "cmd - S0106",
-    "description": "Name of ATT&CK software | cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
+    "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
     "labels": [
         "misp:galaxy-name=\"Tool\"",
         "misp:galaxy-type=\"mitre-tool\""
@@ -5955,7 +5955,7 @@ _VULNERABILITY_GALAXY = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Ghost",
-    "description": "List of known vulnerabilities and exploits | The GHOST vulnerability is a serious weakness in the Linux glibc library.",
+    "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
     "labels": [
         "misp:galaxy-name=\"Branded Vulnerability\"",
         "misp:galaxy-type=\"branded-vulnerability\""
