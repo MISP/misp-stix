@@ -44,7 +44,6 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         )
         if self.galaxies_as_tags:
             self.__galaxy_feature = 'as_tag_names'
-            self.__synonyms_path = _DATA_PATH / 'synonymsToTagNames.json'
         else:
             self._galaxies: dict = {}
             self.__galaxy_feature = 'as_container'
@@ -98,6 +97,14 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         return self.__galaxies_as_tags
 
     @property
+    def galaxy_definitions(self) -> Path:
+        try:
+            return self.__galaxy_definitions
+        except AttributeError:
+            self.__get_galaxy_definitions()
+            return self.__galaxy_definitions
+
+    @property
     def galaxy_feature(self) -> bool:
         return self.__galaxy_feature
 
@@ -124,10 +131,6 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         except AttributeError:
             self.__get_synonyms_mapping()
             return self.__synonyms_mapping
-
-    @property
-    def synonyms_path(self) -> Path:
-        return self.__synonyms_path
 
     @property
     def warnings(self) -> defaultdict:
@@ -367,6 +370,13 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     #          SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING METHODS.          #
     ############################################################################
 
+    def __check_fingerprint(self):
+        latest_fingerprint = self.__get_misp_galaxy_fingerprint()
+        if latest_fingerprint is not None:
+            fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
+            with open(fingerprint_path, 'wt', encoding='utf-8') as f:
+                f.write(latest_fingerprint)
+
     def __galaxies_up_to_date(self) -> bool:
         fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
         if not fingerprint_path.exists():
@@ -377,6 +387,23 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         with open(fingerprint_path, 'rt', encoding='utf-8') as f:
             fingerprint = f.read()
         return fingerprint == latest_fingerprint
+
+    def __get_galaxy_definitions(self):
+        definitions_path = _DATA_PATH / 'galaxyDefinitions.json'
+        if not definitions_path.exists() or not self.__galaxies_up_to_date():
+            data_path = _DATA_PATH / 'misp-galaxy' / 'galaxies'
+            if not data_path.exists():
+                raise UnavailableGalaxyResourcesError(data_path)
+            definitions = {}
+            for filename in data_path.glob('*.json'):
+                with open(filename, 'rt', encoding='utf-8') as f:
+                    galaxy_definition = json.loads(f.read())
+                definitions[galaxy_definition['type']] = galaxy_definition
+            with open(definitions_path, 'wt', encoding='utf-8') as f:
+                f.write(json.dumps(definitions))
+            self.__check_fingerprint()
+        with open(definitions_path, 'rt', encoding='utf-8') as f:
+            self.__galaxy_definitions = json.load(f)
 
     @staticmethod
     def __get_misp_galaxy_fingerprint():
@@ -397,7 +424,8 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             return None
 
     def __get_synonyms_mapping(self):
-        if not self.synonyms_path.exists() or not self.__galaxies_up_to_date():
+        synonyms_path = _DATA_PATH / 'synonymsToTagNames.json'
+        if not synonyms_path.exists() or not self.__galaxies_up_to_date():
             data_path = _DATA_PATH / 'misp-galaxy' / 'clusters'
             if not data_path.exists():
                 raise UnavailableGalaxyResourcesError(data_path)
@@ -413,15 +441,11 @@ class STIXtoMISPParser(metaclass=ABCMeta):
                     if cluster.get('meta', {}).get('synonyms') is not None:
                         for synonym in cluster['meta']['synonyms']:
                             synonyms_mapping[synonym].append(tag_name)
-            with open(self.synonyms_path, 'wt', encoding='utf-8') as f:
+            with open(synonyms_path, 'wt', encoding='utf-8') as f:
                 f.write(json.dumps(synonyms_mapping))
-            latest_fingerprint = self.__get_misp_galaxy_fingerprint()
-            if latest_fingerprint is not None:
-                fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
-                with open(fingerprint_path, 'wt', encoding='utf-8') as f:
-                    f.write(latest_fingerprint)
-        with open(self.synonyms_path, 'rt', encoding='utf-8') as f:
-            self.__synonyms_mapping = json.loads(f.read())
+            self.__check_fingerprint()
+        with open(synonyms_path, 'rt', encoding='utf-8') as f:
+            self.__synonyms_mapping = json.load(f)
 
     ############################################################################
     #                     UUID SANITATION HANDLING METHODS                     #

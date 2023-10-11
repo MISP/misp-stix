@@ -714,8 +714,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_attack_pattern_cluster(
             self, attack_pattern: _ATTACK_PATTERN_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+            galaxy_type: Optional[str] = None,
+            description: Optional[str] = None) -> MISPGalaxyCluster:
         attack_pattern_args = self._create_cluster_args(
             attack_pattern, galaxy_type, description=description
         )
@@ -736,8 +736,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_campaign_cluster(
             self, campaign: _CAMPAIGN_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+            galaxy_type: Optional[str] = None,
+            description: Optional[str] = None) -> MISPGalaxyCluster:
         campaign_args = self._create_cluster_args(
             campaign, galaxy_type, description=description
         )
@@ -752,8 +752,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_course_of_action_cluster(
             self, course_of_action: _COURSE_OF_ACTION_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+            galaxy_type: Optional[str] = None,
+            description: Optional[str] = None) -> MISPGalaxyCluster:
         course_of_action_args = self._create_cluster_args(
             course_of_action, galaxy_type, description=description
         )
@@ -770,8 +770,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_intrusion_set_cluster(
             self, intrusion_set: _INTRUSION_SET_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+            galaxy_type: Optional[str] = None,
+            description: Optional[str] = None) -> MISPGalaxyCluster:
         intrusion_set_args = self._create_cluster_args(
             intrusion_set, galaxy_type, description=description
         )
@@ -788,8 +788,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_malware_cluster(
             self, malware: _MALWARE_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+            galaxy_type: Optional[str] = None,
+            description: Optional[str] = None) -> MISPGalaxyCluster:
         malware_args = self._create_cluster_args(
             malware, galaxy_type, description=description
         )
@@ -810,8 +810,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_threat_actor_cluster(
             self, threat_actor: _THREAT_ACTOR_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+            galaxy_type: Optional[str] = None,
+            description: Optional[str] = None) -> MISPGalaxyCluster:
         threat_actor_args = self._create_cluster_args(
             threat_actor, galaxy_type, description=description
         )
@@ -829,8 +829,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return self._create_misp_galaxy_cluster(threat_actor_args)
 
     def _parse_tool_cluster(
-            self, tool: _TOOL_TYPING, description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+            self, tool: _TOOL_TYPING, galaxy_type: Optional[str] = None,
+            description: Optional[str] = None) -> MISPGalaxyCluster:
         tool_args = self._create_cluster_args(
             tool, galaxy_type, description=description
         )
@@ -855,8 +855,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _parse_vulnerability_cluster(
             self, vulnerability: _VULNERABILITY_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+            galaxy_type: Optional[str] = None,
+            description: Optional[str] = None) -> MISPGalaxyCluster:
         vulnerability_args = self._create_cluster_args(
             vulnerability, galaxy_type, description=description
         )
