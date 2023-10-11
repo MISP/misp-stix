@@ -562,19 +562,15 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         cluster = galaxy.clusters[0]
         self._assert_multiple_equal(galaxy.type, cluster.type, 'tea-matrix')
         self.assertEqual(galaxy.name, 'Tea Matrix')
-        galaxy_description, cluster_description = custom.x_misp_description.split(' | ')
-        self.assertEqual(galaxy.description, galaxy_description)
         self.assertEqual(cluster.value, custom.x_misp_value)
-        self.assertEqual(cluster.description, cluster_description)
+        self.assertEqual(cluster.description, custom.x_misp_description)
 
     def _check_galaxy_fields(self, galaxy, stix_object, galaxy_type, galaxy_name):
         cluster = galaxy.clusters[0]
         self._assert_multiple_equal(galaxy.type, cluster.type, galaxy_type)
         self.assertEqual(galaxy.name, galaxy_name)
-        galaxy_description, cluster_description = stix_object.description.split(' | ')
-        self.assertEqual(galaxy.description, galaxy_description)
         self.assertEqual(cluster.value, stix_object.name)
-        self.assertEqual(cluster.description, cluster_description)
+        self.assertEqual(cluster.description, stix_object.description)
 
     def _check_generic_malware_galaxy(self, galaxy, malware):
         self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
