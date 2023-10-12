@@ -255,8 +255,7 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(stix_object.name, cluster['value'])
         description = galaxy['description']
         if cluster.get('description'):
-            description = f"{description} | {cluster['description']}"
-        self.assertEqual(stix_object.description, description)
+            self.assertEqual(stix_object.description, cluster['description'])
         self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
         self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
         if cluster.get('meta'):

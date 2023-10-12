@@ -2418,11 +2418,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             attack_pattern_id = f"attack-pattern--{cluster['uuid']}"
             attack_pattern_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                attack_pattern_id,
-                timestamp
+                cluster, galaxy['name'], attack_pattern_id, timestamp
             )
             if cluster.get('meta'):
                 attack_pattern_args.update(
@@ -2458,11 +2454,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             course_of_action_id = f"course-of-action--{cluster['uuid']}"
             course_of_action_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                course_of_action_id,
-                timestamp
+                cluster, galaxy['name'], course_of_action_id, timestamp
             )
             if cluster.get('meta'):
                 course_of_action_args.update(
@@ -2519,11 +2511,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             intrusion_set_id = f"intrusion-set--{cluster['uuid']}"
             intrusion_set_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                intrusion_set_id,
-                timestamp
+                cluster, galaxy['name'], intrusion_set_id, timestamp
             )
             if cluster.get('meta'):
                 intrusion_set_args.update(
@@ -2564,11 +2552,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             malware_id = f"malware--{cluster['uuid']}"
             malware_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                malware_id,
-                timestamp
+                cluster, galaxy['name'], malware_id, timestamp
             )
             if cluster.get('meta'):
                 meta_args = self._parse_meta_fields(cluster['meta'], 'malware')
@@ -2689,11 +2673,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             threat_actor_id = f"threat-actor--{cluster['uuid']}"
             threat_actor_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                threat_actor_id,
-                timestamp
+                cluster, galaxy['name'], threat_actor_id, timestamp
             )
             if cluster.get('meta'):
                 meta_args = self._parse_meta_fields(
@@ -2734,11 +2714,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             tool_id = f"tool--{cluster['uuid']}"
             tool_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                tool_id,
-                timestamp
+                cluster, galaxy['name'], tool_id, timestamp
             )
             if cluster.get('meta'):
                 meta_args = self._parse_meta_fields(cluster['meta'], 'tool')
@@ -2794,11 +2770,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             vulnerability_id = f"vulnerability--{cluster['uuid']}"
             vulnerability_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                vulnerability_id,
-                timestamp
+                cluster, galaxy['name'], vulnerability_id, timestamp
             )
             if cluster.get('meta'):
                 vulnerability_args.update(
@@ -2857,9 +2829,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         return custom_args
 
-    def _create_galaxy_args(self, cluster: Union[MISPGalaxyCluster, dict],
-                            description: str, name: str, object_id: str,
-                            timestamp: Optional[datetime] = None) -> dict:
+    def _create_galaxy_args(
+            self, cluster: Union[MISPGalaxyCluster, dict], name: str,
+            object_id: str, timestamp: Optional[datetime] = None) -> dict:
         object_type = object_id.split('--')[0]
 
         value = cluster['value']
@@ -2870,10 +2842,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             'id': object_id,
             'type': object_type,
             'name': value,
-            'description': f"{description} | {cluster['description']}",
             'labels': self._create_galaxy_labels(name, cluster),
             'interoperability': True
         }
+        if cluster.get('description') is not None:
+            galaxy_args['description'] = cluster['description']
         if timestamp is None:
             if not cluster.get('timestamp'):
                 return galaxy_args

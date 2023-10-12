@@ -1500,10 +1500,8 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         cluster = region.clusters[0]
         self._assert_multiple_equal(region.type, cluster.type, 'region')
         self.assertEqual(region.name, 'Regions UN M49')
-        galaxy_description, cluster_description = location2.description.split(' | ')
-        self.assertEqual(region.description, galaxy_description)
         self.assertEqual(cluster.value, f'154 - {location2.name}')
-        self.assertEqual(cluster.description, cluster_description)
+        self.assertEqual(cluster.description, location2.description)
         self.assertEqual(
             region.clusters[0].meta['subregion'], location2.x_misp_subregion
         )

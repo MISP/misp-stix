@@ -256,11 +256,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         else:
             custom_galaxy = self._get_stix_object(custom_ref)
             galaxy_type = custom_galaxy.x_misp_type
-            galaxy_description, cluster_description = custom_galaxy.x_misp_description.split(' | ')
             cluster_args = {
                 'type': galaxy_type,
                 'value': custom_galaxy.x_misp_value,
-                'description': cluster_description
+                'description': custom_galaxy.x_misp_description
             }
             if hasattr(custom_galaxy, 'x_misp_meta'):
                 cluster_args['meta'] = custom_galaxy.x_misp_meta
@@ -270,7 +269,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             }
             if galaxy_type not in self._galaxies:
                 self._create_galaxy_args(
-                    galaxy_description, galaxy_type, custom_galaxy.x_misp_name
+                    galaxy_type, custom_galaxy.x_misp_name
                 )
 
     def _parse_custom_object(self, custom_ref: str):
@@ -411,16 +410,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     #                 STIX Domain Objects (SDOs) PARSING FUNCTIONS                 #
     ################################################################################
 
-    def _create_galaxy_args(self, description: str, galaxy_type: str,
-                            galaxy_name: str) -> MISPGalaxy:
+    def _create_galaxy_args(self, galaxy_type: str, galaxy_name: str) -> MISPGalaxy:
         misp_galaxy = MISPGalaxy()
-        misp_galaxy.from_dict(
-            **{
-                'type': galaxy_type,
-                'name': galaxy_name,
-                'description': description
-            }
-        )
+        if galaxy_type in self.galaxy_definitions:
+            misp_galaxy.from_dict(**self.galaxy_definitions[galaxy_type])
+        else:
+            misp_galaxy.from_dict(
+                **{
+                    'type': galaxy_type,
+                    'name': galaxy_name
+                }
+            )
         self._galaxies[galaxy_type] = misp_galaxy
 
     def _parse_course_of_action_object(
@@ -468,13 +468,11 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         galaxy_type, galaxy_name = self._extract_galaxy_labels(
             stix_object.labels
         )
-        cluster, galaxy_description = self._parse_galaxy_cluster(
+        cluster = self._parse_galaxy_cluster(
             stix_object, galaxy_type
         )
         if galaxy_type not in self._galaxies:
-            self._create_galaxy_args(
-                galaxy_description, galaxy_type, galaxy_name
-            )
+            self._create_galaxy_args(galaxy_type, galaxy_name)
         return {
             'cluster': cluster,
             'used': {self.misp_event.uuid: False}
@@ -490,25 +488,19 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             'used': {self.misp_event.uuid: False}
         }
 
-    def _parse_galaxy_cluster(self, stix_object: _GALAXY_OBJECTS_TYPING,
-                              galaxy_type: str) -> tuple:
+    def _parse_galaxy_cluster(
+            self, stix_object: _GALAXY_OBJECTS_TYPING, galaxy_type: str,
+            description: Optional[str] = None) -> tuple:
+        if ' | ' in getattr(stix_object, 'description', ''):
+            _, description = stix_object.description.split(' | ')
         object_type = stix_object.type.replace('-', '_')
-        if ' | ' in stix_object.description:
-            galaxy_desc, cluster_desc = stix_object.description.split(' | ')
-            cluster = getattr(self, f'_parse_{object_type}_cluster')(
-                stix_object,
-                description=cluster_desc,
-                galaxy_type=galaxy_type
-            )
-            return cluster, galaxy_desc
-        cluster = getattr(self, f'_parse_{object_type}_cluster')(
-            stix_object, galaxy_type=galaxy_type
+        return getattr(self, f'_parse_{object_type}_cluster')(
+            stix_object, galaxy_type=galaxy_type, description=description
         )
-        return cluster, stix_object.description
 
     def _parse_identity_cluster(
-            self, identity: _IDENTITY_TYPING, description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+            self, identity: _IDENTITY_TYPING,  galaxy_type: str,
+            description: Optional[str] = None) -> MISPGalaxyCluster:
         identity_args = self._create_cluster_args(
             identity, galaxy_type, description=description
         )
@@ -565,14 +557,16 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._add_misp_object(misp_object, identity)
 
     def _parse_location_cluster(
-            self, location: Location, description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        location_args = {
-            'type': galaxy_type,
-            'description': description,
-            'value': location.name if galaxy_type == 'country'
-            else self._mapping.regions_mapping(location.region, location.name)
-        }
+            self, location: Location,
+            galaxy_type: Optional[str] = None,
+            description: Optional[str] = None) -> MISPGalaxyCluster:
+        location_args = self._create_cluster_args(
+            location, galaxy_type, description=description,
+            cluster_value=(
+                location.name if galaxy_type == 'country' else
+                self._mapping.regions_mapping(location.region, location.name)
+            )
+        )
         meta = self._handle_meta_fields(location)
         if meta:
             location_args['meta'] = meta
