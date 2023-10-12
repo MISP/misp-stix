@@ -23,6 +23,24 @@ class STIX2Mapping:
     __asn_attribute = Mapping(
         **{'type': 'AS', 'object_relation': 'asn'}
     )
+    __bcc_attribute = Mapping(
+        **{'type': 'email-dst', 'object_relation': 'bcc'}
+    )
+    __bcc_display_name_attribute = Mapping(
+        **{
+            'type': 'email-dst-display-name',
+            'object_relation': 'bcc-display-name'
+        }
+    )
+    __cc_attribute = Mapping(
+        **{'type': 'email-dst', 'object_relation': 'cc'}
+    )
+    __cc_display_name_attribute = Mapping(
+        **{
+            'type': 'email-dst-display-name',
+            'object_relation': 'cc-display-name'
+        }
+    )
     __command_line_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'command-line'}
     )
@@ -82,6 +100,15 @@ class STIX2Mapping:
     )
     __first_packet_seen_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'first-packet-seen'}
+    )
+    __from_attribute = Mapping(
+        **{'type': 'email-src', 'object_relation': 'from'}
+    )
+    __from_display_name_attribute = Mapping(
+        **{
+            'type': 'email-src-display-name',
+            'object_relation': 'from-display-name'
+        }
     )
     __hidden_attribute = Mapping(
         **{'type': 'boolean', 'object_relation': 'hidden'}
@@ -190,6 +217,15 @@ class STIX2Mapping:
     )
     __tlsh_attribute = Mapping(
         **{'type': 'tlsh', 'object_relation': 'tlsh'}
+    )
+    __to_attribute = Mapping(
+        **{'type': 'email-dst', 'object_relation': 'to'}
+    )
+    __to_display_name_attribute = Mapping(
+        **{
+            'type': 'email-dst-display-name',
+            'object_relation': 'to-display-name'
+        }
     )
     __type_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'type'}
@@ -380,6 +416,22 @@ class STIX2Mapping:
         return cls.__asn_attribute
 
     @classmethod
+    def bcc_attribute(cls) -> dict:
+        return cls.__bcc_attribute
+
+    @classmethod
+    def bcc_display_name_attribute(cls) -> dict:
+        return cls.__bcc_display_name_attribute
+
+    @classmethod
+    def cc_attribute(cls) -> dict:
+        return cls.__cc_attribute
+
+    @classmethod
+    def cc_display_name_attribute(cls) -> dict:
+        return cls.__cc_display_name_attribute
+
+    @classmethod
     def command_line_attribute(cls) -> dict:
         return cls.__command_line_attribute
 
@@ -466,6 +518,14 @@ class STIX2Mapping:
     @classmethod
     def first_packet_seen_attribute(cls) -> dict:
         return cls.__first_packet_seen_attribute
+
+    @classmethod
+    def from_attribute(cls) -> dict:
+        return cls.__from_attribute
+
+    @classmethod
+    def from_display_name_attribute(cls) -> dict:
+        return cls.__from_display_name_attribute
 
     @classmethod
     def hidden_attribute(cls) -> dict:
@@ -634,6 +694,14 @@ class STIX2Mapping:
     @classmethod
     def tlsh_attribute(cls) -> dict:
         return cls.__tlsh_attribute
+
+    @classmethod
+    def to_attribute(cls) -> dict:
+        return cls.__to_attribute
+
+    @classmethod
+    def to_display_name_attribute(cls) -> dict:
+        return cls.__to_display_name_attribute
 
     @classmethod
     def type_attribute(cls) -> dict:

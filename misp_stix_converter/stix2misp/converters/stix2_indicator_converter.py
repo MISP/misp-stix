@@ -32,15 +32,6 @@ class STIX2IndicatorMapping(STIX2Mapping, metaclass=ABCMeta):
     __suricata_reference_attribute = Mapping(
         **{'type': 'link', 'object_relation': 'ref'}
     )
-    __to_attribute = Mapping(
-        **{'type': 'email-dst', 'object_relation': 'to'}
-    )
-    __to_display_name_attribute = Mapping(
-        **{
-            'type': 'email-dst-display-name',
-            'object_relation': 'to-display-name'
-        }
-    )
 
     # MISP OBJECTS MAPPING
     __sigma_object_mapping = Mapping(
@@ -87,14 +78,6 @@ class STIX2IndicatorMapping(STIX2Mapping, metaclass=ABCMeta):
     @classmethod
     def suricata_reference_attribute(cls) -> dict:
         return cls.__suricata_reference_attribute
-
-    @classmethod
-    def to_attribute(cls) -> dict:
-        return cls.__to_attribute
-
-    @classmethod
-    def to_display_name_attribute(cls) -> dict:
-        return cls.__to_display_name_attribute
 
     @classmethod
     def yara_object_mapping(cls) -> dict:
@@ -213,6 +196,19 @@ class ExternalSTIX2IndicatorMapping(
             'value': STIX2IndicatorMapping.to_attribute()
         }
     )
+    __email_message_mapping = Mapping(
+        **{
+            **STIX2Mapping.email_object_mapping(),
+            'bcc_refs.display_name': STIX2Mapping.bcc_display_name_attribute(),
+            'bcc_refs.value': STIX2Mapping.bcc_attribute(),
+            'cc_refs.display_name': STIX2Mapping.cc_display_name_attribute(),
+            'cc_refs.value': STIX2Mapping.cc_attribute(),
+            'from_ref.display_name': STIX2Mapping.from_display_name_attribute(),
+            'from_ref.value': STIX2Mapping.from_attribute(),
+            'to_refs.display_name': STIX2Mapping.to_display_name_attribute(),
+            'to_refs.value': STIX2Mapping.to_attribute()
+        }
+    )
     __process_pattern_mapping = Mapping(
         arguments=STIX2Mapping.args_attribute(),
         **ExternalSTIX2Mapping.process_object_mapping()
@@ -248,7 +244,7 @@ class ExternalSTIX2IndicatorMapping(
 
     @classmethod
     def email_message_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.email_object_mapping().get(field)
+        return cls.__email_message_mapping.get(field)
 
     @classmethod
     def file_pattern_mapping(cls, field: str) -> Union[dict, None]:
@@ -513,11 +509,10 @@ class ExternalSTIX2IndicatorConverter(
         for keys, assertion, values in pattern.comparisons['email-message']:
             if assertion not in self._mapping.valid_pattern_assertions():
                 continue
-            mapping = self._mapping.email_message_mapping(keys[0])
+            field = '.'.join(keys) if len(keys) > 1 else keys[0]
+            mapping = self._mapping.email_message_mapping(field)
             if mapping is None:
-                self.main_parser._unmapped_pattern_warning(
-                    indicator.id, '.'.join(keys)
-                )
+                self.main_parser._unmapped_pattern_warning(indicator.id, field)
                 continue
             if isinstance(values, tuple):
                 for value in values:
@@ -1227,27 +1222,18 @@ class InternalSTIX2IndicatorMapping(
             'additional_header_fields.reply_to': STIX2Mapping.reply_to_attribute(),
             'additional_header_fields.x_mailer': STIX2Mapping.x_mailer_attribute(),
             'bcc_refs': {
-                'display_name': {
-                    'type': 'email-dst-display-name',
-                    'object_relation': 'bcc-display-name'
-                },
-                'value': {'type': 'email-dst', 'object_relation': 'bcc'}
+                'display_name': STIX2Mapping.bcc_display_name_attribute(),
+                'value': STIX2Mapping.bcc_attribute()
             },
             'cc_refs': {
-                'display_name': {
-                    'type': 'email-dst-display-name',
-                    'object_relation': 'cc-display-name'
-                },
-                'value': {'type': 'email-dst', 'object_relation': 'cc'}
+                'display_name': STIX2Mapping.cc_display_name_attribute(),
+                'value': STIX2Mapping.cc_attribute()
             },
-            'from_ref.display_name': {
-                'type': 'email-src-display-name',
-                'object_relation': 'from-display-name'
-            },
-            'from_ref.value': {'type': 'email-src', 'object_relation': 'from'},
+            'from_ref.display_name': STIX2Mapping.from_display_name_attribute(),
+            'from_ref.value': STIX2Mapping.from_attribute(),
             'to_refs': {
-                'display_name': STIX2IndicatorMapping.to_display_name_attribute(),
-                'value': STIX2IndicatorMapping.to_attribute()
+                'display_name': STIX2Mapping.to_display_name_attribute(),
+                'value': STIX2Mapping.to_attribute()
             },
             **InternalSTIX2Mapping.email_object_mapping()
         }
