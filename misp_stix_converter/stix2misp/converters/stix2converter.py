@@ -382,15 +382,19 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         return cluster_args
 
     def _create_galaxy_args(
-            self, description: str, galaxy_type: str, galaxy_name: str):
+            self, galaxy_type: str, galaxy_name: str):
         misp_galaxy = MISPGalaxy()
-        misp_galaxy.from_dict(
-            **{
-                'type': galaxy_type,
-                'name': galaxy_name,
-                'description': description
-            }
-        )
+        if galaxy_type in self.main_parser.galaxy_definitions:
+            misp_galaxy.from_dict(
+                **self.main_parser.galaxy_definitions[galaxy_type]
+            )
+        else:
+            misp_galaxy.from_dict(
+                **{
+                    'type': galaxy_type,
+                    'name': galaxy_name
+                }
+            )
         self.main_parser._galaxies[galaxy_type] = misp_galaxy
 
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
@@ -424,13 +428,9 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         galaxy_type, galaxy_name = self._extract_galaxy_labels(
             stix_object.labels
         )
-        cluster, galaxy_description = self._parse_galaxy_cluster(
-            stix_object, galaxy_type
-        )
+        cluster = self._parse_galaxy_cluster(stix_object, galaxy_type)
         if galaxy_type not in self.main_parser._galaxies:
-            self._create_galaxy_args(
-                galaxy_description, galaxy_type, galaxy_name
-            )
+            self._create_galaxy_args(galaxy_type, galaxy_name)
         return {
             'cluster': cluster,
             'used': {self.event_uuid: False}
@@ -447,16 +447,13 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         }
 
     def _parse_galaxy_cluster(
-            self, stix_object: _GALAXY_OBJECTS_TYPING,
-            galaxy_type: str) -> Tuple[MISPGalaxyCluster, str]:
-        if ' | ' in stix_object.description:
-            galaxy_desc, cluster_desc = stix_object.description.split(' | ')
-            cluster = self._create_cluster(
-                stix_object, description=cluster_desc, galaxy_type=galaxy_type
-            )
-            return cluster, galaxy_desc
-        cluster = self._create_cluster(stix_object, galaxy_type=galaxy_type)
-        return cluster, stix_object.description
+            self, stix_object: _GALAXY_OBJECTS_TYPING, galaxy_type: str,
+            description: Optional[str] = None) -> Tuple[MISPGalaxyCluster, str]:
+        if ' | ' in getattr(stix_object, 'description', ''):
+            _, description = stix_object.description.split(' | ')
+        return self._create_cluster(
+            stix_object, description=description, galaxy_type=galaxy_type
+        )
 
     ############################################################################
     #                             UTILITY METHODS.                             #
