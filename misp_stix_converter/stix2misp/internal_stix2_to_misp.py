@@ -9,8 +9,8 @@ from .exceptions import (
 from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .converters import (
-    InternalSTIX2AttackPatternConverter, InternalSTIX2MalwareAnalysisConverter,
-    InternalSTIX2MalwareConverter)
+    InternalSTIX2AttackPatternConverter, InternalSTIX2IndicatorConverter,
+    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter)
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
@@ -69,12 +69,17 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._mapping = InternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: InternalSTIX2AttackPatternConverter
+        self._indicator_parser: InternalSTIX2IndicatorConverter
         self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
         self._malware_parser: InternalSTIX2MalwareConverter
 
     def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
         return self._attack_pattern_parser
+
+    def _set_indicator_parser(self) -> InternalSTIX2IndicatorConverter:
+        self._indicator_parser = InternalSTIX2IndicatorConverter(self)
+        return self._indicator_parser
 
     def _set_malware_analysis_parser(self) -> InternalSTIX2MalwareAnalysisConverter:
         self._malware_analysis_parser = InternalSTIX2MalwareAnalysisConverter(self)
@@ -300,22 +305,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 parser(identity)
             except Exception as exception:
                 self._identity_error(identity.id, exception)
-
-    def _parse_indicator(self, indicator_ref: str):
-        indicator = self._get_stix_object(indicator_ref)
-        feature = self._handle_indicator_object_mapping(
-            indicator.labels, indicator.id
-        )
-        try:
-            parser = getattr(self, f"{feature}_indicator")
-        except AttributeError:
-            raise UnknownParsingFunctionError(f"{feature}_indicator")
-        try:
-            parser(indicator)
-        except AttributeFromPatternParsingError as error:
-            self._attribute_from_pattern_parsing_error(error)
-        except Exception as exception:
-            self._indicator_error(indicator.id, exception)
 
     def _parse_intrusion_set(self, intrusion_set_ref: str):
         intrusion_set = self._get_stix_object(intrusion_set_ref)
@@ -1148,10 +1137,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             if hasattr(observable, 'from_ref'):
                 reference = observables[observable.from_ref]
                 attribute = getattr(self, to_call)(
-                    'email-src',
-                    'from',
-                    'value',
-                    reference
+                    'email-src', 'from', 'value', reference
                 )
                 misp_object.add_attribute(**attribute)
                 if hasattr(reference, 'display_name'):
@@ -1167,10 +1153,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                     for ref in getattr(observable, f'{feature}_refs'):
                         reference = observables[ref]
                         attribute = getattr(self, to_call)(
-                            'email-dst',
-                            feature,
-                            'value',
-                            reference
+                            'email-dst', feature, 'value', reference
                         )
                         misp_object.add_attribute(**attribute)
                         if hasattr(reference, 'display_name'):

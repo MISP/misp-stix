@@ -10,8 +10,9 @@ from .exceptions import (
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import _INDICATOR_TYPING
 from .converters import (
-    ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
-    ExternalSTIX2MalwareConverter, STIX2ObservableObjectConverter)
+    ExternalSTIX2AttackPatternConverter, ExternalSTIX2IndicatorConverter,
+    ExternalSTIX2MalwareAnalysisConverter, ExternalSTIX2MalwareConverter,
+    STIX2ObservableObjectConverter)
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
@@ -132,6 +133,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._mapping = ExternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
+        self._indicator_parser: ExternalSTIX2IndicatorConverter
         self._malware_analysis_parser: ExternalSTIX2MalwareAnalysisConverter
         self._malware_parser: ExternalSTIX2MalwareConverter
         self._observable_object_parser: STIX2ObservableObjectConverter
@@ -146,6 +148,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_attack_pattern_parser(self) -> ExternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
         return self._attack_pattern_parser
+
+    def _set_indicator_parser(self) -> ExternalSTIX2IndicatorConverter:
+        self._indicator_parser = ExternalSTIX2IndicatorConverter(self)
+        return self._indicator_parser
 
     def _set_malware_analysis_parser(self) -> ExternalSTIX2MalwareAnalysisConverter:
         self._malware_analysis_parser = ExternalSTIX2MalwareAnalysisConverter(self)
@@ -485,35 +491,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if hasattr(identity, feature):
                 for value in getattr(identity, feature):
                     yield feature[:-1], value
-
-    def _parse_indicator(self, indicator_ref: str):
-        """
-        Indicator object parsing function.
-        Gets the parsing function depending on the types found within the pattern,
-        and simply calls the parsing function that will parse the pattern, create
-        the appropriate MISP data structure and add it to the associated MISP event.
-
-        :param indicator_ref: The Indicator id used to find the related Indicator
-            object to parse
-        """
-        indicator = self._get_stix_object(indicator_ref)
-        try:
-            feature = self._handle_pattern_mapping(indicator)
-        except UnknownPatternTypeError as error:
-            self._unknown_pattern_type_error(indicator.id, error)
-            return
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(indicator)
-        except UnknownPatternMappingError as error:
-            self._unknown_pattern_mapping_warning(indicator.id, error.__str__())
-            self._create_stix_pattern_object(indicator)
-        except InvalidSTIXPatternError as error:
-            self._invalid_stix_pattern_error(indicator.id, error)
-            self._create_stix_pattern_object(indicator)
 
     def _parse_intrusion_set(self, intrusion_set_ref: str):
         """
