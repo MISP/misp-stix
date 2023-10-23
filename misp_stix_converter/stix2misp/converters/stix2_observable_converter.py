@@ -7,7 +7,7 @@ from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
 from pymisp import AbstractMISP, MISPObject
-from stix2.v21.observables import Artifact, File, Software
+from stix2.v21.observables import Artifact, File, NetworkTraffic, Software
 from stix2.v21.sdo import Malware
 from typing import TYPE_CHECKING, Union
 
@@ -22,7 +22,7 @@ _MAIN_CONVERTER_TYPING = Union[
     'ExternalSTIX2MalwareConverter', 'InternalSTIX2MalwareConverter'
 ]
 _OBSERVABLE_TYPING = Union[
-    Artifact, File, Software
+    Artifact, File, NetworkTraffic, Software
 ]
 
 
@@ -66,41 +66,115 @@ class InternalSTIX2ObservableMapping(
 
 class STIX2ObservableConverter:
     def _parse_artifact_observable(
-            self, artifact_object: MISPObject, artifact: Artifact):
-        if hasattr(artifact, 'hashes'):
-            for hash_type, value in artifact.hashes.items():
+            self, misp_object: MISPObject, observable: Artifact):
+        if hasattr(observable, 'hashes'):
+            for hash_type, value in observable.hashes.items():
                 attribute = self._mapping.file_hashes_mapping(hash_type)
                 if attribute is None:
                     self.main_parser.hash_type_error(hash_type)
                     continue
-                artifact_object.add_attribute(**{'value': value, **attribute})
+                misp_object.add_attribute(**{'value': value, **attribute})
         for field, mapping in self._mapping.artifact_object_mapping().items():
-            if hasattr(artifact, field):
-                self.main_parser._populate_object_attributes(
-                    artifact_object, mapping, getattr(artifact, field)
+            if hasattr(observable, field):
+                self._populate_object_attributes(
+                    misp_object, mapping, getattr(observable, field),
+                    observable.id
                 )
 
-    def _parse_file_observable(self, file_object: MISPObject, _file: File):
-        if hasattr(_file, 'hashes'):
-            for hash_type, value in _file.hashes.items():
+    def _parse_file_observable(self, misp_object: MISPObject, observable: File):
+        if hasattr(observable, 'hashes'):
+            for hash_type, value in observable.hashes.items():
                 attribute = self._mapping.file_hashes_mapping(hash_type)
                 if attribute is None:
                     self.main_parser.hash_type_error(hash_type)
                     continue
-                file_object.add_attribute(**{'value': value, **attribute})
+                misp_object.add_attribute(**{'value': value, **attribute})
         for field, mapping in self._mapping.file_object_mapping().items():
-            if hasattr(_file, field):
-                self.main_parser._populate_object_attributes(
-                    file_object, mapping, getattr(_file, field)
+            if hasattr(observable, field):
+                self._populate_object_attributes(
+                    misp_object, mapping, getattr(observable, field),
+                    observable.id
+                )
+
+    def _parse_network_connection_observable(
+            self, misp_object: MISPObject, observable: NetworkTraffic):
+        for protocol in observable.protocols:
+            layer = self._mapping.connection_protocols(protocol)
+            if layer is not None:
+                misp_object.add_attribute(
+                    f'layer{layer}-protocol', protocol,
+                    uuid=self.main_parser._create_v5_uuid(
+                        f'{observable.id} - layer{layer}-protocol - {protocol}'
+                    )
+                )
+
+    def _parse_network_socket_observable(
+            self, misp_object: MISPObject, observable: NetworkTraffic):
+        for protocol in observable.protocols:
+            misp_object.add_attribute(
+                'protocol', protocol, uuid=self.main_parser._create_v5_uuid(
+                    f'{observable.id} - protocol - {protocol}'
+                )
+            )
+        socket_extension = observable.extensions['socket-ext']
+        mapping = self._mapping.network_socket_extension_object_mapping
+        for field, attribute in mapping().items():
+            if hasattr(socket_extension, field):
+                self._populate_object_attributes(
+                    misp_object, attribute, getattr(socket_extension, field),
+                    observable.id
+                )
+        for feature in ('blocking', 'listening'):
+            if getattr(socket_extension, f'is_{feature}', False):
+                misp_object.add_attribute(
+                    'state', feature, uuid=self.main_parser._create_v5_uuid(
+                        f'{observable.id} - state - {feature}'
+                    )
+                )
+
+    def _parse_network_traffic_observable(
+            self, misp_object: MISPObject, observable: NetworkTraffic):
+        mapping = self._mapping.network_traffic_object_mapping
+        for field, attribute in mapping().items():
+            if hasattr(observable, field):
+                self._populate_object_attributes(
+                    misp_object, attribute, getattr(observable, field),
+                    observable.id
                 )
 
     def _parse_software_observable(
-            self, software_object: MISPObject, software: Software):
+            self, misp_object: MISPObject, observable: Software):
         for field, mapping in self._mapping.software_object_mapping().items():
-            if hasattr(software, field):
-                self.main_parser._populate_object_attributes(
-                    software_object, mapping, getattr(software, field)
+            if hasattr(observable, field):
+                self._populate_object_attributes(
+                    misp_object, mapping, getattr(observable, field),
+                    observable.id
                 )
+
+    def _populate_object_attributes(
+            self, misp_object: MISPObject, mapping: dict,
+            values: Union[list, str], observable_id: str):
+        reference = f"{observable_id} - {mapping['object_relation']}"
+        if isinstance(values, list):
+            for value in values:
+                misp_object.add_attribute(
+                    **{
+                        'value': value, **mapping,
+                        'uuid': self.main_parser._create_v5_uuid(
+                            f'{reference} - {value}'
+                        )
+                    }
+                )
+        else:
+            print(misp_object)
+            misp_object.add_attribute(
+                **{
+                    'value': values, **mapping,
+                    'uuid': self.main_parser._create_v5_uuid(
+                        f'{reference} - {values}'
+                    )
+                }
+            )
 
 
 class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
