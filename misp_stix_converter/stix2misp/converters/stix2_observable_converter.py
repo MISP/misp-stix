@@ -193,7 +193,8 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         )
         return misp_object
 
-    def _parse_artifact_observable(self, artifact_ref: str) -> MISPObject:
+    def _parse_artifact_observable_object(
+            self, artifact_ref: str) -> MISPObject:
         observable = self.main_parser._observable[artifact_ref]
         if observable['used'][self.event_uuid]:
             return observable['misp_object']
@@ -209,7 +210,7 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['misp_object'] = misp_object
         return misp_object
 
-    def _parse_file_observable(self, file_ref: str) -> MISPObject:
+    def _parse_file_observable_object(self, file_ref: str) -> MISPObject:
         observable = self.main_parser._observable[file_ref]
         if observable['used'][self.event_uuid]:
             return observable['misp_object']
@@ -223,7 +224,48 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['misp_object'] = misp_object
         return misp_object
 
-    def _parse_software_observable(self, software_ref: str) -> MISPObject:
+    def _parse_network_connection_observable_object(
+            self, observable: NetworkTraffic) -> MISPObject:
+        connection_object = self._create_misp_object_from_observable_object(
+            'network-connection', observable
+        )
+        super()._parse_network_traffic_observable(connection_object, observable)
+        super()._parse_network_connection_observable(
+            connection_object, observable
+        )
+        return connection_object
+
+    def _parse_network_socket_observable_object(
+            self, observable: NetworkTraffic) -> MISPObject:
+        socket_object = self._create_misp_object_from_observable_object(
+            'network-socket', observable
+        )
+        super()._parse_network_traffic_observable(socket_object, observable)
+        super()._parse_network_socket_observable(socket_object, observable)
+        return socket_object
+
+    def _parse_network_traffic_observable_object(
+            self, network_traffic_ref: str):
+        observable = self.main_parser._observable[network_traffic_ref]
+        network_traffic = observable['observable']
+        feature = self._parse_network_traffic_observable_fields(network_traffic)
+        network_object = getattr(self, feature)(network_traffic)
+        observable['used'][self.event_uuid] = True
+        misp_object = self.main_parser._add_misp_object(
+            network_object, network_traffic
+        )
+        observable['misp_object'] = misp_object
+        return misp_object
+
+    @staticmethod
+    def _parse_network_traffic_observable_fields(
+            observable: NetworkTraffic) -> str:
+        if getattr(observable, 'extensions', {}).get('socket-ext'):
+            return '_parse_network_socket_observable_object'
+        return '_parse_network_connection_observable_object'
+
+    def _parse_software_observable_object(
+            self, software_ref: str) -> MISPObject:
         observable = self.main_parser._observable[software_ref]
         if observable['used'][self.event_uuid]:
             return observable['misp_object']
@@ -266,7 +308,7 @@ class STIX2SampleObservableConverter(
         misp_object.from_dict(**self._main_converter._parse_timeline(malware))
         return misp_object
 
-    def _parse_artifact_observable(
+    def _parse_artifact_observable_object(
             self, artifact_ref: str, malware: Malware) -> MISPObject:
         observable = self.main_parser._observable[artifact_ref]
         if observable['used'][self.event_uuid]:
@@ -283,7 +325,7 @@ class STIX2SampleObservableConverter(
         observable['misp_object'] = misp_object
         return misp_object
 
-    def _parse_file_observable(
+    def _parse_file_observable_object(
             self, file_ref: str, malware: Malware) -> MISPObject:
         observable = self.main_parser._observable[file_ref]
         if observable['used'][self.event_uuid]:
@@ -298,7 +340,7 @@ class STIX2SampleObservableConverter(
         observable['misp_object'] = misp_object
         return misp_object
 
-    def _parse_software_observable(
+    def _parse_software_observable_object(
             self, software_ref: str, malware: Malware) -> MISPObject:
         observable = self.main_parser._observable[software_ref]
         if observable['used'][self.event_uuid]:
