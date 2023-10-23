@@ -28,9 +28,9 @@ _OBSERVABLE_TYPING = Union[
 
 class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
     __artifact_object_mapping = Mapping(
-        decryption_key={'type': '', 'object_relation': 'decryption_key'},
+        decryption_key={'type': 'text', 'object_relation': 'decryption_key'},
         encyption_algorithm={
-            'type': '', 'object_relation': 'encryption_algorithm'
+            'type': 'text', 'object_relation': 'encryption_algorithm'
         },
         mime_type={'type': 'mime-type', 'object_relation': 'mime_type'},
         payload_bin={'type': 'text', 'object_relation': 'payload_bin'},
