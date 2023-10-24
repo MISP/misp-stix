@@ -6,7 +6,7 @@ from .stix2converter import STIX2Converter
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
-from pymisp import AbstractMISP, MISPObject
+from pymisp import AbstractMISP, MISPAttribute, MISPObject
 from stix2.v21.observables import (
     Artifact, DomainName, File, IPv4Address, IPv6Address, MACAddress,
     NetworkTraffic, Software)
@@ -20,6 +20,10 @@ if TYPE_CHECKING:
 
 _MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
 
+# TYPINGS
+_IP_OBSERVABLE_TYPING = Union[
+    IPv4Address, IPv6Address
+]
 _MAIN_CONVERTER_TYPING = Union[
     'ExternalSTIX2MalwareConverter', 'InternalSTIX2MalwareConverter'
 ]
@@ -101,6 +105,15 @@ class STIX2ObservableConverter:
                     observable.id
                 )
 
+    def _parse_domain_observable(
+            self, misp_object: MISPObject, observable: DomainName):
+        misp_object.add_attribute(
+            'domain', observable.value,
+            uuid=self.main_parser._create_v5_uuid(
+                f'{observable.id} - domain - {observable.value}'
+            )
+        )
+
     def _parse_file_observable(self, misp_object: MISPObject, observable: File):
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
@@ -115,6 +128,15 @@ class STIX2ObservableConverter:
                     misp_object, mapping, getattr(observable, field),
                     observable.id
                 )
+
+    def _parse_ip_observable(
+            self, misp_object: MISPObject, observable: _IP_OBSERVABLE_TYPING):
+        misp_object.add_attribute(
+            'ip', observable.value,
+            uuid=self.main_parser._create_v5_uuid(
+                f'{observable.id} - ip - {observable.value}'
+            )
+        )
 
     def _parse_network_connection_observable(
             self, misp_object: MISPObject, observable: NetworkTraffic):
@@ -132,7 +154,8 @@ class STIX2ObservableConverter:
             self, misp_object: MISPObject, observable: NetworkTraffic):
         for protocol in observable.protocols:
             misp_object.add_attribute(
-                'protocol', protocol, uuid=self.main_parser._create_v5_uuid(
+                'protocol', protocol,
+                uuid=self.main_parser._create_v5_uuid(
                     f'{observable.id} - protocol - {protocol}'
                 )
             )
@@ -147,7 +170,8 @@ class STIX2ObservableConverter:
         for feature in ('blocking', 'listening'):
             if getattr(socket_extension, f'is_{feature}', False):
                 misp_object.add_attribute(
-                    'state', feature, uuid=self.main_parser._create_v5_uuid(
+                    'state', feature,
+                    uuid=self.main_parser._create_v5_uuid(
                         f'{observable.id} - state - {feature}'
                     )
                 )
@@ -214,6 +238,19 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         self._set_main_parser(main)
         self._mapping = ExternalSTIX2ObservableMapping
 
+    def _create_misp_attribute_from_observable_object(
+            self, observable: DomainName, attribute_type: str,
+            feature: str) -> MISPAttribute:
+        attribute = MISPAttribute()
+        attribute.from_dict(
+            **{
+                'type': attribute_type,
+                'value': getattr(observable, feature),
+                **self.main_parser._sanitise_attribute_uuid(observable.id)
+            }
+        )
+        return attribute
+
     def _create_misp_object_from_observable_object(
             self, name: str, observable: _OBSERVABLE_TYPING) -> MISPObject:
         misp_object = MISPObject(
@@ -241,6 +278,47 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         )
         observable['misp_object'] = misp_object
         return misp_object
+
+    def _parse_domain_observable_object(self, domain_ref: str) -> MISPObject:
+        observable = self.main_parser._observable[domain_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable.get(
+                'misp_object', observable.get('misp_attribute')
+            )
+        domain_name = observable['observable']
+        if hasattr(domain_name, 'resolves_to_refs'):
+            domain_object = self._create_misp_object_from_observable_object(
+                'domain-ip', domain_name
+            )
+            super()._parse_domain_observable(domain_object, domain_name)
+            observable['used'][self.event_uuid] = True
+            misp_object = self.main_parser._add_misp_object(
+                domain_object, domain_name
+            )
+            observable['misp_object'] = misp_object
+            for reference in domain_name.resolves_to_refs:
+                if reference.split('--')[0] == 'domain-name':
+                    referenced_domain = self._parse_domain_observable_object(
+                        reference
+                    )
+                    misp_object.add_reference(
+                        referenced_domain.uuid, 'resolves-to'
+                    )
+                    continue
+                referenced_ip = self.main_parser._observable[reference]
+                super()._parse_ip_observable(
+                    misp_object, referenced_ip['observable']
+                )
+                referenced_ip['used'][self.event_uuid] = True
+                referenced_ip['misp_object'] = misp_object
+            return misp_object
+        attribute = self._create_misp_attribute_from_observable_object(
+            'domain', domain_name
+        )
+        observable['used'][self.event_uuid] = True
+        misp_attribute = self._main_parser._add_misp_attribute(attribute)
+        observable['misp_attribute'] = misp_attribute
+        return misp_attribute
 
     def _parse_file_observable_object(self, file_ref: str) -> MISPObject:
         observable = self.main_parser._observable[file_ref]
