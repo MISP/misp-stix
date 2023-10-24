@@ -7,7 +7,9 @@ from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
 from pymisp import AbstractMISP, MISPObject
-from stix2.v21.observables import Artifact, File, NetworkTraffic, Software
+from stix2.v21.observables import (
+    Artifact, DomainName, File, IPv4Address, IPv6Address, MACAddress,
+    NetworkTraffic, Software)
 from stix2.v21.sdo import Malware
 from typing import TYPE_CHECKING, Union
 
@@ -20,6 +22,9 @@ _MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
 
 _MAIN_CONVERTER_TYPING = Union[
     'ExternalSTIX2MalwareConverter', 'InternalSTIX2MalwareConverter'
+]
+_NETWORK_TRAFFIC_REFERENCE_TYPING = Union[
+    DomainName, IPv4Address, IPv6Address, MACAddress
 ]
 _OBSERVABLE_TYPING = Union[
     Artifact, File, NetworkTraffic, Software
@@ -56,7 +61,22 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
 
 class ExternalSTIX2ObservableMapping(
         STIX2ObservableMapping, ExternalSTIX2Mapping):
-    pass
+    __network_traffic_reference_mapping = Mapping(
+        **{
+            'domain-name_dst': 'hostname-dst',
+            'domain-name_src': 'hostname-src',
+            'ipv4-addr_dst': 'ip-dst',
+            'ipv4-addr_src': 'ip-src',
+            'ipv6-addr_dst': 'ip-dst',
+            'ipv6-addr_src': 'ip-src',
+            'mac-address_dst': 'mac-dst',
+            'mac-address_src': 'mad-src'
+        }
+    )
+
+    @classmethod
+    def network_traffic_reference_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.__network_traffic_reference_mapping.get(field)
 
 
 class InternalSTIX2ObservableMapping(
@@ -141,6 +161,18 @@ class STIX2ObservableConverter:
                     misp_object, attribute, getattr(observable, field),
                     observable.id
                 )
+
+    def _parse_network_traffic_reference_observable(
+            self, asset: str, misp_object: MISPObject,
+            observable: _NETWORK_TRAFFIC_REFERENCE_TYPING):
+        relation = self._mapping.network_traffic_reference_mapping(
+            f'{observable.type}_{asset}'
+        )
+        if relation is not None:
+            misp_object.add_attribute(
+                relation, observable.value,
+                uuid=self.main_parser._sanitise_uuid(observable.id)
+            )
 
     def _parse_software_observable(
             self, misp_object: MISPObject, observable: Software):
@@ -255,6 +287,15 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
             network_object, network_traffic
         )
         observable['misp_object'] = misp_object
+        for asset in ('src', 'dst'):
+            if hasattr(network_traffic, f'{asset}_ref'):
+                referenced_id = getattr(network_traffic, f'{asset}_ref')
+                referenced_object = self.main_parser._observable[referenced_id]
+                super()._parse_network_traffic_reference_observable(
+                    asset, misp_object, referenced_object['observable']
+                )
+                referenced_object['used'][self.event_uuid] = True
+                referenced_object['misp_object'] = misp_object
         return misp_object
 
     @staticmethod
