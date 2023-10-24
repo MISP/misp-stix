@@ -228,7 +228,7 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
     def _parse_artifact_observable_object(
             self, artifact_ref: str) -> MISPObject:
         observable = self.main_parser._observable[artifact_ref]
-        if observable['used'][self.event_uuid]:
+        if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         artifact = observable['observable']
         artifact_object = self._create_misp_object_from_observable_object(
@@ -244,7 +244,7 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
 
     def _parse_file_observable_object(self, file_ref: str) -> MISPObject:
         observable = self.main_parser._observable[file_ref]
-        if observable['used'][self.event_uuid]:
+        if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         _file = observable['observable']
         file_object = self._create_misp_object_from_observable_object(
@@ -279,6 +279,8 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
     def _parse_network_traffic_observable_object(
             self, network_traffic_ref: str):
         observable = self.main_parser._observable[network_traffic_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable['misp_object']
         network_traffic = observable['observable']
         feature = self._parse_network_traffic_observable_fields(network_traffic)
         network_object = getattr(self, feature)(network_traffic)
@@ -308,7 +310,7 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
     def _parse_software_observable_object(
             self, software_ref: str) -> MISPObject:
         observable = self.main_parser._observable[software_ref]
-        if observable['used'][self.event_uuid]:
+        if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         software = observable['observable']
         software_object = self._create_misp_object_from_observable_object(
