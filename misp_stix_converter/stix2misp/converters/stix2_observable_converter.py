@@ -11,7 +11,7 @@ from stix2.v21.observables import (
     Artifact, DomainName, File, IPv4Address, IPv6Address, MACAddress,
     NetworkTraffic, Software)
 from stix2.v21.sdo import Malware
-from typing import TYPE_CHECKING, Union
+from typing import Dict, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
@@ -222,7 +222,6 @@ class STIX2ObservableConverter:
                     }
                 )
         else:
-            print(misp_object)
             misp_object.add_attribute(
                 **{
                     'value': values, **mapping,
@@ -238,14 +237,14 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         self._set_main_parser(main)
         self._mapping = ExternalSTIX2ObservableMapping
 
-    def _create_misp_attribute_from_observable_object(
-            self, observable: DomainName, attribute_type: str,
-            feature: str) -> MISPAttribute:
+    def _create_misp_attribute(
+            self, attribute_type: str, observable: DomainName,
+            feature: str, **kwargs: Dict[str, str]) -> MISPAttribute:
         attribute = MISPAttribute()
         attribute.from_dict(
             **{
-                'type': attribute_type,
                 'value': getattr(observable, feature),
+                'type': attribute_type, **kwargs,
                 **self.main_parser._sanitise_attribute_uuid(observable.id)
             }
         )
