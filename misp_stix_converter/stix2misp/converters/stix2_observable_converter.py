@@ -333,6 +333,22 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['misp_object'] = misp_object
         return misp_object
 
+    def _parse_ip_address_observable_object(
+            self, ip_address_ref: str) -> MISPObject:
+        observable = self.main_parser._observable[ip_address_ref]
+        ip_address = observable['observable']
+        if observable['used'].get(self.event_uuid, False):
+            return observable.get(
+                'misp_attribute', observable.get('misp_object')
+            )
+        attribute = self._create_misp_attribute('ip-dst', ip_address, 'value')
+        observable['used'][self.event_uuid] = True
+        misp_attribute = self.main_parser._add_misp_attribute(
+            attribute, ip_address
+        )
+        observable['misp_attribute'] = misp_attribute
+        return misp_attribute
+
     def _parse_network_connection_observable_object(
             self, observable: NetworkTraffic) -> MISPObject:
         connection_object = self._create_misp_object_from_observable_object(
