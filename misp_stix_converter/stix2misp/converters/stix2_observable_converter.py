@@ -304,18 +304,35 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
                         referenced_domain.uuid, 'resolves-to'
                     )
                     continue
-                referenced_ip = self.main_parser._observable[reference]
-                super()._parse_ip_observable(
-                    misp_object, referenced_ip['observable']
-                )
-                referenced_ip['used'][self.event_uuid] = True
-                referenced_ip['misp_object'] = misp_object
+                resolved_ip = self.main_parser._observable[reference]
+                ip_address = resolved_ip['observable']
+                super()._parse_ip_observable(misp_object, ip_address)
+                resolved_ip['used'][self.event_uuid] = True
+                resolved_ip['misp_object'] = misp_object
+                if hasattr(ip_address, 'resolves_to_refs'):
+                    for referenced_mac in ip_address.resolves_to_refs:
+                        resolved_mac = self.main_parser._observable[
+                            referenced_mac
+                        ]
+                        mac_address = resolved_mac['observable']
+                        attribute = self._create_misp_attribute(
+                            'mac-address', mac_address, 'value',
+                            comment=f'Resolved by {ip_address.value}'
+                        )
+                        resolved_mac['used'][self.event_uuid] = True
+                        misp_attribute = self.main_parser._add_misp_attribute(
+                            attribute, mac_address
+                        )
+                        resolved_mac['misp_attribute'] = misp_attribute
+                        misp_object.add_reference(
+                            misp_attribute.uuid, 'resolves-to'
+                        )
             return misp_object
-        attribute = self._create_misp_attribute_from_observable_object(
-            'domain', domain_name
-        )
+        attribute = self._create_misp_attribute('domain', domain_name, 'value')
         observable['used'][self.event_uuid] = True
-        misp_attribute = self._main_parser._add_misp_attribute(attribute)
+        misp_attribute = self.main_parser._add_misp_attribute(
+            attribute, domain_name
+        )
         observable['misp_attribute'] = misp_attribute
         return misp_attribute
 
