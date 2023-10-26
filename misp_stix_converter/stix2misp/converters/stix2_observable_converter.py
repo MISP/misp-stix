@@ -376,6 +376,17 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
                 )
                 referenced_object['used'][self.event_uuid] = True
                 referenced_object['misp_object'] = misp_object
+        if hasattr(network_traffic, 'encapsulates_refs'):
+            for reference in network_traffic.encapsulates_refs:
+                referenced = self._parse_network_traffic_observable_object(
+                    reference
+                )
+                misp_object.add_reference(referenced.uuid, 'encapsulates')
+        if hasattr(network_traffic, 'encapsulated_by_ref'):
+            referenced = self._parse_network_traffic_observable_object(
+                network_traffic.encapsulated_by_ref
+            )
+            misp_object.add_reference(referenced.uuid, 'encapsulated-by')
         return misp_object
 
     @staticmethod
