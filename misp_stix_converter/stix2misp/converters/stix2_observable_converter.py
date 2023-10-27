@@ -8,8 +8,8 @@ from .stix2mapping import (
 from abc import ABCMeta
 from pymisp import AbstractMISP, MISPAttribute, MISPObject
 from stix2.v21.observables import (
-    Artifact, DomainName, File, IPv4Address, IPv6Address, MACAddress,
-    NetworkTraffic, Software)
+    Artifact, AutonomousSystem, DomainName, File, IPv4Address, IPv6Address,
+    MACAddress, NetworkTraffic, Software)
 from stix2.v21.sdo import Malware
 from typing import Dict, TYPE_CHECKING, Tuple, Union
 
@@ -127,6 +127,14 @@ class STIX2ObservableConverter:
                 yield from self._populate_object_attributes(
                     mapping, getattr(observable, field), observable.id
                 )
+
+    def _parse_ip_belonging_to_AS_observable(
+            self, observable: _IP_OBSERVABLE_TYPING) -> Tuple:
+        return 'subnet-announced', observable.value, {
+            'uuid': self.main_parser._create_v5_uuid(
+                f'{observable.id} - subnet-announced - {observable.value}'
+            )
+        }
 
     def _parse_ip_observable(self, observable: _IP_OBSERVABLE_TYPING) -> Tuple:
         return 'ip', observable.value, {
@@ -261,6 +269,45 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['misp_object'] = misp_object
         return misp_object
 
+    def _parse_as_observable_object(self, as_ref: str) -> MISPObject:
+        observable = self.main_parser._observable[as_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable.get(
+                'misp_object', observable.get('misp_attribute')
+            )
+        autonomous_system = observable['observable']
+        attributes = tuple(
+            self._parse_ip_addresses_belonging_to_AS(autonomous_system.id)
+        )
+        observable['used'][self.event_uuid] = True
+        if attributes:
+            AS_object = self._create_misp_object_from_observable_object(
+                'asn', autonomous_system
+            )
+            value = f'AS{autonomous_system.number}'
+            AS_object.add_attribute(
+                'asn', value,
+                uuid=self.main_parser._create_v5_uuid(
+                    f'{autonomous_system.id} - asn - {value}'
+                )
+            )
+            for *attribute, kwargs in attributes:
+                AS_object.add_attribute(*attribute, **kwargs)
+            misp_object = self.main_parser._add_misp_object(
+                AS_object, autonomous_system
+            )
+            observable['misp_object'] = misp_object
+            return misp_object
+        attribute = {
+            'type': 'AS', 'value': f'AS{autonomous_system.number}',
+            **self.main_parser._sanitise_attribute_uuid(autonomous_system.id)
+        }
+        misp_attribute = self.main_parser._add_misp_attribute(
+            attribute, autonomous_system
+        )
+        observable['misp_attribute'] = misp_attribute
+        return misp_attribute
+
     def _parse_domain_observable_object(self, domain_ref: str) -> MISPObject:
         observable = self.main_parser._observable[domain_ref]
         if observable['used'].get(self.event_uuid, False):
@@ -335,6 +382,15 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         misp_object = self.main_parser._add_misp_object(file_object, _file)
         observable['misp_object'] = misp_object
         return misp_object
+
+    def _parse_ip_addresses_belonging_to_AS(self, AS_id: str):
+        for content in self.main_parser._observable.values():
+            observable = content['observable']
+            if observable.type not in ('ipv4-addr', 'ipv6-addr'):
+                continue
+            if AS_id in getattr(observable, 'belongs_to_refs', []):
+                content['used'][self.event_uuid] = True
+                yield super()._parse_ip_belonging_to_AS_observable(observable)
 
     def _parse_ip_address_observable_object(
             self, ip_address_ref: str) -> MISPObject:
