@@ -11,7 +11,7 @@ from stix2.v21.observables import (
     Artifact, DomainName, File, IPv4Address, IPv6Address, MACAddress,
     NetworkTraffic, Software)
 from stix2.v21.sdo import Malware
-from typing import Dict, TYPE_CHECKING, Union
+from typing import Dict, TYPE_CHECKING, Tuple, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
@@ -89,147 +89,129 @@ class InternalSTIX2ObservableMapping(
 
 
 class STIX2ObservableConverter:
-    def _parse_artifact_observable(
-            self, misp_object: MISPObject, observable: Artifact):
+    def _parse_artifact_observable(self, observable: Artifact):
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
                 attribute = self._mapping.file_hashes_mapping(hash_type)
                 if attribute is None:
                     self.main_parser.hash_type_error(hash_type)
                     continue
-                misp_object.add_attribute(**{'value': value, **attribute})
+                yield from self._populate_object_attributes(
+                    attribute, value, observable.id
+                )
         for field, mapping in self._mapping.artifact_object_mapping().items():
             if hasattr(observable, field):
-                self._populate_object_attributes(
-                    misp_object, mapping, getattr(observable, field),
-                    observable.id
+                yield from self._populate_object_attributes(
+                    mapping, getattr(observable, field), observable.id
                 )
 
-    def _parse_domain_observable(
-            self, misp_object: MISPObject, observable: DomainName):
-        misp_object.add_attribute(
-            'domain', observable.value,
-            uuid=self.main_parser._create_v5_uuid(
+    def _parse_domain_observable(self, observable: DomainName) -> Tuple:
+        return 'domain', observable.value, {
+            'uuid': self.main_parser._create_v5_uuid(
                 f'{observable.id} - domain - {observable.value}'
             )
-        )
+        }
 
-    def _parse_file_observable(self, misp_object: MISPObject, observable: File):
+    def _parse_file_observable(self, observable: File):
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
                 attribute = self._mapping.file_hashes_mapping(hash_type)
                 if attribute is None:
                     self.main_parser.hash_type_error(hash_type)
                     continue
-                misp_object.add_attribute(**{'value': value, **attribute})
+                yield from self._populate_object_attributes(
+                    attribute, value, observable.id
+                )
         for field, mapping in self._mapping.file_object_mapping().items():
             if hasattr(observable, field):
-                self._populate_object_attributes(
-                    misp_object, mapping, getattr(observable, field),
-                    observable.id
+                yield from self._populate_object_attributes(
+                    mapping, getattr(observable, field), observable.id
                 )
 
-    def _parse_ip_observable(
-            self, misp_object: MISPObject, observable: _IP_OBSERVABLE_TYPING):
-        misp_object.add_attribute(
-            'ip', observable.value,
-            uuid=self.main_parser._create_v5_uuid(
+    def _parse_ip_observable(self, observable: _IP_OBSERVABLE_TYPING) -> Tuple:
+        return 'ip', observable.value, {
+            'uuid': self.main_parser._create_v5_uuid(
                 f'{observable.id} - ip - {observable.value}'
             )
-        )
+        }
 
-    def _parse_network_connection_observable(
-            self, misp_object: MISPObject, observable: NetworkTraffic):
+    def _parse_network_connection_observable(self, observable: NetworkTraffic):
         for protocol in observable.protocols:
             layer = self._mapping.connection_protocols(protocol)
             if layer is not None:
-                misp_object.add_attribute(
-                    f'layer{layer}-protocol', protocol,
-                    uuid=self.main_parser._create_v5_uuid(
+                yield f'layer{layer}-protocol', protocol, {
+                    'uuid': self.main_parser._create_v5_uuid(
                         f'{observable.id} - layer{layer}-protocol - {protocol}'
                     )
-                )
+                }
 
-    def _parse_network_socket_observable(
-            self, misp_object: MISPObject, observable: NetworkTraffic):
+    def _parse_network_socket_observable(self, observable: NetworkTraffic):
         for protocol in observable.protocols:
-            misp_object.add_attribute(
-                'protocol', protocol,
-                uuid=self.main_parser._create_v5_uuid(
+            yield {
+                'type': 'text', 'object_relation': 'protocol',
+                'value': protocol, 'uuid': self.main_parser._create_v5_uuid(
                     f'{observable.id} - protocol - {protocol}'
                 )
-            )
+            }
         socket_extension = observable.extensions['socket-ext']
         mapping = self._mapping.network_socket_extension_object_mapping
         for field, attribute in mapping().items():
             if hasattr(socket_extension, field):
-                self._populate_object_attributes(
-                    misp_object, attribute, getattr(socket_extension, field),
-                    observable.id
+                yield from self._populate_object_attributes(
+                    attribute, getattr(socket_extension, field), observable.id
                 )
         for feature in ('blocking', 'listening'):
             if getattr(socket_extension, f'is_{feature}', False):
-                misp_object.add_attribute(
-                    'state', feature,
-                    uuid=self.main_parser._create_v5_uuid(
+                yield {
+                    'type': 'text', 'object_relation': 'state',
+                    'value': feature, 'uuid': self.main_parser._create_v5_uuid(
                         f'{observable.id} - state - {feature}'
                     )
-                )
+                }
 
-    def _parse_network_traffic_observable(
-            self, misp_object: MISPObject, observable: NetworkTraffic):
+    def _parse_network_traffic_observable(self, observable: NetworkTraffic):
         mapping = self._mapping.network_traffic_object_mapping
         for field, attribute in mapping().items():
             if hasattr(observable, field):
-                self._populate_object_attributes(
-                    misp_object, attribute, getattr(observable, field),
-                    observable.id
+                yield from self._populate_object_attributes(
+                    attribute, getattr(observable, field), observable.id
                 )
 
     def _parse_network_traffic_reference_observable(
-            self, asset: str, misp_object: MISPObject,
-            observable: _NETWORK_TRAFFIC_REFERENCE_TYPING):
+            self, asset: str, observable: _NETWORK_TRAFFIC_REFERENCE_TYPING):
         relation = self._mapping.network_traffic_reference_mapping(
             f'{observable.type}_{asset}'
         )
         if relation is not None:
-            misp_object.add_attribute(
-                relation, observable.value,
-                uuid=self.main_parser._sanitise_uuid(observable.id)
-            )
+            yield relation, observable.value, {
+                'uuid': self.main_parser._sanitise_uuid(observable.id)
+            }
 
-    def _parse_software_observable(
-            self, misp_object: MISPObject, observable: Software):
+    def _parse_software_observable(self, observable: Software):
         for field, mapping in self._mapping.software_object_mapping().items():
             if hasattr(observable, field):
-                self._populate_object_attributes(
-                    misp_object, mapping, getattr(observable, field),
-                    observable.id
+                yield from self._populate_object_attributes(
+                    mapping, getattr(observable, field), observable.id
                 )
 
     def _populate_object_attributes(
-            self, misp_object: MISPObject, mapping: dict,
-            values: Union[list, str], observable_id: str):
+            self, mapping: dict, values: Union[list, str], observable_id: str):
         reference = f"{observable_id} - {mapping['object_relation']}"
         if isinstance(values, list):
             for value in values:
-                misp_object.add_attribute(
-                    **{
-                        'value': value, **mapping,
-                        'uuid': self.main_parser._create_v5_uuid(
-                            f'{reference} - {value}'
-                        )
-                    }
-                )
-        else:
-            misp_object.add_attribute(
-                **{
-                    'value': values, **mapping,
+                yield {
+                    'value': value, **mapping,
                     'uuid': self.main_parser._create_v5_uuid(
-                        f'{reference} - {values}'
+                        f'{reference} - {value}'
                     )
                 }
-            )
+        else:
+            yield {
+                'value': values, **mapping,
+                'uuid': self.main_parser._create_v5_uuid(
+                    f'{reference} - {values}'
+                )
+            }
 
 
 class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
@@ -270,7 +252,8 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         artifact_object = self._create_misp_object_from_observable_object(
             'artifact', artifact
         )
-        super()._parse_artifact_observable(artifact_object, artifact)
+        for attribute in super()._parse_artifact_observable(artifact):
+            artifact_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self._main_parser._add_misp_object(
             artifact_object, artifact
@@ -289,7 +272,8 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
             domain_object = self._create_misp_object_from_observable_object(
                 'domain-ip', domain_name
             )
-            super()._parse_domain_observable(domain_object, domain_name)
+            for attribute in super()._parse_domain_observable(domain_name):
+                domain_object.add_attribute(**attribute)
             observable['used'][self.event_uuid] = True
             misp_object = self.main_parser._add_misp_object(
                 domain_object, domain_name
@@ -306,7 +290,8 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
                     continue
                 resolved_ip = self.main_parser._observable[reference]
                 ip_address = resolved_ip['observable']
-                super()._parse_ip_observable(misp_object, ip_address)
+                *attribute, kwargs = super()._parse_ip_observable(ip_address)
+                misp_object.add_attribute(*attribute, **kwargs)
                 resolved_ip['used'][self.event_uuid] = True
                 resolved_ip['misp_object'] = misp_object
                 if hasattr(ip_address, 'resolves_to_refs'):
@@ -328,10 +313,10 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
                             misp_attribute.uuid, 'resolves-to'
                         )
             return misp_object
-        attribute = self._create_misp_attribute('domain', domain_name, 'value')
         observable['used'][self.event_uuid] = True
         misp_attribute = self.main_parser._add_misp_attribute(
-            attribute, domain_name
+            self._create_misp_attribute('domain', domain_name, 'value'),
+            domain_name
         )
         observable['misp_attribute'] = misp_attribute
         return misp_attribute
@@ -344,7 +329,8 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         file_object = self._create_misp_object_from_observable_object(
             'file', _file
         )
-        super()._parse_file_observable(file_object, _file)
+        for attribute in super()._parse_file_observable(_file):
+            file_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(file_object, _file)
         observable['misp_object'] = misp_object
@@ -371,10 +357,11 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         connection_object = self._create_misp_object_from_observable_object(
             'network-connection', observable
         )
-        super()._parse_network_traffic_observable(connection_object, observable)
-        super()._parse_network_connection_observable(
-            connection_object, observable
-        )
+        for attribute in super()._parse_network_traffic_observable(observable):
+            connection_object.add_attribute(**attribute)
+        protocols = super()._parse_network_connection_observable(observable)
+        for *attribute, kwargs in protocols:
+            connection_object.add_attribute(*attribute, **kwargs)
         return connection_object
 
     def _parse_network_socket_observable_object(
@@ -382,8 +369,10 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         socket_object = self._create_misp_object_from_observable_object(
             'network-socket', observable
         )
-        super()._parse_network_traffic_observable(socket_object, observable)
-        super()._parse_network_socket_observable(socket_object, observable)
+        for attribute in super()._parse_network_traffic_observable(observable):
+            socket_object.add_attribute(**attribute)
+        for attribute in super()._parse_network_socket_observable(observable):
+            socket_object.add_attribute(**attribute)
         return socket_object
 
     def _parse_network_traffic_observable_object(
@@ -403,9 +392,11 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
             if hasattr(network_traffic, f'{asset}_ref'):
                 referenced_id = getattr(network_traffic, f'{asset}_ref')
                 referenced_object = self.main_parser._observable[referenced_id]
-                super()._parse_network_traffic_reference_observable(
-                    asset, misp_object, referenced_object['observable']
+                content = super()._parse_network_traffic_reference_observable(
+                    asset, referenced_object['observable']
                 )
+                for *attribute, kwargs in content:
+                    misp_object.add_attribute(*attribute, **kwargs)
                 referenced_object['used'][self.event_uuid] = True
                 referenced_object['misp_object'] = misp_object
         if hasattr(network_traffic, 'encapsulates_refs'):
@@ -437,7 +428,8 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         software_object = self._create_misp_object_from_observable_object(
             'software', software
         )
-        super()._parse_software_observable(software_object, software)
+        for attribute in super()._parse_software_observable(software):
+            software_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
             software_object, software
@@ -481,7 +473,8 @@ class STIX2SampleObservableConverter(
         artifact_object = self._create_misp_object_from_observable(
             'artifact', artifact, malware
         )
-        super()._parse_artifact_observable(artifact_object, artifact)
+        for attribute in super()._parse_artifact_observable(artifact):
+            artifact_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self._main_parser._add_misp_object(
             artifact_object, artifact
@@ -498,7 +491,8 @@ class STIX2SampleObservableConverter(
         file_object = self._create_misp_object_from_observable(
             'file', _file, malware
         )
-        super()._parse_file_observable(file_object, _file)
+        for attribute in super()._parse_file_observable(_file):
+            file_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(file_object, _file)
         observable['misp_object'] = misp_object
@@ -513,7 +507,8 @@ class STIX2SampleObservableConverter(
         software_object = self._create_misp_object_from_observable(
             'software', software, malware
         )
-        super()._parse_software_observable(software_object, software)
+        for attribute in super()._parse_software_observable(software):
+            software_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
             software_object, software
