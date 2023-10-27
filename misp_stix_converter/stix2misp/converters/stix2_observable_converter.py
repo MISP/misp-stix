@@ -27,6 +27,9 @@ _IP_OBSERVABLE_TYPING = Union[
 _MAIN_CONVERTER_TYPING = Union[
     'ExternalSTIX2MalwareConverter', 'InternalSTIX2MalwareConverter'
 ]
+_MISP_CONTENT_TYPING = Union[
+    MISPAttribute, MISPObject
+]
 _NETWORK_TRAFFIC_REFERENCE_TYPING = Union[
     DomainName, IPv4Address, IPv6Address, MACAddress
 ]
@@ -269,7 +272,7 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['misp_object'] = misp_object
         return misp_object
 
-    def _parse_as_observable_object(self, as_ref: str) -> MISPObject:
+    def _parse_as_observable_object(self, as_ref: str) -> _MISP_CONTENT_TYPING:
         observable = self.main_parser._observable[as_ref]
         if observable['used'].get(self.event_uuid, False):
             return observable.get(
@@ -308,7 +311,8 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['misp_attribute'] = misp_attribute
         return misp_attribute
 
-    def _parse_domain_observable_object(self, domain_ref: str) -> MISPObject:
+    def _parse_domain_observable_object(
+            self, domain_ref: str) -> _MISP_CONTENT_TYPING:
         observable = self.main_parser._observable[domain_ref]
         if observable['used'].get(self.event_uuid, False):
             return observable.get(
@@ -393,7 +397,7 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
                 yield super()._parse_ip_belonging_to_AS_observable(observable)
 
     def _parse_ip_address_observable_object(
-            self, ip_address_ref: str) -> MISPObject:
+            self, ip_address_ref: str) -> _MISP_CONTENT_TYPING:
         observable = self.main_parser._observable[ip_address_ref]
         ip_address = observable['observable']
         if observable['used'].get(self.event_uuid, False):
@@ -432,7 +436,7 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         return socket_object
 
     def _parse_network_traffic_observable_object(
-            self, network_traffic_ref: str):
+            self, network_traffic_ref: str) -> MISPObject:
         observable = self.main_parser._observable[network_traffic_ref]
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
