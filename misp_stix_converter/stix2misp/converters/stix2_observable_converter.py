@@ -8,10 +8,10 @@ from .stix2mapping import (
 from abc import ABCMeta
 from pymisp import AbstractMISP, MISPAttribute, MISPObject
 from stix2.v21.observables import (
-    Artifact, AutonomousSystem, DomainName, File, IPv4Address, IPv6Address,
-    MACAddress, NetworkTraffic, Software)
+    Artifact, Directory, DomainName, File, IPv4Address, IPv6Address, MACAddress,
+    NetworkTraffic, Software)
 from stix2.v21.sdo import Malware
-from typing import Dict, TYPE_CHECKING, Tuple, Union
+from typing import Dict, Optional, TYPE_CHECKING, Tuple, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
@@ -103,6 +103,13 @@ class STIX2ObservableConverter:
                     attribute, value, observable.id
                 )
         for field, mapping in self._mapping.artifact_object_mapping().items():
+            if hasattr(observable, field):
+                yield from self._populate_object_attributes(
+                    mapping, getattr(observable, field), observable.id
+                )
+
+    def _parse_directory_observable(self, observable: Directory):
+        for field, mapping in self._mapping.directory_object_mapping().items():
             if hasattr(observable, field):
                 yield from self._populate_object_attributes(
                     mapping, getattr(observable, field), observable.id
@@ -311,6 +318,58 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['misp_attribute'] = misp_attribute
         return misp_attribute
 
+    def _parse_directory_observable_object(
+            self, directory_ref: str, child: Optional[str] = None
+            ) -> _MISP_CONTENT_TYPING:
+        observable = self.main_parser._observable[directory_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable.get('misp_object', observable['misp_attribute'])
+        directory = observable['observable']
+        attributes = tuple(super()._parse_directory_observable(directory))
+        observable['used'][self.event_uuid] = True
+        force_object = (
+            len(attributes) > 1 or any(
+                ref != child for ref in getattr(directory, 'contains_refs', [])
+            )
+        )
+        if force_object:
+            directory_object = self._create_misp_object_from_observable_object(
+                'directory', directory
+            )
+            for attribute in attributes:
+                directory_object.add_attribute(**attribute)
+            misp_object = self.main_parser._add_misp_object(
+                directory_object, directory
+            )
+            observable['misp_object'] = misp_object
+            if hasattr(directory, 'contains_refs'):
+                for ref in directory.contains_refs:
+                    feature = f"_parse_{ref.split('--')[0]}_observable_object"
+                    referenced_object = (
+                        self.main_parser._observable[child]['observable']
+                        if child == ref else getattr(self, feature)(ref)
+                    )
+                    misp_object.add_reference(
+                        referenced_object.uuid, 'contains'
+                    )
+            return misp_object
+        if child is None:
+            attribute = attributes[0]
+            misp_attribute = self.main_parser._add_misp_attribute(
+                {
+                    'type': attribute['type'], 'value': attribute['value'],
+                    **self.main_parser._sanitise_attribute_uuid(
+                        directory.id
+                    )
+                },
+                directory
+            )
+            observable['misp_attribute'] = misp_attribute
+            return misp_attribute
+        file_object = self.main_parser._observable[child]['observable']
+        file_object.add_attribute(**attributes[0])
+        return misp_object
+
     def _parse_domain_observable_object(
             self, domain_ref: str) -> _MISP_CONTENT_TYPING:
         observable = self.main_parser._observable[domain_ref]
@@ -385,6 +444,15 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(file_object, _file)
         observable['misp_object'] = misp_object
+        if hasattr(_file, 'content_ref'):
+            artifact_object = self._parse_artifact_observable_object(
+                _file.content_ref
+            )
+            artifact_object.add_reference(misp_object.uuid, 'content-of')
+        if hasattr(_file, 'parent_directory_ref'):
+            self._parse_directory_observable_object(
+                _file.parent_directory_ref, child=_file.id
+            )
         return misp_object
 
     def _parse_ip_addresses_belonging_to_AS(self, AS_id: str):
