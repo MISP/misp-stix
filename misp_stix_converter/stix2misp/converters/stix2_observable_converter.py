@@ -368,6 +368,7 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
             return misp_attribute
         file_object = self.main_parser._observable[child]['observable']
         file_object.add_attribute(**attributes[0])
+        observable['misp_object'] = file_object
         return misp_object
 
     def _parse_domain_observable_object(
