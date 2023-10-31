@@ -8,8 +8,8 @@ from .stix2mapping import (
 from abc import ABCMeta
 from pymisp import AbstractMISP, MISPAttribute, MISPObject
 from stix2.v21.observables import (
-    Artifact, Directory, DomainName, File, IPv4Address, IPv6Address, MACAddress,
-    NetworkTraffic, Software)
+    Artifact, Directory, DomainName, EmailAddress, EmailMessage, File,
+    IPv4Address, IPv6Address, MACAddress, NetworkTraffic, Software)
 from stix2.v21.sdo import Malware
 from typing import Dict, Optional, TYPE_CHECKING, Tuple, Union
 
@@ -34,7 +34,8 @@ _NETWORK_TRAFFIC_REFERENCE_TYPING = Union[
     DomainName, IPv4Address, IPv6Address, MACAddress
 ]
 _OBSERVABLE_TYPING = Union[
-    Artifact, File, NetworkTraffic, Software
+    Artifact, Directory, DomainName, EmailMessage, File, NetworkTraffic,
+    Software
 ]
 
 
@@ -121,6 +122,37 @@ class STIX2ObservableConverter:
                 f'{observable.id} - domain - {observable.value}'
             )
         }
+
+    def _parse_email_additional_header(self, observable: EmailMessage):
+        mapping = self._mapping.email_additional_header_fields
+        email_header = observable.additional_header_fields
+        for field, attribute in mapping().items():
+            if email_header.get(field):
+                yield from self._populate_object_attributes(
+                    attribute, email_header[field], observable.id
+                )
+
+    def _parse_email_message_observable(self, observable: EmailMessage):
+        for field, mapping in self._mapping.email_object_mapping().items():
+            if hasattr(observable, field):
+                yield from self._populate_object_attributes(
+                    mapping, getattr(observable, field), observable.id
+                )
+
+    def _parse_email_reference_observable(
+            self, observable: EmailAddress, feature: str):
+        yield feature, observable.value, {
+            'uuid': self.main_parser._create_v5_uuid(
+                f'{observable.id} - {feature} - {observable.value}'
+            )
+        }
+        if hasattr(observable, 'display_name'):
+            relation = f'{feature}-display-name'
+            yield relation, observable.display_name, {
+                'uuid': self.main_parser._create_v5_uuid(
+                    f'{observable.id} - {relation} - {observable.display_name}'
+                )
+            }
 
     def _parse_file_observable(self, observable: File):
         if hasattr(observable, 'hashes'):
@@ -432,6 +464,51 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['misp_attribute'] = misp_attribute
         return misp_attribute
 
+    def _parse_email_message_observable_object(
+            self, email_message_ref: str) -> MISPObject:
+        observable = self.main_parser._observable[email_message_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable['misp_object']
+        email_message = observable['observable']
+        email_object = self._create_misp_object_from_observable_object(
+            'email', email_message
+        )
+        for attribute in super()._parse_email_message_observable(email_message):
+            email_object.add_attribute(**attribute)
+        observable['used'][self.event_uuid] = True
+        misp_object = self.main_parser._add_misp_object(
+            email_object, email_message
+        )
+        observable['misp_object'] = misp_object
+        if hasattr(email_message, 'from_ref'):
+            observable = self.main_parser._observable[email_message.from_ref]
+            attributes = super()._parse_email_reference_observable(
+                observable['observable'], 'from'
+            )
+            for *attribute, kwargs in attributes:
+                misp_object.add_attribute(*attribute, **kwargs)
+            observable['used'][self.event_uuid] = True
+            observable['misp_object'] = misp_object
+        for feature in ('to', 'bcc', 'cc'):
+            field = f'{feature}_refs'
+            if hasattr(email_message, field):
+                for reference in getattr(email_message, field):
+                    observable = self.main_parser._observable[reference]
+                    attributes = super()._parse_email_reference_observable(
+                        observable['observable'], feature
+                    )
+                    for *attribute, kwargs in attributes:
+                        misp_object.add_attribute(*attribute, **kwargs)
+                    observable['used'][self.event_uuid] = True
+                    observable['misp_object'] = misp_object
+        if hasattr(email_message, 'additional_header_fields'):
+            attributes = super()._parse_email_additional_header(
+                email_message.additional_header_fields
+            )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
+        return misp_object
+
     def _parse_file_observable_object(self, file_ref: str) -> MISPObject:
         observable = self.main_parser._observable[file_ref]
         if observable['used'].get(self.event_uuid, False):
@@ -519,8 +596,9 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['misp_object'] = misp_object
         for asset in ('src', 'dst'):
             if hasattr(network_traffic, f'{asset}_ref'):
-                referenced_id = getattr(network_traffic, f'{asset}_ref')
-                referenced_object = self.main_parser._observable[referenced_id]
+                referenced_object = self.main_parser._observable[
+                    getattr(network_traffic, f'{asset}_ref')
+                ]
                 content = super()._parse_network_traffic_reference_observable(
                     asset, referenced_object['observable']
                 )
