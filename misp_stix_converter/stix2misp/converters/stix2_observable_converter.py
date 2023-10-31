@@ -271,16 +271,12 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
 
     def _create_misp_attribute(
             self, attribute_type: str, observable: DomainName,
-            feature: str, **kwargs: Dict[str, str]) -> MISPAttribute:
-        attribute = MISPAttribute()
-        attribute.from_dict(
-            **{
-                'value': getattr(observable, feature),
-                'type': attribute_type, **kwargs,
-                **self.main_parser._sanitise_attribute_uuid(observable.id)
-            }
-        )
-        return attribute
+            feature: Optional[str] = 'value',
+            **kwargs: Dict[str, str]) -> MISPAttribute:
+        return {
+            'value': getattr(observable, feature), 'type': attribute_type,
+            **kwargs, **self.main_parser._sanitise_attribute_uuid(observable.id)
+        }
 
     def _create_misp_object_from_observable_object(
             self, name: str, observable: _OBSERVABLE_TYPING) -> MISPObject:
@@ -444,7 +440,7 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
                         ]
                         mac_address = resolved_mac['observable']
                         attribute = self._create_misp_attribute(
-                            'mac-address', mac_address, 'value',
+                            'mac-address', mac_address,
                             comment=f'Resolved by {ip_address.value}'
                         )
                         resolved_mac['used'][self.event_uuid] = True
@@ -458,8 +454,7 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
             return misp_object
         observable['used'][self.event_uuid] = True
         misp_attribute = self.main_parser._add_misp_attribute(
-            self._create_misp_attribute('domain', domain_name, 'value'),
-            domain_name
+            self._create_misp_attribute('domain', domain_name), domain_name
         )
         observable['misp_attribute'] = misp_attribute
         return misp_attribute
@@ -550,10 +545,9 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
             return observable.get(
                 'misp_attribute', observable.get('misp_object')
             )
-        attribute = self._create_misp_attribute('ip-dst', ip_address, 'value')
         observable['used'][self.event_uuid] = True
         misp_attribute = self.main_parser._add_misp_attribute(
-            attribute, ip_address
+            self._create_misp_attribute('ip-dst', ip_address), ip_address
         )
         observable['misp_attribute'] = misp_attribute
         return misp_attribute
