@@ -9,7 +9,8 @@ from abc import ABCMeta
 from pymisp import AbstractMISP, MISPAttribute, MISPObject
 from stix2.v21.observables import (
     Artifact, Directory, DomainName, EmailAddress, EmailMessage, File,
-    IPv4Address, IPv6Address, MACAddress, NetworkTraffic, Software)
+    IPv4Address, IPv6Address, MACAddress, NetworkTraffic, Software,
+    UserAccount)
 from stix2.v21.sdo import Malware
 from typing import Dict, Optional, TYPE_CHECKING, Tuple, Union
 
@@ -35,7 +36,7 @@ _NETWORK_TRAFFIC_REFERENCE_TYPING = Union[
 ]
 _OBSERVABLE_TYPING = Union[
     Artifact, Directory, DomainName, EmailMessage, File, NetworkTraffic,
-    Software
+    Software, UserAccount
 ]
 
 
@@ -243,6 +244,24 @@ class STIX2ObservableConverter:
                 yield from self._populate_object_attributes(
                     mapping, getattr(observable, field), observable.id
                 )
+
+    def _parse_user_account_observable(self, observable: UserAccount):
+        user_account_mapping = self._mapping.user_account_object_mapping
+        for field, mapping in user_account_mapping().items():
+            if hasattr(observable, field):
+                yield from self._populate_object_attributes(
+                    mapping, getattr(observable, field), observable.id
+                )
+        if 'unix-account-ext' in getattr(observable, 'extensions', {}):
+            extension = observable.extensions['unix-account-ext']
+            extension_mapping = getattr(
+                self._mapping, 'unix_user_account_extension_mapping'
+            )
+            for field, mapping in extension_mapping().items():
+                if hasattr(extension, field):
+                    yield from self._populate_object_attributes(
+                        mapping, getattr(extension, field), observable.id
+                    )
 
     def _populate_object_attributes(
             self, mapping: dict, values: Union[list, str], observable_id: str):
@@ -459,6 +478,35 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['misp_attribute'] = misp_attribute
         return misp_attribute
 
+    def _parse_email_address_observable_object(
+            self, email_address_ref: str) -> _MISP_CONTENT_TYPING:
+        observable = self.main_parser._observable[email_address_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable.get(
+                'misp_attribute', observable.get('misp_object')
+            )
+        email_address = observable['observable']
+        if hasattr(email_address, 'belongs_to_ref'):
+            user_account_object = self._parse_user_account_observable_object(
+                email_address.belongs_to_ref
+            )
+            user_account_object.add_attribute(
+                'email', email_address.value, **{
+                    'uuid': self.main_parser._create_v5_uuid(
+                        f'{email_address.id} - email - {email_address.value}'
+                    )
+                }
+            )
+            observable['used'][self.event_uuid] = True
+            observable['misp_object'] = user_account_object
+            return user_account_object
+        misp_attribute = self.main_parser._add_misp_attribute(
+            self._create_misp_attribute('email', email_address), email_address
+        )
+        observable['used'][self.event_uuid] = True
+        observable['misp_attribute'] = misp_attribute
+        return misp_attribute
+
     def _parse_email_message_observable_object(
             self, email_message_ref: str) -> MISPObject:
         observable = self.main_parser._observable[email_message_ref]
@@ -634,6 +682,24 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
             software_object, software
+        )
+        observable['misp_object'] = misp_object
+        return misp_object
+
+    def _parse_user_account_observable_object(
+            self, user_account_ref: str) -> MISPObject:
+        observable = self.main_parser._observable[user_account_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable['misp_object']
+        user_account = observable['observable']
+        user_account_object = self._create_misp_object_from_observable_object(
+            'user-account', user_account
+        )
+        for attribute in super()._parse_user_account_observable(user_account):
+            user_account_object.add_attribute(**attribute)
+        observable['used'][self.event_uuid] = True
+        misp_object = self.main_parser._add_misp_object(
+            user_account_object, user_account
         )
         observable['misp_object'] = misp_object
         return misp_object
