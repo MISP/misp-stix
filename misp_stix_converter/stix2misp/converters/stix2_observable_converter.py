@@ -831,6 +831,18 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         observable['misp_object'] = misp_object
         return misp_object
 
+    def _parse_url_observable_object(self, url_ref: str) -> MISPAttribute:
+        observable = self.main_parser._observable[url_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable['misp_attribute']
+        url = observable['observable']
+        misp_attribute = self.main_parser._add_misp_attribute(
+            self._create_misp_attribute('url', url), url
+        )
+        observable['used'][self.event_uuid] = True
+        observable['misp_attribute'] = misp_attribute
+        return misp_attribute
+
     def _parse_user_account_observable_object(
             self, user_account_ref: str) -> MISPObject:
         observable = self.main_parser._observable[user_account_ref]
