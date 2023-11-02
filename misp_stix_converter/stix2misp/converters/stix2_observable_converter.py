@@ -10,7 +10,7 @@ from pymisp import AbstractMISP, MISPAttribute, MISPObject
 from stix2.v21.observables import (
     Artifact, Directory, DomainName, EmailAddress, EmailMessage, File,
     IPv4Address, IPv6Address, MACAddress, NetworkTraffic, Process, Software,
-    UserAccount, WindowsRegistryKey, WindowsRegistryValueType)
+    UserAccount, WindowsRegistryKey, WindowsRegistryValueType, X509Certificate)
 from stix2.v21.sdo import Malware
 from typing import Dict, Optional, TYPE_CHECKING, Tuple, Union
 
@@ -36,7 +36,7 @@ _NETWORK_TRAFFIC_REFERENCE_TYPING = Union[
 ]
 _OBSERVABLE_TYPING = Union[
     Artifact, Directory, DomainName, EmailMessage, File, NetworkTraffic,
-    Process, Software, UserAccount, WindowsRegistryKey
+    Process, Software, UserAccount, WindowsRegistryKey, X509Certificate
 ]
 
 
@@ -82,10 +82,21 @@ class ExternalSTIX2ObservableMapping(
             'mac-address_src': 'mad-src'
         }
     )
+    __x509_hashes_mapping = Mapping(
+        **{
+            'MD5': STIX2Mapping.x509_md5_attribute(),
+            'SHA-1': STIX2Mapping.x509_sha1_attribute(),
+            'SHA-256': STIX2Mapping.x509_sha256_attribute()
+        }
+    )
 
     @classmethod
     def network_traffic_reference_mapping(cls, field: str) -> Union[dict, None]:
         return cls.__network_traffic_reference_mapping.get(field)
+
+    @classmethod
+    def x509_hashes_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.__x509_hashes_mapping.get(field)
 
 
 class InternalSTIX2ObservableMapping(
@@ -307,6 +318,20 @@ class STIX2ObservableConverter:
                 if hasattr(extension, field):
                     yield from self._populate_object_attributes(
                         mapping, getattr(extension, field), observable.id
+                    )
+
+    def _parse_x509_observable(self, observable: X509Certificate):
+        for field, mapping in self._mapping.x509_object_mapping().items():
+            if hasattr(observable, field):
+                yield from self._populate_object_attributes(
+                    mapping, getattr(observable, field), observable.id
+                )
+        if hasattr(observable, 'hashes'):
+            for hash_type, hash_value in observable.hashes.items():
+                attribute = self._mapping.x509_hashes_mapping.get(hash_type)
+                if attribute is not None:
+                    yield from self._populate_object_attributes(
+                        attribute, hash_value, observable.id
                     )
 
     def _populate_object_attributes(
@@ -858,6 +883,21 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         misp_object = self.main_parser._add_misp_object(
             user_account_object, user_account
         )
+        observable['misp_object'] = misp_object
+        return misp_object
+
+    def _parse_x509_observable_object(self, x509_ref: str) -> MISPObject:
+        observable = self.main_parser._observable[x509_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable['misp_object']
+        x509 = observable['observable']
+        x509_object = self._create_misp_object_from_observable_object(
+            'x509', x509
+        )
+        for attribute in super()._parse_x509_observable(x509):
+            x509_object.add_attribute(**attribute)
+        observable['used'][self.event_uuid] = True
+        misp_object = self.main_parser._add_misp_object(x509_object, x509)
         observable['misp_object'] = misp_object
         return misp_object
 
