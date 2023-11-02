@@ -588,15 +588,40 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
     def _parse_ip_address_observable_object(
             self, ip_address_ref: str) -> _MISP_CONTENT_TYPING:
         observable = self.main_parser._observable[ip_address_ref]
-        ip_address = observable['observable']
         if observable['used'].get(self.event_uuid, False):
             return observable.get(
                 'misp_attribute', observable.get('misp_object')
             )
+        ip_address = observable['observable']
         observable['used'][self.event_uuid] = True
         misp_attribute = self.main_parser._add_misp_attribute(
             self._create_misp_attribute('ip-dst', ip_address), ip_address
         )
+        observable['misp_attribute'] = misp_attribute
+        return misp_attribute
+
+    def _parse_mac_address_observable_object(
+            self, mac_address_ref: str) -> MISPAttribute:
+        observable = self.main_parser._observable[mac_address_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable['misp_attribute']
+        mac_address = observable['observable']
+        misp_attribute = self.main_parser._add_misp_attribute(
+            self._create_misp_attribute('mac-address', mac_address), mac_address
+        )
+        observable['used'][self.event_uuid] = True
+        observable['misp_attribute'] = misp_attribute
+        return misp_attribute
+
+    def _parse_mutex_observable_object(self, mutex_ref: str) -> MISPAttribute:
+        observable = self.main_parser._observable[mutex_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable['misp_attribute']
+        mutex = observable['observable']
+        misp_attribute = self.main_parser._add_misp_attribute(
+            self._create_misp_attribute('mutex', mutex), mutex
+        )
+        observable['used'][self.event_uuid] = True
         observable['misp_attribute'] = misp_attribute
         return misp_attribute
 
