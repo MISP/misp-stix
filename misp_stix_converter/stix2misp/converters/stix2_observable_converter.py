@@ -9,7 +9,7 @@ from abc import ABCMeta
 from pymisp import AbstractMISP, MISPAttribute, MISPObject
 from stix2.v21.observables import (
     Artifact, Directory, DomainName, EmailAddress, EmailMessage, File,
-    IPv4Address, IPv6Address, MACAddress, NetworkTraffic, Software,
+    IPv4Address, IPv6Address, MACAddress, NetworkTraffic, Process, Software,
     UserAccount)
 from stix2.v21.sdo import Malware
 from typing import Dict, Optional, TYPE_CHECKING, Tuple, Union
@@ -36,7 +36,7 @@ _NETWORK_TRAFFIC_REFERENCE_TYPING = Union[
 ]
 _OBSERVABLE_TYPING = Union[
     Artifact, Directory, DomainName, EmailMessage, File, NetworkTraffic,
-    Software, UserAccount
+    Process, Software, UserAccount
 ]
 
 
@@ -237,6 +237,26 @@ class STIX2ObservableConverter:
             yield relation, observable.value, {
                 'uuid': self.main_parser._sanitise_uuid(observable.id)
             }
+
+    def _parse_process_observable(self, observable: Process):
+        for field, mapping in self._mapping.process_object_mapping().items():
+            if hasattr(observable, field):
+                yield from self._populate_object_attributes(
+                    mapping, getattr(observable, field), observable.id
+                )
+        for feature in ('environment_variables', 'arguments'):
+            if hasattr(observable, feature):
+                value = ' '.join(
+                    f'{key} {value}' for key, value in
+                    getattr(observable, feature).items()
+                )
+                yield {
+                    'type': 'text', 'object_relation': 'args', 'value': value,
+                    'uuid': self.main_parser._create_v5_uuid(
+                        f'{observable.id} - args - {value}'
+                    )
+                }
+                break
 
     def _parse_software_observable(self, observable: Software):
         for field, mapping in self._mapping.software_object_mapping().items():
@@ -692,6 +712,46 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
         if getattr(observable, 'extensions', {}).get('socket-ext'):
             return '_parse_network_socket_observable_object'
         return '_parse_network_connection_observable_object'
+
+    def _parse_process_observable_object(self, process_ref: str) -> MISPObject:
+        observable = self.main_parser._observable[process_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable['misp_object']
+        process = observable['observable']
+        process_object = self._create_misp_object_from_observable_object(
+            'process', process
+        )
+        for attribute in super()._parse_process_observable(process):
+            process_object.add_attribute(**attribute)
+        observable['used'][self.event_uuid] = True
+        misp_object = self.main_parser._add_misp_object(process_object, process)
+        observable['misp_object'] = misp_object
+        if hasattr(process, 'opened_connection_refs'):
+            for reference in process.opened_connection_refs:
+                network_object = self._parse_network_traffic_observable_object(
+                    reference
+                )
+                misp_object.add_reference(
+                    network_object.uuid, 'opens-connection'
+                )
+        if hasattr(process, 'creator_user_ref'):
+            user_object = self._parse_user_account_observable_object(
+                process.creator_user_ref
+            )
+            user_object.add_reference(misp_object.uuid, 'creates')
+        if hasattr(process, 'image_ref'):
+            file_object = self._parse_file_observable_object(process.image_ref)
+            misp_object.add_reference(file_object.uuid, 'executes')
+        if hasattr(process, 'parent_ref'):
+            parent_object = self._parse_process_observable_object(
+                process.parent_ref
+            )
+            parent_object.add_reference(misp_object.uuid, 'parent-of')
+        if hasattr(process, 'child_refs'):
+            for reference in process.child_refs:
+                child_object = self._parse_process_observable_object(reference)
+                child_object.add_reference(misp_object.uuid, 'child-of')
+        return misp_object
 
     def _parse_software_observable_object(
             self, software_ref: str) -> MISPObject:
