@@ -10,7 +10,7 @@ from pymisp import AbstractMISP, MISPAttribute, MISPObject
 from stix2.v21.observables import (
     Artifact, Directory, DomainName, EmailAddress, EmailMessage, File,
     IPv4Address, IPv6Address, MACAddress, NetworkTraffic, Process, Software,
-    UserAccount)
+    UserAccount, WindowsRegistryKey, WindowsRegistryValueType)
 from stix2.v21.sdo import Malware
 from typing import Dict, Optional, TYPE_CHECKING, Tuple, Union
 
@@ -36,7 +36,7 @@ _NETWORK_TRAFFIC_REFERENCE_TYPING = Union[
 ]
 _OBSERVABLE_TYPING = Union[
     Artifact, Directory, DomainName, EmailMessage, File, NetworkTraffic,
-    Process, Software, UserAccount
+    Process, Software, UserAccount, WindowsRegistryKey
 ]
 
 
@@ -257,6 +257,32 @@ class STIX2ObservableConverter:
                     )
                 }
                 break
+
+    def _parse_registry_key_observable(self, observable: WindowsRegistryKey):
+        mapping = self._mapping.registry_key_object_mapping
+        for field, attribute in mapping().items():
+            if hasattr(observable, field):
+                yield from self._populate_object_attributes(
+                    attribute, getattr(observable, field), observable.id
+                )
+        if len(observable.get('values', [])) == 1:
+            registry_key_value = observable['values'][0]
+            values_mapping = self._mapping.registry_key_values_mapping
+            for field, attribute in values_mapping().items():
+                if hasattr(registry_key_value, field):
+                    yield from self._populate_object_attributes(
+                        attribute, getattr(registry_key_value, field),
+                        observable.id
+                    )
+
+    def _parse_registry_key_value_observable(
+            self, observable: WindowsRegistryValueType, reference: str):
+        mapping = self._mapping.registry_key_values_mapping
+        for field, attribute in mapping().items():
+            if hasattr(observable, field):
+                yield from self._populate_object_attributes(
+                    attribute, getattr(observable, field), reference
+                )
 
     def _parse_software_observable(self, observable: Software):
         for field, mapping in self._mapping.software_object_mapping().items():
@@ -751,6 +777,40 @@ class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
             for reference in process.child_refs:
                 child_object = self._parse_process_observable_object(reference)
                 child_object.add_reference(misp_object.uuid, 'child-of')
+        return misp_object
+
+    def _parse_registry_key_observable_object(self, registry_key_ref: str):
+        observable = self.main_parser._observable[registry_key_ref]
+        if observable['used'].get(self.event_uuid, False):
+            return observable['misp_object']
+        registry_key = observable['observable']
+        registry_key_object = self._create_misp_object_from_observable_object(
+            'registry-key', registry_key
+        )
+        for attribute in super()._parse_registry_key_observable(registry_key):
+            registry_key_object.add_attribute(**attribute)
+        observable['used'][self.event_uuid] = True
+        misp_object = self.main_parser._add_misp_object(
+            registry_key_object, registry_key
+        )
+        observable['misp_object'] = misp_object
+        if len(registry_key.get('values', [])) > 1:
+            object_id = registry_key.id
+            for index, registry_key_value in enumerate(registry_key['values']):
+                value_object = self._create_misp_object('registry-key-value')
+                value_object.from_dict(
+                    uuid=self._create_v5_uuid(
+                        f'{object_id} - values - {index}'
+                    ),
+                    comment=f'Original Windows Registry Key ID: {object_id}'
+                )
+                attributes = super()._parse_registry_key_value_observable(
+                    registry_key_value, value_object.uuid
+                )
+                for attribute in attributes:
+                    value_object.add_attribute(**attribute)
+                misp_object.add_reference(value_object.uuid, 'contains')
+                self.main_parser._add_misp_object(value_object, registry_key)
         return misp_object
 
     def _parse_software_observable_object(
