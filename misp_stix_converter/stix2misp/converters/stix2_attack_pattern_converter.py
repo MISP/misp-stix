@@ -6,7 +6,8 @@ from ..exceptions import UnknownParsingFunctionError
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from .stix2converter import (
-    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter)
+    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,
+    _MAIN_PARSER_TYPING)
 from abc import ABCMeta
 from pymisp import MISPGalaxyCluster
 from stix2.v20.common import ExternalReference as ExternalReference_v20
@@ -24,9 +25,6 @@ _ATTACK_PATTERN_TYPING = Union[
 ]
 _EXTERNAL_REFERENCE_TYPING = Union[
     ExternalReference_v20, ExternalReference_v21
-]
-_MAIN_PARSER_TYPING = Union[
-    'ExternalSTIX2toMISPParser', 'InternalSTIX2toMISPParser'
 ]
 
 
@@ -123,7 +121,7 @@ class InternalSTIX2AttackPatternConverter(
 
     def parse(self, attack_pattern_ref: str):
         attack_pattern = self.main_parser._get_stix_object(attack_pattern_ref)
-        feature = self._handle_object_mapping(
+        feature = self._handle_mapping_from_labels(
             attack_pattern.labels, attack_pattern.id
         )
         try:

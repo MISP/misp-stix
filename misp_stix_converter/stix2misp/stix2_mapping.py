@@ -16,18 +16,18 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         }
     )
     __observable_object_types = (
+        'network-traffic',
+        'file',
+        'email-message',
         'artifact',
         'autonomous-system',
         'directory',
         'domain-name',
         'email-addr',
-        'email-message',
-        'file',
         'ipv4-addr',
         'ipv6-addr',
         'mac-addr',
         'mutex',
-        'network-traffic',
         'process',
         'software',
         'url',

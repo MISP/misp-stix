@@ -8,12 +8,14 @@ from .exceptions import (
     UnavailableGalaxyResourcesError, UnavailableSynonymsResourceError,
     UndefinedIndicatorError, UndefinedSTIXObjectError, UndefinedObservableError,
     UnknownAttributeTypeError, UnknownObjectNameError,
-    UnknownParsingFunctionError, UnknownStixObjectTypeError)
+    UnknownParsingFunctionError, UnknownPatternTypeError,
+    UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import STIXtoMISPParser, _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .converters import (
     ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
+    ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter,
     ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
     InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter)
 from abc import ABCMeta
@@ -110,6 +112,9 @@ _GROUPING_REPORT_TYPING = Union[
 ]
 _IDENTITY_TYPING = Union[
     Identity_v20, Identity_v21
+]
+_INDICATOR_PARSER_TYPING = Union[
+    ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter
 ]
 _INTRUSION_SET_TYPING = Union[
     IntrusionSet_v20, IntrusionSet_v21
@@ -259,6 +264,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     @property
     def generic_info_field(self) -> str:
         return f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
+
+    @property
+    def indicator_parser(self) -> _INDICATOR_PARSER_TYPING:
+        return getattr(self, '_indicator_parser', self._set_indicator_parser())
 
     @property
     def malware_analysis_parser(self) -> _MALWARE_ANALYSIS_PARSER_TYPING:
@@ -498,6 +507,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._unknown_object_name_warning(error)
         except UnknownParsingFunctionError as error:
             self._unknown_parsing_function_error(error)
+        except UnknownPatternTypeError as error:
+            self._unknown_pattern_type_error(object_ref, error)
 
     def _handle_misp_event_tags(
             self, misp_event: MISPEvent, stix_object: _GROUPING_REPORT_TYPING):
@@ -597,6 +608,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if not tags['used'][self.misp_event.uuid]:
                 for tag in tags['tag_names']:
                     self.misp_event.add_tag(tag)
+
+    def _parse_indicator(self, indicator_ref: str):
+        self.indicator_parser.parse(indicator_ref)
 
     def _parse_loaded_features(self):
         for feature in _LOADED_FEATURES:
