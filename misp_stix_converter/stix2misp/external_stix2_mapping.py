@@ -89,13 +89,14 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                     'domain-name_ipv4-addr_ipv6-addr_mac-addr_network-traffic',
                     'domain-name_network-traffic',
                     'domain-name_network-traffic_url',
+                    'ipv4-addr_network-traffic',
+                    'ipv6-addr_network-traffic',
+                    'ipv4-addr_ipv6-addr_network-traffic',
                     'mac-addr_network-traffic',
                     'mac-addr_ipv4-addr_network-traffic',
                     'mac-addr_ipv6-addr_network-traffic',
                     'mac-addr_ipv4-addr_ipv6-addr_network-traffic',
-                    'ipv4-addr_network-traffic',
-                    'ipv6-addr_network-traffic',
-                    'ipv4-addr_ipv6-addr_network-traffic'
+                    'network-traffic'
                 ),
                 'network_traffic'
             ),
