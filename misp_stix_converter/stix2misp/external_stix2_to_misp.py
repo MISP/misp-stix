@@ -316,7 +316,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     unparsed_content[observable_type][0]
                 )
                 continue
-            to_call = f'_parse_{feature}_observable'
+            to_call = f'_parse_{feature}_observable_object'
             for object_id in unparsed_content[observable_type]:
                 if self._observable[object_id]['used'][self.misp_event.uuid]:
                     continue
@@ -999,7 +999,9 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 observable_objects, 'ipv4-addr', 'ipv6-addr'):
             self._parse_asn_observables(observable_objects, observed_data)
         else:
-            self._parse_autonomous_system_observable_objects(observable_objects, observed_data)
+            self._parse_autonomous_system_observable_objects(
+                observable_objects, observed_data
+            )
 
     def _parse_asn_observables(
             self, observable_objects: dict, observed_data: _OBSERVED_DATA_TYPING):
