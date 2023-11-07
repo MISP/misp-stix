@@ -136,11 +136,8 @@ class InternalSTIX2AttackPatternConverter(
     def _parse_attack_pattern_object(
             self, attack_pattern: _ATTACK_PATTERN_TYPING):
         misp_object = self._create_misp_object('attack-pattern', attack_pattern)
-        for key, mapping in self._mapping.attack_pattern_object_mapping().items():
-            if hasattr(attack_pattern, key):
-                self.main_parser._populate_object_attributes(
-                    misp_object, mapping, getattr(attack_pattern, key)
-                )
+        for attribute in self._generic_parser(attack_pattern):
+            misp_object.add_attribute(**attribute)
         if hasattr(attack_pattern, 'external_references'):
             for reference in attack_pattern.external_references:
                 misp_object.add_attribute(

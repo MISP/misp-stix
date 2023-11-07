@@ -82,6 +82,39 @@ class STIX2Converter(metaclass=ABCMeta):
         return cluster
 
     ############################################################################
+    #                     STIX OBJECTS CONVERSION METHODS.                     #
+    ############################################################################
+
+    def _generic_parser(self, stix_object, feature: Optional[str] = None):
+        if feature is None:
+            feature = stix_object.type.replace('-', '_')
+        mapping = getattr(self._mapping, f'{feature}_object_mapping')
+        for field, attribute in mapping().items():
+            if hasattr(stix_object, field):
+                yield from self._populate_object_attributes(
+                    attribute, getattr(stix_object, field), stix_object.id
+                )
+
+    def _populate_object_attributes(
+            self, mapping: dict, values: Union[list, str], object_id: str):
+        reference = f"{object_id} - {mapping['object_relation']}"
+        if isinstance(values, list):
+            for value in values:
+                yield {
+                    'value': value, **mapping,
+                    'uuid': self.main_parser._create_v5_uuid(
+                        f'{reference} - {value}'
+                    )
+                }
+        else:
+            yield {
+                'value': values, **mapping,
+                'uuid': self.main_parser._create_v5_uuid(
+                    f'{reference} - {values}'
+                )
+            }
+
+    ############################################################################
     #                             UTILITY METHODS                             #
     ############################################################################
 

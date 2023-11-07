@@ -313,22 +313,3 @@ class STIX2ObservableConverter:
                     yield from self._populate_object_attributes(
                         attribute, hash_value, observable.id
                     )
-
-    def _populate_object_attributes(
-            self, mapping: dict, values: Union[list, str], observable_id: str):
-        reference = f"{observable_id} - {mapping['object_relation']}"
-        if isinstance(values, list):
-            for value in values:
-                yield {
-                    'value': value, **mapping,
-                    'uuid': self.main_parser._create_v5_uuid(
-                        f'{reference} - {value}'
-                    )
-                }
-        else:
-            yield {
-                'value': values, **mapping,
-                'uuid': self.main_parser._create_v5_uuid(
-                    f'{reference} - {values}'
-                )
-            }
