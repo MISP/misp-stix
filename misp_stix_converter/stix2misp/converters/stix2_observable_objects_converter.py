@@ -35,7 +35,7 @@ _OBSERVABLE_TYPING = Union[
 ]
 
 
-class STIX2ObservableObjectConverter(STIX2Converter, STIX2ObservableConverter):
+class STIX2ObservableObjectConverter(STIX2ObservableConverter):
     def __init__(self, main: 'ExternalSTIX2toMISPParser'):
         self._set_main_parser(main)
         self._mapping = ExternalSTIX2ObservableMapping
