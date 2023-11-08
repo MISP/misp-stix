@@ -15,6 +15,7 @@ from .importparser import STIXtoMISPParser, _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .converters import (
     ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
+    ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter,
     ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter,
     ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
     InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter)
@@ -92,6 +93,9 @@ _ATTACK_PATTERN_TYPING = Union[
 ]
 _CAMPAIGN_TYPING = Union[
     Campaign_v20, Campaign_v21
+]
+_COURSE_OF_ACTION_PARSER_TYPING = Union[
+    ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter
 ]
 _COURSE_OF_ACTION_TYPING = Union[
     CourseOfAction_v20, CourseOfAction_v21
@@ -259,6 +263,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def attack_pattern_parser(self) -> _ATTACK_PATTERN_PARSER_TYPING:
         return getattr(
             self, '_attack_pattern_parser', self._set_attack_pattern_parser()
+        )
+
+    @property
+    def course_of_action_parser(self) -> _COURSE_OF_ACTION_PARSER_TYPING:
+        return getattr(
+            self, '_course_of_action_parser',
+            self._set_course_of_action_parser()
         )
 
     @property
@@ -589,6 +600,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._parse_bundle_with_no_report()
         self._handle_unparsed_content()
 
+    def _parse_course_of_action(self, course_of_action_ref: str):
+        self.course_of_action_parser.parse(course_of_action_ref)
+
     def _parse_galaxies_as_container(self):
         clusters = defaultdict(list)
         for cluster in self._clusters.values():
@@ -726,28 +740,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return meta
         return dict(self._extract_custom_fields(stix_object))
 
-    def _parse_attack_pattern_cluster(
-            self, attack_pattern: _ATTACK_PATTERN_TYPING,
-            galaxy_type: Optional[str] = None,
-            description: Optional[str] = None) -> MISPGalaxyCluster:
-        attack_pattern_args = self._create_cluster_args(
-            attack_pattern, galaxy_type, description=description
-        )
-        meta = self._handle_meta_fields(attack_pattern)
-        if hasattr(attack_pattern, 'external_references'):
-            meta.update(
-                self._handle_external_references(
-                    attack_pattern.external_references
-                )
-            )
-        if hasattr(attack_pattern, 'kill_chain_phases'):
-            meta['kill_chain'] = self._handle_kill_chain_phases(
-                attack_pattern.kill_chain_phases
-            )
-        if meta:
-            attack_pattern_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(attack_pattern_args)
-
     def _parse_campaign_cluster(
             self, campaign: _CAMPAIGN_TYPING,
             galaxy_type: Optional[str] = None,
@@ -763,24 +755,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if meta:
             campaign_args['meta'] = meta
         return self._create_misp_galaxy_cluster(campaign_args)
-
-    def _parse_course_of_action_cluster(
-            self, course_of_action: _COURSE_OF_ACTION_TYPING,
-            galaxy_type: Optional[str] = None,
-            description: Optional[str] = None) -> MISPGalaxyCluster:
-        course_of_action_args = self._create_cluster_args(
-            course_of_action, galaxy_type, description=description
-        )
-        meta = dict(self._extract_custom_fields(course_of_action))
-        if hasattr(course_of_action, 'external_references'):
-            meta.update(
-                self._handle_external_references(
-                    course_of_action.external_references
-                )
-            )
-        if meta:
-            course_of_action_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(course_of_action_args)
 
     def _parse_intrusion_set_cluster(
             self, intrusion_set: _INTRUSION_SET_TYPING,
@@ -799,28 +773,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if meta:
             intrusion_set_args['meta'] = meta
         return self._create_misp_galaxy_cluster(intrusion_set_args)
-
-    def _parse_malware_cluster(
-            self, malware: _MALWARE_TYPING,
-            galaxy_type: Optional[str] = None,
-            description: Optional[str] = None) -> MISPGalaxyCluster:
-        malware_args = self._create_cluster_args(
-            malware, galaxy_type, description=description
-        )
-        meta = self._handle_meta_fields(malware)
-        if hasattr(malware, 'external_references'):
-            meta.update(
-                self._handle_external_references(malware.external_references)
-            )
-        if hasattr(malware, 'kill_chain_phases'):
-            meta['kill_chain'] = self._handle_kill_chain_phases(
-                malware.kill_chain_phases
-            )
-        if hasattr(malware, 'labels'):
-            self._handle_labels(meta, malware.labels)
-        if meta:
-            malware_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(malware_args)
 
     def _parse_threat_actor_cluster(
             self, threat_actor: _THREAT_ACTOR_TYPING,

@@ -507,7 +507,10 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         for reference in external_references:
             if reference.get('url'):
                 meta['refs'].append(reference['url'])
-            feature = 'aliases' if reference.get('source_name') == 'cve' else 'external_id'
+            feature = (
+                'aliases' if reference.get('source_name') == 'cve'
+                else 'external_id'
+            )
             if reference.get('external_id'):
                 meta[feature].append(reference['external_id'])
         if 'external_id' in meta and len(meta['external_id']) == 1:

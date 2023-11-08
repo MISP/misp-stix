@@ -1,5 +1,7 @@
 from .stix2_attack_pattern_converter import (  # noqa
     ExternalSTIX2AttackPatternConverter, InternalSTIX2AttackPatternConverter)
+from .stix2_course_of_action_converter import (  # noqa
+    ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter)
 from .stix2_indicator_converter import (  # noqa
     ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter)
 from .stix2_malware_analysis_converter import (  # noqa
