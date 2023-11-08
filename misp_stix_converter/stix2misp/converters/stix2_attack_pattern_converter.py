@@ -66,14 +66,7 @@ class STIX2AttackPatternConverter(STIX2Converter, metaclass=ABCMeta):
 
 class ExternalSTIX2AttackPatternMapping(
         STIX2AttackPatternMapping, ExternalSTIX2Mapping):
-    __attack_pattern_object_mapping = Mapping(
-        name=STIX2Mapping.name_attribute(),
-        description=STIX2Mapping.summary_attribute()
-    )
-
-    @classmethod
-    def attack_pattern_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__attack_pattern_object_mapping.get(field)
+    pass
 
 
 class ExternalSTIX2AttackPatternConverter(
