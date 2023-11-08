@@ -15,6 +15,7 @@ from .importparser import STIXtoMISPParser, _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .converters import (
     ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
+    ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter,
     ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter,
     ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter,
     ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
@@ -90,6 +91,9 @@ _ATTACK_PATTERN_PARSER_TYPING = Union[
 ]
 _ATTACK_PATTERN_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21
+]
+_CAMPAIGN_PARSER_TYPING = Union[
+    ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter
 ]
 _CAMPAIGN_TYPING = Union[
     Campaign_v20, Campaign_v21
@@ -263,6 +267,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def attack_pattern_parser(self) -> _ATTACK_PATTERN_PARSER_TYPING:
         return getattr(
             self, '_attack_pattern_parser', self._set_attack_pattern_parser()
+        )
+
+    @property
+    def campaign_parser(self) -> _CAMPAIGN_PARSER_TYPING:
+        return getattr(
+            self, '_campaign_parser', self._set_campaign_parser()
         )
 
     @property
@@ -600,6 +610,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._parse_bundle_with_no_report()
         self._handle_unparsed_content()
 
+    def _parse_campaign(self, campaign_ref: str):
+        self.campaign_parser.parse(campaign_ref)
+
     def _parse_course_of_action(self, course_of_action_ref: str):
         self.course_of_action_parser.parse(course_of_action_ref)
 
@@ -739,22 +752,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             meta.update(dict(self._extract_custom_fields(stix_object)))
             return meta
         return dict(self._extract_custom_fields(stix_object))
-
-    def _parse_campaign_cluster(
-            self, campaign: _CAMPAIGN_TYPING,
-            galaxy_type: Optional[str] = None,
-            description: Optional[str] = None) -> MISPGalaxyCluster:
-        campaign_args = self._create_cluster_args(
-            campaign, galaxy_type, description=description
-        )
-        meta = self._handle_meta_fields(campaign)
-        if hasattr(campaign, 'external_references'):
-            meta.update(
-                self._handle_external_references(campaign.external_references)
-            )
-        if meta:
-            campaign_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(campaign_args)
 
     def _parse_intrusion_set_cluster(
             self, intrusion_set: _INTRUSION_SET_TYPING,

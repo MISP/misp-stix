@@ -10,7 +10,7 @@ from .exceptions import (
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import _INDICATOR_TYPING
 from .converters import (
-    ExternalSTIX2AttackPatternConverter, #ExternalSTIX2CampaignConverter,
+    ExternalSTIX2AttackPatternConverter, ExternalSTIX2CampaignConverter,
     ExternalSTIX2CourseOfActionConverter, ExternalSTIX2IndicatorConverter,
     ExternalSTIX2MalwareAnalysisConverter, ExternalSTIX2MalwareConverter,
     STIX2ObservableObjectConverter)
@@ -134,6 +134,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._mapping = ExternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
+        self._campaign_parser: ExternalSTIX2CampaignConverter
         self._course_of_action_parser: ExternalSTIX2CourseOfActionConverter
         self._indicator_parser: ExternalSTIX2IndicatorConverter
         self._malware_analysis_parser: ExternalSTIX2MalwareAnalysisConverter
@@ -150,6 +151,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_attack_pattern_parser(self) -> ExternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
         return self._attack_pattern_parser
+
+    def _set_campaign_parser(self) -> ExternalSTIX2CampaignConverter:
+        self._campaign_parser = ExternalSTIX2CampaignConverter(self)
+        return self._campaign_parser
 
     def _set_course_of_action_parser(self) -> ExternalSTIX2CourseOfActionConverter:
         self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
@@ -331,19 +336,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 except Exception as exception:
                     self._observable_object_error(object_id, exception)
         super()._handle_unparsed_content()
-
-    def _parse_campaign(self, campaign_ref: str):
-        """
-        Campaign object parsing function.
-        We check if the campaign already has been seen by looking at its ID,
-        otherwise we convert it as a MISP Galaxy Cluster
-
-        :param capaign_ref: The Campaign id
-        """
-        if campaign_ref in self._clusters:
-            self._clusters[campaign_ref]['used'][self.misp_event.uuid] = False
-        else:
-            self._clusters[campaign_ref] = self._parse_galaxy(campaign_ref)
 
     def _parse_galaxy(
             self, object_ref: str, object_type: Optional[str]=None) -> dict:

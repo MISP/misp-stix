@@ -9,7 +9,7 @@ from .exceptions import (
 from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .converters import (
-    InternalSTIX2AttackPatternConverter, #InternalSTIX2CampaignConverter,
+    InternalSTIX2AttackPatternConverter, InternalSTIX2CampaignConverter,
     InternalSTIX2CourseOfActionConverter, InternalSTIX2IndicatorConverter,
     InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter)
 from .stix2_to_misp import (
@@ -64,14 +64,20 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._mapping = InternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: InternalSTIX2AttackPatternConverter
+        self._campaign_parser: InternalSTIX2CampaignConverter
         self._course_of_action_parser: InternalSTIX2CourseOfActionConverter
         self._indicator_parser: InternalSTIX2IndicatorConverter
         self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
         self._malware_parser: InternalSTIX2MalwareConverter
+        self._observed_data_parser: InternalSTIX2ObservedDataConverter
 
     def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
         return self._attack_pattern_parser
+
+    def _set_campaign_parser(self) -> InternalSTIX2CampaignConverter:
+        self._campaign_parser = InternalSTIX2CampaignConverter(self)
+        return self._campaign_parser
 
     def _set_course_of_action_parser(self) -> InternalSTIX2CourseOfActionConverter:
         self._course_of_action_parser = InternalSTIX2CourseOfActionConverter(self)
@@ -212,12 +218,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             if to_call is not None:
                 return to_call
         raise UndefinedObservableError(object_id)
-
-    def _parse_campaign(self, campaign_ref: str):
-        campaign = self._get_stix_object(campaign_ref)
-        attribute = self._create_attribute_dict(campaign)
-        attribute['value'] = campaign.name
-        self._add_misp_attribute(attribute, campaign)
 
     def _parse_custom_attribute(self, custom_ref: str):
         custom_attribute = self._get_stix_object(custom_ref)
