@@ -1539,6 +1539,29 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         else:
             self._parse_image_object_observable(misp_object)
 
+    def _parse_intrusion_set_object(self, misp_object: Union[MISPObject, dict]):
+        attributes = self._extract_multiple_object_attributes_with_data_escaped(
+            misp_object['Attribute'],
+            force_single=self._mapping.intrusion_set_single_fields()
+        )
+        intrusion_set_args = {}
+        mapping = self._mapping.intrusion_set_object_mapping
+        for key, feature in mapping('features').items():
+            if attributes.get(key):
+                intrusion_set_args[feature] = attributes.pop(key)
+        for key, feature in mapping('timeline').items():
+            if attributes.get(key):
+                intrusion_set_args[feature] = self._datetime_from_str(
+                    attributes.pop(key)
+                )
+        if attributes:
+            intrusion_set_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
+        self._handle_non_indicator_object(
+            misp_object, intrusion_set_args, 'intrusion-set'
+        )
+
     def _parse_ip_port_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'

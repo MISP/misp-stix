@@ -302,6 +302,31 @@ class TestSTIX2Export(TestSTIX):
         for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
             self.assertEqual(external_ref.url, ref)
 
+    def _check_intrusion_set_object(self, intrusion_set, misp_object, identity_id):
+        self.assertEqual(intrusion_set.type, 'intrusion-set')
+        self.assertEqual(intrusion_set.created_by_ref, identity_id)
+        timestamp = misp_object['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        self.assertEqual(intrusion_set.created, timestamp)
+        self.assertEqual(intrusion_set.modified, timestamp)
+        name, description, alias, *goals, primary, secondary, first_seen, last_seen = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(intrusion_set.name, name)
+        self.assertEqual(intrusion_set.description, description)
+        self.assertEqual(intrusion_set.aliases, [alias])
+        self.assertTrue(
+            all(goal in intrusion_set.goals for goal in goals) and
+            len(intrusion_set.goals) == len(goals)
+        )
+        self.assertEqual(intrusion_set.primary_motivation, primary)
+        self.assertEqual(intrusion_set.secondary_motivations, [secondary])
+        if isinstance(first_seen, str):
+            first_seen = self._datetime_from_str(first_seen)
+        self.assertEqual(intrusion_set.first_seen, first_seen)
+        if isinstance(last_seen, str):
+            last_seen = self._datetime_from_str(last_seen)
+        self.assertEqual(intrusion_set.last_seen, last_seen)
+
     def _check_killchain(self, killchain, category):
         self.assertEqual(killchain['kill_chain_name'], 'misp-category')
         self.assertEqual(killchain['phase_name'], category)
