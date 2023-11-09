@@ -348,6 +348,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | http-request | Domain Name & IPv4/IPv6 Address & Network Traffic Objects |
 | identity | **Identity** |
 | image | Artifact & File Objects |
+| intrusion-set | **Intrusion Set** |
 | ip-port | IPv4/IPv6 Address & Network Traffic Objects |
 | legal-entity | **Identity** |
 | lnk | Artifact & Directory & File Objects |
@@ -536,6 +537,7 @@ The detailed mapping for attributes, with explanations and examples, is availabl
 | http-request | Domain Name & IPv4/IPv6 Address & Network Traffic Objects |
 | identity | **Identity** |
 | image | Artifact & File Objects |
+| intrusion-set | **Intrusion Set** |
 | ip-port | IPv4/IPv6 Address & Network Traffic Objects |
 | legal-entity | **Identity** |
 | lnk | Artifact & Directory & File Objects |
