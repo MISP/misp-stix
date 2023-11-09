@@ -827,7 +827,7 @@ _TEST_COURSE_OF_ACTION_GALAXY = {
     ]
 }
 
-_TEST_INTRUSION_SET = {
+_TEST_INTRUSION_SET_GALAXY = {
     "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
     "name": "Intrusion Set",
     "type": "mitre-intrusion-set",
@@ -1992,6 +1992,66 @@ _TEST_HTTP_REQUEST_OBJECT = {
     ]
 }
 
+_TEST_INTRUSION_SET_OBJECT = {
+    "name": "intrusion-set",
+    "meta-category": "misc",
+    "description": "An Intrusion Set is a grouped set of adversarial behaviors and resources with common properties that is believed to be orchestrated by a single organization",
+    "uuid": "79a012ce-9eac-4249-9e7c-fadddfb6e93d",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "Bobcat Breakin"
+        },
+        {
+            "type": "text",
+            "object_relation": "description",
+            "value": "Incidents usually feature a shared TTP of a bobcat being released within the building containing network access, scaring users to leave their computers without locking them first."
+        },
+        {
+            "type": "text",
+            "object_relation": "aliases",
+            "value": "Zookeeper"
+        },
+        {
+            "type": "text",
+            "object_relation": "goals",
+            "value": "acquisition-theft"
+        },
+        {
+            "type": "text",
+            "object_relation": "goals",
+            "value": "harassment"
+        },
+        {
+            "type": "text",
+            "object_relation": "goals",
+            "value": "damage"
+        },
+        {
+            "type": "text",
+            "object_relation": "primary-motivation",
+            "value": "organizational gain"
+        },
+        {
+            "type": "text",
+            "object_relation": "secondary-motivation",
+            "value": "personal gain"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "first_seen",
+            "value": "2016-04-06T20:03:48.000Z"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "last_seen",
+            "value": "2017-05-15T21:05:06.000Z"
+        }
+    ]
+}
+
 _TEST_IP_PORT_OBJECT = {
     "name": "ip-port",
     "meta-category": "network",
@@ -3129,7 +3189,7 @@ def get_event_with_custom_galaxy():
 def get_event_with_intrusion_set_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
-        deepcopy(_TEST_INTRUSION_SET)
+        deepcopy(_TEST_INTRUSION_SET_GALAXY)
     ]
     return event
 
@@ -4596,6 +4656,14 @@ def get_event_with_image_object():
                 ]
             }
         ]
+    return event
+
+
+def get_event_with_intrusion_set_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_INTRUSION_SET_OBJECT)
+    ]
     return event
 
 
