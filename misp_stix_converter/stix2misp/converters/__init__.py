@@ -6,6 +6,8 @@ from .stix2_course_of_action_converter import (  # noqa
     ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter)
 from .stix2_indicator_converter import (  # noqa
     ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter)
+from .stix2_intrusion_set_converter import (  # noqa
+    ExternalSTIX2IntrusionSetConverter, InternalSTIX2IntrusionSetConverter)
 from .stix2_malware_analysis_converter import (  # noqa
     ExternalSTIX2MalwareAnalysisConverter,
     InternalSTIX2MalwareAnalysisConverter)

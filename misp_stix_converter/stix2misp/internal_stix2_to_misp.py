@@ -11,7 +11,8 @@ from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .converters import (
     InternalSTIX2AttackPatternConverter, InternalSTIX2CampaignConverter,
     InternalSTIX2CourseOfActionConverter, InternalSTIX2IndicatorConverter,
-    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter)
+    InternalSTIX2IntrusionSetConverter, InternalSTIX2MalwareAnalysisConverter,
+    InternalSTIX2MalwareConverter)
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
@@ -67,6 +68,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._campaign_parser: InternalSTIX2CampaignConverter
         self._course_of_action_parser: InternalSTIX2CourseOfActionConverter
         self._indicator_parser: InternalSTIX2IndicatorConverter
+        self._intrusion_set_parser: InternalSTIX2IntrusionSetConverter
         self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
         self._malware_parser: InternalSTIX2MalwareConverter
         self._observed_data_parser: InternalSTIX2ObservedDataConverter
@@ -86,6 +88,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_indicator_parser(self) -> InternalSTIX2IndicatorConverter:
         self._indicator_parser = InternalSTIX2IndicatorConverter(self)
         return self._indicator_parser
+
+    def _set_intrusion_set_parser(self) -> InternalSTIX2IntrusionSetConverter:
+        self._intrusion_set_parser = InternalSTIX2IntrusionSetConverter(self)
+        return self._intrusion_set_parser
 
     def _set_malware_analysis_parser(self) -> InternalSTIX2MalwareAnalysisConverter:
         self._malware_analysis_parser = InternalSTIX2MalwareAnalysisConverter(self)
@@ -290,20 +296,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 parser(identity)
             except Exception as exception:
                 self._identity_error(identity.id, exception)
-
-    def _parse_intrusion_set(self, intrusion_set_ref: str):
-        intrusion_set = self._get_stix_object(intrusion_set_ref)
-        feature = self._handle_object_mapping(
-            intrusion_set.labels, intrusion_set.id
-        )
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(intrusion_set)
-        except Exception as exception:
-            self._intrusion_set_error(intrusion_set.id, exception)
 
     def _parse_location(self, location_ref: str):
         location = self._get_stix_object(location_ref)

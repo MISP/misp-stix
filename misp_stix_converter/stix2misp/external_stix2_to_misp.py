@@ -12,8 +12,8 @@ from .importparser import _INDICATOR_TYPING
 from .converters import (
     ExternalSTIX2AttackPatternConverter, ExternalSTIX2CampaignConverter,
     ExternalSTIX2CourseOfActionConverter, ExternalSTIX2IndicatorConverter,
-    ExternalSTIX2MalwareAnalysisConverter, ExternalSTIX2MalwareConverter,
-    STIX2ObservableObjectConverter)
+    ExternalSTIX2IntrusionSetConverter, ExternalSTIX2MalwareAnalysisConverter,
+    ExternalSTIX2MalwareConverter, STIX2ObservableObjectConverter)
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
@@ -137,6 +137,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._campaign_parser: ExternalSTIX2CampaignConverter
         self._course_of_action_parser: ExternalSTIX2CourseOfActionConverter
         self._indicator_parser: ExternalSTIX2IndicatorConverter
+        self._intrusion_set_parser: ExternalSTIX2IntrusionSetConverter
         self._malware_analysis_parser: ExternalSTIX2MalwareAnalysisConverter
         self._malware_parser: ExternalSTIX2MalwareConverter
         self._observable_object_parser: STIX2ObservableObjectConverter
@@ -163,6 +164,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_indicator_parser(self) -> ExternalSTIX2IndicatorConverter:
         self._indicator_parser = ExternalSTIX2IndicatorConverter(self)
         return self._indicator_parser
+
+    def _set_intrusion_set_parser(self) -> ExternalSTIX2IntrusionSetConverter:
+        self._intrusion_set_parser = ExternalSTIX2IntrusionSetConverter(self)
+        return self._intrusion_set_parser
 
     def _set_malware_analysis_parser(self) -> ExternalSTIX2MalwareAnalysisConverter:
         self._malware_analysis_parser = ExternalSTIX2MalwareAnalysisConverter(self)
@@ -438,21 +443,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if hasattr(identity, feature):
                 for value in getattr(identity, feature):
                     yield feature[:-1], value
-
-    def _parse_intrusion_set(self, intrusion_set_ref: str):
-        """
-        IntrusionSet object parsing function.
-        We check if the intrusion set already has been seen by looking at its
-        ID, otherwise we convert it as a MISP Galaxy Cluster.
-
-        :param intrusion_set_ref: The IntrusionSet id
-        """
-        if intrusion_set_ref in self._clusters:
-            self._clusters[intrusion_set_ref]['used'][self.misp_event.uuid] = False
-        else:
-            self._clusters[intrusion_set_ref] = self._parse_galaxy(
-                intrusion_set_ref
-            )
 
     def _parse_loaded_features(self):
         if hasattr(self, '_observable'):
