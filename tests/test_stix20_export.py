@@ -2721,6 +2721,24 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(artifact.x_misp_url, url)
         self.assertEqual(artifact.x_misp_filename, attachment)
 
+    def _test_event_with_intrusion_set_object(self, event):
+        orgc = event['Orgc']
+        misp_object = deepcopy(event['Object'][0])
+        self.parser.parse_misp_event(event)
+        identity, report, intrusion_set = self.parser.stix_objects
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_ref = self._check_report_features(report, event, identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._assert_multiple_equal(
+            intrusion_set.id,
+            f"intrusion-set--{misp_object['uuid']}",
+            object_ref
+        )
+        self._check_intrusion_set_object(intrusion_set, misp_object, identity_id)
+
     def _test_event_with_ip_port_indicator_object(self, event):
         prefix = 'network-traffic'
         attributes, pattern = self._run_indicator_from_object_tests(event)
@@ -3748,6 +3766,14 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
             observed_data = self.parser.stix_objects[-1]
         )
 
+    def test_event_with_intrusion_set_object(self):
+        event = get_event_with_intrusion_set_object()
+        self._test_event_with_intrusion_set_object(event['Event'])
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            intrusion_set = self.parser.stix_objects[-1]
+        )
+
     def test_event_with_ip_port_indicator_object(self):
         event = get_event_with_ip_port_object()
         self._test_event_with_ip_port_indicator_object(event['Event'])
@@ -4225,6 +4251,12 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event = MISPEvent()
         misp_event.from_dict(**event)
         self._test_event_with_image_observable_object(misp_event)
+
+    def test_event_with_intrusion_set_object(self):
+        event = get_event_with_intrusion_set_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_intrusion_set_object(misp_event)
 
     def test_event_with_ip_port_indicator_object(self):
         event = get_event_with_ip_port_object()
