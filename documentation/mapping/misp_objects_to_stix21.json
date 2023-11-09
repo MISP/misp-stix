@@ -2517,6 +2517,98 @@
             ]
         }
     },
+    "intrusion-set": {
+        "MISP": {
+            "name": "intrusion-set",
+            "meta-category": "misc",
+            "description": "An Intrusion Set is a grouped set of adversarial behaviors and resources with common properties that is believed to be orchestrated by a single organization",
+            "uuid": "79a012ce-9eac-4249-9e7c-fadddfb6e93d",
+            "timestamp": "1603642920",
+            "Attribute": [
+                {
+                    "type": "text",
+                    "object_relation": "name",
+                    "value": "Bobcat Breakin"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "description",
+                    "value": "Incidents usually feature a shared TTP of a bobcat being released within the building containing network access, scaring users to leave their computers without locking them first."
+                },
+                {
+                    "type": "text",
+                    "object_relation": "aliases",
+                    "value": "Zookeeper"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "goals",
+                    "value": "acquisition-theft"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "goals",
+                    "value": "harassment"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "goals",
+                    "value": "damage"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "primary-motivation",
+                    "value": "organizational gain"
+                },
+                {
+                    "type": "text",
+                    "object_relation": "secondary-motivation",
+                    "value": "personal gain"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "first_seen",
+                    "value": "2016-04-06T20:03:48.000Z"
+                },
+                {
+                    "type": "datetime",
+                    "object_relation": "last_seen",
+                    "value": "2017-05-15T21:05:06.000Z"
+                }
+            ]
+        },
+        "STIX": {
+            "Intrusion Set": {
+                "type": "intrusion-set",
+                "spec_version": "2.1",
+                "id": "intrusion-set--79a012ce-9eac-4249-9e7c-fadddfb6e93d",
+                "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+                "created": "2020-10-25T16:22:00.000Z",
+                "modified": "2020-10-25T16:22:00.000Z",
+                "name": "Bobcat Breakin",
+                "description": "Incidents usually feature a shared TTP of a bobcat being released within the building containing network access, scaring users to leave their computers without locking them first.",
+                "aliases": [
+                    "Zookeeper"
+                ],
+                "first_seen": "2016-04-06T20:03:48Z",
+                "last_seen": "2017-05-15T21:05:06Z",
+                "goals": [
+                    "acquisition-theft",
+                    "harassment",
+                    "damage"
+                ],
+                "primary_motivation": "organizational gain",
+                "secondary_motivations": [
+                    "personal gain"
+                ],
+                "labels": [
+                    "misp:name=\"intrusion-set\"",
+                    "misp:meta-category=\"misc\"",
+                    "misp:to_ids=\"False\""
+                ]
+            }
+        }
+    },
     "ip-port": {
         "MISP": {
             "name": "ip-port",
