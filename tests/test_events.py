@@ -5468,7 +5468,8 @@ def get_attributes_feed():
                 "value": "1.1.1.1"
             },
             "Event": {
-                "uuid": "a6ef17d6-91cb-4a05-b10b-2f045daf874c","info": "MISP-STIX-Converter test event",
+                "uuid": "a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+                "info": "MISP-STIX-Converter test event",
                 "date": "2020-10-25",
                 "timestamp": "1603642920",
                 "Orgc": {
