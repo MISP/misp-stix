@@ -3679,7 +3679,6 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
             timestamp = self._datetime_from_timestamp(timestamp)
         identity_id = self._check_identity_features(identity, orgc, timestamp)
         object_ref = self._check_grouping_features(grouping, event, identity_id)[0]
-        print(self.parser.errors)
         self._assert_multiple_equal(
             intrusion_set.id,
             grouping['object_refs'][0],
