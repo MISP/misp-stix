@@ -310,7 +310,7 @@ class TestSTIX2Export(TestSTIX):
             timestamp = self._datetime_from_timestamp(timestamp)
         self.assertEqual(intrusion_set.created, timestamp)
         self.assertEqual(intrusion_set.modified, timestamp)
-        name, description, alias, *goals, primary, secondary, first_seen, last_seen = (attribute['value'] for attribute in misp_object['Attribute'])
+        name, description, alias, *goals, level, primary, secondary, first_seen, last_seen = (attribute['value'] for attribute in misp_object['Attribute'])
         self.assertEqual(intrusion_set.name, name)
         self.assertEqual(intrusion_set.description, description)
         self.assertEqual(intrusion_set.aliases, [alias])
@@ -318,6 +318,7 @@ class TestSTIX2Export(TestSTIX):
             all(goal in intrusion_set.goals for goal in goals) and
             len(intrusion_set.goals) == len(goals)
         )
+        self.assertEqual(intrusion_set.resource_level, level)
         self.assertEqual(intrusion_set.primary_motivation, primary)
         self.assertEqual(intrusion_set.secondary_motivations, [secondary])
         if isinstance(first_seen, str):
