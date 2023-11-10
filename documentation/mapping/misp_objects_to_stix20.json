@@ -2400,6 +2400,11 @@
                 },
                 {
                     "type": "text",
+                    "object_relation": "resource_level",
+                    "value": "organization"
+                },
+                {
+                    "type": "text",
                     "object_relation": "primary-motivation",
                     "value": "organizational gain"
                 },
@@ -2439,6 +2444,7 @@
                     "harassment",
                     "damage"
                 ],
+                "resource_level": "organization",
                 "primary_motivation": "organizational gain",
                 "secondary_motivations": [
                     "personal gain"
