@@ -1053,6 +1053,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'gitlab-user': '_object_from_gitlab_user',
             'http-request': '_object_from_http_request',
             'image': '_object_from_image',
+            'intrusion-set': '_parse_intrusion_set_object',
             'ip-port': '_object_from_ip_port',
             'legal-entity': '_parse_legal_entity_object',
             'lnk': '_object_from_lnk',
