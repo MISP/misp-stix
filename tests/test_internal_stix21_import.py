@@ -2365,6 +2365,19 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data = [observed_data, file_object, artifact]
         )
 
+    def test_stix21_bundle_with_intrusion_set_object(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_intrusion_set_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, intrusion_set = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        self._check_intrusion_set_object(misp_object, intrusion_set)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            intrusion_set = intrusion_set
+        )
+
     def test_stix21_bundle_with_ip_port_indicator_object(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_ip_port_indicator_object()
         self.parser.load_stix_bundle(bundle)

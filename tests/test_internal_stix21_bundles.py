@@ -5316,6 +5316,36 @@ _INTRUSION_SET_GALAXY = {
         }
     ]
 }
+_INTRUSION_SET_OBJECT = {
+    "type": "intrusion-set",
+    "spec_version": "2.1",
+    "id": "intrusion-set--79a012ce-9eac-4249-9e7c-fadddfb6e93d",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Bobcat Breakin",
+    "description": "Incidents usually feature a shared TTP of a bobcat being released within the building containing network access, scaring users to leave their computers without locking them first.",
+    "aliases": [
+        "Zookeeper"
+    ],
+    "first_seen": "2016-04-06T20:03:48Z",
+    "last_seen": "2017-05-15T21:05:06Z",
+    "goals": [
+        "acquisition-theft",
+        "harassment",
+        "damage"
+    ],
+    "resource_level": "organization",
+    "primary_motivation": "organizational gain",
+    "secondary_motivations": [
+        "personal gain"
+    ],
+    "labels": [
+        "misp:name=\"intrusion-set\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _IP_INDICATOR_ATTRIBUTES = [
     {
         "type": "indicator",
@@ -8264,6 +8294,10 @@ class TestInternalSTIX21Bundles:
         with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
             observables[-1]['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(*observables)
+
+    @classmethod
+    def get_bundle_with_intrusion_set_object(cls):
+        return cls.__assemble_bundle(_INTRUSION_SET_OBJECT)
 
     @classmethod
     def get_bundle_with_ip_port_indicator_object(cls):
