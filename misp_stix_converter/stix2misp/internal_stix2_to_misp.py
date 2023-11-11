@@ -71,7 +71,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._intrusion_set_parser: InternalSTIX2IntrusionSetConverter
         self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
         self._malware_parser: InternalSTIX2MalwareConverter
-        self._observed_data_parser: InternalSTIX2ObservedDataConverter
 
     def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
