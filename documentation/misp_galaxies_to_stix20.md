@@ -127,7 +127,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "name": "Ghost",
-            "description": "List of known vulnerabilities and exploits | The GHOST vulnerability is a serious weakness in the Linux glibc library.",
+            "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
             "labels": [
                 "misp:galaxy-name=\"Branded Vulnerability\"",
                 "misp:galaxy-type=\"branded-vulnerability\""
@@ -189,7 +189,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "name": "Automated Exfiltration Mitigation - T1020",
-            "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+            "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
             "labels": [
                 "misp:galaxy-name=\"Course of Action\"",
                 "misp:galaxy-type=\"mitre-course-of-action\""
@@ -277,7 +277,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "name": "APT16 - G0023",
-            "description": "Name of ATT&CK Group | APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
+            "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
             "aliases": [
                 "APT16"
             ],
@@ -359,7 +359,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "name": "BISCUIT - S0017",
-            "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+            "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
             "labels": [
                 "misp:galaxy-name=\"Malware\"",
                 "misp:galaxy-type=\"mitre-malware\""
@@ -428,7 +428,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "name": "Test malware in various execution environments - PRE-T1134",
-            "description": "ATT&CK Tactic | Malware may perform differently on different platforms and different operating systems.",
+            "description": "Malware may perform differently on different platforms and different operating systems.",
             "kill_chain_phases": [
                 {
                     "kill_chain_name": "mitre-pre-attack",
@@ -500,7 +500,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "name": "Cutting Kitten",
-            "description": "Threat actors are characteristics of malicious actors. | These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
+            "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
             "aliases": [
                 "Ghambar"
             ],
@@ -574,7 +574,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
             "name": "cmd - S0106",
-            "description": "Name of ATT&CK software | cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
+            "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
             "labels": [
                 "misp:galaxy-name=\"Tool\"",
                 "misp:galaxy-type=\"mitre-tool\""

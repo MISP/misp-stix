@@ -9,8 +9,10 @@ from .exceptions import (
 from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .converters import (
-    InternalSTIX2AttackPatternConverter, InternalSTIX2IndicatorConverter,
-    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter)
+    InternalSTIX2AttackPatternConverter, InternalSTIX2CampaignConverter,
+    InternalSTIX2CourseOfActionConverter, InternalSTIX2IndicatorConverter,
+    InternalSTIX2IntrusionSetConverter, InternalSTIX2MalwareAnalysisConverter,
+    InternalSTIX2MalwareConverter)
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
@@ -18,13 +20,11 @@ from .stix2_to_misp import (
 from collections import defaultdict
 from copy import deepcopy
 from pymisp import MISPGalaxy, MISPGalaxyCluster, MISPObject, MISPSighting
-from stix2.v20.common import ExternalReference as ExternalReference_v20
 from stix2.v20.observables import (
     Process as Process_v20, WindowsPEBinaryExt as WindowsExtension_v20)
 from stix2.v20.sdo import (
     CustomObject as CustomObject_v20, Malware as Malware_v20,
     ObservedData as ObservedData_v20, Tool as Tool_v20)
-from stix2.v21.common import ExternalReference as ExternalReference_v21
 from stix2.v21.observables import (
     DomainName, Process as Process_v21, WindowsPEBinaryExt as WindowsExtension_v21)
 from stix2.v21.sdo import (
@@ -47,10 +47,6 @@ _EXTENSION_TYPING = Union[
     WindowsExtension_v20,
     WindowsExtension_v21
 ]
-_EXTERNAL_REFERENCE_TYPING = [
-    ExternalReference_v20,
-    ExternalReference_v21
-]
 _PROCESS_TYPING = Union[
     Process_v20,
     Process_v21
@@ -69,7 +65,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._mapping = InternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: InternalSTIX2AttackPatternConverter
+        self._campaign_parser: InternalSTIX2CampaignConverter
+        self._course_of_action_parser: InternalSTIX2CourseOfActionConverter
         self._indicator_parser: InternalSTIX2IndicatorConverter
+        self._intrusion_set_parser: InternalSTIX2IntrusionSetConverter
         self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
         self._malware_parser: InternalSTIX2MalwareConverter
 
@@ -77,9 +76,21 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
         return self._attack_pattern_parser
 
+    def _set_campaign_parser(self) -> InternalSTIX2CampaignConverter:
+        self._campaign_parser = InternalSTIX2CampaignConverter(self)
+        return self._campaign_parser
+
+    def _set_course_of_action_parser(self) -> InternalSTIX2CourseOfActionConverter:
+        self._course_of_action_parser = InternalSTIX2CourseOfActionConverter(self)
+        return self._course_of_action_parser
+
     def _set_indicator_parser(self) -> InternalSTIX2IndicatorConverter:
         self._indicator_parser = InternalSTIX2IndicatorConverter(self)
         return self._indicator_parser
+
+    def _set_intrusion_set_parser(self) -> InternalSTIX2IntrusionSetConverter:
+        self._intrusion_set_parser = InternalSTIX2IntrusionSetConverter(self)
+        return self._intrusion_set_parser
 
     def _set_malware_analysis_parser(self) -> InternalSTIX2MalwareAnalysisConverter:
         self._malware_analysis_parser = InternalSTIX2MalwareAnalysisConverter(self)
@@ -213,26 +224,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 return to_call
         raise UndefinedObservableError(object_id)
 
-    def _parse_campaign(self, campaign_ref: str):
-        campaign = self._get_stix_object(campaign_ref)
-        attribute = self._create_attribute_dict(campaign)
-        attribute['value'] = campaign.name
-        self._add_misp_attribute(attribute, campaign)
-
-    def _parse_course_of_action(self, course_of_action_ref: str):
-        course_of_action = self._get_stix_object(course_of_action_ref)
-        feature = self._handle_object_mapping(
-            course_of_action.labels, course_of_action.id
-        )
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(course_of_action)
-        except Exception as exception:
-            self._course_of_action_error(course_of_action.id, exception)
-
     def _parse_custom_attribute(self, custom_ref: str):
         custom_attribute = self._get_stix_object(custom_ref)
         attribute = {
@@ -304,20 +295,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 parser(identity)
             except Exception as exception:
                 self._identity_error(identity.id, exception)
-
-    def _parse_intrusion_set(self, intrusion_set_ref: str):
-        intrusion_set = self._get_stix_object(intrusion_set_ref)
-        feature = self._handle_object_mapping(
-            intrusion_set.labels, intrusion_set.id
-        )
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(intrusion_set)
-        except Exception as exception:
-            self._intrusion_set_error(intrusion_set.id, exception)
 
     def _parse_location(self, location_ref: str):
         location = self._get_stix_object(location_ref)

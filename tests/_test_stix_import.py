@@ -1399,6 +1399,36 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(url.object_relation, 'url')
         self.assertEqual(url.value, artifact.x_misp_url)
 
+    def _check_intrusion_set_object(self, misp_object, intrusion_set):
+        self.assertEqual(misp_object.uuid, intrusion_set.id.split('--')[1])
+        self.assertEqual(misp_object.name, intrusion_set.type)
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            intrusion_set.created,
+            intrusion_set.modified
+        )
+        self._check_object_labels(misp_object, intrusion_set.labels, False)
+        name, description, alias, first_seen, *goals, last_seen, level, primary, secondary = misp_object.attributes
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, intrusion_set.name)
+        self.assertEqual(description.object_relation, 'description')
+        self.assertEqual(description.value, intrusion_set.description)
+        self.assertEqual(alias.object_relation, 'aliases')
+        self.assertEqual(alias.value, intrusion_set.aliases[0])
+        self.assertEqual(first_seen.object_relation, 'first_seen')
+        self.assertEqual(first_seen.value, intrusion_set.first_seen)
+        for n, goal in enumerate(goals):
+            self.assertEqual(goal.object_relation, 'goals')
+            self.assertEqual(goal.value, intrusion_set.goals[n])
+        self.assertEqual(last_seen.object_relation, 'last_seen')
+        self.assertEqual(last_seen.value, intrusion_set.last_seen)
+        self.assertEqual(level.object_relation, 'resource_level')
+        self.assertEqual(level.value, intrusion_set.resource_level)
+        self.assertEqual(primary.object_relation, 'primary-motivation')
+        self.assertEqual(primary.value, intrusion_set.primary_motivation)
+        self.assertEqual(secondary.object_relation, 'secondary-motivation')
+        self.assertEqual(secondary.value, intrusion_set.secondary_motivations[0])
+
     def _check_ip_port_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)
         _, ip_ref, _, domain_ref, dst_port, start = pattern[1:-1].split(' AND ')
