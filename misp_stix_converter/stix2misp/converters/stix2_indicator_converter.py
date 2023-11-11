@@ -1988,12 +1988,8 @@ class InternalSTIX2IndicatorConverter(
             else indicator.pattern_type
         )
         misp_object = self._create_misp_object(name, indicator)
-        mapping = getattr(self._mapping, f'{name}_object_mapping')
-        for key, attribute in mapping().items():
-            if hasattr(indicator, key):
-                self.main_parser._populate_object_attributes(
-                    misp_object, attribute, getattr(indicator, key)
-                )
+        for attribute in self._generic_parser(indicator, feature=name):
+            misp_object.add_attribute(**attribute)
         if hasattr(indicator, 'external_references') and \
                 name in ('sigma', 'suricata'):
             for reference in indicator.external_references:

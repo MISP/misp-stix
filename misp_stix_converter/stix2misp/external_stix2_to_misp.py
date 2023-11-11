@@ -10,9 +10,10 @@ from .exceptions import (
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import _INDICATOR_TYPING
 from .converters import (
-    ExternalSTIX2AttackPatternConverter, ExternalSTIX2IndicatorConverter,
-    ExternalSTIX2MalwareAnalysisConverter, ExternalSTIX2MalwareConverter,
-    STIX2ObservableObjectConverter)
+    ExternalSTIX2AttackPatternConverter, ExternalSTIX2CampaignConverter,
+    ExternalSTIX2CourseOfActionConverter, ExternalSTIX2IndicatorConverter,
+    ExternalSTIX2IntrusionSetConverter, ExternalSTIX2MalwareAnalysisConverter,
+    ExternalSTIX2MalwareConverter, STIX2ObservableObjectConverter)
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
@@ -133,7 +134,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._mapping = ExternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
+        self._campaign_parser: ExternalSTIX2CampaignConverter
+        self._course_of_action_parser: ExternalSTIX2CourseOfActionConverter
         self._indicator_parser: ExternalSTIX2IndicatorConverter
+        self._intrusion_set_parser: ExternalSTIX2IntrusionSetConverter
         self._malware_analysis_parser: ExternalSTIX2MalwareAnalysisConverter
         self._malware_parser: ExternalSTIX2MalwareConverter
         self._observable_object_parser: STIX2ObservableObjectConverter
@@ -149,9 +153,21 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
         return self._attack_pattern_parser
 
+    def _set_campaign_parser(self) -> ExternalSTIX2CampaignConverter:
+        self._campaign_parser = ExternalSTIX2CampaignConverter(self)
+        return self._campaign_parser
+
+    def _set_course_of_action_parser(self) -> ExternalSTIX2CourseOfActionConverter:
+        self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
+        return self._course_of_action_parser
+
     def _set_indicator_parser(self) -> ExternalSTIX2IndicatorConverter:
         self._indicator_parser = ExternalSTIX2IndicatorConverter(self)
         return self._indicator_parser
+
+    def _set_intrusion_set_parser(self) -> ExternalSTIX2IntrusionSetConverter:
+        self._intrusion_set_parser = ExternalSTIX2IntrusionSetConverter(self)
+        return self._intrusion_set_parser
 
     def _set_malware_analysis_parser(self) -> ExternalSTIX2MalwareAnalysisConverter:
         self._malware_analysis_parser = ExternalSTIX2MalwareAnalysisConverter(self)
@@ -326,70 +342,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     self._observable_object_error(object_id, exception)
         super()._handle_unparsed_content()
 
-    def _parse_campaign(self, campaign_ref: str):
-        """
-        Campaign object parsing function.
-        We check if the campaign already has been seen by looking at its ID,
-        otherwise we convert it as a MISP Galaxy Cluster
-
-        :param capaign_ref: The Campaign id
-        """
-        if campaign_ref in self._clusters:
-            self._clusters[campaign_ref]['used'][self.misp_event.uuid] = False
-        else:
-            self._clusters[campaign_ref] = self._parse_galaxy(campaign_ref)
-
-    def _parse_course_of_action(self, course_of_action_ref: str):
-        """
-        CourseOfAction object parsing function.
-        We check if the course of action already has been seen by looking at its
-        ID, otherwise we convert it as a MISP Galaxy Cluster.
-
-        :param course_of_action_ref: The CourseOfAction id
-        """
-        if course_of_action_ref in self._clusters:
-            self._clusters[course_of_action_ref]['used'][self.misp_event.uuid] = False
-        else:
-            self._clusters[course_of_action_ref] = self._parse_galaxy(
-                course_of_action_ref
-            )
-
-    def _parse_course_of_action_object(self, course_of_action: _COURSE_OF_ACTION_TYPING):
-        """
-        # Not currently used, but if we can ever make use of the `action` field
-        # in the STIX 2 CourseOfAction object, we might use this function again
-
-        CourseOfAction object conversion as MISP object function.
-        We found no match with any Galaxy Cluster name, so we now parse this
-        CourseOfAction object to generate an attack-pattern MISP object.
-
-        :param course_of_action: The CourseOfAction object to parse
-        """
-        attributes = tuple(
-            self._get_attributes_from_generic_SDO(
-                course_of_action, 'course_of_action_object_mapping'
-            )
-        )
-        if attributes:
-            misp_object = self._create_misp_object('course-of-action', course_of_action)
-            if hasattr(course_of_action, 'object_marking_refs'):
-                tags = tuple(
-                    self._parse_markings(course_of_action.object_marking_refs)
-                )
-                for attribute in attributes:
-                    misp_attribute = misp_object.add_attribute(**attribute)
-                    for tag in tags:
-                        misp_attribute.add_tag(tag)
-            else:
-                for attribute in attributes:
-                    misp_object.add_attribute(**attribute)
-            self._add_misp_object(misp_object, course_of_action)
-        else:
-            self._clusters[course_of_action.id] = {
-                'tag_names': [f'misp-galaxy:course-of-action="{course_of_action.name}"'],
-                'used': {self.misp_event.uuid: False}
-            }
-
     def _parse_galaxy(
             self, object_ref: str, object_type: Optional[str]=None) -> dict:
         if object_type is None:
@@ -491,21 +443,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             if hasattr(identity, feature):
                 for value in getattr(identity, feature):
                     yield feature[:-1], value
-
-    def _parse_intrusion_set(self, intrusion_set_ref: str):
-        """
-        IntrusionSet object parsing function.
-        We check if the intrusion set already has been seen by looking at its
-        ID, otherwise we convert it as a MISP Galaxy Cluster.
-
-        :param intrusion_set_ref: The IntrusionSet id
-        """
-        if intrusion_set_ref in self._clusters:
-            self._clusters[intrusion_set_ref]['used'][self.misp_event.uuid] = False
-        else:
-            self._clusters[intrusion_set_ref] = self._parse_galaxy(
-                intrusion_set_ref
-            )
 
     def _parse_loaded_features(self):
         if hasattr(self, '_observable'):
@@ -875,7 +812,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 f'{observable_object.id} - {references}', observed_data_id
             )
         return self._fill_observable_object_attribute(
-            f'{observed_data_id} - {object_id} - {references}', observed_data_id
+            f'{observed_data_id} - {object_id} - {references}',
+            observed_data_id
         )
 
     def _handle_observable_attribute(

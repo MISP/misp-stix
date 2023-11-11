@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ... import Mapping
+from .stix2converter import STIX2Converter
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
@@ -84,7 +85,7 @@ class InternalSTIX2ObservableMapping(
     pass
 
 
-class STIX2ObservableConverter:
+class STIX2ObservableConverter(STIX2Converter):
     def _parse_artifact_observable(self, observable: Artifact):
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
@@ -313,22 +314,3 @@ class STIX2ObservableConverter:
                     yield from self._populate_object_attributes(
                         attribute, hash_value, observable.id
                     )
-
-    def _populate_object_attributes(
-            self, mapping: dict, values: Union[list, str], observable_id: str):
-        reference = f"{observable_id} - {mapping['object_relation']}"
-        if isinstance(values, list):
-            for value in values:
-                yield {
-                    'value': value, **mapping,
-                    'uuid': self.main_parser._create_v5_uuid(
-                        f'{reference} - {value}'
-                    )
-                }
-        else:
-            yield {
-                'value': values, **mapping,
-                'uuid': self.main_parser._create_v5_uuid(
-                    f'{reference} - {values}'
-                )
-            }

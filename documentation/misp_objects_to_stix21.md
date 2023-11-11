@@ -2730,6 +2730,11 @@ For the rest of this documentation, we will then, in order to keep the content c
             },
             {
                 "type": "text",
+                "object_relation": "resource_level",
+                "value": "organization"
+            },
+            {
+                "type": "text",
                 "object_relation": "primary-motivation",
                 "value": "organizational gain"
             },
@@ -2773,6 +2778,7 @@ For the rest of this documentation, we will then, in order to keep the content c
               "harassment",
               "damage"
           ],
+          "resource_level": "organization",
           "primary_motivation": "organizational gain",
           "secondary_motivations": [
               "personal gain"

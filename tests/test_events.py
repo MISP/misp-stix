@@ -2031,6 +2031,11 @@ _TEST_INTRUSION_SET_OBJECT = {
         },
         {
             "type": "text",
+            "object_relation": "resource_level",
+            "value": "organization"
+        },
+        {
+            "type": "text",
             "object_relation": "primary-motivation",
             "value": "organizational gain"
         },

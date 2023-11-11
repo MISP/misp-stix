@@ -470,13 +470,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     )
 
     # MISP GALAXIES MAPPING
-    __attack_pattern_meta_mapping = Mapping(
-        aliases='synonyms'
-    )
-    __campaign_meta_mapping = Mapping(
-        aliases='synonyms',
-        objective='objective'
-    )
     __dash_meta_fields = (
         'x_misp_attribution_confidence',
         'x_misp_calling_code',
@@ -501,13 +494,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         'x_misp_territory_type',
         'x_misp_threat_actor_classification',
         'x_misp_top_level_domain'
-    )
-    __intrusion_set_meta_mapping = Mapping(
-        aliases='synonyms',
-        goals='goals',
-        primary_motivation='primary_motivation',
-        resource_level='resource_level',
-        secondary_motivations='secondary_motivations'
     )
     __malware_meta_mapping = Mapping(
         aliases='synonyms',
@@ -647,16 +633,8 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__attack_pattern_id_attribute
 
     @classmethod
-    def attack_pattern_meta_mapping(cls) -> dict:
-        return cls.__attack_pattern_meta_mapping
-
-    @classmethod
     def bundle_to_misp_mapping(cls, field: str) -> Union[str, None]:
         return cls.__bundle_to_misp_mapping.get(field)
-
-    @classmethod
-    def campaign_meta_mapping(cls) -> dict:
-        return cls.__campaign_meta_mapping
 
     @classmethod
     def can_escalate_privs_attribute(cls) -> dict:
@@ -809,10 +787,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     @classmethod
     def imphash_attribute(cls) -> dict:
         return cls.__imphash_attribute
-
-    @classmethod
-    def intrusion_set_meta_mapping(cls) -> dict:
-        return cls.__intrusion_set_meta_mapping
 
     @classmethod
     def ip_attribute(cls) -> dict:

@@ -82,6 +82,39 @@ class STIX2Converter(metaclass=ABCMeta):
         return cluster
 
     ############################################################################
+    #                     STIX OBJECTS CONVERSION METHODS.                     #
+    ############################################################################
+
+    def _generic_parser(self, stix_object, feature: Optional[str] = None):
+        if feature is None:
+            feature = stix_object.type.replace('-', '_')
+        mapping = getattr(self._mapping, f'{feature}_object_mapping')
+        for field, attribute in mapping().items():
+            if hasattr(stix_object, field):
+                yield from self._populate_object_attributes(
+                    attribute, getattr(stix_object, field), stix_object.id
+                )
+
+    def _populate_object_attributes(
+            self, mapping: dict, values: Union[list, str], object_id: str):
+        reference = f"{object_id} - {mapping['object_relation']}"
+        if isinstance(values, list):
+            for value in values:
+                yield {
+                    'value': value, **mapping,
+                    'uuid': self.main_parser._create_v5_uuid(
+                        f'{reference} - {value}'
+                    )
+                }
+        else:
+            yield {
+                'value': values, **mapping,
+                'uuid': self.main_parser._create_v5_uuid(
+                    f'{reference} - {values}'
+                )
+            }
+
+    ############################################################################
     #                             UTILITY METHODS                             #
     ############################################################################
 
@@ -474,7 +507,10 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         for reference in external_references:
             if reference.get('url'):
                 meta['refs'].append(reference['url'])
-            feature = 'aliases' if reference.get('source_name') == 'cve' else 'external_id'
+            feature = (
+                'aliases' if reference.get('source_name') == 'cve'
+                else 'external_id'
+            )
             if reference.get('external_id'):
                 meta[feature].append(reference['external_id'])
         if 'external_id' in meta and len(meta['external_id']) == 1:
