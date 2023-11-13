@@ -20,7 +20,8 @@ from .converters import (
     ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter,
     ExternalSTIX2IntrusionSetConverter, InternalSTIX2IntrusionSetConverter,
     ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
-    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter)
+    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter,
+    ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter)
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
@@ -165,6 +166,9 @@ _SDO_TYPING = Union[
 ]
 _SIGHTING_TYPING = Union[
     Sighting_v20, Sighting_v21
+]
+_THREAT_ACTOR_PARSER_TYPING = Union[
+    ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter
 ]
 _THREAT_ACTOR_TYPING = Union[
     ThreatActor_v20, ThreatActor_v21
@@ -328,6 +332,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     @property
     def stix_version(self) -> str:
         return self.__stix_version
+
+    @property
+    def threat_actor_parser(self) -> _THREAT_ACTOR_PARSER_TYPING:
+        return getattr(
+            self, '_threat_actor_parser', self._set_threat_actor_parser()
+        )
 
     ################################################################################
     #                        STIX OBJECTS LOADING FUNCTIONS                        #
@@ -691,6 +701,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_malware_analysis(self, malware_analysis_ref: str):
         self.malware_analysis_parser.parse(malware_analysis_ref)
 
+    def _parse_threat_actor(self, threat_actor_ref: str):
+        self.threat_actor_parser.parse(threat_actor_ref)
+
     ################################################################################
     #                  MISP GALAXIES & CLUSTERS PARSING FUNCTIONS                  #
     ################################################################################
@@ -765,26 +778,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             meta.update(dict(self._extract_custom_fields(stix_object)))
             return meta
         return dict(self._extract_custom_fields(stix_object))
-
-    def _parse_threat_actor_cluster(
-            self, threat_actor: _THREAT_ACTOR_TYPING,
-            galaxy_type: Optional[str] = None,
-            description: Optional[str] = None) -> MISPGalaxyCluster:
-        threat_actor_args = self._create_cluster_args(
-            threat_actor, galaxy_type, description=description
-        )
-        meta = self._handle_meta_fields(threat_actor)
-        if hasattr(threat_actor, 'external_references'):
-            meta.update(
-                self._handle_external_references(
-                    threat_actor.external_references
-                )
-            )
-        if hasattr(threat_actor, 'labels'):
-            self._handle_labels(meta, threat_actor.labels)
-        if meta:
-            threat_actor_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(threat_actor_args)
 
     def _parse_tool_cluster(
             self, tool: _TOOL_TYPING, galaxy_type: Optional[str] = None,

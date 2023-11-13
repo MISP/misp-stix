@@ -12,7 +12,7 @@ from .converters import (
     InternalSTIX2AttackPatternConverter, InternalSTIX2CampaignConverter,
     InternalSTIX2CourseOfActionConverter, InternalSTIX2IndicatorConverter,
     InternalSTIX2IntrusionSetConverter, InternalSTIX2MalwareAnalysisConverter,
-    InternalSTIX2MalwareConverter)
+    InternalSTIX2MalwareConverter, InternalSTIX2ThreatActorConverter)
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
@@ -72,6 +72,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
         self._malware_parser: InternalSTIX2MalwareConverter
         self._observed_data_parser: InternalSTIX2ObservedDataConverter
+        self._threat_actor_parser: InternalSTIX2ThreatActorConverter
 
     def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
@@ -100,6 +101,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_malware_parser(self) -> InternalSTIX2MalwareConverter:
         self._malware_parser = InternalSTIX2MalwareConverter(self)
         return self._malware_parser
+
+    def _set_threat_actor_parser(self) -> InternalSTIX2ThreatActorConverter:
+        self._threat_actor_parser = InternalSTIX2ThreatActorConverter(self)
+        return self._threat_actor_parser
 
     ################################################################################
     #                        STIX OBJECTS LOADING FUNCTIONS                        #
@@ -343,20 +348,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             parser(observed_data)
         except UnknownObservableMappingError as observable_types:
             self._observable_mapping_error(observed_data.id, observable_types)
-
-    def _parse_threat_actor(self, threat_actor_ref: str):
-        threat_actor = self._get_stix_object(threat_actor_ref)
-        feature = self._handle_object_mapping(
-            threat_actor.labels, threat_actor.id
-        )
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(threat_actor)
-        except Exception as exception:
-            self._threat_actor_error(threat_actor.id, exception)
 
     def _parse_tool(self, tool_ref: str):
         tool = self._get_stix_object(tool_ref)

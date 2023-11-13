@@ -13,7 +13,8 @@ from .converters import (
     ExternalSTIX2AttackPatternConverter, ExternalSTIX2CampaignConverter,
     ExternalSTIX2CourseOfActionConverter, ExternalSTIX2IndicatorConverter,
     ExternalSTIX2IntrusionSetConverter, ExternalSTIX2MalwareAnalysisConverter,
-    ExternalSTIX2MalwareConverter, STIX2ObservableObjectConverter)
+    ExternalSTIX2MalwareConverter, STIX2ObservableObjectConverter,
+    ExternalSTIX2ThreatActorConverter)
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
@@ -141,6 +142,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._malware_analysis_parser: ExternalSTIX2MalwareAnalysisConverter
         self._malware_parser: ExternalSTIX2MalwareConverter
         self._observable_object_parser: STIX2ObservableObjectConverter
+        self._threat_actor_parser: ExternalSTIX2ThreatActorConverter
 
     @property
     def observable_object_parser(self) -> STIX2ObservableObjectConverter:
@@ -180,6 +182,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_observable_object_parser(self) -> STIX2ObservableObjectConverter:
         self._observable_object_parser = STIX2ObservableObjectConverter(self)
         return self._observable_object_parser
+
+    def _set_threat_actor_parser(self) -> ExternalSTIX2ThreatActorConverter:
+        self._threat_actor_parser = ExternalSTIX2ThreatActorConverter(self)
+        return self._threat_actor_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
@@ -531,21 +537,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._parse_observable_objects(observed_data)
         except UnknownObservableMappingError as observable_types:
             self._observable_mapping_error(observed_data.id, observable_types)
-
-    def _parse_threat_actor(self, threat_actor_ref: str):
-        """
-        ThreatActor object parsing function.
-        We check if the threat actor already has been seen by looking at its ID,
-        otherwise we convert it as a MISP Galaxy Cluster.
-
-        :param threat_actor_ref: The ThreatActor id
-        """
-        if threat_actor_ref in self._clusters:
-            self._clusters[threat_actor_ref]['used'][self.misp_event.uuid] = False
-        else:
-            self._clusters[threat_actor_ref] = self._parse_galaxy(
-                threat_actor_ref
-            )
 
     def _parse_tool(self, tool_ref: str):
         """
