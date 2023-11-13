@@ -495,16 +495,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         'x_misp_threat_actor_classification',
         'x_misp_top_level_domain'
     )
-    __malware_meta_mapping = Mapping(
-        aliases='synonyms',
-        architecture_execution_envs='architecture_execution_envs',
-        capabilities='capabilities',
-        implementation_languages='implementation_languages',
-        is_family='is_family',
-        malware_types='malware_types',
-        operating_system_refs='operating_system_refs',
-        sample_refs='sample_refs'
-    )
     __regions_mapping = Mapping(
         **{
             'world': '001 - World',
@@ -538,22 +528,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'micronesia': '057 - Micronesia',
             'polynesia': '061 - Polynesia'
         }
-    )
-    __threat_actor_meta_mapping = Mapping(
-        aliases='synonyms',
-        goals='goals',
-        personal_motivations='personal_motivations',
-        primary_motivation='primary_motivation',
-        resource_level='resource_level',
-        roles='roles',
-        secondary_motivations='secondary_motivations',
-        sophistication='sophistication',
-        threat_actor_types='threat_actor_types'
-    )
-    __tool_meta_mapping = Mapping(
-        aliases='synonyms',
-        tool_types='tool_types',
-        tool_version='tool_version'
     )
 
     # MISP OBJECTS MAPPING
@@ -845,10 +819,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__mac_address_pattern
 
     @classmethod
-    def malware_meta_mapping(cls) -> dict:
-        return cls.__malware_meta_mapping
-
-    @classmethod
     def message_id_attribute(cls) -> dict:
         return cls.__message_id_attribute
 
@@ -1069,20 +1039,12 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__text_attribute
 
     @classmethod
-    def threat_actor_meta_mapping(cls) -> dict:
-        return cls.__threat_actor_meta_mapping
-
-    @classmethod
     def timeline_mapping(cls, field: str) -> Union[tuple, None]:
         return cls.__timeline_mapping.get(field)
 
     @classmethod
     def tlsh_attribute(cls) -> dict:
         return cls.__tlsh_attribute
-
-    @classmethod
-    def tool_meta_mapping(cls) -> dict:
-        return cls.__tool_meta_mapping
 
     @classmethod
     def type_attribute(cls) -> dict:
