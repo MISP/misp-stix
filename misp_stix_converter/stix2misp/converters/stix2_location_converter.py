@@ -80,7 +80,7 @@ class STIX2LocationMapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__regions_mapping.get(field, default_value)
 
 
-class STIX2LocationConverter(STIX2Converter):
+class STIX2LocationConverter(STIX2Converter, metaclass=ABCMeta):
     def __init__(self, main: _MAIN_PARSER_TYPING):
         self._set_main_parser(main)
 
@@ -91,7 +91,7 @@ class STIX2LocationConverter(STIX2Converter):
             location, galaxy_type, description=description,
             cluster_value=(
                 location.name if galaxy_type == 'country' else
-                self._mapping.regions_mapping(location.regions, location.name)
+                self._mapping.regions_mapping(location.region, location.name)
             )
         )
         meta = self._handle_meta_fields(location)
