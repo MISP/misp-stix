@@ -19,6 +19,7 @@ from .converters import (
     ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter,
     ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter,
     ExternalSTIX2IntrusionSetConverter, InternalSTIX2IntrusionSetConverter,
+    ExternalSTIX2LocationConverter, InternalSTIX2LocationConverter,
     ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
     InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter,
     ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter,
@@ -133,6 +134,9 @@ _INTRUSION_SET_PARSER_TYPING = Union[
 ]
 _INTRUSION_SET_TYPING = Union[
     IntrusionSet_v20, IntrusionSet_v21
+]
+_LOCATION_PARSER_TYPING = Union[
+    ExternalSTIX2LocationConverter, InternalSTIX2LocationConverter
 ]
 _MALWARE_ANALYSIS_PARSER_TYPING = Union[
     ExternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareAnalysisConverter
@@ -311,6 +315,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return getattr(
             self, '_intrusion_set_parser', self._set_intrusion_set_parser()
         )
+
+    @property
+    def location_parser(self) -> _LOCATION_PARSER_TYPING:
+        return getattr(self, '_location_parser', self._set_location_parser())
 
     @property
     def malware_analysis_parser(self) -> _MALWARE_ANALYSIS_PARSER_TYPING:
@@ -692,26 +700,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     except UnknownParsingFunctionError as error:
                         self._unknown_parsing_function_error(error)
 
-    def _parse_location_object(self, location: Location,
-                               to_return: Optional[bool] = False) -> MISPObject:
-        misp_object = self._create_misp_object('geolocation', location)
-        if hasattr(location, 'description'):
-            misp_object.comment = location.description
-        for feature, attribute in self._mapping.location_object_mapping().items():
-            if hasattr(location, feature):
-                misp_object.add_attribute(
-                    **{'value': getattr(location, feature), **attribute}
-                )
-        if hasattr(location, 'precision'):
-            misp_object.add_attribute(
-                **{
-                    'value': float(location.precision) / 1000,
-                    **self._mapping.accuracy_radius_attribute()
-                }
-            )
-        if to_return:
-            return misp_object
-        self._add_misp_object(misp_object, location)
+    def _parse_location(self, location_ref: str):
+        self.location_parser.parse(location_ref)
 
     def _parse_malware(self, malware_ref: str):
         self.malware_parser.parse(malware_ref)

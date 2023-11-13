@@ -908,6 +908,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __dst_as_attribute = Mapping(
         **{'type': 'AS', 'object_relation': 'dst-as'}
     )
+    __first_seen_attribute = Mapping(
+        **{'type': 'datetime', 'object_relation': 'first-seen'}
+    )
     __host_attribute = Mapping(
         **{'type': 'hostname', 'object_relation': 'host'}
     )
@@ -919,6 +922,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
     )
     __icmp_type_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'icmp-type'}
+    )
+    __last_seen_attribute = Mapping(
+        **{'type': 'datetime', 'object_relation': 'last-seen'}
     )
     __parent_command_line_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'parent-command-line'}
@@ -1005,7 +1011,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __bio_attribute = {'type': 'text', 'object_relation': 'bio'}
     __community_id_attribute = {'type': 'community-id', 'object_relation': 'community-id'}
     __compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
-    __first_seen_attribute = {'type': 'datetime', 'object_relation': 'first-seen'}
     __followers_attribute = {'type': 'text', 'object_relation': 'followers'}
     __following_attribute = {'type': 'text', 'object_relation': 'following'}
     __format_attribute = {'type': 'text', 'object_relation': 'format'}
@@ -1015,7 +1020,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __hostname_attribute = {'type': 'hostname', 'object_relation': 'hostname'}
     __id_attribute = {'type': 'text', 'object_relation': 'id'}
     __image_text_attribute = {'type': 'text', 'object_relation': 'image-text'}
-    __last_seen_attribute = {'type': 'datetime', 'object_relation': 'last-seen'}
     __likes_attribute = {'type': 'text', 'object_relation': 'likes'}
     __link_attribute = {'type': 'link', 'object_relation': 'link'}
     __lnk_access_time_attribute = {'type': 'datetime', 'object_relation': 'lnk-access-time'}
@@ -1548,6 +1552,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return cls.__file_object_mapping
 
     @classmethod
+    def first_seen_attribute(cls) -> dict:
+        return cls.__first_seen_attribute
+
+    @classmethod
     def github_user_object_mapping(cls) -> dict:
         return cls.__github_user_object_mapping
 
@@ -1582,6 +1590,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def ip_port_object_mapping(cls) -> dict:
         return cls.__ip_port_object_mapping
+
+    @classmethod
+    def last_seen_attribute(cls) -> dict:
+        return cls.__last_seen_attribute
 
     @classmethod
     def lnk_object_mapping(cls) -> dict:

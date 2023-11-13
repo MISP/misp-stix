@@ -11,9 +11,10 @@ from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .converters import (
     InternalSTIX2AttackPatternConverter, InternalSTIX2CampaignConverter,
     InternalSTIX2CourseOfActionConverter, InternalSTIX2IndicatorConverter,
-    InternalSTIX2IntrusionSetConverter, InternalSTIX2MalwareAnalysisConverter,
-    InternalSTIX2MalwareConverter, InternalSTIX2ThreatActorConverter,
-    InternalSTIX2ToolConverter, InternalSTIX2VulnerabilityConverter)
+    InternalSTIX2IntrusionSetConverter, InternalSTIX2LocationConverter,
+    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter,
+    InternalSTIX2ThreatActorConverter, InternalSTIX2ToolConverter,
+    InternalSTIX2VulnerabilityConverter)
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
@@ -70,6 +71,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._course_of_action_parser: InternalSTIX2CourseOfActionConverter
         self._indicator_parser: InternalSTIX2IndicatorConverter
         self._intrusion_set_parser: InternalSTIX2IntrusionSetConverter
+        self._location_parser: InternalSTIX2LocationConverter
         self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
         self._malware_parser: InternalSTIX2MalwareConverter
         self._threat_actor_parser: InternalSTIX2ThreatActorConverter
@@ -95,6 +97,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_intrusion_set_parser(self) -> InternalSTIX2IntrusionSetConverter:
         self._intrusion_set_parser = InternalSTIX2IntrusionSetConverter(self)
         return self._intrusion_set_parser
+
+    def _set_location_parser(self) -> InternalSTIX2LocationConverter:
+        self._location_parser = InternalSTIX2LocationConverter(self)
+        return self._location_parser
 
     def _set_malware_analysis_parser(self) -> InternalSTIX2MalwareAnalysisConverter:
         self._malware_analysis_parser = InternalSTIX2MalwareAnalysisConverter(self)
@@ -312,18 +318,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             except Exception as exception:
                 self._identity_error(identity.id, exception)
 
-    def _parse_location(self, location_ref: str):
-        location = self._get_stix_object(location_ref)
-        feature = self._handle_object_mapping(location.labels, location.id)
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(location)
-        except Exception as exception:
-            self._location_error(location.id, exception)
-
     def _parse_note(self, note_ref: str):
         note = self._get_stix_object(note_ref)
         misp_object = self._create_misp_object('annotation', note)
@@ -508,22 +502,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 attribute['value'] = identity.x_misp_logo
             misp_object.add_attribute(**attribute)
         self._add_misp_object(misp_object, identity)
-
-    def _parse_location_cluster(
-            self, location: Location,
-            galaxy_type: Optional[str] = None,
-            description: Optional[str] = None) -> MISPGalaxyCluster:
-        location_args = self._create_cluster_args(
-            location, galaxy_type, description=description,
-            cluster_value=(
-                location.name if galaxy_type == 'country' else
-                self._mapping.regions_mapping(location.region, location.name)
-            )
-        )
-        meta = self._handle_meta_fields(location)
-        if meta:
-            location_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(location_args)
 
     def _parse_news_agency_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._parse_identity_object(identity, 'news-agency')

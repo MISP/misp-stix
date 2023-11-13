@@ -676,27 +676,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             **__lnk_object_mapping
         }
     )
-    __location_object_mapping = Mapping(
-        city=STIX2toMISPMapping.city_attribute(),
-        country=STIX2toMISPMapping.country_attribute(),
-        description=STIX2toMISPMapping.text_attribute(),
-        latitude=STIX2toMISPMapping.latitude_attribute(),
-        longitude=STIX2toMISPMapping.longitude_attribute(),
-        postal_code=STIX2toMISPMapping.zipcode_attribute(),
-        region=STIX2toMISPMapping.region_attribute(),
-        street_address=STIX2toMISPMapping.address_attribute(),
-        x_misp_altitude={'type': 'float', 'object_relation': 'altitude'},
-        x_misp_country={'type': 'text', 'object_relation': 'country'},
-        x_misp_epsg={'type': 'text', 'object_relation': 'epsg'},
-        x_misp_first_seen=__first_seen_attribute,
-        x_misp_last_seen=__last_seen_attribute,
-        x_misp_neighborhood={
-            'type': 'text', 'object_relation': 'neighborhood'
-        },
-        x_misp_spacial_reference={
-            'type': 'text', 'object_relation': 'spacial-reference'
-        }
-    )
     __mutex_object_mapping = Mapping(
         name=STIX2toMISPMapping.name_attribute(),
         x_misp_description=STIX2toMISPMapping.description_attribute(),
@@ -1198,10 +1177,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def lnk_pattern_mapping(cls, field) -> Union[dict, None]:
         return cls.__lnk_pattern_mapping.get(field)
-
-    @classmethod
-    def location_object_mapping(cls) -> dict:
-        return cls.__location_object_mapping
 
     @classmethod
     def mutex_object_mapping(cls) -> dict:
