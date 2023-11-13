@@ -18,3 +18,5 @@ from .stix2_threat_actor_converter import(  # noqa
     ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter)
 from .stix2_tool_converter import (  # noqa
     ExternalSTIX2ToolConverter, InternalSTIX2ToolConverter)
+from .stix2_vulnerability_converter import (  # noqa
+    ExternalSTIX2VulnerabilityConverter, InternalSTIX2VulnerabilityConverter)

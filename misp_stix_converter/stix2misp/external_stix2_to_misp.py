@@ -14,7 +14,8 @@ from .converters import (
     ExternalSTIX2CourseOfActionConverter, ExternalSTIX2IndicatorConverter,
     ExternalSTIX2IntrusionSetConverter, ExternalSTIX2MalwareAnalysisConverter,
     ExternalSTIX2MalwareConverter, STIX2ObservableObjectConverter,
-    ExternalSTIX2ThreatActorConverter, ExternalSTIX2ToolConverter)
+    ExternalSTIX2ThreatActorConverter, ExternalSTIX2ToolConverter,
+    ExternalSTIX2VulnerabilityConverter)
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
@@ -144,6 +145,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._observable_object_parser: STIX2ObservableObjectConverter
         self._threat_actor_parser: ExternalSTIX2ThreatActorConverter
         self._tool_parser: ExternalSTIX2ToolConverter
+        self._vulnerability_parser: ExternalSTIX2VulnerabilityConverter
 
     @property
     def observable_object_parser(self) -> STIX2ObservableObjectConverter:
@@ -191,6 +193,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_tool_parser(self) -> ExternalSTIX2ToolConverter:
         self._tool_parser = ExternalSTIX2ToolConverter(self)
         return self._tool_parser
+
+    def _set_vulnerability_parser(self) -> ExternalSTIX2VulnerabilityConverter:
+        self._vulnerability_parser = ExternalSTIX2VulnerabilityConverter(self)
+        return self._vulnerability_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
@@ -542,85 +548,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._parse_observable_objects(observed_data)
         except UnknownObservableMappingError as observable_types:
             self._observable_mapping_error(observed_data.id, observable_types)
-
-    def _parse_vulnerability(self, vulnerability_ref: str):
-        """
-        Vulnerabilty object parsing function.
-        If the vulnerability already has been seen by looking at its ID,
-        otherwise we convert it as a MISP Galaxy Cluster.
-
-        :param vulnerability_ref: The Vulnerability id
-        """
-        if vulnerability_ref in self._clusters:
-            self._clusters[vulnerability_ref]['used'][self.misp_event.uuid] = False
-        else:
-            self._clusters[vulnerability_ref] = self._parse_galaxy(
-                vulnerability_ref
-            )
-
-    def _parse_vulnerability_object(self, vulnerability: _VULNERABILITY_TYPING):
-        """
-        # Not currently used, but if we can ever define wether the vulnerability
-        # is well known or in progress, we might use this function again for
-        # vulnerabilities in progress
-
-        Vulnerability object conversion as MISP attribute or object function.
-        We found no match with any Galaxy Cluster name, so we now parse this
-        Vulnerability object to extract MISP attributes.
-        The extracted attributes are then passed to the handler function that will
-        define whether a standalone MISP attribute or a MISP object will be created.
-
-        :param vulnerability: The Vulnerability object to parse
-        """
-        attributes = tuple(
-            self._get_attributes_from_generic_SDO(
-                vulnerability, 'vulnerability_object_mapping'
-            )
-        )
-        if hasattr(vulnerability, 'external_references'):
-            external_ids = set()
-            for reference in vulnerability.external_references:
-                if reference['source_name'] in ('cve', 'vulnerability') and reference.get('external_id') is not None:
-                    external_ids.add(reference['external_id'])
-                elif reference['source_name'] == 'url' and reference.get('url') is not None:
-                    attributes.append(
-                        {
-                            'value': reference['url'],
-                            **self._mapping.references_attribute()
-                        }
-                    )
-            if len(external_ids) == 1:
-                attributes.append(
-                    {
-                        'value': list(external_ids)[0],
-                        **self._mapping.vulnerability_attribute()
-                    }
-                )
-            else:
-                for external_id in external_ids:
-                    if external_id == vulnerability.name:
-                        attributes.append(
-                            {
-                                'value': external_id,
-                                **self._mapping.vulnerability_attribute()
-                            }
-                        )
-                        continue
-                    attributes.append(
-                        {
-                            'value': external_id,
-                            **self._mapping.reference_attribute()
-                        }
-                    )
-        if attributes:
-            self._handle_import_case(vulnerability, attributes, 'vulnerability')
-        else:
-            self._clusters[vulnerability.id] = {
-                'cluster': self._parse_vulnerbaility_cluster(vulnerability),
-                'used': {self.misp_event.uuid: False}
-            }
-            if 'vulnerability' not in self._galaxies:
-                self._create_galaxy_args(vulnerability)
 
     ################################################################################
     #                 STIX Domain Objects (SDOs) PARSING FUNCTIONS                 #

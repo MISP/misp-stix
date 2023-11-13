@@ -984,20 +984,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         credential_last_changed=STIX2toMISPMapping.password_last_changed_attribute(),
         password_last_changed=STIX2toMISPMapping.password_last_changed_attribute()
     )
-    __vulnerability_object_mapping = Mapping(
-        description=STIX2toMISPMapping.description_attribute(),
-        x_misp_created={'type': 'datetime', 'object_relation': 'created'},
-        x_misp_credit={'type': 'text', 'object_relation': 'credit'},
-        x_misp_cvss_score={'type': 'float', 'object_relation': 'cvss-score'},
-        x_misp_modified={'type': 'datetime', 'object_relation': 'modified'},
-        x_misp_published={'type': 'datetime', 'object_relation': 'published'},
-        x_misp_state={'type': 'text', 'object_relation': 'state'},
-        x_misp_summary=STIX2toMISPMapping.summary_attribute(),
-        x_misp_vulnerable_configuration={
-            'type': 'cpe',
-            'object_relation': 'vulnerable-configuration'
-        }
-    )
     __x509_object_mapping = Mapping(
         is_self_signed=STIX2toMISPMapping.is_self_signed_attribute(),
         issuer=STIX2toMISPMapping.issuer_attribute(),
@@ -1376,10 +1362,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def user_account_pattern_mapping(cls, field) -> Union[dict, None]:
         return cls.__user_account_object_mapping.get(field)
-
-    @classmethod
-    def vulnerability_object_mapping(cls) -> dict:
-        return cls.__vulnerability_object_mapping
 
     @classmethod
     def x509_object_mapping(cls) -> dict:
