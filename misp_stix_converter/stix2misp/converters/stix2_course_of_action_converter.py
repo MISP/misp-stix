@@ -3,11 +3,11 @@
 
 from ... import Mapping
 from ..exceptions import UnknownParsingFunctionError
-from .stix2mapping import (
-    ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from .stix2converter import (
     ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,
     _MAIN_PARSER_TYPING)
+from .stix2mapping import (
+    ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
 from pymisp import MISPGalaxyCluster
 from stix2.v20.sdo import CourseOfAction as CourseOfAction_v20
@@ -45,15 +45,11 @@ class STIX2CourseOfActionConverter(STIX2Converter, metaclass=ABCMeta):
         return self._create_misp_galaxy_cluster(course_of_action_args)
 
 
-class ExternalSTIX2CourseOfActionMapping(ExternalSTIX2Mapping):
-    pass
-
-
 class ExternalSTIX2CourseOfActionConverter(
         STIX2CourseOfActionConverter, ExternalSTIX2Converter):
     def __init__(self, main: 'ExternalSTIX2toMISPParser'):
         super().__init__(main)
-        self._mapping = ExternalSTIX2CourseOfActionMapping
+        self._mapping = ExternalSTIX2Mapping
 
     def parse(self, course_of_action_ref: str):
         course_of_action = self.main_parser._get_stix_object(
