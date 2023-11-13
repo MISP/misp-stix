@@ -143,7 +143,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._malware_parser: ExternalSTIX2MalwareConverter
         self._observable_object_parser: STIX2ObservableObjectConverter
         self._threat_actor_parser: ExternalSTIX2ThreatActorConverter
-        self._tool_converter: ExternalSTIX2ToolConverter
+        self._tool_parser: ExternalSTIX2ToolConverter
 
     @property
     def observable_object_parser(self) -> STIX2ObservableObjectConverter:
@@ -189,8 +189,8 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         return self._threat_actor_parser
 
     def _set_tool_parser(self) -> ExternalSTIX2ToolConverter:
-        self._tool_converter = ExternalSTIX2ToolConverter(self)
-        return self._tool_converter
+        self._tool_parser = ExternalSTIX2ToolConverter(self)
+        return self._tool_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #

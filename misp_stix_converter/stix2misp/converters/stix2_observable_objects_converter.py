@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from .stix2converter import STIX2Converter
 from .stix2_observable_converter import (
     ExternalSTIX2ObservableMapping, InternalSTIX2ObservableMapping,
     STIX2ObservableConverter)

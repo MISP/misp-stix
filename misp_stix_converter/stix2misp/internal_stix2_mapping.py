@@ -901,20 +901,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_hive={'type': 'text', 'object_relation': 'hive'},
         x_misp_root_keys={'type': 'text', 'object_relation': 'root-keys'}
     )
-    __script_from_malware_object_mapping = Mapping(
-        name=STIX2toMISPMapping.filename_attribute(),
-        description=__comment_text_attribute,
-        implementation_languages=STIX2toMISPMapping.language_attribute(),
-        x_misp_script=__script_attribute,
-        x_misp_state=__state_attribute
-    )
-    __script_from_tool_object_mapping = Mapping(
-        name=STIX2toMISPMapping.filename_attribute(),
-        description=__comment_text_attribute,
-        x_misp_language=STIX2toMISPMapping.language_attribute(),
-        x_misp_script=__script_attribute,
-        x_misp_state=__state_attribute
-    )
     __sigma_object_mapping = Mapping(
         pattern=STIX2toMISPMapping.sigma_attribute(),
         description=STIX2toMISPMapping.comment_attribute(),
@@ -1346,14 +1332,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def registry_key_pattern_mapping(cls, field) -> Union[dict, None]:
         return cls.__registry_key_object_mapping.get(field)
-
-    @classmethod
-    def script_from_malware_object_mapping(cls) -> dict:
-        return cls.__script_from_malware_object_mapping
-
-    @classmethod
-    def script_from_tool_object_mapping(cls) -> dict:
-        return cls.__script_from_tool_object_mapping
 
     @classmethod
     def sigma_object_mapping(cls) -> dict:

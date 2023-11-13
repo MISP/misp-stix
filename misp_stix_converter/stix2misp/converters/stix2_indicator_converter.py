@@ -6,6 +6,7 @@ import re
 from ... import Mapping
 from ..exceptions import (
     AttributeFromPatternParsingError, InvalidSTIXPatternError,
+    UndefinedIndicatorError, UndefinedSTIXObjectError,
     UnknownParsingFunctionError, UnknownPatternMappingError,
     UnknownPatternTypeError)
 from ..importparser import _INDICATOR_TYPING
@@ -1468,9 +1469,12 @@ class InternalSTIX2IndicatorConverter(
 
     def parse(self, indicator_ref: str):
         indicator = self.main_parser._get_stix_object(indicator_ref)
-        feature = self._handle_mapping_from_labels(
-            indicator.labels, indicator.id
-        )
+        try:
+            feature = self._handle_mapping_from_labels(
+                indicator.labels, indicator.id
+            )
+        except UndefinedSTIXObjectError as error:
+            raise UndefinedIndicatorError(error)
         try:
             parser = getattr(self, f"{feature}_indicator")
         except AttributeError:

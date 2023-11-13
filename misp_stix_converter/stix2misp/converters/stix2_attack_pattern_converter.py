@@ -3,11 +3,11 @@
 
 from ... import Mapping
 from ..exceptions import UnknownParsingFunctionError
-from .stix2mapping import (
-    ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from .stix2converter import (
     ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,
     _MAIN_PARSER_TYPING)
+from .stix2mapping import (
+    ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
 from pymisp import MISPGalaxyCluster
 from stix2.v20.common import ExternalReference as ExternalReference_v20
