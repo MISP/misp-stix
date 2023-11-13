@@ -8,6 +8,8 @@ from .stix2_indicator_converter import (  # noqa
     ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter)
 from .stix2_intrusion_set_converter import (  # noqa
     ExternalSTIX2IntrusionSetConverter, InternalSTIX2IntrusionSetConverter)
+from .stix2_location_converter import (  # noqa
+    ExternalSTIX2LocationConverter, InternalSTIX2LocationConverter)
 from .stix2_malware_analysis_converter import (  # noqa
     ExternalSTIX2MalwareAnalysisConverter,
     InternalSTIX2MalwareAnalysisConverter)

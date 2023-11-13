@@ -264,16 +264,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         name_enc=STIX2toMISPMapping.file_encoding_attribute(),
         size=STIX2toMISPMapping.size_in_bytes_attribute()
     )
-    __location_object_mapping = Mapping(
-        city=STIX2toMISPMapping.city_attribute(),
-        country=STIX2toMISPMapping.country_attribute(),
-        description=STIX2toMISPMapping.text_attribute(),
-        latitude=STIX2toMISPMapping.latitude_attribute(),
-        longitude=STIX2toMISPMapping.longitude_attribute(),
-        postal_code=STIX2toMISPMapping.zipcode_attribute(),
-        region=STIX2toMISPMapping.region_attribute(),
-        street_address=STIX2toMISPMapping.address_attribute()
-    )
     __network_connection_object_reference_mapping = Mapping(
         **{
             'domain-name_dst': 'hostname-dst',
@@ -494,13 +484,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             }
         }
     )
-    __location_object_fields = (
-        'city',
-        'latitude',
-        'longitude',
-        'postal_code',
-        'street_address',
-    )
 
     @classmethod
     def asn_pattern_mapping(cls, field) -> Union[dict, None]:
@@ -573,14 +556,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def identity_object_single_fields(cls) -> tuple:
         return cls.__identity_object_single_fields
-
-    @classmethod
-    def location_object_fields(cls) -> tuple:
-        return cls.__location_object_fields
-
-    @classmethod
-    def location_object_mapping(cls) -> dict:
-        return cls.__location_object_mapping
 
     @classmethod
     def network_connection_object_reference_mapping(cls, field) -> Union[str, None]:
