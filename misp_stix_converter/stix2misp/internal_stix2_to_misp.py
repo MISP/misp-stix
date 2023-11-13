@@ -416,9 +416,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         galaxy_type, galaxy_name = self._extract_galaxy_labels(
             stix_object.labels
         )
-        cluster = self._parse_galaxy_cluster(
-            stix_object, galaxy_type
-        )
+        cluster = self._parse_galaxy_cluster(stix_object, galaxy_type)
         if galaxy_type not in self._galaxies:
             self._create_galaxy_args(galaxy_type, galaxy_name)
         return {

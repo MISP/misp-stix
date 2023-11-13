@@ -295,32 +295,32 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
                       object_type: Optional[str] = None):
         clusters = self.main_parser._clusters
         if stix_object.id in clusters:
-            misp_event_uuid = self.event_uuid
-            clusters[stix_object.id]['used'][misp_event_uuid] = False
+            clusters[stix_object.id]['used'][self.event_uuid] = False
         else:
             feature = f'_parse_galaxy_{self.main_parser.galaxy_feature}'
             clusters[stix_object.id] = getattr(self, feature)(
-                stix_object, object_type or stix_object.type
+                stix_object, object_type
             )
 
     def _parse_galaxy_as_container(self, stix_object: _GALAXY_OBJECTS_TYPING,
-                                   object_type: str) -> dict:
-        if object_type not in self.main_parser._galaxies:
-            self._create_galaxy_args(
-                stix_object, object_type
-            )
+                                   object_type: Union[str, None]) -> dict:
+        galaxy_type = object_type or stix_object.type
+        if galaxy_type not in self.main_parser._galaxies:
+            self._create_galaxy_args(stix_object, galaxy_type)
         return {
-            'cluster': self._create_cluster(stix_object),
+            'cluster': self._create_cluster(
+                stix_object, galaxy_type=object_type
+            ),
             'used': {self.event_uuid: False}
         }
 
     def _parse_galaxy_as_tag_names(self, stix_object: _GALAXY_OBJECTS_TYPING,
-                                   object_type: str) -> dict:
+                                   object_type: Union[str, None]) -> dict:
         name = stix_object.name
         tag_names = self.main_parser._check_existing_galaxy_name(name)
         if tag_names is None:
             tag_names = [
-                f'misp-galaxy:{object_type}="{name}"'
+                f'misp-galaxy:{object_type or stix_object.type}="{name}"'
             ]
         return {
             'tag_names': tag_names,

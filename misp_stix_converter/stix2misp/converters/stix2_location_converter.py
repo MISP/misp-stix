@@ -137,7 +137,10 @@ class ExternalSTIX2LocationConverter(
         if self._is_geolocation_object(location):
             self._parse_location_object(location)
         else:
-            self._parse_galaxy(location)
+            self._parse_galaxy(
+                location,
+                'country' if hasattr(location, 'country') else 'region'
+            )
 
     def _is_geolocation_object(self, location: Location) -> bool:
         for field in self._mapping.location_object_fields():
