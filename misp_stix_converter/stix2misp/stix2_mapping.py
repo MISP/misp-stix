@@ -529,11 +529,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'polynesia': '061 - Polynesia'
         }
     )
-    __tool_meta_mapping = Mapping(
-        aliases='synonyms',
-        tool_types='tool_types',
-        tool_version='tool_version'
-    )
 
     # MISP OBJECTS MAPPING
     __connection_protocols = Mapping(
@@ -824,10 +819,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__mac_address_pattern
 
     @classmethod
-    def malware_meta_mapping(cls) -> dict:
-        return cls.__malware_meta_mapping
-
-    @classmethod
     def message_id_attribute(cls) -> dict:
         return cls.__message_id_attribute
 
@@ -1048,20 +1039,12 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__text_attribute
 
     @classmethod
-    def threat_actor_meta_mapping(cls) -> dict:
-        return cls.__threat_actor_meta_mapping
-
-    @classmethod
     def timeline_mapping(cls, field: str) -> Union[tuple, None]:
         return cls.__timeline_mapping.get(field)
 
     @classmethod
     def tlsh_attribute(cls) -> dict:
         return cls.__tlsh_attribute
-
-    @classmethod
-    def tool_meta_mapping(cls) -> dict:
-        return cls.__tool_meta_mapping
 
     @classmethod
     def type_attribute(cls) -> dict:

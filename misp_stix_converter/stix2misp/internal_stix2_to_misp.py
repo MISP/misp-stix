@@ -12,7 +12,8 @@ from .converters import (
     InternalSTIX2AttackPatternConverter, InternalSTIX2CampaignConverter,
     InternalSTIX2CourseOfActionConverter, InternalSTIX2IndicatorConverter,
     InternalSTIX2IntrusionSetConverter, InternalSTIX2MalwareAnalysisConverter,
-    InternalSTIX2MalwareConverter, InternalSTIX2ThreatActorConverter)
+    InternalSTIX2MalwareConverter, InternalSTIX2ThreatActorConverter,
+    InternalSTIX2ToolConverter)
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
@@ -73,6 +74,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._malware_parser: InternalSTIX2MalwareConverter
         self._observed_data_parser: InternalSTIX2ObservedDataConverter
         self._threat_actor_parser: InternalSTIX2ThreatActorConverter
+        self._tool_parser: InternalSTIX2ToolConverter
 
     def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
@@ -105,6 +107,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_threat_actor_parser(self) -> InternalSTIX2ThreatActorConverter:
         self._threat_actor_parser = InternalSTIX2ThreatActorConverter(self)
         return self._threat_actor_parser
+
+    def _set_tool_parser(self) -> InternalSTIX2ToolConverter:
+        self._tool_parser = InternalSTIX2ToolConverter(self)
+        return self._tool_parser
 
     ################################################################################
     #                        STIX OBJECTS LOADING FUNCTIONS                        #
@@ -349,18 +355,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except UnknownObservableMappingError as observable_types:
             self._observable_mapping_error(observed_data.id, observable_types)
 
-    def _parse_tool(self, tool_ref: str):
-        tool = self._get_stix_object(tool_ref)
-        feature = self._handle_object_mapping(tool.labels, tool.id)
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        try:
-            parser(tool)
-        except Exception as exception:
-            self._tool_error(tool.id, exception)
-
     def _parse_vulnerability(self, vulnerability_ref: str):
         vulnerability = self._get_stix_object(vulnerability_ref)
         feature = self._handle_object_mapping(
@@ -555,28 +549,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_organization_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._parse_identity_object(identity, 'organization')
         self._add_misp_object(misp_object, identity)
-
-    def _parse_script_object(self, stix_object: _SCRIPT_TYPING):
-        misp_object = self._create_misp_object('script', stix_object)
-        feature = f'script_from_{stix_object.type}_object_mapping'
-        for key, mapping in getattr(self._mapping, feature)().items():
-            if hasattr(stix_object, key):
-                self._populate_object_attributes(
-                    misp_object,
-                    mapping,
-                    getattr(stix_object, key)
-                )
-        if hasattr(stix_object, 'x_misp_script_as_attachment'):
-            attribute = {
-                'type': 'attachment',
-                'object_relation': 'script-as-attachment'
-            }
-            if isinstance(stix_object.x_misp_script_as_attachment, dict):
-                attribute.update(stix_object.x_misp_script_as_attachment)
-            else:
-                attribute['value'] = stix_object.x_misp_script_as_attachment
-            misp_object.add_attribute(**attribute)
-        self._add_misp_object(misp_object, stix_object)
 
     def _parse_vulnerability_attribute(
             self, vulnerability: _VULNERABILITY_TYPING):

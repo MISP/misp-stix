@@ -14,7 +14,7 @@ from .converters import (
     ExternalSTIX2CourseOfActionConverter, ExternalSTIX2IndicatorConverter,
     ExternalSTIX2IntrusionSetConverter, ExternalSTIX2MalwareAnalysisConverter,
     ExternalSTIX2MalwareConverter, STIX2ObservableObjectConverter,
-    ExternalSTIX2ThreatActorConverter)
+    ExternalSTIX2ThreatActorConverter, ExternalSTIX2ToolConverter)
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
@@ -143,6 +143,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._malware_parser: ExternalSTIX2MalwareConverter
         self._observable_object_parser: STIX2ObservableObjectConverter
         self._threat_actor_parser: ExternalSTIX2ThreatActorConverter
+        self._tool_converter: ExternalSTIX2ToolConverter
 
     @property
     def observable_object_parser(self) -> STIX2ObservableObjectConverter:
@@ -186,6 +187,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_threat_actor_parser(self) -> ExternalSTIX2ThreatActorConverter:
         self._threat_actor_parser = ExternalSTIX2ThreatActorConverter(self)
         return self._threat_actor_parser
+
+    def _set_tool_parser(self) -> ExternalSTIX2ToolConverter:
+        self._tool_converter = ExternalSTIX2ToolConverter(self)
+        return self._tool_converter
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
@@ -537,19 +542,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._parse_observable_objects(observed_data)
         except UnknownObservableMappingError as observable_types:
             self._observable_mapping_error(observed_data.id, observable_types)
-
-    def _parse_tool(self, tool_ref: str):
-        """
-        Tool object parsing function.
-        We check if the tool already has been seen by looking at its ID,
-        otherwise we convert it as a MISP Galaxy Cluster.
-
-        :param tool_ref: The Tool id
-        """
-        if tool_ref in self._clusters:
-            self._clusters[tool_ref]['used'][self.misp_event.uuid] = False
-        else:
-            self._clusters[tool_ref] = self._parse_galaxy(tool_ref)
 
     def _parse_vulnerability(self, vulnerability_ref: str):
         """
