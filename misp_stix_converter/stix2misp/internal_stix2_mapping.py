@@ -901,20 +901,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_hive={'type': 'text', 'object_relation': 'hive'},
         x_misp_root_keys={'type': 'text', 'object_relation': 'root-keys'}
     )
-    __script_from_malware_object_mapping = Mapping(
-        name=STIX2toMISPMapping.filename_attribute(),
-        description=__comment_text_attribute,
-        implementation_languages=STIX2toMISPMapping.language_attribute(),
-        x_misp_script=__script_attribute,
-        x_misp_state=__state_attribute
-    )
-    __script_from_tool_object_mapping = Mapping(
-        name=STIX2toMISPMapping.filename_attribute(),
-        description=__comment_text_attribute,
-        x_misp_language=STIX2toMISPMapping.language_attribute(),
-        x_misp_script=__script_attribute,
-        x_misp_state=__state_attribute
-    )
     __sigma_object_mapping = Mapping(
         pattern=STIX2toMISPMapping.sigma_attribute(),
         description=STIX2toMISPMapping.comment_attribute(),
@@ -997,20 +983,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         account_last_login=STIX2toMISPMapping.last_login_attribute(),
         credential_last_changed=STIX2toMISPMapping.password_last_changed_attribute(),
         password_last_changed=STIX2toMISPMapping.password_last_changed_attribute()
-    )
-    __vulnerability_object_mapping = Mapping(
-        description=STIX2toMISPMapping.description_attribute(),
-        x_misp_created={'type': 'datetime', 'object_relation': 'created'},
-        x_misp_credit={'type': 'text', 'object_relation': 'credit'},
-        x_misp_cvss_score={'type': 'float', 'object_relation': 'cvss-score'},
-        x_misp_modified={'type': 'datetime', 'object_relation': 'modified'},
-        x_misp_published={'type': 'datetime', 'object_relation': 'published'},
-        x_misp_state={'type': 'text', 'object_relation': 'state'},
-        x_misp_summary=STIX2toMISPMapping.summary_attribute(),
-        x_misp_vulnerable_configuration={
-            'type': 'cpe',
-            'object_relation': 'vulnerable-configuration'
-        }
     )
     __x509_object_mapping = Mapping(
         is_self_signed=STIX2toMISPMapping.is_self_signed_attribute(),
@@ -1348,14 +1320,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__registry_key_object_mapping.get(field)
 
     @classmethod
-    def script_from_malware_object_mapping(cls) -> dict:
-        return cls.__script_from_malware_object_mapping
-
-    @classmethod
-    def script_from_tool_object_mapping(cls) -> dict:
-        return cls.__script_from_tool_object_mapping
-
-    @classmethod
     def sigma_object_mapping(cls) -> dict:
         return cls.__sigma_object_mapping
 
@@ -1398,10 +1362,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def user_account_pattern_mapping(cls, field) -> Union[dict, None]:
         return cls.__user_account_object_mapping.get(field)
-
-    @classmethod
-    def vulnerability_object_mapping(cls) -> dict:
-        return cls.__vulnerability_object_mapping
 
     @classmethod
     def x509_object_mapping(cls) -> dict:

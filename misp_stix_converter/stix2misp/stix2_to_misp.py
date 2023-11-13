@@ -22,7 +22,8 @@ from .converters import (
     ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
     InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter,
     ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter,
-    ExternalSTIX2ToolConverter, InternalSTIX2ToolConverter)
+    ExternalSTIX2ToolConverter, InternalSTIX2ToolConverter,
+    ExternalSTIX2VulnerabilityConverter, InternalSTIX2VulnerabilityConverter)
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
@@ -179,6 +180,9 @@ _TOOL_PARSER_TYPING = Union[
 ]
 _TOOL_TYPING = Union[
     Tool_v20, Tool_v21
+]
+_VULNERABILITY_PARSER_TYPING = Union[
+    ExternalSTIX2VulnerabilityConverter, InternalSTIX2VulnerabilityConverter
 ]
 _VULNERABILITY_TYPING = Union[
     Vulnerability_v20, Vulnerability_v21
@@ -346,6 +350,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     @property
     def tool_parser(self) -> _TOOL_PARSER_TYPING:
         return getattr(self, '_tool_parser', self._set_tool_parser())
+
+    @property
+    def vulnerability_parser(self) -> _VULNERABILITY_PARSER_TYPING:
+        return getattr(
+            self, '_vulnerability_parser', self._set_vulnerability_parser()
+        )
 
     ################################################################################
     #                        STIX OBJECTS LOADING FUNCTIONS                        #
@@ -715,6 +725,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_tool(self, tool_ref: str):
         self.tool_parser.parse(tool_ref)
 
+    def _parse_vulnerability(self, vulnerability_ref: str):
+        self.vulnerability_parser.parse(vulnerability_ref)
+
     ################################################################################
     #                  MISP GALAXIES & CLUSTERS PARSING FUNCTIONS                  #
     ################################################################################
@@ -789,24 +802,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             meta.update(dict(self._extract_custom_fields(stix_object)))
             return meta
         return dict(self._extract_custom_fields(stix_object))
-
-    def _parse_vulnerability_cluster(
-            self, vulnerability: _VULNERABILITY_TYPING,
-            galaxy_type: Optional[str] = None,
-            description: Optional[str] = None) -> MISPGalaxyCluster:
-        vulnerability_args = self._create_cluster_args(
-            vulnerability, galaxy_type, description=description
-        )
-        meta = dict(self._extract_custom_fields(vulnerability))
-        if hasattr(vulnerability, 'external_references'):
-            meta.update(
-                self._handle_external_references(
-                    vulnerability.external_references
-                )
-            )
-        if meta:
-            vulnerability_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(vulnerability_args)
 
     ################################################################################
     #                 RELATIONSHIPS & SIGHTINGS PARSING FUNCTIONS.                 #

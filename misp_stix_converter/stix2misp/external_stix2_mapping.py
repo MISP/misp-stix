@@ -203,10 +203,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         description=STIX2toMISPMapping.comment_attribute(),
         name=STIX2toMISPMapping.sigma_rule_name_attribute()
     )
-    __vulnerability_object_mapping = Mapping(
-        name=STIX2toMISPMapping.summary_attribute(),
-        description=STIX2toMISPMapping.description_attribute()
-    )
     __yara_object_mapping = Mapping(
         pattern=STIX2toMISPMapping.yara_attribute(),
         description=STIX2toMISPMapping.comment_attribute(),
@@ -681,10 +677,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def user_account_pattern_mapping(cls, field) -> Union[dict, None]:
         return cls.__user_account_pattern_mapping.get(field)
-
-    @classmethod
-    def vulnerability_object_mapping(cls) -> dict:
-        return cls.__vulnerability_object_mapping
 
     @classmethod
     def x509_hashes_object_mapping(cls) -> dict:
