@@ -14,7 +14,7 @@ from .converters import (
     InternalSTIX2IntrusionSetConverter, InternalSTIX2LocationConverter,
     InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter,
     InternalSTIX2ThreatActorConverter, InternalSTIX2ToolConverter,
-    InternalSTIX2VulnerabilityConverter)
+    InternalSTIX2VulnerabilityConverter, STIX2CustomObjectConverter)
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
@@ -69,6 +69,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._attack_pattern_parser: InternalSTIX2AttackPatternConverter
         self._campaign_parser: InternalSTIX2CampaignConverter
         self._course_of_action_parser: InternalSTIX2CourseOfActionConverter
+        self._custom_object_parser: STIX2CustomObjectConverter
         self._indicator_parser: InternalSTIX2IndicatorConverter
         self._intrusion_set_parser: InternalSTIX2IntrusionSetConverter
         self._location_parser: InternalSTIX2LocationConverter
@@ -78,6 +79,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._threat_actor_parser: InternalSTIX2ThreatActorConverter
         self._tool_parser: InternalSTIX2ToolConverter
         self._vulnerability_parser: InternalSTIX2VulnerabilityConverter
+
+    @property
+    def custom_object_parser(self) -> STIX2CustomObjectConverter:
+        return getattr(
+            self, '_custom_object_parser', self._set_custom_object_parser()
+        )
 
     def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
@@ -90,6 +97,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_course_of_action_parser(self) -> InternalSTIX2CourseOfActionConverter:
         self._course_of_action_parser = InternalSTIX2CourseOfActionConverter(self)
         return self._course_of_action_parser
+
+    def _set_custom_object_parser(self) -> STIX2CustomObjectConverter:
+        self._custom_object_parser = STIX2CustomObjectConverter(self)
+        return self._custom_object_parser
 
     def _set_indicator_parser(self) -> InternalSTIX2IndicatorConverter:
         self._indicator_parser = InternalSTIX2IndicatorConverter(self)
@@ -247,64 +258,8 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 return to_call
         raise UndefinedObservableError(object_id)
 
-    def _parse_custom_attribute(self, custom_ref: str):
-        custom_attribute = self._get_stix_object(custom_ref)
-        attribute = {
-            "type": custom_attribute.x_misp_type,
-            "value": self._sanitise_value(custom_attribute.x_misp_value),
-            "timestamp": self._timestamp_from_date(custom_attribute.modified)
-        }
-        for field in _attribute_additional_fields:
-            if hasattr(custom_attribute, f'x_misp_{field}'):
-                attribute[field] = getattr(custom_attribute, f'x_misp_{field}')
-        attribute.update(
-            self._sanitise_attribute_uuid(
-                custom_attribute.id, comment=attribute.get('comment')
-            )
-        )
-        self._add_misp_attribute(attribute, custom_attribute)
-
-    def _parse_custom_galaxy_cluster(self, custom_ref: str):
-        if custom_ref in self._clusters:
-            self._clusters[custom_ref]['used'][self.misp_event.uuid] = False
-        else:
-            custom_galaxy = self._get_stix_object(custom_ref)
-            galaxy_type = custom_galaxy.x_misp_type
-            cluster_args = {
-                'type': galaxy_type,
-                'value': custom_galaxy.x_misp_value,
-                'description': custom_galaxy.x_misp_description
-            }
-            if hasattr(custom_galaxy, 'x_misp_meta'):
-                cluster_args['meta'] = custom_galaxy.x_misp_meta
-            self._clusters[custom_ref] = {
-                'cluster': self._create_misp_galaxy_cluster(cluster_args),
-                'used': {self.misp_event.uuid: False}
-            }
-            if galaxy_type not in self._galaxies:
-                self._create_galaxy_args(
-                    galaxy_type, custom_galaxy.x_misp_name
-                )
-
     def _parse_custom_object(self, custom_ref: str):
-        custom_object = self._get_stix_object(custom_ref)
-        name = custom_object.x_misp_name
-        misp_object = self._create_misp_object(name)
-        misp_object.category = custom_object.x_misp_meta_category
-        misp_object.from_dict(**self._parse_timeline(custom_object))
-        if hasattr(custom_object, 'x_misp_comment'):
-            misp_object.comment = custom_object.x_misp_comment
-        self._sanitise_object_uuid(misp_object, custom_object.id)
-        for custom_attribute in custom_object.x_misp_attributes:
-            attribute = dict(custom_attribute)
-            if attribute.get('uuid'):
-                attribute.update(
-                    self._sanitise_attribute_uuid(
-                        attribute['uuid'], attribute.get('comment')
-                    )
-                )
-            misp_object.add_attribute(**attribute)
-        self._add_misp_object(misp_object, custom_object)
+        self.custom_object_parser.parse(custom_ref)
 
     def _parse_identity(self, identity_ref: str):
         if identity_ref not in self._creators:
