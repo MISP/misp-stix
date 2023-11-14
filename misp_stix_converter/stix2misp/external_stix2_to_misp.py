@@ -12,10 +12,10 @@ from .importparser import _INDICATOR_TYPING
 from .converters import (
     ExternalSTIX2AttackPatternConverter, ExternalSTIX2CampaignConverter,
     ExternalSTIX2CourseOfActionConverter, ExternalSTIX2IndicatorConverter,
-    ExternalSTIX2IntrusionSetConverter, ExternalSTIX2MalwareAnalysisConverter,
-    ExternalSTIX2MalwareConverter, STIX2ObservableObjectConverter,
-    ExternalSTIX2ThreatActorConverter, ExternalSTIX2ToolConverter,
-    ExternalSTIX2VulnerabilityConverter)
+    ExternalSTIX2IntrusionSetConverter, ExternalSTIX2LocationConverter,
+    ExternalSTIX2MalwareAnalysisConverter, ExternalSTIX2MalwareConverter,
+    STIX2ObservableObjectConverter, ExternalSTIX2ThreatActorConverter,
+    ExternalSTIX2ToolConverter, ExternalSTIX2VulnerabilityConverter)
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
@@ -140,6 +140,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._course_of_action_parser: ExternalSTIX2CourseOfActionConverter
         self._indicator_parser: ExternalSTIX2IndicatorConverter
         self._intrusion_set_parser: ExternalSTIX2IntrusionSetConverter
+        self._location_parser: ExternalSTIX2LocationConverter
         self._malware_analysis_parser: ExternalSTIX2MalwareAnalysisConverter
         self._malware_parser: ExternalSTIX2MalwareConverter
         self._observable_object_parser: STIX2ObservableObjectConverter
@@ -173,6 +174,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_intrusion_set_parser(self) -> ExternalSTIX2IntrusionSetConverter:
         self._intrusion_set_parser = ExternalSTIX2IntrusionSetConverter(self)
         return self._intrusion_set_parser
+
+    def _set_location_parser(self) -> ExternalSTIX2LocationConverter:
+        self._location_parser = ExternalSTIX2LocationConverter(self)
+        return self._location_parser
 
     def _set_malware_analysis_parser(self) -> ExternalSTIX2MalwareAnalysisConverter:
         self._malware_analysis_parser = ExternalSTIX2MalwareAnalysisConverter(self)
@@ -466,32 +471,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             for observable in self._observable.values():
                 observable['used'][self.misp_event.uuid] = False
         super()._parse_loaded_features()
-
-    def _parse_location(self, location_ref: str):
-        """
-        STIX 2.1 Location object parsing function. A geolocation MISP object is
-        created and the different STIX fields are converted into the appropriate
-        object attributes (Common with the parent parsing class).
-
-        :param location_ref: The Location id used to find the related Location
-            object to parse
-        """
-        if location_ref in self._clusters:
-            self._clusters[location_ref]['used'][self.misp_event.uuid] = False
-        else:
-            location = self._get_stix_object(location_ref)
-            if any(hasattr(location, feature) for feature in self._mapping.location_object_fields()):
-                misp_object = self._parse_location_object(
-                    location, to_return=True
-                )
-                self._add_misp_object(misp_object, location)
-            else:
-                feature = 'region' if not hasattr(location, 'country') else 'country'
-                self._clusters[location_ref] = getattr(
-                    self, f'_parse_galaxy_{self.galaxy_feature}'
-                )(
-                    location, feature
-                )
 
     def _parse_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
         """
