@@ -98,8 +98,8 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'threat-actor': '_parse_threat_actor',
             'tool': '_parse_tool',
             'vulnerability': '_parse_vulnerability',
-            'x-misp-attribute': '_parse_custom_attribute',
-            'x-misp-galaxy-cluster': '_parse_custom_galaxy_cluster',
+            'x-misp-attribute': '_parse_custom_object',
+            'x-misp-galaxy-cluster': '_parse_custom_object',
             'x-misp-object': '_parse_custom_object'
         }
     )

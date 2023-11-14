@@ -4,6 +4,7 @@ from .stix2_campaign_converter import (  # noqa
     ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter)
 from .stix2_course_of_action_converter import (  # noqa
     ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter)
+from .stix2_custom_object_converter import STIX2CustomObjectConverter  # noqa
 from .stix2_indicator_converter import (  # noqa
     ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter)
 from .stix2_intrusion_set_converter import (  # noqa

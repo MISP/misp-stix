@@ -165,6 +165,12 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f'The Following exception was raised: {exception}'
         )
 
+    def _custom_object_error(self, custom_object_id: str, exception: Exception):
+        self.__errors[self._identifier].add(
+            'Error parsing the Custom object with id'
+            f'{custom_object_id}: {self._parse_traceback(exception)}'
+        )
+
     def _distribution_error(self, exception: Exception):
         self.__errors['init'].add(
             f'Wrong distribution format: {exception}'
