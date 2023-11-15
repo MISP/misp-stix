@@ -90,7 +90,8 @@ class STIX2LocationConverter(STIX2Converter, metaclass=ABCMeta):
         location_args = self._create_cluster_args(
             location, galaxy_type, description=description,
             cluster_value=(
-                location.name if galaxy_type == 'country' else
+                location.name if galaxy_type == 'country' or
+                not hasattr(location, 'region') else
                 self._mapping.regions_mapping(location.region, location.name)
             )
         )

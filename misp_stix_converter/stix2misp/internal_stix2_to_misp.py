@@ -14,7 +14,8 @@ from .converters import (
     InternalSTIX2IntrusionSetConverter, InternalSTIX2LocationConverter,
     InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter,
     InternalSTIX2ThreatActorConverter, InternalSTIX2ToolConverter,
-    InternalSTIX2VulnerabilityConverter, STIX2CustomObjectConverter)
+    InternalSTIX2VulnerabilityConverter, STIX2CustomObjectConverter,
+    STIX2NoteConverter)
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
@@ -75,6 +76,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._location_parser: InternalSTIX2LocationConverter
         self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
         self._malware_parser: InternalSTIX2MalwareConverter
+        self._note_parser: STIX2NoteConverter
         self._threat_actor_parser: InternalSTIX2ThreatActorConverter
         self._tool_parser: InternalSTIX2ToolConverter
         self._vulnerability_parser: InternalSTIX2VulnerabilityConverter
@@ -84,6 +86,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         return getattr(
             self, '_custom_object_parser', self._set_custom_object_parser()
         )
+
+    @property
+    def note_parser(self) -> STIX2NoteConverter:
+        return getattr(self, '_note_parser', self._set_note_parser())
 
     def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
@@ -120,6 +126,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_malware_parser(self) -> InternalSTIX2MalwareConverter:
         self._malware_parser = InternalSTIX2MalwareConverter(self)
         return self._malware_parser
+
+    def _set_note_parser(self) -> STIX2NoteConverter:
+        self._note_parser = STIX2NoteConverter(self)
+        return self._note_parser
 
     def _set_threat_actor_parser(self) -> InternalSTIX2ThreatActorConverter:
         self._threat_actor_parser = InternalSTIX2ThreatActorConverter(self)
@@ -274,23 +284,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._identity_error(identity.id, exception)
 
     def _parse_note(self, note_ref: str):
-        note = self._get_stix_object(note_ref)
-        misp_object = self._create_misp_object('annotation', note)
-        self._sanitise_object_uuid(misp_object, note.id)
-        misp_object.from_dict(**self._parse_timeline(note))
-        for feature, mapping in self._mapping.annotation_object_mapping().items():
-            if hasattr(note, feature):
-                self._populate_object_attributes_with_data(
-                    misp_object,
-                    mapping,
-                    getattr(note, feature)
-                )
-        if hasattr(note, 'object_refs'):
-            for object_ref in note.object_refs:
-                misp_object.add_reference(
-                    self._sanitise_uuid(object_ref), 'annotates'
-                )
-        self._add_misp_object(misp_object, note)
+        self.note_parser.parse(note_ref)
 
     def _parse_observed_data(self, observed_data_ref: str):
         observed_data = self._get_stix_object(observed_data_ref)
