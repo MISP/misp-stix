@@ -911,6 +911,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __first_seen_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'first-seen'}
     )
+    __format_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'format'}
+    )
     __host_attribute = Mapping(
         **{'type': 'hostname', 'object_relation': 'host'}
     )
@@ -1013,7 +1016,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
     __followers_attribute = {'type': 'text', 'object_relation': 'followers'}
     __following_attribute = {'type': 'text', 'object_relation': 'following'}
-    __format_attribute = {'type': 'text', 'object_relation': 'format'}
     __fullpath_attribute = {'type': 'text', 'object_relation': 'fullpath'}
     __guid_attribute = {'type': 'text', 'object_relation': 'guid'}
     __header_attribute = {'type': 'text', 'object_relation': 'header'}
@@ -1554,6 +1556,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def first_seen_attribute(cls) -> dict:
         return cls.__first_seen_attribute
+
+    @classmethod
+    def format_attribute(cls) -> dict:
+        return cls.__format_attribute
 
     @classmethod
     def github_user_object_mapping(cls) -> dict:

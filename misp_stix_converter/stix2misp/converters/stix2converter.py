@@ -13,7 +13,7 @@ from stix2.v20.sdo import (
 from stix2.v21.observables import Artifact as Artifact_v21, File as File_v21
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, Malware as Malware_v21)
-from typing import Optional, Tuple, TYPE_CHECKING, Union
+from typing import Iterator, Optional, Tuple, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
@@ -85,7 +85,8 @@ class STIX2Converter(metaclass=ABCMeta):
     #                     STIX OBJECTS CONVERSION METHODS.                     #
     ############################################################################
 
-    def _generic_parser(self, stix_object, feature: Optional[str] = None):
+    def _generic_parser(
+            self, stix_object, feature: Optional[str] = None) -> Iterator[dict]:
         if feature is None:
             feature = stix_object.type.replace('-', '_')
         mapping = getattr(self._mapping, f'{feature}_object_mapping')
@@ -95,8 +96,26 @@ class STIX2Converter(metaclass=ABCMeta):
                     attribute, getattr(stix_object, field), stix_object.id
                 )
 
+    def _populate_object_attribute(
+            self, mapping: dict, reference: str, value: str) -> dict:
+        if isinstance(value, dict):
+            attribute_value = value['value']
+            return {
+                **value, **mapping,
+                'uuid': self.main_parser._create_v5_uuid(
+                    f'{reference} - {attribute_value}'
+                )
+            }
+        return {
+            'value': value, **mapping,
+            'uuid': self.main_parser._create_v5_uuid(
+                f'{reference} - {value}'
+            )
+        }
+
     def _populate_object_attributes(
-            self, mapping: dict, values: Union[list, str], object_id: str):
+            self, mapping: dict, values: Union[list, str],
+            object_id: str) -> Iterator[dict]:
         reference = f"{object_id} - {mapping['object_relation']}"
         if isinstance(values, list):
             for value in values:
@@ -114,8 +133,18 @@ class STIX2Converter(metaclass=ABCMeta):
                 )
             }
 
+    def _populate_object_attributes_with_data(
+            self, mapping: dict, values: Union[dict, list, str],
+            object_id: str) -> Iterator[dict]:
+        reference = f"{object_id} - {mapping['object_relation']}"
+        if isinstance(values, list):
+            for value in values:
+                yield self._populate_object_attribute(mapping, reference, value)
+        else:
+            yield self._populate_object_attribute(mapping, reference, values)
+
     ############################################################################
-    #                             UTILITY METHODS                             #
+    #                             UTILITY METHODS.                             #
     ############################################################################
 
     @staticmethod
