@@ -10,12 +10,12 @@ from .importparser import _INDICATOR_TYPING
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .converters import (
     InternalSTIX2AttackPatternConverter, InternalSTIX2CampaignConverter,
-    InternalSTIX2CourseOfActionConverter, InternalSTIX2IndicatorConverter,
-    InternalSTIX2IntrusionSetConverter, InternalSTIX2LocationConverter,
-    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter,
-    InternalSTIX2ThreatActorConverter, InternalSTIX2ToolConverter,
-    InternalSTIX2VulnerabilityConverter, STIX2CustomObjectConverter,
-    STIX2NoteConverter)
+    InternalSTIX2CourseOfActionConverter, InternalSTIX2IdentityConverter,
+    InternalSTIX2IndicatorConverter, InternalSTIX2IntrusionSetConverter,
+    InternalSTIX2LocationConverter, InternalSTIX2MalwareAnalysisConverter,
+    InternalSTIX2MalwareConverter, InternalSTIX2ThreatActorConverter,
+    InternalSTIX2ToolConverter, InternalSTIX2VulnerabilityConverter,
+    STIX2CustomObjectConverter, STIX2NoteConverter)
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
@@ -71,6 +71,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._campaign_parser: InternalSTIX2CampaignConverter
         self._course_of_action_parser: InternalSTIX2CourseOfActionConverter
         self._custom_object_parser: STIX2CustomObjectConverter
+        self._identity_parser: InternalSTIX2IdentityConverter
         self._indicator_parser: InternalSTIX2IndicatorConverter
         self._intrusion_set_parser: InternalSTIX2IntrusionSetConverter
         self._location_parser: InternalSTIX2LocationConverter
@@ -107,6 +108,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_custom_object_parser(self) -> STIX2CustomObjectConverter:
         self._custom_object_parser = STIX2CustomObjectConverter(self)
         return self._custom_object_parser
+
+    def _set_identity_parser(self) -> InternalSTIX2IdentityConverter:
+        self._identity_parser = InternalSTIX2IdentityConverter(self)
+        return self._identity_parser
 
     def _set_indicator_parser(self) -> InternalSTIX2IndicatorConverter:
         self._indicator_parser = InternalSTIX2IndicatorConverter(self)
@@ -271,19 +276,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _parse_custom_object(self, custom_ref: str):
         self.custom_object_parser.parse(custom_ref)
 
-    def _parse_identity(self, identity_ref: str):
-        if identity_ref not in self._creators:
-            identity = self._get_stix_object(identity_ref)
-            feature = self._handle_object_mapping(identity.labels, identity.id)
-            try:
-                parser = getattr(self, feature)
-            except AttributeError:
-                raise UnknownParsingFunctionError(feature)
-            try:
-                parser(identity)
-            except Exception as exception:
-                self._identity_error(identity.id, exception)
-
     def _parse_note(self, note_ref: str):
         self.note_parser.parse(note_ref)
 
@@ -319,20 +311,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 }
             )
         self._galaxies[galaxy_type] = misp_galaxy
-
-    def _parse_course_of_action_object(
-            self, course_of_action: _COURSE_OF_ACTION_TYPING):
-        misp_object = self._create_misp_object(
-            'course-of-action', course_of_action
-        )
-        for key, mapping in self._mapping.course_of_action_object_mapping().items():
-            if hasattr(course_of_action, key):
-                self._populate_object_attributes(
-                    misp_object,
-                    mapping,
-                    getattr(course_of_action, key)
-                )
-        self._add_misp_object(misp_object, course_of_action)
 
     def _parse_employee_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._create_misp_object('employee', identity)
@@ -393,82 +371,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             stix_object, galaxy_type=galaxy_type, description=description
         )
 
-    def _parse_identity_cluster(
-            self, identity: _IDENTITY_TYPING,  galaxy_type: str,
-            description: Optional[str] = None) -> MISPGalaxyCluster:
-        identity_args = self._create_cluster_args(
-            identity, galaxy_type, description=description
-        )
-        return self._create_misp_galaxy_cluster(identity_args)
-
-    def _parse_identity_object(
-            self, identity: _IDENTITY_TYPING, name: str) -> MISPObject:
-        misp_object = self._create_misp_object(name, identity)
-        feature = name.replace('-', '_')
-        for key, mapping in getattr(self._mapping, f'{feature}_object_mapping')().items():
-            if hasattr(identity, key):
-                self._populate_object_attributes(
-                    misp_object,
-                    mapping,
-                    getattr(identity, key)
-                )
-        if hasattr(identity, 'contact_information'):
-            mapping = getattr(
-                self._mapping, f'{feature}_contact_information_mapping'
-            )
-            contact_information = []
-            for contact_info in identity.contact_information.split(' / '):
-                if ': ' in contact_info:
-                    try:
-                        object_relation, value = contact_info.split(': ')
-                    except ValueError:
-                        contact_information.append(contact_info)
-                        continue
-                    attribute = mapping(object_relation)
-                    if attribute is not None:
-                        misp_object.add_attribute(
-                            **{
-                                'object_relation': object_relation,
-                                'value': value, **attribute
-                            }
-                        )
-                        continue
-                contact_information.append(contact_info)
-            if contact_information:
-                misp_object.add_attribute(
-                    'contact_information', '; '.join(contact_information)
-                )
-        return misp_object
-
-    def _parse_legal_entity_object(self, identity: _IDENTITY_TYPING):
-        misp_object = self._parse_identity_object(identity, 'legal-entity')
-        if hasattr(identity, 'x_misp_logo'):
-            attribute = {'type': 'attachment', 'object_relation': 'logo'}
-            if isinstance(identity.x_misp_logo, dict):
-                attribute.update(identity.x_misp_logo)
-            else:
-                attribute['value'] = identity.x_misp_logo
-            misp_object.add_attribute(**attribute)
-        self._add_misp_object(misp_object, identity)
-
-    def _parse_news_agency_object(self, identity: _IDENTITY_TYPING):
-        misp_object = self._parse_identity_object(identity, 'news-agency')
-        if hasattr(identity, 'x_misp_attachment'):
-            attribute = {'type': 'attachment', 'object_relation': 'attachment'}
-            if isinstance(identity.x_misp_attachment, dict):
-                attribute.update(identity.x_misp_attachment)
-            else:
-                attribute['value'] = identity.x_misp_attachment
-            misp_object.add_attribute(**attribute)
-        self._add_misp_object(misp_object, identity)
-
-    def _parse_organization_object(self, identity: _IDENTITY_TYPING):
-        misp_object = self._parse_identity_object(identity, 'organization')
-        self._add_misp_object(misp_object, identity)
-
-    ################################################################################
-    #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #
-    ################################################################################
+    ############################################################################
+    #                    OBSERVABLE OBJECTS PARSING METHODS                    #
+    ############################################################################
 
     def _attribute_from_address_observable_v20(
             self, observed_data: ObservedData_v20):

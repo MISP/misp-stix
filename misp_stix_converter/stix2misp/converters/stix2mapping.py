@@ -896,6 +896,9 @@ class ExternalSTIX2Mapping(STIX2Mapping):
 
 class InternalSTIX2Mapping(STIX2Mapping):
     # SINGLE ATTRIBUTES
+    __archive_attribute = Mapping(
+        **{'type': 'link', 'object_relation': 'archive'}
+    )
     __attachment_attribute = Mapping(
         **{'type': 'attachment', 'object_relation': 'attachment'}
     )
@@ -1010,7 +1013,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     # OBJECT ATTRIBUTES
     __account_id_attribute = {'type': 'text', 'object_relation': 'account-id'}
     __account_name_attribute = {'type': 'text', 'object_relation': 'account-name'}
-    __archive_attribute = {'type': 'link', 'object_relation': 'archive'}
     __bio_attribute = {'type': 'text', 'object_relation': 'bio'}
     __community_id_attribute = {'type': 'community-id', 'object_relation': 'community-id'}
     __compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
@@ -1496,6 +1498,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def android_app_object_mapping(cls) -> dict:
         return cls.__android_app_object_mapping
+
+    @classmethod
+    def archive_attribute(cls) -> dict:
+        return cls.__archive_attribute
 
     @classmethod
     def asn_object_mapping(cls) -> dict:
