@@ -17,6 +17,7 @@ from .converters import (
     ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
     ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter,
     ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter,
+    ExternalSTIX2IdentityConverter, InternalSTIX2IdentityConverter,
     ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter,
     ExternalSTIX2IntrusionSetConverter, InternalSTIX2IntrusionSetConverter,
     ExternalSTIX2LocationConverter, InternalSTIX2LocationConverter,
@@ -122,6 +123,9 @@ _GALAXY_OBJECTS_TYPING = Union[
 ]
 _GROUPING_REPORT_TYPING = Union[
     Grouping, Report_v20, Report_v21
+]
+_IDENTITY_PARSER_TYPING = Union[
+    ExternalSTIX2IdentityConverter, InternalSTIX2IdentityConverter
 ]
 _IDENTITY_TYPING = Union[
     Identity_v20, Identity_v21
@@ -305,6 +309,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     @property
     def generic_info_field(self) -> str:
         return f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
+
+    @property
+    def identity_parser(self) -> _IDENTITY_PARSER_TYPING:
+        return getattr(self, '_identity_parser', self._set_identity_parser())
 
     @property
     def indicator_parser(self) -> _INDICATOR_PARSER_TYPING:
@@ -681,6 +689,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if not tags['used'][self.misp_event.uuid]:
                 for tag in tags['tag_names']:
                     self.misp_event.add_tag(tag)
+
+    def _parse_identity(self, identity_ref: str):
+        self.identity_parser.parse(identity_ref)
 
     def _parse_indicator(self, indicator_ref: str):
         self.indicator_parser.parse(indicator_ref)

@@ -184,20 +184,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         name=STIX2toMISPMapping.name_attribute(),
         description=STIX2toMISPMapping.description_attribute()
     )
-    __identity_object_multiple_fields = (
-        'roles', 'sectors'
-    )
-    __identity_object_single_fields = (
-        'name',
-        'description',
-        'identity_class',
-        'contact_information'
-    )
-    __organization_object_mapping = Mapping(
-        contact_information='contact_information',
-        description='description',
-        name='name'
-    )
     __sigma_object_mapping = Mapping(
         pattern=STIX2toMISPMapping.sigma_attribute(),
         description=STIX2toMISPMapping.comment_attribute(),
@@ -550,14 +536,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__http_request_extension_mapping.get(field)
 
     @classmethod
-    def identity_object_multiple_fields(cls) -> tuple:
-        return cls.__identity_object_multiple_fields
-
-    @classmethod
-    def identity_object_single_fields(cls) -> tuple:
-        return cls.__identity_object_single_fields
-
-    @classmethod
     def network_connection_object_reference_mapping(cls, field) -> Union[str, None]:
         return cls.__network_connection_object_reference_mapping.get(field)
 
@@ -576,10 +554,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def observable_mapping(cls, field) -> Union[str, None]:
         return cls.__observable_mapping.get(field)
-
-    @classmethod
-    def organization_object_mapping(cls) -> dict:
-        return cls.__organization_object_mapping
 
     @classmethod
     def pattern_forbidden_relations(cls) -> tuple:

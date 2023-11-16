@@ -423,17 +423,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
             **__email_object_mapping
         }
     )
-    __employee_object_mapping = Mapping(
-        name={'type': 'full-name', 'object_relation': 'full-name'},
-        description={'type': 'text', 'object_relation': 'text'},
-        roles=__employee_type_attribute,
-        x_misp_business_unit={'type': 'target-org', 'object_relation': 'business_unit'},
-        x_misp_employee_type=__employee_type_attribute,
-        x_misp_first_name={'type': 'first-name', 'object_relation': 'first-name'},
-        x_misp_last_name={'type': 'last-name', 'object_relation': 'last-name'},
-        x_misp_primary_asset={'type': 'target-machine', 'object_relation': 'primary-asset'},
-        x_misp_userid={'type': 'target-user', 'object_relation': 'userid'}
-    )
     __facebook_account_object_mapping = Mapping(
         user_id=__account_id_attribute,
         account_login=__account_name_attribute,
@@ -614,20 +603,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_ip=STIX2toMISPMapping.ip_attribute(),
         x_misp_text=__text_attribute
     )
-    __legal_entity_contact_information_mapping = Mapping(
-        **{
-            'phone-number': {'type': 'phone-number'},
-            'website': {'type': 'link'}
-        }
-    )
-    __legal_entity_object_mapping = Mapping(
-        name=STIX2toMISPMapping.name_attribute(),
-        description=__text_attribute,
-        sectors={'type': 'text', 'object_relation': 'business'},
-        x_misp_commercial_name={'type': 'text', 'object_relation': 'commercial-name'},
-        x_misp_legal_form={'type': 'text', 'object_relation': 'legal-form'},
-        x_misp_registration_number={'type': 'text', 'object_relation': 'registration-number'}
-    )
     __lnk_object_mapping = Mapping(
         name=STIX2toMISPMapping.filename_attribute(),
         accessed=__lnk_access_time_attribute,
@@ -721,46 +696,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         x_misp_hostname_dst=__hostname_dst_attribute,
         x_misp_hostname_src=__hostname_src_attribute,
         x_misp_option={'type': 'text', 'object_relation': 'option'}
-    )
-    __news_agency_contact_information_mapping = Mapping(
-        **{
-            'address': {'type': 'text'},
-            'e-mail': {'type': 'email-src'},
-            'fax-number': {'type': 'phone-number'},
-            'link': {'type': 'link'},
-            'phone-number': {'type': 'phone-number'}
-        }
-    )
-    __news_agency_object_mapping = Mapping(
-        name=STIX2toMISPMapping.name_attribute(),
-        x_misp_alias=__alias_attribute,
-        x_misp_archive=__archive_attribute,
-        x_misp_url=STIX2toMISPMapping.url_attribute()
-    )
-    __organization_contact_information_mapping = Mapping(
-        **{
-            'address': {'type': 'text'},
-            'e-mail': {'type': 'email-src'},
-            'fax-number': {'type': 'phone-number'},
-            'phone-number': {'type': 'phone-number'}
-        }
-    )
-    __organization_object_mapping = Mapping(
-        name=STIX2toMISPMapping.name_attribute(),
-        description=STIX2toMISPMapping.description_attribute(),
-        roles=__role_attribute,
-        sectors={'type': 'text', 'object_relation': 'sector'},
-        x_misp_role=__role_attribute,
-        x_misp_alias=__alias_attribute,
-        x_misp_date_of_inception={
-            'type': 'datetime',
-            'object_relation': 'date-of-inception'
-        },
-        x_misp_type_of_organization={
-            'type': 'text',
-            'object_relation': 'type-of-organization'
-        },
-        x_misp_VAT={'type': 'text', 'object_relation': 'VAT'}
     )
     __parent_process_object_mapping = Mapping(
         command_line=__parent_command_line_attribute,
@@ -1071,10 +1006,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__email_pattern_mapping.get(field)
 
     @classmethod
-    def employee_object_mapping(cls) -> dict:
-        return cls.__employee_object_mapping
-
-    @classmethod
     def facebook_account_object_mapping(cls) -> dict:
         return cls.__facebook_account_object_mapping
 
@@ -1163,14 +1094,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__ip_port_object_mapping.get(field)
 
     @classmethod
-    def legal_entity_contact_information_mapping(cls, field) -> Union[dict, None]:
-        return cls.__legal_entity_contact_information_mapping.get(field)
-
-    @classmethod
-    def legal_entity_object_mapping(cls) -> dict:
-        return cls.__legal_entity_object_mapping
-
-    @classmethod
     def lnk_object_mapping(cls) -> dict:
         return cls.__lnk_object_mapping
 
@@ -1211,14 +1134,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__network_socket_object_mapping.get(field)
 
     @classmethod
-    def news_agency_contact_information_mapping(cls, field) -> Union[dict, None]:
-        return cls.__news_agency_contact_information_mapping.get(field)
-
-    @classmethod
-    def news_agency_object_mapping(cls) -> dict:
-        return cls.__news_agency_object_mapping
-
-    @classmethod
     def objects_mapping(cls, field) -> Union[str, None]:
         return cls.__objects_mapping.get(field)
 
@@ -1229,14 +1144,6 @@ class InternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def observable_attributes_mapping(cls, field) -> Union[str, None]:
         return cls.__observable_attributes_mapping.get(field)
-
-    @classmethod
-    def organization_contact_information_mapping(cls, field) -> Union[dict, None]:
-        return cls.__organization_contact_information_mapping.get(field)
-
-    @classmethod
-    def organization_object_mapping(cls) -> dict:
-        return cls.__organization_object_mapping
 
     @classmethod
     def parent_process_object_mapping(cls) -> dict:
