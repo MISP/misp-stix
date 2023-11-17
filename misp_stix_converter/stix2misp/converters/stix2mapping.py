@@ -1073,6 +1073,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'news-agency': '_parse_news_agency_object',
             'organization': '_parse_organization_object',
             'parler-account': '_object_from_parler_account',
+            'person': '_parse_person_object',
             'process': '_object_from_process',
             'reddit-account': '_object_from_reddit_account',
             'registry-key': '_object_from_registry_key',
