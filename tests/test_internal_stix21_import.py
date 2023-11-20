@@ -2832,6 +2832,21 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             indicator = yara_indicator
         )
 
+    def test_stix21_bundle_with_person_object(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_person_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, identity = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        role = self._check_person_object(misp_object, identity)
+        self.assertEqual(role.object_relation, 'role')
+        self.assertEqual(role.value, identity.roles[0])
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            identity = identity
+        )
+
     def test_stix21_bundle_with_process_indicator_object(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_process_indicator_object()
         self.parser.load_stix_bundle(bundle)

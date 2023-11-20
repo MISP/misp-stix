@@ -1954,6 +1954,25 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(ssdeep.object_relation, 'ssdeep')
         self.assertEqual(ssdeep.value, self._get_pattern_value(SSDEEP))
 
+    def _check_person_object(self, misp_object, identity):
+        self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        self.assertEqual(misp_object.name, 'person')
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            identity.created,
+            identity.modified
+        )
+        self._check_object_labels(misp_object, identity.labels, False)
+        name, role, nationality, passport, phone = misp_object.attributes
+        self.assertEqual(name.object_relation, 'full-name')
+        self.assertEqual(name.value, identity.name)
+        self.assertEqual(nationality.object_relation, 'nationality')
+        self.assertEqual(nationality.value, identity.x_misp_nationality)
+        self.assertEqual(passport.object_relation, 'passport-number')
+        self.assertEqual(passport.value, identity.x_misp_passport_number)
+        self.assertEqual(identity.contact_information, f'{phone.object_relation}: {phone.value}')
+        return role
+
     def _check_process_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 10)
         name, pid, image, parent_command_line, parent_image, parent_pid, parent_name, child_pid, hidden, port = attributes
