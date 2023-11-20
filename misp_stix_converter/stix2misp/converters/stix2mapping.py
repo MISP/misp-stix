@@ -896,6 +896,9 @@ class ExternalSTIX2Mapping(STIX2Mapping):
 
 class InternalSTIX2Mapping(STIX2Mapping):
     # SINGLE ATTRIBUTES
+    __archive_attribute = Mapping(
+        **{'type': 'link', 'object_relation': 'archive'}
+    )
     __attachment_attribute = Mapping(
         **{'type': 'attachment', 'object_relation': 'attachment'}
     )
@@ -1010,7 +1013,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     # OBJECT ATTRIBUTES
     __account_id_attribute = {'type': 'text', 'object_relation': 'account-id'}
     __account_name_attribute = {'type': 'text', 'object_relation': 'account-name'}
-    __archive_attribute = {'type': 'link', 'object_relation': 'archive'}
     __bio_attribute = {'type': 'text', 'object_relation': 'bio'}
     __community_id_attribute = {'type': 'community-id', 'object_relation': 'community-id'}
     __compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
@@ -1058,6 +1060,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'github-user': '_object_from_github_user',
             'gitlab-user': '_object_from_gitlab_user',
             'http-request': '_object_from_http_request',
+            'identity': '_parse_identity_object',
             'image': '_object_from_image',
             'intrusion-set': '_parse_intrusion_set_object',
             'ip-port': '_object_from_ip_port',
@@ -1071,6 +1074,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
             'news-agency': '_parse_news_agency_object',
             'organization': '_parse_organization_object',
             'parler-account': '_object_from_parler_account',
+            'person': '_parse_person_object',
             'process': '_object_from_process',
             'reddit-account': '_object_from_reddit_account',
             'registry-key': '_object_from_registry_key',
@@ -1496,6 +1500,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def android_app_object_mapping(cls) -> dict:
         return cls.__android_app_object_mapping
+
+    @classmethod
+    def archive_attribute(cls) -> dict:
+        return cls.__archive_attribute
 
     @classmethod
     def asn_object_mapping(cls) -> dict:

@@ -4325,6 +4325,23 @@ _HTTP_REQUEST_OBSERVABLE_OBJECT = {
         "misp:to_ids=\"False\""
     ]
 }
+_IDENTITY_OBJECT = {
+    "type": "identity",
+    "id": "identity--a54e32af-5569-4949-b1fe-ad75054cde45",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "John Doe",
+    "description": "Unknown person",
+    "identity_class": "individual",
+    "contact_information": "email-address: jdoe@email.com / phone-number: 0123456789",
+    "labels": [
+        "misp:name=\"identity\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ],
+    "x_misp_roles": "Placeholder name"
+}
 _IMAGE_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--939b2f03-c487-4f62-a90e-cab7acfee294",
@@ -5418,6 +5435,24 @@ _ORGANIZATION_OBJECT = {
     ],
     "x_misp_alias": "CIRCL",
     "x_misp_role": "national CERT"
+}
+_PERSON_OBJECT = {
+    "type": "identity",
+    "id": "identity--868037d5-d804-4f1d-8016-f296361f9c68",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "John Smith",
+    "identity_class": "individual",
+    "contact_information": "phone-number: 0123456789",
+    "labels": [
+        "misp:name=\"person\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ],
+    "x_misp_nationality": "USA",
+    "x_misp_passport_number": "ABA9875413",
+    "x_misp_role": "Guru"
 }
 _PORT_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
@@ -6812,6 +6847,10 @@ class TestInternalSTIX20Bundles:
         return cls.__assemble_bundle(_HTTP_REQUEST_OBSERVABLE_OBJECT)
 
     @classmethod
+    def get_bundle_with_identity_object(cls):
+        return cls.__assemble_bundle(_IDENTITY_OBJECT)
+
+    @classmethod
     def get_bundle_with_image_indicator_object(cls):
         indicator = deepcopy(_IMAGE_INDICATOR_OBJECT)
         with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
@@ -6927,6 +6966,10 @@ class TestInternalSTIX20Bundles:
     @classmethod
     def get_bundle_with_organization_object(cls):
         return cls.__assemble_bundle(_ORGANIZATION_OBJECT)
+
+    @classmethod
+    def get_bundle_with_person_object(cls):
+        return cls.__assemble_bundle(_PERSON_OBJECT)
 
     @classmethod
     def get_bundle_with_process_indicator_object(cls):

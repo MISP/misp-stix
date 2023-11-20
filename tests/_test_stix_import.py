@@ -1360,6 +1360,26 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(host.object_relation, 'host')
         self.assertEqual(host.value, domain_name.value)
 
+    def _check_identity_object(self, misp_object, identity):
+        self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        self.assertEqual(misp_object.name, 'identity')
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            identity.created,
+            identity.modified
+        )
+        self._check_object_labels(misp_object, identity.labels, False)
+        name, description, contact, identity_class, roles = misp_object.attributes
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, identity.name)
+        self.assertEqual(description.object_relation, 'description')
+        self.assertEqual(description.value, identity.description)
+        self.assertEqual(contact.object_relation, 'contact_information')
+        self.assertEqual(contact.value, identity.contact_information)
+        self.assertEqual(identity_class.object_relation, 'identity_class')
+        self.assertEqual(identity_class.value, identity.identity_class)
+        return roles
+
     def _check_image_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)
         name, payload_bin, _, x_misp_filename, x_misp_url, x_misp_image_text = pattern[1:-1].split(' AND ')
@@ -1953,6 +1973,25 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(ssdeep.type, 'ssdeep')
         self.assertEqual(ssdeep.object_relation, 'ssdeep')
         self.assertEqual(ssdeep.value, self._get_pattern_value(SSDEEP))
+
+    def _check_person_object(self, misp_object, identity):
+        self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        self.assertEqual(misp_object.name, 'person')
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            identity.created,
+            identity.modified
+        )
+        self._check_object_labels(misp_object, identity.labels, False)
+        name, role, nationality, passport, phone = misp_object.attributes
+        self.assertEqual(name.object_relation, 'full-name')
+        self.assertEqual(name.value, identity.name)
+        self.assertEqual(nationality.object_relation, 'nationality')
+        self.assertEqual(nationality.value, identity.x_misp_nationality)
+        self.assertEqual(passport.object_relation, 'passport-number')
+        self.assertEqual(passport.value, identity.x_misp_passport_number)
+        self.assertEqual(identity.contact_information, f'{phone.object_relation}: {phone.value}')
+        return role
 
     def _check_process_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 10)

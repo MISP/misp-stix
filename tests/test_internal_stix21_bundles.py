@@ -5226,6 +5226,26 @@ _HTTP_REQUEST_OBSERVABLE_OBJECT = [
         ]
     }
 ]
+_IDENTITY_OBJECT = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--a54e32af-5569-4949-b1fe-ad75054cde45",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "John Doe",
+    "description": "Unknown person",
+    "roles": [
+        "Placeholder name"
+    ],
+    "identity_class": "individual",
+    "contact_information": "email-address: jdoe@email.com / phone-number: 0123456789",
+    "labels": [
+        "misp:name=\"identity\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _IMAGE_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -6725,6 +6745,27 @@ _PATTERNING_LANGUAGE_OBJECTS = [
         ]
     }
 ]
+_PERSON_OBJECT = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--868037d5-d804-4f1d-8016-f296361f9c68",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "John Smith",
+    "roles": [
+        "Guru"
+    ],
+    "identity_class": "individual",
+    "contact_information": "phone-number: 0123456789",
+    "labels": [
+        "misp:name=\"person\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ],
+    "x_misp_nationality": "USA",
+    "x_misp_passport_number": "ABA9875413"
+}
 _PORT_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -8274,6 +8315,10 @@ class TestInternalSTIX21Bundles:
         return cls.__assemble_bundle(*_HTTP_REQUEST_OBSERVABLE_OBJECT)
 
     @classmethod
+    def get_bundle_with_identity_object(cls):
+        return cls.__assemble_bundle(_IDENTITY_OBJECT)
+
+    @classmethod
     def get_bundle_with_image_indicator_object(cls):
         indicator = deepcopy(_IMAGE_INDICATOR_OBJECT)
         with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
@@ -8395,6 +8440,10 @@ class TestInternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_patterning_language_objects(cls):
         return cls.__assemble_bundle(*_PATTERNING_LANGUAGE_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_person_object(cls):
+        return cls.__assemble_bundle(_PERSON_OBJECT)
 
     @classmethod
     def get_bundle_with_process_indicator_object(cls):

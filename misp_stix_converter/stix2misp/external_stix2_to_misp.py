@@ -11,11 +11,12 @@ from .external_stix2_mapping import ExternalSTIX2toMISPMapping
 from .importparser import _INDICATOR_TYPING
 from .converters import (
     ExternalSTIX2AttackPatternConverter, ExternalSTIX2CampaignConverter,
-    ExternalSTIX2CourseOfActionConverter, ExternalSTIX2IndicatorConverter,
-    ExternalSTIX2IntrusionSetConverter, ExternalSTIX2LocationConverter,
-    ExternalSTIX2MalwareAnalysisConverter, ExternalSTIX2MalwareConverter,
-    STIX2ObservableObjectConverter, ExternalSTIX2ThreatActorConverter,
-    ExternalSTIX2ToolConverter, ExternalSTIX2VulnerabilityConverter)
+    ExternalSTIX2CourseOfActionConverter, ExternalSTIX2IdentityConverter,
+    ExternalSTIX2IndicatorConverter, ExternalSTIX2IntrusionSetConverter,
+    ExternalSTIX2LocationConverter, ExternalSTIX2MalwareAnalysisConverter,
+    ExternalSTIX2MalwareConverter, ExternalSTIX2ThreatActorConverter,
+    ExternalSTIX2ToolConverter, ExternalSTIX2VulnerabilityConverter,
+    STIX2ObservableObjectConverter)
 from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
@@ -138,6 +139,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
         self._campaign_parser: ExternalSTIX2CampaignConverter
         self._course_of_action_parser: ExternalSTIX2CourseOfActionConverter
+        self._identity_parser: ExternalSTIX2IdentityConverter
         self._indicator_parser: ExternalSTIX2IndicatorConverter
         self._intrusion_set_parser: ExternalSTIX2IntrusionSetConverter
         self._location_parser: ExternalSTIX2LocationConverter
@@ -166,6 +168,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_course_of_action_parser(self) -> ExternalSTIX2CourseOfActionConverter:
         self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
         return self._course_of_action_parser
+
+    def _set_identity_parser(self) -> ExternalSTIX2IdentityConverter:
+        self._identity_parser = ExternalSTIX2IdentityConverter(self)
+        return self._identity_parser
 
     def _set_indicator_parser(self) -> ExternalSTIX2IndicatorConverter:
         self._indicator_parser = ExternalSTIX2IndicatorConverter(self)
@@ -399,72 +405,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             'tag_names': tag_names,
             'used': {self.misp_event.uuid: False}
         }
-
-    def _parse_identity(self, identity_ref: str):
-        """
-        Identity object parsing function.
-        Based on the `identity_class` field, we try to redirect to the
-        appropriate parsing function
-
-        :param identity_ref: The Identity id used to find the related Identity
-            object to parse
-        """
-        identity = self._get_stix_object(identity_ref)
-        if hasattr(identity, 'identity_class') and identity.identity_class == 'class':
-            if identity_ref in self._clusters:
-                self._clusters[identity_ref]['used'][self.misp_event.uuid] = False
-            else:
-                self._clusters[identity_ref] = self._parse_galaxy(
-                    identity_ref, 'sector'
-                )
-        else:
-            self._parse_identity_object(identity)
-
-    def _parse_identity_object(self, identity: _IDENTITY_TYPING):
-        """
-        Generic STIX Identity object parsing function.
-        We start by defining the appropriate object name depending on some key
-        fields on the identity object, and extract the object attributes.
-
-        :param identity: The Identity object to parse
-        """
-        name = self._fetch_identity_object_name(identity)
-        misp_object = self._create_misp_object(name, identity)
-        for feature, value in getattr(self, f'_parse_{name}_object_attributes')(identity):
-            misp_object.add_attribute(feature, value)
-        self._add_misp_object(misp_object, identity)
-
-    def _parse_identity_object_attributes(self, identity: _IDENTITY_TYPING):
-        """
-        MISP Identity object attributes extraction function.
-        We check different fields in the Identity object and return the
-        appropriate information to build object attributes from each field.
-
-        :param identity: The identity object to parse
-        """
-        for feature in self._mapping.identity_object_single_fields():
-            if hasattr(identity, feature):
-                yield feature, getattr(identity, feature)
-        for feature in self._mapping.identity_object_multiple_fields():
-            if hasattr(identity, feature):
-                for value in getattr(identity, feature):
-                    yield feature, value
-
-    def _parse_organization_object_attributes(self, identity: _IDENTITY_TYPING):
-        """
-        MISP Organization object attributes extraction function.
-        We take the STIX Identity object to MISP Organization template mapping
-        in order to convert the given fields into object attributes
-
-        :param identity: The identity object to parse
-        """
-        for field, relation in self._mapping.organization_object_mapping().items():
-            if hasattr(identity, field):
-                yield relation, getattr(identity, field)
-        for feature in ('roles', 'sectors'):
-            if hasattr(identity, feature):
-                for value in getattr(identity, feature):
-                    yield feature[:-1], value
 
     def _parse_loaded_features(self):
         if hasattr(self, '_observable'):
