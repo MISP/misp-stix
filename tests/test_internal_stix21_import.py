@@ -2321,6 +2321,21 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data = [observed_data, network_traffic, address1, address2, domain_name]
         )
 
+    def test_stix21_bundle_with_identity_object(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_identity_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, identity = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
+        roles = self._check_identity_object(misp_object, identity)
+        self.assertEqual(roles.object_relation, 'roles')
+        self.assertEqual(roles.value, identity.roles[0])
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            identity = identity
+        )
+
     def test_stix21_bundle_with_image_indicator_object(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_image_indicator_object()
         self.parser.load_stix_bundle(bundle)

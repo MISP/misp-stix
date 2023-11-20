@@ -4325,6 +4325,23 @@ _HTTP_REQUEST_OBSERVABLE_OBJECT = {
         "misp:to_ids=\"False\""
     ]
 }
+_IDENTITY_OBJECT = {
+    "type": "identity",
+    "id": "identity--a54e32af-5569-4949-b1fe-ad75054cde45",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "John Doe",
+    "description": "Unknown person",
+    "identity_class": "individual",
+    "contact_information": "email-address: jdoe@email.com / phone-number: 0123456789",
+    "labels": [
+        "misp:name=\"identity\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ],
+    "x_misp_roles": "Placeholder name"
+}
 _IMAGE_INDICATOR_OBJECT = {
     "type": "indicator",
     "id": "indicator--939b2f03-c487-4f62-a90e-cab7acfee294",
@@ -6828,6 +6845,10 @@ class TestInternalSTIX20Bundles:
     @classmethod
     def get_bundle_with_http_request_observable_object(cls):
         return cls.__assemble_bundle(_HTTP_REQUEST_OBSERVABLE_OBJECT)
+
+    @classmethod
+    def get_bundle_with_identity_object(cls):
+        return cls.__assemble_bundle(_IDENTITY_OBJECT)
 
     @classmethod
     def get_bundle_with_image_indicator_object(cls):

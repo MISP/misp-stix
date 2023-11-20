@@ -1803,6 +1803,21 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data = observed_data
         )
 
+    def test_stix20_bundle_with_identity_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_identity_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, identity = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        roles = self._check_identity_object(misp_object, identity)
+        self.assertEqual(roles.object_relation, 'roles')
+        self.assertEqual(roles.value, identity.x_misp_roles)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            identity = identity
+        )
+
     def test_stix20_bundle_with_image_indicator_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_image_indicator_object()
         self.parser.load_stix_bundle(bundle)
