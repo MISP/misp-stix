@@ -30,7 +30,7 @@ class STIX2IdentityMapping(STIX2Mapping, metaclass=ABCMeta):
     __role_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'role'}
     )
-
+    __roles_attribute = {'type': 'text', 'object_relation': 'roles'}
     __organization_object_mapping = Mapping(
         name=STIX2Mapping.name_attribute(),
         description=STIX2Mapping.description_attribute(),
@@ -38,9 +38,13 @@ class STIX2IdentityMapping(STIX2Mapping, metaclass=ABCMeta):
         sectors={'type': 'text', 'object_relation': 'sector'}
     )
     __identity_object_mapping = Mapping(
-        **__organization_object_mapping,
+        name=STIX2Mapping.name_attribute(),
+        description=STIX2Mapping.description_attribute(),
         contact_information=__contact_information_attribute,
-        identity_class={'type': 'text', 'object_relation': 'identity_class'}
+        identity_class={'type': 'text', 'object_relation': 'identity_class'},
+        sectors={'type': 'text', 'object_relation': 'sectors'},
+        roles=__roles_attribute,
+        x_misp_roles=__roles_attribute
     )
 
     @classmethod
@@ -79,7 +83,7 @@ class STIX2IdentityConverter(STIX2Converter, metaclass=ABCMeta):
         misp_object = self._create_misp_object('identity', identity)
         for attribute in self._generic_parser(identity):
             misp_object.add_attribute(**attribute)
-        self.main_parser._add_misp_object(misp_object)
+        self.main_parser._add_misp_object(misp_object, identity)
 
 
 class ExternalSTIX2IdentityMapping(STIX2IdentityMapping, ExternalSTIX2Mapping):
@@ -109,7 +113,7 @@ class ExternalSTIX2IdentityConverter(
             misp_object = self._create_misp_object(name, identity)
             for attribute in self._generic_parser(identity, name):
                 misp_object.add_attribute(**attribute)
-            self.main_parser._add_misp_object(misp_object)
+            self.main_parser._add_misp_object(misp_object, identity)
 
     @staticmethod
     def _fetch_identity_object_name(identity: _IDENTITY_TYPING) -> str:
@@ -121,7 +125,7 @@ class ExternalSTIX2IdentityConverter(
         misp_object = self._create_misp_object('organization', identity)
         for attribute in self._generic_parser(identity, 'organization'):
             misp_object.add_attribute(**attribute)
-        self.main_parser._add_misp_object(misp_object)
+        self.main_parser._add_misp_object(misp_object, identity)
 
 
 class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
