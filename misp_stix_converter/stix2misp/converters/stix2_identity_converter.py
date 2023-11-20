@@ -128,6 +128,10 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
     __employee_type_attribute = {
         'type': 'text', 'object_relation': 'employee-type'
     }
+    __link_type = {'type': 'link'}
+    __phone_number_type = {'type': 'phone-number'}
+    __src_email_type = {'type': 'email-src'}
+    __text_type = {'type': 'text'}
 
     __employee_object_mapping = Mapping(
         name={'type': 'full-name', 'object_relation': 'full-name'},
@@ -148,8 +152,8 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
     )
     __legal_entity_contact_information_mapping = Mapping(
         **{
-            'phone-number': {'type': 'phone-number'},
-            'website': {'type': 'link'}
+            'phone-number': __phone_number_type,
+            'website': __link_type
         }
     )
     __legal_entity_object_mapping = Mapping(
@@ -166,11 +170,11 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
     )
     __news_agency_contact_information_mapping = Mapping(
         **{
-            'address': {'type': 'text'},
-            'e-mail': {'type': 'email-src'},
-            'fax-number': {'type': 'phone-number'},
-            'link': {'type': 'link'},
-            'phone-number': {'type': 'phone-number'}
+            'address': __text_type,
+            'e-mail': __src_email_type,
+            'fax-number': __phone_number_type,
+            'link': __link_type,
+            'phone-number': __phone_number_type
         }
     )
     __news_agency_object_mapping = Mapping(
@@ -181,10 +185,10 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
     )
     __organization_contact_information_mapping = Mapping(
         **{
-            'address': {'type': 'text'},
-            'e-mail': {'type': 'email-src'},
-            'fax-number': {'type': 'phone-number'},
-            'phone-number': {'type': 'phone-number'}
+            'address': __text_type,
+            'e-mail': __src_email_type,
+            'fax-number': __phone_number_type,
+            'phone-number': __phone_number_type
         }
     )
     __organization_object_mapping = Mapping(
@@ -198,6 +202,61 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
             'type': 'text', 'object_relation': 'type-of-organization'
         },
         x_misp_VAT={'type': 'text', 'object_relation': 'VAT'}
+    )
+    __person_contact_information_mapping = Mapping(
+        **{
+            'address': __text_type,
+            'e-mail': __src_email_type,
+            'fax-number': __phone_number_type,
+            'phone-number': __phone_number_type
+        }
+    )
+    __person_object_mapping = Mapping(
+        name={'type': 'text', 'object_relation': 'full-name'},
+        description=InternalSTIX2Mapping.text_attribute(),
+        roles=STIX2IdentityMapping.role_attribute(),
+        x_misp_role=STIX2IdentityMapping.role_attribute(),
+        x_misp_alias=STIX2Mapping.alias_attribute(),
+        x_misp_birth_certificate_number={
+            'type': 'text', 'object_relation': 'birth-certificate-number'
+        },
+        x_misp_date_of_birth={
+            'type': 'date-of-birth', 'object_relation': 'date-of-birth'
+        },
+        x_misp_function={'type': 'text', 'object_relation': 'function'},
+        x_misp_gender={'type': 'gender', 'object_relation': 'gender'},
+        x_misp_handle={'type': 'text', 'object_relation': 'handle'},
+        x_misp_identity_card_number={
+            'type': 'identity-card-number',
+            'object_relation': 'identity-card-number'
+        },
+        x_misp_instant_messaging_used={
+            'type': 'text', 'object_relation': 'instant-messaging-used'
+        },
+        x_misp_nationality={
+            'type': 'nationality', 'object_relation': 'nationality'
+        },
+        x_misp_occupation={'type': 'text', 'object_relation': 'occupation'},
+        x_misp_passport_country={
+            'type': 'passport-country', 'object_relation': 'passport-country'
+        },
+        x_misp_passport_creation={
+            'type': 'passport-creation', 'object_relation': 'passport-creation'
+        },
+        x_misp_passport_expiration={
+            'type': 'passport-expiration',
+            'object_relation': 'passport-expiration'
+        },
+        x_misp_passport_number={
+            'type': 'passport-number', 'object_relation': 'passport-number'
+        },
+        x_misp_place_of_birth={
+            'type': 'place-of-birth', 'object_relation': 'place-of-birth'
+        },
+        x_misp_social_security_number={
+            'type': 'text', 'object_relation': 'social-security-number'
+        },
+        x_misp_title={'type': 'text', 'object_relation': 'title'}
     )
 
     @classmethod
@@ -230,6 +289,14 @@ class InternalSTIX2IdentityMapping(STIX2IdentityMapping, InternalSTIX2Mapping):
     @classmethod
     def organization_object_mapping(cls) -> dict:
         return cls.__organization_object_mapping
+
+    @classmethod
+    def person_contact_information_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__person_contact_information_mapping.get(field)
+
+    @classmethod
+    def person_object_mapping(cls) -> dict:
+        return cls.__person_object_mapping
 
 
 class InternalSTIX2IdentityConverter(
@@ -338,4 +405,15 @@ class InternalSTIX2IdentityConverter(
         misp_object = self._parse_identity_object_attributes(
             identity, 'organization'
         )
+        self.main_parser._add_misp_object(misp_object, identity)
+
+    def _parse_person_object(self, identity: _IDENTITY_TYPING):
+        misp_object = self._parse_identity_object_attributes(identity, 'person')
+        if hasattr(identity, 'x_misp_portrait'):
+            misp_object.add_attribute(
+                **self._populate_object_attribute(
+                    {'type': 'attachment', 'object_relation': 'portrait'},
+                    f'{identity.id} - porttrait', identity.x_misp_portrait
+                )
+            )
         self.main_parser._add_misp_object(misp_object, identity)
