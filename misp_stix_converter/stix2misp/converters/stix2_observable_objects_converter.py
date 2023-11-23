@@ -325,6 +325,41 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
             self._parse_directory_observable_object(
                 _file.parent_directory_ref, child=_file.id
             )
+        if getattr(_file, 'extensions', {}).get('windows-pebinary-ext'):
+            pe_object = self._parse_file_pe_extension_observable_object(_file)
+            misp_object.add_reference(pe_object.uuid, 'includes')
+        return misp_object
+
+    def _parse_file_pe_extension_observable_object(
+            self, observable: File) -> MISPObject:
+        extension = observable.extensions['windows-pebinary-ext']
+        pe_object = self._create_misp_object('pe')
+        pe_object.from_dict(
+            uuid=self.main_parser._create_v5_uuid(
+                f'{observable.id} - windows-pebinary-ext'
+            )
+        )
+        attributes = self._parse_pe_extension_observable(
+            extension, f'{observable.id} - windows-pebinary-ext'
+        )
+        for attribute in attributes:
+            pe_object.add_attribute(**attribute)
+        misp_object = self.main_parser._add_misp_object(pe_object, observable)
+        if hasattr(extension, 'sections'):
+            for index, section in enumerate(extension.sections):
+                section_object = self._create_misp_object('pe-section')
+                section_object.from_dict(
+                    uuid=self.main_parser._create_v5_uuid(
+                        f'{observable.id} - section #{index}'
+                    )
+                )
+                attributes = self._parse_pe_section_observable(
+                    section, f'{observable.id} - section #{index}'
+                )
+                for attribute in attributes:
+                    section_object.add_attribute(**attribute)
+                self.main_parser._add_misp_object(section_object, observable)
+                misp_object.add_reference(section_object.uuid, 'includes')
         return misp_object
 
     def _parse_ip_addresses_belonging_to_AS(self, AS_id: str):
