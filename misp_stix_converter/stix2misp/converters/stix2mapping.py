@@ -905,6 +905,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __authentihash_attribute = Mapping(
         **{'type': 'authentihash', 'object_relation': 'authentihash'}
     )
+    __child_pid_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'child-pid'}
+    )
     __comment_text_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'comment'}
     )
@@ -925,6 +928,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
     )
     __hostname_src_attribute = Mapping(
         **{'type': 'hostname', 'object_relation': 'hostname-src'}
+    __image_attribute = Mapping(
+        **{'type': 'filename', 'object_relation': 'image'}
     )
     __icmp_type_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'icmp-type'}
@@ -937,6 +942,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
     )
     __parent_guid_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'parent-guid'}
+    )
+    __parent_image_attribute = Mapping(
+        **{'type': 'filename', 'object_relation': 'parent-image'}
     )
     __parent_pid_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'parent-pid'}
@@ -1522,6 +1530,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return cls.__authentihash_attribute
 
     @classmethod
+    def child_pid_attribute(cls) -> dict:
+        return cls.__child_pid_attribute
+
+    @classmethod
     def comment_text_attribute(cls) -> dict:
         return cls.__comment_text_attribute
 
@@ -1594,6 +1606,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return cls.__http_request_object_mapping
 
     @classmethod
+    def image_attribute(cls) -> dict:
+        return cls.__image_attribute
+
+    @classmethod
     def icmp_type_attribute(cls) -> dict:
         return cls.__icmp_type_attribute
 
@@ -1640,6 +1656,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def parent_guid_attribute(cls) -> dict:
         return cls.__parent_guid_attribute
+
+    @classmethod
+    def parent_image_attribute(cls) -> dict:
+        return cls.__parent_image_attribute
 
     @classmethod
     def parent_pid_attribute(cls) -> dict:
