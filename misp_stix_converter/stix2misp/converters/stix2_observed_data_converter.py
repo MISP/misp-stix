@@ -643,7 +643,7 @@ class InternalSTIX2ObservedDataConverter(
             for attribute in attributes:
                 file_object.add_attribute(**attribute)
             if hasattr(observable, 'parent_directory_ref'):
-                misp_object.add_attribute(
+                file_object.add_attribute(
                     **self._parse_file_parent_observable(
                         observables[observable.parent_directory_ref],
                         observed_data.id
@@ -743,8 +743,8 @@ class InternalSTIX2ObservedDataConverter(
                     attribute['uuid'] = self.main_parser._create_v5_uuid(
                         f'{observed_data.id} - host - {observable.value}'
                     )
-                    misp_object.add_attribute(**attribute)
-                    continue
+                misp_object.add_attribute(**attribute)
+                continue
             for feature in ('src', 'dst'):
                 if hasattr(observable, f'{feature}_ref'):
                     address = observables[
@@ -887,7 +887,7 @@ class InternalSTIX2ObservedDataConverter(
                 observable, observed_data.id
             )
             for attribute in attributes:
-                misp_object.add_attribute(**attributes)
+                misp_object.add_attribute(**attribute)
             if hasattr(observable, 'parent_directory_ref'):
                 misp_object.add_attribute(
                     **self._parse_file_parent_observable(
