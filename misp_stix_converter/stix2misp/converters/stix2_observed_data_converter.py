@@ -696,7 +696,8 @@ class InternalSTIX2ObservedDataConverter(
             observed_data
         )
         attributes = self._parse_generic_observable(
-            observable, name, getattr(observable, 'id', observed_data.id)
+            observable, name.replace('-', '_'),
+            getattr(observable, 'id', observed_data.id)
         )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
@@ -1239,7 +1240,7 @@ class InternalSTIX2ObservedDataConverter(
         if getattr(observable, 'extensions', {}).get('unix-account-ext'):
             attributes = self._parse_generic_observable(
                 observable.extensions['unix-account-ext'],
-                'user_account_unix_extension', object_id
+                'unix_user_account_extension', object_id
             )
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
