@@ -515,7 +515,7 @@ class InternalSTIX2ObservedDataConverter(
             if hasattr(observable, 'from_ref'):
                 address = observables[observable.from_ref]
                 attributes = self._parse_email_reference_observable(
-                    address, getattr(address, 'id', observed_data.id)
+                    address, 'from', getattr(address, 'id', observed_data.id)
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
@@ -524,7 +524,8 @@ class InternalSTIX2ObservedDataConverter(
                     for reference in getattr(observable, f'{feature}_refs'):
                         address = observables[reference]
                         attributes = self._parse_email_reference_observable(
-                            address, getattr(address, 'id', observed_data.id)
+                            address, feature,
+                            getattr(address, 'id', observed_data.id)
                         )
                         for attribute in attributes:
                             misp_object.add_attribute(**attribute)
