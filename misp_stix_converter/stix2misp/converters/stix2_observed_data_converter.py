@@ -1037,9 +1037,9 @@ class InternalSTIX2ObservedDataConverter(
         observable = observables[observable_id]
         for asset in ('src', 'dst'):
             if hasattr(observable, f'{asset}_ref'):
+                address = observables[getattr(observable, f'{asset}_ref')]
                 attributes = self._parse_network_traffic_reference_observable(
-                    asset, observables[getattr(observable, f'{asset}_ref')],
-                    getattr(observable, 'id', observed_data.id)
+                    asset, address, getattr(address, 'id', observed_data.id)
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
