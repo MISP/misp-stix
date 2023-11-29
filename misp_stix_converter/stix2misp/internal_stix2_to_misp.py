@@ -148,9 +148,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._vulnerability_parser = InternalSTIX2VulnerabilityConverter(self)
         return self._vulnerability_parser
 
-    ################################################################################
-    #                        STIX OBJECTS LOADING FUNCTIONS                        #
-    ################################################################################
+    ############################################################################
+    #                       STIX OBJECTS LOADING METHODS                       #
+    ############################################################################
 
     def _load_custom_attribute(self, custom_attribute: _CUSTOM_TYPING):
         self._check_uuid(custom_attribute.id)
@@ -201,9 +201,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except AttributeError:
             self._observable = {observable.id: observable}
 
-    ################################################################################
-    #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
-    ################################################################################
+    ############################################################################
+    #                    MAIN STIX OBJECTS PARSING METHODS.                    #
+    ############################################################################
 
     def _handle_indicator_object_mapping(
             self, labels: list, object_id: str) -> str:
@@ -294,9 +294,9 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         except UnknownObservableMappingError as observable_types:
             self._observable_mapping_error(observed_data.id, observable_types)
 
-    ################################################################################
-    #                 STIX Domain Objects (SDOs) PARSING FUNCTIONS                 #
-    ################################################################################
+    ############################################################################
+    #                STIX Domain Objects (SDOs) PARSING METHODS                #
+    ############################################################################
 
     def _create_galaxy_args(self, galaxy_type: str, galaxy_name: str) -> MISPGalaxy:
         misp_galaxy = MISPGalaxy()

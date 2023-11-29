@@ -1213,10 +1213,6 @@ class InternalSTIX2IndicatorMapping(
         }
     )
 
-    # OBJECT ATTRIBUTES MAPPING
-    __image_attribute = {'type': 'filename', 'object_relation': 'image'}
-    __parent_image_attribute = {'type': 'filename', 'object_relation': 'parent-image'}
-
     # OBJECTS MAPPING
     __email_pattern_mapping = Mapping(
         **{
@@ -1304,13 +1300,13 @@ class InternalSTIX2IndicatorMapping(
     )
     __process_pattern_mapping = Mapping(
         **{
-            'binary_ref.name': __image_attribute,
-            'image_ref.name': __image_attribute,
+            'binary_ref.name': InternalSTIX2Mapping.image_attribute(),
+            'image_ref.name': InternalSTIX2Mapping.image_attribute(),
             'parent_ref.command_line': InternalSTIX2Mapping.parent_command_line_attribute(),
             'parent_ref.name': InternalSTIX2Mapping.parent_process_name_attribute(),
             'parent_ref.pid': InternalSTIX2Mapping.parent_pid_attribute(),
-            'parent_ref.binary_ref.name': __parent_image_attribute,
-            'parent_ref.image_ref.name': __parent_image_attribute,
+            'parent_ref.binary_ref.name': InternalSTIX2Mapping.parent_image_attribute(),
+            'parent_ref.image_ref.name': InternalSTIX2Mapping.parent_image_attribute(),
             'parent_ref.x_misp_guid': InternalSTIX2Mapping.parent_guid_attribute(),
             'parent_ref.x_misp_process_name': InternalSTIX2Mapping.parent_process_name_attribute(),
             'parent_ref.x_misp_process_path': InternalSTIX2Mapping.parent_process_path_attribute(),
@@ -2013,8 +2009,7 @@ class InternalSTIX2IndicatorConverter(
             if 'child_refs' in feature:
                 misp_object.add_attribute(
                     **{
-                        'type': 'text',
-                        'object_relation': 'child-pid',
+                        **self._mapping.child_pid_attribute(),
                         'value': value
                     }
                 )
