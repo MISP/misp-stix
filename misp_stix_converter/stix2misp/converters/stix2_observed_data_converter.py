@@ -531,7 +531,7 @@ class InternalSTIX2ObservedDataConverter(
                             misp_object.add_attribute(**attribute)
             object_id = getattr(observable, 'id', observed_data.id)
             attributes = self._parse_generic_observable(
-                observables, 'email', object_id
+                observable, 'email', object_id
             )
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
@@ -549,27 +549,9 @@ class InternalSTIX2ObservedDataConverter(
                         else 'attachment'
                     )
                     reference = observables[body_part.body_raw_ref]
-                    if reference.type == 'file':
-                        attribute = getattr(
-                            self._mapping, f'{feature}_attribute'
-                        )
-                        misp_object.add_attribute(
-                            **{
-                                'value': reference.name, **attribute(),
-                                **self.main_parser._create_v5_uuid(
-                                    f"{object_id} - {feature.replace('_', '-')}"
-                                    f' - {reference.name}'
-                                )
-                            }
-                        )
-                        continue
-                    attributes = self._populate_object_attribute(
-                        getattr(self._mapping, f'{feature}_attribute')(),
-                        f"{object_id} - {feature.replace('_', '-')}",
-                        {
-                            'value': value.split('=').strip("'"),
-                            'data': reference.payload_bin
-                        }
+                    attributes = self._parse_email_body_observable(
+                        reference, feature, value,
+                        getattr(reference, 'id', observed_data.id)
                     )
                     for attribute in attributes:
                         misp_object.add_attribute(**attribute)
@@ -959,7 +941,7 @@ class InternalSTIX2ObservedDataConverter(
                             in getattr(address, 'belongs_to_refs')
                         )
                         attributes = self._parse_netflow_references(
-                            *autonomous_systems, feature, observed_data.id
+                            feature, observed_data.id, *autonomous_systems
                         )
                         for attribute in attributes:
                             misp_object.add_attribute(**attribute)
