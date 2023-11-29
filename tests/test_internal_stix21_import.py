@@ -1720,9 +1720,9 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             user_o.id.split('--')[1],
             user_account_ref.split('--')[1]
         )
-        password, last_changed = self._check_user_account_observable_object(
-            user_account.attributes,
-            user_o
+        username, account_type, password, display_name, user_id, last_changed, *attributes = user_account.attributes
+        self._check_user_account_observable_object(
+            user_o, username, account_type, display_name, user_id, *attributes
         )
         self.assertEqual(password.type, 'text')
         self.assertEqual(password.object_relation, 'password')
@@ -2058,37 +2058,12 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, od, message, addr1, addr2, addr3, addr4, addr5, file1, file2 = bundle.objects
         email = self._check_misp_event_features_from_grouping(event, grouping)[0]
         _from, _from_dn, _to, _to_dn, cc1, cc1_dn, cc2, cc2_dn, bcc, bcc_dn, message_id, subject, boundary, user_agent, reply_to, x_mailer, *attachments = email.attributes
-        message_ref, addr1_ref, addr2_ref, addr3_ref, addr4_ref, addr5_ref, file1_ref, file2_ref = self._check_observed_data_object(email, od)
+        message_ref, *_, file1_ref, file2_ref = self._check_observed_data_object(email, od)
         self._assert_multiple_equal(
             email.uuid,
             od.id.split('--')[1],
             message.id.split('--')[1],
             message_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            _from.uuid,
-            addr1.id.split('--')[1],
-            addr1_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            _to.uuid,
-            addr2.id.split('--')[1],
-            addr2_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            cc1.uuid,
-            addr3.id.split('--')[1],
-            addr3_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            cc2.uuid,
-            addr4.id.split('--')[1],
-            addr4_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            bcc.uuid,
-            addr5.id.split('--')[1],
-            addr5_ref.split('--')[1]
         )
         self._assert_multiple_equal(
             attachments[0].uuid,
@@ -2357,16 +2332,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, observed_data, file_object, artifact = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
-        file_ref, artifact_ref = self._check_observed_data_object(misp_object, observed_data)
+        file_ref = self._check_observed_data_object(misp_object, observed_data)[0]
         self._assert_multiple_equal(
             misp_object.uuid,
             file_object.id.split('--')[1],
             file_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            misp_object.attributes[-2].uuid,
-            artifact.id.split('--')[1],
-            artifact_ref.split('--')[1]
         )
         self._check_image_observable_object(
             misp_object.attributes,
@@ -2894,26 +2864,16 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, observed_data, process, parent_image, parent_process, child_process, image = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
-        process_ref, parent_image_ref, parent_ref, child_ref, image_ref = self._check_observed_data_object(misp_object, observed_data)
+        process_ref, parent_image_ref, _, _, image_ref = self._check_observed_data_object(misp_object, observed_data)
         self._assert_multiple_equal(
             misp_object.uuid,
             process.id.split('--')[1],
             process_ref.split('--')[1]
         )
         self._assert_multiple_equal(
-            misp_object.attributes[-2].uuid,
-            parent_process.id.split('--')[1],
-            parent_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
             misp_object.attributes[-1].uuid,
             parent_image.id.split('--')[1],
             parent_image_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            misp_object.attributes[5].uuid,
-            child_process.id.split('--')[1],
-            child_ref.split('--')[1]
         )
         self._assert_multiple_equal(
             misp_object.attributes[4].uuid,

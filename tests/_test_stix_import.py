@@ -2127,8 +2127,14 @@ class TestInternalSTIX2Import(TestSTIX2Import):
 
     def _check_registry_key_observable_object(self, attributes, observable):
         self.assertEqual(len(attributes), 6)
-        data, data_type, name, key, modified_time, hive = attributes
+        key, modified_time, hive, data, data_type, name = attributes
         values = observable['values'][0]
+        self.assertEqual(key.type, 'regkey')
+        self.assertEqual(key.object_relation, 'key')
+        self.assertEqual(key.value, observable.key)
+        self.assertEqual(hive.type, 'text')
+        self.assertEqual(hive.object_relation, 'hive')
+        self.assertEqual(hive.value, observable.x_misp_hive)
         self.assertEqual(data.type, 'text')
         self.assertEqual(data.object_relation, 'data')
         self.assertEqual(data.value, values.data)
@@ -2138,12 +2144,6 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'name')
         self.assertEqual(name.value, values.name)
-        self.assertEqual(key.type, 'regkey')
-        self.assertEqual(key.object_relation, 'key')
-        self.assertEqual(key.value, observable.key)
-        self.assertEqual(hive.type, 'text')
-        self.assertEqual(hive.object_relation, 'hive')
-        self.assertEqual(hive.value, observable.x_misp_hive)
         return modified_time
 
     def _check_script_object(self, misp_object, stix_object):
@@ -2350,9 +2350,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self._get_pattern_value(user_avatar_data)
         )
 
-    def _check_user_account_observable_object(self, attributes, observable):
-        self.assertEqual(len(attributes), 11)
-        username, account_type, password, display_name, user_id, user_avatar, last_changed, group_id, group1, group2, home_dir = attributes
+    def _check_user_account_observable_object(self, observable, *attributes):
+        self.assertEqual(len(attributes), 9)
+        username, account_type, display_name, user_id, user_avatar, group_id, group1, group2, home_dir = attributes
         self.assertEqual(username.type, 'text'),
         self.assertEqual(username.object_relation, 'username')
         self.assertEqual(username.value, observable.account_login)
@@ -2383,7 +2383,6 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(home_dir.type, 'text')
         self.assertEqual(home_dir.object_relation, 'home_dir')
         self.assertEqual(home_dir.value, extension.home_dir)
-        return password, last_changed
 
     def _check_vulnerability_object(self, misp_object, vulnerability):
         self.assertEqual(misp_object.uuid, vulnerability.id.split('--')[1])
