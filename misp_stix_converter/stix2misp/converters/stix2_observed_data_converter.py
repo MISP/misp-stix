@@ -470,6 +470,7 @@ class InternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v20):
         misp_object = self._create_misp_object('domain-ip', observed_data)
         mapping = self._mapping.domain_ip_object_mapping
+        ip_parsed = set()
         for observable in observed_data.objects.values():
             if observable.type == 'domain-name':
                 for field, attribute in mapping().items():
@@ -482,25 +483,44 @@ class InternalSTIX2ObservedDataConverter(
                             misp_object.add_attribute(**attribute)
                 if hasattr(observable, 'resolves_to_refs'):
                     for reference in observable.resolves_to_refs:
-                        attributes = self._populate_object_attributes(
-                            self._mapping.ip_attribute(),
-                            observed_data.objects[reference].value,
-                            observed_data.id
+                        if reference in ip_parsed:
+                            continue
+                        value = observed_data.objects[reference].value
+                        misp_object.add_attribute(
+                            **{
+                                'value': value, **self._mapping.ip_attribute(),
+                                'uuid': self.main_parser._create_v5_uuid(
+                                    f'{observed_data.id} - ip - {value}'
+                                )
+                            }
                         )
-                        for attribute in attributes:
-                            misp_object.add_attribute(**attribute)
+                        ip_parsed.add(reference)
         self.main_parser._add_misp_object(misp_object, observed_data)
 
     def _object_from_domain_ip_observable_v21(
             self, observed_data: ObservedData_v21):
         misp_object = self._create_misp_object('domain-ip', observed_data)
+        ip_parsed = set()
         for object_ref in observed_data.object_refs:
             if object_ref.startswith('domain-name--'):
-                attributes = self._parse_domain_ip_observable(
-                    self.main_parser._observable[object_ref]
-                )
-                for attribute in attributes:
+                observable = self.main_parser._observable[object_ref]
+                for attribute in self._parse_domain_ip_observable(observable):
                     misp_object.add_attribute(**attribute)
+                if hasattr(observable, 'resolves_to_refs'):
+                    for reference in observable.resolves_to_refs:
+                        if reference in ip_parsed:
+                            continue
+                        address = self.main_parser._observable[reference]
+                        misp_object.add_attribute(
+                            **{
+                                'value': address.value,
+                                **self._mapping.ip_attribute(),
+                                **self.main_parser._sanitise_attribute_uuid(
+                                    address.id
+                                )
+                            }
+                        )
+                        ip_parsed.add(reference)
         self.main_parser._add_misp_object(misp_object, observed_data)
 
     def _object_from_email_observable(
