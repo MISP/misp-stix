@@ -716,7 +716,7 @@ class STIX2Mapping:
         return cls.__url_attribute
 
     @classmethod
-    def unix_user_account_extension_mapping(cls) -> dict:
+    def unix_user_account_extension_object_mapping(cls) -> dict:
         return cls.__unix_user_account_extension_mapping
 
     @classmethod

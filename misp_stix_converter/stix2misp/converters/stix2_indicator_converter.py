@@ -219,7 +219,7 @@ class ExternalSTIX2IndicatorMapping(
         **ExternalSTIX2Mapping.software_object_mapping()
     )
     __user_account_pattern_mapping = Mapping(
-        **STIX2Mapping.unix_user_account_extension_mapping(),
+        **STIX2Mapping.unix_user_account_extension_object_mapping(),
         **STIX2Mapping.user_account_object_mapping()
     )
     __x509_pattern_mapping = Mapping(
@@ -1438,7 +1438,7 @@ class InternalSTIX2IndicatorMapping(
 
     @classmethod
     def unix_user_account_pattern_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.unix_user_account_extension_mapping().get(field)
+        return cls.unix_user_account_extension_object_mapping().get(field)
 
     @classmethod
     def url_pattern_mapping(cls, field: str) -> Union[dict, None]:
