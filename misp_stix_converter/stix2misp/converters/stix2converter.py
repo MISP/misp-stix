@@ -7,10 +7,8 @@ from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
 from pymisp import AbstractMISP, MISPGalaxy, MISPGalaxyCluster, MISPObject
-from stix2.v20.observables import Artifact as Artifact_v20, File as File_v20
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, Malware as Malware_v20)
-from stix2.v21.observables import Artifact as Artifact_v21, File as File_v21
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, Malware as Malware_v21)
 from typing import Iterator, Optional, Tuple, TYPE_CHECKING, Union

@@ -2138,12 +2138,12 @@ class InternalSTIX2IndicatorConverter(
 
     def _parse_http_request_values(
             self, misp_object: MISPObject, uri: str, url: str):
-        uri_attribute = {'value': uri}
-        uri_attribute.update(self._mapping.uri_attribute())
-        misp_object.add_attribute(**uri_attribute)
-        url_attribute = {'value': url}
-        url_attribute.update(self._mapping.url_attribute())
-        misp_object.add_attribute(**url_attribute)
+        misp_object.add_attribute(
+            **{'value': uri, **self._mapping.uri_attribute()}
+        )
+        misp_object.add_attribute(
+            **{'value': url, **self._mapping.url_attribute()}
+        )
     
     def _parse_netflow_reference(
             self, reference: dict, feature: str, value: str):
