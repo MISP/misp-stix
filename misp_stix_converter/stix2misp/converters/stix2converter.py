@@ -549,7 +549,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _handle_mapping_from_labels(self, labels: list, object_id: str) -> str:
         parsed_labels = {
             key: value.strip('"') for key, value
-            in (label.split('=') for label in labels)
+            in (label.split('=') for label in labels if '=' in label)
         }
         if 'misp:galaxy-type' in parsed_labels:
             return f'_parse_galaxy'
