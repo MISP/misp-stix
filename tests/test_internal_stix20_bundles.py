@@ -6291,9 +6291,9 @@ class TestInternalSTIX20Bundles:
         bundle['objects'][1]['object_refs'] = [stix_object['id'] for stix_object in stix_objects]
         return dict_to_stix2(bundle, allow_custom=True)
 
-    ################################################################################
-    #                              ATTRIBUTES SAMPLES                              #
-    ################################################################################
+    ############################################################################
+    #                            ATTRIBUTES SAMPLES                            #
+    ############################################################################
 
     @classmethod
     def get_bundle_with_AS_indicator_attribute(cls):
@@ -6555,9 +6555,17 @@ class TestInternalSTIX20Bundles:
     def get_bundle_with_x509_fingerprint_observable_attributes(cls):
         return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES)
 
-    ################################################################################
-    #                                EVENTS SAMPLES                                #
-    ################################################################################
+    ############################################################################
+    #                              EVENTS SAMPLES                              #
+    ############################################################################
+
+    @classmethod
+    def get_bundle_with_custom_labels(cls):
+        indicator = deepcopy(_DOMAIN_IP_INDICATOR_ATTRIBUTE)
+        indicator['labels'].append('Attribute tag')
+        observed_data = deepcopy(_DOMAIN_IP_OBSERVABLE_OBJECTS[0])
+        observed_data['labels'].append('Object tag')
+        return cls.__assemble_bundle(indicator, observed_data)
 
     @classmethod
     def get_bundle_with_invalid_uuids(cls):
@@ -6602,9 +6610,9 @@ class TestInternalSTIX20Bundles:
     def get_bundle_with_single_report(cls):
         return cls.__assemble_bundle(*_BUNDLE_WITH_NO_REPORT)
 
-    ################################################################################
-    #                               GALAXIES SAMPLES                               #
-    ################################################################################
+    ############################################################################
+    #                             GALAXIES SAMPLES                             #
+    ############################################################################
 
     @classmethod
     def get_bundle_with_attack_pattern_galaxy(cls):
@@ -6642,9 +6650,9 @@ class TestInternalSTIX20Bundles:
     def get_bundle_with_vulnerability_galaxy(cls):
         return cls.__assemble_bundle(_VULNERABILITY_GALAXY)
 
-    ################################################################################
-    #                             MISP OBJECTS SAMPLES                             #
-    ################################################################################
+    ############################################################################
+    #                           MISP OBJECTS SAMPLES                           #
+    ############################################################################
 
     @classmethod
     def get_bundle_with_account_indicator_objects(cls):
