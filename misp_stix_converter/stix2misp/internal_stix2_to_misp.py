@@ -209,7 +209,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
             self, labels: list, object_id: str) -> str:
         parsed_labels = {
             key: value.strip('"') for key, value
-            in (label.split('=')for label in labels)
+            in (label.split('=') for label in labels if '=' in label)
         }
         if 'misp:name' in parsed_labels:
             to_call = self._mapping.objects_mapping(parsed_labels['misp:name'])
