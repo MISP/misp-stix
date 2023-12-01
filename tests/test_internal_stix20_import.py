@@ -10,9 +10,9 @@ from ._test_stix_import import TestInternalSTIX2Import, TestSTIX20Import
 
 class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Import):
 
-    ################################################################################
-    #                      MISP ATTRIBUTES CHECKING FUNCTIONS                      #
-    ################################################################################
+    ############################################################################
+    #                    MISP ATTRIBUTES CHECKING FUNCTIONS                    #
+    ############################################################################
 
     def _check_observed_data_attribute(self, attribute, observed_data):
         self.assertEqual(attribute.uuid, observed_data.id.split('--')[1])
@@ -34,9 +34,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_object_labels(misp_object, observed_data.labels, False)
         return observed_data.objects
 
-    ################################################################################
-    #                         MISP ATTRIBUTES IMPORT TESTS                         #
-    ################################################################################
+    ############################################################################
+    #                       MISP ATTRIBUTES IMPORT TESTS                       #
+    ############################################################################
 
     def test_stix20_bundle_with_AS_indicator_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_AS_indicator_attribute()
@@ -1028,9 +1028,56 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 observed_data = observed_data
             )
 
-    ################################################################################
-    #                           MISP EVENTS IMPORT TESTS                           #
-    ################################################################################
+    ############################################################################
+    #                         MISP EVENTS IMPORT TESTS                         #
+    ############################################################################
+
+    def test_stix20_bundle_with_custom_labels(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_custom_labels()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator, observed_data = bundle.objects
+        misp_object, attribute = self._check_misp_event_features(event, report)
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self._assert_multiple_equal(
+            attribute.timestamp,
+            indicator.created,
+            indicator.modified
+        )
+        type_label, category_label, ids_label, _ = indicator.labels
+        self.assertEqual(ids_label, f'misp:to_ids="{attribute.to_ids}"')
+        self.assertEqual(type_label, f'misp:type="{attribute.type}"')
+        self.assertEqual(category_label, f'misp:category="{attribute.category}"')
+        self.assertEqual(attribute.type, 'domain|ip')
+        domain, address = indicator.pattern[1:-1].split(' AND ')
+        self.assertEqual(
+            attribute.value,
+            f'{self._get_pattern_value(domain)}|{self._get_pattern_value(address)}'
+        )
+        self.assertEqual(misp_object.uuid, observed_data.id.split('--')[1])
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            observed_data.created,
+            observed_data.modified
+        )
+        name_label, category_label, ids_label, _ = observed_data.labels
+        self.assertEqual(ids_label, 'misp:to_ids="False"')
+        self.assertEqual(name_label, f'misp:name="{misp_object.name}"')
+        self.assertEqual(
+            category_label,
+            f'misp:meta-category="{getattr(misp_object, "meta-category")}"'
+        )
+        domain1, ip1, ip2, domain2 = misp_object.attributes
+        observables = observed_data.objects
+        for attribute, index in zip((domain1, domain2), ('2', '3')):
+            self.assertEqual(attribute.type,'domain')
+            self.assertEqual(attribute.object_relation, 'domain')
+            self.assertEqual(attribute.value, observables[index].value)
+        for attribute, index in zip((ip1, ip2), ('0', '1')):
+            self.assertEqual(attribute.type, 'ip-dst')
+            self.assertEqual(attribute.object_relation, 'ip')
+            self.assertEqual(attribute.value, observables[index].value)
 
     def test_stix20_bundle_with_invalid_uuids(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_invalid_uuids()
@@ -1155,9 +1202,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.parser.parse_stix_bundle()
         self._check_event_from_bundle_with_single_report(bundle.objects[1:])
 
-    ################################################################################
-    #                          MISP GALAXIES IMPORT TESTS                          #
-    ################################################################################
+    ############################################################################
+    #                        MISP GALAXIES IMPORT TESTS                        #
+    ############################################################################
 
     def test_stix20_bundle_with_attack_pattern_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_attack_pattern_galaxy()
@@ -1267,9 +1314,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_misp_event_features(event, report)
         self._check_vulnerability_galaxy(event.galaxies[0], vulnerability)
 
-    ################################################################################
-    #                          MISP OBJECTS IMPORT TESTS.                          #
-    ################################################################################
+    ############################################################################
+    #                        MISP OBJECTS IMPORT TESTS.                        #
+    ############################################################################
 
     def test_stix20_bundle_with_account_indicator_objects(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_account_indicator_objects()
