@@ -501,10 +501,6 @@ class ExternalSTIX2ObservableMapping(
     )
 
     @classmethod
-    def network_traffic_reference_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.__network_traffic_reference_mapping.get(field)
-
-    @classmethod
     def observable_mapping(cls, field: str) -> Union[str, None]:
         return cls.__observable_mapping.get(field)
 

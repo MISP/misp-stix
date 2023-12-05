@@ -422,9 +422,8 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
         )
         for attribute in attributes:
             connection_object.add_attribute(**attribute)
-        protocols = self._parse_network_connection_observable(observable)
-        for *attribute, kwargs in protocols:
-            connection_object.add_attribute(*attribute, **kwargs)
+        for attribute in self._parse_network_connection_observable(observable):
+            connection_object.add_attribute(**attribute)
         return connection_object
 
     def _parse_network_socket_observable_object(
