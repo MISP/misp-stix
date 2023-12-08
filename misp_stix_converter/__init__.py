@@ -137,7 +137,7 @@ def main():
     )
     import_parser.add_argument(
         '-d', '--distribution', type=int, default=0,
-        help='Distribution level for the imported MIPS content.'
+        help='Distribution level for the imported MISP content.'
     )
     import_parser.add_argument(
         '-sg', '--sharing_group', type=int, default=None,
@@ -146,6 +146,10 @@ def main():
     import_parser.add_argument(
         '--galaxies_as_tags', action='store_true',
         help='Import MISP Galaxies as tag names instead of the standard Galaxy format.'
+    )
+    import_parser.add_argument(
+        '-cd', '--cluster_distribution', type=int, default=0,
+        help='Galaxy Clusters distribution level in case of External STIX 2 content.'
     )
     import_parser.set_defaults(func=_stix_to_misp)
 
