@@ -132,8 +132,12 @@ _X509_TYPING = Union[
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def __init__(self, distribution: Optional[int] = 0,
                  sharing_group_id: Optional[int] = None,
-                 galaxies_as_tags: Optional[bool] = False):
+                 galaxies_as_tags: Optional[bool] = False,
+                 cluster_distribution: Optional[int] = 0):
         super().__init__(distribution, sharing_group_id, galaxies_as_tags)
+        self.__cluster_distribution = self._sanitise_distribution(
+            cluster_distribution
+        )
         self._mapping = ExternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
@@ -149,6 +153,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._threat_actor_parser: ExternalSTIX2ThreatActorConverter
         self._tool_parser: ExternalSTIX2ToolConverter
         self._vulnerability_parser: ExternalSTIX2VulnerabilityConverter
+
+    @property
+    def cluster_distribution(self) -> int:
+        return self.__cluster_distribution
 
     @property
     def observable_object_parser(self) -> STIX2ObservableObjectConverter:
