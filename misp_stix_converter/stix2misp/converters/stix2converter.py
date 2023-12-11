@@ -259,6 +259,7 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             cluster_value: Optional[str] = None) -> dict:
         value = cluster_value or stix_object.name
         cluster_args = {
+            'distribution': self.main_parser.cluster_distribution,
             'uuid': self.main_parser._sanitise_uuid(stix_object.id),
             'value': value
         }
