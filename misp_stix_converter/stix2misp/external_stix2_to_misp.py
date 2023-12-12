@@ -133,10 +133,12 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def __init__(self, distribution: Optional[int] = 0,
                  sharing_group_id: Optional[int] = None,
                  galaxies_as_tags: Optional[bool] = False,
-                 cluster_distribution: Optional[int] = 0):
+                 cluster_distribution: Optional[int] = 0,
+                 cluster_sharing_group_id: Optional[int] = None):
         super().__init__(distribution, sharing_group_id, galaxies_as_tags)
-        self.__cluster_distribution = self._sanitise_distribution(
-            cluster_distribution
+        self._set_cluster_distribution(
+            self._sanitise_distribution(cluster_distribution),
+            self._sanitise_sharing_group_id(cluster_sharing_group_id)
         )
         self._mapping = ExternalSTIX2toMISPMapping
         # parsers
@@ -155,7 +157,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._vulnerability_parser: ExternalSTIX2VulnerabilityConverter
 
     @property
-    def cluster_distribution(self) -> int:
+    def cluster_distribution(self) -> dict:
         return self.__cluster_distribution
 
     @property
@@ -172,6 +174,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_campaign_parser(self) -> ExternalSTIX2CampaignConverter:
         self._campaign_parser = ExternalSTIX2CampaignConverter(self)
         return self._campaign_parser
+
+    def _set_cluster_distribution(
+            self, distribution: int, sharing_group_id: Union[int, None]):
+        cluster_distribution = {'distribution': distribution}
+        if distribution == 4 and sharing_group_id is not None:
+            cluster_distribution['sharing_group_id'] = sharing_group_id
+        self.__cluster_distribution = cluster_distribution
 
     def _set_course_of_action_parser(self) -> ExternalSTIX2CourseOfActionConverter:
         self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
