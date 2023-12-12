@@ -662,6 +662,7 @@ def stix_1_to_misp(
 
 def stix_2_to_misp(filename: _files_type,
                    cluster_distribution: Optional[int] = 0,
+                   cluster_sharing_group_id: Optional[int] = None,
                    debug: Optional[bool] = False,
                    distribution: Optional[int] = 0,
                    galaxies_as_tags: Optional[bool] = False,
@@ -680,7 +681,7 @@ def stix_2_to_misp(filename: _files_type,
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
         _from_misp(bundle.objects), distribution, sharing_group_id,
-        galaxies_as_tags, cluster_distribution
+        galaxies_as_tags, cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser(*args)
     stix_parser.load_stix_bundle(bundle)
@@ -715,7 +716,7 @@ def _from_misp(stix_objects):
 
 def _get_stix2_parser(from_misp: bool, *args: tuple) -> tuple:
     if from_misp:
-        return InternalSTIX2toMISPParser, args[:-1]
+        return InternalSTIX2toMISPParser, args[:-2]
     return ExternalSTIX2toMISPParser, args
 
 def _load_stix_event(filename, tries=0):
@@ -1016,6 +1017,7 @@ def _stix_to_misp(stix_args):
     for filename in stix_args.file:
         traceback = method(
             filename, cluster_distribution=stix_args.cluster_distribution,
+            cluster_sharing_group_id=stix_args.cluster_sharing_group,
             debug=stix_args.debug, distribution=stix_args.distribution,
             galaxies_as_tags=stix_args.galaxies_as_tags,
             output_dir=stix_args.output_dir,

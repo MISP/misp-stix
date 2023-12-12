@@ -151,6 +151,10 @@ def main():
         '-cd', '--cluster_distribution', type=int, default=0,
         help='Galaxy Clusters distribution level in case of External STIX 2 content.'
     )
+    import_parser.add_argument(
+        '-cg', '--cluster_sharing_group', type=int, default=None,
+        help='Galaxy Clusters sharing group ID in case of External STIX 2 content.'
+    )
     import_parser.set_defaults(func=_stix_to_misp)
 
     stix_args = parser.parse_args()
