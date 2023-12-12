@@ -7,10 +7,8 @@ from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
 from pymisp import AbstractMISP, MISPGalaxy, MISPGalaxyCluster, MISPObject
-from stix2.v20.observables import Artifact as Artifact_v20, File as File_v20
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, Malware as Malware_v20)
-from stix2.v21.observables import Artifact as Artifact_v21, File as File_v21
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, Malware as Malware_v21)
 from typing import Iterator, Optional, Tuple, TYPE_CHECKING, Union
@@ -96,8 +94,8 @@ class STIX2Converter(metaclass=ABCMeta):
                     attribute, getattr(stix_object, field), stix_object.id
                 )
 
-    def _populate_object_attribute(
-            self, mapping: dict, reference: str, value: str) -> dict:
+    def _populate_object_attribute(self, mapping: dict, reference: str,
+                                   value: Union[dict, str]) -> dict:
         if isinstance(value, dict):
             attribute_value = value['value']
             return {
@@ -463,7 +461,9 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
         for key, value in stix_object.items():
             if key.startswith('x_misp_'):
-                separator = '-' if key in self._mapping.dash_meta_fields() else '_'
+                separator = (
+                    '-' if key in self._mapping.dash_meta_fields() else '_'
+                )
                 yield separator.join(key.split('_')[2:]), value
 
     def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
@@ -480,8 +480,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _parse_galaxy(self, stix_object: _GALAXY_OBJECTS_TYPING):
         clusters = self.main_parser._clusters
         if stix_object.id in clusters:
-            misp_event_uuid = self.event_uuid
-            clusters[stix_object.id]['used'][misp_event_uuid] = False
+            clusters[stix_object.id]['used'][self.event_uuid] = False
         else:
             feature = f'_parse_galaxy_{self.main_parser.galaxy_feature}'
             clusters[stix_object.id] = getattr(self, feature)(stix_object)
