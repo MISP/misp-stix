@@ -1319,7 +1319,6 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             f'{domain.value}|{address.value}'
         )
 
-
     def test_stix21_bundle_with_invalid_uuids(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_invalid_uuids()
         grouping, ap1, coa1, indicator1 = bundle.objects[1:5]

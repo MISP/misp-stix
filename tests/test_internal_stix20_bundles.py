@@ -6284,11 +6284,11 @@ class TestInternalSTIX20Bundles:
     def __assemble_bundle(cls, *stix_objects):
         bundle = deepcopy(cls.__bundle)
         bundle['objects'] = [
-            deepcopy(cls.__identity),
-            deepcopy(cls.__report),
-            *stix_objects
+            deepcopy(cls.__identity), deepcopy(cls.__report), *stix_objects
         ]
-        bundle['objects'][1]['object_refs'] = [stix_object['id'] for stix_object in stix_objects]
+        bundle['objects'][1]['object_refs'] = [
+            stix_object['id'] for stix_object in stix_objects
+        ]
         return dict_to_stix2(bundle, allow_custom=True)
 
     ############################################################################
@@ -6690,7 +6690,8 @@ class TestInternalSTIX20Bundles:
                 "user-account:user_id = '42'",
                 "user-account:account_login = 'ParlerOctocat'",
                 "user-account:x_misp_human = 'False'",
-                f"user-account:x_misp_profile_photo.data = '{data}'","user-account:x_misp_profile_photo.value = 'octocat.png'"
+                f"user-account:x_misp_profile_photo.data = '{data}'",
+                "user-account:x_misp_profile_photo.value = 'octocat.png'"
             ),
             (
                 "user-account:account_type = 'reddit'",

@@ -7719,11 +7719,11 @@ class TestInternalSTIX21Bundles:
     def __assemble_bundle(cls, *stix_objects):
         bundle = deepcopy(cls.__bundle)
         bundle['objects'] = [
-            deepcopy(cls.__identity),
-            deepcopy(cls.__grouping),
-            *stix_objects
+            deepcopy(cls.__identity), deepcopy(cls.__grouping), *stix_objects
         ]
-        bundle['objects'][1]['object_refs'] = [stix_object['id'] for stix_object in stix_objects]
+        bundle['objects'][1]['object_refs'] = [
+            stix_object['id'] for stix_object in stix_objects
+        ]
         return dict_to_stix2(bundle, allow_custom=True)
 
     ############################################################################
