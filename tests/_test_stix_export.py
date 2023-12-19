@@ -252,8 +252,11 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(stix_object.id, f"{stix_object.type}--{cluster['uuid']}")
         self.assertEqual(stix_object.created, timestamp)
         self.assertEqual(stix_object.modified, timestamp)
-        self.assertEqual(stix_object.name, cluster['value'])
-        description = galaxy['description']
+        self.assertEqual(
+            stix_object.name,
+            cluster['value'].split(' - ')[0] if
+            cluster['type'].startswith('mitre-') else cluster['value']
+        )
         if cluster.get('description'):
             self.assertEqual(stix_object.description, cluster['description'])
         self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
