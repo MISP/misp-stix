@@ -4696,6 +4696,7 @@ For the rest of this documentation, we will then, in order to keep the content c
           "description": "Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A",
           "pattern": "title: Ps.exe Renamed SysInternals Tool description: Detects renamed SysInternals tool execution with a binary named ps.exe as used by Dragonfly APT group and documentied in TA17-293A report reference: https://www.us-cert.gov/ncas/alerts/TA17-293A author: Florian Roth date: 2017/10/22 logsource: product: windows service: sysmon detection: selection: EventID: 1 CommandLine: \\'ps.exe -accepteula\\' condition: selection falsepositives: - Renamed SysInternals tool level: high",
           "pattern_type": "sigma",
+          "pattern_version": "2.1",
           "valid_from": "2020-10-25T16:22:00Z",
           "kill_chain_phases": [
               {
