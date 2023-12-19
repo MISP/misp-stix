@@ -2858,9 +2858,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         object_type = object_id.split('--')[0]
 
         value = cluster['value']
-        if object_type == "attack-pattern":
-            value = value.split(' - T')[0].strip()
-
+        if cluster['type'].startswith('mitre-') and ' - ' in value:
+            value = value.split(' - ')[0].strip()
         galaxy_args = {
             'id': object_id,
             'type': object_type,
