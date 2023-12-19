@@ -252,7 +252,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "id": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "name": "Automated Exfiltration Mitigation - T1020",
+            "name": "Automated Exfiltration Mitigation",
             "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
             "labels": [
                 "misp:galaxy-name=\"Course of Action\"",
@@ -342,7 +342,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "id": "intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "name": "APT16 - G0023",
+            "name": "APT16",
             "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
             "aliases": [
                 "APT16"
@@ -430,7 +430,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "name": "BISCUIT - S0017",
+            "name": "BISCUIT",
             "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
             "is_family": false,
             "aliases": [
@@ -501,7 +501,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "name": "Test malware in various execution environments - PRE-T1134",
+            "name": "Test malware in various execution environments",
             "description": "Malware may perform differently on different platforms and different operating systems.",
             "kill_chain_phases": [
                 {
@@ -596,6 +596,43 @@ Since not all the fields of the galaxies and their clusters are exported into ST
                 "744 - Svalbard and Jan Mayen Islands",
                 "752 - Sweden",
                 "826 - United Kingdom of Great Britain and Northern Ireland"
+            ]
+        }
+    }
+    ```
+
+- Sector
+  - MISP
+    ```json
+    {
+        "uuid": "e1bb134c-ae4d-11e7-8aa9-f78a37325439",
+        "name": "Sector",
+        "type": "sector",
+        "description": "Activity sectors",
+        "GalaxyCluster": [
+            {
+                "uuid": "75597b7f-54e8-4f14-88c9-e81485ece483",
+                "type": "sector",
+                "value": "IT - Security"
+            }
+        ]
+    }
+    ```
+  - STIX
+    ```json
+    {
+        "Identity": {
+            "type": "identity",
+            "spec_version": "2.1",
+            "id": "identity--75597b7f-54e8-4f14-88c9-e81485ece483",
+            "created": "2020-10-25T16:22:00.000Z",
+            "modified": "2020-10-25T16:22:00.000Z",
+            "name": "IT - Security",
+            "description": "Activity sectors",
+            "identity_class": "class",
+            "labels": [
+                "misp:galaxy-name=\"Sector\"",
+                "misp:galaxy-type=\"sector\""
             ]
         }
     }
@@ -728,7 +765,7 @@ Since not all the fields of the galaxies and their clusters are exported into ST
             "id": "tool--bba595da-b73a-4354-aa6c-224d4de7cb4e",
             "created": "2020-10-25T16:22:00.000Z",
             "modified": "2020-10-25T16:22:00.000Z",
-            "name": "cmd - S0106",
+            "name": "cmd",
             "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
             "aliases": [
                 "cmd",
