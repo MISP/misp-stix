@@ -753,22 +753,26 @@ _TEST_EVENT_REPORT = {
 
 _TEST_ATTACK_PATTERN_GALAXY = {
     "uuid": "c4e851fa-775f-11e7-8163-b774922098cd",
-    "name": "Pre Attack - Attack Pattern",
-    "type": "mitre-pre-attack-attack-pattern",
+    "name": "Attack Pattern",
+    "type": "mitre-attack-pattern",
     "description": "ATT&CK Tactic",
     "GalaxyCluster": [
         {
             "uuid": "e042a41b-5ecf-4f3a-8f1f-1b528c534772",
-            "type": "mitre-pre-attack-attack-pattern",
-            "value": "Test malware in various execution environments - PRE-T1134",
-            "description": "Malware may perform differently on different platforms and different operating systems.",
+            "type": "mitre-attack-pattern",
+            "value": "Access Token Manipulation - T1134",
+            "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
             "meta": {
-                "external_id": "PRE-T1134",
+                "external_id": "T1134",
                 "kill_chain": [
-                    "mitre-pre-attack:pre-attack:test-capabilities"
+                    "mitre-attack:defense-evasion",
+                    "mitre-attack:privilege-escalation"
+                ],
+                "mitre_platforms": [
+                    "Windows"
                 ],
                 "refs": [
-                    "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
+                    "https://attack.mitre.org/techniques/T1134"
                 ]
             }
         }
