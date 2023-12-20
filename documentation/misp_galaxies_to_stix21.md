@@ -38,46 +38,45 @@ Since not all the fields of the galaxies and their clusters are exported into ST
     }
     ```
   - STIX
-    ```json
-    {
-        "Attack Pattern": {
-            "type": "attack-pattern",
-            "spec_version": "2.1",
-            "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "name": "Access Token Manipulation",
-            "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
-            "kill_chain_phases": [
-                {
-                    "kill_chain_name": "mitre-attack",
-                    "phase_name": "defense-evasion"
-                },
-                {
-                    "kill_chain_name": "mitre-attack",
-                    "phase_name": "privilege-escalation"
-                }
-            ],
-            "labels": [
-                "misp:galaxy-name=\"Attack Pattern\"",
-                "misp:galaxy-type=\"mitre-attack-pattern\""
-            ],
-            "external_references": [
-                {
-                    "source_name": "mitre-attack",
-                    "external_id": "T1134"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://attack.mitre.org/techniques/T1134"
-                }
-            ],
-            "x_misp_mitre_platforms": [
-                "Windows"
-            ]
-        }
-    }
-    ```
+    - Attack Pattern
+      ```json
+      {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "name": "Access Token Manipulation",
+          "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
+          "kill_chain_phases": [
+              {
+                  "kill_chain_name": "mitre-attack",
+                  "phase_name": "defense-evasion"
+              },
+              {
+                  "kill_chain_name": "mitre-attack",
+                  "phase_name": "privilege-escalation"
+              }
+          ],
+          "labels": [
+              "misp:galaxy-name=\"Attack Pattern\"",
+              "misp:galaxy-type=\"mitre-attack-pattern\""
+          ],
+          "external_references": [
+              {
+                  "source_name": "mitre-attack",
+                  "external_id": "T1134"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://attack.mitre.org/techniques/T1134"
+              }
+          ],
+          "x_misp_mitre_platforms": [
+              "Windows"
+          ]
+      }
+      ```
 
 - Branded Vulnerability
   - MISP
@@ -103,29 +102,28 @@ Since not all the fields of the galaxies and their clusters are exported into ST
     }
     ```
   - STIX
-    ```json
-    {
-        "Vulnerability": {
-            "type": "vulnerability",
-            "spec_version": "2.1",
-            "id": "vulnerability--a1640081-aa8d-4070-84b2-d23e2ae82799",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "name": "Ghost",
-            "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
-            "labels": [
-                "misp:galaxy-name=\"Branded Vulnerability\"",
-                "misp:galaxy-type=\"branded-vulnerability\""
-            ],
-            "external_references": [
-                {
-                    "source_name": "cve",
-                    "external_id": "CVE-2015-0235"
-                }
-            ]
-        }
-    }
-    ```
+    - Vulnerability
+      ```json
+      {
+          "type": "vulnerability",
+          "spec_version": "2.1",
+          "id": "vulnerability--a1640081-aa8d-4070-84b2-d23e2ae82799",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "name": "Ghost",
+          "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
+          "labels": [
+              "misp:galaxy-name=\"Branded Vulnerability\"",
+              "misp:galaxy-type=\"branded-vulnerability\""
+          ],
+          "external_references": [
+              {
+                  "source_name": "cve",
+                  "external_id": "CVE-2015-0235"
+              }
+          ]
+      }
+      ```
 
 - Country
   - MISP
@@ -157,33 +155,32 @@ Since not all the fields of the galaxies and their clusters are exported into ST
     }
     ```
   - STIX
-    ```json
-    {
-        "Location": {
-            "type": "location",
-            "spec_version": "2.1",
-            "id": "location--84668357-5a8c-4bdd-9f0f-6b50b2535745",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "name": "Sweden",
-            "description": "Country meta information | sweden",
-            "country": "SE",
-            "labels": [
-                "misp:galaxy-name=\"Country\"",
-                "misp:galaxy-type=\"country\""
-            ],
-            "x_misp_Capital": "Stockholm",
-            "x_misp_Continent": "EU",
-            "x_misp_CurrencyCode": "SEK",
-            "x_misp_CurrencyName": "Krona",
-            "x_misp_ISO": "SE",
-            "x_misp_ISO3": "SWE",
-            "x_misp_Languages": "sv-SE,se,sma,fi-SE",
-            "x_misp_Population": "9828655",
-            "x_misp_tld": ".se"
-        }
-    }
-    ```
+    - Location
+      ```json
+      {
+          "type": "location",
+          "spec_version": "2.1",
+          "id": "location--84668357-5a8c-4bdd-9f0f-6b50b2535745",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "name": "Sweden",
+          "description": "Country meta information | sweden",
+          "country": "SE",
+          "labels": [
+              "misp:galaxy-name=\"Country\"",
+              "misp:galaxy-type=\"country\""
+          ],
+          "x_misp_Capital": "Stockholm",
+          "x_misp_Continent": "EU",
+          "x_misp_CurrencyCode": "SEK",
+          "x_misp_CurrencyName": "Krona",
+          "x_misp_ISO": "SE",
+          "x_misp_ISO3": "SWE",
+          "x_misp_Languages": "sv-SE,se,sma,fi-SE",
+          "x_misp_Population": "9828655",
+          "x_misp_tld": ".se"
+      }
+      ```
 
 - Course of Action
   - MISP
@@ -215,53 +212,52 @@ Since not all the fields of the galaxies and their clusters are exported into ST
     }
     ```
   - STIX
-    ```json
-    {
-        "Course of Action": {
-            "type": "course-of-action",
-            "spec_version": "2.1",
-            "id": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "name": "Automated Exfiltration Mitigation",
-            "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
-            "labels": [
-                "misp:galaxy-name=\"Course of Action\"",
-                "misp:galaxy-type=\"mitre-course-of-action\""
-            ],
-            "external_references": [
-                {
-                    "source_name": "mitre-attack",
-                    "external_id": "T1020"
-                },
-                {
-                    "source_name": "url",
-                    "url": "http://technet.microsoft.com/en-us/magazine/2008.06.srp.aspx"
-                },
-                {
-                    "source_name": "url",
-                    "url": "http://www.sans.org/reading-room/whitepapers/application/application-whitelisting-panacea-propaganda-33599"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://apps.nsa.gov/iaarchive/library/ia-guidance/tech-briefs/application-whitelisting-using-microsoft-applocker.cfm"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://attack.mitre.org/mitigations/T1020"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://blogs.jpcert.or.jp/en/2016/01/windows-commands-abused-by-attackers.html"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://technet.microsoft.com/en-us/library/ee791851.aspx"
-                }
-            ]
-        }
-    }
-    ```
+    - Course of Action
+      ```json
+      {
+          "type": "course-of-action",
+          "spec_version": "2.1",
+          "id": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "name": "Automated Exfiltration Mitigation",
+          "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+          "labels": [
+              "misp:galaxy-name=\"Course of Action\"",
+              "misp:galaxy-type=\"mitre-course-of-action\""
+          ],
+          "external_references": [
+              {
+                  "source_name": "mitre-attack",
+                  "external_id": "T1020"
+              },
+              {
+                  "source_name": "url",
+                  "url": "http://technet.microsoft.com/en-us/magazine/2008.06.srp.aspx"
+              },
+              {
+                  "source_name": "url",
+                  "url": "http://www.sans.org/reading-room/whitepapers/application/application-whitelisting-panacea-propaganda-33599"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://apps.nsa.gov/iaarchive/library/ia-guidance/tech-briefs/application-whitelisting-using-microsoft-applocker.cfm"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://attack.mitre.org/mitigations/T1020"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://blogs.jpcert.or.jp/en/2016/01/windows-commands-abused-by-attackers.html"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://technet.microsoft.com/en-us/library/ee791851.aspx"
+              }
+          ]
+      }
+      ```
 
 - Intrusion Set
   - MISP
@@ -292,40 +288,39 @@ Since not all the fields of the galaxies and their clusters are exported into ST
     }
     ```
   - STIX
-    ```json
-    {
-        "Intrusion Set": {
-            "type": "intrusion-set",
-            "spec_version": "2.1",
-            "id": "intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "name": "APT16",
-            "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
-            "aliases": [
-                "APT16"
-            ],
-            "labels": [
-                "misp:galaxy-name=\"Intrusion Set\"",
-                "misp:galaxy-type=\"mitre-intrusion-set\""
-            ],
-            "external_references": [
-                {
-                    "source_name": "mitre-attack",
-                    "external_id": "G0023"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://attack.mitre.org/groups/G0023"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://www.fireeye.com/blog/threat-research/2015/12/the-eps-awakens-part-two.html"
-                }
-            ]
-        }
-    }
-    ```
+    - Intrusion Set
+      ```json
+      {
+          "type": "intrusion-set",
+          "spec_version": "2.1",
+          "id": "intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "name": "APT16",
+          "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
+          "aliases": [
+              "APT16"
+          ],
+          "labels": [
+              "misp:galaxy-name=\"Intrusion Set\"",
+              "misp:galaxy-type=\"mitre-intrusion-set\""
+          ],
+          "external_references": [
+              {
+                  "source_name": "mitre-attack",
+                  "external_id": "G0023"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://attack.mitre.org/groups/G0023"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://www.fireeye.com/blog/threat-research/2015/12/the-eps-awakens-part-two.html"
+              }
+          ]
+      }
+      ```
 
 - Malware
   - MISP
@@ -360,110 +355,47 @@ Since not all the fields of the galaxies and their clusters are exported into ST
     }
     ```
   - STIX
-    ```json
-    {
-        "Malware": {
-            "type": "malware",
-            "spec_version": "2.1",
-            "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "name": "BISCUIT",
-            "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-            "is_family": false,
-            "aliases": [
-                "BISCUIT"
-            ],
-            "labels": [
-                "misp:galaxy-name=\"Malware\"",
-                "misp:galaxy-type=\"mitre-malware\""
-            ],
-            "external_references": [
-                {
-                    "source_name": "mitre-attack",
-                    "external_id": "S0017"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://attack.mitre.org/software/S0017"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report-appendix.zip"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report.pdf"
-                }
-            ],
-            "x_misp_mitre_platforms": [
-                "Windows"
-            ]
-        }
-    }
-    ```
-
-- Pre Attack - Attack Pattern
-  - MISP
-    ```json
-    {
-        "uuid": "c4e851fa-775f-11e7-8163-b774922098cd",
-        "name": "Pre Attack - Attack Pattern",
-        "type": "mitre-pre-attack-attack-pattern",
-        "description": "ATT&CK Tactic",
-        "GalaxyCluster": [
-            {
-                "uuid": "e042a41b-5ecf-4f3a-8f1f-1b528c534772",
-                "type": "mitre-pre-attack-attack-pattern",
-                "value": "Test malware in various execution environments - PRE-T1134",
-                "description": "Malware may perform differently on different platforms and different operating systems.",
-                "meta": {
-                    "external_id": "PRE-T1134",
-                    "kill_chain": [
-                        "mitre-pre-attack:pre-attack:test-capabilities"
-                    ],
-                    "refs": [
-                        "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
-                    ]
-                }
-            }
-        ]
-    }
-    ```
-  - STIX
-    ```json
-    {
-        "Attack Pattern": {
-            "type": "attack-pattern",
-            "spec_version": "2.1",
-            "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "name": "Test malware in various execution environments",
-            "description": "Malware may perform differently on different platforms and different operating systems.",
-            "kill_chain_phases": [
-                {
-                    "kill_chain_name": "mitre-pre-attack",
-                    "phase_name": "test-capabilities"
-                }
-            ],
-            "labels": [
-                "misp:galaxy-name=\"Pre Attack - Attack Pattern\"",
-                "misp:galaxy-type=\"mitre-pre-attack-attack-pattern\""
-            ],
-            "external_references": [
-                {
-                    "source_name": "mitre-pre-attack",
-                    "external_id": "PRE-T1134"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
-                }
-            ]
-        }
-    }
-    ```
+    - Malware
+      ```json
+      {
+          "type": "malware",
+          "spec_version": "2.1",
+          "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "name": "BISCUIT",
+          "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+          "is_family": false,
+          "aliases": [
+              "BISCUIT"
+          ],
+          "labels": [
+              "misp:galaxy-name=\"Malware\"",
+              "misp:galaxy-type=\"mitre-malware\""
+          ],
+          "external_references": [
+              {
+                  "source_name": "mitre-attack",
+                  "external_id": "S0017"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://attack.mitre.org/software/S0017"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report-appendix.zip"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://www.fireeye.com/content/dam/fireeye-www/services/pdfs/mandiant-apt1-report.pdf"
+              }
+          ],
+          "x_misp_mitre_platforms": [
+              "Windows"
+          ]
+      }
+      ```
 
 - Regions UN M49
   - MISP
@@ -503,41 +435,40 @@ Since not all the fields of the galaxies and their clusters are exported into ST
     }
     ```
   - STIX
-    ```json
-    {
-        "Location": {
-            "type": "location",
-            "spec_version": "2.1",
-            "id": "location--f93cb275-0366-4ecc-abf0-a17928d1e177",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "name": "Northern Europe",
-            "description": "Regions based on UN M49 | Nothern Europe",
-            "region": "northern-europe",
-            "labels": [
-                "misp:galaxy-name=\"Regions UN M49\"",
-                "misp:galaxy-type=\"region\""
-            ],
-            "x_misp_subregion": [
-                "830 - Channel Islands",
-                "248 - \u00c5land Islands",
-                "208 - Denmark",
-                "233 - Estonia",
-                "234 - Faroe Islands",
-                "246 - Finland",
-                "352 - Iceland",
-                "372 - Ireland",
-                "833 - Isle of Man",
-                "428 - Latvia",
-                "440 - Lithuania",
-                "578 - Norway",
-                "744 - Svalbard and Jan Mayen Islands",
-                "752 - Sweden",
-                "826 - United Kingdom of Great Britain and Northern Ireland"
-            ]
-        }
-    }
-    ```
+    - Location
+      ```json
+      {
+          "type": "location",
+          "spec_version": "2.1",
+          "id": "location--f93cb275-0366-4ecc-abf0-a17928d1e177",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "name": "Northern Europe",
+          "description": "Regions based on UN M49 | Nothern Europe",
+          "region": "northern-europe",
+          "labels": [
+              "misp:galaxy-name=\"Regions UN M49\"",
+              "misp:galaxy-type=\"region\""
+          ],
+          "x_misp_subregion": [
+              "830 - Channel Islands",
+              "248 - Åland Islands",
+              "208 - Denmark",
+              "233 - Estonia",
+              "234 - Faroe Islands",
+              "246 - Finland",
+              "352 - Iceland",
+              "372 - Ireland",
+              "833 - Isle of Man",
+              "428 - Latvia",
+              "440 - Lithuania",
+              "578 - Norway",
+              "744 - Svalbard and Jan Mayen Islands",
+              "752 - Sweden",
+              "826 - United Kingdom of Great Britain and Northern Ireland"
+          ]
+      }
+      ```
 
 - Sector
   - MISP
@@ -557,24 +488,23 @@ Since not all the fields of the galaxies and their clusters are exported into ST
     }
     ```
   - STIX
-    ```json
-    {
-        "Identity": {
-            "type": "identity",
-            "spec_version": "2.1",
-            "id": "identity--75597b7f-54e8-4f14-88c9-e81485ece483",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "name": "IT - Security",
-            "description": "Activity sectors",
-            "identity_class": "class",
-            "labels": [
-                "misp:galaxy-name=\"Sector\"",
-                "misp:galaxy-type=\"sector\""
-            ]
-        }
-    }
-    ```
+    - Identity
+      ```json
+      {
+          "type": "identity",
+          "spec_version": "2.1",
+          "id": "identity--75597b7f-54e8-4f14-88c9-e81485ece483",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "name": "IT - Security",
+          "description": "Activity sectors",
+          "identity_class": "class",
+          "labels": [
+              "misp:galaxy-name=\"Sector\"",
+              "misp:galaxy-type=\"sector\""
+          ]
+      }
+      ```
 
 - Threat Actor
   - MISP
@@ -603,29 +533,28 @@ Since not all the fields of the galaxies and their clusters are exported into ST
     }
     ```
   - STIX
-    ```json
-    {
-        "Threat Actor": {
-            "type": "threat-actor",
-            "spec_version": "2.1",
-            "id": "threat-actor--11e17436-6ede-4733-8547-4ce0254ea19e",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "name": "Cutting Kitten",
-            "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
-            "aliases": [
-                "Ghambar"
-            ],
-            "labels": [
-                "misp:galaxy-name=\"Threat Actor\"",
-                "misp:galaxy-type=\"threat-actor\""
-            ],
-            "x_misp_cfr_type_of_incident": [
-                "Denial of service"
-            ]
-        }
-    }
-    ```
+    - Threat Actor
+      ```json
+      {
+          "type": "threat-actor",
+          "spec_version": "2.1",
+          "id": "threat-actor--11e17436-6ede-4733-8547-4ce0254ea19e",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "name": "Cutting Kitten",
+          "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
+          "aliases": [
+              "Ghambar"
+          ],
+          "labels": [
+              "misp:galaxy-name=\"Threat Actor\"",
+              "misp:galaxy-type=\"threat-actor\""
+          ],
+          "x_misp_cfr-type-of-incident": [
+              "Denial of service"
+          ]
+      }
+      ```
 
 - Tool
   - MISP
@@ -663,56 +592,55 @@ Since not all the fields of the galaxies and their clusters are exported into ST
     }
     ```
   - STIX
-    ```json
-    {
-        "Tool": {
-            "type": "tool",
-            "spec_version": "2.1",
-            "id": "tool--bba595da-b73a-4354-aa6c-224d4de7cb4e",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "name": "cmd",
-            "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
-            "aliases": [
-                "cmd",
-                "cmd.exe"
-            ],
-            "labels": [
-                "misp:galaxy-name=\"Tool\"",
-                "misp:galaxy-type=\"mitre-tool\""
-            ],
-            "external_references": [
-                {
-                    "source_name": "mitre-attack",
-                    "external_id": "S0106"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://attack.mitre.org/software/S0106"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://technet.microsoft.com/en-us/library/bb490880.aspx"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://technet.microsoft.com/en-us/library/bb490886.aspx"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://technet.microsoft.com/en-us/library/cc755121.aspx"
-                },
-                {
-                    "source_name": "url",
-                    "url": "https://technet.microsoft.com/en-us/library/cc771049.aspx"
-                }
-            ],
-            "x_misp_mitre_platforms": [
-                "Windows"
-            ]
-        }
-    }
-    ```
+    - Tool
+      ```json
+      {
+          "type": "tool",
+          "spec_version": "2.1",
+          "id": "tool--bba595da-b73a-4354-aa6c-224d4de7cb4e",
+          "created": "2020-10-25T16:22:00.000Z",
+          "modified": "2020-10-25T16:22:00.000Z",
+          "name": "cmd",
+          "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
+          "aliases": [
+              "cmd",
+              "cmd.exe"
+          ],
+          "labels": [
+              "misp:galaxy-name=\"Tool\"",
+              "misp:galaxy-type=\"mitre-tool\""
+          ],
+          "external_references": [
+              {
+                  "source_name": "mitre-attack",
+                  "external_id": "S0106"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://attack.mitre.org/software/S0106"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://technet.microsoft.com/en-us/library/bb490880.aspx"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://technet.microsoft.com/en-us/library/bb490886.aspx"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://technet.microsoft.com/en-us/library/cc755121.aspx"
+              },
+              {
+                  "source_name": "url",
+                  "url": "https://technet.microsoft.com/en-us/library/cc771049.aspx"
+              }
+          ],
+          "x_misp_mitre_platforms": [
+              "Windows"
+          ]
+      }
+      ```
 
 
 ## The other detailed mappings
