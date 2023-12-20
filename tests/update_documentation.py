@@ -95,7 +95,10 @@ class DocumentationUpdater:
             self._write_summary()
 
     def _check_stix_export_summary(self, name, mapping, feature):
-        summary = self.summary_mapping[name] if name in self.summary_mapping else getattr(self, f"_define_{feature}_export_summary")(mapping)
+        summary = (
+            self.summary_mapping[name] if name in self.summary_mapping else
+            getattr(self, f"_define_{feature}_export_summary")(mapping)
+        )
         if name not in self._summary or self._summary[name] != summary:
             self._summary[name] = summary
             self._summary_changed = True

@@ -302,61 +302,6 @@
             }
         }
     },
-    "Pre Attack - Attack Pattern": {
-        "MISP": {
-            "uuid": "c4e851fa-775f-11e7-8163-b774922098cd",
-            "name": "Pre Attack - Attack Pattern",
-            "type": "mitre-pre-attack-attack-pattern",
-            "description": "ATT&CK Tactic",
-            "GalaxyCluster": [
-                {
-                    "uuid": "e042a41b-5ecf-4f3a-8f1f-1b528c534772",
-                    "type": "mitre-pre-attack-attack-pattern",
-                    "value": "Test malware in various execution environments - PRE-T1134",
-                    "description": "Malware may perform differently on different platforms and different operating systems.",
-                    "meta": {
-                        "external_id": "PRE-T1134",
-                        "kill_chain": [
-                            "mitre-pre-attack:pre-attack:test-capabilities"
-                        ],
-                        "refs": [
-                            "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
-                        ]
-                    }
-                }
-            ]
-        },
-        "STIX": {
-            "Attack Pattern": {
-                "type": "attack-pattern",
-                "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
-                "created": "2020-10-25T16:22:00.000Z",
-                "modified": "2020-10-25T16:22:00.000Z",
-                "name": "Test malware in various execution environments",
-                "description": "Malware may perform differently on different platforms and different operating systems.",
-                "kill_chain_phases": [
-                    {
-                        "kill_chain_name": "mitre-pre-attack",
-                        "phase_name": "test-capabilities"
-                    }
-                ],
-                "labels": [
-                    "misp:galaxy-name=\"Pre Attack - Attack Pattern\"",
-                    "misp:galaxy-type=\"mitre-pre-attack-attack-pattern\""
-                ],
-                "external_references": [
-                    {
-                        "source_name": "mitre-pre-attack",
-                        "external_id": "PRE-T1134"
-                    },
-                    {
-                        "source_name": "url",
-                        "url": "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
-                    }
-                ]
-            }
-        }
-    },
     "Sector": {
         "MISP": {
             "uuid": "e1bb134c-ae4d-11e7-8aa9-f78a37325439",
