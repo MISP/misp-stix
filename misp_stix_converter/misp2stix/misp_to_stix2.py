@@ -2576,8 +2576,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         feature = 'malware_types' if self._version == '2.1' else 'labels'
         meta_args[feature] = values if isinstance(values, list) else [values]
 
-    def _parse_meta_custom_fields(
-            self, cluster_meta: dict, object_type: str) -> dict:
+    def _parse_meta_custom_fields(self, cluster_meta: dict) -> dict:
         meta_args = defaultdict(list)
         for key, values in cluster_meta.items():
             feature = self._mapping.external_references_fields(key)
@@ -2870,7 +2869,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             meta_args = (
                 self._parse_meta_fields(cluster['meta'], object_type, value)
                 if hasattr(self._mapping, feature) else
-                self._parse_meta_custom_fields(cluster['meta'], object_type)
+                self._parse_meta_custom_fields(cluster['meta'])
             )
             if object_type in _labelled_object_types and 'labels' in meta_args:
                 galaxy_args['labels'].extend(meta_args.pop('labels'))
