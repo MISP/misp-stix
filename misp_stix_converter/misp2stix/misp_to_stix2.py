@@ -18,7 +18,6 @@ from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v21.bundle import Bundle as Bundle_v21
 from typing import Generator, Optional, Tuple, Union
 
-_aliases_fields = ('aliases', 'x_misp_synonyms')
 _label_fields = ('type', 'category', 'to_ids')
 _labelled_object_types = ('malware', 'threat-actor', 'tool')
 _misp_time_fields = ('first_seen', 'last_seen')
@@ -2489,7 +2488,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             'external_id': external_id
         }
 
-    def _parse_external_reference(
+    def _parse_external_references(
             self, meta_args: dict, values: Union[list, str],
             feature: Optional[str] = '_parse_external_id'):
         if isinstance(values, list):
@@ -2583,8 +2582,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         for key, values in cluster_meta.items():
             feature = self._mapping.external_references_fields(key)
             if feature is not None:
-                for ref in self._parse_external_references(feature, values):
-                    meta_args['external_references'].append(ref)
+                self._parse_external_references(meta_args, values, feature)
             else:
                 meta_args[f"x_misp_{self._sanitise_meta_field(key)}"] = values
         if any(key.startswith('x_misp_') for key in meta_args.keys()):
@@ -2594,36 +2592,39 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _parse_meta_fields(
             self, cluster_meta: dict, object_type: str, value: str) -> dict:
         meta_args = defaultdict(list)
-        field = f'{object_type}_meta_mapping'
+        field = f"{object_type.replace('-', '_')}_meta_mapping"
         for key, values in cluster_meta.items():
             feature = self._mapping.external_references_fields(key)
             if feature is not None:
-                for ref in self._parse_external_references(feature, values):
-                    meta_args['external_references'].append(ref)
+                self._parse_external_references(meta_args, values, feature)
                 continue
-            to_call = getattr(self._mapping, f'{object_type}_meta_mapping')(key)
+            to_call = getattr(self._mapping, field)(key)
             if to_call is not None:
-                getattr(self, to_call)(
+                args = [
                     meta_args, values if isinstance(values, list) else [values]
-                )
+                ]
+                if 'synonyms' in to_call:
+                    args.append(value)
+                getattr(self, to_call)(*args)
             else:
                 meta_args[f"x_misp_{self._sanitise_meta_field(key)}"] = values
-        for field in ('aliases', 'x_misp_synonyms'):
-            if field in meta_args:
-                aliases = [alias for alias in meta_args.pop(field) if alias != value]
-                if aliases:
-                    meta_args[field] = aliases
         if any(key.startswith('x_misp_') for key in meta_args.keys()):
             meta_args['allow_custom'] = True
         return meta_args
 
-    def _parse_synonyms_21_meta_field(self, meta_args: dict, values: list):
-        feature = 'aliases' if self._version == '2.1' else 'x_misp_synonyms'
-        meta_args[feature] = values
+    def _parse_synonyms_21_meta_field(
+            self, meta_args: dict, values: list, cluster_value: str):
+        aliases = [value for value in values if value != cluster_value]
+        if aliases:
+            feature = 'aliases' if self._version == '2.1' else 'x_misp_synonyms'
+            meta_args[feature] = aliases
 
     @staticmethod
-    def _parse_synonyms_meta_field(meta_args: dict, values: list):
-        meta_args['aliases'] = values
+    def _parse_synonyms_meta_field(
+        meta_args: dict, values: list, cluster_value: str):
+        aliases = [value for value in values if value != cluster_value]
+        if aliases:
+            meta_args['aliases'] = aliases
 
     def _parse_sector_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                              timestamp: Union[datetime, None]) -> list:
