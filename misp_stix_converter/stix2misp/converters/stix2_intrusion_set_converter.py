@@ -3,9 +3,7 @@
 
 from ... import Mapping
 from ..exceptions import UnknownParsingFunctionError
-from .stix2converter import (
-    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,
-    _MAIN_PARSER_TYPING)
+from .stix2converter import ExternalSTIX2Converter, InternalSTIX2Converter
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
@@ -37,15 +35,24 @@ class STIX2IntrusionSetMapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__intrusion_set_meta_mapping
 
 
-class STIX2IntrusionSetConverter(STIX2Converter, metaclass=ABCMeta):
-    def __init__(self, main: _MAIN_PARSER_TYPING):
+class ExternalSTIX2IntrusionSetMapping(
+        STIX2IntrusionSetMapping, ExternalSTIX2Mapping):
+    pass
+
+
+class ExternalSTIX2IntrusionSetConverter(ExternalSTIX2Converter):
+    def __init__(self, main: 'ExternalSTIX2toMISPParser'):
         self._set_main_parser(main)
+        self._mapping = ExternalSTIX2IntrusionSetMapping
+
+    def parse(self, intrusion_set_ref: str):
+        intrusion_set = self.main_parser._get_stix_object(intrusion_set_ref)
+        self._parse_galaxy(intrusion_set)
 
     def _create_cluster(self, intrusion_set: _INTRUSION_SET_TYPING,
-                        description: Optional[str] = None,
                         galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         intrusion_set_args = self._create_cluster_args(
-            intrusion_set, galaxy_type, description=description
+            intrusion_set, galaxy_type
         )
         meta = self._handle_meta_fields(intrusion_set)
         if hasattr(intrusion_set, 'external_references'):
@@ -54,27 +61,9 @@ class STIX2IntrusionSetConverter(STIX2Converter, metaclass=ABCMeta):
                     intrusion_set.external_references
                 )
             )
-        if meta.get('external_id'):
-            self._handle_cluster_value_with_synonyms(intrusion_set_args, meta)
         if meta:
             intrusion_set_args['meta'] = meta
         return self._create_misp_galaxy_cluster(intrusion_set_args)
-
-
-class ExternalSTIX2IntrusionSetMapping(
-        STIX2IntrusionSetMapping, ExternalSTIX2Mapping):
-    pass
-
-
-class ExternalSTIX2IntrusionSetConverter(
-        STIX2IntrusionSetConverter, ExternalSTIX2Converter):
-    def __init__(self, main: 'ExternalSTIX2toMISPParser'):
-        super().__init__(main)
-        self._mapping = ExternalSTIX2IntrusionSetMapping
-
-    def parse(self, intrusion_set_ref: str):
-        intrusion_set = self.main_parser._get_stix_object(intrusion_set_ref)
-        self._parse_galaxy(intrusion_set)
 
 
 class InternalSTIX2IntrusionSetMapping(
@@ -100,10 +89,9 @@ class InternalSTIX2IntrusionSetMapping(
         return cls.__intrusion_set_object_mapping
 
 
-class InternalSTIX2IntrusionSetConverter(
-        STIX2IntrusionSetConverter, InternalSTIX2Converter):
+class InternalSTIX2IntrusionSetConverter(InternalSTIX2Converter):
     def __init__(self, main: 'InternalSTIX2toMISPParser'):
-        super().__init__(main)
+        self._set_main_parser(main)
         self._mapping = InternalSTIX2IntrusionSetMapping
 
     def parse(self, intrusion_set_ref: str):
@@ -119,6 +107,25 @@ class InternalSTIX2IntrusionSetConverter(
             parser(intrusion_set)
         except Exception as exception:
             self.main_parser.intrusion_set_error(intrusion_set.id, exception)
+
+    def _create_cluster(self, intrusion_set: _INTRUSION_SET_TYPING,
+                        description: Optional[str] = None,
+                        galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        intrusion_set_args = self._create_cluster_args(
+            intrusion_set, galaxy_type, description=description
+        )
+        meta = self._handle_meta_fields(intrusion_set)
+        if hasattr(intrusion_set, 'external_references'):
+            meta.update(
+                self._handle_external_references(
+                    intrusion_set.external_references
+                )
+            )
+        if meta.get('external_id'):
+            self._handle_cluster_value_with_synonyms(intrusion_set_args, meta)
+        if meta:
+            intrusion_set_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(intrusion_set_args)
 
     def _parse_intrusion_set_object(self, intrusion_set: _INTRUSION_SET_TYPING):
         misp_object = self._create_misp_object('intrusion-set', intrusion_set)
