@@ -1242,7 +1242,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         attribute = self._check_misp_event_features(event, report)[0]
         for galaxy in attribute.galaxies:
             if galaxy['type'] == 'mitre-attack-pattern':
-                self._check_galaxy_fields(
+                self._check_galaxy_fields_with_external_id(
                     galaxy, attack_pattern, 'mitre-attack-pattern',
                     'Attack Pattern'
                 )
@@ -1451,9 +1451,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data = twitter_od
         )
         user_account_observable = self._check_observed_data_object(user_account, user_od)['0']
-        password, last_changed = self._check_user_account_observable_object(
-            user_account.attributes,
-            user_account_observable
+        username, account_type, display_name, user_id, last_changed, password, *attributes = user_account.attributes
+        self._check_user_account_observable_object(
+            user_account_observable,
+            username, account_type, display_name, user_id, *attributes
         )
         self.assertEqual(password.type, 'text')
         self.assertEqual(password.object_relation, 'password')

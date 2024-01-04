@@ -757,27 +757,34 @@ _ATTACK_PATTERN_GALAXY = {
     "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "name": "Test malware in various execution environments - PRE-T1134",
-    "description": "Malware may perform differently on different platforms and different operating systems.",
+    "name": "Access Token Manipulation",
+    "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
     "kill_chain_phases": [
         {
-            "kill_chain_name": "mitre-pre-attack",
-            "phase_name": "test-capabilities"
+            "kill_chain_name": "mitre-attack",
+            "phase_name": "defense-evasion"
+        },
+        {
+            "kill_chain_name": "mitre-attack",
+            "phase_name": "privilege-escalation"
         }
     ],
     "labels": [
-        "misp:galaxy-name=\"Pre Attack - Attack Pattern\"",
-        "misp:galaxy-type=\"mitre-pre-attack-attack-pattern\""
+        "misp:galaxy-name=\"Attack Pattern\"",
+        "misp:galaxy-type=\"mitre-attack-pattern\""
     ],
     "external_references": [
         {
-            "source_name": "mitre-pre-attack",
-            "external_id": "PRE-T1134"
+            "source_name": "mitre-attack",
+            "external_id": "T1134"
         },
         {
             "source_name": "url",
-            "url": "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
+            "url": "https://attack.mitre.org/techniques/T1134"
         }
+    ],
+    "x_misp_mitre_platforms": [
+        "Windows"
     ]
 }
 _ATTACK_PATTERN_OBJECT = {
@@ -814,32 +821,14 @@ _ATTACK_PATTERN_OBJECT = {
     "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
 }
 _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
-    {
-        "type": "attack-pattern",
-        "spec_version": "2.1",
-        "id": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "name": "Access Token Manipulation - T1134",
-        "description": "Windows uses access tokens to determine the ownership of a running process.",
-        "labels": [
-            "misp:galaxy-name=\"Attack Pattern\"",
-            "misp:galaxy-type=\"mitre-attack-pattern\""
-        ],
-        "external_references": [
-            {
-                "source_name": "capec",
-                "external_id": "CAPEC-633"
-            }
-        ]
-    },
+    _ATTACK_PATTERN_GALAXY,
     {
         "type": "course-of-action",
         "spec_version": "2.1",
         "id": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "Automated Exfiltration Mitigation - T1020",
+        "name": "Automated Exfiltration Mitigation",
         "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
         "labels": [
             "misp:galaxy-name=\"Course of Action\"",
@@ -876,12 +865,9 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "BISCUIT - S0017",
+        "name": "BISCUIT",
         "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
         "is_family": True,
-        "aliases": [
-            "BISCUIT"
-        ],
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -895,7 +881,7 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "indicates",
         "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "target_ref": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48"
+        "target_ref": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772"
     },
     {
         "type": "relationship",
@@ -959,19 +945,35 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "id": "attack-pattern--00000000-0000-0000-0000-000000000000",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "Access Token Manipulation - T1134",
-        "description": "Windows uses access tokens to determine the ownership of a running process.",
+        "name": "Access Token Manipulation",
+        "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "mitre-attack",
+                "phase_name": "defense-evasion"
+            },
+            {
+                "kill_chain_name": "mitre-attack",
+                "phase_name": "privilege-escalation"
+            }
+        ],
         "labels": [
             "misp:galaxy-name=\"Attack Pattern\"",
             "misp:galaxy-type=\"mitre-attack-pattern\""
         ],
         "external_references": [
             {
-                "source_name": "capec",
-                "external_id": "CAPEC-633"
+                "source_name": "mitre-attack",
+                "external_id": "T1134"
+            },
+            {
+                "source_name": "url",
+                "url": "https://attack.mitre.org/techniques/T1134"
             }
         ],
-        "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef"
+        "x_misp_mitre_platforms": [
+            "Windows"
+        ]
     },
     {
         "type": "course-of-action",
@@ -979,7 +981,7 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "id": "course-of-action--11111111-1111-1111-1111-111111111111",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "Automated Exfiltration Mitigation - T1020",
+        "name": "Automated Exfiltration Mitigation",
         "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
         "labels": [
             "misp:galaxy-name=\"Course of Action\"",
@@ -1017,12 +1019,9 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "id": "malware--33333333-3333-3333-3333-333333333333",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "BISCUIT - S0017",
+        "name": "BISCUIT",
         "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
         "is_family": True,
-        "aliases": [
-            "BISCUIT"
-        ],
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -1429,12 +1428,9 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
         "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "BISCUIT - S0017",
+        "name": "BISCUIT",
         "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
         "is_family": True,
-        "aliases": [
-            "BISCUIT"
-        ],
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -1569,12 +1565,9 @@ _BUNDLE_WITH_NO_REPORT = [
         "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "BISCUIT - S0017",
+        "name": "BISCUIT",
         "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
         "is_family": True,
-        "aliases": [
-            "BISCUIT"
-        ],
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -1841,7 +1834,7 @@ _COURSE_OF_ACTION_GALAXY = {
     "id": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "name": "Automated Exfiltration Mitigation - T1020",
+    "name": "Automated Exfiltration Mitigation",
     "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
     "labels": [
         "misp:galaxy-name=\"Course of Action\"",
@@ -5312,11 +5305,8 @@ _INTRUSION_SET_GALAXY = {
     "id": "intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "name": "APT16 - G0023",
+    "name": "APT16",
     "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
-    "aliases": [
-        "APT16"
-    ],
     "labels": [
         "misp:galaxy-name=\"Intrusion Set\"",
         "misp:galaxy-type=\"mitre-intrusion-set\""
@@ -5814,7 +5804,7 @@ _LOCATION_GALAXIES = [
         ],
         "x_misp_subregion": [
             "830 - Channel Islands",
-            "248 - \u00c5land Islands",
+            "248 - Åland Islands",
             "208 - Denmark",
             "233 - Estonia",
             "234 - Faroe Islands",
@@ -5886,12 +5876,9 @@ _MALWARE_GALAXY = {
     "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "name": "BISCUIT - S0017",
+    "name": "BISCUIT",
     "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
     "is_family": False,
-    "aliases": [
-        "BISCUIT"
-    ],
     "labels": [
         "misp:galaxy-name=\"Malware\"",
         "misp:galaxy-type=\"mitre-malware\""
@@ -7165,10 +7152,9 @@ _TOOL_GALAXY = {
     "id": "tool--bba595da-b73a-4354-aa6c-224d4de7cb4e",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "name": "cmd - S0106",
+    "name": "cmd",
     "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
     "aliases": [
-        "cmd",
         "cmd.exe"
     ],
     "labels": [
@@ -7719,11 +7705,11 @@ class TestInternalSTIX21Bundles:
     def __assemble_bundle(cls, *stix_objects):
         bundle = deepcopy(cls.__bundle)
         bundle['objects'] = [
-            deepcopy(cls.__identity),
-            deepcopy(cls.__grouping),
-            *stix_objects
+            deepcopy(cls.__identity), deepcopy(cls.__grouping), *stix_objects
         ]
-        bundle['objects'][1]['object_refs'] = [stix_object['id'] for stix_object in stix_objects]
+        bundle['objects'][1]['object_refs'] = [
+            stix_object['id'] for stix_object in stix_objects
+        ]
         return dict_to_stix2(bundle, allow_custom=True)
 
     ############################################################################

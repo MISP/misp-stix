@@ -3,9 +3,7 @@
 
 from ... import Mapping
 from ..exceptions import UnknownParsingFunctionError
-from .stix2converter import (
-    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,
-    _MAIN_PARSER_TYPING)
+from .stix2converter import ExternalSTIX2Converter, InternalSTIX2Converter
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
@@ -35,16 +33,24 @@ class STIX2ToolMapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__tool_meta_mapping
 
 
-class STIX2ToolConverter(STIX2Converter, metaclass=ABCMeta):
-    def __init__(self, main: _MAIN_PARSER_TYPING):
+
+class ExternalSTIX2ToolMapping(
+        STIX2ToolMapping, ExternalSTIX2Mapping):
+    pass
+
+
+class ExternalSTIX2ToolConverter(ExternalSTIX2Converter):
+    def __init__(self, main: 'ExternalSTIX2toMISPParser'):
         self._set_main_parser(main)
+        self._mapping = ExternalSTIX2ToolMapping
+
+    def parse(self, tool_ref: str):
+        tool = self.main_parser._get_stix_object(tool_ref)
+        self._parse_galaxy(tool)
 
     def _create_cluster(self, tool: _TOOL_TYPING,
-                        description: Optional[str] = None,
                         galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        tool_args = self._create_cluster_args(
-            tool, galaxy_type, description=description
-        )
+        tool_args = self._create_cluster_args(tool, galaxy_type)
         meta = self._handle_meta_fields(tool)
         if hasattr(tool, 'external_references'):
             meta.update(
@@ -59,22 +65,6 @@ class STIX2ToolConverter(STIX2Converter, metaclass=ABCMeta):
         if meta:
             tool_args['meta'] = meta
         return self._create_misp_galaxy_cluster(tool_args)
-
-
-class ExternalSTIX2ToolMapping(
-        STIX2ToolMapping, ExternalSTIX2Mapping):
-    pass
-
-
-class ExternalSTIX2ToolConverter(
-        STIX2ToolConverter, ExternalSTIX2Converter):
-    def __init__(self, main: 'ExternalSTIX2toMISPParser'):
-        super().__init__(main)
-        self._mapping = ExternalSTIX2ToolMapping
-    
-    def parse(self, tool_ref: str):
-        tool = self.main_parser._get_stix_object(tool_ref)
-        self._parse_galaxy(tool)
 
 
 class InternalSTIX2ToolMapping(
@@ -92,10 +82,9 @@ class InternalSTIX2ToolMapping(
         return cls.__script_object_mapping
 
 
-class InternalSTIX2ToolConverter(
-        STIX2ToolConverter, InternalSTIX2Converter):
+class InternalSTIX2ToolConverter(InternalSTIX2Converter):
     def __init__(self, main: 'InternalSTIX2toMISPParser'):
-        super().__init__(main)
+        self._set_main_parser(main)
         self._mapping = InternalSTIX2ToolMapping
     
     def parse(self, tool_ref: str):
@@ -109,6 +98,29 @@ class InternalSTIX2ToolConverter(
             parser(tool)
         except Exception as exception:
             self.main_parser._tool_error(tool.id, exception)
+
+    def _create_cluster(self, tool: _TOOL_TYPING,
+                        description: Optional[str] = None,
+                        galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        tool_args = self._create_cluster_args(
+            tool, galaxy_type, description=description
+        )
+        meta = self._handle_meta_fields(tool)
+        if hasattr(tool, 'external_references'):
+            meta.update(
+                self._handle_external_references(tool.external_references)
+            )
+        if hasattr(tool, 'kill_chain_phases'):
+            meta['kill_chain'] = self._handle_kill_chain_phases(
+                tool.kill_chain_phases
+            )
+        if meta.get('external_id'):
+            self._handle_cluster_value_with_synonyms(tool_args, meta)
+        if hasattr(tool, 'labels'):
+            self._handle_labels(meta, tool.labels)
+        if meta:
+            tool_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(tool_args)
 
     def _parse_script_object(self, tool: _TOOL_TYPING):
         misp_object = self._create_misp_object('script', tool)

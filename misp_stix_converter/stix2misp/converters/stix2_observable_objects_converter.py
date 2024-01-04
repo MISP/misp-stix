@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from .stix2_observable_converter import (
-    ExternalSTIX2ObservableMapping, InternalSTIX2ObservableMapping,
-    STIX2ObservableConverter)
+    ExternalSTIX2ObservableConverter, ExternalSTIX2ObservableMapping,
+    InternalSTIX2ObservableConverter, InternalSTIX2ObservableMapping)
 from abc import ABCMeta
 from pymisp import AbstractMISP, MISPAttribute, MISPObject
 from stix2.v21.observables import (
@@ -34,7 +34,7 @@ _OBSERVABLE_TYPING = Union[
 ]
 
 
-class STIX2ObservableObjectConverter(STIX2ObservableConverter):
+class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
     def __init__(self, main: 'ExternalSTIX2toMISPParser'):
         self._set_main_parser(main)
         self._mapping = ExternalSTIX2ObservableMapping
@@ -68,7 +68,7 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         artifact_object = self._create_misp_object_from_observable_object(
             'artifact', artifact
         )
-        for attribute in super()._parse_artifact_observable(artifact):
+        for attribute in self._parse_artifact_observable(artifact):
             artifact_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self._main_parser._add_misp_object(
@@ -99,8 +99,8 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
                     f'{autonomous_system.id} - asn - {value}'
                 )
             )
-            for *attribute, kwargs in attributes:
-                AS_object.add_attribute(*attribute, **kwargs)
+            for attribute in attributes:
+                AS_object.add_attribute(**attribute)
             misp_object = self.main_parser._add_misp_object(
                 AS_object, autonomous_system
             )
@@ -123,7 +123,7 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         if observable['used'].get(self.event_uuid, False):
             return observable.get('misp_object', observable['misp_attribute'])
         directory = observable['observable']
-        attributes = tuple(super()._parse_directory_observable(directory))
+        attributes = tuple(self._parse_directory_observable(directory))
         observable['used'][self.event_uuid] = True
         force_object = (
             len(attributes) > 1 or any(
@@ -181,7 +181,7 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
             domain_object = self._create_misp_object_from_observable_object(
                 'domain-ip', domain_name
             )
-            for attribute in super()._parse_domain_observable(domain_name):
+            for attribute in self._parse_domain_observable(domain_name):
                 domain_object.add_attribute(**attribute)
             observable['used'][self.event_uuid] = True
             misp_object = self.main_parser._add_misp_object(
@@ -199,8 +199,9 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
                     continue
                 resolved_ip = self.main_parser._observable[reference]
                 ip_address = resolved_ip['observable']
-                *attribute, kwargs = super()._parse_ip_observable(ip_address)
-                misp_object.add_attribute(*attribute, **kwargs)
+                misp_object.add_attribute(
+                    **self._parse_ip_observable(ip_address)
+                )
                 resolved_ip['used'][self.event_uuid] = True
                 resolved_ip['misp_object'] = misp_object
                 if hasattr(ip_address, 'resolves_to_refs'):
@@ -267,7 +268,7 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         email_object = self._create_misp_object_from_observable_object(
             'email', email_message
         )
-        for attribute in super()._parse_email_message_observable(email_message):
+        for attribute in self._parse_generic_observable(email_message, 'email'):
             email_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
@@ -276,11 +277,11 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         observable['misp_object'] = misp_object
         if hasattr(email_message, 'from_ref'):
             observable = self.main_parser._observable[email_message.from_ref]
-            attributes = super()._parse_email_reference_observable(
+            attributes = self._parse_email_reference_observable(
                 observable['observable'], 'from'
             )
-            for *attribute, kwargs in attributes:
-                misp_object.add_attribute(*attribute, **kwargs)
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
             observable['used'][self.event_uuid] = True
             observable['misp_object'] = misp_object
         for feature in ('to', 'bcc', 'cc'):
@@ -288,15 +289,15 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
             if hasattr(email_message, field):
                 for reference in getattr(email_message, field):
                     observable = self.main_parser._observable[reference]
-                    attributes = super()._parse_email_reference_observable(
+                    attributes = self._parse_email_reference_observable(
                         observable['observable'], feature
                     )
-                    for *attribute, kwargs in attributes:
-                        misp_object.add_attribute(*attribute, **kwargs)
+                    for attribute in attributes:
+                        misp_object.add_attribute(**attribute)
                     observable['used'][self.event_uuid] = True
                     observable['misp_object'] = misp_object
         if hasattr(email_message, 'additional_header_fields'):
-            attributes = super()._parse_email_additional_header(
+            attributes = self._parse_email_additional_header(
                 email_message.additional_header_fields
             )
             for attribute in attributes:
@@ -311,7 +312,7 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         file_object = self._create_misp_object_from_observable_object(
             'file', _file
         )
-        for attribute in super()._parse_file_observable(_file):
+        for attribute in self._parse_file_observable(_file):
             file_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(file_object, _file)
@@ -325,6 +326,41 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
             self._parse_directory_observable_object(
                 _file.parent_directory_ref, child=_file.id
             )
+        if getattr(_file, 'extensions', {}).get('windows-pebinary-ext'):
+            pe_object = self._parse_file_pe_extension_observable_object(_file)
+            misp_object.add_reference(pe_object.uuid, 'includes')
+        return misp_object
+
+    def _parse_file_pe_extension_observable_object(
+            self, observable: File) -> MISPObject:
+        extension = observable.extensions['windows-pebinary-ext']
+        pe_object = self._create_misp_object('pe')
+        pe_object.from_dict(
+            uuid=self.main_parser._create_v5_uuid(
+                f'{observable.id} - windows-pebinary-ext'
+            )
+        )
+        attributes = self._parse_pe_extension_observable(
+            extension, f'{observable.id} - windows-pebinary-ext'
+        )
+        for attribute in attributes:
+            pe_object.add_attribute(**attribute)
+        misp_object = self.main_parser._add_misp_object(pe_object, observable)
+        if hasattr(extension, 'sections'):
+            for index, section in enumerate(extension.sections):
+                section_object = self._create_misp_object('pe-section')
+                section_object.from_dict(
+                    uuid=self.main_parser._create_v5_uuid(
+                        f'{observable.id} - section #{index}'
+                    )
+                )
+                attributes = self._parse_pe_section_observable(
+                    section, f'{observable.id} - section #{index}'
+                )
+                for attribute in attributes:
+                    section_object.add_attribute(**attribute)
+                self.main_parser._add_misp_object(section_object, observable)
+                misp_object.add_reference(section_object.uuid, 'includes')
         return misp_object
 
     def _parse_ip_addresses_belonging_to_AS(self, AS_id: str):
@@ -334,7 +370,7 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
                 continue
             if AS_id in getattr(observable, 'belongs_to_refs', []):
                 content['used'][self.event_uuid] = True
-                yield super()._parse_ip_belonging_to_AS_observable(observable)
+                yield self._parse_ip_belonging_to_AS_observable(observable)
 
     def _parse_ip_address_observable_object(
             self, ip_address_ref: str) -> _MISP_CONTENT_TYPING:
@@ -381,11 +417,13 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         connection_object = self._create_misp_object_from_observable_object(
             'network-connection', observable
         )
-        for attribute in super()._parse_network_traffic_observable(observable):
+        attributes = self._parse_generic_observable(
+            observable, 'network_traffic'
+        )
+        for attribute in attributes:
             connection_object.add_attribute(**attribute)
-        protocols = super()._parse_network_connection_observable(observable)
-        for *attribute, kwargs in protocols:
-            connection_object.add_attribute(*attribute, **kwargs)
+        for attribute in self._parse_network_connection_observable(observable):
+            connection_object.add_attribute(**attribute)
         return connection_object
 
     def _parse_network_socket_observable_object(
@@ -393,9 +431,12 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         socket_object = self._create_misp_object_from_observable_object(
             'network-socket', observable
         )
-        for attribute in super()._parse_network_traffic_observable(observable):
+        attributes = self._parse_generic_observable(
+            observable, 'network_traffic'
+        )
+        for attribute in attributes:
             socket_object.add_attribute(**attribute)
-        for attribute in super()._parse_network_socket_observable(observable):
+        for attribute in self._parse_network_socket_observable(observable):
             socket_object.add_attribute(**attribute)
         return socket_object
 
@@ -417,11 +458,11 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
                 referenced_object = self.main_parser._observable[
                     getattr(network_traffic, f'{asset}_ref')
                 ]
-                content = super()._parse_network_traffic_reference_observable(
+                attributes = self._parse_network_traffic_reference_observable(
                     asset, referenced_object['observable']
                 )
-                for *attribute, kwargs in content:
-                    misp_object.add_attribute(*attribute, **kwargs)
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
                 referenced_object['used'][self.event_uuid] = True
                 referenced_object['misp_object'] = misp_object
         if hasattr(network_traffic, 'encapsulates_refs'):
@@ -452,7 +493,7 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         process_object = self._create_misp_object_from_observable_object(
             'process', process
         )
-        for attribute in super()._parse_process_observable(process):
+        for attribute in self._parse_process_observable(process):
             process_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(process_object, process)
@@ -492,7 +533,7 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         registry_key_object = self._create_misp_object_from_observable_object(
             'registry-key', registry_key
         )
-        for attribute in super()._parse_registry_key_observable(registry_key):
+        for attribute in self._parse_registry_key_observable(registry_key):
             registry_key_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
@@ -503,14 +544,13 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
             object_id = registry_key.id
             for index, registry_key_value in enumerate(registry_key['values']):
                 value_object = self._create_misp_object('registry-key-value')
+                reference = f'{object_id} - values - {index}'
                 value_object.from_dict(
-                    uuid=self._create_v5_uuid(
-                        f'{object_id} - values - {index}'
-                    ),
+                    uuid=self._create_v5_uuid(reference),
                     comment=f'Original Windows Registry Key ID: {object_id}'
                 )
-                attributes = super()._parse_registry_key_value_observable(
-                    registry_key_value, value_object.uuid
+                attributes = self._parse_generic_observable(
+                    registry_key_value, 'registry_key_values', reference
                 )
                 for attribute in attributes:
                     value_object.add_attribute(**attribute)
@@ -527,7 +567,7 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         software_object = self._create_misp_object_from_observable_object(
             'software', software
         )
-        for attribute in super()._parse_software_observable(software):
+        for attribute in self._parse_generic_observable(software, 'software'):
             software_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
@@ -557,7 +597,7 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         user_account_object = self._create_misp_object_from_observable_object(
             'user-account', user_account
         )
-        for attribute in super()._parse_user_account_observable(user_account):
+        for attribute in self._parse_user_account_observable(user_account):
             user_account_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
@@ -574,7 +614,7 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         x509_object = self._create_misp_object_from_observable_object(
             'x509', x509
         )
-        for attribute in super()._parse_x509_observable(x509):
+        for attribute in self._parse_x509_observable(x509):
             x509_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(x509_object, x509)
@@ -582,8 +622,7 @@ class STIX2ObservableObjectConverter(STIX2ObservableConverter):
         return misp_object
 
 
-class STIX2SampleObservableConverter(
-        STIX2ObservableConverter, metaclass=ABCMeta):
+class STIX2SampleObservableConverter(metaclass=ABCMeta):
     def __init__(self, main: _MAIN_CONVERTER_TYPING):
         self._main_converter = main
 
@@ -617,7 +656,7 @@ class STIX2SampleObservableConverter(
         artifact_object = self._create_misp_object_from_observable(
             'artifact', artifact, malware
         )
-        for attribute in super()._parse_artifact_observable(artifact):
+        for attribute in self._parse_artifact_observable(artifact):
             artifact_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self._main_parser._add_misp_object(
@@ -635,7 +674,7 @@ class STIX2SampleObservableConverter(
         file_object = self._create_misp_object_from_observable(
             'file', _file, malware
         )
-        for attribute in super()._parse_file_observable(_file):
+        for attribute in self._parse_file_observable(_file):
             file_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(file_object, _file)
@@ -651,7 +690,7 @@ class STIX2SampleObservableConverter(
         software_object = self._create_misp_object_from_observable(
             'software', software, malware
         )
-        for attribute in super()._parse_software_observable(software):
+        for attribute in self._parse_generic_observable(software, 'software'):
             software_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
@@ -661,13 +700,15 @@ class STIX2SampleObservableConverter(
         return misp_object
 
 
-class ExternalSTIX2SampleObservableConverter(STIX2SampleObservableConverter):
+class ExternalSTIX2SampleObservableConverter(
+        STIX2SampleObservableConverter, ExternalSTIX2ObservableConverter):
     def __init__(self, main: 'ExternalSTIX2MalwareConverter'):
         super().__init__(main)
         self._mapping = ExternalSTIX2ObservableMapping
 
 
-class InternalSTIX2SampleObservableConverter(STIX2SampleObservableConverter):
+class InternalSTIX2SampleObservableConverter(
+        STIX2SampleObservableConverter, InternalSTIX2ObservableConverter):
     def __init__(self, main: 'InternalSTIX2MalwareConverter'):
         super().__init__(main)
         self._mapping = InternalSTIX2ObservableMapping

@@ -300,7 +300,12 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(indicator.valid_from, timestamp)
 
     def _check_intrusion_set_meta_fields(self, stix_object, meta):
-        self.assertEqual(stix_object.aliases, meta['synonyms'])
+        aliases = [
+            synonym for synonym in meta['synonyms']
+            if synonym != stix_object.name
+        ]
+        if aliases:
+            self.assertEqual(stix_object.aliases, aliases)
         self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
         for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
             self.assertEqual(external_ref.url, ref)
@@ -368,10 +373,15 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(legal_entity.x_misp_logo['data'], data)
 
     def _check_malware_meta_fields(self, stix_object, meta):
-        if hasattr(stix_object, 'aliases'):
-            self.assertEqual(stix_object.aliases, meta['synonyms'])
-        else:
-            self.assertEqual(stix_object.x_misp_synonyms, meta['synonyms'])
+        aliases = [
+            synonym for synonym in meta['synonyms']
+            if synonym != stix_object.name
+        ]
+        if aliases:
+            if hasattr(stix_object, 'aliases'):
+                self.assertEqual(stix_object.aliases, meta['synonyms'])
+            else:
+                self.assertEqual(stix_object.x_misp_synonyms, meta['synonyms'])
         self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
         for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
             self.assertEqual(external_ref.url, ref)
@@ -570,10 +580,14 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(stix_object.aliases, meta['synonyms'])
 
     def _check_tool_meta_fields(self, stix_object, meta):
+        aliases = [
+            synonym for synonym in meta['synonyms']
+            if synonym != stix_object.name
+        ]
         if hasattr(stix_object, 'aliases'):
-            self.assertEqual(stix_object.aliases, meta['synonyms'])
+            self.assertEqual(stix_object.aliases, aliases)
         else:
-            self.assertEqual(stix_object.x_misp_synonyms, meta['synonyms'])
+            self.assertEqual(stix_object.x_misp_synonyms, aliases)
         self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
         for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
             self.assertEqual(external_ref.url, ref)

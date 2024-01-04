@@ -3,9 +3,7 @@
 
 from ... import Mapping
 from ..exceptions import UnknownParsingFunctionError
-from .stix2converter import (
-    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,
-    _MAIN_PARSER_TYPING)
+from .stix2converter import ExternalSTIX2Converter, InternalSTIX2Converter
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
@@ -23,15 +21,21 @@ _COURSE_OF_ACTION_TYPING = Union[
 ]
 
 
-class STIX2CourseOfActionConverter(STIX2Converter, metaclass=ABCMeta):
-    def __init__(self, main: _MAIN_PARSER_TYPING):
+class ExternalSTIX2CourseOfActionConverter(ExternalSTIX2Converter):
+    def __init__(self, main: 'ExternalSTIX2toMISPParser'):
         self._set_main_parser(main)
+        self._mapping = ExternalSTIX2Mapping
+
+    def parse(self, course_of_action_ref: str):
+        course_of_action = self.main_parser._get_stix_object(
+            course_of_action_ref
+        )
+        self._parse_galaxy(course_of_action)
 
     def _create_cluster(self, course_of_action: _COURSE_OF_ACTION_TYPING,
-                        description: Optional[str] = None,
                         galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         course_of_action_args = self._create_cluster_args(
-            course_of_action, galaxy_type, description=description
+            course_of_action, galaxy_type
         )
         meta = self._handle_meta_fields(course_of_action)
         if hasattr(course_of_action, 'external_references'):
@@ -43,19 +47,6 @@ class STIX2CourseOfActionConverter(STIX2Converter, metaclass=ABCMeta):
         if meta:
             course_of_action_args['meta'] = meta
         return self._create_misp_galaxy_cluster(course_of_action_args)
-
-
-class ExternalSTIX2CourseOfActionConverter(
-        STIX2CourseOfActionConverter, ExternalSTIX2Converter):
-    def __init__(self, main: 'ExternalSTIX2toMISPParser'):
-        super().__init__(main)
-        self._mapping = ExternalSTIX2Mapping
-
-    def parse(self, course_of_action_ref: str):
-        course_of_action = self.main_parser._get_stix_object(
-            course_of_action_ref
-        )
-        self._parse_galaxy(course_of_action)
 
 
 class InternalSTIX2CourseOfActionMapping(InternalSTIX2Mapping):
@@ -75,10 +66,9 @@ class InternalSTIX2CourseOfActionMapping(InternalSTIX2Mapping):
         return cls.__course_of_action_object_mapping
 
 
-class InternalSTIX2CourseOfActionConverter(
-        STIX2CourseOfActionConverter, InternalSTIX2Converter):
+class InternalSTIX2CourseOfActionConverter(InternalSTIX2Converter):
     def __init__(self, main: 'InternalSTIX2toMISPParser'):
-        super().__init__(main)
+        self._set_main_parser(main)
         self._mapping = InternalSTIX2CourseOfActionMapping
 
     def parse(self, course_of_action_ref: str):
@@ -98,6 +88,27 @@ class InternalSTIX2CourseOfActionConverter(
             self.main_parser._course_of_action_error(
                 course_of_action.id, exception
             )
+
+    def _create_cluster(self, course_of_action: _COURSE_OF_ACTION_TYPING,
+                        description: Optional[str] = None,
+                        galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        course_of_action_args = self._create_cluster_args(
+            course_of_action, galaxy_type, description=description
+        )
+        meta = self._handle_meta_fields(course_of_action)
+        if hasattr(course_of_action, 'external_references'):
+            meta.update(
+                self._handle_external_references(
+                    course_of_action.external_references
+                )
+            )
+        if meta.get('external_id'):
+            self._handle_cluster_value(
+                course_of_action_args, meta['external_id']
+            )
+        if meta:
+            course_of_action_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(course_of_action_args)
 
     def _parse_course_of_action_object(
             self, course_of_action: _COURSE_OF_ACTION_TYPING):

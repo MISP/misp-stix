@@ -219,6 +219,12 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f'Error parsing the Malware object with id {malware_id}: {tb}'
         )
 
+    def _marking_definition_error(self, marking_definition_id: str):
+        self.__errors[self._identifier].add(
+            f'Error parsing the Marking Definition object with id '
+            f'{marking_definition_id}'
+        )
+
     def _no_converted_content_from_pattern_warning(
             self, indicator: _INDICATOR_TYPING):
         self.__warnings[self._identifier].add(
@@ -244,7 +250,8 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f": {observable_types.__str__().replace('_', ', ')}"
         )
 
-    def _observable_object_error(self, observable_id: str, exception: Exception):
+    def _observable_object_error(
+            self, observable_id: str, exception: Exception):
         self.__errors[self._identifier].add(
             f'Error parsing the Observable object with id {observable_id}'
             f': {self._parse_traceback(exception)}'
@@ -459,7 +466,11 @@ class STIXtoMISPParser(metaclass=ABCMeta):
 
     def _check_uuid(self, object_id: str):
         object_uuid = self._extract_uuid(object_id)
-        if UUID(object_uuid).version not in _RFC_VERSIONS and object_uuid not in self.replacement_uuids:
+        replacement = (
+            UUID(object_uuid).version not in _RFC_VERSIONS and
+            object_uuid not in self.replacement_uuids
+        )
+        if replacement:
             self.replacement_uuids[object_uuid] = self._create_v5_uuid(
                 object_uuid
             )
@@ -475,14 +486,20 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         if attribute_uuid in self.replacement_uuids:
             return {
                 'uuid': self.replacement_uuids[attribute_uuid],
-                'comment': f'{comment} - {attribute_comment}' if comment else attribute_comment
+                'comment': (
+                    f'{comment} - {attribute_comment}'
+                    if comment else attribute_comment
+                )
             }
         if UUID(attribute_uuid).version not in _RFC_VERSIONS:
             sanitised_uuid = self._create_v5_uuid(attribute_uuid)
             self.replacement_uuids[attribute_uuid] = sanitised_uuid
             return {
                 'uuid': sanitised_uuid,
-                'comment': f'{comment} - {attribute_comment}' if comment else attribute_comment
+                'comment': (
+                    f'{comment} - {attribute_comment}'
+                    if comment else attribute_comment
+                )
             }
         return {'uuid': attribute_uuid}
 
@@ -491,7 +508,10 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         object_uuid = self._extract_uuid(object_id)
         if object_uuid in self.replacement_uuids:
             comment = f'Original UUID was: {object_uuid}'
-            misp_object.comment = f'{misp_object.comment} - {comment}' if hasattr(misp_object, 'comment') else comment
+            misp_object.comment = (
+                f'{misp_object.comment} - {comment}'
+                if hasattr(misp_object, 'comment') else comment
+            )
             object_uuid = self.replacement_uuids[object_uuid]
         misp_object.uuid = object_uuid
 

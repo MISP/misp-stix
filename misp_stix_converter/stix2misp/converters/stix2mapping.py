@@ -113,6 +113,12 @@ class STIX2Mapping:
     __hidden_attribute = Mapping(
         **{'type': 'boolean', 'object_relation': 'hidden'}
     )
+    __hostname_dst_attribute = Mapping(
+        **{'type': 'hostname', 'object_relation': 'hostname-dst'}
+    )
+    __hostname_src_attribute = Mapping(
+        **{'type': 'hostname', 'object_relation': 'hostname-src'}
+    )
     __imphash_attribute = Mapping(
         **{'type': 'imphash', 'object_relation': 'imphash'}
     )
@@ -532,6 +538,14 @@ class STIX2Mapping:
         return cls.__hidden_attribute
 
     @classmethod
+    def hostname_dst_attribute(cls) -> dict:
+        return cls.__hostname_dst_attribute
+
+    @classmethod
+    def hostname_src_attribute(cls) -> dict:
+        return cls.__hostname_src_attribute
+
+    @classmethod
     def imphash_attribute(cls) -> dict:
         return cls.__imphash_attribute
 
@@ -716,7 +730,7 @@ class STIX2Mapping:
         return cls.__url_attribute
 
     @classmethod
-    def unix_user_account_extension_mapping(cls) -> dict:
+    def unix_user_account_extension_object_mapping(cls) -> dict:
         return cls.__unix_user_account_extension_mapping
 
     @classmethod
@@ -905,11 +919,17 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __authentihash_attribute = Mapping(
         **{'type': 'authentihash', 'object_relation': 'authentihash'}
     )
+    __child_pid_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'child-pid'}
+    )
     __comment_text_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'comment'}
     )
     __dst_as_attribute = Mapping(
         **{'type': 'AS', 'object_relation': 'dst-as'}
+    )
+    __email_attachment_attribute = Mapping(
+        **{'type': 'email-attachment', 'object_relation': 'attachment'}
     )
     __first_seen_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'first-seen'}
@@ -920,11 +940,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __host_attribute = Mapping(
         **{'type': 'hostname', 'object_relation': 'host'}
     )
-    __hostname_dst_attribute = Mapping(
-        **{'type': 'hostname', 'object_relation': 'hostname-dst'}
-    )
-    __hostname_src_attribute = Mapping(
-        **{'type': 'hostname', 'object_relation': 'hostname-src'}
+    __image_attribute = Mapping(
+        **{'type': 'filename', 'object_relation': 'image'}
     )
     __icmp_type_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'icmp-type'}
@@ -937,6 +954,9 @@ class InternalSTIX2Mapping(STIX2Mapping):
     )
     __parent_guid_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'parent-guid'}
+    )
+    __parent_image_attribute = Mapping(
+        **{'type': 'filename', 'object_relation': 'parent-image'}
     )
     __parent_pid_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'parent-pid'}
@@ -1148,7 +1168,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
     )
     __email_object_mapping = Mapping(
         **STIX2Mapping.email_object_mapping(),
-        x_misp_attachment={'type': 'email-attachment', 'object_relation': 'attachment'},
+        x_misp_attachment=__email_attachment_attribute,
         x_misp_from_domain={'type': 'domain', 'object_relation': 'from-domain'},
         x_misp_ip_src=STIX2Mapping.ip_src_attribute(),
         x_misp_message_id=STIX2Mapping.message_id_attribute(),
@@ -1314,8 +1334,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         src_port=STIX2Mapping.src_port_attribute(),
         start=STIX2Mapping.first_packet_seen_attribute(),
         x_misp_community_id=__community_id_attribute,
-        x_misp_hostname_dst=__hostname_dst_attribute,
-        x_misp_hostname_src=__hostname_src_attribute
+        x_misp_hostname_dst=STIX2Mapping.hostname_dst_attribute(),
+        x_misp_hostname_src=STIX2Mapping.hostname_src_attribute()
     )
     __network_socket_object_mapping = Mapping(
         dst_port=STIX2Mapping.dst_port_attribute(),
@@ -1323,8 +1343,8 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_address_family=STIX2Mapping.address_family_attribute(),
         x_misp_domain_family=STIX2Mapping.domain_family_attribute(),
         x_misp_filename=STIX2Mapping.filename_attribute(),
-        x_misp_hostname_dst=__hostname_dst_attribute,
-        x_misp_hostname_src=__hostname_src_attribute,
+        x_misp_hostname_dst=STIX2Mapping.hostname_dst_attribute(),
+        x_misp_hostname_src=STIX2Mapping.hostname_src_attribute(),
         x_misp_option={'type': 'text', 'object_relation': 'option'}
     )
     __parler_account_object_mapping = Mapping(
@@ -1522,6 +1542,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return cls.__authentihash_attribute
 
     @classmethod
+    def child_pid_attribute(cls) -> dict:
+        return cls.__child_pid_attribute
+
+    @classmethod
     def comment_text_attribute(cls) -> dict:
         return cls.__comment_text_attribute
 
@@ -1544,6 +1568,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def dst_as_attribute(cls) -> dict:
         return cls.__dst_as_attribute
+
+    @classmethod
+    def email_attachment_attribute(cls) -> dict:
+        return cls.__email_attachment_attribute
 
     @classmethod
     def email_object_mapping(cls) -> dict:
@@ -1582,16 +1610,12 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return cls.__host_attribute
 
     @classmethod
-    def hostname_dst_attribute(cls) -> dict:
-        return cls.__hostname_dst_attribute
-
-    @classmethod
-    def hostname_src_attribute(cls) -> dict:
-        return cls.__hostname_src_attribute
-
-    @classmethod
     def http_request_object_mapping(cls) -> dict:
         return cls.__http_request_object_mapping
+
+    @classmethod
+    def image_attribute(cls) -> dict:
+        return cls.__image_attribute
 
     @classmethod
     def icmp_type_attribute(cls) -> dict:
@@ -1640,6 +1664,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def parent_guid_attribute(cls) -> dict:
         return cls.__parent_guid_attribute
+
+    @classmethod
+    def parent_image_attribute(cls) -> dict:
+        return cls.__parent_image_attribute
 
     @classmethod
     def parent_pid_attribute(cls) -> dict:

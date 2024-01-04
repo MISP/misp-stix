@@ -3,9 +3,7 @@
 
 from ... import Mapping
 from ..exceptions import UnknownParsingFunctionError
-from .stix2converter import (
-    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter,
-    _MAIN_PARSER_TYPING)
+from .stix2converter import ExternalSTIX2Converter, InternalSTIX2Converter
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
@@ -38,15 +36,24 @@ class STIX2AttackPatternMapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__attack_pattern_meta_mapping
 
 
-class STIX2AttackPatternConverter(STIX2Converter, metaclass=ABCMeta):
-    def __init__(self, main: _MAIN_PARSER_TYPING):
+class ExternalSTIX2AttackPatternMapping(
+        STIX2AttackPatternMapping, ExternalSTIX2Mapping):
+    pass
+
+
+class ExternalSTIX2AttackPatternConverter(ExternalSTIX2Converter):
+    def __init__(self, main: 'ExternalSTIX2toMISPParser'):
         self._set_main_parser(main)
+        self._mapping = ExternalSTIX2AttackPatternMapping
+
+    def parse(self, attack_pattern_ref: str):
+        attack_pattern = self.main_parser._get_stix_object(attack_pattern_ref)
+        self._parse_galaxy(attack_pattern)
 
     def _create_cluster(self, attack_pattern: _ATTACK_PATTERN_TYPING,
-                        description: Optional[str] = None,
                         galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         attack_pattern_args = self._create_cluster_args(
-            attack_pattern, galaxy_type, description=description
+            attack_pattern, galaxy_type
         )
         meta = self._handle_meta_fields(attack_pattern)
         if hasattr(attack_pattern, 'external_references'):
@@ -62,22 +69,6 @@ class STIX2AttackPatternConverter(STIX2Converter, metaclass=ABCMeta):
         if meta:
             attack_pattern_args['meta'] = meta
         return self._create_misp_galaxy_cluster(attack_pattern_args)
-
-
-class ExternalSTIX2AttackPatternMapping(
-        STIX2AttackPatternMapping, ExternalSTIX2Mapping):
-    pass
-
-
-class ExternalSTIX2AttackPatternConverter(
-        STIX2AttackPatternConverter, ExternalSTIX2Converter):
-    def __init__(self, main: 'ExternalSTIX2toMISPParser'):
-        super().__init__(main)
-        self._mapping = ExternalSTIX2AttackPatternMapping
-
-    def parse(self, attack_pattern_ref: str):
-        attack_pattern = self.main_parser._get_stix_object(attack_pattern_ref)
-        self._parse_galaxy(attack_pattern)
 
 
 class InternalSTIX2AttackPatternMapping(
@@ -106,10 +97,9 @@ class InternalSTIX2AttackPatternMapping(
         return cls.__attack_pattern_object_mapping
 
 
-class InternalSTIX2AttackPatternConverter(
-        STIX2AttackPatternConverter, InternalSTIX2Converter):
+class InternalSTIX2AttackPatternConverter(InternalSTIX2Converter):
     def __init__(self, main: 'InternalSTIX2toMISPParser'):
-        super().__init__(main)
+        self._set_main_parser(main)
         self._mapping = InternalSTIX2AttackPatternMapping
 
     def parse(self, attack_pattern_ref: str):
@@ -125,6 +115,29 @@ class InternalSTIX2AttackPatternConverter(
             parser(attack_pattern)
         except Exception as exception:
             self.main_parser._attack_pattern_error(attack_pattern.id, exception)
+
+    def _create_cluster(self, attack_pattern: _ATTACK_PATTERN_TYPING,
+                        description: Optional[str] = None,
+                        galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        attack_pattern_args = self._create_cluster_args(
+            attack_pattern, galaxy_type, description=description
+        )
+        meta = self._handle_meta_fields(attack_pattern)
+        if hasattr(attack_pattern, 'external_references'):
+            meta.update(
+                self._handle_external_references(
+                    attack_pattern.external_references
+                )
+            )
+        if meta.get('external_id'):
+            self._handle_cluster_value(attack_pattern_args, meta['external_id'])
+        if hasattr(attack_pattern, 'kill_chain_phases'):
+            meta['kill_chain'] = self._handle_kill_chain_phases(
+                attack_pattern.kill_chain_phases
+            )
+        if meta:
+            attack_pattern_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(attack_pattern_args)
 
     def _parse_attack_pattern_object(
             self, attack_pattern: _ATTACK_PATTERN_TYPING):
