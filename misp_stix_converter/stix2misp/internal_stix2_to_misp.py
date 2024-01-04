@@ -43,6 +43,7 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
         self._malware_parser: InternalSTIX2MalwareConverter
         self._note_parser: STIX2NoteConverter
+        self._observed_data_parser: InternalSTIX2ObservedDataConverter
         self._threat_actor_parser: InternalSTIX2ThreatActorConverter
         self._tool_parser: InternalSTIX2ToolConverter
         self._vulnerability_parser: InternalSTIX2VulnerabilityConverter
@@ -56,6 +57,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     @property
     def note_parser(self) -> STIX2NoteConverter:
         return getattr(self, '_note_parser', self._set_note_parser())
+
+    @property
+    def observed_data_parser(self) -> InternalSTIX2ObservedDataConverter:
+        return getattr(
+            self, '_observed_data_parser', self._set_observed_data_parser()
+        )
 
     def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
@@ -100,6 +107,10 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_note_parser(self) -> STIX2NoteConverter:
         self._note_parser = STIX2NoteConverter(self)
         return self._note_parser
+
+    def _set_observed_data_parser(self) -> InternalSTIX2ObservedDataConverter:
+        self._observed_data_parser = InternalSTIX2ObservedDataConverter(self)
+        return self._observed_data_parser
 
     def _set_threat_actor_parser(self) -> InternalSTIX2ThreatActorConverter:
         self._threat_actor_parser = InternalSTIX2ThreatActorConverter(self)
@@ -181,3 +192,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._unknown_stix_object_type_error(error)
             except UnknownParsingFunctionError as error:
                 self._unknown_parsing_function_error(error)
+
+    def _parse_custom_object(self, custom_object_ref: str):
+        self.custom_object_parser.parse(custom_object_ref)
+
+    def _parse_note(self, note_ref: str):
+        self.note_parser.parse(note_ref)
+
+    def _parse_observed_data(self, observed_data_ref: str):
+        self.observed_data_parser.parse(observed_data_ref)
