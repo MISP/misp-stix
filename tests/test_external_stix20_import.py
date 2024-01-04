@@ -8,9 +8,9 @@ from ._test_stix_import import TestExternalSTIX2Import, TestSTIX21Import
 
 class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Import):
     
-    ################################################################################
-    #                          MISP GALAXIES IMPORT TESTS                          #
-    ################################################################################
+    ############################################################################
+    #                        MISP GALAXIES IMPORT TESTS                        #
+    ############################################################################
 
     def test_stix20_bundle_with_attack_pattern_galaxy(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_attack_pattern_galaxy()

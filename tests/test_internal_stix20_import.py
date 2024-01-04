@@ -1242,7 +1242,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         attribute = self._check_misp_event_features(event, report)[0]
         for galaxy in attribute.galaxies:
             if galaxy['type'] == 'mitre-attack-pattern':
-                self._check_galaxy_fields(
+                self._check_galaxy_fields_with_external_id(
                     galaxy, attack_pattern, 'mitre-attack-pattern',
                     'Attack Pattern'
                 )

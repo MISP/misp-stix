@@ -691,7 +691,7 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "indicates",
         "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "target_ref": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48"
+        "target_ref": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772"
     },
     {
         "type": "relationship",

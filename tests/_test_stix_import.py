@@ -533,26 +533,26 @@ class TestInternalSTIX2Import(TestSTIX2Import):
     ################################################################################
 
     def _check_attack_pattern_galaxy(self, galaxy, attack_pattern):
-        self._check_galaxy_fields(
-            galaxy, attack_pattern, 'mitre-pre-attack-attack-pattern',
-            'Pre Attack - Attack Pattern'
+        meta = self._check_galaxy_fields_with_external_id(
+            galaxy, attack_pattern, 'mitre-attack-pattern', 'Attack Pattern'
         )
-        meta = galaxy.clusters[0].meta
         external_id, url = attack_pattern.external_references
         self.assertEqual(meta['external_id'], external_id.external_id)
         self.assertEqual(meta['refs'], [url.url])
-        kill_chain = attack_pattern.kill_chain_phases[0]
+        evasion, escalation = attack_pattern.kill_chain_phases
         self.assertEqual(
             meta['kill_chain'],
-            [f'{kill_chain.kill_chain_name}:{kill_chain.phase_name}']
+            [
+                f'{evasion.kill_chain_name}:{evasion.phase_name}',
+                f'{escalation.kill_chain_name}:{escalation.phase_name}'
+            ]
         )
 
     def _check_course_of_action_galaxy(self, galaxy, course_of_action):
-        self._check_galaxy_fields(
+        meta = self._check_galaxy_fields_with_external_id(
             galaxy, course_of_action, 'mitre-course-of-action',
             'Course of Action'
         )
-        meta = galaxy.clusters[0].meta
         external_id, *urls = course_of_action.external_references
         self.assertEqual(meta['external_id'], external_id.external_id)
         for ref, url in zip(meta['refs'], urls):
@@ -571,37 +571,63 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(galaxy.name, galaxy_name)
         self.assertEqual(cluster.value, stix_object.name)
         self.assertEqual(cluster.description, stix_object.description)
+        return cluster.meta
+
+    def _check_galaxy_fields_with_external_id(self, galaxy, stix_object, galaxy_type, galaxy_name):
+        cluster = galaxy.clusters[0]
+        self._assert_multiple_equal(galaxy.type, cluster.type, galaxy_type)
+        self.assertEqual(galaxy.name, galaxy_name)
+        external_id = None
+        if hasattr(stix_object, 'external_references'):
+            for external_reference in stix_object.external_references:
+                if hasattr(external_reference, 'external_id'):
+                    external_id = external_reference.external_id
+                    break
+        if external_id is None:
+            self.assertEqual(cluster.value, stix_object.name)
+        else:
+            self.assertEqual(
+                cluster.value, f"{stix_object.name} - {external_id}"
+            )
+        self.assertEqual(cluster.description, stix_object.description)
+        return cluster.meta
 
     def _check_generic_malware_galaxy(self, galaxy, malware):
-        self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
-        meta = galaxy.clusters[0].meta
+        meta = self._check_galaxy_fields_with_external_id(
+            galaxy, malware, 'mitre-malware', 'Malware'
+        )
         if hasattr(malware, 'aliases'):
             self.assertEqual(meta['synonyms'], malware.aliases)
         if hasattr(malware, 'is_family'):
             self.assertEqual(meta['is_family'], malware.is_family)
 
     def _check_intrusion_set_galaxy(self, galaxy, intrusion_set):
-        self._check_galaxy_fields(
+        meta = self._check_galaxy_fields_with_external_id(
             galaxy, intrusion_set, 'mitre-intrusion-set', 'Intrusion Set'
         )
-        meta = galaxy.clusters[0].meta
         external_id, *urls = intrusion_set.external_references
         self.assertEqual(meta['external_id'], external_id.external_id)
         for ref, url in zip(meta['refs'], urls):
             self.assertEqual(ref, url.url)
-        self.assertEqual(meta['synonyms'], intrusion_set.aliases)
+        if hasattr(intrusion_set, 'aliases'):
+            self.assertEqual(meta['synonyms'], intrusion_set.aliases)
+        else:
+            self.assertEqual(meta['synonyms'], [intrusion_set.name])
 
     def _check_malware_galaxy(self, galaxy, malware):
-        self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
-        meta = galaxy.clusters[0].meta
+        meta = self._check_galaxy_fields_with_external_id(
+            galaxy, malware, 'mitre-malware', 'Malware'
+        )
         external_id, *urls = malware.external_references
         self.assertEqual(meta['external_id'], external_id.external_id)
         for ref, url in zip(meta['refs'], urls):
             self.assertEqual(ref, url.url)
         if hasattr(malware, 'aliases'):
             self.assertEqual(meta['synonyms'], malware.aliases)
-        else:
+        elif hasattr(malware, 'x_misp_synonyms'):
             self.assertEqual(meta['synonyms'], malware.x_misp_synonyms)
+        else:
+            self.assertEqual(meta['synonyms'], [malware.name])
         if hasattr(malware, 'is_family'):
             self.assertEqual(meta['is_family'], malware.is_family)
         self.assertEqual(meta['mitre_platforms'], malware.x_misp_mitre_platforms)
@@ -614,10 +640,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(cluster.value, identity.name)
 
     def _check_threat_actor_galaxy(self, galaxy, threat_actor):
-        self._check_galaxy_fields(
+        meta = self._check_galaxy_fields(
             galaxy, threat_actor, 'threat-actor', 'Threat Actor'
         )
-        meta = galaxy.clusters[0].meta
         self.assertEqual(meta['synonyms'], threat_actor.aliases)
         self.assertEqual(
             meta['cfr-type-of-incident'],
@@ -625,8 +650,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
 
     def _check_tool_galaxy(self, galaxy, tool):
-        self._check_galaxy_fields(galaxy, tool, 'mitre-tool', 'Tool')
-        meta = galaxy.clusters[0].meta
+        meta = self._check_galaxy_fields_with_external_id(
+            galaxy, tool, 'mitre-tool', 'Tool'
+        )
         if hasattr(tool, 'aliases'):
             self.assertEqual(meta['synonyms'], tool.aliases)
         else:
@@ -638,11 +664,10 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(meta['mitre_platforms'], tool.x_misp_mitre_platforms)
 
     def _check_vulnerability_galaxy(self, galaxy, vulnerability):
-        self._check_galaxy_fields(
+        meta = self._check_galaxy_fields(
             galaxy, vulnerability, 'branded-vulnerability',
             'Branded Vulnerability'
         )
-        meta = galaxy.clusters[0].meta
         self.assertEqual(
             meta['aliases'][0],
             vulnerability.external_references[0]['external_id']

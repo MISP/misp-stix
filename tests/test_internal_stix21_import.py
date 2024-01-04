@@ -1499,7 +1499,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         attribute = self._check_misp_event_features(event, report)[0]
         for galaxy in attribute.galaxies:
             if galaxy['type'] == 'mitre-attack-pattern':
-                self._check_galaxy_fields(
+                self._check_galaxy_fields_with_external_id(
                     galaxy, attack_pattern, 'mitre-attack-pattern',
                     'Attack Pattern'
                 )
@@ -1514,10 +1514,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
                 )
             else:
                 self.fail(f"Wrong MISP Galaxy type: {galaxy['type']}")
+        self.assertEqual(len(event.galaxies), 1)
         galaxy = event.galaxies[0]
         self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
         meta = galaxy.clusters[0].meta
-        self.assertEqual(meta['synonyms'], malware.aliases)
         self.assertEqual(meta['is_family'], malware.is_family)
 
     def test_stix21_bundle_with_intrusion_set_galaxy(self):

@@ -881,7 +881,7 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "indicates",
         "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "target_ref": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48"
+        "target_ref": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772"
     },
     {
         "type": "relationship",
@@ -939,7 +939,42 @@ _BUNDLE_WITH_INVALID_UUIDS = [
             "relationship--2cac5500-e293-4a61-a751-9d7ea9624692"
         ]
     },
-    _ATTACK_PATTERN_GALAXY,
+    {
+        "type": "attack-pattern",
+        "spec_version": "2.1",
+        "id": "attack-pattern--00000000-0000-0000-0000-000000000000",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "Access Token Manipulation",
+        "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "mitre-attack",
+                "phase_name": "defense-evasion"
+            },
+            {
+                "kill_chain_name": "mitre-attack",
+                "phase_name": "privilege-escalation"
+            }
+        ],
+        "labels": [
+            "misp:galaxy-name=\"Attack Pattern\"",
+            "misp:galaxy-type=\"mitre-attack-pattern\""
+        ],
+        "external_references": [
+            {
+                "source_name": "mitre-attack",
+                "external_id": "T1134"
+            },
+            {
+                "source_name": "url",
+                "url": "https://attack.mitre.org/techniques/T1134"
+            }
+        ],
+        "x_misp_mitre_platforms": [
+            "Windows"
+        ]
+    },
     {
         "type": "course-of-action",
         "spec_version": "2.1",
