@@ -54,6 +54,8 @@ class STIX2ToolConverter(STIX2Converter, metaclass=ABCMeta):
             meta['kill_chain'] = self._handle_kill_chain_phases(
                 tool.kill_chain_phases
             )
+        if meta.get('external_id'):
+            self._handle_cluster_value_with_synonyms(tool_args, meta)
         if hasattr(tool, 'labels'):
             self._handle_labels(meta, tool.labels)
         if meta:

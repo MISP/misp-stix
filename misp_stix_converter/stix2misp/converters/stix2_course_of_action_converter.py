@@ -40,6 +40,10 @@ class STIX2CourseOfActionConverter(STIX2Converter, metaclass=ABCMeta):
                     course_of_action.external_references
                 )
             )
+        if meta.get('external_id'):
+            self._handle_cluster_value(
+                course_of_action_args, meta['external_id']
+            )
         if meta:
             course_of_action_args['meta'] = meta
         return self._create_misp_galaxy_cluster(course_of_action_args)

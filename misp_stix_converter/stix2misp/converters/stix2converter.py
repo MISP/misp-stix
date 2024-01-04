@@ -146,6 +146,23 @@ class STIX2Converter(metaclass=ABCMeta):
     ############################################################################
 
     @staticmethod
+    def _handle_cluster_value(cluster_args: dict, external_id: str):
+        cluster_value = cluster_args['value']
+        if external_id not in cluster_value:
+            cluster_args['value'] = f'{cluster_value} - {external_id}'
+
+    @staticmethod
+    def _handle_cluster_value_with_synonyms(cluster_args: dict, meta: dict):
+        cluster_value = cluster_args['value']
+        external_id = meta['external_id']
+        if external_id not in cluster_value:
+            cluster_args['value'] = f'{cluster_value} - {external_id}'
+            if meta.get('synonyms') is None:
+                meta['synonyms'] = [cluster_value]
+            elif cluster_value not in meta['synonyms']:
+                meta['synonyms'].append(cluster_value)
+
+    @staticmethod
     def _handle_kill_chain_phases(kill_chain_phases: list) -> list:
         kill_chains = []
         for kill_chain in kill_chain_phases:

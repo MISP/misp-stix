@@ -54,6 +54,8 @@ class STIX2IntrusionSetConverter(STIX2Converter, metaclass=ABCMeta):
                     intrusion_set.external_references
                 )
             )
+        if meta.get('external_id'):
+            self._handle_cluster_value_with_synonyms(intrusion_set_args, meta)
         if meta:
             intrusion_set_args['meta'] = meta
         return self._create_misp_galaxy_cluster(intrusion_set_args)
