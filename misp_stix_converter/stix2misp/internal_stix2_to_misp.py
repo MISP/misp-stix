@@ -43,7 +43,6 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
         self._malware_analysis_parser: InternalSTIX2MalwareAnalysisConverter
         self._malware_parser: InternalSTIX2MalwareConverter
         self._note_parser: STIX2NoteConverter
-        self._observed_data_parser: InternalSTIX2ObservedDataConverter
         self._threat_actor_parser: InternalSTIX2ThreatActorConverter
         self._tool_parser: InternalSTIX2ToolConverter
         self._vulnerability_parser: InternalSTIX2VulnerabilityConverter
