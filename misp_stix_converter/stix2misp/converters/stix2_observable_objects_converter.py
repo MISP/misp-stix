@@ -99,8 +99,8 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
                     f'{autonomous_system.id} - asn - {value}'
                 )
             )
-            for *attribute, kwargs in attributes:
-                AS_object.add_attribute(*attribute, **kwargs)
+            for attribute in attributes:
+                AS_object.add_attribute(**attribute)
             misp_object = self.main_parser._add_misp_object(
                 AS_object, autonomous_system
             )
@@ -199,8 +199,9 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
                     continue
                 resolved_ip = self.main_parser._observable[reference]
                 ip_address = resolved_ip['observable']
-                *attribute, kwargs = self._parse_ip_observable(ip_address)
-                misp_object.add_attribute(*attribute, **kwargs)
+                misp_object.add_attribute(
+                    **self._parse_ip_observable(ip_address)
+                )
                 resolved_ip['used'][self.event_uuid] = True
                 resolved_ip['misp_object'] = misp_object
                 if hasattr(ip_address, 'resolves_to_refs'):
@@ -421,9 +422,8 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
         )
         for attribute in attributes:
             connection_object.add_attribute(**attribute)
-        protocols = self._parse_network_connection_observable(observable)
-        for *attribute, kwargs in protocols:
-            connection_object.add_attribute(*attribute, **kwargs)
+        for attribute in self._parse_network_connection_observable(observable):
+            connection_object.add_attribute(**attribute)
         return connection_object
 
     def _parse_network_socket_observable_object(

@@ -10,9 +10,9 @@ from ._test_stix_import import TestInternalSTIX2Import, TestSTIX21Import
 
 class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Import):
 
-    ################################################################################
-    #                      MISP ATTRIBUTES CHECKING FUNCTIONS                      #
-    ################################################################################
+    ############################################################################
+    #                    MISP ATTRIBUTES CHECKING FUNCTIONS                    #
+    ############################################################################
 
     def _check_observed_data_attribute(self, attribute, observed_data):
         self.assertEqual(attribute.uuid, observed_data.id.split('--')[1])
@@ -46,9 +46,9 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_attribute_labels(attribute, indicator.labels)
         self.assertEqual(attribute.value, indicator.pattern)
 
-    ################################################################################
-    #                         MISP ATTRIBUTES IMPORT TESTS                         #
-    ################################################################################
+    ############################################################################
+    #                       MISP ATTRIBUTES IMPORT TESTS                       #
+    ############################################################################
 
     def test_stix21_bundle_with_AS_indicator_attribute(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_AS_indicator_attribute()
@@ -1271,9 +1271,53 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
                 observed_data = [observed_data, observable]
             )
 
-    ################################################################################
-    #                           MISP EVENTS IMPORT TESTS                           #
-    ################################################################################
+    ############################################################################
+    #                         MISP EVENTS IMPORT TESTS                         #
+    ############################################################################
+
+    def test_stix21_bundle_with_custom_labels(self):
+        bundle = TestInternalSTIX21Bundles.get_bundle_with_custom_labels()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, indicator, observed_data, domain, address = bundle.objects
+        misp_object, attribute = self._check_misp_event_features_from_grouping(
+            event, grouping
+        )
+        self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
+        self.assertEqual(misp_object.timestamp, indicator.modified)
+        name_label, category_label, ids_label, _ = indicator.labels
+        self.assertEqual(ids_label, 'misp:to_ids="True"')
+        self.assertEqual(name_label, f'misp:name="{misp_object.name}"')
+        self.assertEqual(
+            category_label,
+            f'misp:meta-category="{getattr(misp_object, "meta-category")}"'
+        )
+        self._check_domain_ip_indicator_object(
+            misp_object.attributes, indicator.pattern
+        )
+        self.assertEqual(attribute.uuid, observed_data.id.split('--')[1])
+        self._assert_multiple_equal(
+            attribute.timestamp,
+            observed_data.created,
+            observed_data.modified
+        )
+        type_label, category_label, _ = observed_data.labels
+        self.assertEqual(type_label, f'misp:type="{attribute.type}"')
+        self.assertEqual(category_label, f'misp:category="{attribute.category}"')
+        domain_ref, address_ref = observed_data.object_refs
+        self._assert_multiple_equal(
+            attribute.uuid,
+            domain.id.split('--')[1],
+            domain_ref.split('--')[1],
+            address.id.split('--')[1],
+            address_ref.split('--')[1]
+        )
+        self.assertEqual(attribute.type, 'domain|ip')
+        self.assertEqual(
+            attribute.value,
+            f'{domain.value}|{address.value}'
+        )
 
     def test_stix21_bundle_with_invalid_uuids(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_invalid_uuids()
@@ -1415,9 +1459,9 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             (grouping, od1, od2, indicator1, indicator2, malware, relation1, relation2)
         )
 
-    ################################################################################
-    #                          MISP GALAXIES IMPORT TESTS                          #
-    ################################################################################
+    ############################################################################
+    #                        MISP GALAXIES IMPORT TESTS                        #
+    ############################################################################
 
     def test_stix21_bundle_with_attack_pattern_galaxy(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_attack_pattern_galaxy()
@@ -1455,7 +1499,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         attribute = self._check_misp_event_features(event, report)[0]
         for galaxy in attribute.galaxies:
             if galaxy['type'] == 'mitre-attack-pattern':
-                self._check_galaxy_fields(
+                self._check_galaxy_fields_with_external_id(
                     galaxy, attack_pattern, 'mitre-attack-pattern',
                     'Attack Pattern'
                 )
@@ -1470,10 +1514,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
                 )
             else:
                 self.fail(f"Wrong MISP Galaxy type: {galaxy['type']}")
+        self.assertEqual(len(event.galaxies), 1)
         galaxy = event.galaxies[0]
         self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
         meta = galaxy.clusters[0].meta
-        self.assertEqual(meta['synonyms'], malware.aliases)
         self.assertEqual(meta['is_family'], malware.is_family)
 
     def test_stix21_bundle_with_intrusion_set_galaxy(self):
@@ -1551,9 +1595,9 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_misp_event_features_from_grouping(event, grouping)
         self._check_vulnerability_galaxy(event.galaxies[0], vulnerability)
 
-    ################################################################################
-    #                          MISP OBJECTS IMPORT TESTS.                          #
-    ################################################################################
+    ############################################################################
+    #                        MISP OBJECTS IMPORT TESTS.                        #
+    ############################################################################
 
     def test_stix21_bundle_with_account_indicator_objects(self):
         bundle = TestInternalSTIX21Bundles.get_bundle_with_account_indicator_objects()
@@ -1720,9 +1764,9 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
             user_o.id.split('--')[1],
             user_account_ref.split('--')[1]
         )
-        password, last_changed = self._check_user_account_observable_object(
-            user_account.attributes,
-            user_o
+        username, account_type, password, display_name, user_id, last_changed, *attributes = user_account.attributes
+        self._check_user_account_observable_object(
+            user_o, username, account_type, display_name, user_id, *attributes
         )
         self.assertEqual(password.type, 'text')
         self.assertEqual(password.object_relation, 'password')
@@ -2058,37 +2102,12 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         _, grouping, od, message, addr1, addr2, addr3, addr4, addr5, file1, file2 = bundle.objects
         email = self._check_misp_event_features_from_grouping(event, grouping)[0]
         _from, _from_dn, _to, _to_dn, cc1, cc1_dn, cc2, cc2_dn, bcc, bcc_dn, message_id, subject, boundary, user_agent, reply_to, x_mailer, *attachments = email.attributes
-        message_ref, addr1_ref, addr2_ref, addr3_ref, addr4_ref, addr5_ref, file1_ref, file2_ref = self._check_observed_data_object(email, od)
+        message_ref, *_, file1_ref, file2_ref = self._check_observed_data_object(email, od)
         self._assert_multiple_equal(
             email.uuid,
             od.id.split('--')[1],
             message.id.split('--')[1],
             message_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            _from.uuid,
-            addr1.id.split('--')[1],
-            addr1_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            _to.uuid,
-            addr2.id.split('--')[1],
-            addr2_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            cc1.uuid,
-            addr3.id.split('--')[1],
-            addr3_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            cc2.uuid,
-            addr4.id.split('--')[1],
-            addr4_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            bcc.uuid,
-            addr5.id.split('--')[1],
-            addr5_ref.split('--')[1]
         )
         self._assert_multiple_equal(
             attachments[0].uuid,
@@ -2357,16 +2376,11 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, observed_data, file_object, artifact = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
-        file_ref, artifact_ref = self._check_observed_data_object(misp_object, observed_data)
+        file_ref = self._check_observed_data_object(misp_object, observed_data)[0]
         self._assert_multiple_equal(
             misp_object.uuid,
             file_object.id.split('--')[1],
             file_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            misp_object.attributes[-2].uuid,
-            artifact.id.split('--')[1],
-            artifact_ref.split('--')[1]
         )
         self._check_image_observable_object(
             misp_object.attributes,
@@ -2894,26 +2908,16 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, observed_data, process, parent_image, parent_process, child_process, image = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
-        process_ref, parent_image_ref, parent_ref, child_ref, image_ref = self._check_observed_data_object(misp_object, observed_data)
+        process_ref, parent_image_ref, _, _, image_ref = self._check_observed_data_object(misp_object, observed_data)
         self._assert_multiple_equal(
             misp_object.uuid,
             process.id.split('--')[1],
             process_ref.split('--')[1]
         )
         self._assert_multiple_equal(
-            misp_object.attributes[-2].uuid,
-            parent_process.id.split('--')[1],
-            parent_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
             misp_object.attributes[-1].uuid,
             parent_image.id.split('--')[1],
             parent_image_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            misp_object.attributes[5].uuid,
-            child_process.id.split('--')[1],
-            child_ref.split('--')[1]
         )
         self._assert_multiple_equal(
             misp_object.attributes[4].uuid,

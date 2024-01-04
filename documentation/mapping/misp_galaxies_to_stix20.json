@@ -7,51 +7,42 @@
             "description": "ATT&CK Tactic",
             "GalaxyCluster": [
                 {
-                    "uuid": "dcaa092b-7de9-4a21-977f-7fcb77e89c48",
+                    "uuid": "e042a41b-5ecf-4f3a-8f1f-1b528c534772",
                     "type": "mitre-attack-pattern",
                     "value": "Access Token Manipulation - T1134",
-                    "description": "Windows uses access tokens to determine the ownership of a running process.",
+                    "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
                     "meta": {
-                        "external_id": [
-                            "CAPEC-633"
+                        "external_id": "T1134",
+                        "kill_chain": [
+                            "mitre-attack:defense-evasion",
+                            "mitre-attack:privilege-escalation"
+                        ],
+                        "mitre_platforms": [
+                            "Windows"
+                        ],
+                        "refs": [
+                            "https://attack.mitre.org/techniques/T1134"
                         ]
                     }
                 }
             ]
         },
         "STIX": {
-            "type": "attack-pattern",
-            "id": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48",
-            "created": "2020-25-10:16:22:00.000Z",
-            "modified": "2020-25-10:16:22:00.000Z",
-            "name": "Access Token Manipulation - T1134",
-            "description": "ATT&CK Tactic | Windows uses access tokens to determine the ownership of a running process.",
-            "kill_chain_phases": [
-                {
-                    "kill_chain_name": "misp-category",
-                    "phase_name": "mitre-attack-pattern"
-                }
-            ],
-            "labels": [
-                "misp:name=\"Attack Pattern\""
-            ],
-            "external_references": [
-                {
-                    "source_name": "capec",
-                    "external_id": "CAPEC-633"
-                }
-            ],
             "Attack Pattern": {
                 "type": "attack-pattern",
-                "id": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48",
+                "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "name": "Access Token Manipulation - T1134",
-                "description": "ATT&CK Tactic | Windows uses access tokens to determine the ownership of a running process.",
+                "name": "Access Token Manipulation",
+                "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
                 "kill_chain_phases": [
                     {
-                        "kill_chain_name": "misp-category",
-                        "phase_name": "mitre-attack-pattern"
+                        "kill_chain_name": "mitre-attack",
+                        "phase_name": "defense-evasion"
+                    },
+                    {
+                        "kill_chain_name": "mitre-attack",
+                        "phase_name": "privilege-escalation"
                     }
                 ],
                 "labels": [
@@ -60,9 +51,16 @@
                 ],
                 "external_references": [
                     {
-                        "source_name": "capec",
-                        "external_id": "CAPEC-633"
+                        "source_name": "mitre-attack",
+                        "external_id": "T1134"
+                    },
+                    {
+                        "source_name": "url",
+                        "url": "https://attack.mitre.org/techniques/T1134"
                     }
+                ],
+                "x_misp_mitre_platforms": [
+                    "Windows"
                 ]
             }
         }
@@ -88,21 +86,6 @@
             ]
         },
         "STIX": {
-            "type": "vulnerability",
-            "id": "vulnerability--a1640081-aa8d-4070-84b2-d23e2ae82799",
-            "created": "2020-25-10:16:22:00.000Z",
-            "modified": "2020-25-10:16:22:00.000Z",
-            "name": "Ghost",
-            "description": "List of known vulnerabilities and exploits | The GHOST vulnerability is a serious weakness in the Linux glibc library.",
-            "labels": [
-                "misp:name=\"Branded Vulnerability\""
-            ],
-            "external_references": [
-                {
-                    "source_name": "cve",
-                    "external_id": "CVE-2015-0235"
-                }
-            ],
             "Vulnerability": {
                 "type": "vulnerability",
                 "id": "vulnerability--a1640081-aa8d-4070-84b2-d23e2ae82799",
@@ -150,21 +133,12 @@
             ]
         },
         "STIX": {
-            "type": "course-of-action",
-            "id": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294",
-            "created": "2020-25-10:16:22:00.000Z",
-            "modified": "2020-25-10:16:22:00.000Z",
-            "name": "Automated Exfiltration Mitigation - T1020",
-            "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
-            "labels": [
-                "misp:name=\"Course of Action\""
-            ],
             "Course of Action": {
                 "type": "course-of-action",
                 "id": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "name": "Automated Exfiltration Mitigation - T1020",
+                "name": "Automated Exfiltration Mitigation",
                 "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
                 "labels": [
                     "misp:galaxy-name=\"Course of Action\"",
@@ -229,24 +203,12 @@
             ]
         },
         "STIX": {
-            "type": "intrusion-set",
-            "id": "intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70",
-            "created": "2020-10-25T16:22:00.000Z",
-            "modified": "2020-10-25T16:22:00.000Z",
-            "name": "APT16 - G0023",
-            "description": "Name of ATT&CK Group | APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
-            "aliases": [
-                "APT16"
-            ],
-            "labels": [
-                "misp:name=\"Intrusion Set\""
-            ],
             "Intrusion Set": {
                 "type": "intrusion-set",
                 "id": "intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "name": "APT16 - G0023",
+                "name": "APT16",
                 "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
                 "aliases": [
                     "APT16"
@@ -302,27 +264,12 @@
             ]
         },
         "STIX": {
-            "type": "malware",
-            "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
-            "created": "2020-25-10:16:22:00.000Z",
-            "modified": "2020-25-10:16:22:00.000Z",
-            "name": "BISCUIT - S0017",
-            "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
-            "kill_chain_phases": [
-                {
-                    "kill_chain_name": "misp-category",
-                    "phase_name": "mitre-malware"
-                }
-            ],
-            "labels": [
-                "misp:name=\"Malware\""
-            ],
             "Malware": {
                 "type": "malware",
                 "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "name": "BISCUIT - S0017",
+                "name": "BISCUIT",
                 "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
                 "labels": [
                     "misp:galaxy-name=\"Malware\"",
@@ -351,61 +298,6 @@
                 ],
                 "x_misp_synonyms": [
                     "BISCUIT"
-                ]
-            }
-        }
-    },
-    "Pre Attack - Attack Pattern": {
-        "MISP": {
-            "uuid": "c4e851fa-775f-11e7-8163-b774922098cd",
-            "name": "Pre Attack - Attack Pattern",
-            "type": "mitre-pre-attack-attack-pattern",
-            "description": "ATT&CK Tactic",
-            "GalaxyCluster": [
-                {
-                    "uuid": "e042a41b-5ecf-4f3a-8f1f-1b528c534772",
-                    "type": "mitre-pre-attack-attack-pattern",
-                    "value": "Test malware in various execution environments - PRE-T1134",
-                    "description": "Malware may perform differently on different platforms and different operating systems.",
-                    "meta": {
-                        "external_id": "PRE-T1134",
-                        "kill_chain": [
-                            "mitre-pre-attack:pre-attack:test-capabilities"
-                        ],
-                        "refs": [
-                            "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
-                        ]
-                    }
-                }
-            ]
-        },
-        "STIX": {
-            "Attack Pattern": {
-                "type": "attack-pattern",
-                "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
-                "created": "2020-10-25T16:22:00.000Z",
-                "modified": "2020-10-25T16:22:00.000Z",
-                "name": "Test malware in various execution environments - PRE-T1134",
-                "description": "Malware may perform differently on different platforms and different operating systems.",
-                "kill_chain_phases": [
-                    {
-                        "kill_chain_name": "mitre-pre-attack",
-                        "phase_name": "test-capabilities"
-                    }
-                ],
-                "labels": [
-                    "misp:galaxy-name=\"Pre Attack - Attack Pattern\"",
-                    "misp:galaxy-type=\"mitre-pre-attack-attack-pattern\""
-                ],
-                "external_references": [
-                    {
-                        "source_name": "mitre-pre-attack",
-                        "external_id": "PRE-T1134"
-                    },
-                    {
-                        "source_name": "url",
-                        "url": "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
-                    }
                 ]
             }
         }
@@ -464,18 +356,6 @@
             ]
         },
         "STIX": {
-            "type": "threat-actor",
-            "id": "threat-actor--11e17436-6ede-4733-8547-4ce0254ea19e",
-            "created": "2020-25-10:16:22:00.000Z",
-            "modified": "2020-25-10:16:22:00.000Z",
-            "name": "Cutting Kitten",
-            "description": "Threat actors are characteristics of malicious actors. | These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
-            "aliases": [
-                "Ghambar"
-            ],
-            "labels": [
-                "misp:name=\"Threat Actor\""
-            ],
             "Threat Actor": {
                 "type": "threat-actor",
                 "id": "threat-actor--11e17436-6ede-4733-8547-4ce0254ea19e",
@@ -529,27 +409,12 @@
             ]
         },
         "STIX": {
-            "type": "tool",
-            "id": "tool--bba595da-b73a-4354-aa6c-224d4de7cb4e",
-            "created": "2020-25-10:16:22:00.000Z",
-            "modified": "2020-25-10:16:22:00.000Z",
-            "name": "cmd - S0106",
-            "description": "Name of ATT&CK software | cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
-            "kill_chain_phases": [
-                {
-                    "kill_chain_name": "misp-category",
-                    "phase_name": "mitre-tool"
-                }
-            ],
-            "labels": [
-                "misp:name=\"Tool\""
-            ],
             "Tool": {
                 "type": "tool",
                 "id": "tool--bba595da-b73a-4354-aa6c-224d4de7cb4e",
                 "created": "2020-10-25T16:22:00.000Z",
                 "modified": "2020-10-25T16:22:00.000Z",
-                "name": "cmd - S0106",
+                "name": "cmd",
                 "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
                 "labels": [
                     "misp:galaxy-name=\"Tool\"",

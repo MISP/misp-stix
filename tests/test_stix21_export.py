@@ -18,31 +18,6 @@ class TestSTIX21GenericExport(TestSTIX21Export, TestSTIX21):
     def setUp(self):
         self.parser = MISPtoSTIX21Parser()
 
-    @classmethod
-    def tearDownClass(self):
-        attributes_documentation = AttributesDocumentationUpdater(
-            'misp_attributes_to_stix21',
-            self._attributes_v21,
-            'export'
-        )
-        attributes_documentation.check_export_mapping('stix21')
-        objects_documentation = ObjectsDocumentationUpdater(
-            'misp_objects_to_stix21',
-            self._objects_v21,
-            'export'
-        )
-        objects_documentation.check_export_mapping('stix21')
-        galaxies_documentation = GalaxiesDocumentationUpdater(
-            'misp_galaxies_to_stix21',
-            self._galaxies_v21,
-            'export'
-        )
-        galaxies_documentation.check_export_mapping('stix21')
-
-    ################################################################################
-    #                              UTILITY FUNCTIONS.                              #
-    ################################################################################
-
     def _check_bundle_features(self, length):
         bundle = self.parser.bundle
         self.assertEqual(bundle.type, 'bundle')
@@ -1388,6 +1363,15 @@ class TestSTIX21AttributesExport(TestSTIX21GenericExport):
 
 
 class TestSTIX21JSONAttributesExport(TestSTIX21AttributesExport):
+    @classmethod
+    def tearDownClass(self):
+        attributes_documentation = AttributesDocumentationUpdater(
+            'misp_attributes_to_stix21',
+            self._attributes_v21,
+            'export'
+        )
+        attributes_documentation.check_export_mapping('stix21')
+
     def test_embedded_indicator_attribute_galaxy(self):
         event = get_embedded_indicator_attribute_galaxy()
         self._test_embedded_indicator_attribute_galaxy(event['Event'])
@@ -4705,6 +4689,15 @@ class TestSTIX21ObjectsExport(TestSTIX21GenericExport):
 
 
 class TestSTIX21JSONObjectsExport(TestSTIX21ObjectsExport):
+    @classmethod
+    def tearDownClass(self):
+        objects_documentation = ObjectsDocumentationUpdater(
+            'misp_objects_to_stix21',
+            self._objects_v21,
+            'export'
+        )
+        objects_documentation.check_export_mapping('stix21')
+
     def test_embedded_indicator_object_galaxy(self):
         event = get_embedded_indicator_object_galaxy()
         self._test_embedded_indicator_object_galaxy(event['Event'])
@@ -5851,6 +5844,15 @@ class TestSTIX21GalaxiesExport(TestSTIX21GenericExport):
 
 class TestSTIX21JSONGalaxiesExport(TestSTIX21GalaxiesExport):
     _mapping_types = MISPtoSTIX21Mapping
+
+    @classmethod
+    def tearDownClass(self):
+        galaxies_documentation = GalaxiesDocumentationUpdater(
+            'misp_galaxies_to_stix21',
+            self._galaxies_v21,
+            'export'
+        )
+        galaxies_documentation.check_export_mapping('stix21')
 
     def test_event_with_attack_pattern_galaxy(self):
         event = get_event_with_attack_pattern_galaxy()

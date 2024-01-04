@@ -16,6 +16,10 @@ class InvalidSTIXPatternError(STIXtoMISPError):
     pass
 
 
+class MarkingDefinitionLoadingError(STIXtoMISPError):
+    pass
+
+
 class ObjectRefLoadingError(STIXtoMISPError):
     pass
 

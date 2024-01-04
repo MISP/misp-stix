@@ -55,6 +55,8 @@ class STIX2AttackPatternConverter(STIX2Converter, metaclass=ABCMeta):
                     attack_pattern.external_references
                 )
             )
+        if meta.get('external_id'):
+            self._handle_cluster_value(attack_pattern_args, meta['external_id'])
         if hasattr(attack_pattern, 'kill_chain_phases'):
             meta['kill_chain'] = self._handle_kill_chain_phases(
                 attack_pattern.kill_chain_phases

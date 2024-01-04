@@ -501,10 +501,6 @@ class ExternalSTIX2ObservableMapping(
     )
 
     @classmethod
-    def network_traffic_reference_mapping(cls, field: str) -> Union[dict, None]:
-        return cls.__network_traffic_reference_mapping.get(field)
-
-    @classmethod
     def observable_mapping(cls, field: str) -> Union[str, None]:
         return cls.__observable_mapping.get(field)
 
@@ -512,7 +508,10 @@ class ExternalSTIX2ObservableMapping(
 class ExternalSTIX2ObservableConverter(
         STIX2ObservableConverter, ExternalSTIX2Converter):
     def _parse_artifact_observable(
-            self, observable: Artifact_v21, object_id: str) -> Iterator:
+            self, observable: Artifact_v21,
+            object_id: Optional[str] = None) -> Iterator[dict]:
+        if object_id is None:
+            object_id = observable.id
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
                 attribute = self._mapping.file_hashes_mapping(hash_type)
@@ -541,34 +540,63 @@ class ExternalSTIX2ObservableConverter(
                 object_id
             )
 
-    def _parse_directory_observable(self, observable: _DIRECTORY_TYPING):
+    def _parse_directory_observable(
+            self, observable: _DIRECTORY_TYPING,
+            object_id: Optional[str] = None) -> Iterator[dict]:
+        if object_id is None:
+            object_id = observable.id
         for field, mapping in self._mapping.directory_object_mapping().items():
             if hasattr(observable, field):
                 yield from self._populate_object_attributes(
-                    mapping, getattr(observable, field), observable.id
+                    mapping, getattr(observable, field), object_id
                 )
 
-    def _parse_domain_observable(self, observable: _DOMAIN_TYPING) -> Tuple:
-        return 'domain', observable.value, {
-            'uuid': self.main_parser._create_v5_uuid(
-                f'{observable.id} - domain - {observable.value}'
-            )
+    def _parse_domain_observable(self, observable: _DOMAIN_TYPING,
+                                 object_id: Optional[str] = None) -> dict:
+        attribute = {
+            'value': observable.value, **self._mapping.domain_attribute()
         }
+        if object_id is None:
+            attribute.update(
+                self.main_parser._sanitise_attribute_uuid(observable.id)
+            )
+            return attribute
+        attribute['uuid'] = self.main_parser._create_v5_uuid(
+            f'{object_id} - domain - {observable.value}'
+        )
+        return attribute
 
     def _parse_ip_belonging_to_AS_observable(
-            self, observable: _IP_OBSERVABLE_TYPING) -> Tuple:
-        return 'subnet-announced', observable.value, {
-            'uuid': self.main_parser._create_v5_uuid(
-                f'{observable.id} - subnet-announced - {observable.value}'
-            )
+            self, observable: _IP_OBSERVABLE_TYPING,
+            object_id: Optional[str] = None) -> dict:
+        attribute = {
+            'value': observable.value,
+            **self._mapping.subnet_announced_attribute()
         }
+        if object_id is None:
+            attribute.update(
+                self.main_parser._sanitise_attribute_uuid(observable.id)
+            )
+            return attribute
+        attribute['uuid'] = self.main_parser._create_v5_uuid(
+            f'{object_id} - subnet-announced - {observable.value}'
+        )
+        return attribute
 
-    def _parse_ip_observable(self, observable: _IP_OBSERVABLE_TYPING) -> Tuple:
-        return 'ip', observable.value, {
-            'uuid': self.main_parser._create_v5_uuid(
-                f'{observable.id} - ip - {observable.value}'
-            )
+    def _parse_ip_observable(self, observable: _IP_OBSERVABLE_TYPING,
+                             object_id: Optional[str] = None) -> dict:
+        attribute = {
+            'value': observable.value, **self._mapping.ip_attribute()
         }
+        if object_id is None:
+            attribute.update(
+                self.main_parser._sanitise_attribute_uuid(observable.id)
+            )
+            return attribute
+        attribute['uuid'] = self.main_parser._create_v5_uuid(
+            f'{object_id} - ip - {observable.value}'
+        )
+        return attribute
 
     def _parse_url_observable(self, observable: _URL_TYPING,
                               observed_data_id: str) -> Iterator[dict]:

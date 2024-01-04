@@ -7,10 +7,8 @@ from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
 from pymisp import AbstractMISP, MISPGalaxy, MISPGalaxyCluster, MISPObject
-from stix2.v20.observables import Artifact as Artifact_v20, File as File_v20
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, Malware as Malware_v20)
-from stix2.v21.observables import Artifact as Artifact_v21, File as File_v21
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, Malware as Malware_v21)
 from typing import Iterator, Optional, Tuple, TYPE_CHECKING, Union
@@ -148,6 +146,23 @@ class STIX2Converter(metaclass=ABCMeta):
     ############################################################################
 
     @staticmethod
+    def _handle_cluster_value(cluster_args: dict, external_id: str):
+        cluster_value = cluster_args['value']
+        if external_id not in cluster_value:
+            cluster_args['value'] = f'{cluster_value} - {external_id}'
+
+    @staticmethod
+    def _handle_cluster_value_with_synonyms(cluster_args: dict, meta: dict):
+        cluster_value = cluster_args['value']
+        external_id = meta['external_id']
+        if external_id not in cluster_value:
+            cluster_args['value'] = f'{cluster_value} - {external_id}'
+            if meta.get('synonyms') is None:
+                meta['synonyms'] = [cluster_value]
+            elif cluster_value not in meta['synonyms']:
+                meta['synonyms'].append(cluster_value)
+
+    @staticmethod
     def _handle_kill_chain_phases(kill_chain_phases: list) -> list:
         kill_chains = []
         for kill_chain in kill_chain_phases:
@@ -260,7 +275,7 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         value = cluster_value or stix_object.name
         cluster_args = {
             'uuid': self.main_parser._sanitise_uuid(stix_object.id),
-            'value': value
+            'value': value, **self.main_parser.cluster_distribution
         }
         if galaxy_type is None:
             version = getattr(stix_object, 'spec_version', '2.0')
@@ -550,7 +565,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _handle_mapping_from_labels(self, labels: list, object_id: str) -> str:
         parsed_labels = {
             key: value.strip('"') for key, value
-            in (label.split('=') for label in labels)
+            in (label.split('=') for label in labels if '=' in label)
         }
         if 'misp:galaxy-type' in parsed_labels:
             return f'_parse_galaxy'

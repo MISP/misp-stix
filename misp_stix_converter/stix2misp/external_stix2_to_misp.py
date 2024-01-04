@@ -17,7 +17,6 @@ from .converters import (
     ExternalSTIX2MalwareConverter, ExternalSTIX2ThreatActorConverter,
     ExternalSTIX2ToolConverter, ExternalSTIX2VulnerabilityConverter,
     STIX2ObservableObjectConverter)
-from .stix2_pattern_parser import STIX2PatternParser
 from .stix2_to_misp import (
     STIX2toMISPParser, _COURSE_OF_ACTION_TYPING, _GALAXY_OBJECTS_TYPING,
     _IDENTITY_TYPING, _NETWORK_TRAFFIC_TYPING, _OBSERVABLE_TYPING,
@@ -49,7 +48,6 @@ from stix2.v21.observables import (
 from stix2.v21.sdo import (
     CourseOfAction as CourseOfAction_v21, Indicator as Indicator_v21, Location,
     ObservedData as ObservedData_v21, Vulnerability as Vulnerability_v21)
-from stix2patterns.inspector import _PatternData as PatternData
 from typing import Optional, Tuple, Union
 
 # Useful lists
@@ -58,7 +56,6 @@ _observable_skip_properties = (
     'encryption_algorithm', 'extensions', 'id', 'is_encrypted', 'is_multipart',
     'magic_number_hex', 'received_lines', 'sender_ref', 'spec_version', 'type'
 )
-_valid_pattern_assertions = ('=', 'IN', 'LIKE')
 
 # Typing definitions
 _AUTONOMOUS_SYSTEM_TYPING = Union[
@@ -132,8 +129,14 @@ _X509_TYPING = Union[
 class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def __init__(self, distribution: Optional[int] = 0,
                  sharing_group_id: Optional[int] = None,
-                 galaxies_as_tags: Optional[bool] = False):
+                 galaxies_as_tags: Optional[bool] = False,
+                 cluster_distribution: Optional[int] = 0,
+                 cluster_sharing_group_id: Optional[int] = None):
         super().__init__(distribution, sharing_group_id, galaxies_as_tags)
+        self._set_cluster_distribution(
+            self._sanitise_distribution(cluster_distribution),
+            self._sanitise_sharing_group_id(cluster_sharing_group_id)
+        )
         self._mapping = ExternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
@@ -151,6 +154,10 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
         self._vulnerability_parser: ExternalSTIX2VulnerabilityConverter
 
     @property
+    def cluster_distribution(self) -> dict:
+        return self.__cluster_distribution
+
+    @property
     def observable_object_parser(self) -> STIX2ObservableObjectConverter:
         return getattr(
             self, '_observable_objects_parser',
@@ -164,6 +171,13 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def _set_campaign_parser(self) -> ExternalSTIX2CampaignConverter:
         self._campaign_parser = ExternalSTIX2CampaignConverter(self)
         return self._campaign_parser
+
+    def _set_cluster_distribution(
+            self, distribution: int, sharing_group_id: Union[int, None]):
+        cluster_distribution = {'distribution': distribution}
+        if distribution == 4 and sharing_group_id is not None:
+            cluster_distribution['sharing_group_id'] = sharing_group_id
+        self.__cluster_distribution = cluster_distribution
 
     def _set_course_of_action_parser(self) -> ExternalSTIX2CourseOfActionConverter:
         self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
@@ -370,7 +384,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                     self._observable_object_error(object_id, exception)
         super()._handle_unparsed_content()
 
-
     def _parse_loaded_features(self):
         if hasattr(self, '_observable'):
             for observable in self._observable.values():
@@ -432,11 +445,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._parse_observable_objects(observed_data)
         except UnknownObservableMappingError as observable_types:
             self._observable_mapping_error(observed_data.id, observable_types)
-
-    ################################################################################
-    #                 STIX Domain Objects (SDOs) PARSING FUNCTIONS                 #
-    ################################################################################
-
 
     ################################################################################
     #                     OBSERVABLE OBJECTS PARSING FUNCTIONS                     #
@@ -1724,10 +1732,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         )
                     }
                 )
-
-    ############################################################################
-    #                         PATTERNS PARSING METHODS                         #
-    ############################################################################
 
 
     ################################################################################

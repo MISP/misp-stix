@@ -435,7 +435,9 @@ class InternalSTIX2ObservedDataConverter(
         observable = getattr(self, f'_fetch_observables_{version}')(
             observed_data
         )
-        attributes = self._parse_asn_observable(observable, observed_data.id)
+        attributes = self._parse_asn_observable(
+            observable, getattr(observable, 'id', observed_data.id)
+        )
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
         self.main_parser._add_misp_object(misp_object, observed_data)

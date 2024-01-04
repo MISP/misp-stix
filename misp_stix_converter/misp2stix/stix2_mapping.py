@@ -262,7 +262,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     )
     __vulnerability_meta_mapping = Mapping(
         **{
-            'aliases': '_parse_external_reference'
+            'aliases': '_parse_external_references'
         }
     )
 

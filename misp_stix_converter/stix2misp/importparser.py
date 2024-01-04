@@ -219,6 +219,12 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f'Error parsing the Malware object with id {malware_id}: {tb}'
         )
 
+    def _marking_definition_error(self, marking_definition_id: str):
+        self.__errors[self._identifier].add(
+            f'Error parsing the Marking Definition object with id '
+            f'{marking_definition_id}'
+        )
+
     def _no_converted_content_from_pattern_warning(
             self, indicator: _INDICATOR_TYPING):
         self.__warnings[self._identifier].add(

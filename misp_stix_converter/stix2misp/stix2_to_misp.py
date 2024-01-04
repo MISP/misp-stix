@@ -4,7 +4,8 @@
 import sys
 import time
 from .exceptions import (
-    ObjectRefLoadingError, ObjectTypeLoadingError, SynonymsResourceJSONError,
+    MarkingDefinitionLoadingError, ObjectRefLoadingError,
+    ObjectTypeLoadingError, SynonymsResourceJSONError,
     UnavailableGalaxyResourcesError, UnavailableSynonymsResourceError,
     UndefinedIndicatorError, UndefinedSTIXObjectError, UndefinedObservableError,
     UnknownAttributeTypeError, UnknownObjectNameError,
@@ -246,6 +247,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._creators.add(stix_object.created_by_ref)
             try:
                 getattr(self, feature)(stix_object)
+            except MarkingDefinitionLoadingError as error:
+                self._marking_definition_error(error)
             except AttributeError as exception:
                 self._critical_error(exception)
         self.__n_report = 2 if n_report >= 2 else n_report
@@ -449,12 +452,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._malware_analysis = {malware_analysis.id: malware_analysis}
 
     def _load_marking_definition(
-            self, marking_definition: _MARKING_DEFINITION_TYPING):
-        if not hasattr(marking_definition, 'definition_type'):
-            return
-        definition_type = marking_definition.definition_type
-        definition = marking_definition.definition[definition_type]
-        tag = f"{definition_type}:{definition}"
+        self, marking_definition: _MARKING_DEFINITION_TYPING):
+        tag = self._parse_marking_definition(marking_definition)
         try:
             self._marking_definition[marking_definition.id] = tag
         except AttributeError:
@@ -1152,6 +1151,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if confidence_level >= 25:
             return 'misp:confidence-level="rarely-confident"'
         return 'misp:confidence-level="unconfident"'
+
+    def _parse_marking_definition(
+            self, marking_definition: _MARKING_DEFINITION_TYPING) -> str:
+        if hasattr(marking_definition, 'definition_type'):
+            definition_type = marking_definition.definition_type
+            definition = marking_definition.definition[definition_type]
+            return f"{definition_type}:{definition}"
+        if hasattr(marking_definition, 'name'):
+            # should be TLP 2.0 definition
+            name = marking_definition.name
+            return marking_definition.name.lower()
+        raise MarkingDefinitionLoadingError(marking_definition.id)
 
     def _parse_markings(self, marking_refs: list):
         for marking_ref in marking_refs:
