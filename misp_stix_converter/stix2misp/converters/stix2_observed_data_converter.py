@@ -30,6 +30,69 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
     def __init__(self, main: _MAIN_PARSER_TYPING):
         self._set_main_parser(main)
 
+    def _fetch_observables(self, object_refs: Union[list, str]):
+        if isinstance(object_refs, str):
+            return self.main_parser._observable[object_refs]
+        if len(object_refs) == 1:
+            return self.main_parser._observable[object_refs[0]]
+        return tuple(
+            self.main_parser._observable[object_ref]
+            for object_ref in object_refs
+        )
+
+
+class ExternalSTIX2ObservedDataConverter(
+        STIX2ObservedDataConverter, ExternalSTIX2ObservableConverter):
+    def __init__(self, main: 'ExternalSTIX2toMISPParser'):
+        super().__init__(main)
+        self._mapping = ExternalSTIX2ObservableMapping
+
+    def parse(self, observed_data_ref: str):
+        observed_data = self.main_parser._get_stix_object(observed_data_ref)
+        try:
+            if hasattr(observed_data, 'object_refs'):
+                self._parse_observable_refs(observed_data)
+            else:
+                self._parse_observable_objects(observed_data)
+        except UnknownObservableMappingError as observable_types:
+            self.main_parser._observable_mapping_error(
+                observed_data.id, observable_types
+            )
+
+    ############################################################################
+    #                  GENERIC OBSERVED DATA HANDLING METHODS                  #
+    ############################################################################
+
+    def _handle_observables_mapping(self, observable_types: set) -> str:
+        to_call = '_'.join(sorted(observable_types))
+        mapping = self._mapping.observable_mapping(to_call)
+        if mapping is None:
+            raise UnknownObservableMappingError(to_call)
+        return mapping
+
+    def _parse_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
+        observable_types = set(
+            observable['type'] for observable in observed_data.objects.values()
+        )
+        mapping = self._handle_observables_mapping(observable_types)
+        feature = f'_parse_{mapping}_observable_objects'
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        parser(observed_data)
+
+    def _parse_observable_refs(self, observed_data: ObservedData_v21):
+        observable_types = set(
+            reference.split('--')[0] for reference in observed_data.object_refs
+        )
+        mapping = self._handle_observables_mapping(observable_types)
+        feature = f'_parse_{mapping}_observable_object_refs'
+        try:
+            parser = getattr(self, feature)
+        except AttributeError:
+            raise UnknownParsingFunctionError(feature)
+        parser(observed_data)
 
 
 class InternalSTIX2ObservedDataConverter(
@@ -1309,16 +1372,6 @@ class InternalSTIX2ObservedDataConverter(
                 continue
             if any(hasattr(observable, feature) for feature in ref_features):
                 return observable
-
-    def _fetch_observables(self, object_refs: Union[list, str]):
-        if isinstance(object_refs, str):
-            return self.main_parser._observable[object_refs]
-        if len(object_refs) == 1:
-            return self.main_parser._observable[object_refs[0]]
-        return tuple(
-            self.main_parser._observable[object_ref]
-            for object_ref in object_refs
-        )
 
     @staticmethod
     def _fetch_observables_v20(observed_data: ObservedData_v20):
