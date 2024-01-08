@@ -9,7 +9,7 @@ from .stix2_observable_converter import (
     InternalSTIX2ObservableConverter, InternalSTIX2ObservableMapping,
     STIX2ObservableConverter, _AUTONOMOUS_SYSTEM_TYPING, _DIRECTORY_TYPING,
     _EXTENSION_TYPING, _NETWORK_TRAFFIC_TYPING, _PROCESS_TYPING)
-from .stix2converter import (_MAIN_PARSER_TYPING)
+from .stix2converter import _MAIN_PARSER_TYPING
 from abc import ABCMeta
 from collections import defaultdict
 from pymisp import MISPObject
@@ -295,7 +295,7 @@ class InternalSTIX2ObservedDataConverter(
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
     def _attribute_from_ip_port_observable(
-            self, network_traffic :_NETWORK_TRAFFIC_TYPING,
+            self, network_traffic: _NETWORK_TRAFFIC_TYPING,
             ip_value: str, observed_data: _OBSERVED_DATA_TYPING):
         attribute = self._create_attribute_dict(observed_data)
         for feature in ('src_port', 'dst_port'):
