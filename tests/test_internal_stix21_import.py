@@ -11,7 +11,7 @@ from ._test_stix_import import TestInternalSTIX2Import, TestSTIX21Import
 class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Import):
 
     ############################################################################
-    #                    MISP ATTRIBUTES CHECKING FUNCTIONS                    #
+    #                   STIX 2.1 SPECIFIC CHECKING FUNCTIONS                   #
     ############################################################################
 
     def _check_observed_data_attribute(self, attribute, observed_data):

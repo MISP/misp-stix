@@ -389,12 +389,6 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self._check_attribute_labels(attribute, indicator.labels)
         return indicator.pattern
 
-    def _check_indicator_object(self, misp_object, indicator):
-        self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
-        self.assertEqual(misp_object.timestamp, indicator.modified)
-        self._check_object_labels(misp_object, indicator.labels, True)
-        return indicator.pattern
-
     def _check_vulnerability_attribute(self, attribute, vulnerability):
         self.assertEqual(attribute.uuid, vulnerability.id.split('--')[1])
         self.assertEqual(attribute.type, vulnerability.type)
@@ -1443,6 +1437,12 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(url.type, 'url')
         self.assertEqual(url.object_relation, 'url')
         self.assertEqual(url.value, artifact.x_misp_url)
+
+    def _check_indicator_object(self, misp_object, indicator):
+        self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
+        self.assertEqual(misp_object.timestamp, indicator.modified)
+        self._check_object_labels(misp_object, indicator.labels, True)
+        return indicator.pattern
 
     def _check_intrusion_set_object(self, misp_object, intrusion_set):
         self.assertEqual(misp_object.uuid, intrusion_set.id.split('--')[1])
