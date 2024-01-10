@@ -159,18 +159,15 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     @property
     def observable_object_parser(self) -> STIX2ObservableObjectConverter:
-        return getattr(
-            self, '_observable_objects_parser',
+        if not hasattr(self, '_observable_object_parser'):
             self._set_observable_object_parser()
-        )
+        return self._observable_object_parser
 
     def _set_attack_pattern_parser(self) -> ExternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
-        return self._attack_pattern_parser
 
     def _set_campaign_parser(self) -> ExternalSTIX2CampaignConverter:
         self._campaign_parser = ExternalSTIX2CampaignConverter(self)
-        return self._campaign_parser
 
     def _set_cluster_distribution(
             self, distribution: int, sharing_group_id: Union[int, None]):
@@ -181,47 +178,36 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _set_course_of_action_parser(self) -> ExternalSTIX2CourseOfActionConverter:
         self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
-        return self._course_of_action_parser
 
     def _set_identity_parser(self) -> ExternalSTIX2IdentityConverter:
         self._identity_parser = ExternalSTIX2IdentityConverter(self)
-        return self._identity_parser
 
     def _set_indicator_parser(self) -> ExternalSTIX2IndicatorConverter:
         self._indicator_parser = ExternalSTIX2IndicatorConverter(self)
-        return self._indicator_parser
 
     def _set_intrusion_set_parser(self) -> ExternalSTIX2IntrusionSetConverter:
         self._intrusion_set_parser = ExternalSTIX2IntrusionSetConverter(self)
-        return self._intrusion_set_parser
 
     def _set_location_parser(self) -> ExternalSTIX2LocationConverter:
         self._location_parser = ExternalSTIX2LocationConverter(self)
-        return self._location_parser
 
     def _set_malware_analysis_parser(self) -> ExternalSTIX2MalwareAnalysisConverter:
         self._malware_analysis_parser = ExternalSTIX2MalwareAnalysisConverter(self)
-        return self._malware_analysis_parser
 
     def _set_malware_parser(self) -> ExternalSTIX2MalwareConverter:
         self._malware_parser = ExternalSTIX2MalwareConverter(self)
-        return self._malware_parser
 
     def _set_observable_object_parser(self) -> STIX2ObservableObjectConverter:
         self._observable_object_parser = STIX2ObservableObjectConverter(self)
-        return self._observable_object_parser
 
     def _set_threat_actor_parser(self) -> ExternalSTIX2ThreatActorConverter:
         self._threat_actor_parser = ExternalSTIX2ThreatActorConverter(self)
-        return self._threat_actor_parser
 
     def _set_tool_parser(self) -> ExternalSTIX2ToolConverter:
         self._tool_parser = ExternalSTIX2ToolConverter(self)
-        return self._tool_parser
 
     def _set_vulnerability_parser(self) -> ExternalSTIX2VulnerabilityConverter:
         self._vulnerability_parser = ExternalSTIX2VulnerabilityConverter(self)
-        return self._vulnerability_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
@@ -1732,7 +1718,6 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
                         )
                     }
                 )
-
 
     ################################################################################
     #                   MISP DATA STRUCTURES CREATION FUNCTIONS.                   #
