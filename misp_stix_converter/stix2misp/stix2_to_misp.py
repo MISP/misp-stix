@@ -299,22 +299,21 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @property
     def attack_pattern_parser(self) -> _ATTACK_PATTERN_PARSER_TYPING:
-        return getattr(
-            self, '_attack_pattern_parser', self._set_attack_pattern_parser()
-        )
+        if not hasattr(self, '_attack_pattern_parser'):
+            self._set_attack_pattern_parser()
+        return self._attack_pattern_parser
 
     @property
     def campaign_parser(self) -> _CAMPAIGN_PARSER_TYPING:
-        return getattr(
-            self, '_campaign_parser', self._set_campaign_parser()
-        )
+        if not hasattr(self, '_campaign_parser'):
+            self._set_campaign_parser()
+        return self._campaign_parser
 
     @property
     def course_of_action_parser(self) -> _COURSE_OF_ACTION_PARSER_TYPING:
-        return getattr(
-            self, '_course_of_action_parser',
+        if not hasattr(self, '_course_of_action_parser'):
             self._set_course_of_action_parser()
-        )
+        return self._course_of_action_parser
 
     @property
     def generic_info_field(self) -> str:
@@ -322,32 +321,39 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @property
     def identity_parser(self) -> _IDENTITY_PARSER_TYPING:
-        return getattr(self, '_identity_parser', self._set_identity_parser())
+        if not hasattr(self, '_identity_parser'):
+            self._set_identity_parser()
+        return self._identity_parser
 
     @property
     def indicator_parser(self) -> _INDICATOR_PARSER_TYPING:
-        return getattr(self, '_indicator_parser', self._set_indicator_parser())
+        if not hasattr(self, '_indicator_parser'):
+            self._set_indicator_parser()
+        return self._indicator_parser
 
     @property
     def intrusion_set_parser(self) -> _INTRUSION_SET_PARSER_TYPING:
-        return getattr(
-            self, '_intrusion_set_parser', self._set_intrusion_set_parser()
-        )
+        if not hasattr(self, '_intrusion_set_parser'):
+            self._set_intrusion_set_parser()
+        return self._intrusion_set_parser
 
     @property
     def location_parser(self) -> _LOCATION_PARSER_TYPING:
-        return getattr(self, '_location_parser', self._set_location_parser())
+        if not hasattr(self, '_location_parser'):
+            self._set_location_parser()
+        return self._location_parser
 
     @property
     def malware_analysis_parser(self) -> _MALWARE_ANALYSIS_PARSER_TYPING:
-        return getattr(
-            self, '_malware_analysis_parser',
+        if not hasattr(self, '_malware_analysis_parser'):
             self._set_malware_analysis_parser()
-        )
+        return self._malware_analysis_parser
 
     @property
     def malware_parser(self) -> _MALWARE_PARSER_TYPING:
-        return getattr(self, '_malware_parser', self._set_malware_parser())
+        if not hasattr(self, '_malware_parser'):
+            self._set_malware_parser()
+        return self._malware_parser
 
     @property
     def misp_event(self) -> MISPEvent:
@@ -369,19 +375,21 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     @property
     def threat_actor_parser(self) -> _THREAT_ACTOR_PARSER_TYPING:
-        return getattr(
-            self, '_threat_actor_parser', self._set_threat_actor_parser()
-        )
+        if not hasattr(self, '_threat_actor_parser'):
+            self._set_threat_actor_parser()
+        return self._threat_actor_parser
 
     @property
     def tool_parser(self) -> _TOOL_PARSER_TYPING:
-        return getattr(self, '_tool_parser', self._set_tool_parser())
+        if not hasattr(self, '_tool_parser'):
+            self._set_tool_parser()
+        return self._tool_parser
 
     @property
     def vulnerability_parser(self) -> _VULNERABILITY_PARSER_TYPING:
-        return getattr(
-            self, '_vulnerability_parser', self._set_vulnerability_parser()
-        )
+        if not hasattr(self, '_vulnerability_parser'):
+            self._set_vulnerability_parser()
+        return self._vulnerability_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #

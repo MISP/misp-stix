@@ -50,13 +50,15 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     @property
     def custom_object_parser(self) -> STIX2CustomObjectConverter:
-        return getattr(
-            self, '_custom_object_parser', self._set_custom_object_parser()
-        )
+        if not hasattr(self, '_custom_object_parser'):
+            self._set_custom_object_parser()
+        return self._custom_object_parser
 
     @property
     def note_parser(self) -> STIX2NoteConverter:
-        return getattr(self, '_note_parser', self._set_note_parser())
+        if not hasattr(self, '_note_parser'):
+            self._set_note_parser()
+        return self._note_parser
 
     @property
     def observed_data_parser(self) -> InternalSTIX2ObservedDataConverter:
@@ -66,47 +68,36 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _set_attack_pattern_parser(self) -> InternalSTIX2AttackPatternConverter:
         self._attack_pattern_parser = InternalSTIX2AttackPatternConverter(self)
-        return self._attack_pattern_parser
 
     def _set_campaign_parser(self) -> InternalSTIX2CampaignConverter:
         self._campaign_parser = InternalSTIX2CampaignConverter(self)
-        return self._campaign_parser
 
     def _set_course_of_action_parser(self) -> InternalSTIX2CourseOfActionConverter:
         self._course_of_action_parser = InternalSTIX2CourseOfActionConverter(self)
-        return self._course_of_action_parser
 
     def _set_custom_object_parser(self) -> STIX2CustomObjectConverter:
         self._custom_object_parser = STIX2CustomObjectConverter(self)
-        return self._custom_object_parser
 
     def _set_identity_parser(self) -> InternalSTIX2IdentityConverter:
         self._identity_parser = InternalSTIX2IdentityConverter(self)
-        return self._identity_parser
 
     def _set_indicator_parser(self) -> InternalSTIX2IndicatorConverter:
         self._indicator_parser = InternalSTIX2IndicatorConverter(self)
-        return self._indicator_parser
 
     def _set_intrusion_set_parser(self) -> InternalSTIX2IntrusionSetConverter:
         self._intrusion_set_parser = InternalSTIX2IntrusionSetConverter(self)
-        return self._intrusion_set_parser
 
     def _set_location_parser(self) -> InternalSTIX2LocationConverter:
         self._location_parser = InternalSTIX2LocationConverter(self)
-        return self._location_parser
 
     def _set_malware_analysis_parser(self) -> InternalSTIX2MalwareAnalysisConverter:
         self._malware_analysis_parser = InternalSTIX2MalwareAnalysisConverter(self)
-        return self._malware_analysis_parser
 
     def _set_malware_parser(self) -> InternalSTIX2MalwareConverter:
         self._malware_parser = InternalSTIX2MalwareConverter(self)
-        return self._malware_parser
 
     def _set_note_parser(self) -> STIX2NoteConverter:
         self._note_parser = STIX2NoteConverter(self)
-        return self._note_parser
 
     def _set_observed_data_parser(self) -> InternalSTIX2ObservedDataConverter:
         self._observed_data_parser = InternalSTIX2ObservedDataConverter(self)
@@ -114,15 +105,12 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
 
     def _set_threat_actor_parser(self) -> InternalSTIX2ThreatActorConverter:
         self._threat_actor_parser = InternalSTIX2ThreatActorConverter(self)
-        return self._threat_actor_parser
 
     def _set_tool_parser(self) -> InternalSTIX2ToolConverter:
         self._tool_parser = InternalSTIX2ToolConverter(self)
-        return self._tool_parser
 
     def _set_vulnerability_parser(self) -> InternalSTIX2VulnerabilityConverter:
         self._vulnerability_parser = InternalSTIX2VulnerabilityConverter(self)
-        return self._vulnerability_parser
 
     ############################################################################
     #                       STIX OBJECTS LOADING METHODS                       #
