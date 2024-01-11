@@ -124,7 +124,7 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _parse_directory_observable_object(
             self, observed_data: _OBSERVED_DATA_TYPING,
-            object_id: Optional[str] = None) -> MISPObject:
+            object_id: str) -> MISPObject:
         directory = observed_data.objects[object_id]
         if directory.get('id') is not None:
             return self._parse_directory_observable_object_ref(
