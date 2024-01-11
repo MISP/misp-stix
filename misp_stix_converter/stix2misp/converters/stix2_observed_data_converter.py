@@ -127,12 +127,9 @@ class ExternalSTIX2ObservedDataConverter(
             object_id: Optional[str] = None) -> MISPObject:
         directory = observed_data.objects[object_id]
         if directory.get('id') is not None:
-            misp_object = self._create_misp_object_from_observable_object_ref(
-                'directory', directory, observed_data
+            return self._parse_directory_observable_object_ref(
+                observed_data, directory
             )
-            for attribute in self._parse_directory_observable(directory):
-                misp_object.add_attribute(**attribute)
-            return self.main_parser._add_misp_object(misp_object, observed_data)
         object_id = f'{observed_data.id} - {object_id}'
         misp_object = self._create_misp_object_from_observable_object(
             'directory', observed_data, object_id
@@ -143,7 +140,7 @@ class ExternalSTIX2ObservedDataConverter(
         return self.main_parser._add_misp_object(misp_object, observed_data)
 
     def _parse_directory_observable_object_ref(
-            self, observed_data: ObservedData_v21,
+            self, observed_data: _OBSERVED_DATA_TYPING,
             directory: _DIRECTORY_TYPING) -> MISPObject:
         misp_object = self._create_misp_object_from_observable_object_ref(
             'directory', directory, observed_data
@@ -206,6 +203,10 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: _OBSERVED_DATA_TYPING):
         if len(observed_data.objects) == 1:
             directory = next(iter(observed_data.objects.values()))
+            if directory.get('id') is not None:
+                return self._parse_directory_observable_object_ref(
+                    observed_data, directory
+                )
             misp_object = self._create_misp_object_from_observable_object(
                 'directory', observed_data
             )
