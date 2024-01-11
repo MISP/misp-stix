@@ -854,7 +854,7 @@ class ExternalSTIX2Mapping(STIX2Mapping):
         modified=STIX2Mapping.modification_time_attribute(),
         mtime=STIX2Mapping.modification_time_attribute(),
         path=STIX2Mapping.path_attribute(),
-        path_enc={'type': 'text', 'object_relaiton': 'path-encoding'}
+        path_enc={'type': 'text', 'object_relation': 'path-encoding'}
     )
     __network_traffic_object_mapping = Mapping(
         src_port=STIX2Mapping.src_port_attribute(),
