@@ -533,7 +533,8 @@ class ExternalSTIX2ObservableConverter(
             observed_data_id: Optional[str] = None) -> Iterator:
         object_id = getattr(observable, 'id', observed_data_id)
         yield from self._populate_object_attributes(
-            self._mapping.asn_attribute(), f'AS{observable.number}', object_id
+            self._mapping.asn_attribute(),
+            self._parse_AS_value(observable.number), object_id
         )
         if hasattr(observable, 'name'):
             yield from self._populate_object_attributes(
