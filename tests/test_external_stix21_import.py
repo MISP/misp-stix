@@ -248,11 +248,13 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(
             mtime.uuid, uuid5(self._UUIDv4, f'{directory.id} - modification-time - {mtime.value}')
         )
+        self.assertEqual(path.type, 'text')
         self.assertEqual(path.object_relation, 'path')
         self.assertEqual(path.value, directory.path)
         self.assertEqual(
             path.uuid, uuid5(self._UUIDv4, f'{directory.id} - path - {path.value}')
         )
+        self.assertEqual(path_enc.type, 'text')
         self.assertEqual(path_enc.object_relation, 'path-encoding')
         self.assertEqual(path_enc.value, directory.path_enc)
         self.assertEqual(
