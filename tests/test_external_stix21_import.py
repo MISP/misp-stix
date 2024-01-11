@@ -4,6 +4,7 @@
 from .test_external_stix21_bundles import TestExternalSTIX21Bundles
 from ._test_stix import TestSTIX21
 from ._test_stix_import import TestExternalSTIX2Import, TestSTIX21Import
+from uuid import uuid5
 
 
 class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Import):
@@ -219,3 +220,76 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             meta['external_id'],
             attribute_vuln.external_references[0].external_id
         )
+
+    ############################################################################
+    #                        MISP OBJECTS IMPORT TESTS.                        #
+    ############################################################################
+
+    def _check_directory_object(self, misp_object, observed_data, directory):
+        self.assertEqual(misp_object.name, 'directory')
+        self._check_misp_object_fields(misp_object, observed_data, directory)
+        self.assertEqual(len(misp_object.attributes), 5)
+        atime, ctime, mtime, path, path_enc = misp_object.attributes
+        self._assert_multiple_equal(
+            atime.type, ctime.type, mtime.type, 'datetime'
+        )
+        self.assertEqual(atime.object_relation, 'access-time')
+        self.assertEqual(atime.value, directory.atime)
+        self.assertEqual(
+            atime.uuid, uuid5(self._UUIDv4, f'{directory.id} - access-time - {atime.value}')
+        )
+        self.assertEqual(ctime.object_relation, 'creation-time')
+        self.assertEqual(ctime.value, directory.ctime)
+        self.assertEqual(
+            ctime.uuid, uuid5(self._UUIDv4, f'{directory.id} - creation-time - {ctime.value}')
+        )
+        self.assertEqual(mtime.object_relation, 'modification-time')
+        self.assertEqual(mtime.value, directory.mtime)
+        self.assertEqual(
+            mtime.uuid, uuid5(self._UUIDv4, f'{directory.id} - modification-time - {mtime.value}')
+        )
+        self.assertEqual(path.object_relation, 'path')
+        self.assertEqual(path.value, directory.path)
+        self.assertEqual(
+            path.uuid, uuid5(self._UUIDv4, f'{directory.id} - path - {path.value}')
+        )
+        self.assertEqual(path_enc.object_relation, 'path-encoding')
+        self.assertEqual(path_enc.value, directory.path_enc)
+        self.assertEqual(
+            path_enc.uuid, uuid5(self._UUIDv4, f'{directory.id} - path-encoding - {path_enc.value}')
+        )
+
+    def _check_misp_object_fields(self, misp_object, observed_data, observable_object):
+        self.assertEqual(misp_object.uuid, observable_object.id.split('--')[1])
+        self.assertEqual(misp_object.comment, f'Observed Data ID: {observed_data.id}')
+        if not (observed_data.modified == observed_data.first_observed == observed_data.last_observed):
+            self.assertEqual(misp_object.first_seen, observed_data.first_observed)
+            self.assertEqual(misp_object.last_seen, observed_data.last_observed)
+        self.assertEqual(misp_object.timestamp, observed_data.modified)
+
+    def test_stix21_bundle_with_directory_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_directory_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, od2, directory1, directory2, directory3 = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 3)
+        referenced_directory, directory, single_directory = misp_objects
+        self._check_directory_object(referenced_directory, od1, directory2)
+        self._check_directory_object(directory, od1, directory1)
+        self._check_directory_object(single_directory, od2, directory3)
+        reference1 = directory.references[0]
+        self._assert_multiple_equal(
+            reference1.referenced_uuid,
+            referenced_directory.uuid,
+            directory2.id.split('--')[1]
+        )
+        self.assertEqual(reference1.relationship_type, 'contains')
+        reference2 = referenced_directory.references[0]
+        self._assert_multiple_equal(
+            reference2.referenced_uuid,
+            single_directory.uuid,
+            directory3.id.split('--')[1]
+        )
+        self.assertEqual(reference2.relationship_type, 'contains')

@@ -4,6 +4,7 @@
 from .test_external_stix20_bundles import TestExternalSTIX20Bundles
 from ._test_stix import TestSTIX21
 from ._test_stix_import import TestExternalSTIX2Import, TestSTIX21Import
+from uuid import uuid5
 
 
 class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Import):
@@ -178,3 +179,81 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             meta['external_id'],
             attribute_vuln.external_references[0].external_id
         )
+
+    ############################################################################
+    #                        MISP OBJECTS IMPORT TESTS.                        #
+    ############################################################################
+
+    def _check_directory_object(self, misp_object, observed_data, identifier=None):
+        self.assertEqual(misp_object.name, 'directory')
+        self._check_misp_object_fields(misp_object, observed_data, identifier)
+        object_id = observed_data.id
+        if identifier is None:
+            identifier = '0'
+        else:
+            object_id = f'{object_id} - {identifier}'
+        directory = observed_data.objects[identifier]
+        self.assertEqual(len(misp_object.attributes), 5)
+        accessed, created, modified, path, path_enc = misp_object.attributes
+        self._assert_multiple_equal(
+            accessed.type, created.type, modified.type, 'datetime'
+        )
+        self.assertEqual(accessed.object_relation, 'access-time')
+        self.assertEqual(accessed.value, directory.accessed)
+        self.assertEqual(
+            accessed.uuid, uuid5(self._UUIDv4, f'{object_id} - access-time - {accessed.value}')
+        )
+        self.assertEqual(created.object_relation, 'creation-time')
+        self.assertEqual(created.value, directory.created)
+        self.assertEqual(
+            created.uuid, uuid5(self._UUIDv4, f'{object_id} - creation-time - {created.value}')
+        )
+        self.assertEqual(modified.object_relation, 'modification-time')
+        self.assertEqual(modified.value, directory.modified)
+        self.assertEqual(
+            modified.uuid, uuid5(self._UUIDv4, f'{object_id} - modification-time - {modified.value}')
+        )
+        self.assertEqual(path.type, 'text')
+        self.assertEqual(path.object_relation, 'path')
+        self.assertEqual(path.value, directory.path)
+        self.assertEqual(
+            path.uuid, uuid5(self._UUIDv4, f'{object_id} - path - {path.value}')
+        )
+        self.assertEqual(path_enc.type, 'text')
+        self.assertEqual(path_enc.object_relation, 'path-encoding')
+        self.assertEqual(path_enc.value, directory.path_enc)
+        self.assertEqual(
+            path_enc.uuid, uuid5(self._UUIDv4, f'{object_id} - path-encoding - {path_enc.value}')
+        )
+
+    def _check_misp_object_fields(self, misp_object, observed_data, identifier):
+        if identifier is None:
+            self.assertEqual(misp_object.uuid, observed_data.id.split('--')[1])
+        else:
+            self.assertEqual(
+                misp_object.uuid, uuid5(self._UUIDv4, f'{observed_data.id} - {identifier}')
+            )
+        if not (observed_data.modified == observed_data.first_observed == observed_data.last_observed):
+            self.assertEqual(misp_object.first_seen, observed_data.first_observed)
+            self.assertEqual(misp_object.last_seen, observed_data.last_observed)
+        self.assertEqual(misp_object.timestamp, observed_data.modified)
+
+    def test_stix20_bundle_with_directory_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_directory_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data1, observed_data2 = bundle.objects
+        misp_objects = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_objects), 3)
+        single_directory, directory, referenced_directory = misp_objects
+        self._check_directory_object(single_directory, observed_data1)
+        self._check_directory_object(directory, observed_data2, '0')
+        self._check_directory_object(referenced_directory, observed_data2, '1')
+        reference = directory.references[0]
+        self._assert_multiple_equal(
+            reference.referenced_uuid,
+            referenced_directory.uuid,
+            uuid5(self._UUIDv4, f'{observed_data2.id} - 1')
+        )
+        self.assertEqual(reference.relationship_type, 'contains')

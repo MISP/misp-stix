@@ -108,6 +108,59 @@ _COURSE_OF_ACTION_OBJECTS = [
         ]
     }
 ]
+_DIRECTORY_OBJECTS = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "directory",
+                "path": "/var/www/MISP/app/files/scripts/misp-stix",
+                "path_enc": "ISO-8859-1",
+                "created": "2021-07-21T11:44:56Z",
+                "modified": "2023-12-12T11:24:30Z",
+                "accessed": "2023-12-12T11:24:30Z"
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--5ac47782-e1b8-40b6-96b4-02510a00020f",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "directory",
+                "path": "/var/www/MISP/app/files/scripts/",
+                "path_enc": "ISO-8859-6-I",
+                "created": "2014-07-25T10:47:08Z",
+                "modified": "2023-12-12T11:34:05Z",
+                "accessed": "2023-12-12T11:34:05Z",
+                "contains_refs": [
+                    "1"
+                ]
+            },
+            "1": {
+                "type": "directory",
+                "path": "/var/www/MISP/app/files/scripts/misp-stix",
+                "path_enc": "ISO-8859-1",
+                "created": "2021-07-21T11:44:56Z",
+                "modified": "2023-12-12T11:24:30Z",
+                "accessed": "2023-12-12T11:24:30Z"
+            }
+        }
+    }
+]
 _INTRUSION_SET_OBJECTS = [
     {
         "type": "intrusion-set",
@@ -350,6 +403,17 @@ class TestExternalSTIX20Bundles:
     }
 
     @classmethod
+    def __assemble_bundle(cls, *stix_objects):
+        bundle = deepcopy(cls.__bundle)
+        bundle['objects'] = [
+            deepcopy(cls.__identity), deepcopy(cls.__report), *stix_objects
+        ]
+        bundle['objects'][1]['object_refs'] = [
+            stix_object['id'] for stix_object in stix_objects
+        ]
+        return dict_to_stix2(bundle, allow_custom=True)
+
+    @classmethod
     def __assemble_galaxy_bundle(cls, event_galaxy, attribute_galaxy):
         relationship = {
             "type": "relationship",
@@ -405,3 +469,11 @@ class TestExternalSTIX20Bundles:
     @classmethod
     def get_bundle_with_vulnerability_galaxy(cls):
         return cls.__assemble_galaxy_bundle(*_VULNERABILITY_OBJECTS)
+
+    ############################################################################
+    #                           MISP OBJECTS SAMPLES                           #
+    ############################################################################
+
+    @classmethod
+    def get_bundle_with_directory_objects(cls):
+        return cls.__assemble_bundle(*_DIRECTORY_OBJECTS)
