@@ -1168,7 +1168,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return f"{definition_type}:{definition}"
         if hasattr(marking_definition, 'name'):
             # should be TLP 2.0 definition
-            name = marking_definition.name
             return marking_definition.name.lower()
         raise MarkingDefinitionLoadingError(marking_definition.id)
 
