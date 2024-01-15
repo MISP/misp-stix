@@ -358,6 +358,18 @@ class TestExternalSTIX2Import(TestSTIX2Import):
     #                  OBSERVED DATA OBJECTS CHECKING METHODS                  #
     ############################################################################
 
+    def _check_as_fields(self, misp_object, autonomous_system, object_id):
+        self.assertEqual(len(misp_object.attributes), 2)
+        asn, name = misp_object.attributes
+        self.assertEqual(asn.type, 'AS')
+        self.assertEqual(asn.object_relation, 'asn')
+        self.assertEqual(asn.value, f'AS{autonomous_system.number}')
+        self.assertEqual(asn.uuid, uuid5(self._UUIDv4, f'{object_id} - asn - {asn.value}'))
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'description')
+        self.assertEqual(name.value, autonomous_system.name)
+        self.assertEqual(name.uuid, uuid5(self._UUIDv4, f'{object_id} - description - {name.value}'))
+
     def _check_directory_fields(self, misp_object, directory, object_id):
         self.assertEqual(len(misp_object.attributes), 5)
         accessed, created, modified, path, path_enc = misp_object.attributes

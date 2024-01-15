@@ -181,8 +181,26 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
 
     ############################################################################
-    #                        MISP OBJECTS IMPORT TESTS.                        #
+    #                    OBSERVED DATA OBJECTS IMPORT TESTS                    #
     ############################################################################
+
+    def _check_as_attribute(self, attribute, observed_data, identifier=None):
+        self.assertEqual(attribute.type, 'AS')
+        self._check_misp_object_fields(attribute, observed_data, identifier)
+        autonomous_system = observed_data.objects[identifier or '0']
+        self.assertEqual(attribute.type, 'AS')
+        self.assertEqual(attribute.value, f'AS{autonomous_system.number}')
+
+    def _check_as_object(self, misp_object, observed_data, identifier=None):
+        self.assertEqual(misp_object.name, 'asn')
+        self._check_misp_object_fields(misp_object, observed_data, identifier)
+        object_id = observed_data.id
+        if identifier is None:
+            identifier = '0'
+        else:
+            object_id = f'{object_id} - {identifier}'
+        autonomous_system = observed_data.objects[identifier]
+        self._check_as_fields(misp_object, autonomous_system, object_id)
 
     def _check_directory_object(self, misp_object, observed_data, identifier=None):
         self.assertEqual(misp_object.name, 'directory')
@@ -212,6 +230,20 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.assertEqual(misp_object.first_seen, observed_data.first_observed)
             self.assertEqual(misp_object.last_seen, observed_data.last_observed)
         self.assertEqual(misp_object.timestamp, observed_data.modified)
+
+    def test_stix20_bundle_with_as_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_as_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data1, observed_data2, observed_data3 = bundle.objects
+        misp_content = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_content), 4)
+        m_object, s_object, m_attribute, s_attribute = misp_content
+        self._check_as_object(m_object, observed_data1, '0')
+        self._check_as_object(s_object, observed_data2)
+        self._check_as_attribute(m_attribute, observed_data1, '1')
+        self._check_as_attribute(s_attribute, observed_data3)
 
     def test_stix20_bundle_with_directory_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_directory_objects()

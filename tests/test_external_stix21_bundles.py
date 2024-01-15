@@ -5,6 +5,77 @@ from copy import deepcopy
 from stix2.parsing import dict_to_stix2
 
 
+_AS_OBJECTS = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "autonomous-system--46f7e73f-36e5-40dd-9b27-735a0a6b44c2",
+            "autonomous-system--49713b77-b6ee-4069-a1b4-2a8ad49adf62"
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "autonomous-system--81294150-8f7a-453d-a1d8-96c2cfe04efa"
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--1bf81a4f-0e70-4a34-944b-7e46f67ff7a7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "autonomous-system--cd890f31-5825-4fea-85ca-0b3ab3872926"
+        ]
+    },
+    {
+        "type": "autonomous-system",
+        "spec_version": "2.1",
+        "id": "autonomous-system--46f7e73f-36e5-40dd-9b27-735a0a6b44c2",
+        "number": 666,
+        "name": "Satan autonomous system"
+    },
+    {
+        "type": "autonomous-system",
+        "spec_version": "2.1",
+        "id": "autonomous-system--49713b77-b6ee-4069-a1b4-2a8ad49adf62",
+        "number": 1234
+    },
+    {
+        "type": "autonomous-system",
+        "spec_version": "2.1",
+        "id": "autonomous-system--81294150-8f7a-453d-a1d8-96c2cfe04efa",
+        "number": 197869,
+        "name": "CIRCL"
+    },
+    {
+        "type": "autonomous-system",
+        "spec_version": "2.1",
+        "id": "autonomous-system--cd890f31-5825-4fea-85ca-0b3ab3872926",
+        "number": 50588
+    }
+]
 _ATTACK_PATTERN_OBJECTS = [
     {
         "type": "attack-pattern",
@@ -533,8 +604,12 @@ class TestExternalSTIX21Bundles:
         return cls.__assemble_galaxy_bundle(*_VULNERABILITY_OBJECTS)
 
     ############################################################################
-    #                           MISP OBJECTS SAMPLES                           #
+    #                          OBSERVED DATA SAMPLES.                          #
     ############################################################################
+
+    @classmethod
+    def get_bundle_with_as_objects(cls):
+        return cls.__assemble_bundle(*_AS_OBJECTS)
 
     @classmethod
     def get_bundle_with_directory_objects(cls):
