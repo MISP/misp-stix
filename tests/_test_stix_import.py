@@ -325,6 +325,10 @@ class TestExternalSTIX2Import(TestSTIX2Import):
     def setUp(self):
         self.parser = ExternalSTIX2toMISPParser()
 
+    ############################################################################
+    #                      MISP GALAXIES CHECKING METHODS                      #
+    ############################################################################
+
     def _check_galaxy_features(self, galaxies, stix_object):
         self.assertEqual(len(galaxies), 1)
         galaxy = galaxies[0]
@@ -349,6 +353,42 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         if hasattr(stix_object, 'description'):
             self.assertEqual(cluster.description, stix_object.description)
         return cluster.meta
+
+    ############################################################################
+    #                  OBSERVED DATA OBJECTS CHECKING METHODS                  #
+    ############################################################################
+
+    def _check_directory_fields(self, misp_object, directory, object_id):
+        self.assertEqual(len(misp_object.attributes), 5)
+        accessed, created, modified, path, path_enc = misp_object.attributes
+        self._assert_multiple_equal(
+            accessed.type, created.type, modified.type, 'datetime'
+        )
+        self.assertEqual(accessed.object_relation, 'access-time')
+        self.assertEqual(
+            accessed.uuid, uuid5(self._UUIDv4, f'{object_id} - access-time - {accessed.value}')
+        )
+        self.assertEqual(created.object_relation, 'creation-time')
+        self.assertEqual(
+            created.uuid, uuid5(self._UUIDv4, f'{object_id} - creation-time - {created.value}')
+        )
+        self.assertEqual(modified.object_relation, 'modification-time')
+        self.assertEqual(
+            modified.uuid, uuid5(self._UUIDv4, f'{object_id} - modification-time - {modified.value}')
+        )
+        self.assertEqual(path.type, 'text')
+        self.assertEqual(path.object_relation, 'path')
+        self.assertEqual(path.value, directory.path)
+        self.assertEqual(
+            path.uuid, uuid5(self._UUIDv4, f'{object_id} - path - {path.value}')
+        )
+        self.assertEqual(path_enc.type, 'text')
+        self.assertEqual(path_enc.object_relation, 'path-encoding')
+        self.assertEqual(path_enc.value, directory.path_enc)
+        self.assertEqual(
+            path_enc.uuid, uuid5(self._UUIDv4, f'{object_id} - path-encoding - {path_enc.value}')
+        )
+        return accessed.value, created.value, modified.value
 
 
 class TestInternalSTIX2Import(TestSTIX2Import):

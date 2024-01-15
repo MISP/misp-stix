@@ -228,38 +228,12 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     def _check_directory_object(self, misp_object, observed_data, directory):
         self.assertEqual(misp_object.name, 'directory')
         self._check_misp_object_fields(misp_object, observed_data, directory)
-        self.assertEqual(len(misp_object.attributes), 5)
-        atime, ctime, mtime, path, path_enc = misp_object.attributes
-        self._assert_multiple_equal(
-            atime.type, ctime.type, mtime.type, 'datetime'
+        atime, ctime, mtime = self._check_directory_fields(
+            misp_object, directory, directory.id
         )
-        self.assertEqual(atime.object_relation, 'access-time')
-        self.assertEqual(atime.value, directory.atime)
-        self.assertEqual(
-            atime.uuid, uuid5(self._UUIDv4, f'{directory.id} - access-time - {atime.value}')
-        )
-        self.assertEqual(ctime.object_relation, 'creation-time')
-        self.assertEqual(ctime.value, directory.ctime)
-        self.assertEqual(
-            ctime.uuid, uuid5(self._UUIDv4, f'{directory.id} - creation-time - {ctime.value}')
-        )
-        self.assertEqual(mtime.object_relation, 'modification-time')
-        self.assertEqual(mtime.value, directory.mtime)
-        self.assertEqual(
-            mtime.uuid, uuid5(self._UUIDv4, f'{directory.id} - modification-time - {mtime.value}')
-        )
-        self.assertEqual(path.type, 'text')
-        self.assertEqual(path.object_relation, 'path')
-        self.assertEqual(path.value, directory.path)
-        self.assertEqual(
-            path.uuid, uuid5(self._UUIDv4, f'{directory.id} - path - {path.value}')
-        )
-        self.assertEqual(path_enc.type, 'text')
-        self.assertEqual(path_enc.object_relation, 'path-encoding')
-        self.assertEqual(path_enc.value, directory.path_enc)
-        self.assertEqual(
-            path_enc.uuid, uuid5(self._UUIDv4, f'{directory.id} - path-encoding - {path_enc.value}')
-        )
+        self.assertEqual(atime, directory.atime)
+        self.assertEqual(ctime, directory.ctime)
+        self.assertEqual(mtime, directory.mtime)
 
     def _check_misp_object_fields(self, misp_object, observed_data, observable_object):
         self.assertEqual(misp_object.uuid, observable_object.id.split('--')[1])
