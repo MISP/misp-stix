@@ -174,7 +174,9 @@ class ExternalSTIX2ObservedDataConverter(
                     'type': 'AS',
                     'value': self._parse_AS_value(autonomous_system.number),
                     'comment': f'Observed Data ID: {observed_data.id}',
-                    'uuid': self._sanitise_uuid(autonomous_system.id),
+                    'uuid': self.main_parser._sanitise_uuid(
+                        autonomous_system.id
+                    ),
                     **self._parse_timeline(observed_data)
                 },
                 observed_data
