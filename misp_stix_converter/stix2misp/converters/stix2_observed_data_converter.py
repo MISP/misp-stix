@@ -14,10 +14,10 @@ from abc import ABCMeta
 from collections import defaultdict
 from pymisp import MISPObject
 from stix2.v20.observables import (
-    Directory as Directory_v20)
+    AutonomousSystem as AutonomousSystem_v20, Directory as Directory_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
 from stix2.v21.observables import (
-    Directory as Directory_v21)
+    AutonomousSystem as AutonomousSystem_v21, Directory as Directory_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
 from typing import Optional, TYPE_CHECKING, Union
 
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
 
 _OBSERVABLE_OBJECTS_TYPING = Union[
+    AutonomousSystem_v20, AutonomousSystem_v21,
     Directory_v20, Directory_v21
 ]
 _OBSERVED_DATA_TYPING = Union[
@@ -121,6 +122,128 @@ class ExternalSTIX2ObservedDataConverter(
     ############################################################################
     #                    OBSERVABLE OBJECTS PARSING METHODS                    #
     ############################################################################
+
+    def _parse_as_observable_object(
+            self, observed_data: _OBSERVED_DATA_TYPING, object_id: str):
+        autonomous_system = observed_data.objects[object_id]
+        if autonomous_system.get('id') is not None:
+            return self._parse_autonomous_system_observable_object_ref(
+                observed_data, autonomous_system
+            )
+        object_id = f'{observed_data.id} - {object_id}'
+        AS_value = self._parse_AS_value(autonomous_system.number)
+        if hasattr(autonomous_system, 'name'):
+            misp_object = self._create_misp_object_from_observable_object(
+                'asn', observed_data, object_id
+            )
+            misp_object.add_attribute(
+                'asn', AS_value,
+                uuid=self.main_parser._create_v5_uuid(
+                    f'{object_id} - asn - {AS_value}'
+                )
+            )
+            description = autonomous_system.name
+            misp_object.add_attribute(
+                'description', description,
+                uuid=self.main_parser._create_v5_uuid(
+                    f'{object_id} - description - {description}'
+                )
+            )
+            return self.main_parser._add_misp_object(misp_object, observed_data)
+        return self.main_parser._add_misp_attribute(
+            {
+                'type': 'AS', 'value': AS_value,
+                'uuid': self.main_parser._create_v5_uuid(object_id),
+                **self._parse_timeline(observed_data)
+            },
+            observed_data
+        )
+
+    def _parse_as_observable_object_refs(self, observed_data: ObservedData_v21):
+        for object_ref in observed_data.object_refs:
+            observable = self._fetch_observables(object_ref)
+            autonomous_system = observable['observable']
+            if hasattr(autonomous_system, 'name'):
+                self._parse_autonomous_system_observable_object_ref(
+                    observed_data, autonomous_system
+                )
+                observable['used'][self.event_uuid] = True
+                continue
+            self.main_parser._add_misp_attribute(
+                {
+                    'type': 'AS',
+                    'value': self._parse_AS_value(autonomous_system.number),
+                    'comment': f'Observed Data ID: {observed_data.id}',
+                    'uuid': self._sanitise_uuid(autonomous_system.id),
+                    **self._parse_timeline(observed_data)
+                },
+                observed_data
+            )
+            observable['used'][self.event_uuid] = True
+
+    def _parse_as_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        if len(observed_data.objects) == 1:
+            autonomous_system = next(iter(observed_data.objects.values()))
+            if autonomous_system.get('id') is not None:
+                return self._parse_autonomous_system_observable_object_ref(
+                    observed_data, autonomous_system
+                )
+            AS_value = self._parse_AS_value(autonomous_system.number)
+            if hasattr(autonomous_system, 'name'):
+                misp_object = self._create_misp_object_from_observable_object(
+                    'asn', observed_data
+                )
+                misp_object.add_attribute(
+                    'asn', AS_value,
+                    uuid=self.main_parser._create_v5_uuid(
+                        f'{observed_data.id} - asn - {AS_value}'
+                    )
+                )
+                description = autonomous_system.name
+                misp_object.add_attribute(
+                    'description', description,
+                    uuid=self.main_parser._create_v5_uuid(
+                        f'{observed_data.id} - description - {description}'
+                    )
+                )
+                return self.main_parser._add_misp_object(
+                    misp_object, observed_data
+                )
+            return self.main_parser._add_misp_attribute(
+                {
+                    'type': 'AS', 'value': AS_value,
+                    **self._parse_timeline(observed_data),
+                    **self.main_parser._sanitise_attribute_uuid(
+                        observed_data.id
+                    )
+                },
+                observed_data
+            )
+        for object_id in observed_data.objects:
+            self._parse_as_observable_object(observed_data, object_id)
+
+    def _parse_autonomous_system_observable_object_ref(
+            self, observed_data: ObservedData_v21,
+            autonomous_system: _AUTONOMOUS_SYSTEM_TYPING) -> MISPObject:
+        misp_object = self._create_misp_object_from_observable_object_ref(
+            'asn', autonomous_system, observed_data
+        )
+        AS_value = self._parse_AS_value(autonomous_system.number)
+        misp_object.add_attribute(
+            'asn', AS_value,
+            uuid=self.main_parser._create_v5_uuid(
+                f'{autonomous_system.id} - asn - {AS_value}'
+            )
+        )
+        description = autonomous_system.name
+        misp_object.add_attribute(
+            'description', description,
+            uuid=self.main_parser._create_v5_uuid(
+                f'{autonomous_system.id} - description - {description}'
+            )
+        )
+        return self.main_parser._add_misp_object(misp_object, observed_data)
 
     def _parse_directory_observable_object(
             self, observed_data: _OBSERVED_DATA_TYPING,
