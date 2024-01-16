@@ -217,6 +217,62 @@ _DIRECTORY_OBJECTS = [
         }
     }
 ]
+_EMAIL_ADDRESS_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-addr",
+                "value": "john.doe@gmail.com",
+                "display_name": "John Doe"
+            },
+            "1": {
+                "type": "email-addr",
+                "value": "john@doe.org"
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-addr",
+                "value": "donald.duck@disney.com",
+                "display_name": "Donald Duck"
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--1bf81a4f-0e70-4a34-944b-7e46f67ff7a7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "email-addr",
+                "value": "donald.duck@gmail.com"
+            }
+        }
+    }
+]
 _INTRUSION_SET_OBJECTS = [
     {
         "type": "intrusion-set",
@@ -537,3 +593,7 @@ class TestExternalSTIX20Bundles:
     @classmethod
     def get_bundle_with_directory_objects(cls):
         return cls.__assemble_bundle(*_DIRECTORY_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_email_address_attributes(cls):
+        return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES)

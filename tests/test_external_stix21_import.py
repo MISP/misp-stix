@@ -8,7 +8,7 @@ from uuid import uuid5
 
 
 class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Import):
-    
+
     ################################################################################
     #                          MISP GALAXIES IMPORT TESTS                          #
     ################################################################################
@@ -226,7 +226,6 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     ############################################################################
 
     def _check_as_attribute(self, attribute, observed_data, autonomous_system):
-        self.assertEqual(attribute.type, 'AS')
         self._check_misp_object_fields(attribute, observed_data, autonomous_system)
         self.assertEqual(attribute.type, 'AS')
         self.assertEqual(attribute.value, f'AS{autonomous_system.number}')
@@ -246,8 +245,32 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(ctime, directory.ctime)
         self.assertEqual(mtime, directory.mtime)
 
-    def _check_misp_object_fields(self, misp_object, observed_data, observable_object):
-        self.assertEqual(misp_object.uuid, observable_object.id.split('--')[1])
+    def _check_email_address_attribute(self, observed_data, address, email_address):
+        self._check_misp_object_fields(address, observed_data, email_address)
+        self.assertEqual(address.type, 'email-dst')
+        self.assertEqual(address.value, email_address.value)
+
+    def _check_email_address_attribute_with_display_name(
+            self, observed_data, address, display_name, email_address):
+        self._check_misp_object_fields(
+            address, observed_data, email_address,
+            f'{email_address.id} - email-dst - {email_address.value}'
+        )
+        self.assertEqual(address.type, 'email-dst')
+        self.assertEqual(address.value, email_address.value)
+        self._check_misp_object_fields(
+            display_name, observed_data, email_address,
+            f'{email_address.id} - email-dst-display-name - {email_address.display_name}'
+        )
+        self.assertEqual(display_name.type, 'email-dst-display-name')
+        self.assertEqual(display_name.value, email_address.display_name)
+
+    def _check_misp_object_fields(
+            self, misp_object, observed_data, observable_object, identifier=None):
+        if identifier is None:
+            self.assertEqual(misp_object.uuid, observable_object.id.split('--')[1])
+        else:
+            self.assertEqual(misp_object.uuid, uuid5(self._UUIDv4, identifier))
         self.assertEqual(misp_object.comment, f'Observed Data ID: {observed_data.id}')
         if not (observed_data.modified == observed_data.first_observed == observed_data.last_observed):
             self.assertEqual(misp_object.first_seen, observed_data.first_observed)
@@ -294,3 +317,21 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             directory3.id.split('--')[1]
         )
         self.assertEqual(reference2.relationship_type, 'contains')
+
+    def test_stix21_bundle_with_email_address_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_email_address_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, od2, od3, ea1, ea2, ea3, ea4 = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 6)
+        mm_address, mm_display_name, ms_address, sm_address, sm_display_name, ss_address = attributes
+        self._check_email_address_attribute_with_display_name(
+            od1, mm_address, mm_display_name, ea1
+        )
+        self._check_email_address_attribute(od1, ms_address, ea2)
+        self._check_email_address_attribute_with_display_name(
+            od2, sm_address, sm_display_name, ea3
+        )
+        self._check_email_address_attribute(od3, ss_address, ea4)

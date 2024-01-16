@@ -8,7 +8,7 @@ from uuid import uuid5
 
 
 class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Import):
-    
+
     ############################################################################
     #                        MISP GALAXIES IMPORT TESTS                        #
     ############################################################################
@@ -185,7 +185,6 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     ############################################################################
 
     def _check_as_attribute(self, attribute, observed_data, identifier=None):
-        self.assertEqual(attribute.type, 'AS')
         self._check_misp_object_fields(attribute, observed_data, identifier)
         autonomous_system = observed_data.objects[identifier or '0']
         self.assertEqual(attribute.type, 'AS')
@@ -217,6 +216,40 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(accessed, directory.accessed)
         self.assertEqual(created, directory.created)
         self.assertEqual(modified, directory.modified)
+
+    def _check_email_address_attribute(
+            self, observed_data, address, identifier=None):
+        email_address = observed_data.objects[identifier or '0']
+        self._check_misp_object_fields(address, observed_data, identifier)
+        self.assertEqual(address.type, 'email-dst')
+        self.assertEqual(address.value, email_address.value)
+
+    def _check_email_address_attribute_with_display_name(
+            self, observed_data, address, display_name, identifier=None):
+        if identifier is None:
+            email_address = observed_data.objects['0']
+            self._check_misp_object_fields(
+                address, observed_data, f'email-dst - {email_address.value}'
+            )
+            self._check_misp_object_fields(
+                display_name, observed_data,
+                f'email-dst-display-name - {email_address.display_name}'
+            )
+        else:
+            email_address = observed_data.objects[identifier]
+            self._check_misp_object_fields(
+                address, observed_data,
+                f'{identifier} - email-dst - {email_address.value}'
+            )
+            self._check_misp_object_fields(
+                display_name, observed_data,
+                f'{identifier} - email-dst-display-name - {email_address.display_name}'
+            )
+        self.assertEqual(address.type, 'email-dst')
+        self.assertEqual(address.value, email_address.value)
+        self.assertEqual(display_name.type, 'email-dst-display-name')
+        self.assertEqual(display_name.value, email_address.display_name)
+
 
     def _check_misp_object_fields(self, misp_object, observed_data, identifier):
         if identifier is None:
@@ -264,3 +297,21 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             uuid5(self._UUIDv4, f'{observed_data2.id} - 1')
         )
         self.assertEqual(reference.relationship_type, 'contains')
+
+    def test_stix20_bundle_with_email_address_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_email_address_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data1, observed_data2, observed_data3 = bundle.objects
+        attributes = self._check_misp_event_features(event, report)
+        self.assertEqual(len(attributes), 6)
+        mm_address, mm_display_name, ms_address, sm_address, sm_display_name, ss_address = attributes
+        self._check_email_address_attribute_with_display_name(
+            observed_data1, mm_address, mm_display_name, '0'
+        )
+        self._check_email_address_attribute(observed_data1, ms_address, '1')
+        self._check_email_address_attribute_with_display_name(
+            observed_data2, sm_address, sm_display_name
+        )
+        self._check_email_address_attribute(observed_data3, ss_address)

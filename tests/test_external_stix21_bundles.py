@@ -252,6 +252,77 @@ _DIRECTORY_OBJECTS = [
         "atime": "2023-12-12T11:24:30Z"
     }
 ]
+_EMAIL_ADDRESS_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "email-addr--46f7e73f-36e5-40dd-9b27-735a0a6b44c2",
+            "email-addr--49713b77-b6ee-4069-a1b4-2a8ad49adf62",
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "email-addr--81294150-8f7a-453d-a1d8-96c2cfe04efa"
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--1bf81a4f-0e70-4a34-944b-7e46f67ff7a7",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "email-addr--cd890f31-5825-4fea-85ca-0b3ab3872926"
+        ]
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--46f7e73f-36e5-40dd-9b27-735a0a6b44c2",
+        "value": "john.doe@gmail.com",
+        "display_name": "John Doe"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--49713b77-b6ee-4069-a1b4-2a8ad49adf62",
+        "value": "john@doe.org"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--81294150-8f7a-453d-a1d8-96c2cfe04efa",
+        "value": "donald.duck@disney.com",
+        "display_name": "Donald Duck"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--cd890f31-5825-4fea-85ca-0b3ab3872926",
+        "value": "donald.duck@gmail.com"
+    }
+]
 _INTRUSION_SET_OBJECTS = [
     {
         "type": "intrusion-set",
@@ -614,3 +685,7 @@ class TestExternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_directory_objects(cls):
         return cls.__assemble_bundle(*_DIRECTORY_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_email_address_attributes(cls):
+        return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES)
