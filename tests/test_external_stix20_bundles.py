@@ -18,13 +18,11 @@ _AS_OBJECTS = [
         "objects": {
             "0": {
                 "type": "autonomous-system",
-                "spec_version": "2.1",
                 "number": 666,
                 "name": "Satan autonomous system"
             },
             "1": {
                 "type": "autonomous-system",
-                "spec_version": "2.1",
                 "number": 1234
             }
         }
@@ -41,7 +39,6 @@ _AS_OBJECTS = [
         "objects": {
             "0": {
                 "type": "autonomous-system",
-                "spec_version": "2.1",
                 "number": 197869,
                 "name": "CIRCL"
             }
@@ -59,7 +56,6 @@ _AS_OBJECTS = [
         "objects": {
             "0": {
                 "type": "autonomous-system",
-                "spec_version": "2.1",
                 "number": 50588
             }
         }
