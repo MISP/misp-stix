@@ -8,7 +8,8 @@ from .stix2_observable_converter import (
     ExternalSTIX2ObservableConverter, ExternalSTIX2ObservableMapping,
     InternalSTIX2ObservableConverter, InternalSTIX2ObservableMapping,
     STIX2ObservableConverter, _AUTONOMOUS_SYSTEM_TYPING, _DIRECTORY_TYPING,
-    _EXTENSION_TYPING, _NETWORK_TRAFFIC_TYPING, _PROCESS_TYPING)
+    _EMAIL_ADDRESS_TYPING, _EXTENSION_TYPING, _NETWORK_TRAFFIC_TYPING,
+    _PROCESS_TYPING)
 from .stix2converter import _MAIN_PARSER_TYPING
 from abc import ABCMeta
 from collections import defaultdict
@@ -371,6 +372,145 @@ class ExternalSTIX2ObservedDataConverter(
                     misp_object.add_reference(
                         contained_object.uuid, 'contains'
                     )
+
+    def _parse_email_address_observable_object(
+            self, observed_data: _OBSERVED_DATA_TYPING, identifier: str):
+        attribute = {
+            'comment': f'Observed Data ID: {observed_data.id}',
+            **self._parse_timeline(observed_data)
+        }
+        email_address = observed_data.objects[identifier]
+        object_id = f'{observed_data.id} - {identifier}'
+        if hasattr(email_address, 'display_name'):
+            self.main_parser._add_misp_attribute(
+                {
+                    'type': 'email-dst', 'value': email_address.value,
+                    'uuid': self.main_parser._create_v5_uuid(
+                        f'{object_id} - email-dst - {email_address.value}'
+                    ),
+                    **attribute
+                },
+                observed_data
+            )
+            attr_type = 'email-dst-display-name'
+            display_name = email_address.display_name
+            self.main_parser._add_misp_attribute(
+                {
+                    'type': attr_type, 'value': display_name, **attribute,
+                    'uuid': self.main_parser._create_v5_uuid(
+                        f'{object_id} - {attr_type} - {display_name}'
+                    )
+                },
+                observed_data
+            )
+        else:
+            self.main_parser._add_misp_attribute(
+                {
+                    'type': 'email-dst', 'value': email_address.value,
+                    'uuid': self.main_parser._create_v5_uuid(object_id),
+                    **attribute
+                },
+                observed_data
+            )
+
+    def _parse_email_address_observable_object_ref(
+            self, observed_data: _OBSERVED_DATA_TYPING,
+            email_address: _EMAIL_ADDRESS_TYPING):
+        attribute = {
+            'comment': f'Observed Data ID: {observed_data.id}',
+            **self._parse_timeline(observed_data)
+        }
+        if hasattr(email_address, 'display_name'):
+            address = email_address.value
+            self.main_parser._add_misp_attribute(
+                {
+                    'type': 'email-dst', 'value': address, **attribute,
+                    'uuid': self.main_parser._create_v5_uuid(
+                        f'{email_address.id} - email-dst - {address}'
+                    )
+                },
+                observed_data
+            )
+            attr_type = 'email-dst-display-name'
+            display_name = email_address.display_name
+            self.main_parser._add_misp_attribute(
+                {
+                    'type': attr_type, 'value': display_name, **attribute,
+                    'uuid': self.main_parser._create_v5_uuid(
+                        f'{email_address.id} - {attr_type} - {display_name}'
+                    )
+                },
+                observed_data
+            )
+        else:
+            self.main_parser._add_misp_attribute(
+                {
+                    'type': 'email-dst', 'value': email_address.value,
+                    'uuid': self.main_parser._sanitise_uuid(email_address.id),
+                    **attribute
+                },
+                observed_data
+            )
+
+    def _parse_email_address_observable_object_refs(
+            self, observed_data: ObservedData_v21):
+        for object_ref in observed_data.object_refs:
+            observable = self._fetch_observables(object_ref)
+            email_address = observable['observable']
+            self._parse_email_address_observable_object_ref(
+                observed_data, email_address
+            )
+            observable['used'][self.event_uuid] = True
+
+    def _parse_email_address_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        if len(observed_data.objects) == 1:
+            email_address = next(iter(observed_data.objects.values()))
+            if email_address.get('id') is not None:
+                return self._parse_email_address_observable_object_ref(
+                    observed_data, email_address
+                )
+            attribute = {
+                'comment': f'Observed Data ID: {observed_data.id}',
+                **self._parse_timeline(observed_data)
+            }
+            address = email_address.value
+            if hasattr(email_address, 'display_name'):
+                self.main_parser._add_misp_attribute(
+                    {
+                        'type': 'email-dst', 'value': address, **attribute,
+                        'uuid': self.main_parser._create_v5_uuid(
+                            f'{observed_data.id} - email-dst - {address}'
+                        )
+                    },
+                    observed_data
+                )
+                attr_type = 'email-dst-display-name'
+                display_name = email_address.display_name
+                self.main_parser._add_misp_attribute(
+                    {
+                        'type': attr_type, 'value': display_name, **attribute,
+                        'uuid': self.main_parser._create_v5_uuid(
+                            f'{observed_data.id} - {attr_type} - {display_name}'
+                        )
+                    },
+                    observed_data
+                )
+            else:
+                self.main_parser._add_misp_attribute(
+                    {
+                        'type': 'email-dst', 'value': address, **attribute,
+                        'uuid': self.main_parser._sanitise_uuid(
+                            observed_data.id
+                        )
+                    },
+                    observed_data
+                )
+        else:
+            for identifier in observed_data.objects:
+                self._parse_email_address_observable_object(
+                    observed_data, identifier
+                )
 
     ############################################################################
     #                             UTILITY METHODS.                             #
