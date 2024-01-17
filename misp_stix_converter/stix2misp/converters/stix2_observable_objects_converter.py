@@ -41,11 +41,13 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
 
     def _create_misp_attribute(
             self, attribute_type: str, observable: DomainName,
-            feature: Optional[str] = 'value',
+            feature: Optional[str] = 'value', comment: Optional[str] = None,
             **kwargs: Dict[str, str]) -> MISPAttribute:
         return {
             'value': getattr(observable, feature), 'type': attribute_type,
-            **kwargs, **self.main_parser._sanitise_attribute_uuid(observable.id)
+            **kwargs, **self.main_parser._sanitise_attribute_uuid(
+                observable.id, comment=comment
+            )
         }
 
     def _create_misp_object_from_observable_object(

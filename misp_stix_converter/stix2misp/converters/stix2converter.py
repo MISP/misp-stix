@@ -50,11 +50,9 @@ class STIX2Converter(metaclass=ABCMeta):
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = self._parse_timeline(stix_object)
-        if hasattr(stix_object, 'description') and stix_object.description:
-            attribute['comment'] = stix_object.description
         attribute.update(
             self.main_parser._sanitise_attribute_uuid(
-                stix_object.id, comment=attribute.get('comment')
+                stix_object.id, comment=stix_object.get('description')
             )
         )
         return attribute

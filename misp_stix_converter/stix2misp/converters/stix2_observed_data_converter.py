@@ -174,11 +174,11 @@ class ExternalSTIX2ObservedDataConverter(
                 {
                     'type': 'AS',
                     'value': self._parse_AS_value(autonomous_system.number),
-                    'comment': f'Observed Data ID: {observed_data.id}',
-                    'uuid': self.main_parser._sanitise_uuid(
-                        autonomous_system.id
-                    ),
-                    **self._parse_timeline(observed_data)
+                    **self._parse_timeline(observed_data),
+                    **self.main_parser._sanitise_attribute_uuid(
+                        autonomous_system.id,
+                        comment=f'Observed Data ID: {observed_data.id}'
+                    )
                 },
                 observed_data
             )
@@ -416,11 +416,11 @@ class ExternalSTIX2ObservedDataConverter(
     def _parse_email_address_observable_object_ref(
             self, observed_data: _OBSERVED_DATA_TYPING,
             email_address: _EMAIL_ADDRESS_TYPING):
-        attribute = {
-            'comment': f'Observed Data ID: {observed_data.id}',
-            **self._parse_timeline(observed_data)
-        }
         if hasattr(email_address, 'display_name'):
+            attribute = {
+                'comment': f'Observed Data ID: {observed_data.id}',
+                **self._parse_timeline(observed_data)
+            }
             address = email_address.value
             self.main_parser._add_misp_attribute(
                 {
@@ -446,8 +446,11 @@ class ExternalSTIX2ObservedDataConverter(
             self.main_parser._add_misp_attribute(
                 {
                     'type': 'email-dst', 'value': email_address.value,
-                    'uuid': self.main_parser._sanitise_uuid(email_address.id),
-                    **attribute
+                    **self._parse_timeline(observed_data),
+                    **self.main_parser._sanitise_attribute_uuid(
+                        email_address.id,
+                        comment=f'Observed Data ID: {observed_data.id}'
+                    )
                 },
                 observed_data
             )
@@ -470,12 +473,12 @@ class ExternalSTIX2ObservedDataConverter(
                 return self._parse_email_address_observable_object_ref(
                     observed_data, email_address
                 )
-            attribute = {
-                'comment': f'Observed Data ID: {observed_data.id}',
-                **self._parse_timeline(observed_data)
-            }
             address = email_address.value
             if hasattr(email_address, 'display_name'):
+                attribute = {
+                    'comment': f'Observed Data ID: {observed_data.id}',
+                    **self._parse_timeline(observed_data)
+                }
                 self.main_parser._add_misp_attribute(
                     {
                         'type': 'email-dst', 'value': address, **attribute,
@@ -499,8 +502,9 @@ class ExternalSTIX2ObservedDataConverter(
             else:
                 self.main_parser._add_misp_attribute(
                     {
-                        'type': 'email-dst', 'value': address, **attribute,
-                        'uuid': self.main_parser._sanitise_uuid(
+                        'type': 'email-dst', 'value': address,
+                        **self._parse_timeline(observed_data),
+                        **self.main_parser._sanitise_attribute_uuid(
                             observed_data.id
                         )
                     },
