@@ -465,6 +465,7 @@ class ExternalSTIX2ObservableMapping(
             **dict.fromkeys(
                 (
                     'ipv4-addr',
+                    'ipv4-addr_ipv6-addr',
                     'ipv6-addr'
                 ),
                 'ip_address'
