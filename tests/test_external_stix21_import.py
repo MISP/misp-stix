@@ -265,6 +265,13 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(display_name.type, 'email-dst-display-name')
         self.assertEqual(display_name.value, email_address.display_name)
 
+    def _check_generic_attribute(
+            self, observed_data, observable_object, attribute,
+            attribute_type, feature='value'):
+        self._check_misp_object_fields(attribute, observed_data, observable_object)
+        self.assertEqual(attribute.type, attribute_type)
+        self.assertEqual(attribute.value, getattr(observable_object, feature))
+
     def _check_misp_object_fields(
             self, misp_object, observed_data, observable_object, identifier=None):
         if identifier is None:
@@ -318,6 +325,19 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(reference2.relationship_type, 'contains')
 
+    def test_stix21_bundle_with_domain_attributes(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, od2, domain_1, domain_2, domain_3 = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 3)
+        m_domain1, m_domain2, s_domain = attributes
+        self._check_generic_attribute(od1, domain_1, m_domain1, 'domain')
+        self._check_generic_attribute(od1, domain_2, m_domain2, 'domain')
+        self._check_generic_attribute(od2, domain_3, s_domain, 'domain')
+
     def test_stix21_bundle_with_email_address_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_address_attributes()
         self.parser.load_stix_bundle(bundle)
@@ -335,3 +355,55 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             od2, sm_address, sm_display_name, ea3
         )
         self._check_email_address_attribute(od3, ss_address, ea4)
+
+    def test_stix21_bundle_with_ip_address_attributes(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_ip_address_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, od2, address_1, address_2, address_3 = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 3)
+        m_ip1, m_ip2, s_ip = attributes
+        self._check_generic_attribute(od1, address_1, m_ip1, 'ip-dst')
+        self._check_generic_attribute(od1, address_2, m_ip2, 'ip-dst')
+        self._check_generic_attribute(od2, address_3, s_ip, 'ip-dst')
+
+    def test_stix21_bundle_with_mac_address_attributes(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_mac_address_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, od2, address_1, address_2, address_3 = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 3)
+        m_mac1, m_mac2, s_mac = attributes
+        self._check_generic_attribute(od1, address_1, m_mac1, 'mac-address')
+        self._check_generic_attribute(od1, address_2, m_mac2, 'mac-address')
+        self._check_generic_attribute(od2, address_3, s_mac, 'mac-address')
+
+    def test_stix21_bundle_with_mutex_attributes(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_mutex_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, od2, mutex_1, mutex_2, mutex_3 = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 3)
+        m_mutex1, m_mutex2, s_mutex = attributes
+        self._check_generic_attribute(od1, mutex_1, m_mutex1, 'mutex', 'name')
+        self._check_generic_attribute(od1, mutex_2, m_mutex2, 'mutex', 'name')
+        self._check_generic_attribute(od2, mutex_3, s_mutex, 'mutex', 'name')
+
+    def test_stix21_bundle_with_url_attributes(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_url_attributes()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, od2, url_1, url_2, url_3 = bundle.objects
+        attributes = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(attributes), 3)
+        m_url1, m_url2, s_url = attributes
+        self._check_generic_attribute(od1, url_1, m_url1, 'url')
+        self._check_generic_attribute(od1, url_2, m_url2, 'url')
+        self._check_generic_attribute(od2, url_3, s_url, 'url')

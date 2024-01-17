@@ -217,6 +217,44 @@ _DIRECTORY_OBJECTS = [
         }
     }
 ]
+_DOMAIN_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "domain-name",
+                "value": "circl.lu"
+            },
+            "1": {
+                "type": "domain-name",
+                "value": "lhc.lu"
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "domain-name",
+                "value": "misp-project.org"
+            }
+        }
+    }
+]
 _EMAIL_ADDRESS_ATTRIBUTES = [
     {
         "type": "observed-data",
@@ -310,6 +348,82 @@ _INTRUSION_SET_OBJECTS = [
         ]
     }
 ]
+_IP_ADDRESS_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "ipv4-addr",
+                "value": "8.8.8.8"
+            },
+            "1": {
+                "type": "ipv6-addr",
+                "value": "2001:4860:4860::8888"
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "ipv4-addr",
+                "value": "185.194.93.14"
+            }
+        }
+    }
+]
+_MAC_ADDRESS_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "mac-addr",
+                "value": "d2:fb:49:24:37:18"
+            },
+            "1": {
+                "type": "mac-addr",
+                "value": "62:3e:5f:53:ac:68"
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "mac-addr",
+                "value": "ae:49:db:d4:d9:cf"
+            }
+        }
+    }
+]
 _MALWARE_OBJECTS = [
     {
         "type": "malware",
@@ -337,6 +451,44 @@ _MALWARE_OBJECTS = [
             "remote-access-trojan"
         ],
         "description": "A WEBC2 backdoor is designed to retrieve a Web page from a C2 server. It expects the page to contain special HTML tags; the backdoor will attempt to interpret the data between the tags as commands."
+    }
+]
+_MUTEX_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "mutex",
+                "name": "shared_resource_lock"
+            },
+            "1": {
+                "type": "mutex",
+                "name": "thread_synchronization_lock"
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "mutex",
+                "name": "sensitive_resource_lock"
+            }
+        }
     }
 ]
 _THREAT_ACTOR_OBJECTS = [
@@ -430,6 +582,44 @@ _TOOL_OBJECTS = [
                 "url": "http://www.foofus.net/fizzgig/fgdump/"
             }
         ]
+    }
+]
+_URL_ATTRIBUTES = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "url",
+                "value": "https://circl.lu/team/"
+            },
+            "1": {
+                "type": "url",
+                "value": "https://cybersecurity.lu/entity/324"
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "url",
+                "value": "https://misp-project.org/blog/"
+            }
+        }
     }
 ]
 _VULNERABILITY_OBJECTS = [
@@ -595,5 +785,25 @@ class TestExternalSTIX20Bundles:
         return cls.__assemble_bundle(*_DIRECTORY_OBJECTS)
 
     @classmethod
+    def get_bundle_with_domain_attributes(cls):
+        return cls.__assemble_bundle(*_DOMAIN_ATTRIBUTES)
+
+    @classmethod
     def get_bundle_with_email_address_attributes(cls):
         return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_ip_address_attributes(cls):
+        return cls.__assemble_bundle(*_IP_ADDRESS_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_mac_address_attributes(cls):
+        return cls.__assemble_bundle(*_MAC_ADDRESS_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_mutex_attributes(cls):
+        return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_url_attributes(cls):
+        return cls.__assemble_bundle(*_URL_ATTRIBUTES)
