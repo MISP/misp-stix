@@ -554,6 +554,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             raise ObjectRefLoadingError(object_ref)
 
     def _handle_unparsed_content(self):
+        if hasattr(self, '_observed_data_parser'):
+            if hasattr(self.observed_data_parser, '_observable_relationships'):
+                self.observed_data_parser.parse_relationships()
         if hasattr(self, '_relationship'):
             if hasattr(self, '_sighting'):
                 self._parse_relationships_and_sightings()
