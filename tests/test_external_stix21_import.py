@@ -225,6 +225,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     #                    OBSERVED DATA OBJECTS IMPORT TESTS                    #
     ############################################################################
 
+    def _check_artifact_object(self, misp_object, observed_data, artifact):
+        self.assertEqual(misp_object.name, 'artifact')
+        self._check_misp_object_fields(misp_object, observed_data, artifact)
+        self._check_artifact_fields(misp_object, artifact, artifact.id)
+
     def _check_as_attribute(self, attribute, observed_data, autonomous_system):
         self._check_misp_object_fields(attribute, observed_data, autonomous_system)
         self.assertEqual(attribute.type, 'AS')
@@ -283,6 +288,20 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.assertEqual(misp_object.first_seen, observed_data.first_observed)
             self.assertEqual(misp_object.last_seen, observed_data.last_observed)
         self.assertEqual(misp_object.timestamp, observed_data.modified)
+
+    def test_stix21_bundle_with_artifact_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_artifact_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, od2, artifact1, artifact2, artifact3 = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 3)
+        multiple1, multiple2, single = misp_objects
+        self._check_artifact_object(multiple1, od1, artifact1)
+        self._check_misp_object_fields(multiple2, od1, artifact2)
+        self._check_artifact_with_url_fields(multiple2, artifact2, artifact2.id)
+        self._check_artifact_object(single, od2, artifact3)
 
     def test_stix21_bundle_with_as_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_as_objects()

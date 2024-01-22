@@ -358,6 +358,89 @@ class TestExternalSTIX2Import(TestSTIX2Import):
     #                  OBSERVED DATA OBJECTS CHECKING METHODS                  #
     ############################################################################
 
+    def _check_artifact_fields(self, misp_object, artifact, object_id):
+        self.assertEqual(len(misp_object.attributes), 6)
+        payload_bin, md5, sha1, sha256, decryption, mime_type = misp_object.attributes
+        self.assertEqual(payload_bin.type, 'attachment')
+        self.assertEqual(payload_bin.object_relation, 'payload_bin')
+        self.assertEqual(
+            payload_bin.value,
+            getattr(artifact, 'id', object_id.split(' - ')[0]).split('--')[1]
+        )
+        self.assertEqual(self._get_data_value(payload_bin.data), artifact.payload_bin)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - payload_bin - {payload_bin.value}'
+            )
+        )
+        hashes = artifact.hashes
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, hashes['MD5'])
+        self.assertEqual(
+            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+        )
+        self.assertEqual(sha1.type, 'sha1')
+        self.assertEqual(sha1.object_relation, 'sha1')
+        self.assertEqual(sha1.value, hashes['SHA-1'])
+        self.assertEqual(
+            sha1.uuid, uuid5(self._UUIDv4, f'{object_id} - sha1 - {sha1.value}')
+        )
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, hashes['SHA-256'])
+        self.assertEqual(
+            sha256.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - sha256 - {sha256.value}'
+            )
+        )
+        self.assertEqual(decryption.type, 'text')
+        self.assertEqual(decryption.object_relation, 'decryption_key')
+        self.assertEqual(decryption.value, artifact.decryption_key)
+        self.assertEqual(
+            decryption.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - decryption_key - {decryption.value}'
+            )
+        )
+        self.assertEqual(mime_type.type, 'mime-type')
+        self.assertEqual(mime_type.object_relation, 'mime_type')
+        self.assertEqual(mime_type.value, artifact.mime_type)
+        self.assertEqual(
+            mime_type.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - mime_type - {mime_type.value}'
+            )
+        )
+
+    def _check_artifact_with_url_fields(self, misp_object, artifact, object_id):
+        self.assertEqual(misp_object.name, 'artifact')
+        self.assertEqual(len(misp_object.attributes), 3)
+        hashes = artifact.hashes
+        md5, sha256, url = misp_object.attributes
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, hashes['MD5'])
+        self.assertEqual(
+            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+        )
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, hashes['SHA-256'])
+        self.assertEqual(
+            sha256.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - sha256 - {sha256.value}')
+        )
+        self.assertEqual(url.type, 'url')
+        self.assertEqual(url.object_relation, 'url')
+        self.assertEqual(url.value, artifact.url)
+        self.assertEqual(
+            url.uuid, uuid5(self._UUIDv4, f'{object_id} - url - {url.value}')
+        )
+
     def _check_as_fields(self, misp_object, autonomous_system, object_id):
         self.assertEqual(len(misp_object.attributes), 2)
         asn, name = misp_object.attributes

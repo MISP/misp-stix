@@ -5,6 +5,62 @@ from copy import deepcopy
 from stix2.parsing import dict_to_stix2
 
 
+_ARTIFACT_OBJECTS = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "artifact",
+                "mime_type": "application/zip",
+                "payload_bin": "UEsDBAoACQAAAKBINlgCq9FEEAAAAAQAAAADABwAb3VpVVQJAAOrIa5lrSGuZXV4CwABBPUBAAAEFAAAAOLQGBmrTcdmURq/qqA1qFFQSwcIAqvRRBAAAAAEAAAAUEsBAh4DCgAJAAAAoEg2WAKr0UQQAAAABAAAAAMAGAAAAAAAAQAAAKSBAAAAAG91aVVUBQADqyGuZXV4CwABBPUBAAAEFAAAAFBLBQYAAAAAAQABAEkAAABdAAAAAAA=",
+                "hashes": {
+                    "MD5": "bc590af5f7b16b890860248dc0d4c68f",
+                    "SHA-1": "003d59659a3e28781aaf03da1ac1cb0e326ed65e",
+                    "SHA-256": "2dd39c08867f34010fd9ea1833aa549a02da16950dda4a8ef922113a9eccd963"
+                },
+                "decryption_key": "infected",
+            },
+            "1": {
+                "type": "artifact",
+                "url": "https://files.pythonhosted.org/packages/1a/62/29f55ef42483c30281fab9d3282ac467f215501826f3251678d8ec2da2e1/misp_stix-2.4.183.tar.gz",
+                "hashes": {
+                    "MD5": "b3982699c1b9a25346cc8498f483b150",
+                    "SHA-256": "836f395a4f86e9d1b2f528756c248e76665c02c5d0fc89f9b26136db5ac7f7ae"
+                }
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "artifact",
+                "mime_type": "application/zip",
+                "payload_bin": "UEsDBAoACQAAANVUNlgGfJ2iEAAAAAQAAAADABwAbm9uVVQJAAOhN65lozeuZXV4CwABBPUBAAAEFAAAAE7nhRTz5ElBwvqrXUHYVMlQSwcIBnydohAAAAAEAAAAUEsBAh4DCgAJAAAA1VQ2WAZ8naIQAAAABAAAAAMAGAAAAAAAAQAAAKSBAAAAAG5vblVUBQADoTeuZXV4CwABBPUBAAAEFAAAAFBLBQYAAAAAAQABAEkAAABdAAAAAAA=",
+                "hashes": {
+                    "MD5": "5bfd0814254d0ff993a83560cb740042",
+                    "SHA-1": "5ec1405887e5a74bf2cb97a8d64481194dc13fdc",
+                    "SHA-256": "367e474683cb1f61aae1f963aa9a17446afb5f71a8a03dae7203ac84765a5efa"
+                },
+                "decryption_key": "clear",
+            }
+        }
+    }
+]
 _AS_OBJECTS = [
     {
         "type": "observed-data",
@@ -775,6 +831,10 @@ class TestExternalSTIX20Bundles:
     ############################################################################
     #                          OBSERVED DATA SAMPLES.                          #
     ############################################################################
+
+    @classmethod
+    def get_bundle_with_artifact_objects(cls):
+        return cls.__assemble_bundle(*_ARTIFACT_OBJECTS)
 
     @classmethod
     def get_bundle_with_as_objects(cls):

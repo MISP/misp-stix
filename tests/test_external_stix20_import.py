@@ -184,6 +184,18 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
     #                    OBSERVED DATA OBJECTS IMPORT TESTS                    #
     ############################################################################
 
+    def _check_artifact_object(self, misp_object, observed_data, identifier=None):
+        self.assertEqual(misp_object.name, 'artifact')
+        self._check_misp_object_fields(misp_object, observed_data, identifier)
+        object_id = observed_data.id
+        if identifier is None:
+            identifier = '0'
+        else:
+            object_id = f'{object_id} - {identifier}'
+        self._check_artifact_fields(
+            misp_object, observed_data.objects[identifier], object_id
+        )
+
     def _check_as_attribute(self, attribute, observed_data, identifier=None):
         self._check_misp_object_fields(attribute, observed_data, identifier)
         autonomous_system = observed_data.objects[identifier or '0']
@@ -258,7 +270,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.type, attribute_type)
         self.assertEqual(attribute.value, getattr(observable_object, feature))
 
-    def _check_misp_object_fields(self, misp_object, observed_data, identifier):
+    def _check_misp_object_fields(self, misp_object, observed_data, identifier=None):
         if identifier is None:
             self.assertEqual(misp_object.uuid, observed_data.id.split('--')[1])
         else:
@@ -270,6 +282,22 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.assertEqual(misp_object.first_seen, observed_data.first_observed)
             self.assertEqual(misp_object.last_seen, observed_data.last_observed)
         self.assertEqual(misp_object.timestamp, observed_data.modified)
+
+    def test_stix20_bundle_with_artifact_object(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_artifact_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data1, observed_data2 = bundle.objects
+        misp_objects = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_objects), 3)
+        multiple1, multiple2, single = misp_objects
+        self._check_artifact_object(multiple1, observed_data1, '0')
+        self._check_misp_object_fields(multiple2, observed_data1, '1')
+        self._check_artifact_with_url_fields(
+            multiple2, observed_data1.objects['1'], f'{observed_data1.id} - 1'
+        )
+        self._check_artifact_object(single, observed_data2)
 
     def test_stix20_bundle_with_as_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_as_objects()
