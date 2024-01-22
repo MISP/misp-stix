@@ -139,7 +139,7 @@ class ExternalSTIX2ObservedDataConverter(
     ############################################################################
 
     def _parse_as_observable_object(
-            self, observed_data: _OBSERVED_DATA_TYPING, object_id: str):
+            self, observed_data: ObservedData_v20, object_id: str):
         autonomous_system = observed_data.objects[object_id]
         if autonomous_system.get('id') is not None:
             return self._parse_autonomous_system_observable_object_ref(
@@ -264,7 +264,7 @@ class ExternalSTIX2ObservedDataConverter(
         return self.main_parser._add_misp_object(misp_object, observed_data)
 
     def _parse_directory_observable_object(
-            self, observed_data: _OBSERVED_DATA_TYPING,
+            self, observed_data: ObservedData_v20,
             object_id: str) -> MISPObject:
         directory = observed_data.objects[object_id]
         if directory.get('id') is not None:
@@ -275,8 +275,7 @@ class ExternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object_from_observable_object(
             'directory', observed_data, object_id
         )
-        attributes = self._parse_directory_observable(directory, object_id)
-        for attribute in attributes:
+        for attribute in self._parse_directory_observable(directory, object_id):
             misp_object.add_attribute(**attribute)
         return self.main_parser._add_misp_object(misp_object, observed_data)
 
@@ -422,7 +421,7 @@ class ExternalSTIX2ObservedDataConverter(
             )
 
     def _parse_email_address_observable_object(
-            self, observed_data: _OBSERVED_DATA_TYPING, identifier: str):
+            self, observed_data: ObservedData_v20, identifier: str):
         attribute = {
             'comment': f'Observed Data ID: {observed_data.id}',
             **self._parse_timeline(observed_data)
@@ -565,7 +564,7 @@ class ExternalSTIX2ObservedDataConverter(
                 )
 
     def _parse_generic_observable_object(
-            self, observed_data: _OBSERVED_DATA_TYPING, identifier: str,
+            self, observed_data: ObservedData_v20, identifier: str,
             attribute_type: str, feature: Optional[str] = 'value'):
         observable_object = observed_data.objects[identifier]
         if hasattr(observable_object, 'id'):
