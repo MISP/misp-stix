@@ -161,6 +161,9 @@ class STIX2Mapping:
     __path_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'path'}
     )
+    __payload_bin_attribute = Mapping(
+        **{'type': 'attachment', 'object_relation': 'payload_bin'}
+    )
     __pid_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'pid'}
     )
@@ -604,6 +607,10 @@ class STIX2Mapping:
     @classmethod
     def path_attribute(cls) -> dict:
         return cls.__path_attribute
+
+    @staticmethod
+    def payload_bin_attribute(cls) -> dict:
+        return cls.__payload_bin_attribute
 
     @classmethod
     def pe_object_mapping(cls) -> dict:

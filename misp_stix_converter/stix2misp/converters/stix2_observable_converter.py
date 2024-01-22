@@ -114,7 +114,6 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'type': 'text', 'object_relation': 'encryption_algorithm'
         },
         mime_type={'type': 'mime-type', 'object_relation': 'mime_type'},
-        payload_bin={'type': 'text', 'object_relation': 'payload_bin'},
         url=STIX2Mapping.url_attribute()
     )
     __email_additional_header_fields_mapping = Mapping(
@@ -415,6 +414,7 @@ class ExternalSTIX2ObservableMapping(
         STIX2ObservableMapping, ExternalSTIX2Mapping):
     __observable_mapping = Mapping(
         **{
+            'artifact': 'artifact',
             'autonomous-system': 'as',
             'directory': 'directory',
             'domain-name': 'domain',
@@ -510,10 +510,17 @@ class ExternalSTIX2ObservableMapping(
 class ExternalSTIX2ObservableConverter(
         STIX2ObservableConverter, ExternalSTIX2Converter):
     def _parse_artifact_observable(
-            self, observable: Artifact_v21,
+            self, observable: _ARTIFACT_TYPING,
             object_id: Optional[str] = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
+        if hasattr(observable, 'payload_bin'):
+            value = getattr(observable, 'id', object_id.split(' - ')[0])
+            yield from self._populate_object_attributes_with_data(
+                {'type': 'attachment', 'object_relation': 'payload_bin'},
+                {'data': observable.payload_bin, 'value': value.split('--')[1]},
+                object_id
+            )
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
                 attribute = self._mapping.file_hashes_mapping(hash_type)
@@ -808,17 +815,17 @@ class InternalSTIX2ObservableConverter(
                 'value': value.split('=').strip("'"),
                 'data': observable.payload_bin
             }
-            mapping = getattr(self._mapping, f'{feature}_attribute')
+            mapping = f'{feature}_attribute'
             if hasattr(observable, 'id'):
                 yield {
-                    **content, **mapping(),
+                    **content, **getattr(self._mapping, mapping)(),
                     'uuid': self.main_parser._sanitise_attribute_uuid(
                         observable.id
                     )
                 }
             else:
-                yield from self._populate_object_attribute_with_data(
-                    mapping(), content, object_id
+                yield from self._populate_object_attributes_with_data(
+                    getattr(self._mapping, mapping)(), content, object_id
                 )
 
     def _parse_file_parent_observable(self, observable: _DIRECTORY_TYPING,

@@ -7,24 +7,24 @@ from ..exceptions import (
 from .stix2_observable_converter import (
     ExternalSTIX2ObservableConverter, ExternalSTIX2ObservableMapping,
     InternalSTIX2ObservableConverter, InternalSTIX2ObservableMapping,
-    STIX2ObservableConverter, _AUTONOMOUS_SYSTEM_TYPING, _DIRECTORY_TYPING,
-    _EMAIL_ADDRESS_TYPING, _EXTENSION_TYPING, _NETWORK_TRAFFIC_TYPING,
-    _PROCESS_TYPING)
+    STIX2ObservableConverter, _ARTIFACT_TYPING, _AUTONOMOUS_SYSTEM_TYPING,
+    _DIRECTORY_TYPING, _EMAIL_ADDRESS_TYPING, _EXTENSION_TYPING,
+    _NETWORK_TRAFFIC_TYPING, _PROCESS_TYPING)
 from .stix2converter import _MAIN_PARSER_TYPING
 from abc import ABCMeta
 from collections import defaultdict
 from pymisp import MISPObject
 from stix2.v20.observables import (
-    AutonomousSystem as AutonomousSystem_v20, Directory as Directory_v20,
-    DomainName as DomainName_v20, IPv4Address as IPv4Address_v20,
-    IPv6Address as IPv6Address_v20, MACAddress as MACAddress_v20,
-    Mutex as Mutex_v20, URL as URL_v20)
+    Artifact as Artifact_v20, AutonomousSystem as AutonomousSystem_v20,
+    Directory as Directory_v20, DomainName as DomainName_v20,
+    IPv4Address as IPv4Address_v20, IPv6Address as IPv6Address_v20,
+    MACAddress as MACAddress_v20, Mutex as Mutex_v20, URL as URL_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
 from stix2.v21.observables import (
-    AutonomousSystem as AutonomousSystem_v21, Directory as Directory_v21,
-    DomainName as DomainName_v21, IPv4Address as IPv4Address_v21,
-    IPv6Address as IPv6Address_v21, MACAddress as MACAddress_v21,
-    Mutex as Mutex_v21, URL as URL_v21)
+    Artifact as Artifact_v21, AutonomousSystem as AutonomousSystem_v21,
+    Directory as Directory_v21, DomainName as DomainName_v21,
+    IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
+    MACAddress as MACAddress_v21, Mutex as Mutex_v21, URL as URL_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
 from typing import Optional, TYPE_CHECKING, Union
 
@@ -41,6 +41,7 @@ _GENERIC_OBSERVABLE_OBJECTS_TYPING = Union[
     URL_v20, URL_v21
 ]
 _OBSERVABLE_OBJECTS_TYPING = Union[
+    Artifact_v20, Artifact_v21,
     AutonomousSystem_v20, AutonomousSystem_v21,
     Directory_v20, Directory_v21
 ]
@@ -137,6 +138,58 @@ class ExternalSTIX2ObservedDataConverter(
     ############################################################################
     #                    OBSERVABLE OBJECTS PARSING METHODS                    #
     ############################################################################
+
+    def _parse_artifact_observable_object(self, observed_data: ObservedData_v20,
+                                          identifier: str) -> MISPObject:
+        artifact = observed_data.objects[identifier]
+        if artifact.get('id') is not None:
+            return self._parse_artifact_observable_object_ref(
+                artifact, observed_data
+            )
+        object_id = f'{observed_data.id} - {identifier}'
+        misp_object = self._create_misp_object_from_observable_object(
+            'artifact', observed_data, object_id
+        )
+        for attribute in self._parse_artifact_observable(artifact, object_id):
+            misp_object.add_attribute(**attribute)
+        return self.main_parser._add_misp_object(misp_object, observed_data)
+
+    def _parse_artifact_observable_object_ref(
+            self, artifact: _ARTIFACT_TYPING,
+            observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
+        misp_object = self._create_misp_object_from_observable_object_ref(
+            'artifact', artifact, observed_data
+        )
+        for attribute in self._parse_artifact_observable(artifact):
+            misp_object.add_attribute(**attribute)
+        return self.main_parser._add_misp_object(misp_object, observed_data)
+
+    def _parse_artifact_observable_object_refs(
+            self, observed_data: ObservedData_v21):
+        for object_ref in observed_data.object_refs:
+            observable = self._fetch_observables(object_ref)
+            artifact = observable['observable']
+            self._parse_artifact_observable_object_ref(artifact, observed_data)
+            observable['used'][self.event_uuid] = True
+
+    def _parse_artifact_observable_objects(self, observed_data):
+        if len(observed_data.objects) == 1:
+            artifact = next(iter(observed_data.objects.values()))
+            if artifact.get('id') is not None:
+                return self._parse_artifact_observable_object_ref(
+                    artifact, observed_data
+                )
+            misp_object = self._create_misp_object_from_observable_object(
+                'artifact', observed_data
+            )
+            attributes = self._parse_artifact_observable(
+                artifact, observed_data.id
+            )
+            for attribute in attributes:
+                misp_object.add_attribute(**attribute)
+            return self.main_parser._add_misp_object(misp_object, observed_data)
+        for identifier in observed_data.objects:
+            self._parse_artifact_observable_object(observed_data, identifier)
 
     def _parse_as_observable_object(
             self, observed_data: ObservedData_v20, object_id: str):
