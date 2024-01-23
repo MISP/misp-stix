@@ -125,7 +125,9 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
         if observable['used'].get(self.event_uuid, False):
             return observable.get('misp_object', observable['misp_attribute'])
         directory = observable['observable']
-        attributes = tuple(self._parse_directory_observable(directory))
+        attributes = tuple(
+            self._parse_generic_observable(directory, 'directory')
+        )
         observable['used'][self.event_uuid] = True
         force_object = (
             len(attributes) > 1 or any(

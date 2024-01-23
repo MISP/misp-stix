@@ -26,7 +26,7 @@ from stix2.v21.observables import (
     IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
     MACAddress as MACAddress_v21, Mutex as Mutex_v21, URL as URL_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
-from typing import Optional, TYPE_CHECKING, Union
+from typing import Iterator, Optional, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
@@ -149,7 +149,7 @@ class ExternalSTIX2ObservedDataConverter(
             observable = self._fetch_observables(object_ref)
             artifact = observable['observable']
             self._parse_generic_observable_object_ref(
-                artifact, observed_data, 'artifact'
+                artifact, observed_data, 'artifact', False
             )
             observable['used'][self.event_uuid] = True
 
@@ -157,11 +157,11 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: _OBSERVED_DATA_TYPING):
         if len(observed_data.objects) == 1:
             return self._parse_generic_single_observable_object(
-                observed_data, 'artifact'
+                observed_data, 'artifact', False
             )
         for identifier in observed_data.objects:
             self._parse_generic_observable_object(
-                observed_data, identifier, 'artifact'
+                observed_data, identifier, 'artifact', False
             )
 
     def _parse_as_observable_object(
@@ -547,18 +547,23 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _parse_generic_observable_object(
             self, observed_data: _OBSERVED_DATA_TYPING, object_id: str,
-            name: str, feature: Optional[str] = None) -> MISPObject:
+            name: str, generic: Optional[bool] = True) -> MISPObject:
         observable_object = observed_data.objects[object_id]
         if observable_object.get('id') is not None:
             return self._parse_generic_observable_object_ref(
-                observable_object, observed_data, name, feature
+                observable_object, observed_data, name, generic
             )
         object_id = f'{observed_data.id} - {object_id}'
         misp_object = self._create_misp_object_from_observable_object(
             name, observed_data, object_id
         )
-        to_call = getattr(self, f'_parse_{feature or name}_observable')
-        for attribute in to_call(observable_object, object_id):
+        attributes = (
+            self._parse_generic_observable(observable_object, name, object_id)
+            if generic else getattr(self, f'_parse_{name}_observable')(
+                observable_object, object_id
+            )
+        )
+        for attribute in attributes:
             misp_object.add_attribute(**attribute)
         return self.main_parser._add_misp_object(misp_object, observed_data)
 
@@ -586,12 +591,17 @@ class ExternalSTIX2ObservedDataConverter(
     def _parse_generic_observable_object_ref(
             self, observable_object: _GENERIC_OBSERVABLE_OBJECT_TYPING,
             observed_data: ObservedData_v21, name: str,
-            feature: Optional[str] = None) -> MISPObject:
+            generic: Optional[bool] = True) -> MISPObject:
         misp_object = self._create_misp_object_from_observable_object_ref(
             name, observable_object, observed_data
         )
-        to_call = getattr(self, f'_parse_{feature or name}_observable')
-        for attribute in to_call(observable_object):
+        attributes = (
+            self._parse_generic_observable(observable_object, name)
+            if generic else getattr(self, f'_parse_{name}_observable')(
+                observable_object
+            )
+        )
+        for attribute in attributes:
             misp_object.add_attribute(**attribute)
         return self.main_parser._add_misp_object(misp_object, observed_data)
 
@@ -614,17 +624,23 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _parse_generic_single_observable_object(
             self, observed_data: _OBSERVED_DATA_TYPING, name: str,
-            feature: Optional[str] = None) -> MISPObject:
+            generic: Optional[bool] = True) -> MISPObject:
         observable_object = next(iter(observed_data.objects.values()))
         if observable_object.get('id') is not None:
             return self._parse_generic_observable_object_ref(
-                observable_object, observed_data, name, feature
+                observable_object, observed_data, name, generic
             )
         misp_object = self._create_misp_object_from_observable_object(
             name, observed_data
         )
-        to_call = getattr(self, f'_parse_{feature or name}_observable')
-        for attribute in to_call(observable_object, observed_data.id):
+        object_id = observed_data.id
+        attributes = (
+            self._parse_generic_observable(observable_object, name, object_id)
+            if generic else getattr(self, f'_parse_{name}_observable')(
+                observable_object, object_id
+            )
+        )
+        for attribute in attributes:
             misp_object.add_attribute(**attribute)
         return self.main_parser._add_misp_object(misp_object, observed_data)
 

@@ -550,17 +550,6 @@ class ExternalSTIX2ObservableConverter(
                 object_id
             )
 
-    def _parse_directory_observable(
-            self, observable: _DIRECTORY_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
-        if object_id is None:
-            object_id = observable.id
-        for field, mapping in self._mapping.directory_object_mapping().items():
-            if hasattr(observable, field):
-                yield from self._populate_object_attributes(
-                    mapping, getattr(observable, field), object_id
-                )
-
     def _parse_domain_observable(self, observable: _DOMAIN_TYPING,
                                  object_id: Optional[str] = None) -> dict:
         attribute = {
