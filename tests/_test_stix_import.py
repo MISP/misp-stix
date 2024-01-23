@@ -485,6 +485,97 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         )
         return accessed.value, created.value, modified.value
 
+    def _check_software_fields(self, misp_object, software, object_id):
+        self.assertEqual(len(misp_object.attributes), 4)
+        language, name, vendor, version = misp_object.attributes
+        self.assertEqual(language.type, 'text')
+        self.assertEqual(language.object_relation, 'language')
+        self.assertEqual(language.value, software.languages[0])
+        self.assertEqual(
+            language.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - language - {language.value}')
+        )
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, software.name)
+        self.assertEqual(
+            name.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        self.assertEqual(vendor.type, 'text')
+        self.assertEqual(vendor.object_relation, 'vendor')
+        self.assertEqual(vendor.value, software.vendor)
+        self.assertEqual(
+            vendor.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - vendor - {vendor.value}')
+        )
+        self.assertEqual(version.type, 'text')
+        self.assertEqual(version.object_relation, 'version')
+        self.assertEqual(version.value, software.version)
+        self.assertEqual(
+            version.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
+        )
+
+    def _check_software_with_swid_fields(self, misp_object, software, object_id):
+        self.assertEqual(misp_object.name, 'software')
+        self.assertEqual(len(misp_object.attributes), 8)
+        cpe, lang1, lang2, lang3, name, swid, vendor, version = misp_object.attributes
+        self._assert_multiple_equal(cpe.type, cpe.object_relation, 'cpe')
+        self.assertEqual(cpe.value, software.cpe)
+        self.assertEqual(
+            cpe.uuid, uuid5(self._UUIDv4, f'{object_id} - cpe - {cpe.value}')
+        )
+        language1, language2, language3 = software.languages
+        self._assert_multiple_equal(lang1.type, lang2.type, lang3.type, 'text')
+        self._assert_multiple_equal(
+            lang1.object_relation, lang2.object_relation,
+            lang3.object_relation, 'language'
+        )
+        self.assertEqual(lang1.value, language1)
+        self.assertEqual(
+            lang1.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - language - {lang1.value}')
+        )
+        self.assertEqual(lang2.value, language2)
+        self.assertEqual(
+            lang2.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - language - {lang2.value}')
+        )
+        self.assertEqual(lang3.value, language3)
+        self.assertEqual(
+            lang3.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - language - {lang3.value}')
+        )
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, software.name)
+        self.assertEqual(
+            name.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        self.assertEqual(swid.type, 'text')
+        self.assertEqual(swid.object_relation, 'swid')
+        self.assertEqual(swid.value, software.swid)
+        self.assertEqual(
+            swid.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - swid - {swid.value}')
+        )
+        self.assertEqual(vendor.type, 'text')
+        self.assertEqual(vendor.object_relation, 'vendor')
+        self.assertEqual(vendor.value, software.vendor)
+        self.assertEqual(
+            vendor.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - vendor - {vendor.value}')
+        )
+        self.assertEqual(version.type, 'text')
+        self.assertEqual(version.object_relation, 'version')
+        self.assertEqual(version.value, software.version)
+        self.assertEqual(
+            version.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
+        )
+
 
 class TestInternalSTIX2Import(TestSTIX2Import):
     def setUp(self):

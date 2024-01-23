@@ -547,6 +547,63 @@ _MUTEX_ATTRIBUTES = [
         }
     }
 ]
+_SOFTWARE_OBJECTS = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "software",
+                "name": "MISP",
+                "languages": [
+                    "PHP"
+                ],
+                "vendor": "MISP Project",
+                "version": "2.4.183"
+            },
+            "1": {
+                "type": "software",
+                "name": "misp-stix",
+                "languages": [
+                    "Python"
+                ],
+                "vendor": "CIRCL",
+                "version": "2.4.183"
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "software",
+                "name": "Acrobat X Pro",
+                "cpe": "cpe:2.3:a:adobe:acrobat:10.0:-:pro:*:*:*:*:*",
+                "swid": "<?xml version='1.0' encoding='utf-8'?><swid:software_identification_tag xsi:schemaLocation='https://standards.iso.org/iso/19770/-2/2008/schema.xsd software_identification_tag.xsd'xmlns:swid='https://standards.iso.org/iso/19770/-2/2008/schema.xsd' xmlns:xsi='https://www.w3.org/2001/XMLSchema-instance'><!--Mandatory Identity elements --><swid:entitlement_required_indicator>true</swid:entitlement_required_indicator><swid:product_title>Acrobat X Pro</swid:product_title><swid:product_version><swid:name>10.0</swid:name><swid:numeric><swid:major>10</swid:major><swid:minor>0</swid:minor><swid:build>0</swid:build><swid:review>0</swid:review></swid:numeric></swid:product_version><swid:software_creator><swid:name>Adobe Inc.</swid:name><swid:regid>regid.1986-12.com.adobe</swid:regid></swid:software_creator><swid:software_licensor><swid:name>Adobe Inc.</swid:name><swid:regid>regid.1986-12.com.adobe</swid:regid></swid:software_licensor><swid:software_id><swid:unique_id>AcrobatPro-AS1-Win-GM-MUL</swid:unique_id><swid:tag_creator_regid>regid.1986-12.com.adobe</swid:tag_creator_regid></swid:software_id><swid:tag_creator><swid:name>Adobe Inc.</swid:name><swid:regid>regid.1986-12.com.adobe</swid:regid></swid:tag_creator><!--Optional Identity elements --><swid:license_linkage><swid:activation_status>unlicensed</swid:activation_status><swid:channel_type>VOLUME</swid:channel_type><swid:customer_type>VOLUME</swid:customer_type></swid:license_linkage><swid:serial_number>970787034620329571838915</swid:serial_number></swid:software_identification_tag>",
+                "languages": [
+                    "C#",
+                    "Javascript",
+                    "Postscript"
+                ],
+                "vendor": "Adobe Inc.",
+                "version": "10.0"
+            }
+        }
+    }
+]
 _THREAT_ACTOR_OBJECTS = [
     {
         "type": "threat-actor",
@@ -863,6 +920,10 @@ class TestExternalSTIX20Bundles:
     @classmethod
     def get_bundle_with_mutex_attributes(cls):
         return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_software_objects(cls):
+        return cls.__assemble_bundle(*_SOFTWARE_OBJECTS)
 
     @classmethod
     def get_bundle_with_url_attributes(cls):

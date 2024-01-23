@@ -289,6 +289,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.assertEqual(misp_object.last_seen, observed_data.last_observed)
         self.assertEqual(misp_object.timestamp, observed_data.modified)
 
+    def _check_software_object(self, misp_object, observed_data, software):
+        self.assertEqual(misp_object.name, 'software')
+        self._check_misp_object_fields(misp_object, observed_data, software)
+        self._check_software_fields(misp_object, software, software.id)
+
     def test_stix21_bundle_with_artifact_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_artifact_objects()
         self.parser.load_stix_bundle(bundle)
@@ -413,6 +418,20 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(od1, mutex_1, m_mutex1, 'mutex', 'name')
         self._check_generic_attribute(od1, mutex_2, m_mutex2, 'mutex', 'name')
         self._check_generic_attribute(od2, mutex_3, s_mutex, 'mutex', 'name')
+
+    def test_stix21_bundle_with_software_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_software_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, od2, software1, software2, software3 = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 3)
+        multiple1, multiple2, single = misp_objects
+        self._check_software_object(multiple1, od1, software1)
+        self._check_software_object(multiple2, od1, software2)
+        self._check_misp_object_fields(single, od2, software3)
+        self._check_software_with_swid_fields(single, software3, software3.id)
 
     def test_stix21_bundle_with_url_attributes(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_url_attributes()

@@ -72,7 +72,6 @@ _ARTIFACT_OBJECTS = [
         "decryption_key": "clear",
     }
 ]
-
 _AS_OBJECTS = [
     {
         "type": "observed-data",
@@ -681,6 +680,75 @@ _MUTEX_ATTRIBUTES = [
         "name": "sensitive_resource_lock"
     }
 ]
+_SOFTWARE_OBJECTS = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "software--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "software--5e384ae7-672c-4250-9cda-3b4da964451a"
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "software--f93cb275-0366-4ecc-abf0-a17928d1e177"
+        ]
+    },
+    {
+        "type": "software",
+        "spec_version": "2.1",
+        "id": "software--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "name": "MISP",
+        "languages": [
+            "PHP"
+        ],
+        "vendor": "MISP Project",
+        "version": "2.4.183"
+    },
+    {
+        "type": "software",
+        "spec_version": "2.1",
+        "id": "software--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "name": "misp-stix",
+        "languages": [
+            "Python"
+        ],
+        "vendor": "CIRCL",
+        "spec_version": "2.1",
+        "version": "2.4.183"
+    },
+    {
+        "type": "software",
+        "id": "software--f93cb275-0366-4ecc-abf0-a17928d1e177",
+        "spec_version": "2.1",
+        "name": "Acrobat X Pro",
+        "cpe": "cpe:2.3:a:adobe:acrobat:10.0:-:pro:*:*:*:*:*",
+        "swid": "<?xml version='1.0' encoding='utf-8'?><swid:software_identification_tag xsi:schemaLocation='https://standards.iso.org/iso/19770/-2/2008/schema.xsd software_identification_tag.xsd'xmlns:swid='https://standards.iso.org/iso/19770/-2/2008/schema.xsd' xmlns:xsi='https://www.w3.org/2001/XMLSchema-instance'><!--Mandatory Identity elements --><swid:entitlement_required_indicator>true</swid:entitlement_required_indicator><swid:product_title>Acrobat X Pro</swid:product_title><swid:product_version><swid:name>10.0</swid:name><swid:numeric><swid:major>10</swid:major><swid:minor>0</swid:minor><swid:build>0</swid:build><swid:review>0</swid:review></swid:numeric></swid:product_version><swid:software_creator><swid:name>Adobe Inc.</swid:name><swid:regid>regid.1986-12.com.adobe</swid:regid></swid:software_creator><swid:software_licensor><swid:name>Adobe Inc.</swid:name><swid:regid>regid.1986-12.com.adobe</swid:regid></swid:software_licensor><swid:software_id><swid:unique_id>AcrobatPro-AS1-Win-GM-MUL</swid:unique_id><swid:tag_creator_regid>regid.1986-12.com.adobe</swid:tag_creator_regid></swid:software_id><swid:tag_creator><swid:name>Adobe Inc.</swid:name><swid:regid>regid.1986-12.com.adobe</swid:regid></swid:tag_creator><!--Optional Identity elements --><swid:license_linkage><swid:activation_status>unlicensed</swid:activation_status><swid:channel_type>VOLUME</swid:channel_type><swid:customer_type>VOLUME</swid:customer_type></swid:license_linkage><swid:serial_number>970787034620329571838915</swid:serial_number></swid:software_identification_tag>",
+        "languages": [
+            "C#",
+            "Javascript",
+            "Postscript"
+        ],
+        "vendor": "Adobe Inc.",
+        "version": "10.0"
+    }
+]
 _THREAT_ACTOR_OBJECTS = [
     {
         "type": "threat-actor",
@@ -1022,6 +1090,10 @@ class TestExternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_mutex_attributes(cls):
         return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_software_objects(cls):
+        return cls.__assemble_bundle(*_SOFTWARE_OBJECTS)
 
     @classmethod
     def get_bundle_with_url_attributes(cls):
