@@ -18,13 +18,15 @@ from stix2.v20.observables import (
     Artifact as Artifact_v20, AutonomousSystem as AutonomousSystem_v20,
     Directory as Directory_v20, DomainName as DomainName_v20,
     IPv4Address as IPv4Address_v20, IPv6Address as IPv6Address_v20,
-    MACAddress as MACAddress_v20, Mutex as Mutex_v20, URL as URL_v20)
+    MACAddress as MACAddress_v20, Mutex as Mutex_v20, Software as Software_v20,
+    URL as URL_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
 from stix2.v21.observables import (
     Artifact as Artifact_v21, AutonomousSystem as AutonomousSystem_v21,
     Directory as Directory_v21, DomainName as DomainName_v21,
     IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
-    MACAddress as MACAddress_v21, Mutex as Mutex_v21, URL as URL_v21)
+    MACAddress as MACAddress_v21, Mutex as Mutex_v21, Software as Software_v21,
+    URL as URL_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
 from typing import Iterator, Optional, TYPE_CHECKING, Union
 
@@ -34,7 +36,8 @@ if TYPE_CHECKING:
 
 _GENERIC_OBSERVABLE_OBJECT_TYPING = Union[
     Artifact_v20, Artifact_v21,
-    Directory_v20, Directory_v21
+    Directory_v20, Directory_v21,
+    Software_v20, Software_v21
 ]
 _GENERIC_OBSERVABLE_TYPING = Union[
     DomainName_v20, DomainName_v21,
@@ -47,7 +50,8 @@ _GENERIC_OBSERVABLE_TYPING = Union[
 _OBSERVABLE_OBJECTS_TYPING = Union[
     Artifact_v20, Artifact_v21,
     AutonomousSystem_v20, AutonomousSystem_v21,
-    Directory_v20, Directory_v21
+    Directory_v20, Directory_v21,
+    Software_v20, Software_v21
 ]
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20, ObservedData_v21
@@ -741,6 +745,27 @@ class ExternalSTIX2ObservedDataConverter(
         for identifier in observed_data.objects:
             self._parse_generic_observable_object_as_attribute(
                 observed_data, identifier, 'mutex', feature='name'
+            )
+
+    def _parse_software_observable_object_refs(
+            self, observed_data: ObservedData_v21):
+        for object_ref in observed_data.object_refs:
+            observable = self._fetch_observables(object_ref)
+            software = observable['observable']
+            self._parse_generic_observable_object_ref(
+                software, observed_data, 'software'
+            )
+            observable['used'][self.event_uuid] = True
+
+    def _parse_software_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        if len(observed_data.objects) == 1:
+            return self._parse_generic_single_observable_object(
+                observed_data, 'software'
+            )
+        for identifier in observed_data.objects:
+            self._parse_generic_observable_object(
+                observed_data, identifier, 'software'
             )
 
     def _parse_url_observable_object_refs(
