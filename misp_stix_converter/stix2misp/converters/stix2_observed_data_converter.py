@@ -801,6 +801,27 @@ class ExternalSTIX2ObservedDataConverter(
                 observed_data, identifier, 'url'
             )
 
+    def _parse_x509_observable_object_refs(
+            self, observed_data: ObservedData_v21):
+        for object_ref in observed_data.object_refs:
+            observable = self._fetch_observables(object_ref)
+            x509 = observable['observable']
+            self._parse_generic_observable_object(
+                x509, observed_data, 'x509', False
+            )
+            observable['used'][self.event_uuid] = True
+
+    def _parse_x509_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        if len(observed_data.objects) == 1:
+            return self._parse_generic_single_observable_object(
+                observed_data, 'x509', False
+            )
+        for identifier in observed_data.objects:
+            self._parse_generic_observable_object(
+                observed_data, identifier, 'x509', False
+            )
+
     ############################################################################
     #                             UTILITY METHODS.                             #
     ############################################################################
