@@ -1061,17 +1061,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     attribute.add_tag(tag)
         return self.misp_event.add_object(misp_object)
 
-    def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
-        attribute = self._parse_timeline(stix_object)
-        if hasattr(stix_object, 'description') and stix_object.description:
-            attribute['comment'] = stix_object.description
-        attribute.update(
-            self._sanitise_attribute_uuid(
-                stix_object.id, comment=attribute.get('comment')
-            )
-        )
-        return attribute
-
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
         event_args = {

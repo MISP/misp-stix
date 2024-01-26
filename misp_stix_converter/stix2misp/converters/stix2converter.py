@@ -242,9 +242,6 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         stix_object = self.main_parser._get_stix_object(stix_object_ref)
         self._parse_galaxy(stix_object)
 
-    def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
-        return super()._create_attribute_dict(stix_object)
-
     ############################################################################
     #                         GALAXIES PARSING METHODS                         #
     ############################################################################
