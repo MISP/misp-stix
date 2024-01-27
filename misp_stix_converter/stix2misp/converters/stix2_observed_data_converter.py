@@ -311,22 +311,17 @@ class ExternalSTIX2ObservedDataConverter(
                 continue
             for contained_ref in directory.contains_refs:
                 contained = self._fetch_observables(contained_ref)
+                if contained['used'].get(self.event_uuid, False):
+                    misp_object.add_reference(
+                        contained['misp_object'].uuid, 'contains'
+                    )
+                    continue
                 if contained_ref not in observed_data.object_refs:
-                    if contained['used'].get(self.event_uuid, False):
-                        misp_object.add_reference(
-                            contained['misp_object'].uuid, 'contains'
-                        )
-                        continue
                     self.observable_relationships[misp_object.uuid].add(
                         (
                             self.main_parser._sanitise_uuid(contained_ref),
                             'contains'
                         )
-                    )
-                    continue
-                if contained['used'].get(self.event_uuid, False):
-                    misp_object.add_reference(
-                        contained['misp_object'].uuid, 'contains'
                     )
                     continue
                 contained_object = self._parse_generic_observable_object_ref(
