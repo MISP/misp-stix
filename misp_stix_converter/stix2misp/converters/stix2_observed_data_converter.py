@@ -801,7 +801,7 @@ class ExternalSTIX2ObservedDataConverter(
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
             x509 = observable['observable']
-            self._parse_generic_observable_object(
+            self._parse_generic_observable_object_ref(
                 x509, observed_data, 'x509', False
             )
             observable['used'][self.event_uuid] = True
