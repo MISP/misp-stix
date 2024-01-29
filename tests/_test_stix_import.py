@@ -576,6 +576,143 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
         )
 
+    def _check_x509_fields(self, misp_object, x509, object_id):
+        self.assertEqual(len(misp_object.attributes), 14)
+        (md5, sha1, sha256, signed, issuer, serial_number, signature,
+         subject, key_algo, key_exponent, key_modulus, not_after,
+         not_before, version) = misp_object.attributes
+        hashes = x509.hashes
+        self._assert_multiple_equal(
+            md5.type, md5.object_relation, 'x509-fingerprint-md5'
+        )
+        self.assertEqual(md5.value, hashes['MD5'])
+        self.assertEqual(
+            md5.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - x509-fingerprint-md5 - {md5.value}'
+            )
+        )
+        self._assert_multiple_equal(
+            sha1.type, sha1.object_relation, 'x509-fingerprint-sha1'
+        )
+        self.assertEqual(sha1.value, hashes['SHA-1'])
+        self.assertEqual(
+            sha1.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - x509-fingerprint-sha1 - {sha1.value}'
+            )
+        )
+        self._assert_multiple_equal(
+            sha256.type, sha256.object_relation, 'x509-fingerprint-sha256'
+        )
+        self.assertEqual(sha256.value, hashes['SHA-256'])
+        self.assertEqual(
+            sha256.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - x509-fingerprint-sha256 - {sha256.value}'
+            )
+        )
+        self.assertEqual(signed.type, 'boolean')
+        self.assertEqual(signed.object_relation, 'self_signed')
+        self.assertEqual(signed.value, x509.is_self_signed)
+        self.assertEqual(
+            signed.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - self_signed - {signed.value}')
+        )
+        self.assertEqual(issuer.type, 'text')
+        self.assertEqual(issuer.object_relation, 'issuer')
+        self.assertEqual(issuer.value, x509.issuer)
+        self.assertEqual(
+            issuer.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - issuer - {issuer.value}')
+        )
+        self.assertEqual(serial_number.type, 'text')
+        self.assertEqual(serial_number.object_relation, 'serial-number')
+        self.assertEqual(serial_number.value, x509.serial_number)
+        self.assertEqual(
+            serial_number.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - serial-number - {serial_number.value}'
+            )
+        )
+        self.assertEqual(signature.type, 'text')
+        self.assertEqual(signature.object_relation, 'signature_algorithm')
+        self.assertEqual(signature.value, x509.signature_algorithm)
+        self.assertEqual(
+            signature.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - signature_algorithm - {signature.value}'
+            )
+        )
+        self.assertEqual(subject.type, 'text')
+        self.assertEqual(subject.object_relation, 'subject')
+        self.assertEqual(subject.value, x509.subject)
+        self.assertEqual(
+            subject.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - subject - {subject.value}')
+        )
+        self.assertEqual(key_algo.type, 'text')
+        self.assertEqual(key_algo.object_relation, 'pubkey-info-algorithm')
+        self.assertEqual(key_algo.value, x509.subject_public_key_algorithm)
+        self.assertEqual(
+            key_algo.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - pubkey-info-algorithm - {key_algo.value}'
+            )
+        )
+        self.assertEqual(key_exponent.type, 'text')
+        self.assertEqual(key_exponent.object_relation, 'pubkey-info-exponent')
+        self.assertEqual(key_exponent.value, x509.subject_public_key_exponent)
+        self.assertEqual(
+            key_exponent.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - pubkey-info-exponent - {key_exponent.value}'
+            )
+        )
+        self.assertEqual(key_modulus.type, 'text')
+        self.assertEqual(key_modulus.object_relation, 'pubkey-info-modulus')
+        self.assertEqual(key_modulus.value, x509.subject_public_key_modulus)
+        self.assertEqual(
+            key_modulus.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - pubkey-info-modulus - {key_modulus.value}'
+            )
+        )
+        self.assertEqual(not_before.type, 'datetime')
+        self.assertEqual(not_before.object_relation, 'validity-not-before')
+        self.assertEqual(not_before.value, x509.validity_not_before)
+        self.assertEqual(
+            not_before.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - validity-not-before - {not_before.value}'
+            )
+        )
+        self.assertEqual(not_after.type, 'datetime')
+        self.assertEqual(not_after.object_relation, 'validity-not-after')
+        self.assertEqual(not_after.value, x509.validity_not_after)
+        self.assertEqual(
+            not_after.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - validity-not-after - {not_after.value}'
+            )
+        )
+        self.assertEqual(version.type, 'text')
+        self.assertEqual(version.object_relation, 'version')
+        self.assertEqual(version.value, x509.version)
+        self.assertEqual(
+            version.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
+        )
 
 class TestInternalSTIX2Import(TestSTIX2Import):
     def setUp(self):

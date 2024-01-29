@@ -291,6 +291,18 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             misp_object, observed_data.objects[identifier], object_id
         )
 
+    def _check_x509_object(self, misp_object, observed_data, identifier=None):
+        self.assertEqual(misp_object.name, 'x509')
+        self._check_misp_object_fields(misp_object, observed_data, identifier)
+        object_id = observed_data.id
+        if identifier is None:
+            identifier = '0'
+        else:
+            object_id = f'{object_id} - {identifier}'
+        self._check_x509_fields(
+            misp_object, observed_data.objects[identifier], object_id
+        )
+
     def test_stix20_bundle_with_artifact_object(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_artifact_objects()
         self.parser.load_stix_bundle(bundle)
@@ -469,3 +481,16 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(
             observed_data2, s_url, 'url'
         )
+
+    def test_stix20_bundle_with_x509_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_x509_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data1, observed_data2 = bundle.objects
+        misp_objects = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_objects), 3)
+        multiple1, multiple2, single = misp_objects
+        self._check_x509_object(multiple1, observed_data1, '0')
+        self._check_x509_object(multiple2, observed_data1, '1')
+        self._check_x509_object(single, observed_data2)

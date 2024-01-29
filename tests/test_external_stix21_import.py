@@ -294,6 +294,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_misp_object_fields(misp_object, observed_data, software)
         self._check_software_fields(misp_object, software, software.id)
 
+    def _check_x509_object(self, misp_object, observed_data, x509):
+        self.assertEqual(misp_object.name, 'x509')
+        self._check_misp_object_fields(misp_object, observed_data, x509)
+        self._check_x509_fields(misp_object, x509, x509.id)
+
     def test_stix21_bundle_with_artifact_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_artifact_objects()
         self.parser.load_stix_bundle(bundle)
@@ -445,3 +450,16 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(od1, url_1, m_url1, 'url')
         self._check_generic_attribute(od1, url_2, m_url2, 'url')
         self._check_generic_attribute(od2, url_3, s_url, 'url')
+
+    def test_stix21_bundle_with_x509_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_x509_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, od2, cert1, cert2, cert3 = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 3)
+        multiple1, multiple2, single = misp_objects
+        self._check_x509_object(multiple1, od1, cert1)
+        self._check_x509_object(multiple2, od1, cert2)
+        self._check_x509_object(single, od2, cert3)
