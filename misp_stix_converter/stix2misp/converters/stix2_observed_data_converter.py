@@ -18,15 +18,17 @@ from stix2.v20.observables import (
     Artifact as Artifact_v20, AutonomousSystem as AutonomousSystem_v20,
     Directory as Directory_v20, DomainName as DomainName_v20,
     IPv4Address as IPv4Address_v20, IPv6Address as IPv6Address_v20,
-    MACAddress as MACAddress_v20, Mutex as Mutex_v20, Software as Software_v20,
-    URL as URL_v20, X509Certificate as X509Certificate_v20)
+    MACAddress as MACAddress_v20, Mutex as Mutex_v20, Process as Process_v20,
+    Software as Software_v20, URL as URL_v20,
+    X509Certificate as X509Certificate_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
 from stix2.v21.observables import (
     Artifact as Artifact_v21, AutonomousSystem as AutonomousSystem_v21,
     Directory as Directory_v21, DomainName as DomainName_v21,
     IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
-    MACAddress as MACAddress_v21, Mutex as Mutex_v21, Software as Software_v21,
-    URL as URL_v21, X509Certificate as X509Certificate_v21)
+    MACAddress as MACAddress_v21, Mutex as Mutex_v21, Process as Process_v21,
+    Software as Software_v21, URL as URL_v21,
+    X509Certificate as X509Certificate_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
 from typing import Iterator, Optional, TYPE_CHECKING, Union
 
@@ -38,6 +40,7 @@ _GENERIC_OBSERVABLE_OBJECT_TYPING = Union[
     Artifact_v20, Artifact_v21,
     Directory_v20, Directory_v21,
     Software_v20, Software_v21,
+    Process_v20, Process_v21,
     X509Certificate_v20, X509Certificate_v21
 ]
 _GENERIC_OBSERVABLE_TYPING = Union[
@@ -52,6 +55,7 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
     Artifact_v20, Artifact_v21,
     AutonomousSystem_v20, AutonomousSystem_v21,
     Directory_v20, Directory_v21,
+    Process_v20, Process_v21,
     Software_v20, Software_v21,
     X509Certificate_v20, X509Certificate_v21
 ]
@@ -742,6 +746,132 @@ class ExternalSTIX2ObservedDataConverter(
         for identifier in observed_data.objects:
             self._parse_generic_observable_object_as_attribute(
                 observed_data, identifier, 'mutex', feature='name'
+            )
+
+    def _parse_process_observable_object_refs(
+            self, observed_data: ObservedData_v21):
+        for object_ref in observed_data.objects:
+            observable = self._fetch_observables(object_ref)
+            if object_ref.startswith('file--'):
+                if not observable['used'].get(self.event_uuid, False):
+                    misp_object = self._parse_generic_observable_object_ref(
+                        observable['observable'], observed_data, 'file', False
+                    )
+                    observable['used'][self.event_uuid] = True
+                    observable['misp_object'] = misp_object
+                continue
+            process = observable['observable']
+            misp_object = (
+                observable['misp_object'] if
+                observable['used'][self.event_uuid] else
+                self._parse_generic_observable_object_ref(
+                    process, observed_data, 'process', False
+                )
+            )
+            observable['used'][self.event_uuid] = True
+            if hasattr(process, 'parent_ref'):
+                self._parse_process_reference_observable_object_ref(
+                    observed_data, misp_object, process.parent_ref, 'child-of'
+                )
+            if hasattr(process, 'child_refs'):
+                for child_ref in process.child_refs:
+                    self._parse_process_reference_observable_object_ref(
+                        observed_data, misp_object, child_ref, 'parent-of'
+                    )
+            if hasattr(process, 'image_ref'):
+                self._parse_process_reference_observable_object_ref(
+                    observed_data, misp_object, process.image_ref,
+                    'executes', name='file'
+                )
+
+    def _parse_process_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        if len(observed_data.objects) == 1:
+            return self._parse_generic_single_observable_object(
+                observed_data, 'process'
+            )
+        observable_objects = {
+            object_id: {'used': False, 'observable': observable}
+            for object_id, observable in observed_data.objects.items()
+        }
+        for object_id, observable in observable_objects.items():
+            if observable['observable'].type == 'file':
+                if not observable['used']:
+                    misp_object = self._parse_generic_observable_object(
+                        observed_data, object_id, 'file', False
+                    )
+                    observable['used'] = True
+                    observable['misp_object'] = misp_object
+                continue
+            process = observable['observable']
+            misp_object = (
+                observable['misp_object'] if observable['used'] else
+                self._parse_generic_observable_object(
+                    observed_data, object_id, 'process', False
+                )
+            )
+            observable['misp_object'] = misp_object
+            observable['used'] = True
+            if hasattr(process, 'parent_ref'):
+                self._parse_process_reference_observable_object(
+                    observed_data, misp_object,
+                    observable_objects[process.parent_ref],
+                    process.parent_ref, 'child-of'
+                )
+            if hasattr(process, 'child_refs'):
+                for child_ref in process.child_refs:
+                    self._parse_process_reference_observable_object(
+                        observed_data, misp_object,
+                        observable_objects[child_ref],
+                        child_ref, 'parent-of'
+                    )
+            for feature in ('binary', 'image'):
+                if hasattr(process, f'{feature}_ref'):
+                    reference = getattr(process, f'{feature}_ref')
+                    self._parse_process_reference_observable_object(
+                        observed_data, misp_object,
+                        observable_objects[reference],
+                        reference, 'executes', name='file'
+                    )
+
+    def _parse_process_reference_observable_object(
+            self, observed_data: _OBSERVED_DATA_TYPING, misp_object: MISPObject,
+            observable: dict, reference: str, relationship_type: str,
+            name: Optional[str] = 'process'):
+        if observable['used']:
+            misp_object.add_reference(
+                observable['misp_object'].uuid, relationship_type
+            )
+            return
+        referenced_object = self._parse_generic_observable_object(
+            observed_data, reference, name, False
+        )
+        misp_object.add_reference(referenced_object.uuid, relationship_type)
+        observable.update({'used': True, 'misp_object': referenced_object})
+
+    def _parse_process_reference_observable_object_ref(
+            self, observed_data: _OBSERVED_DATA_TYPING, misp_object: MISPObject,
+            reference: str, relationship_type: str,
+            name: Optional[str] = 'process'):
+        observable = self._fetch_observables(reference)
+        if observable['used'].get(self.event_uuid, False):
+            misp_object.add_reference(
+                observable['misp_object'].uuid, relationship_type
+            )
+            return
+        if reference in observed_data.object_refs:
+            referenced_object = self._parse_generic_observable_object_ref(
+                observable['observable'], observed_data, name, False
+            )
+            observable['misp_object'] = referenced_object
+            observable['used'][self.event_uuid] = True
+            misp_object.add_reference(referenced_object.uuid, relationship_type)
+        else:
+            self.observable_relationships[misp_object.uuid].add(
+                (
+                    self.main_parser._sanitise_uuid(reference),
+                    relationship_type
+                )
             )
 
     def _parse_software_observable_object_refs(
