@@ -357,19 +357,25 @@ class STIX2ObservableConverter(STIX2Converter):
                 yield from self._populate_object_attributes(
                     mapping, getattr(observable, field), object_id
                 )
-        for feature in ('environment_variables', 'arguments'):
-            if hasattr(observable, feature):
-                value = ' '.join(
-                    f'{key} {value}' for key, value in
-                    getattr(observable, feature).items()
+        if hasattr(observable, 'arguments'):
+            value = ' '.join(observable.arguments)
+            yield {
+                **self._mappping.args_attribute(),
+                'value': value, 'uuid': self.main_parser._create_v5_uuid(
+                    f'{object_id} -  args - {value}'
                 )
-                yield {
-                    **self._mapping.args_attribute(),
-                    'value': value, 'uuid': self.main_parser._create_v5_uuid(
-                        f'{object_id} - args - {value}'
-                    )
-                }
-                break
+            }
+        if hasattr(observable, 'environment_variables'):
+            value = ' - '.join(
+                f'{key}: {value}' for key, value in
+                observable.environment_variables.items()
+            )
+            yield {
+                **self._mapping.environment_variables_attribute(),
+                'value': value, 'uuid': self.main_parser._create_v5_uuid(
+                    f'{object_id} - environment-variables - {value}'
+                )
+            }
 
     def _parse_registry_key_observable(
             self, observable: _REGISTRY_KEY_TYPING,
