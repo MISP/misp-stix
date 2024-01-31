@@ -485,6 +485,172 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         )
         return accessed.value, created.value, modified.value
 
+    def _check_process_child_fields(self, misp_object, process, object_id):
+        self.assertEqual(len(misp_object.attributes), 2)
+        name, pid = misp_object.attributes
+        self._assert_multiple_equal(name.type, pid.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, process.name)
+        self.assertEqual(
+            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        self.assertEqual(pid.object_relation, 'pid')
+        self.assertEqual(pid.value, process.pid)
+        self.assertEqual(
+            pid.uuid, uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
+        )
+
+    def _check_process_image_reference_fields(self, misp_object, file_object, object_id):
+        self.assertEqual(len(misp_object.attributes), 4)
+        mimetype, filename, encoding, size = misp_object.attributes
+        self.assertEqual(mimetype.type, 'mime-type')
+        self.assertEqual(mimetype.object_relation, 'mimetype')
+        self.assertEqual(mimetype.value, file_object.mime_type)
+        self.assertEqual(
+            mimetype.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - mimetype - {mimetype.value}')
+        )
+        self._assert_multiple_equal(
+            filename.type, filename.object_relation, 'filename'
+        )
+        self.assertEqual(filename.value, file_object.name)
+        self.assertEqual(
+            filename.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - filename - {filename.value}')
+        )
+        self.assertEqual(encoding.type, 'text')
+        self.assertEqual(encoding.object_relation, 'file-encoding')
+        self.assertEqual(encoding.value, file_object.name_enc)
+        self.assertEqual(
+            encoding.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - file-encoding - {encoding.value}'
+            )
+        )
+        self._assert_multiple_equal(
+            size.type, size.object_relation, 'size-in-bytes'
+        )
+        self.assertEqual(size.value, file_object.size)
+        self.assertEqual(
+            size.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - size-in-bytes - {size.value}')
+        )
+
+    def _check_process_multiple_fields(self, misp_object, process, object_id):
+        self.assertEqual(len(misp_object.attributes), 3)
+        hidden, name, pid = misp_object.attributes
+        self.assertEqual(hidden.type, 'boolean')
+        self.assertEqual(hidden.object_relation, 'hidden')
+        self.assertEqual(hidden.value, process.is_hidden)
+        self.assertEqual(
+            hidden.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - hidden - {hidden.value}')
+        )
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, process.name)
+        self.assertEqual(
+            name.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        self.assertEqual(pid.type, 'text')
+        self.assertEqual(pid.object_relation, 'pid')
+        self.assertEqual(pid.value, process.pid)
+        self.assertEqual(
+            pid.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
+        )
+
+    def _check_process_parent_fields(self, misp_object, process, object_id):
+        self.assertEqual(len(misp_object.attributes), 6)
+        command_line, creation_time, directory, name, pid, variables = misp_object.attributes
+        self._assert_multiple_equal(
+            command_line.type, directory.type, name.type, pid.type,
+            variables.type, 'text'
+        )
+        self.assertEqual(command_line.object_relation, 'command-line')
+        self.assertEqual(command_line.value, process.command_line)
+        self.assertEqual(
+            command_line.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - command-line - {command_line.value}'
+            )
+        )
+        self.assertEqual(creation_time.type, 'datetime')
+        self.assertEqual(creation_time.object_relation, 'creation-time')
+        self.assertEqual(
+            creation_time.value,
+            getattr(process, 'created', process.created_time)
+        )
+        self.assertEqual(
+            creation_time.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - creation-time - {creation_time.value}'
+            )
+        )
+        self.assertEqual(directory.object_relation, 'current-directory')
+        self.assertEqual(directory.value, process.cwd)
+        self.assertEqual(
+            directory.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - current-directory - {directory.value}'
+            )
+        )
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, process.name)
+        self.assertEqual(
+            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        self.assertEqual(pid.object_relation, 'pid')
+        self.assertEqual(pid.value, process.pid)
+        self.assertEqual(
+            pid.uuid, uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
+        )
+        self.assertEqual(variables.object_relation, 'environment-variables')
+        self.assertEqual(
+            variables.value,
+            ' - '.join(
+                f'{key}: {value}' for key, value in
+                process.environment_variables.items()
+            )
+        )
+        self.assertEqual(
+            variables.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - environment-variables - {variables.value}'
+            )
+        )
+
+    def _check_process_single_fields(self, misp_object, process, object_id):
+        self.assertEqual(len(misp_object.attributes), 3)
+        command_line, name, pid = misp_object.attributes
+        self._assert_multiple_equal(command_line.type, name.type, pid.type, 'text')
+        self.assertEqual(command_line.object_relation, 'command-line')
+        self.assertEqual(command_line.value, process.command_line)
+        self.assertEqual(
+            command_line.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - command-line - {command_line.value}'
+            )
+        )
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, process.name)
+        self.assertEqual(
+            name.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        self.assertEqual(pid.object_relation, 'pid')
+        self.assertEqual(pid.value, process.pid)
+        self.assertEqual(
+            pid.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
+        )
+
     def _check_software_fields(self, misp_object, software, object_id):
         self.assertEqual(len(misp_object.attributes), 4)
         language, name, vendor, version = misp_object.attributes

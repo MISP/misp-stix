@@ -424,6 +424,50 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(od1, mutex_2, m_mutex2, 'mutex', 'name')
         self._check_generic_attribute(od2, mutex_3, s_mutex, 'mutex', 'name')
 
+    def test_stix21_bundle_with_process_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_process_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, od2, process1, process2, file1, process3, file2, process4 = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 6)
+        multiple, parent, child, image1, image2, single = misp_objects
+        self._assert_multiple_equal(
+            multiple.name, parent.name, child.name, single.name, 'process'
+        )
+        self._assert_multiple_equal(image1.name, image2.name, 'file')
+
+        self._check_misp_object_fields(multiple, od1, process1)
+        self._check_process_multiple_fields(multiple, process1, process1.id)
+        self.assertEqual(len(multiple.references), 3)
+        child_ref, parent_ref, binary_ref = multiple.references
+        self.assertEqual(child_ref.referenced_uuid, parent.uuid)
+        self.assertEqual(child_ref.relationship_type, 'child-of')
+        self.assertEqual(parent_ref.referenced_uuid, child.uuid)
+        self.assertEqual(parent_ref.relationship_type, 'parent-of')
+        self.assertEqual(binary_ref.referenced_uuid, image1.uuid)
+        self.assertEqual(binary_ref.relationship_type, 'executes')
+
+        self._check_misp_object_fields(parent, od1, process2)
+        self._check_process_parent_fields(parent, process2, process2.id)
+        self.assertEqual(len(parent.references), 1)
+        reference = parent.references[0]
+        self.assertEqual(reference.referenced_uuid, image2.uuid)
+        self.assertEqual(reference.relationship_type, 'executes')
+
+        self._check_misp_object_fields(child, od1, process3)
+        self._check_process_child_fields(child, process3, process3.id)
+
+        self._check_misp_object_fields(image1, od1, file2)
+        self._check_process_image_reference_fields(image1, file2, file2.id)
+
+        self._check_misp_object_fields(image2, od1, file1)
+        self._check_process_image_reference_fields(image2, file1, file1.id)
+
+        self._check_misp_object_fields(single, od2, process4)
+        self._check_process_single_fields(single, process4, process4.id)
+
     def test_stix21_bundle_with_software_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_software_objects()
         self.parser.load_stix_bundle(bundle)

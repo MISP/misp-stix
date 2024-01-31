@@ -680,6 +680,101 @@ _MUTEX_ATTRIBUTES = [
         "name": "sensitive_resource_lock"
     }
 ]
+_PROCESS_OBJECTS = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "process--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "process--5e384ae7-672c-4250-9cda-3b4da964451a",
+            "file--d1385ba1-69de-4774-879c-f2c4771b369d",
+            "process--f93cb275-0366-4ecc-abf0-a17928d1e177",
+            "file--43fdb7b9-a771-4b10-ab74-2bac893daf0d"
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "process--28b2fff7-ca78-483b-9c4f-6f684ee7cdd0"
+        ]
+    },
+    {
+        "type": "process",
+        "spec_version": "2.1",
+        "id": "process--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "pid": 2510,
+        "name": "TestProcess",
+        "image_ref": "file--43fdb7b9-a771-4b10-ab74-2bac893daf0d",
+        "parent_ref": "process--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "child_refs": [
+            "process--f93cb275-0366-4ecc-abf0-a17928d1e177"
+        ],
+        "is_hidden": True
+    },
+    {
+        "type": "process",
+        "spec_version": "2.1",
+        "id": "process--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "pid": 2107,
+        "name": "Friends_From_H",
+        "cwd": "/home/viktor",
+        "created_time": "2017-05-01T08:00:00Z",
+        "command_line": "grep -nrG iglocska ${HOME}/friends.txt",
+        "environment_variables": {
+            "HOME": "/home/viktor",
+            "USER": "viktor"
+        },
+        "image_ref": "file--d1385ba1-69de-4774-879c-f2c4771b369d"
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--d1385ba1-69de-4774-879c-f2c4771b369d",
+        "name": "parent_process.exe",
+        "size": 12367,
+        "name_enc": "UTF-8",
+        "mime_type": "application/exe"
+    },
+    {
+        "type": "process",
+        "spec_version": "2.1",
+        "id": "process--f93cb275-0366-4ecc-abf0-a17928d1e177",
+        "pid": 1401,
+        "name": "ChildProcess"
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--43fdb7b9-a771-4b10-ab74-2bac893daf0d",
+        "name": "test_process.exe",
+        "size": 82639,
+        "name_enc": "UTF-8",
+        "mime_type": "application/exe"
+    },
+    {
+        "type": "process",
+        "spec_version": "2.1",
+        "id": "process--28b2fff7-ca78-483b-9c4f-6f684ee7cdd0",
+        "pid": 666,
+        "name": "SatanProcess",
+        "command_line": "rm -rf *"
+    }
+]
 _SOFTWARE_OBJECTS = [
     {
         "type": "observed-data",
@@ -1184,6 +1279,10 @@ class TestExternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_mutex_attributes(cls):
         return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_process_objects(cls):
+        return cls.__assemble_bundle(*_PROCESS_OBJECTS)
 
     @classmethod
     def get_bundle_with_software_objects(cls):

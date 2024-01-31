@@ -447,6 +447,62 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data2, s_mutex, 'mutex', feature='name'
         )
 
+    def test_stix20_bundle_with_process_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_process_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data1, observed_data2 = bundle.objects
+        misp_objects = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_objects), 6)
+        multiple, parent, child, image1, image2, single = misp_objects
+        self._assert_multiple_equal(
+            multiple.name, parent.name, child.name, single.name, 'process'
+        )
+        self._assert_multiple_equal(image1.name, image2.name, 'file')
+
+        self._check_misp_object_fields(multiple, observed_data1, '0')
+        self._check_process_multiple_fields(
+            multiple, observed_data1.objects['0'], f'{observed_data1.id} - 0'
+        )
+        self.assertEqual(len(multiple.references), 3)
+        child_ref, parent_ref, binary_ref = multiple.references
+        self.assertEqual(child_ref.referenced_uuid, parent.uuid)
+        self.assertEqual(child_ref.relationship_type, 'child-of')
+        self.assertEqual(parent_ref.referenced_uuid, child.uuid)
+        self.assertEqual(parent_ref.relationship_type, 'parent-of')
+        self.assertEqual(binary_ref.referenced_uuid, image1.uuid)
+        self.assertEqual(binary_ref.relationship_type, 'executes')
+
+        self._check_misp_object_fields(parent, observed_data1, '1')
+        self._check_process_parent_fields(
+            parent, observed_data1.objects['1'], f'{observed_data1.id} - 1'
+        )
+        self.assertEqual(len(parent.references), 1)
+        reference = parent.references[0]
+        self.assertEqual(reference.referenced_uuid, image2.uuid)
+        self.assertEqual(reference.relationship_type, 'executes')
+
+        self._check_misp_object_fields(child, observed_data1, '3')
+        self._check_process_child_fields(
+            child, observed_data1.objects['3'], f'{observed_data1.id} - 3'
+        )
+
+        self._check_misp_object_fields(image2, observed_data1, '2')
+        self._check_process_image_reference_fields(
+            image2, observed_data1.objects['2'], f'{observed_data1.id} - 2'
+        )
+
+        self._check_misp_object_fields(image1, observed_data1, '4')
+        self._check_process_image_reference_fields(
+            image1, observed_data1.objects['4'], f'{observed_data1.id} - 4'
+        )
+
+        self._check_misp_object_fields(single, observed_data2)
+        self._check_process_single_fields(
+            single, observed_data2.objects['0'], observed_data2.id
+        )
+
     def test_stix20_bundle_with_software_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_software_objects()
         self.parser.load_stix_bundle(bundle)
