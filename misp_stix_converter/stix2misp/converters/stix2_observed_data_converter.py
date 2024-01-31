@@ -750,7 +750,7 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _parse_process_observable_object_refs(
             self, observed_data: ObservedData_v21):
-        for object_ref in observed_data.objects:
+        for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
             if object_ref.startswith('file--'):
                 if not observable['used'].get(self.event_uuid, False):
@@ -763,7 +763,7 @@ class ExternalSTIX2ObservedDataConverter(
             process = observable['observable']
             misp_object = (
                 observable['misp_object'] if
-                observable['used'][self.event_uuid] else
+                observable['used'].get(self.event_uuid, False) else
                 self._parse_generic_observable_object_ref(
                     process, observed_data, 'process', False
                 )
