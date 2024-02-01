@@ -613,20 +613,23 @@ class ExternalSTIX2ObservableConverter(
                 )
 
     def _parse_user_account_observable(
-            self, observable: _USER_ACCOUNT_TYPING) -> Iterator[dict]:
+            self, observable: _USER_ACCOUNT_TYPING,
+            object_id: Optional[str] = None) -> Iterator[dict]:
+        if object_id is None:
+            object_id = observable.id
         user_account_mapping = self._mapping.user_account_object_mapping
         for field, attribute in user_account_mapping().items():
             if hasattr(observable, field):
                 yield from self._populate_object_attributes(
-                    attribute, getattr(observable, field), observable.id
+                    attribute, getattr(observable, field), object_id
                 )
         if 'unix-account-ext' in getattr(observable, 'extensions', {}):
             extension = observable.extensions['unix-account-ext']
-            mapping = self._mapping.unix_user_account_extension_mapping
+            mapping = self._mapping.unix_user_account_extension_object_mapping
             for field, attribute in mapping().items():
                 if hasattr(extension, field):
                     yield from self._populate_object_attributes(
-                        attribute, getattr(extension, field), observable.id
+                        attribute, getattr(extension, field), object_id
                     )
 
 

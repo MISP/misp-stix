@@ -19,7 +19,7 @@ from stix2.v20.observables import (
     Directory as Directory_v20, DomainName as DomainName_v20,
     IPv4Address as IPv4Address_v20, IPv6Address as IPv6Address_v20,
     MACAddress as MACAddress_v20, Mutex as Mutex_v20, Process as Process_v20,
-    Software as Software_v20, URL as URL_v20,
+    Software as Software_v20, URL as URL_v20, UserAccount as UserAccount_v20,
     X509Certificate as X509Certificate_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
 from stix2.v21.observables import (
@@ -27,7 +27,7 @@ from stix2.v21.observables import (
     Directory as Directory_v21, DomainName as DomainName_v21,
     IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
     MACAddress as MACAddress_v21, Mutex as Mutex_v21, Process as Process_v21,
-    Software as Software_v21, URL as URL_v21,
+    Software as Software_v21, URL as URL_v21, UserAccount as UserAccount_v21,
     X509Certificate as X509Certificate_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
 from typing import Iterator, Optional, TYPE_CHECKING, Union
@@ -41,6 +41,7 @@ _GENERIC_OBSERVABLE_OBJECT_TYPING = Union[
     Directory_v20, Directory_v21,
     Software_v20, Software_v21,
     Process_v20, Process_v21,
+    UserAccount_v20, UserAccount_v21,
     X509Certificate_v20, X509Certificate_v21
 ]
 _GENERIC_OBSERVABLE_TYPING = Union[
@@ -57,6 +58,7 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
     Directory_v20, Directory_v21,
     Process_v20, Process_v21,
     Software_v20, Software_v21,
+    UserAccount_v20, UserAccount_v21,
     X509Certificate_v20, X509Certificate_v21
 ]
 _OBSERVED_DATA_TYPING = Union[
@@ -929,6 +931,27 @@ class ExternalSTIX2ObservedDataConverter(
         for identifier in observed_data.objects:
             self._parse_generic_observable_object_as_attribute(
                 observed_data, identifier, 'url'
+            )
+
+    def _parse_user_account_observable_objects(
+            self, observed_data: ObservedData_v21):
+        for object_ref in observed_data.object_refs:
+            observable = self._fetch_observables(object_ref)
+            user_account = observable['observable']
+            self._parse_generic_observable_object(
+                user_account, observed_data, 'user-account', False
+            )
+            observable['used'][self.event_uuid] = True
+
+    def _parse_user_account_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        if len(observed_data.objects) == 1:
+            return self._parse_generic_single_observable_object(
+                observed_data, 'user-account', False
+            )
+        for identifier in observed_data.objects:
+            self._parse_generic_observable_object(
+                observed_data, identifier, 'user-account', False
             )
 
     def _parse_x509_observable_object_refs(
