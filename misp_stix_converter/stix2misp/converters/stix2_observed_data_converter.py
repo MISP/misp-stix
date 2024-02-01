@@ -562,9 +562,10 @@ class ExternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object_from_observable_object(
             name, observed_data, object_id
         )
+        _name = name.replace('-', '_')
         attributes = (
-            self._parse_generic_observable(observable_object, name, object_id)
-            if generic else getattr(self, f'_parse_{name}_observable')(
+            self._parse_generic_observable(observable_object, _name, object_id)
+            if generic else getattr(self, f'_parse_{_name}_observable')(
                 observable_object, object_id
             )
         )
@@ -600,9 +601,10 @@ class ExternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object_from_observable_object_ref(
             name, observable_object, observed_data
         )
+        _name = name.replace('-', '_')
         attributes = (
-            self._parse_generic_observable(observable_object, name)
-            if generic else getattr(self, f'_parse_{name}_observable')(
+            self._parse_generic_observable(observable_object, _name)
+            if generic else getattr(self, f'_parse_{_name}_observable')(
                 observable_object
             )
         )
@@ -638,10 +640,11 @@ class ExternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object_from_observable_object(
             name, observed_data
         )
+        _name = name.replace('-', '_')
         object_id = observed_data.id
         attributes = (
-            self._parse_generic_observable(observable_object, name, object_id)
-            if generic else getattr(self, f'_parse_{name}_observable')(
+            self._parse_generic_observable(observable_object, _name, object_id)
+            if generic else getattr(self, f'_parse_{_name}_observable')(
                 observable_object, object_id
             )
         )
