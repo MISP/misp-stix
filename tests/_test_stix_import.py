@@ -581,7 +581,7 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(creation_time.object_relation, 'creation-time')
         self.assertEqual(
             creation_time.value,
-            getattr(process, 'created', process.created_time)
+            process.created if hasattr(process, 'created') else process.created_time
         )
         self.assertEqual(
             creation_time.uuid,
