@@ -742,6 +742,170 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
         )
 
+    def _check_user_account_extension_fields(self, attributes, extension, object_id):
+        group_id, group, home_dir, shell = attributes
+        self._assert_multiple_equal(
+            group_id.type, group.type, home_dir.type, shell.type, 'text'
+        )
+        self.assertEqual(group_id.object_relation, 'group-id')
+        self.assertEqual(group_id.value, extension.gid)
+        self.assertEqual(
+            group_id.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - group-id - {group_id.value}')
+        )
+        self.assertEqual(group.object_relation, 'group')
+        self.assertEqual(group.value, extension.groups[0])
+        self.assertEqual(
+            group.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - group - {group.value}')
+        )
+        self.assertEqual(home_dir.object_relation, 'home_dir')
+        self.assertEqual(home_dir.value, extension.home_dir)
+        self.assertEqual(
+            home_dir.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - home_dir - {home_dir.value}')
+        )
+        self.assertEqual(shell.object_relation, 'shell')
+        self.assertEqual(shell.value, extension.shell)
+        self.assertEqual(
+            shell.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - shell - {shell.value}')
+        )
+
+    def _check_user_account_fields(self, attributes, user_account, object_id):
+        username, account_type, escalate, display_name, privileged, service, user_id = attributes
+        self._assert_multiple_equal(
+            username.type, account_type.type, display_name.type, user_id.type, 'text'
+        )
+        self._assert_multiple_equal(
+            escalate.type, privileged.type, service.type, 'boolean'
+        )
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, user_account.account_login)
+        self.assertEqual(
+            username.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - username - {username.value}')
+        )
+        self.assertEqual(account_type.object_relation, 'account-type')
+        self.assertEqual(account_type.value, user_account.account_type)
+        self.assertEqual(
+            account_type.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - account-type - {account_type.value}'
+            )
+        )
+        self.assertEqual(escalate.object_relation, 'can_escalate_privs')
+        self.assertEqual(escalate.value, user_account.can_escalate_privs)
+        self.assertEqual(
+            escalate.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - can_escalate_privs - {escalate.value}'
+            )
+        )
+        self.assertEqual(display_name.object_relation, 'display-name')
+        self.assertEqual(display_name.value, user_account.display_name)
+        self.assertEqual(
+            display_name.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - display-name - {display_name.value}'
+            )
+        )
+        self.assertEqual(privileged.object_relation, 'privileged')
+        self.assertEqual(privileged.value, user_account.is_privileged)
+        self.assertEqual(
+            privileged.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - privileged - {privileged.value}'
+            )
+        )
+        self.assertEqual(service.object_relation, 'is_service_account')
+        self.assertEqual(service.value, user_account.is_service_account)
+        self.assertEqual(
+            service.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - is_service_account - {service.value}'
+            )
+        )
+        self.assertEqual(user_id.object_relation, 'user-id')
+        self.assertEqual(user_id.value, user_account.user_id)
+        self.assertEqual(
+            user_id.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - user-id - {user_id.value}')
+        )
+
+    def _check_user_account_timeline_fields(self, attributes, user_account, object_id):
+        created, first_login, last_login = attributes
+        self._assert_multiple_equal(
+            created.type, first_login.type, last_login.type, 'datetime'
+        )
+        self.assertEqual(created.object_relation, 'created')
+        self.assertEqual(created.value, user_account.account_created)
+        self.assertEqual(
+            created.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - created - {created.value}')
+        )
+        self.assertEqual(first_login.object_relation, 'first_login')
+        self.assertEqual(first_login.value, user_account.account_first_login)
+        self.assertEqual(
+            first_login.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - first_login - {first_login.value}'
+            )
+        )
+        self.assertEqual(last_login.object_relation, 'last_login')
+        self.assertEqual(last_login.value, user_account.account_last_login)
+        self.assertEqual(
+            last_login.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - last_login - {last_login.value}'
+            )
+        )
+
+    def _check_user_account_twitter_fields(self, misp_object, user_account, object_id):
+        self.assertEqual(len(misp_object.attributes), 4)
+        username, account_type, display_name, user_id = misp_object.attributes
+        self._assert_multiple_equal(
+            username.type, account_type.type, display_name.type,
+            user_id.type, 'text'
+        )
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, user_account.account_login)
+        self.assertEqual(
+            username.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - username - {username.value}')
+        )
+        self.assertEqual(account_type.object_relation, 'account-type')
+        self.assertEqual(account_type.value, user_account.account_type)
+        self.assertEqual(
+            account_type.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - account-type - {account_type.value}'
+            )
+        )
+        self.assertEqual(display_name.object_relation, 'display-name')
+        self.assertEqual(display_name.value, user_account.display_name)
+        self.assertEqual(
+            display_name.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - display-name - {display_name.value}'
+            )
+        )
+        self.assertEqual(user_id.object_relation, 'user-id')
+        self.assertEqual(user_id.value, user_account.user_id)
+        self.assertEqual(
+            user_id.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - user-id - {user_id.value}')
+        )
+
     def _check_x509_fields(self, misp_object, x509, object_id):
         self.assertEqual(len(misp_object.attributes), 14)
         (md5, sha1, sha256, signed, issuer, serial_number, signature,

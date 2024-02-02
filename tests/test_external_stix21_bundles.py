@@ -990,6 +990,82 @@ _TOOL_OBJECTS = [
         ]
     }
 ]
+_USER_ACCOUNT_OBJECTS = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "user-account--0d5b424b-93b8-5cd8-ac36-306e1789d63c",
+            "user-account--9bd3afcf-deee-54f9-83e2-520653cb6bba"
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "user-account--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ]
+    },
+    {
+        "type": "user-account",
+        "spec_version": "2.1",
+        "id": "user-account--0d5b424b-93b8-5cd8-ac36-306e1789d63c",
+        "user_id": "1001",
+        "account_login": "jdoe",
+        "account_type": "unix",
+        "display_name": "John Doe",
+        "is_service_account": False,
+        "is_privileged": False,
+        "can_escalate_privs": True,
+        "account_created": "2016-01-20T12:31:12Z",
+        "credential_last_changed": "2016-01-20T14:27:43Z",
+        "account_first_login": "2016-01-20T14:26:07Z",
+        "account_last_login": "2016-07-22T16:08:28Z"
+    },
+    {
+        "type": "user-account",
+        "spec_version": "2.1",
+        "id": "user-account--9bd3afcf-deee-54f9-83e2-520653cb6bba",
+        "user_id": "thegrugq_ebooks",
+        "account_login": "thegrugq_ebooks",
+        "account_type": "twitter",
+        "display_name": "the grugq"
+    },
+    {
+        "type": "user-account",
+        "spec_version": "2.1",
+        "id": "user-account--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "user_id": "1001",
+        "account_login": "jdoe",
+        "account_type": "unix",
+        "display_name": "John Doe",
+        "is_service_account": False,
+        "is_privileged": False,
+        "can_escalate_privs": True,
+        "extensions": {
+            "unix-account-ext": {
+                "gid": 1001,
+                "groups": ["wheel"],
+                "home_dir": "/home/jdoe",
+                "shell": "/bin/bash"
+            }
+        }
+    }
+]
 _VULNERABILITY_OBJECTS = [
     {
         "type": "vulnerability",
@@ -1291,6 +1367,10 @@ class TestExternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_url_attributes(cls):
         return cls.__assemble_bundle(*_URL_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_user_account_objects(cls):
+        return cls.__assemble_bundle(*_USER_ACCOUNT_OBJECTS)
 
     @classmethod
     def get_bundle_with_x509_objects(cls):

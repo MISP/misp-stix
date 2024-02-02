@@ -810,6 +810,71 @@ _URL_ATTRIBUTES = [
         }
     }
 ]
+_USER_ACCOUNT_OBJECTS = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "1001",
+                "account_login": "jdoe",
+                "account_type": "unix",
+                "display_name": "John Doe",
+                "is_service_account": False,
+                "is_privileged": False,
+                "can_escalate_privs": True,
+                "account_created": "2016-01-20T12:31:12Z",
+                "password_last_changed": "2016-01-20T14:27:43Z",
+                "account_first_login": "2016-01-20T14:26:07Z",
+                "account_last_login": "2016-07-22T16:08:28Z"
+            },
+            "1": {
+                "type": "user-account",
+                "user_id": "thegrugq_ebooks",
+                "account_login": "thegrugq_ebooks",
+                "account_type": "twitter",
+                "display_name": "the grugq"
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "user-account",
+                "user_id": "1001",
+                "account_login": "jdoe",
+                "account_type": "unix",
+                "display_name": "John Doe",
+                "is_service_account": False,
+                "is_privileged": False,
+                "can_escalate_privs": True,
+                "extensions": {
+                    "unix-account-ext": {
+                        "gid": 1001,
+                        "groups": ["wheel"],
+                        "home_dir": "/home/jdoe",
+                        "shell": "/bin/bash"
+                    }
+                }
+            }
+        }
+    }
+]
 _VULNERABILITY_OBJECTS = [
     {
         "type": "vulnerability",
@@ -1090,6 +1155,10 @@ class TestExternalSTIX20Bundles:
     @classmethod
     def get_bundle_with_url_attributes(cls):
         return cls.__assemble_bundle(*_URL_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_user_account_objects(cls):
+        return cls.__assemble_bundle(*_USER_ACCOUNT_OBJECTS)
 
     @classmethod
     def get_bundle_with_x509_objects(cls):

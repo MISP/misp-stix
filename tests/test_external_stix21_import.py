@@ -495,6 +495,51 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(od1, url_2, m_url2, 'url')
         self._check_generic_attribute(od2, url_3, s_url, 'url')
 
+    def test_stix21_bundle_with_user_account_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_user_account_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, od2, user1, user2, user3 = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 3)
+        multiple1, multiple2, single = misp_objects
+        self._assert_multiple_equal(
+            multiple1.name, multiple2.name, single.name, 'user-account'
+        )
+        self._check_misp_object_fields(multiple1, od1, user1)
+        self.assertEqual(len(multiple1.attributes), 11)
+        self._check_user_account_fields(
+            multiple1.attributes[:7], user1, user1.id
+        )
+        self._check_user_account_timeline_fields(
+            multiple1.attributes[7:-1], user1, user1.id
+        )
+        password_last_changed = multiple1.attributes[-1]
+        self.assertEqual(
+            password_last_changed.object_relation, 'password_last_changed'
+        )
+        self.assertEqual(
+            password_last_changed.value, user1.credential_last_changed
+        )
+        self.assertEqual(
+            password_last_changed.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{user1.id} - password_last_changed'
+                f' - {password_last_changed.value}'
+            )
+        )
+        self._check_misp_object_fields(multiple2, od1, user2)
+        self._check_user_account_twitter_fields(multiple2, user2, user2.id)
+        self._check_misp_object_fields(single, od2, user3)
+        self.assertEqual(len(single.attributes), 11)
+        self._check_user_account_fields(single.attributes[:7], user3, user3.id)
+        self._check_user_account_extension_fields(
+            single.attributes[7:], user3.extensions['unix-account-ext'],
+            user3.id
+        )
+
     def test_stix21_bundle_with_x509_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_x509_objects()
         self.parser.load_stix_bundle(bundle)
