@@ -933,12 +933,12 @@ class ExternalSTIX2ObservedDataConverter(
                 observed_data, identifier, 'url'
             )
 
-    def _parse_user_account_observable_objects(
+    def _parse_user_account_observable_object_refs(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
             user_account = observable['observable']
-            self._parse_generic_observable_object(
+            self._parse_generic_observable_object_ref(
                 user_account, observed_data, 'user-account', False
             )
             observable['used'][self.event_uuid] = True
