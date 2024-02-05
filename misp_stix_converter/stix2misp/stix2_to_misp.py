@@ -1104,7 +1104,16 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if hasattr(stix_object, 'confidence'):
             yield self._parse_confidence_level(stix_object.confidence)
         if hasattr(stix_object, 'object_marking_refs'):
-            yield from self._parse_markings(stix_object.object_marking_refs)
+            for marking_ref in stix_object.object_marking_refs:
+                try:
+                    marking_definition = self._get_stix_object(marking_ref)
+                except ObjectTypeLoadingError as error:
+                    self._object_type_loading_error(error)
+                    continue
+                except ObjectRefLoadingError as error:
+                    self._object_ref_loading_error(error)
+                    continue
+                yield marking_definition
 
     ############################################################################
     #                             UTILITY METHODS.                             #
@@ -1149,18 +1158,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             # should be TLP 2.0 definition
             return marking_definition.name.lower()
         raise MarkingDefinitionLoadingError(marking_definition.id)
-
-    def _parse_markings(self, marking_refs: list):
-        for marking_ref in marking_refs:
-            try:
-                marking_definition = self._get_stix_object(marking_ref)
-            except ObjectTypeLoadingError as error:
-                self._object_type_loading_error(error)
-                continue
-            except ObjectRefLoadingError as error:
-                self._object_ref_loading_error(error)
-                continue
-            yield marking_definition
 
     @staticmethod
     def _populate_object_attributes(
