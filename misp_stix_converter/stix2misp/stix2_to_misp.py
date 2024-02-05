@@ -33,16 +33,18 @@ from datetime import datetime
 from pymisp import (
     AbstractMISP, MISPEvent, MISPAttribute, MISPGalaxy, MISPGalaxyCluster,
     MISPObject, MISPSighting)
+from stix2 import TLP_AMBER, TLP_GREEN, TLP_RED, TLP_WHITE
 from stix2.parsing import parse as stix2_parser
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
 from stix2.v20.observables import NetworkTraffic as NetworkTraffic_v20
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, Campaign as Campaign_v20,
-    CourseOfAction as CourseOfAction_v20, Identity as Identity_v20,
-    Indicator as Indicator_v20, IntrusionSet as IntrusionSet_v20,
-    Malware as Malware_v20, ObservedData as ObservedData_v20,
-    Report as Report_v20, ThreatActor as ThreatActor_v20, Tool as Tool_v20,
+    CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
+    Identity as Identity_v20, Indicator as Indicator_v20,
+    IntrusionSet as IntrusionSet_v20, Malware as Malware_v20,
+    ObservedData as ObservedData_v20, Report as Report_v20,
+    ThreatActor as ThreatActor_v20, Tool as Tool_v20,
     Vulnerability as Vulnerability_v20)
 from stix2.v20.sro import (
     Relationship as Relationship_v20, Sighting as Sighting_v20)
@@ -53,13 +55,14 @@ from stix2.v21.observables import (
     EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
     NetworkTraffic as NetworkTraffic_v21, Process, Software, URL, UserAccount,
     WindowsRegistryKey, X509Certificate)
-from stix2.v21.sdo import Grouping, MalwareAnalysis, Note, Opinion
+from stix2.v21.sdo import Grouping, Location, MalwareAnalysis, Note, Opinion
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, Campaign as Campaign_v21,
-    CourseOfAction as CourseOfAction_v21, Identity as Identity_v21,
-    Indicator as Indicator_v21, IntrusionSet as IntrusionSet_v21, Location,
-    Malware as Malware_v21, ObservedData as ObservedData_v21,
-    Report as Report_v21, ThreatActor as ThreatActor_v21, Tool as Tool_v21,
+    CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21,
+    Identity as Identity_v21, Indicator as Indicator_v21,
+    IntrusionSet as IntrusionSet_v21, Malware as Malware_v21,
+    ObservedData as ObservedData_v21, Report as Report_v21,
+    ThreatActor as ThreatActor_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
 from stix2.v21.sro import (
     Relationship as Relationship_v21, Sighting as Sighting_v21)
@@ -171,8 +174,12 @@ _REPORT_TYPING = Union[
     Report_v20, Report_v21
 ]
 _SDO_TYPING = Union[
+    Campaign_v20, Campaign_v21,
+    CustomObject_v20, CustomObject_v21,
+    Grouping,
     Indicator_v20, Indicator_v21,
     ObservedData_v20, ObservedData_v21,
+    Report_v20, Report_v21,
     Vulnerability_v20, Vulnerability_v21
 ]
 _SIGHTING_TYPING = Union[
@@ -587,14 +594,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _handle_misp_event_tags(
             self, misp_event: MISPEvent, stix_object: _GROUPING_REPORT_TYPING):
-        if hasattr(stix_object, 'object_marking_refs'):
-            for marking_ref in stix_object.object_marking_refs:
-                try:
-                    misp_event.add_tag(self._marking_definition[marking_ref])
-                except KeyError:
-                    self._unknown_marking_ref_warning(marking_ref)
-                except AttributeError:
-                    self._unknown_marking_object_warning(marking_ref)
+        for tag in  self._handle_tags_from_stix_fields(stix_object):
+            misp_event.add_tag(tag)
         if hasattr(stix_object, 'labels'):
             self._fetch_tags_from_labels(misp_event, stix_object.labels)
 
@@ -1035,19 +1036,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                             stix_object: _SDO_TYPING) -> MISPAttribute:
         misp_attribute = MISPAttribute()
         misp_attribute.from_dict(**attribute)
-        tags = tuple(self._handle_tags_from_stix_fields(stix_object))
-        if tags:
-            for tag in tags:
-                misp_attribute.add_tag(tag)
+        for tag in self._handle_tags_from_stix_fields(stix_object):
+            misp_attribute.add_tag(tag)
         return self.misp_event.add_attribute(**misp_attribute)
 
     def _add_misp_object(self, misp_object: MISPObject,
                          stix_object: _SDO_TYPING) -> MISPObject:
-        tags = tuple(self._handle_tags_from_stix_fields(stix_object))
-        if tags:
+        for tag in self._handle_tags_from_stix_fields(stix_object):
             for attribute in misp_object.attributes:
-                for tag in tags:
-                    attribute.add_tag(tag)
+                attribute.add_tag(tag)
         return self.misp_event.add_object(misp_object)
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
@@ -1117,7 +1114,22 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if hasattr(stix_object, 'confidence'):
             yield self._parse_confidence_level(stix_object.confidence)
         if hasattr(stix_object, 'object_marking_refs'):
-            yield from self._parse_markings(stix_object.object_marking_refs)
+            for marking_ref in stix_object.object_marking_refs:
+                try:
+                    marking_definition = self._get_stix_object(marking_ref)
+                except ObjectTypeLoadingError as error:
+                    if self._is_tlp_marking(marking_ref):
+                        yield self._get_stix_object(marking_ref)
+                    else:
+                        self._object_type_loading_error(error)
+                    continue
+                except ObjectRefLoadingError as error:
+                    if self._is_tlp_marking(marking_ref):
+                        yield self._get_stix_object(marking_ref)
+                    else:
+                        self._object_ref_loading_error(error)
+                    continue
+                yield marking_definition
 
     ############################################################################
     #                             UTILITY METHODS.                             #
@@ -1133,6 +1145,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for label in (label for label in labels
                       if label.lower() != 'threat-report'):
             misp_feature.add_tag(label)
+
+    def _is_tlp_marking(self, marking_ref: str) -> bool:
+        for marking in (TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED):
+            if marking_ref == marking.id:
+                self._load_marking_definition(marking)
+                return True
+        return False
 
     @staticmethod
     def _parse_AS_value(number: Union[int, str]) -> str:
