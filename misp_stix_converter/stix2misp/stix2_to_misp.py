@@ -1173,7 +1173,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             except ObjectRefLoadingError as error:
                 self._object_ref_loading_error(error)
                 continue
-            yield(marking_definition)
+            yield marking_definition
 
     def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
         misp_object = {
