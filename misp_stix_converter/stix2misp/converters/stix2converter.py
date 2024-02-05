@@ -160,43 +160,11 @@ class STIX2Converter(metaclass=ABCMeta):
         if meta_labels:
             meta['labels'] = meta_labels
 
-    def _handle_tags_from_stix_fields(self, stix_object: _SDO_TYPING):
-        if hasattr(stix_object, 'confidence'):
-            yield self._parse_confidence_level(stix_object.confidence)
-        if hasattr(stix_object, 'object_marking_refs'):
-            yield from self._parse_markings(stix_object.object_marking_refs)
-
     @staticmethod
     def _parse_AS_value(number: Union[int, str]) -> str:
         if isinstance(number, int) or not number.startswith('AS'):
             return f'AS{number}'
         return number
-
-    @staticmethod
-    def _parse_confidence_level(confidence_level: int) -> str:
-        if confidence_level == 100:
-            return 'misp:confidence-level="completely-confident"'
-        if confidence_level >= 75:
-            return 'misp:confidence-level="usually-confident"'
-        if confidence_level >= 50:
-            return 'misp:confidence-level="fairly-confident"'
-        if confidence_level >= 25:
-            return 'misp:confidence-level="rarely-confident"'
-        return 'misp:confidence-level="unconfident"'
-
-    def _parse_markings(self, marking_refs: list):
-        for marking_ref in marking_refs:
-            try:
-                marking_definition = self.main_parser._get_stix_object(
-                    marking_ref
-                )
-            except ObjectTypeLoadingError as error:
-                self.main_parser._object_type_loading_error(error)
-                continue
-            except ObjectRefLoadingError as error:
-                self.main_parser._object_ref_loading_error(error)
-                continue
-            yield(marking_definition)
 
     def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
         misp_object = {
@@ -386,7 +354,9 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _handle_object_case(self, stix_object: _SDO_TYPING, attributes: list,
                             name: str) -> MISPObject:
         misp_object = self._create_misp_object(name, stix_object)
-        tags = tuple(self._handle_tags_from_stix_fields(stix_object))
+        tags = tuple(
+            self.main_parser._handle_tags_from_stix_fields(stix_object)
+        )
         if tags:
             for attribute in attributes:
                 misp_attribute = misp_object.add_attribute(**attribute)

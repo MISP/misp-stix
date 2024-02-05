@@ -1100,19 +1100,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         cluster.from_dict(**cluster_args)
         return cluster
 
-    def _create_misp_object(
-            self, name: str, stix_object: Optional[_SDO_TYPING] = None
-            ) -> MISPObject:
-        misp_object = MISPObject(
-            name,
-            misp_objects_path_custom=_MISP_OBJECTS_PATH,
-            force_timestamps=True
-        )
-        if stix_object is not None:
-            self._sanitise_object_uuid(misp_object, stix_object['id'])
-            misp_object.from_dict(**self._parse_timeline(stix_object))
-        return misp_object
-
     def _handle_tags_from_stix_fields(self, stix_object: _SDO_TYPING):
         if hasattr(stix_object, 'confidence'):
             yield self._parse_confidence_level(stix_object.confidence)
@@ -1174,20 +1161,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._object_ref_loading_error(error)
                 continue
             yield marking_definition
-
-    def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
-        misp_object = {
-            'timestamp': self._timestamp_from_date(stix_object.modified)
-        }
-        object_type = stix_object.type
-        if self._mapping.timeline_mapping(object_type) is not None:
-            first, last = self._mapping.timeline_mapping(object_type)
-            if not self._skip_first_seen_last_seen(stix_object):
-                if hasattr(stix_object, first) and getattr(stix_object, first):
-                    misp_object['first_seen'] = getattr(stix_object, first)
-                if hasattr(stix_object, last) and getattr(stix_object, last):
-                    misp_object['last_seen'] = getattr(stix_object, last)
-        return misp_object
 
     @staticmethod
     def _populate_object_attributes(
