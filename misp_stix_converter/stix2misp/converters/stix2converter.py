@@ -92,8 +92,9 @@ class STIX2Converter(metaclass=ABCMeta):
                     attribute, getattr(stix_object, field), stix_object.id
                 )
 
-    def _populate_object_attribute(self, mapping: dict, reference: str,
+    def _populate_object_attribute(self, mapping: dict, object_id: str,
                                    value: Union[dict, str]) -> dict:
+        reference = f"{object_id} - {mapping['object_relation']}"
         if isinstance(value, dict):
             attribute_value = value['value']
             return {
@@ -132,12 +133,11 @@ class STIX2Converter(metaclass=ABCMeta):
     def _populate_object_attributes_with_data(
             self, mapping: dict, values: Union[dict, list, str],
             object_id: str) -> Iterator[dict]:
-        reference = f"{object_id} - {mapping['object_relation']}"
         if isinstance(values, list):
             for value in values:
-                yield self._populate_object_attribute(mapping, reference, value)
+                yield self._populate_object_attribute(mapping, object_id, value)
         else:
-            yield self._populate_object_attribute(mapping, reference, values)
+            yield self._populate_object_attribute(mapping, object_id, values)
 
     ############################################################################
     #                             UTILITY METHODS.                             #
