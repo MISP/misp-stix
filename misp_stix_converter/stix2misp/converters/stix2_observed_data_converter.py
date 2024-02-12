@@ -7,59 +7,36 @@ from ..exceptions import (
 from .stix2_observable_converter import (
     ExternalSTIX2ObservableConverter, ExternalSTIX2ObservableMapping,
     InternalSTIX2ObservableConverter, InternalSTIX2ObservableMapping,
-    STIX2ObservableConverter, _ARTIFACT_TYPING, _AUTONOMOUS_SYSTEM_TYPING,
-    _DIRECTORY_TYPING, _EMAIL_ADDRESS_TYPING, _EXTENSION_TYPING,
-    _NETWORK_TRAFFIC_TYPING, _PROCESS_TYPING)
+    STIX2ObservableConverter, _AUTONOMOUS_SYSTEM_TYPING, _EMAIL_ADDRESS_TYPING,
+    _EXTENSION_TYPING, _NETWORK_TRAFFIC_TYPING, _PROCESS_TYPING)
 from .stix2converter import _MAIN_PARSER_TYPING
 from abc import ABCMeta
 from collections import defaultdict
 from pymisp import MISPObject
 from stix2.v20.observables import (
-    Artifact as Artifact_v20, AutonomousSystem as AutonomousSystem_v20,
-    Directory as Directory_v20, DomainName as DomainName_v20,
-    IPv4Address as IPv4Address_v20, IPv6Address as IPv6Address_v20,
-    MACAddress as MACAddress_v20, Mutex as Mutex_v20, Process as Process_v20,
-    Software as Software_v20, URL as URL_v20, UserAccount as UserAccount_v20,
-    X509Certificate as X509Certificate_v20)
+    WindowsRegistryValueType as WindowsRegistryValueType_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
 from stix2.v21.observables import (
-    Artifact as Artifact_v21, AutonomousSystem as AutonomousSystem_v21,
-    Directory as Directory_v21, DomainName as DomainName_v21,
-    IPv4Address as IPv4Address_v21, IPv6Address as IPv6Address_v21,
-    MACAddress as MACAddress_v21, Mutex as Mutex_v21, Process as Process_v21,
-    Software as Software_v21, URL as URL_v21, UserAccount as UserAccount_v21,
-    X509Certificate as X509Certificate_v21)
+    Artifact, AutonomousSystem, Directory, DomainName, File, IPv4Address,
+    IPv6Address, MACAddress, Mutex, Process, Software, URL, UserAccount,
+    X509Certificate)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
-from typing import Iterator, Optional, TYPE_CHECKING, Union
+from typing import Optional, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
 
 _GENERIC_OBSERVABLE_OBJECT_TYPING = Union[
-    Artifact_v20, Artifact_v21,
-    Directory_v20, Directory_v21,
-    Software_v20, Software_v21,
-    Process_v20, Process_v21,
-    UserAccount_v20, UserAccount_v21,
-    X509Certificate_v20, X509Certificate_v21
+    Artifact, Directory, File, Process, Software, UserAccount,
+    X509Certificate
 ]
 _GENERIC_OBSERVABLE_TYPING = Union[
-    DomainName_v20, DomainName_v21,
-    IPv4Address_v20, IPv4Address_v21,
-    IPv6Address_v20, IPv6Address_v21,
-    MACAddress_v20, MACAddress_v21,
-    Mutex_v20, Mutex_v21,
-    URL_v20, URL_v21
+    DomainName, IPv4Address, IPv6Address, MACAddress, Mutex, URL
 ]
 _OBSERVABLE_OBJECTS_TYPING = Union[
-    Artifact_v20, Artifact_v21,
-    AutonomousSystem_v20, AutonomousSystem_v21,
-    Directory_v20, Directory_v21,
-    Process_v20, Process_v21,
-    Software_v20, Software_v21,
-    UserAccount_v20, UserAccount_v21,
-    X509Certificate_v20, X509Certificate_v21
+    Artifact, AutonomousSystem, Directory, File, Process, Software,
+    UserAccount, X509Certificate
 ]
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20, ObservedData_v21
@@ -281,7 +258,7 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _parse_autonomous_system_observable_object_ref(
             self, autonomous_system: _AUTONOMOUS_SYSTEM_TYPING,
-            observed_data: _OBSERVED_DATA_TYPING) -> MISPObject:
+            observed_data: ObservedData_v21) -> MISPObject:
         misp_object = self._create_misp_object_from_observable_object_ref(
             'asn', autonomous_system, observed_data
         )
