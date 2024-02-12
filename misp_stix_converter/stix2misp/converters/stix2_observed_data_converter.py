@@ -964,6 +964,7 @@ class ExternalSTIX2ObservedDataConverter(
         misp_object = self._create_misp_object(name)
         misp_object.from_dict(
             uuid=self.main_parser._create_v5_uuid(object_id),
+            comment=f'Observed Data ID: {observed_data.id}',
             **self._parse_timeline(observed_data)
         )
         return misp_object
