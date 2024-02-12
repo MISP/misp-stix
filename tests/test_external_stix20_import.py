@@ -278,6 +278,9 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
                 misp_object.uuid,
                 uuid5(self._UUIDv4, f'{observed_data.id} - {identifier}')
             )
+            self.assertEqual(
+                misp_object.comment, f'Observed Data ID: {observed_data.id}'
+            )
         if not (observed_data.modified == observed_data.first_observed == observed_data.last_observed):
             self.assertEqual(misp_object.first_seen, observed_data.first_observed)
             self.assertEqual(misp_object.last_seen, observed_data.last_observed)
