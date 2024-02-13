@@ -453,6 +453,43 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(name.value, autonomous_system.name)
         self.assertEqual(name.uuid, uuid5(self._UUIDv4, f'{object_id} - description - {name.value}'))
 
+    def _check_creator_user_fields(self, misp_object, user_account, object_id):
+        self.assertEqual(len(misp_object.attributes), 4)
+        username, account_type, privileged, user_id = misp_object.attributes
+        self.assertEqual(username.type, 'text')
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, user_account.account_login)
+        self.assertEqual(
+            username.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - username - {username.value}')
+        )
+        self.assertEqual(account_type.type, 'text')
+        self.assertEqual(account_type.object_relation, 'account-type')
+        self.assertEqual(account_type.value, user_account.account_type)
+        self.assertEqual(
+            account_type.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - account-type - {account_type.value}'
+            )
+        )
+        self.assertEqual(privileged.type, 'boolean')
+        self.assertEqual(privileged.object_relation, 'privileged')
+        self.assertEqual(privileged.value, user_account.is_privileged)
+        self.assertEqual(
+            privileged.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - privileged - {privileged.value}'
+            )
+        )
+        self.assertEqual(user_id.type, 'text')
+        self.assertEqual(user_id.object_relation, 'user-id')
+        self.assertEqual(user_id.value, user_account.user_id)
+        self.assertEqual(
+            user_id.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - user-id - {user_id.value}')
+        )
+
     def _check_directory_fields(self, misp_object, directory, object_id):
         self.assertEqual(len(misp_object.attributes), 5)
         accessed, created, modified, path, path_enc = misp_object.attributes

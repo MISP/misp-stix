@@ -802,7 +802,8 @@ _REGISTRY_KEY_OBJECTS = [
         "last_observed": "2020-10-25T16:22:00Z",
         "number_observed": 1,
         "object_refs": [
-            "windows-registry-key--28b2fff7-ca78-483b-9c4f-6f684ee7cdd0"
+            "windows-registry-key--28b2fff7-ca78-483b-9c4f-6f684ee7cdd0",
+            "user-account--5e384ae7-672c-4250-9cda-3b4da964451a"
         ]
     },
     {
@@ -826,6 +827,7 @@ _REGISTRY_KEY_OBJECTS = [
         "key": "hkey_local_machine\\system\\bar\\foo",
         "modified_time": "2020-10-25T16:22:00Z",
         "number_of_subkeys": 2,
+        "creator_user_ref": "user-account--5e384ae7-672c-4250-9cda-3b4da964451a",
         "values": [
             {
                 "name": "Foo",
@@ -845,6 +847,7 @@ _REGISTRY_KEY_OBJECTS = [
         "id": "windows-registry-key--28b2fff7-ca78-483b-9c4f-6f684ee7cdd0",
         "key": "hkey_local_machine\\system\\foo\\fortytwo",
         "modified_time": "2020-10-25T16:22:00Z",
+        "creator_user_ref": "user-account--5e384ae7-672c-4250-9cda-3b4da964451a",
         "values": [
             {
                 "name": "FortyTwoFoo",
@@ -852,6 +855,15 @@ _REGISTRY_KEY_OBJECTS = [
                 "data_type": "REG_QWORD"
             }
         ]
+    },
+    {
+        "type": "user-account",
+        "spec_version": "2.1",
+        "id": "user-account--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "user_id": "john.doe",
+        "account_login": "JohnDoe",
+        "account_type": "windows-local",
+        "is_privileged": True
     }
 ]
 _SOFTWARE_OBJECTS = [

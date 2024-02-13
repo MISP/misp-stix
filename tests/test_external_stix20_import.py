@@ -543,12 +543,21 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, report, observed_data1, observed_data2 = bundle.objects
         misp_objects = self._check_misp_event_features(event, report)
-        self.assertEqual(len(misp_objects), 5)
-        multiple1, multiple2, value1, value2, single = misp_objects
+        self.assertEqual(len(misp_objects), 6)
+        multiple1, multiple2, value1, value2, creator_user, single = misp_objects
         self._check_registry_key_object(multiple1, observed_data1, identifier='0')
         self._check_registry_key_object(
             multiple2, observed_data1, value1, value2, identifier='1'
         )
+        self._check_misp_object_fields(creator_user, observed_data1, '2')
+        self._check_creator_user_fields(
+            creator_user, observed_data1.objects['2'],
+            f'{observed_data1.id} - 2'
+        )
+        self.assertEqual(len(creator_user.references), 1)
+        reference = creator_user.references[0]
+        self.assertEqual(reference.referenced_uuid, multiple2.uuid)
+        self.assertEqual(reference.relationship_type, 'creates')
         self._check_registry_key_object(single, observed_data2)
 
     def test_stix20_bundle_with_software_objects(self):

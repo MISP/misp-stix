@@ -650,6 +650,7 @@ _REGISTRY_KEY_OBJECTS = [
                 "key": "hkey_local_machine\\system\\bar\\foo",
                 "modified": "2020-10-25T16:22:00Z",
                 "number_of_subkeys": 2,
+                "creator_user_ref": "2",
                 "values": [
                     {
                         "name": "Foo",
@@ -662,6 +663,13 @@ _REGISTRY_KEY_OBJECTS = [
                         "data_type": "REG_DWORD"
                     }
                 ]
+            },
+            "2": {
+                "type": "user-account",
+                "user_id": "john.doe",
+                "account_login": "JohnDoe",
+                "account_type": "windows-local",
+                "is_privileged": True
             }
         }
     },

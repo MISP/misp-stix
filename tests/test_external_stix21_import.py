@@ -497,13 +497,32 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, od1, od2, key1, key2, key3 = bundle.objects
+        _, grouping, od1, od2, key1, key2, key3, user = bundle.objects
         misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
-        self.assertEqual(len(misp_objects), 5)
-        multiple1, multiple2, value1, value2, single = misp_objects
+        self.assertEqual(len(misp_objects), 6)
+        multiple1, multiple2, value1, value2, creator_user, single = misp_objects
         self._check_registry_key_object(multiple1, od1, key1)
         self._check_registry_key_object(multiple2, od1, key2, value1, value2)
         self._check_registry_key_object(single, od2, key3)
+        self.assertEqual(creator_user.uuid, user.id.split('--')[1])
+        self.assertEqual(creator_user.name, 'user-account')
+        self.assertEqual(
+            creator_user.comment,
+            f'Observed Data ID: {od1.id} - Observed Data ID: {od2.id}'
+        )
+        self.assertEqual(creator_user.timestamp, od1.modified)
+        self._assert_multiple_equal(
+            creator_user.first_seen, od1.first_observed, od2.first_observed
+        )
+        self._check_creator_user_fields(creator_user, user, user.id)
+        self.assertEqual(len(creator_user.references), 2)
+        reference1, reference2 = creator_user.references
+        self.assertEqual(reference1.referenced_uuid, multiple2.uuid)
+        self._assert_multiple_equal(
+            reference1.relationship_type,
+            reference2.relationship_type,
+            'creates'
+        )
 
     def test_stix21_bundle_with_software_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_software_objects()
