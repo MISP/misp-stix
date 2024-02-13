@@ -168,7 +168,7 @@ class STIX2Converter(metaclass=ABCMeta):
 
     def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
         misp_object = {
-            'timestamp': self._timestamp_from_date(stix_object.modified)
+            'timestamp': stix_object.modified
         }
         object_type = stix_object.type
         if self._mapping.timeline_mapping(object_type) is not None:
