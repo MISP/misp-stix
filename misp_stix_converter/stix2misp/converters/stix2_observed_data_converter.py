@@ -12,6 +12,7 @@ from .stix2_observable_converter import (
 from .stix2converter import _MAIN_PARSER_TYPING
 from abc import ABCMeta
 from collections import defaultdict
+from datetime import datetime
 from pymisp import MISPObject
 from stix2.v20.observables import (
     WindowsRegistryValueType as WindowsRegistryValueType_v20)
@@ -135,6 +136,17 @@ class ExternalSTIX2ObservedDataConverter(
     ############################################################################
     #                    OBSERVABLE OBJECTS PARSING METHODS                    #
     ############################################################################
+
+    def _handle_observable_object_refs_parsing(
+            self, observable: dict, observed_data: ObservedData_v21,
+            *args: tuple) -> MISPObject:
+        if observable['used'].get(self.event_uuid, False):
+            misp_object = observable['misp_object']
+            self._handle_misp_object_fields(misp_object, observed_data)
+            return misp_object
+        return self._parse_generic_observable_object_ref(
+            observable['observable'], observed_data, *args
+        )
 
     def _parse_artifact_observable_object_refs(
             self, observed_data: ObservedData_v21):
@@ -286,14 +298,10 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
-            directory = observable['observable']
-            misp_object = (
-                observable['misp_object'] if
-                observable['used'].get(self.event_uuid, False) else
-                self._parse_generic_observable_object_ref(
-                    directory, observed_data, 'directory'
-                )
+            misp_object = self._handle_observable_object_refs_parsing(
+                observable, observed_data, 'directory'
             )
+            directory = observable['observable']
             observable['misp_object'] = misp_object
             observable['used'][self.event_uuid] = True
             if not hasattr(directory, 'contains_refs'):
@@ -301,6 +309,7 @@ class ExternalSTIX2ObservedDataConverter(
             for contained_ref in directory.contains_refs:
                 contained = self._fetch_observables(contained_ref)
                 if contained['used'].get(self.event_uuid, False):
+                    self._handle_misp_object_fields(misp_object, observed_data)
                     misp_object.add_reference(
                         contained['misp_object'].uuid, 'contains'
                     )
@@ -746,15 +755,11 @@ class ExternalSTIX2ObservedDataConverter(
                     observable['used'][self.event_uuid] = True
                     observable['misp_object'] = misp_object
                 continue
-            process = observable['observable']
-            misp_object = (
-                observable['misp_object'] if
-                observable['used'].get(self.event_uuid, False) else
-                self._parse_generic_observable_object_ref(
-                    process, observed_data, 'process', False
-                )
+            misp_object = self._handle_observable_object_refs_parsing(
+                observable, observed_data, 'process', False
             )
             observable['used'][self.event_uuid] = True
+            process = observable['observable']
             if hasattr(process, 'parent_ref'):
                 self._parse_process_reference_observable_object_ref(
                     observed_data, misp_object, process.parent_ref, 'child-of'
@@ -841,6 +846,7 @@ class ExternalSTIX2ObservedDataConverter(
             name: Optional[str] = 'process'):
         observable = self._fetch_observables(reference)
         if observable['used'].get(self.event_uuid, False):
+            self._handle_misp_object_fields(misp_object, observed_data)
             misp_object.add_reference(
                 observable['misp_object'].uuid, relationship_type
             )
@@ -915,6 +921,9 @@ class ExternalSTIX2ObservedDataConverter(
             observable_object = observable['observable']
             if observable_object.type == 'user-account':
                 if observable['used'].get(self.event_uuid, False):
+                    self._handle_misp_object_fields(
+                        observable['misp_object'], observed_data
+                    )
                     continue
                 misp_object = self._parse_generic_observable_object_ref(
                     observable_object, observed_data, 'user-account', False
@@ -932,6 +941,9 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 if creator_observable['used'].get(self.event_uuid, False):
                     creator_object = creator_observable['misp_object']
+                    self._handle_misp_object_fields(
+                        creator_object, observed_data
+                    )
                     creator_object.add_reference(misp_object.uuid, 'creates')
                     continue
                 creator_object = self._parse_generic_observable_object_ref(
@@ -1151,6 +1163,24 @@ class ExternalSTIX2ObservedDataConverter(
         )
         self.main_parser._sanitise_object_uuid(misp_object, observable.id)
         return misp_object
+
+    def _handle_misp_object_fields(
+            self, misp_object: MISPObject, observed_data: ObservedData_v21):
+        time_fields = self._parse_timeline(observed_data)
+        for field in ('timestamp', 'last_seen'):
+            if time_fields.get(field) is None:
+                continue
+            if time_fields[field] > misp_object.get(field, datetime.max):
+                setattr(misp_object, field, time_fields[field])
+        if time_fields.get('first_seen') is not None:
+            field = 'first_seen'
+            if time_fields[field] < misp_object.get(field, datetime.min):
+                misp_object.first_seen = time_fields[field]
+        comment = f'Observed Data ID: {observed_data.id}'
+        if misp_object.get('comment') is None:
+            misp_object.comment = comment
+        elif comment not in misp_object.comment:
+            misp_object.comment = f'{misp_object.comment} - {comment}'
 
 
 class InternalSTIX2ObservedDataConverter(
@@ -1377,7 +1407,7 @@ class InternalSTIX2ObservedDataConverter(
     def _attribute_from_first_observable_v21(
             self, observed_data: ObservedData_v21):
         attribute = self._create_attribute_dict(observed_data)
-        observable = self._fetch_observables(observed_data.object_refs[0])
+        observable = self._fetch_observables(observed_data.object_refs)
         attribute['value'] = observable.value
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
