@@ -19,7 +19,8 @@ from stix2.v20.sdo import ObservedData as ObservedData_v20
 from stix2.v21.observables import (
     Artifact, AutonomousSystem, Directory, DomainName, File, IPv4Address,
     IPv6Address, MACAddress, Mutex, Process, Software, URL, UserAccount,
-    X509Certificate)
+    WindowsRegistryKey, X509Certificate,
+    WindowsRegistryValueType as WindowsRegistryValueType_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
 from typing import Optional, TYPE_CHECKING, Union
 
@@ -29,17 +30,20 @@ if TYPE_CHECKING:
 
 _GENERIC_OBSERVABLE_OBJECT_TYPING = Union[
     Artifact, Directory, File, Process, Software, UserAccount,
-    X509Certificate
+    WindowsRegistryKey, X509Certificate
 ]
 _GENERIC_OBSERVABLE_TYPING = Union[
     DomainName, IPv4Address, IPv6Address, MACAddress, Mutex, URL
 ]
 _OBSERVABLE_OBJECTS_TYPING = Union[
     Artifact, AutonomousSystem, Directory, File, Process, Software,
-    UserAccount, X509Certificate
+    UserAccount, WindowsRegistryKey, X509Certificate
 ]
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20, ObservedData_v21
+]
+_WINDOWS_REGISTRY_VALUE_TYPING = Union[
+    WindowsRegistryValueType_v20, WindowsRegistryValueType_v21
 ]
 
 
@@ -855,6 +859,106 @@ class ExternalSTIX2ObservedDataConverter(
                     relationship_type
                 )
             )
+
+    def _parse_registry_key_observable_object_ref(
+            self, registry_key: WindowsRegistryKey,
+            observed_data: ObservedData_v21):
+        regkey_object = self._create_misp_object_from_observable_object_ref(
+            'registry-key', registry_key, observed_data,
+        )
+        for attribute in self._parse_registry_key_observable(registry_key):
+            regkey_object.add_attribute(**attribute)
+        misp_object = self.main_parser._add_misp_object(
+            regkey_object, observed_data
+        )
+        if len(registry_key.get('values', [])) > 1:
+            for index, registry_value in enumerate(registry_key['values']):
+                value_uuid = self._parse_registry_key_value_observable(
+                    registry_value, observed_data,
+                    f'{registry_key.id} - values - {index}'
+                )
+                misp_object.add_reference(value_uuid, 'contains')
+
+    def _parse_registry_key_observable_object_refs(
+            self, observed_data: ObservedData_v21):
+        for object_ref in observed_data.object_refs:
+            observable = self._fetch_observables(object_ref)
+            registry_key = observable['observable']
+            self._parse_registry_key_observable_object_ref(
+                registry_key, observed_data
+            )
+            observable['used'][self.event_uuid] = True
+
+    def _parse_registry_key_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        if len(observed_data.objects) == 1:
+            registry_key = next(iter(observed_data.objects.values()))
+            if hasattr(registry_key, 'id'):
+                return self._parse_registry_key_observable_object_ref(
+                    registry_key, observed_data
+                )
+            regkey_object = self._create_misp_object_from_observable_object(
+                'registry-key', observed_data
+            )
+            attributes = self._parse_registry_key_observable(
+                registry_key, observed_data.id
+            )
+            for attribute in attributes:
+                regkey_object.add_attribute(**attribute)
+            misp_object = self.main_parser._add_misp_object(
+                regkey_object, observed_data
+            )
+            if len(registry_key.get('values', [])) > 1:
+                for index, registry_value in enumerate(registry_key['values']):
+                    value_uuid = self._parse_registry_key_value_observable(
+                        registry_value, observed_data,
+                        f'{observed_data.id} - values - {index}'
+                    )
+                    misp_object.add_reference(value_uuid, 'contains')
+            return misp_object
+        for identifier, registry_key in observed_data.objects.items():
+            if hasattr(registry_key, 'id'):
+                return self._parse_registry_key_observable_object_ref(
+                    registry_key, observed_data
+                )
+            object_id = f'{observed_data.id} - {identifier}'
+            regkey_object = self._create_misp_object_from_observable_object(
+                'registry-key', observed_data, object_id
+            )
+            attributes = self._parse_registry_key_observable(
+                registry_key, object_id
+            )
+            for attribute in attributes:
+                regkey_object.add_attribute(**attribute)
+            misp_object = self.main_parser._add_misp_object(
+                regkey_object, observed_data
+            )
+            if len(registry_key.get('values', [])) > 1:
+                for index, registry_value in enumerate(registry_key['values']):
+                    value_uuid = self._parse_registry_key_value_observable(
+                        registry_value, observed_data,
+                        f'{object_id} - values - {index}'
+                    )
+                    misp_object.add_reference(value_uuid, 'contains')
+
+    def _parse_registry_key_value_observable(
+            self, registry_value: _WINDOWS_REGISTRY_VALUE_TYPING,
+            observed_data: _OBSERVED_DATA_TYPING, object_id) -> str:
+        misp_object = self._create_misp_object_from_observable_object(
+            'registry-key-value', observed_data, object_id
+        )
+        mapping = self._mapping.registry_key_values_mapping
+        for field, attribute in mapping().items():
+            if hasattr(registry_value, field):
+                misp_object.add_attribute(
+                    **self._populate_object_attribute(
+                        attribute, object_id, getattr(registry_value, field)
+                    )
+                )
+        misp_object = self.main_parser._add_misp_object(
+            misp_object, observed_data
+        )
+        return misp_object.uuid
 
     def _parse_software_observable_object_refs(
             self, observed_data: ObservedData_v21):
