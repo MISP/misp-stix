@@ -860,9 +860,37 @@ class ExternalSTIX2ObservedDataConverter(
                 )
             )
 
+    def _parse_registry_key_observable_object(
+            self, observed_data: _OBSERVED_DATA_TYPING,
+            identifier: str) -> MISPObject:
+        registry_key = observed_data.objects[identifier]
+        if hasattr(registry_key, 'id'):
+            return self._parse_registry_key_observable_object_ref(
+                registry_key, observed_data
+            )
+        object_id = f'{observed_data.id} - {identifier}'
+        regkey_object = self._create_misp_object_from_observable_object(
+            'registry-key', observed_data, object_id
+        )
+        attributes = self._parse_registry_key_observable(
+            registry_key, object_id
+        )
+        for attribute in attributes:
+            regkey_object.add_attribute(**attribute)
+        misp_object = self.main_parser._add_misp_object(
+            regkey_object, observed_data
+        )
+        if len(registry_key.get('values', [])) > 1:
+            for index, value in enumerate(registry_key['values']):
+                value_uuid = self._parse_registry_key_value_observable(
+                    value, observed_data, f'{object_id} - values - {index}'
+                )
+                misp_object.add_reference(value_uuid, 'contains')
+        return misp_object
+
     def _parse_registry_key_observable_object_ref(
             self, registry_key: WindowsRegistryKey,
-            observed_data: ObservedData_v21):
+            observed_data: ObservedData_v21) -> MISPObject:
         regkey_object = self._create_misp_object_from_observable_object_ref(
             'registry-key', registry_key, observed_data,
         )
@@ -878,16 +906,41 @@ class ExternalSTIX2ObservedDataConverter(
                     f'{registry_key.id} - values - {index}'
                 )
                 misp_object.add_reference(value_uuid, 'contains')
+        return misp_object
 
     def _parse_registry_key_observable_object_refs(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
-            registry_key = observable['observable']
-            self._parse_registry_key_observable_object_ref(
-                registry_key, observed_data
+            observable_object = observable['observable']
+            if observable_object.type == 'user-account':
+                if observable['used'].get(self.event_uuid, False):
+                    continue
+                misp_object = self._parse_generic_observable_object_ref(
+                    observable_object, observed_data, 'user-account', False
+                )
+                observable['misp_object'] = misp_object
+                observable['used'][self.event_uuid] = True
+                continue
+            misp_object = self._parse_registry_key_observable_object_ref(
+                observable_object, observed_data
             )
             observable['used'][self.event_uuid] = True
+            if hasattr(observable_object, 'creator_user_ref'):
+                creator_observable = self._fetch_observables(
+                    observable_object.creator_user_ref
+                )
+                if creator_observable['used'].get(self.event_uuid, False):
+                    creator_object = creator_observable['misp_object']
+                    creator_object.add_reference(misp_object.uuid, 'creates')
+                    continue
+                creator_object = self._parse_generic_observable_object_ref(
+                    creator_observable['observable'], observed_data,
+                    'user-account', False
+                )
+                creator_object.add_reference(misp_object.uuid, 'creates')
+                creator_observable['misp_object'] = creator_object
+                creator_observable['used'][self.event_uuid] = True
 
     def _parse_registry_key_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING):
@@ -916,30 +969,45 @@ class ExternalSTIX2ObservedDataConverter(
                     )
                     misp_object.add_reference(value_uuid, 'contains')
             return misp_object
-        for identifier, registry_key in observed_data.objects.items():
-            if hasattr(registry_key, 'id'):
-                return self._parse_registry_key_observable_object_ref(
-                    registry_key, observed_data
-                )
-            object_id = f'{observed_data.id} - {identifier}'
-            regkey_object = self._create_misp_object_from_observable_object(
-                'registry-key', observed_data, object_id
-            )
-            attributes = self._parse_registry_key_observable(
-                registry_key, object_id
-            )
-            for attribute in attributes:
-                regkey_object.add_attribute(**attribute)
-            misp_object = self.main_parser._add_misp_object(
-                regkey_object, observed_data
-            )
-            if len(registry_key.get('values', [])) > 1:
-                for index, registry_value in enumerate(registry_key['values']):
-                    value_uuid = self._parse_registry_key_value_observable(
-                        registry_value, observed_data,
-                        f'{object_id} - values - {index}'
+        observable_objects = {
+            object_id: {'used': False, 'observable': observable}
+            for object_id, observable in observed_data.objects.items()
+        }
+        for identifier, observable in observable_objects.items():
+            observable_object = observable['observable']
+            if observable_object.type == 'user-account':
+                if observable['used']:
+                    continue
+                misp_object = (
+                    self._parse_generic_observable_object_ref(
+                        observable_object, observed_data, 'user-account', False
+                    ) if observable['used'] else
+                    self._parse_generic_observable_object(
+                        observed_data, identifier, 'user-account', False
                     )
-                    misp_object.add_reference(value_uuid, 'contains')
+                )
+                observable['misp_object'] = misp_object
+                observable['used'] = True
+                continue
+            misp_object = self._parse_registry_key_observable_object(
+                observed_data, identifier
+            )
+            if hasattr(observable_object, 'creator_user_ref'):
+                creator_observable = observable_objects[
+                    observable_object.creator_user_ref
+                ]
+                if creator_observable['used']:
+                    creator_observable['misp_object'].add_reference(
+                        misp_object.uuid, 'creates'
+                    )
+                    continue
+                creator_object = self._parse_generic_observable_object(
+                    observed_data, observable_object.creator_user_ref,
+                    'user-account', False
+                )
+                creator_object.add_reference(misp_object.uuid, 'creates')
+                creator_observable['misp_object'] = creator_object
+                creator_observable['used'] = True
 
     def _parse_registry_key_value_observable(
             self, registry_value: _WINDOWS_REGISTRY_VALUE_TYPING,

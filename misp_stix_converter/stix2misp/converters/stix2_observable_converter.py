@@ -430,7 +430,6 @@ class ExternalSTIX2ObservableMapping(
             'software': 'software',
             'url': 'url',
             'user-account': 'user_account',
-            'windows-registry-key': 'registry_key',
             'x509-certificate': 'x509',
             **dict.fromkeys(
                 (
@@ -504,6 +503,13 @@ class ExternalSTIX2ObservableMapping(
                     'process'
                 ),
                 'process'
+            ),
+            **dict.fromkeys(
+                (
+                    'user-account_windows-registry-key',
+                    'windows-registry-key'
+                ),
+                'registry_key'
             )
         }
     )
