@@ -286,6 +286,36 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self.assertEqual(misp_object.last_seen, observed_data.last_observed)
         self.assertEqual(misp_object.timestamp, observed_data.modified)
 
+    def _check_registry_key_object(
+            self, misp_object, observed_data, *values, identifier=None):
+        self.assertEqual(misp_object.name, 'registry-key')
+        self._check_misp_object_fields(misp_object, observed_data, identifier)
+        object_id = observed_data.id
+        if identifier is None:
+            identifier = '0'
+        else:
+            object_id = f'{observed_data.id} - {identifier}'
+        registry_key = observed_data.objects[identifier]
+        if values:
+            modified = self._check_registry_key_fields(
+                misp_object, registry_key, object_id
+            )
+            for index, value_object in enumerate(values):
+                self.assertEqual(value_object.name, 'registry-key-value')
+                self._check_misp_object_fields(
+                    value_object, observed_data,
+                    f'{identifier} - values - {index}'
+                )
+                self._check_registry_key_value_fields(
+                    value_object, registry_key['values'][index],
+                    f'{object_id} - values - {index}'
+                )
+        else:
+            modified = self._check_registry_key_with_values_fields(
+                misp_object, registry_key, object_id
+            )
+        self.assertEqual(modified.value, registry_key.modified)
+
     def _check_software_object(self, misp_object, observed_data, identifier):
         self.assertEqual(misp_object.name, 'software')
         self._check_misp_object_fields(misp_object, observed_data, identifier)
@@ -505,6 +535,21 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_process_single_fields(
             single, observed_data2.objects['0'], observed_data2.id
         )
+
+    def test_stix20_bundle_with_registry_key_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_registry_key_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data1, observed_data2 = bundle.objects
+        misp_objects = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_objects), 5)
+        multiple1, multiple2, value1, value2, single = misp_objects
+        self._check_registry_key_object(multiple1, observed_data1, identifier='0')
+        self._check_registry_key_object(
+            multiple2, observed_data1, value1, value2, identifier='1'
+        )
+        self._check_registry_key_object(single, observed_data2)
 
     def test_stix20_bundle_with_software_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_software_objects()

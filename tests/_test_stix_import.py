@@ -651,6 +651,87 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
         )
 
+    def _check_registry_key_fields(self, misp_object, registry_key, object_id):
+        self.assertEqual(len(misp_object.attributes), 2)
+        key, modified = misp_object.attributes
+        self.assertEqual(key.type, 'regkey')
+        self.assertEqual(key.object_relation, 'key')
+        self.assertEqual(key.value, registry_key.key)
+        self.assertEqual(
+            key.uuid, uuid5(self._UUIDv4, f'{object_id} - key - {key.value}')
+        )
+        self.assertEqual(modified.type, 'datetime')
+        self.assertEqual(modified.object_relation, 'last-modified')
+        self.assertEqual(
+            modified.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - last-modified - {modified.value}'
+            )
+        )
+        return modified
+
+    def _check_registry_key_value_fields(self, misp_object, registry_value, object_id):
+        self.assertEqual(len(misp_object.attributes), 3)
+        data, data_type, name = misp_object.attributes
+        self.assertEqual(data.type, 'text')
+        self.assertEqual(data.object_relation, 'data')
+        self.assertEqual(data.value, registry_value.data)
+        self.assertEqual(
+            data.uuid, uuid5(self._UUIDv4, f'{object_id} - data - {data.value}')
+        )
+        self.assertEqual(data_type.type, 'text')
+        self.assertEqual(data_type.object_relation, 'data-type')
+        self.assertEqual(data_type.value, registry_value.data_type)
+        self.assertEqual(
+            data_type.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - data-type - {data_type.value}')
+        )
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, registry_value.name)
+        self.assertEqual(
+            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+
+    def _check_registry_key_with_values_fields(self, misp_object, registry_key, object_id):
+        self.assertEqual(len(misp_object.attributes), 5)
+        key, modified, data, data_type, name = misp_object.attributes
+        self.assertEqual(key.type, 'regkey')
+        self.assertEqual(key.object_relation, 'key')
+        self.assertEqual(key.value, registry_key.key)
+        self.assertEqual(
+            key.uuid, uuid5(self._UUIDv4, f'{object_id} - key - {key.value}')
+        )
+        self.assertEqual(modified.type, 'datetime')
+        self.assertEqual(modified.object_relation, 'last-modified')
+        self.assertEqual(
+            modified.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - last-modified - {modified.value}'
+            )
+        )
+        registry_value = registry_key['values'][0]
+        self.assertEqual(data.type, 'text')
+        self.assertEqual(data.object_relation, 'data')
+        self.assertEqual(data.value, registry_value.data)
+        self.assertEqual(
+            data.uuid, uuid5(self._UUIDv4, f'{object_id} - data - {data.value}')
+        )
+        self.assertEqual(data_type.type, 'text')
+        self.assertEqual(data_type.object_relation, 'data-type')
+        self.assertEqual(data_type.value, registry_value.data_type)
+        self.assertEqual(
+            data_type.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - data-type - {data_type.value}')
+        )
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, registry_value.name)
+        self.assertEqual(
+            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        return modified
+
     def _check_software_fields(self, misp_object, software, object_id):
         self.assertEqual(len(misp_object.attributes), 4)
         language, name, vendor, version = misp_object.attributes

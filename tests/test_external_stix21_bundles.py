@@ -775,6 +775,85 @@ _PROCESS_OBJECTS = [
         "command_line": "rm -rf *"
     }
 ]
+_REGISTRY_KEY_OBJECTS = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "windows-registry-key--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+            "windows-registry-key--2ba37ae7-2745-5082-9dfd-9486dad41016"
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "windows-registry-key--28b2fff7-ca78-483b-9c4f-6f684ee7cdd0"
+        ]
+    },
+    {
+        "type": "windows-registry-key",
+        "spec_version": "2.1",
+        "id": "windows-registry-key--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "key": "hkey_local_machine\\system\\bar\\baz",
+        "modified_time": "2020-10-25T16:22:00Z",
+        "values": [
+            {
+                "name": "RegistryName",
+                "data": "%DATA%\\baz",
+                "data_type": "REG_SZ"
+            }
+        ]
+    },
+    {
+        "type": "windows-registry-key",
+        "spec_version": "2.1",
+        "id": "windows-registry-key--2ba37ae7-2745-5082-9dfd-9486dad41016",
+        "key": "hkey_local_machine\\system\\bar\\foo",
+        "modified_time": "2020-10-25T16:22:00Z",
+        "number_of_subkeys": 2,
+        "values": [
+            {
+                "name": "Foo",
+                "data": "qwerty",
+                "data_type": "REG_SZ"
+            },
+            {
+                "name": "Bar",
+                "data": "42",
+                "data_type": "REG_DWORD"
+            }
+        ]
+    },
+    {
+        "type": "windows-registry-key",
+        "spec_version": "2.1",
+        "id": "windows-registry-key--28b2fff7-ca78-483b-9c4f-6f684ee7cdd0",
+        "key": "hkey_local_machine\\system\\foo\\fortytwo",
+        "modified_time": "2020-10-25T16:22:00Z",
+        "values": [
+            {
+                "name": "FortyTwoFoo",
+                "data": "%DATA%\\42",
+                "data_type": "REG_QWORD"
+            }
+        ]
+    }
+]
 _SOFTWARE_OBJECTS = [
     {
         "type": "observed-data",
@@ -1359,6 +1438,10 @@ class TestExternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_process_objects(cls):
         return cls.__assemble_bundle(*_PROCESS_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_registry_key_objects(cls):
+        return cls.__assemble_bundle(*_REGISTRY_KEY_OBJECTS)
 
     @classmethod
     def get_bundle_with_software_objects(cls):
