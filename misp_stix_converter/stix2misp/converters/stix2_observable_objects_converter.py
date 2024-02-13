@@ -550,7 +550,7 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
                 value_object = self._create_misp_object('registry-key-value')
                 reference = f'{object_id} - values - {index}'
                 value_object.from_dict(
-                    uuid=self._create_v5_uuid(reference),
+                    uuid=self.main_parser._create_v5_uuid(reference),
                     comment=f'Original Windows Registry Key ID: {object_id}'
                 )
                 attributes = self._parse_generic_observable(
