@@ -174,6 +174,16 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
 
 
 class STIX2ObservableConverter(STIX2Converter):
+    def _fetch_observables(self, object_refs: Union[list, str]):
+        if isinstance(object_refs, str):
+            return self.main_parser._observable[object_refs]
+        if len(object_refs) == 1:
+            return self.main_parser._observable[object_refs[0]]
+        return tuple(
+            self.main_parser._observable[object_ref]
+            for object_ref in object_refs
+        )
+
     def _parse_email_additional_header(
             self, observable: _EMAIL_MESSAGE_TYPING,
             object_id: Optional[str] = None) -> Iterator[dict]:

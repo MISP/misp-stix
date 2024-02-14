@@ -52,16 +52,6 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
     def __init__(self, main: _MAIN_PARSER_TYPING):
         self._set_main_parser(main)
 
-    def _fetch_observables(self, object_refs: Union[list, str]):
-        if isinstance(object_refs, str):
-            return self.main_parser._observable[object_refs]
-        if len(object_refs) == 1:
-            return self.main_parser._observable[object_refs[0]]
-        return tuple(
-            self.main_parser._observable[object_ref]
-            for object_ref in object_refs
-        )
-
 
 class ExternalSTIX2ObservedDataConverter(
         STIX2ObservedDataConverter, ExternalSTIX2ObservableConverter):
