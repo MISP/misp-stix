@@ -70,7 +70,7 @@ class ExternalSTIX2ObservedDataConverter(
         observed_data = self.main_parser._get_stix_object(observed_data_ref)
         try:
             if hasattr(observed_data, 'object_refs'):
-                self._parse_observable_refs(observed_data)
+                self._parse_observable_object_refs(observed_data)
             else:
                 self._parse_observable_objects(observed_data)
         except UnknownObservableMappingError as observable_types:
@@ -92,36 +92,37 @@ class ExternalSTIX2ObservedDataConverter(
     #                  GENERIC OBSERVED DATA HANDLING METHODS                  #
     ############################################################################
 
-    def _handle_observables_mapping(self, observable_types: set) -> str:
-        to_call = '_'.join(sorted(observable_types))
-        mapping = self._mapping.observable_mapping(to_call)
+    def _parse_observable_object_refs(self, observed_data: ObservedData_v21):
+        observable_types = set(
+            reference.split('--')[0] for reference in observed_data.object_refs
+        )
+        fields = '_'.join(observable_types)
+        mapping = self._mapping.observable_mapping(fields)
         if mapping is None:
             raise UnknownObservableMappingError(to_call)
-        return mapping
+        else:
+            feature = f'_parse_{mapping}_observable_object_refs'
+            try:
+                parser = getattr(self, feature)
+            except AttributeError:
+                raise UnknownParsingFunctionError(feature)
+            parser(observed_data)
 
     def _parse_observable_objects(self, observed_data: _OBSERVED_DATA_TYPING):
         observable_types = set(
             observable['type'] for observable in observed_data.objects.values()
         )
-        mapping = self._handle_observables_mapping(observable_types)
-        feature = f'_parse_{mapping}_observable_objects'
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        parser(observed_data)
-
-    def _parse_observable_refs(self, observed_data: ObservedData_v21):
-        observable_types = set(
-            reference.split('--')[0] for reference in observed_data.object_refs
-        )
-        mapping = self._handle_observables_mapping(observable_types)
-        feature = f'_parse_{mapping}_observable_object_refs'
-        try:
-            parser = getattr(self, feature)
-        except AttributeError:
-            raise UnknownParsingFunctionError(feature)
-        parser(observed_data)
+        fields = '_'.join(observable_types)
+        mapping = self._mapping.observable_mapping(fields)
+        if mapping is None:
+            raise UnknownObservableMappingError(fields)
+        else:
+            feature = f'_parse_{mapping}_observable_objects'
+            try:
+                parser = getattr(self, feature)
+            except AttributeError:
+                raise UnknownParsingFunctionError(feature)
+            parser(observed_data)
 
     ############################################################################
     #                    OBSERVABLE OBJECTS PARSING METHODS                    #
