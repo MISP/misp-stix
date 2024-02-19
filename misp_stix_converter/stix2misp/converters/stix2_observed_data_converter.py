@@ -96,7 +96,7 @@ class ExternalSTIX2ObservedDataConverter(
         observable_types = set(
             reference.split('--')[0] for reference in observed_data.object_refs
         )
-        fields = '_'.join(observable_types)
+        fields = '_'.join(sorted(observable_types))
         mapping = self._mapping.observable_mapping(fields)
         if mapping is None:
             raise UnknownObservableMappingError(to_call)
@@ -112,7 +112,7 @@ class ExternalSTIX2ObservedDataConverter(
         observable_types = set(
             observable['type'] for observable in observed_data.objects.values()
         )
-        fields = '_'.join(observable_types)
+        fields = '_'.join(sorted(observable_types))
         mapping = self._mapping.observable_mapping(fields)
         if mapping is None:
             raise UnknownObservableMappingError(fields)
