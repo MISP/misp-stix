@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from os import walk
 import sys
 import time
 from .converters import (
