@@ -9,7 +9,11 @@ from abc import ABCMeta
 from collections import defaultdict
 from pathlib import Path
 from pymisp import AbstractMISP, MISPEvent, MISPObject
+from stix2.exceptions import InvalidValueError
+from stix2.parsing import dict_to_stix2, parse as stix2_parser, ParseError
+from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.sdo import Indicator as Indicator_v20
+from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v21.sdo import Indicator as Indicator_v21
 from types import GeneratorType
 from typing import Optional, Union
@@ -24,6 +28,43 @@ _DATA_PATH = Path(__file__).parents[1].resolve() / 'data'
 _VALID_DISTRIBUTIONS = (0, 1, 2, 3, 4)
 _RFC_VERSIONS = (1, 3, 4, 5)
 _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
+
+
+def _get_stix2_content_version(stix2_content: dict):
+    for stix_object in stix2_content['objects']:
+        if stix_object.get('spec_version'):
+            return '2.1'
+    return '2.0'
+
+
+def _handle_stix2_loading_error(stix2_content: dict):
+    version = _get_stix2_content_version(stix2_content)
+    if isinstance(stix2_content, dict):
+        if version == '2.1' and stix2_content.get('spec_version') == '2.0':
+            del stix2_content['spec_version']
+            return dict_to_stix2(
+                stix2_content, allow_custom=True, interoperability=True
+            )
+        if version == '2.0' and stix2_content.get('spec_version') == '2.1':
+            stix2_content['spec_version'] = '2.0'
+            return dict_to_stix2(
+                stix2_content, allow_custom=True, interoperability=True
+            )
+        bundle = Bundle_v21 if version == '2.1' else Bundle_v20
+        if 'objects' in stix2_content:
+            stix2_content = stix2_content['objects']
+    return bundle(*stix2_content, allow_custom=True, interoperability=True)
+
+
+def _load_stix2_content(filename):
+    with open(filename, 'rt', encoding='utf-8') as f:
+        stix2_content = f.read()
+    try:
+        return stix2_parser(
+            stix2_content, allow_custom=True, interoperability=True
+        )
+    except (InvalidValueError, ParseError):
+        return _handle_stix2_loading_error(json.loads(stix2_content))
 
 
 class STIXtoMISPParser(metaclass=ABCMeta):
