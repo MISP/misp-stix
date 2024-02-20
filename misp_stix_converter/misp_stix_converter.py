@@ -3,7 +3,6 @@
 
 import json
 import os
-import re
 import sys
 from .misp2stix.framing import (
     _stix1_attributes_framing, _stix1_framing, _handle_namespaces,
@@ -714,10 +713,12 @@ def _from_misp(stix_objects):
             return True
     return False
 
+
 def _get_stix2_parser(from_misp: bool, *args: tuple) -> tuple:
     if from_misp:
         return InternalSTIX2toMISPParser, args[:-2]
     return ExternalSTIX2toMISPParser, args
+
 
 def _load_stix_event(filename, tries=0):
     try:
