@@ -1,19 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from os import walk
 import sys
 import time
-from .exceptions import (
-    MarkingDefinitionLoadingError, ObjectRefLoadingError,
-    ObjectTypeLoadingError, SynonymsResourceJSONError,
-    UnavailableGalaxyResourcesError, UnavailableSynonymsResourceError,
-    UndefinedIndicatorError, UndefinedSTIXObjectError, UndefinedObservableError,
-    UnknownAttributeTypeError, UnknownObjectNameError,
-    UnknownParsingFunctionError, UnknownPatternTypeError,
-    UnknownStixObjectTypeError)
-from .external_stix2_mapping import ExternalSTIX2toMISPMapping
-from .importparser import STIXtoMISPParser, _INDICATOR_TYPING
-from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from .converters import (
     ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
     ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter,
@@ -27,6 +17,18 @@ from .converters import (
     ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter,
     ExternalSTIX2ToolConverter, InternalSTIX2ToolConverter,
     ExternalSTIX2VulnerabilityConverter, InternalSTIX2VulnerabilityConverter)
+from .exceptions import (
+    MarkingDefinitionLoadingError, ObjectRefLoadingError,
+    ObjectTypeLoadingError, SynonymsResourceJSONError,
+    UnavailableGalaxyResourcesError, UnavailableSynonymsResourceError,
+    UndefinedIndicatorError, UndefinedSTIXObjectError, UndefinedObservableError,
+    UnknownAttributeTypeError, UnknownObjectNameError,
+    UnknownParsingFunctionError, UnknownPatternTypeError,
+    UnknownStixObjectTypeError)
+from .external_stix2_mapping import ExternalSTIX2toMISPMapping
+from .importparser import (
+    STIXtoMISPParser, _INDICATOR_TYPING, _load_stix2_content)
+from .internal_stix2_mapping import InternalSTIX2toMISPMapping
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
@@ -34,7 +36,6 @@ from pymisp import (
     AbstractMISP, MISPEvent, MISPAttribute, MISPGalaxy, MISPGalaxyCluster,
     MISPObject, MISPSighting)
 from stix2 import TLP_AMBER, TLP_GREEN, TLP_RED, TLP_WHITE
-from stix2.parsing import parse as stix2_parser
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
 from stix2.v20.observables import NetworkTraffic as NetworkTraffic_v20
@@ -283,10 +284,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def parse_stix_content(
             self, filename: str, single_event: Optional[bool] = False):
         try:
-            with open(filename, 'rt', encoding='utf-8') as f:
-                bundle = stix2_parser(
-                    f.read(), allow_custom=True, interoperability=True
-                )
+            bundle = _load_stix2_content(filename)
         except Exception as exception:
             sys.exit(exception)
         self.load_stix_bundle(bundle)
