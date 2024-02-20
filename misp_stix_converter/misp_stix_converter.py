@@ -14,6 +14,7 @@ from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
 from .misp2stix.stix1_mapping import NS_DICT, SCHEMALOC_DICT
 from .stix2misp.external_stix1_to_misp import ExternalSTIX1toMISPParser
 from .stix2misp.external_stix2_to_misp import ExternalSTIX2toMISPParser
+from .stix2misp.importparser import _load_stix2_content
 from .stix2misp.internal_stix1_to_misp import InternalSTIX1toMISPParser
 from .stix2misp.internal_stix2_to_misp import InternalSTIX2toMISPParser
 from collections import defaultdict
@@ -26,8 +27,6 @@ from stix.core import (
     Campaigns, CoursesOfAction, Indicators, ThreatActors, STIXPackage)
 from stix.core.ttps import TTPs
 from stix2.base import STIXJSONEncoder
-from stix2.exceptions import InvalidValueError
-from stix2.parsing import parse as stix2_parser, ParseError
 from stix2.v20 import Bundle as Bundle_v20
 from stix2.v21 import Bundle as Bundle_v21
 from typing import List, Optional, Union
@@ -672,11 +671,8 @@ def stix_2_to_misp(filename: _files_type,
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        with open(filename, 'rt', encoding='utf-8') as f:
-            bundle = stix2_parser(
-                f.read(), allow_custom=True, interoperability=True
-            )
-    except (ParseError, InvalidValueError) as error:
+        bundle = _load_stix2_content(filename)
+    except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
         _from_misp(bundle.objects), distribution, sharing_group_id,
