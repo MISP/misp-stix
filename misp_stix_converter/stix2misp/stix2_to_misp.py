@@ -606,13 +606,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._fetch_tags_from_labels(misp_event, stix_object.labels)
 
     def _misp_event_from_grouping(self, grouping: Grouping) -> MISPEvent:
-        self.__single_event = True
         misp_event = self._create_misp_event(grouping)
         misp_event.published = False
         return misp_event
 
     def _misp_event_from_report(self, report: _REPORT_TYPING) -> MISPEvent:
-        self.__single_event = True
         misp_event = self._create_misp_event(report)
         if report.published != report.modified:
             misp_event.published = True
@@ -637,20 +635,19 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     self._handle_object_refs(grouping.object_refs)
             self._handle_unparsed_content()
         else:
-            events = []
+            self.__misp_events = []
             if hasattr(self, '_report') and self._report is not None:
                 for report in self._report.values():
                     self.__misp_event = self._misp_event_from_report(report)
                     self._handle_object_refs(report.object_refs)
                     self._handle_unparsed_content()
-                    events.append(self.misp_event)
+                    self.__misp_events.append(self.misp_event)
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self.__misp_event = self._misp_event_from_grouping(grouping)
                     self._handle_object_refs(grouping.object_refs)
                     self._handle_unparsed_content()
-                    events.append(self.misp_event)
-            self.__misp_events = events
+                    self.__misp_events.append(self.misp_event)
 
     def _parse_bundle_with_no_report(self):
         self.__single_event = True
@@ -815,37 +812,54 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                RELATIONSHIPS & SIGHTINGS PARSING METHODS.                #
     ############################################################################
 
+    def _check_sighting_replacements(
+            self, parent_uuid: str, replaced_uuid: str):
+        for field in ('opinion_refs', 'sighting'):
+            if parent_uuid in getattr(self, '_sighting', {}).get(field, {}):
+                self.replacement_uuids[replaced_uuid] = parent_uuid
+
     def _handle_attribute_sightings(self, attribute: MISPAttribute):
         attribute_uuid = attribute.uuid
+        if attribute_uuid in self.replacement_uuids:
+            attribute_uuid = self.replacement_uuids[attribute_uuid]
         if attribute_uuid in self._sighting.get('sighting', {}):
-            self._parse_attribute_sightings(attribute)
+            for sighting in self._sighting['sighting'][attribute_uuid]:
+                attribute.add_sighting(self._parse_sighting(sighting))
         if attribute_uuid in self._sighting.get('opinion_refs', {}):
-            self._parse_attribute_opinions(attribute)
+            for opinion_ref in self._sighting['opinion_refs'][attribute_uuid]:
+                attribute.add_sighting(
+                    self._parse_opinion(self._sighting['opinion'][opinion_ref])
+                )
         elif attribute_uuid in self._sighting.get('custom_opinion', {}):
-            self._parse_attribute_custom_opinions(attribute)
+            for sighting in self._sighting['custom_opinion'][attribute_uuid]:
+                attribute.add_sighting(sighting)
 
     def _handle_object_sightings(self, misp_object: MISPObject):
         object_uuid = misp_object.uuid
+        if object_uuid in self.replacement_uuids:
+            object_uuid = self.replacement_uuids[object_uuid]
         if object_uuid in self._sighting.get('sighting', {}):
-            self._parse_object_sightings(misp_object)
+            for sighting in self._sighting['sighting'][object_uuid]:
+                misp_sighting = self._parse_sighting(sighting)
+                for attribute in misp_object.attributes:
+                    attribute.add_sighting(misp_sighting)
         if object_uuid in self._sighting.get('opinion_refs', {}):
-            self._parse_object_opinions(misp_object)
+            for opinion_ref in self._sighting['opinion_refs'][object_uuid]:
+                misp_sighting = self._parse_opinion(
+                    self._sighting['opinion'][opinion_ref]
+                )
+                for attribute in misp_object.attributes:
+                    attribute.add_sighting(misp_sighting)
         elif misp_object.uuid in self._sighting.get('custom_opinion', {}):
-            self._parse_object_custom_opinion(misp_object)
+            for sighting in self._sighting['custom_opinion'][object_uuid]:
+                for attribute in misp_object.attributes:
+                    attribute.add_sighting(sighting)
 
     def _handle_opposite_reference(
             self, relationship_type: str, source_uuid: str, target_uuid: str):
         sanitised_uuid = self._sanitise_uuid(target_uuid)
         reference = (source_uuid, self.relationship_types[relationship_type])
         self._relationship[sanitised_uuid].add(reference)
-
-    def _parse_attribute_custom_opinions(self, attribute: MISPAttribute):
-        for sighting in self._sighting['custom_opinion'][attribute.uuid]:
-            attribute.add_sighting(sighting)
-
-    def _parse_attribute_opinions(self, attribute: MISPAttribute):
-        for opinion_ref in self._sighting['opinion_refs'][attribute.uuid]:
-            attribute.add_sighting(self._sighting['opinion'][opinion_ref])
 
     def _parse_attribute_relationships_as_container(
             self, attribute: MISPAttribute):
@@ -880,10 +894,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     relationship_type, attribute.uuid, referenced_uuid
                 )
 
-    def _parse_attribute_sightings(self, attribute: MISPAttribute):
-        for sighting in self._sighting['sighting'][attribute.uuid]:
-            attribute.add_sighting(self._parse_sighting(sighting))
-
     def _parse_cluster_relationships(self, cluster: MISPGalaxyCluster):
         for relationship in self._relationship[cluster.uuid]:
             referenced_uuid, relationship_type = relationship
@@ -898,17 +908,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             for cluster in galaxy.clusters:
                 if cluster.uuid in self._relationship:
                     self._parse_cluster_relationships(cluster)
-
-    def _parse_object_custom_opinion(self, misp_object: MISPObject):
-        for sighting in self._sighting['custom_opinion'][misp_object.uuid]:
-            for attribute in misp_object.attributes:
-                attribute.add_sighting(sighting)
-
-    def _parse_object_opinions(self, misp_object: MISPObject):
-        for opinion_ref in self._sighting['opinion_refs'][misp_object.uuid]:
-            sighting = self._sighting['opinion'][opinion_ref]
-            for attribute in misp_object.attributes:
-                attribute.add_sighting(sighting)
 
     def _parse_object_relationships_as_container(self, misp_object: MISPObject):
         clusters = defaultdict(list)
@@ -941,17 +940,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     self._sanitise_uuid(referenced_uuid), relationship_type
                 )
 
-    def _parse_object_sightings(self, misp_object: MISPObject):
-        for sighting in self._sighting['sighting'][misp_object.uuid]:
-            misp_sighting = self._parse_sighting(sighting)
-            for attribute in misp_object.attributes:
-                attribute.add_sighting(misp_sighting)
-
     def _parse_opinion(self, opinion: Opinion) -> MISPSighting:
-        sighting = MISPSighting()
+        misp_sighting = MISPSighting()
         sighting_args = {
             'date_sighting': self._timestamp_from_date(opinion.modified),
-            'type': '1'
+            'type': '1' if 'disagree' in opinion.opinion else '0'
         }
         if hasattr(opinion, 'x_misp_source'):
             sighting_args['source'] = opinion.x_misp_source
@@ -961,8 +954,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 'uuid': self._sanitise_uuid(identity.id),
                 'name': identity.name
             }
-        sighting.from_dict(**sighting_args)
-        return sighting
+        misp_sighting.from_dict(**sighting_args)
+        return misp_sighting
 
     def _parse_relationships(self):
         for attribute in self.misp_event.attributes:
@@ -985,8 +978,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._parse_galaxy_relationships()
 
     def _parse_relationships_and_sightings(self):
-        for opinion_id, opinion in self._sighting['opinion'].items():
-            self._sighting['opinion'][opinion_id] = self._parse_opinion(opinion)
         for attribute in self.misp_event.attributes:
             if attribute.uuid in self._relationship:
                 getattr(
@@ -1026,8 +1017,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return misp_sighting
 
     def _parse_sightings(self):
-        for opinion_id, opinion in self._sighting['opinion'].items():
-            self._sighting['opinion'][opinion_id] = self._parse_opinion(opinion)
         for attribute in self.misp_event.attributes:
             self._handle_attribute_sightings(attribute)
         for misp_object in self.misp_event.objects:

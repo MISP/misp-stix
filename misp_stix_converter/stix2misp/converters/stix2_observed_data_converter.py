@@ -31,7 +31,6 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
         self._set_main_parser(main)
 
 
-
 class InternalSTIX2ObservedDataConverter(
         STIX2ObservedDataConverter, InternalSTIX2ObservableConverter):
     def __init__(self, main: 'InternalSTIX2toMISPParser'):
