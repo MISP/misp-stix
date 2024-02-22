@@ -1153,6 +1153,9 @@ class ExternalSTIX2ObservedDataConverter(
             **self._parse_timeline(observed_data)
         )
         self.main_parser._sanitise_object_uuid(misp_object, observable.id)
+        self.main_parser._check_sighting_replacements(
+            self.main_parser._sanitise_uuid(observed_data.id), misp_object.uuid
+        )
         return misp_object
 
     def _handle_misp_object_fields(
