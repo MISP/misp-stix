@@ -608,13 +608,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._fetch_tags_from_labels(misp_event, stix_object.labels)
 
     def _misp_event_from_grouping(self, grouping: Grouping) -> MISPEvent:
-        self.__single_event = True
         misp_event = self._create_misp_event(grouping)
         misp_event.published = False
         return misp_event
 
     def _misp_event_from_report(self, report: _REPORT_TYPING) -> MISPEvent:
-        self.__single_event = True
         misp_event = self._create_misp_event(report)
         if report.published != report.modified:
             misp_event.published = True
@@ -639,20 +637,19 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     self._handle_object_refs(grouping.object_refs)
             self._handle_unparsed_content()
         else:
-            events = []
+            self.__misp_events = []
             if hasattr(self, '_report') and self._report is not None:
                 for report in self._report.values():
                     self.__misp_event = self._misp_event_from_report(report)
                     self._handle_object_refs(report.object_refs)
                     self._handle_unparsed_content()
-                    events.append(self.misp_event)
+                    self.__misp_events.append(self.misp_event)
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self.__misp_event = self._misp_event_from_grouping(grouping)
                     self._handle_object_refs(grouping.object_refs)
                     self._handle_unparsed_content()
-                    events.append(self.misp_event)
-            self.__misp_events = events
+                    self.__misp_events.append(self.misp_event)
 
     def _parse_bundle_with_no_report(self):
         self.__single_event = True
