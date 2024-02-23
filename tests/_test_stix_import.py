@@ -6,7 +6,7 @@ from base64 import b64encode
 from collections import defaultdict
 from misp_stix_converter import (
     ExternalSTIX2toMISPMapping, ExternalSTIX2toMISPParser,
-    InternalSTIX2toMISPParser)
+    InternalSTIX2toMISPParser, MISP_org_uuid)
 from uuid import UUID, uuid5
 from ._test_stix import TestSTIX
 from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
@@ -334,7 +334,13 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         galaxy = galaxies[0]
         self.assertEqual(len(galaxy.clusters), 1)
         cluster = galaxy.clusters[0]
-        self.assertEqual(cluster.uuid, stix_object.id.split('--')[1])
+        self.assertEqual(
+            cluster.uuid,
+            uuid5(
+                self._UUIDv4,
+                f"{stix_object.id.split('--')[1]} - {MISP_org_uuid}"
+            )
+        )
         version = getattr(stix_object, 'spec_version', '2.0')
         self._assert_multiple_equal(
             galaxy.type, cluster.type, f'stix-{version}-{stix_object.type}'
