@@ -13,7 +13,8 @@ from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
 from .misp2stix.stix1_mapping import NS_DICT, SCHEMALOC_DICT
 from .stix2misp.external_stix1_to_misp import ExternalSTIX1toMISPParser
-from .stix2misp.external_stix2_to_misp import ExternalSTIX2toMISPParser
+from .stix2misp.external_stix2_to_misp import (
+    ExternalSTIX2toMISPParser, MISP_org_uuid)
 from .stix2misp.importparser import _load_stix2_content
 from .stix2misp.internal_stix1_to_misp import InternalSTIX1toMISPParser
 from .stix2misp.internal_stix2_to_misp import InternalSTIX2toMISPParser
@@ -664,6 +665,7 @@ def stix_2_to_misp(filename: _files_type,
                    debug: Optional[bool] = False,
                    distribution: Optional[int] = 0,
                    galaxies_as_tags: Optional[bool] = False,
+                   organisation_uuid: Optional[str] = MISP_org_uuid,
                    output_dir: Optional[_files_type]=None,
                    output_name: Optional[_files_type]=None,
                    sharing_group_id: Optional[int] = None,
@@ -676,7 +678,8 @@ def stix_2_to_misp(filename: _files_type,
         return {'errors': [f'{filename} -  {error.__str__()}']}
     parser, args = _get_stix2_parser(
         _from_misp(bundle.objects), distribution, sharing_group_id,
-        galaxies_as_tags, cluster_distribution, cluster_sharing_group_id
+        galaxies_as_tags, organisation_uuid,
+        cluster_distribution, cluster_sharing_group_id
     )
     stix_parser = parser(*args)
     stix_parser.load_stix_bundle(bundle)
@@ -712,7 +715,7 @@ def _from_misp(stix_objects):
 
 def _get_stix2_parser(from_misp: bool, *args: tuple) -> tuple:
     if from_misp:
-        return InternalSTIX2toMISPParser, args[:-2]
+        return InternalSTIX2toMISPParser, args[:-3]
     return ExternalSTIX2toMISPParser, args
 
 
@@ -1017,6 +1020,7 @@ def _stix_to_misp(stix_args):
             cluster_sharing_group_id=stix_args.cluster_sharing_group,
             debug=stix_args.debug, distribution=stix_args.distribution,
             galaxies_as_tags=stix_args.galaxies_as_tags,
+            organisation_uuid=stix_args.org_uuid,
             output_dir=stix_args.output_dir,
             output_name=stix_args.output_name,
             sharing_group_id=stix_args.sharing_group,

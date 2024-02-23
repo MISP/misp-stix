@@ -220,8 +220,11 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             cluster_value: Optional[str] = None) -> dict:
         value = cluster_value or stix_object.name
         cluster_args = {
-            'uuid': self.main_parser._sanitise_uuid(stix_object.id),
-            'value': value, **self.main_parser.cluster_distribution
+            'value': value, **self.main_parser.cluster_distribution,
+            'uuid': self.main_parser._create_v5_uuid(
+                f'{self.main_parser._extract_uuid(stix_object.id)} -'
+                f' {self.main_parser.organisation_uuid}'
+            )
         }
         if galaxy_type is None:
             version = getattr(stix_object, 'spec_version', '2.0')

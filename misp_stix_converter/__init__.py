@@ -30,6 +30,7 @@ from .misp_stix_converter import _misp_to_stix, _stix_to_misp # noqa
 from .stix2misp import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser # noqa
 from .stix2misp import ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping # noqa
 from .stix2misp import STIX2PatternParser # noqa
+from .stix2misp import MISP_org_uuid # noqa
 from pathlib import Path
 
 
@@ -146,6 +147,10 @@ def main():
     import_parser.add_argument(
         '--galaxies_as_tags', action='store_true',
         help='Import MISP Galaxies as tag names instead of the standard Galaxy format.'
+    )
+    import_parser.add_argument(
+        '--org_uuid', default=MISP_org_uuid,
+        help='Organisation UUID to use when creating custom Galaxy clusters.'
     )
     import_parser.add_argument(
         '-cd', '--cluster_distribution', type=int, default=0,
