@@ -90,7 +90,7 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'location': '_parse_location',
             'malware': '_parse_malware',
             'malware-analysis': '_parse_malware_analysis',
-            'marking-definition': '_parse_marking_definition',
+            # 'marking-definition': '_parse_marking_definition',
             'note': '_parse_note',
             'observed-data': '_parse_observed_data',
             # 'report': '_parse_report',
