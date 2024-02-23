@@ -658,6 +658,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._handle_unparsed_content()
 
     def _parse_bundle_with_single_report(self):
+        self.__single_event = True
         if hasattr(self, '_report') and self._report is not None:
             for report in self._report.values():
                 self.__misp_event = self._misp_event_from_report(report)
