@@ -50,6 +50,8 @@ from stix2.v21.sdo import (
     ObservedData as ObservedData_v21, Vulnerability as Vulnerability_v21)
 from typing import Optional, Tuple, Union
 
+MISP_org_uuid = '55f6ea65-aa10-4c5a-bf01-4f84950d210f'
+
 # Useful lists
 _observable_skip_properties = (
     'content_ref', 'content_type', 'decryption_key', 'defanged',
@@ -130,6 +132,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
     def __init__(self, distribution: Optional[int] = 0,
                  sharing_group_id: Optional[int] = None,
                  galaxies_as_tags: Optional[bool] = False,
+                 organisation_uuid: Optional[str] = MISP_org_uuid,
                  cluster_distribution: Optional[int] = 0,
                  cluster_sharing_group_id: Optional[int] = None):
         super().__init__(distribution, sharing_group_id, galaxies_as_tags)
@@ -137,6 +140,7 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._sanitise_distribution(cluster_distribution),
             self._sanitise_sharing_group_id(cluster_sharing_group_id)
         )
+        self.__organisation_uuid = organisation_uuid
         self._mapping = ExternalSTIX2toMISPMapping
         # parsers
         self._attack_pattern_parser: ExternalSTIX2AttackPatternConverter
@@ -163,10 +167,14 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             self._set_observable_object_parser()
         return self._observable_object_parser
 
-    def _set_attack_pattern_parser(self) -> ExternalSTIX2AttackPatternConverter:
+    @property
+    def organisation_uuid(self) -> str:
+        return self.__organisation_uuid
+
+    def _set_attack_pattern_parser(self):
         self._attack_pattern_parser = ExternalSTIX2AttackPatternConverter(self)
 
-    def _set_campaign_parser(self) -> ExternalSTIX2CampaignConverter:
+    def _set_campaign_parser(self):
         self._campaign_parser = ExternalSTIX2CampaignConverter(self)
 
     def _set_cluster_distribution(
@@ -176,37 +184,37 @@ class ExternalSTIX2toMISPParser(STIX2toMISPParser):
             cluster_distribution['sharing_group_id'] = sharing_group_id
         self.__cluster_distribution = cluster_distribution
 
-    def _set_course_of_action_parser(self) -> ExternalSTIX2CourseOfActionConverter:
+    def _set_course_of_action_parser(self):
         self._course_of_action_parser = ExternalSTIX2CourseOfActionConverter(self)
 
-    def _set_identity_parser(self) -> ExternalSTIX2IdentityConverter:
+    def _set_identity_parser(self):
         self._identity_parser = ExternalSTIX2IdentityConverter(self)
 
-    def _set_indicator_parser(self) -> ExternalSTIX2IndicatorConverter:
+    def _set_indicator_parser(self):
         self._indicator_parser = ExternalSTIX2IndicatorConverter(self)
 
-    def _set_intrusion_set_parser(self) -> ExternalSTIX2IntrusionSetConverter:
+    def _set_intrusion_set_parser(self):
         self._intrusion_set_parser = ExternalSTIX2IntrusionSetConverter(self)
 
-    def _set_location_parser(self) -> ExternalSTIX2LocationConverter:
+    def _set_location_parser(self):
         self._location_parser = ExternalSTIX2LocationConverter(self)
 
-    def _set_malware_analysis_parser(self) -> ExternalSTIX2MalwareAnalysisConverter:
+    def _set_malware_analysis_parser(self):
         self._malware_analysis_parser = ExternalSTIX2MalwareAnalysisConverter(self)
 
-    def _set_malware_parser(self) -> ExternalSTIX2MalwareConverter:
+    def _set_malware_parser(self):
         self._malware_parser = ExternalSTIX2MalwareConverter(self)
 
-    def _set_observable_object_parser(self) -> STIX2ObservableObjectConverter:
+    def _set_observable_object_parser(self):
         self._observable_object_parser = STIX2ObservableObjectConverter(self)
 
-    def _set_threat_actor_parser(self) -> ExternalSTIX2ThreatActorConverter:
+    def _set_threat_actor_parser(self):
         self._threat_actor_parser = ExternalSTIX2ThreatActorConverter(self)
 
-    def _set_tool_parser(self) -> ExternalSTIX2ToolConverter:
+    def _set_tool_parser(self):
         self._tool_parser = ExternalSTIX2ToolConverter(self)
 
-    def _set_vulnerability_parser(self) -> ExternalSTIX2VulnerabilityConverter:
+    def _set_vulnerability_parser(self):
         self._vulnerability_parser = ExternalSTIX2VulnerabilityConverter(self)
 
     ############################################################################
