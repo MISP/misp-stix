@@ -300,10 +300,11 @@ class ExternalSTIX2ObservedDataConverter(
             for contained_ref in directory.contains_refs:
                 contained = self._fetch_observables(contained_ref)
                 if contained['used'].get(self.event_uuid, False):
-                    self._handle_misp_object_fields(misp_object, observed_data)
-                    misp_object.add_reference(
-                        contained['misp_object'].uuid, 'contains'
+                    contained_object = contained['misp_object']
+                    self._handle_misp_object_fields(
+                        contained_object, observed_data
                     )
+                    misp_object.add_reference(contained_object.uuid, 'contains')
                     continue
                 if contained_ref not in observed_data.object_refs:
                     self.observable_relationships[misp_object.uuid].add(
