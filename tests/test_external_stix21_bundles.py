@@ -1448,6 +1448,40 @@ class TestExternalSTIX21Bundles:
         return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES)
 
     @classmethod
+    def get_bundle_with_opinion_objects(cls):
+        agree_opinion = {
+            "type": "opinion",
+            "spec_version": "2.1",
+            "id": "opinion--3b7f3754-a31c-4bf8-a97f-a8ff10aab5a3",
+            "created_by_ref": "identity--b3bca3c2-1f3d-4b54-b44f-dac42c3a8f01",
+            "created": "2024-02-17T00:47:42.000Z",
+            "modified": "2024-02-17T00:47:42.000Z",
+            "opinion": "agree",
+            "explanation": "Not confirmed; possibly malicious (if marked or otherwise evaluated as malicious-activity) or benign (if marked as benign); no other information on the subject known to the opinion author. Please see AIS Scoring Framework used for Indicator Enrichment at https://www.cisa.gov/ais.",
+            "object_refs": [
+                "observed-data--e812789e-e49d-47e2-b334-8ee0e8a766ce"
+            ]
+        }
+        strongly_disagree_opinion = {
+            "type": "opinion",
+            "spec_version": "2.1",
+            "id": "opinion--b01efc25-77b4-4003-b18b-f6e24b5cd9f7",
+            "created_by_ref": "identity--f431f809-377b-45e0-aa1c-6a4751cae5ff",
+            "created": "2016-05-12T08:17:27.000Z",
+            "modified": "2016-05-12T08:17:27.000Z",
+            "opinion": "strongly-disagree",
+            "explanation": "This doesn't seem like it is feasible.",
+            "object_refs": [
+                "software--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+            ]
+        }
+        return cls.__assemble_bundle(
+            agree_opinion, strongly_disagree_opinion,
+            deepcopy(_DIRECTORY_OBJECTS[1]), deepcopy(_SOFTWARE_OBJECTS[0]),
+            deepcopy(_DIRECTORY_OBJECTS[-1]), *deepcopy(_SOFTWARE_OBJECTS[2:-1])
+        )
+
+    @classmethod
     def get_bundle_with_process_objects(cls):
         return cls.__assemble_bundle(*_PROCESS_OBJECTS)
 

@@ -4,6 +4,7 @@
 from .test_external_stix21_bundles import TestExternalSTIX21Bundles
 from ._test_stix import TestSTIX21
 from ._test_stix_import import TestExternalSTIX2Import, TestSTIX21Import
+from datetime import datetime
 from uuid import uuid5
 
 
@@ -447,6 +448,33 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(od1, mutex_1, m_mutex1, 'mutex', 'name')
         self._check_generic_attribute(od1, mutex_2, m_mutex2, 'mutex', 'name')
         self._check_generic_attribute(od2, mutex_3, s_mutex, 'mutex', 'name')
+
+    def test_stix21_bundle_with_opinion_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_opinion_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, opinion1, opinion2, od1, od2, directory, software1, software2 = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 3)
+        sighted_directory, sighted_software, software = misp_objects
+        self._check_directory_object(sighted_directory, od1, directory)
+        self._check_software_object(sighted_software, od2, software1)
+        self._check_software_object(software, od2, software2)
+        for directory_attribute in sighted_directory.attributes:
+            self.assertEqual(len(directory_attribute.sightings), 1)
+            sighting = directory_attribute.sightings[0]
+            self.assertEqual(
+                sighting.date_sighting, datetime.timestamp(opinion1.modified)
+            )
+            self.assertEqual(sighting.type, '0')
+        for software_attribute in sighted_software.attributes:
+            self.assertEqual(len(software_attribute.sightings), 1)
+            sighting = software_attribute.sightings[0]
+            self.assertEqual(
+                sighting.date_sighting, datetime.timestamp(opinion2.modified)
+            )
+            self.assertEqual(sighting.type, '1')
 
     def test_stix21_bundle_with_process_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_process_objects()
