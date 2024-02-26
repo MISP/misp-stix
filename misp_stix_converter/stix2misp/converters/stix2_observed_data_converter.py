@@ -13,7 +13,7 @@ from .stix2converter import _MAIN_PARSER_TYPING
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
-from pymisp import MISPObject
+from pymisp import MISPAttribute, MISPObject
 from stix2.v20.observables import (
     WindowsRegistryValueType as WindowsRegistryValueType_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
@@ -559,13 +559,14 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _parse_generic_observable_object_as_attribute(
             self, observed_data: _OBSERVED_DATA_TYPING, identifier: str,
-            attribute_type: str, feature: Optional[str] = 'value'):
+            attribute_type: str, feature: Optional[str] = 'value'
+            ) -> MISPAttribute:
         observable_object = observed_data.objects[identifier]
         if hasattr(observable_object, 'id'):
             return self._parse_generic_observable_object_ref_as_attribute(
                 observable_object, observed_data, attribute_type, feature
             )
-        self.main_parser._add_misp_attribute(
+        return self.main_parser._add_misp_attribute(
             {
                 'type': attribute_type,
                 'value': getattr(observable_object, feature),
@@ -599,8 +600,8 @@ class ExternalSTIX2ObservedDataConverter(
     def _parse_generic_observable_object_ref_as_attribute(
             self, observable_object: _GENERIC_OBSERVABLE_TYPING,
             observed_data: _OBSERVED_DATA_TYPING, attribute_type: str,
-            feature: Optional[str] = 'value'):
-        self.main_parser._add_misp_attribute(
+            feature: Optional[str] = 'value') -> MISPAttribute:
+        return self.main_parser._add_misp_attribute(
             {
                 'type': attribute_type,
                 'value': getattr(observable_object, feature),
@@ -1160,7 +1161,8 @@ class ExternalSTIX2ObservedDataConverter(
         return misp_object
 
     def _handle_misp_object_fields(
-            self, misp_object: MISPObject, observed_data: ObservedData_v21):
+            self, misp_object: MISPAttribute | MISPObject,
+            observed_data: ObservedData_v21):
         time_fields = self._parse_timeline(observed_data)
         for field in ('timestamp', 'last_seen'):
             if time_fields.get(field) is None:
