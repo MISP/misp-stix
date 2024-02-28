@@ -313,6 +313,23 @@ class ExternalSTIX2ObservedDataConverter(
             contained['used'][self.event_uuid] = True
             yield contained_object.uuid
 
+    def _parse_contained_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING,
+            observable_objects: dict, *contained_refs: tuple) -> Generator:
+        for contained_ref in contained_refs:
+            contained = observable_objects[contained_ref]
+            if contained['used']:
+                yield contained['misp_object'].uuid
+                continue
+            observable_object = observed_data.objects[contained_ref]
+            misp_object = self._parse_generic_observable_object(
+                observed_data, contained_ref, observable_object.type,
+                (observable_object.type == 'directory')
+            )
+            contained['misp_object'] = misp_object
+            contained['used'] = True
+            yield misp_object.uuid
+
     def _parse_directory_observable_object_refs(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
@@ -356,21 +373,11 @@ class ExternalSTIX2ObservedDataConverter(
             observable['misp_object'] = misp_object
             observable['used'] = True
             if hasattr(directory, 'contains_refs'):
-                for contained_ref in directory.contains_refs:
-                    contained = observable_objects[contained_ref]
-                    if contained['used']:
-                        misp_object.add_reference(
-                            contained['misp_object'].uuid, 'contains'
-                        )
-                        continue
-                    contained_object = self._parse_generic_observable_object(
-                        observed_data, contained_ref, 'directory'
-                    )
-                    contained['misp_object'] = contained_object
-                    contained['used'] = True
-                    misp_object.add_reference(
-                        contained_object.uuid, 'contains'
-                    )
+                contained_uuids = self._parse_contained_objects(
+                    observed_data, observable_objects, *directory.contains_refs
+                )
+                for contained_uuid in contained_uuids:
+                    misp_object.add_reference(contained_uuid, 'contains')
 
     def _parse_domain_observable_object_refs(
             self, observed_data: ObservedData_v21):
