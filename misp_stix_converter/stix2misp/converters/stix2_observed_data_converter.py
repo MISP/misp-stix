@@ -136,18 +136,39 @@ class ExternalSTIX2ObservedDataConverter(
             misp_object = observable['misp_object']
             self._handle_misp_object_fields(misp_object, observed_data)
             return misp_object
-        return self._parse_generic_observable_object_ref(
+        misp_object = self._parse_generic_observable_object_ref(
             observable['observable'], observed_data, *args
         )
+        observable['misp_object'] = misp_object
+        observable['used'][self.event_uuid] = True
+        return misp_object
+
+    def _handle_observable_objects_parsing(
+            self, observable_objects: dict, object_id: str,
+            observed_data: _OBSERVED_DATA_TYPING, *args: tuple) -> MISPObject:
+        observable = observable_objects[object_id]
+        if observable['used']:
+            return observable['misp_object']
+        misp_object = self._parse_generic_observable_object(
+            observed_data, object_id, *args
+        )
+        observable.update({'misp_object': misp_object, 'used': True})
+        return misp_object
 
     def _parse_artifact_observable_object_refs(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
+            if observable['used'].get(self.event_uuid, False):
+                self._handle_misp_object_fields(
+                    observable['misp_object'], observed_data
+                )
+                continue
             artifact = observable['observable']
-            self._parse_generic_observable_object_ref(
+            misp_object = self._parse_generic_observable_object_ref(
                 artifact, observed_data, 'artifact', False
             )
+            observable['misp_object'] = misp_object
             observable['used'][self.event_uuid] = True
 
     def _parse_artifact_observable_objects(
@@ -201,25 +222,36 @@ class ExternalSTIX2ObservedDataConverter(
     def _parse_as_observable_object_refs(self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
-            autonomous_system = observable['observable']
-            if hasattr(autonomous_system, 'name'):
-                self._parse_autonomous_system_observable_object_ref(
-                    autonomous_system, observed_data
+            if observable['used'].get(self.event_uuid, False):
+                self._handle_misp_object_fields(
+                    observable[
+                        'misp_object' if 'misp_object' in observable
+                        else 'misp_attribute'
+                    ],
+                    observed_data
                 )
+                continue
+            autonomous_system = observable['observable']
+            if not hasattr(autonomous_system, 'name'):
+                attribute = self.main_parser._add_misp_attribute(
+                    {
+                        'type': 'AS',
+                        'value': self._parse_AS_value(autonomous_system.number),
+                        **self._parse_timeline(observed_data),
+                        **self.main_parser._sanitise_attribute_uuid(
+                            autonomous_system.id,
+                            comment=f'Observed Data ID: {observed_data.id}'
+                        )
+                    },
+                    observed_data
+                )
+                observable['misp_attribute'] = attribute
                 observable['used'][self.event_uuid] = True
                 continue
-            self.main_parser._add_misp_attribute(
-                {
-                    'type': 'AS',
-                    'value': self._parse_AS_value(autonomous_system.number),
-                    **self._parse_timeline(observed_data),
-                    **self.main_parser._sanitise_attribute_uuid(
-                        autonomous_system.id,
-                        comment=f'Observed Data ID: {observed_data.id}'
-                    )
-                },
-                observed_data
+            misp_object = self._parse_autonomous_system_observable_object_ref(
+                autonomous_system, observed_data
             )
+            observable['misp_object'] = misp_object
             observable['used'][self.event_uuid] = True
 
     def _parse_as_observable_objects(
@@ -326,8 +358,7 @@ class ExternalSTIX2ObservedDataConverter(
                 observed_data, contained_ref, observable_object.type,
                 (observable_object.type == 'directory')
             )
-            contained['misp_object'] = misp_object
-            contained['used'] = True
+            contained.update({'misp_object': misp_object, 'used': True})
             yield misp_object.uuid
 
     def _parse_directory_observable_object_refs(
@@ -343,8 +374,6 @@ class ExternalSTIX2ObservedDataConverter(
                 observable, observed_data, 'directory'
             )
             directory = observable['observable']
-            observable['misp_object'] = misp_object
-            observable['used'][self.event_uuid] = True
             if hasattr(directory, 'contains_refs'):
                 contained_uuids = self._parse_contained_object_refs(
                     observed_data, misp_object.uuid, *directory.contains_refs
@@ -359,19 +388,13 @@ class ExternalSTIX2ObservedDataConverter(
                 observed_data, 'directory'
             )
         observable_objects = {
-            object_id: {'used': False, 'observable': observable}
-            for object_id, observable in observed_data.objects.items()
+            object_id: {'used': False} for object_id in observed_data.objects
         }
-        for object_id, observable in observable_objects.items():
-            directory = observable['observable']
-            misp_object = (
-                observable['misp_object'] if observable['used'] else
-                self._parse_generic_observable_object(
-                    observed_data, object_id, 'directory'
-                )
+        for object_id in observable_objects.keys():
+            misp_object = self._handle_observable_objects_parsing(
+                observable_objects, object_id, observed_data, 'directory'
             )
-            observable['misp_object'] = misp_object
-            observable['used'] = True
+            directory = observed_data.objects[object_id]
             if hasattr(directory, 'contains_refs'):
                 contained_uuids = self._parse_contained_objects(
                     observed_data, observable_objects, *directory.contains_refs
@@ -383,10 +406,16 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
+            if observable['used'].get(self.event_uuid, False):
+                self._handle_misp_object_fields(
+                    observable['misp_attribute'], observed_data
+                )
+                continue
             domain = observable['observable']
-            self._parse_generic_observable_object_ref_as_attribute(
+            attribute = self._parse_generic_observable_object_ref_as_attribute(
                 domain, observed_data, 'domain'
             )
+            observable['misp_attribute'] = attribute
             observable['used'][self.event_uuid] = True
 
     def _parse_domain_observable_objects(
@@ -454,14 +483,14 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _parse_email_address_observable_object_ref(
             self, email_address: _EMAIL_ADDRESS_TYPING,
-            observed_data: _OBSERVED_DATA_TYPING):
+            observed_data: _OBSERVED_DATA_TYPING) -> Generator:
         if hasattr(email_address, 'display_name'):
             attribute = {
                 'comment': f'Observed Data ID: {observed_data.id}',
                 **self._parse_timeline(observed_data)
             }
             address = email_address.value
-            self.main_parser._add_misp_attribute(
+            yield self.main_parser._add_misp_attribute(
                 {
                     'type': 'email-dst', 'value': address, **attribute,
                     'uuid': self.main_parser._create_v5_uuid(
@@ -472,7 +501,7 @@ class ExternalSTIX2ObservedDataConverter(
             )
             attr_type = 'email-dst-display-name'
             display_name = email_address.display_name
-            self.main_parser._add_misp_attribute(
+            yield self.main_parser._add_misp_attribute(
                 {
                     'type': attr_type, 'value': display_name, **attribute,
                     'uuid': self.main_parser._create_v5_uuid(
@@ -482,7 +511,7 @@ class ExternalSTIX2ObservedDataConverter(
                 observed_data
             )
         else:
-            self.main_parser._add_misp_attribute(
+            yield self.main_parser._add_misp_attribute(
                 {
                     'type': 'email-dst', 'value': email_address.value,
                     **self._parse_timeline(observed_data),
@@ -498,9 +527,15 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
+            if observable['used'].get(self.event_uuid, False):
+                for attribute in observable['misp_attribute']:
+                    self._handle_misp_object_fields(attribute, observed_data)
+                continue
             email_address = observable['observable']
-            self._parse_email_address_observable_object_ref(
-                email_address, observed_data
+            observable['misp_attribute'] = tuple(
+                self._parse_email_address_observable_object_ref(
+                    email_address, observed_data
+                )
             )
             observable['used'][self.event_uuid] = True
 
@@ -662,10 +697,15 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: _OBSERVED_DATA_TYPING):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
-            ip_address = observable['observable']
-            self._parse_generic_observable_object_ref_as_attribute(
-                ip_address, observed_data, 'ip-dst'
+            if observable['used'].get(self.event_uuid, False):
+                self._handle_misp_object_fields(
+                    observable['misp_attribute'], observed_data
+                )
+                continue
+            attribute = self._parse_generic_observable_object_ref_as_attribute(
+                observable['observable'], observed_data, 'ip-dst'
             )
+            observable['misp_attributes'] = attribute
             observable['used'][self.event_uuid] = True
 
     def _parse_ip_address_observable_objects(
@@ -695,10 +735,15 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
-            mac_address = observable['observable']
-            self._parse_generic_observable_object_ref_as_attribute(
-                mac_address, observed_data, 'mac-address'
+            if observable['used'].get(self.event_uuid, False):
+                self._handle_misp_object_fields(
+                    observable['misp_attribute'], observed_data
+                )
+                continue
+            attribute = self._parse_generic_observable_object_ref_as_attribute(
+                observable['observable'], observed_data, 'mac-address'
             )
+            observable['misp_attribute'] = attribute
             observable['used'][self.event_uuid] = True
 
     def _parse_mac_address_observable_objects(
@@ -728,10 +773,15 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
-            mutex = observable['observable']
-            self._parse_generic_observable_object_ref_as_attribute(
-                mutex, observed_data, 'mutex', feature='name'
+            if observable['used'].get(self.event_uuid, False):
+                self._handle_misp_object_fields(
+                    observable['misp_attribute'], observed_data
+                )
+                continue
+            attribute = self._parse_generic_observable_object_ref_as_attribute(
+                observable['observable'], observed_data, 'mutex', feature='name'
             )
+            observable['misp_attribute'] = attribute
             observable['used'][self.event_uuid] = True
 
     def _parse_mutex_observable_objects(
@@ -760,19 +810,13 @@ class ExternalSTIX2ObservedDataConverter(
     def _parse_process_observable_object_refs(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
+            object_type = object_ref.split('--')[0]
             observable = self._fetch_observables(object_ref)
-            if object_ref.startswith('file--'):
-                if not observable['used'].get(self.event_uuid, False):
-                    misp_object = self._parse_generic_observable_object_ref(
-                        observable['observable'], observed_data, 'file', False
-                    )
-                    observable['used'][self.event_uuid] = True
-                    observable['misp_object'] = misp_object
-                continue
             misp_object = self._handle_observable_object_refs_parsing(
-                observable, observed_data, 'process', False
+                observable, observed_data, object_type, False
             )
-            observable['used'][self.event_uuid] = True
+            if object_type == 'file':
+                continue
             process = observable['observable']
             if hasattr(process, 'parent_ref'):
                 self._parse_process_reference_observable_object_ref(
@@ -796,43 +840,39 @@ class ExternalSTIX2ObservedDataConverter(
                 observed_data, 'process'
             )
         observable_objects = {
-            object_id: {'used': False, 'observable': observable}
-            for object_id, observable in observed_data.objects.items()
+            object_id: {'used': False} for object_id in observed_data.objects
         }
         for object_id, observable in observable_objects.items():
-            if observable['observable'].type == 'file':
+            observable_object = observed_data.objects[object_id]
+            object_type = observable_object.type
+            if object_type == 'file':
                 if not observable['used']:
                     misp_object = self._parse_generic_observable_object(
-                        observed_data, object_id, 'file', False
+                        observed_data, object_id, object_type, False
                     )
-                    observable['used'] = True
-                    observable['misp_object'] = misp_object
+                    observable.update(
+                        {'misp_object': misp_object, 'used': True}
+                    )
                 continue
-            process = observable['observable']
-            misp_object = (
-                observable['misp_object'] if observable['used'] else
-                self._parse_generic_observable_object(
-                    observed_data, object_id, 'process', False
-                )
+            misp_object = self._handle_observable_objects_parsing(
+                observable_objects, object_id, observed_data, 'process', False
             )
-            observable['misp_object'] = misp_object
-            observable['used'] = True
-            if hasattr(process, 'parent_ref'):
+            if hasattr(observable_object, 'parent_ref'):
                 self._parse_process_reference_observable_object(
                     observed_data, misp_object,
-                    observable_objects[process.parent_ref],
-                    process.parent_ref, 'child-of'
+                    observable_objects[observable_object.parent_ref],
+                    observable_object.parent_ref, 'child-of'
                 )
-            if hasattr(process, 'child_refs'):
-                for child_ref in process.child_refs:
+            if hasattr(observable_object, 'child_refs'):
+                for child_ref in observable_object.child_refs:
                     self._parse_process_reference_observable_object(
                         observed_data, misp_object,
                         observable_objects[child_ref],
                         child_ref, 'parent-of'
                     )
             for feature in ('binary', 'image'):
-                if hasattr(process, f'{feature}_ref'):
-                    reference = getattr(process, f'{feature}_ref')
+                if hasattr(observable_object, f'{feature}_ref'):
+                    reference = getattr(observable_object, f'{feature}_ref')
                     self._parse_process_reference_observable_object(
                         observed_data, misp_object,
                         observable_objects[reference],
@@ -932,13 +972,13 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
+            if observable['used'].get(self.event_uuid, False):
+                self._handle_misp_object_fields(
+                    observable['misp_object'], observed_data
+                )
+                continue
             observable_object = observable['observable']
             if observable_object.type == 'user-account':
-                if observable['used'].get(self.event_uuid, False):
-                    self._handle_misp_object_fields(
-                        observable['misp_object'], observed_data
-                    )
-                    continue
                 misp_object = self._parse_generic_observable_object_ref(
                     observable_object, observed_data, 'user-account', False
                 )
@@ -948,6 +988,7 @@ class ExternalSTIX2ObservedDataConverter(
             misp_object = self._parse_registry_key_observable_object_ref(
                 observable_object, observed_data
             )
+            observable['misp_object'] = misp_object
             observable['used'][self.event_uuid] = True
             if hasattr(observable_object, 'creator_user_ref'):
                 creator_observable = self._fetch_observables(
@@ -996,11 +1037,10 @@ class ExternalSTIX2ObservedDataConverter(
                     misp_object.add_reference(value_uuid, 'contains')
             return misp_object
         observable_objects = {
-            object_id: {'used': False, 'observable': observable}
-            for object_id, observable in observed_data.objects.items()
+            object_id: {'used': False} for object_id in observed_data.objects
         }
-        for identifier, observable in observable_objects.items():
-            observable_object = observable['observable']
+        for object_id, observable in observable_objects.items():
+            observable_object = observed_data.objects[object_id]
             if observable_object.type == 'user-account':
                 if observable['used']:
                     continue
@@ -1009,14 +1049,13 @@ class ExternalSTIX2ObservedDataConverter(
                         observable_object, observed_data, 'user-account', False
                     ) if observable['used'] else
                     self._parse_generic_observable_object(
-                        observed_data, identifier, 'user-account', False
+                        observed_data, object_id, 'user-account', False
                     )
                 )
-                observable['misp_object'] = misp_object
-                observable['used'] = True
+                observable.update({'misp_object': misp_object, 'used': True})
                 continue
             misp_object = self._parse_registry_key_observable_object(
-                observed_data, identifier
+                observed_data, object_id
             )
             if hasattr(observable_object, 'creator_user_ref'):
                 creator_observable = observable_objects[
@@ -1032,8 +1071,9 @@ class ExternalSTIX2ObservedDataConverter(
                     'user-account', False
                 )
                 creator_object.add_reference(misp_object.uuid, 'creates')
-                creator_observable['misp_object'] = creator_object
-                creator_observable['used'] = True
+                creator_observable.update(
+                    {'misp_object': creator_object, 'used': True}
+                )
 
     def _parse_registry_key_value_observable(
             self, registry_value: _WINDOWS_REGISTRY_VALUE_TYPING,
@@ -1058,10 +1098,15 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
-            software = observable['observable']
-            self._parse_generic_observable_object_ref(
-                software, observed_data, 'software'
+            if observable['used'].get(self.event_uuid, False):
+                self._handle_misp_object_fields(
+                    observable['misp_object'], observed_data
+                )
+                continue
+            misp_object = self._parse_generic_observable_object_ref(
+                observable['observable'], observed_data, 'software'
             )
+            observable['misp_object'] = misp_object
             observable['used'][self.event_uuid] = True
 
     def _parse_software_observable_objects(
@@ -1079,10 +1124,15 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
-            url = observable['observable']
-            self._parse_generic_observable_object_ref_as_attribute(
-                url, observed_data, 'url'
+            if observable['used'].get(self.event_uuid, False):
+                self._handle_misp_object_fields(
+                    observable['misp_attribute'], observed_data
+                )
+                continue
+            attribute = self._parse_generic_observable_object_ref_as_attribute(
+                observable['observable'], observed_data, 'url'
             )
+            observable['misp_attribute'] = attribute
             observable['used'][self.event_uuid] = True
 
     def _parse_url_observable_objects(
@@ -1112,10 +1162,15 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
-            user_account = observable['observable']
-            self._parse_generic_observable_object_ref(
-                user_account, observed_data, 'user-account', False
+            if observable['used'].get(self.event_uuid, False):
+                self._handle_misp_object_fields(
+                    observable['misp_object'], observed_data
+                )
+                continue
+            misp_object = self._parse_generic_observable_object_ref(
+                observable['observable'], observed_data, 'user-account', False
             )
+            observable['misp_object'] = misp_object
             observable['used'][self.event_uuid] = True
 
     def _parse_user_account_observable_objects(
@@ -1133,10 +1188,15 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: ObservedData_v21):
         for object_ref in observed_data.object_refs:
             observable = self._fetch_observables(object_ref)
-            x509 = observable['observable']
-            self._parse_generic_observable_object_ref(
-                x509, observed_data, 'x509', False
+            if observable['used'].get(self.event_uuid, False):
+                self._handle_misp_object_fields(
+                    observable['misp_object'], observed_data
+                )
+                continue
+            misp_object = self._parse_generic_observable_object_ref(
+                observable['observable'], observed_data, 'x509', False
             )
+            observable['misp_object'] = misp_object
             observable['used'][self.event_uuid] = True
 
     def _parse_x509_observable_objects(
