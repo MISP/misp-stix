@@ -590,6 +590,106 @@ class ExternalSTIX2ObservedDataConverter(
                     observed_data, identifier
                 )
 
+    def _parse_file_observable_object_refs(
+            self, observed_data: ObservedData_v21, *object_refs: tuple):
+        for object_ref in object_refs or observed_data.object_refs:
+            object_type = object_ref.split('--')[0]
+            observable = self._fetch_observables(object_ref)
+            misp_object = self._handle_observable_object_refs_parsing(
+                observable, observed_data, object_type,
+                (object_type == 'directory')
+            )
+            if object_type == 'artifact':
+                continue
+            observable_object = observable['observable']
+            if hasattr(observable_object, 'contains_refs'):
+                contained_uuids = self._parse_contained_object_refs(
+                    observed_data, misp_object.uuid,
+                    *observable_object.contains_refs
+                )
+                for contained_uuid in contained_uuids:
+                    misp_object.add_reference(contained_uuid, 'contains')
+            if object_type == 'directory':
+                continue
+            if hasattr(observable_object, 'parent_directory_ref'):
+                parent_ref = observable_object.parent_directory_ref
+                if parent_ref not in observed_data.object_refs:
+                    self.observable_relationships[misp_object.uuid].add(
+                        (
+                            self.main_parser._sanitise_uuid(parent_ref),
+                            'contained-in'
+                        )
+                    )
+                else:
+                    parent = self._fetch_observables(parent_ref)
+                    parent_object = self._handle_observable_object_refs_parsing(
+                        parent, observed_data, 'directory'
+                    )
+                    misp_object.add_reference(
+                        parent_object.uuid, 'contained-in'
+                    )
+            if hasattr(observable_object, 'content_ref'):
+                content_ref = observable_object.content_ref
+                if content_ref not in observed_data.object_refs:
+                    content_uuid = self.main_parser._sanitise_uuid(content_ref)
+                    self.observable_relationships[content_uuid].add(
+                        (misp_object.uuid, 'content-of')
+                    )
+                else:
+                    content = self._fetch_observables(content_ref)
+                    artifact = self._handle_observable_object_refs_parsing(
+                        content, observed_data, 'artifact', False
+                    )
+                    artifact.add_reference(misp_object.uuid, 'content-of')
+
+    def _parse_file_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        if len(observed_data.objects) == 1:
+            return self._parse_generic_single_observable_object(
+                observed_data, 'file', False
+            )
+        observable_objects = {
+            object_id: {'used': False} for object_id in observed_data.objects
+        }
+        for object_id, observable in observable_objects.items():
+            observable_object = observed_data.objects[object_id]
+            object_type = observable_object.type
+            if object_type == 'artifact':
+                if not observable['used']:
+                    misp_object = self._parse_generic_observable_object(
+                        observed_data, object_id, object_type, False
+                    )
+                    observable.update(
+                        {'misp_object': misp_object, 'used': True}
+                    )
+                continue
+            misp_object = self._handle_observable_objects_parsing(
+                observable_objects, object_id, observed_data,
+                object_type, (object_type == 'directory')
+            )
+            if hasattr(observable_object, 'contains_refs'):
+                contained_uuids = self._parse_contained_objects(
+                    observed_data, observable_objects,
+                    *observable_object.contains_refs
+                )
+                for contained_uuid in contained_uuids:
+                    misp_object.add_reference(contained_uuid, 'contains')
+            if object_type == 'directory':
+                continue
+            if hasattr(observable_object, 'parent_directory_ref'):
+                parent_ref = observable_object.parent_directory_ref
+                parent_object = self._handle_observable_objects_parsing(
+                    observable_objects, parent_ref, observed_data, 'directory'
+                )
+                misp_object.add_reference(parent_object.uuid, 'contained-in')
+            if hasattr(observable_object, 'content_ref'):
+                content_ref = observable_object.content_ref
+                artifact = self._handle_observable_objects_parsing(
+                    observable_objects, content_ref, observed_data,
+                    'artifact', False
+                )
+                artifact.add_reference(misp_object.uuid, 'content-of')
+
     def _parse_generic_observable_object(
             self, observed_data: _OBSERVED_DATA_TYPING, object_id: str,
             name: str, generic: Optional[bool] = True) -> MISPObject:
