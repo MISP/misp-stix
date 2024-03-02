@@ -241,6 +241,11 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_misp_object_fields(misp_object, observed_data, autonomous_system.id)
         self._check_as_fields(misp_object, autonomous_system, autonomous_system.id)
 
+    def _check_content_ref_object(self, misp_object, observed_data, artifact):
+        self.assertEqual(misp_object.name, 'artifact')
+        self._check_misp_object_fields(misp_object, observed_data, artifact.id)
+        self._check_content_ref_fields(misp_object, artifact, artifact.id)
+
     def _check_directory_object(self, misp_object, observed_data, directory):
         self.assertEqual(misp_object.name, 'directory')
         self._check_misp_object_fields(misp_object, observed_data, directory.id)
@@ -271,6 +276,15 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         )
         self.assertEqual(display_name.type, 'email-dst-display-name')
         self.assertEqual(display_name.value, email_address.display_name)
+
+    def _check_file_object(self, misp_object, observed_data, observable_object):
+        self.assertEqual(misp_object.name, 'file')
+        self._check_misp_object_fields(
+            misp_object, observed_data, observable_object.id
+        )
+        self._check_file_fields(
+            misp_object, observable_object, observable_object.id
+        )
 
     def _check_generic_attribute(
             self, observed_data, observable_object, attribute,
@@ -409,6 +423,39 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             od2, sm_address, sm_display_name, ea3
         )
         self._check_email_address_attribute(od3, ss_address, ea4)
+
+    def test_stix21_bundle_with_file_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_file_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, od1, file1, directory, artifact = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 3)
+        file_object, directory_object, artifact_object = misp_objects
+        self._check_file_object(file_object, od1, file1)
+        self.assertEqual(directory_object.name, 'directory')
+        self._check_misp_object_fields(directory_object, od1, directory.id)
+        self.assertEqual(len(directory_object.attributes), 1)
+        path_attribute = directory_object.attributes[0]
+        self.assertEqual(path_attribute.type, 'text')
+        self.assertEqual(path_attribute.object_relation, 'path')
+        self.assertEqual(path_attribute.value, directory.path)
+        self.assertEqual(
+            path_attribute.uuid,
+            uuid5(
+                self._UUIDv4, f'{directory.id} - path - {path_attribute.value}'
+            )
+        )
+        self._check_content_ref_object(artifact_object, od1, artifact)
+        self.assertEqual(len(file_object.references), 1)
+        file_reference = file_object.references[0]
+        self.assertEqual(file_reference.referenced_uuid, directory_object.uuid)
+        self.assertEqual(file_reference.relationship_type, 'contained-in')
+        self.assertEqual(len(artifact_object.references), 1)
+        artifact_reference = artifact_object.references[0]
+        self.assertEqual(artifact_reference.referenced_uuid, file_object.uuid)
+        self.assertEqual(artifact_reference.relationship_type, 'content-of')
 
     def test_stix21_bundle_with_ip_address_attributes(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_ip_address_attributes()

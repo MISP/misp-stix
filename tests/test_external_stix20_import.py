@@ -213,6 +213,18 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         autonomous_system = observed_data.objects[identifier]
         self._check_as_fields(misp_object, autonomous_system, object_id)
 
+    def _check_content_ref_object(self, misp_object, observed_data, identifier=None):
+        self.assertEqual(misp_object.name, 'artifact')
+        self._check_misp_object_fields(misp_object, observed_data, identifier)
+        object_id = observed_data.id
+        if identifier is None:
+            identifier = '0'
+        else:
+            object_id = f'{object_id} - {identifier}'
+        self._check_content_ref_fields(
+            misp_object, observed_data.objects[identifier], object_id
+        )
+
     def _check_directory_object(self, misp_object, observed_data, identifier=None):
         self.assertEqual(misp_object.name, 'directory')
         self._check_misp_object_fields(misp_object, observed_data, identifier)
@@ -261,6 +273,18 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(address.value, email_address.value)
         self.assertEqual(display_name.type, 'email-dst-display-name')
         self.assertEqual(display_name.value, email_address.display_name)
+
+    def _check_file_object(self, misp_object, observed_data, identifier=None):
+        self.assertEqual(misp_object.name, 'file')
+        self._check_misp_object_fields(misp_object, observed_data, identifier)
+        object_id = observed_data.id
+        if identifier is None:
+            identifier = '0'
+        else:
+            object_id = f'{object_id} - {identifier}'
+        self._check_file_fields(
+            misp_object, observed_data.objects[identifier], object_id
+        )
 
     def _check_generic_attribute(
             self, observed_data, attribute, attribute_type,
@@ -422,6 +446,41 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data2, sm_address, sm_display_name
         )
         self._check_email_address_attribute(observed_data3, ss_address)
+
+    def test_stix20_bundle_with_file_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_file_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_objects = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_objects), 3)
+        file_object, directory_object, artifact_object = misp_objects
+        self._check_file_object(file_object, observed_data, '0')
+        self.assertEqual(directory_object.name, 'directory')
+        self._check_misp_object_fields(directory_object, observed_data, '1')
+        artifact = observed_data.objects['1']
+        self.assertEqual(len(directory_object.attributes), 1)
+        path_attribute = directory_object.attributes[0]
+        self.assertEqual(path_attribute.type, 'text')
+        self.assertEqual(path_attribute.object_relation, 'path')
+        self.assertEqual(path_attribute.value, artifact.path)
+        self.assertEqual(
+            path_attribute.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{observed_data.id} - 1 - path - {path_attribute.value}'
+            )
+        )
+        self._check_content_ref_object(artifact_object, observed_data, '2')
+        self.assertEqual(len(file_object.references), 1)
+        file_reference = file_object.references[0]
+        self.assertEqual(file_reference.referenced_uuid, directory_object.uuid)
+        self.assertEqual(file_reference.relationship_type, 'contained-in')
+        self.assertEqual(len(artifact_object.references), 1)
+        artifact_reference = artifact_object.references[0]
+        self.assertEqual(artifact_reference.referenced_uuid, file_object.uuid)
+        self.assertEqual(artifact_reference.relationship_type, 'content-of')
 
     def test_stix20_bundle_with_ip_address_attributes(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_ip_address_attributes()

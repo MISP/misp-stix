@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from base64 import b64encode
 from copy import deepcopy
+from pathlib import Path
 from stix2.parsing import dict_to_stix2
 
+_TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
 
 _ARTIFACT_OBJECTS = [
     {
@@ -363,6 +366,46 @@ _EMAIL_ADDRESS_ATTRIBUTES = [
             "0": {
                 "type": "email-addr",
                 "value": "donald.duck@gmail.com"
+            }
+        }
+    }
+]
+_FILE_OBJECTS = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "MD5": "8764605c6f388c89096b534d33565802",
+                    "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                    "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+                },
+                "size": 35,
+                "name": "oui",
+                "name_enc": "UTF-8",
+                "parent_directory_ref": "1",
+                "content_ref": "2"
+            },
+            "1": {
+                "type": "directory",
+                "path": "/var/www/MISP/app/files/scripts/tmp"
+            },
+            "2": {
+                "type": "artifact",
+                "mime_type": "application/zip",
+                "hashes": {
+                    "MD5": "8764605c6f388c89096b534d33565802"
+                },
+                "encryption_algorithm": "mime-type-indicated",
+                "decryption_key": "infected"
             }
         }
     }
@@ -1207,6 +1250,13 @@ class TestExternalSTIX20Bundles:
     @classmethod
     def get_bundle_with_email_address_attributes(cls):
         return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_file_objects(cls):
+        observed_data = deepcopy(_FILE_OBJECTS)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            observed_data[0]['objects']['2']['payload_bin'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(*observed_data)
 
     @classmethod
     def get_bundle_with_ip_address_attributes(cls):

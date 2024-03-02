@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from base64 import b64encode
 from copy import deepcopy
+from pathlib import Path
 from stix2.parsing import dict_to_stix2
 
+_TESTFILES_PATH = Path(__file__).parent.resolve() / 'attachment_test_files'
 
 _ARTIFACT_OBJECTS = [
     {
@@ -437,6 +440,56 @@ _EMAIL_ADDRESS_ATTRIBUTES = [
         "spec_version": "2.1",
         "id": "email-addr--cd890f31-5825-4fea-85ca-0b3ab3872926",
         "value": "donald.duck@gmail.com"
+    }
+]
+_FILE_OBJECTS = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--5e384ae7-672c-4250-9cda-3b4da964451a",
+            "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+            "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+        ],
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--5e384ae7-672c-4250-9cda-3b4da964451a",
+        "hashes": {
+            "MD5": "8764605c6f388c89096b534d33565802",
+            "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+            "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+        },
+        "size": 35,
+        "name": "oui",
+        "name_enc": "UTF-8",
+        "parent_directory_ref": "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "content_ref": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f"
+    },
+    {
+        "type": "directory",
+        "spec_version": "2.1",
+        "id": "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45",
+        "path": "/var/www/MISP/app/files/scripts/tmp"
+    },
+    {
+        "type": "artifact",
+        "spec_version": "2.1",
+        "id": "artifact--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
+        "mime_type": "application/zip",
+        "hashes": {
+            "MD5": "8764605c6f388c89096b534d33565802"
+        },
+        "encryption_algorithm": "mime-type-indicated",
+        "decryption_key": "infected"
     }
 ]
 _INTRUSION_SET_OBJECTS = [
@@ -1434,6 +1487,13 @@ class TestExternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_email_address_attributes(cls):
         return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_file_objects(cls):
+        observables = deepcopy(_FILE_OBJECTS)
+        with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
+            observables[-1]['payload_bin'] = b64encode(f.read()).decode()
+        return cls.__assemble_bundle(*observables)
 
     @classmethod
     def get_bundle_with_ip_address_attributes(cls):

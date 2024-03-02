@@ -459,6 +459,45 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(name.value, autonomous_system.name)
         self.assertEqual(name.uuid, uuid5(self._UUIDv4, f'{object_id} - description - {name.value}'))
 
+    def _check_content_ref_fields(self, misp_object, artifact, object_id):
+        self.assertEqual(len(misp_object.attributes), 4)
+        payload_bin, md5, decryption_key, mime_type = misp_object.attributes
+        self.assertEqual(payload_bin.type, 'attachment')
+        self.assertEqual(payload_bin.object_relation, 'payload_bin')
+        self.assertEqual(
+            payload_bin.value,
+            getattr(artifact, 'id', object_id.split(' - ')[0]).split('--')[1]
+        )
+        self.assertEqual(self._get_data_value(payload_bin.data), artifact.payload_bin)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - payload_bin - {payload_bin.value}'
+            )
+        )
+        self._assert_multiple_equal(md5.type, md5.object_relation, 'md5')
+        self.assertEqual(md5.value, artifact.hashes['MD5'])
+        self.assertEqual(
+            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+        )
+        self.assertEqual(decryption_key.type, 'text')
+        self.assertEqual(decryption_key.object_relation, 'decryption_key')
+        self.assertEqual(decryption_key.value, artifact.decryption_key)
+        self.assertEqual(
+            decryption_key.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - decryption_key - {decryption_key.value}'
+            )
+        )
+        self.assertEqual(mime_type.type, 'mime-type')
+        self.assertEqual(mime_type.object_relation, 'mime_type')
+        self.assertEqual(mime_type.value, artifact.mime_type)
+        self.assertEqual(
+            mime_type.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - mime_type - {mime_type.value}')
+        )
+
     def _check_creator_user_fields(self, misp_object, user_account, object_id):
         self.assertEqual(len(misp_object.attributes), 4)
         username, account_type, privileged, user_id = misp_object.attributes
@@ -527,6 +566,58 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             path_enc.uuid, uuid5(self._UUIDv4, f'{object_id} - path-encoding - {path_enc.value}')
         )
         return accessed.value, created.value, modified.value
+
+    def _check_file_fields(self, misp_object, observable_object, object_id):
+        self.assertEqual(len(misp_object.attributes), 6)
+        md5, sha1, sha256, filename, encoding, size = misp_object.attributes
+        hashes = observable_object.hashes
+        self._assert_multiple_equal(md5.type, md5.object_relation, 'md5')
+        self.assertEqual(md5.value, hashes['MD5'])
+        self.assertEqual(
+            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+        )
+        self._assert_multiple_equal(sha1.type, sha1.object_relation, 'sha1')
+        self.assertEqual(sha1.value, hashes['SHA-1'])
+        self.assertEqual(
+            sha1.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - sha1 - {sha1.value}')
+        )
+        self._assert_multiple_equal(
+            sha256.type, sha256.object_relation, 'sha256'
+        )
+        self.assertEqual(sha256.value, hashes['SHA-256'])
+        self.assertEqual(
+            sha256.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - sha256 - {sha256.value}')
+        )
+        self._assert_multiple_equal(
+            filename.type, filename.object_relation, 'filename'
+        )
+        self.assertEqual(filename.value, observable_object.name)
+        self.assertEqual(
+            filename.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - filename - {filename.value}')
+        )
+        self.assertEqual(encoding.type, 'text')
+        self.assertEqual(encoding.object_relation, 'file-encoding')
+        self.assertEqual(encoding.value, observable_object.name_enc)
+        self.assertEqual(
+            encoding.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - file-encoding - {encoding.value}'
+            )
+        )
+        self._assert_multiple_equal(
+            size.type, size.object_relation, 'size-in-bytes'
+        )
+        self.assertEqual(size.value, observable_object.size)
+        self.assertEqual(
+            size.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - size-in-bytes - {size.value}'
+            )
+        )
 
     def _check_process_child_fields(self, misp_object, process, object_id):
         self.assertEqual(len(misp_object.attributes), 2)
