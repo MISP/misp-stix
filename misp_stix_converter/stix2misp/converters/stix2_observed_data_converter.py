@@ -133,6 +133,19 @@ class ExternalSTIX2ObservedDataConverter(
     #               MULTIPLE OBSERVABLE OBJECTS PARSING METHODS.               #
     ############################################################################
 
+    @staticmethod
+    def _extract_referenced_ids_from_observable_objects(
+            **observable_objects: dict) -> dict:
+        referenced_ids = defaultdict(set)
+        for identifier, observable_object in observable_objects.items():
+            for key, value in observable_object.items():
+                if key.endswith('_ref'):
+                    referenced_ids[value].add(identifier)
+                if key.endswith('_refs'):
+                    for reference in value:
+                        referenced_ids[reference].add(identifier)
+        return referenced_ids
+
     def _fetch_multiple_observable_ids(
             self, observed_data: _OBSERVED_DATA_TYPING,
             object_id: str) -> Generator:
@@ -177,6 +190,9 @@ class ExternalSTIX2ObservedDataConverter(
         observable_objects = {
             object_id: {'used': False} for object_id in observed_data.objects
         }
+        referenced_ids = self._extract_referenced_ids_from_observable_objects(
+            **observed_data.objects
+        )
         for object_id in observable_objects.keys():
             if observable_objects[object_id]['used']:
                 continue
@@ -188,6 +204,9 @@ class ExternalSTIX2ObservedDataConverter(
                     )
                 )
             }
+            if object_id in referenced_ids:
+                for reference in referenced_ids[object_id]:
+                    observables[reference] = observable_objects[reference]
             observable_types = set(
                 observed_data.objects[identifier].type
                 for identifier in observables
