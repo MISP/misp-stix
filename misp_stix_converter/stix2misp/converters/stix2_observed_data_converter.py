@@ -16,12 +16,14 @@ from collections.abc import Generator
 from datetime import datetime
 from pymisp import MISPAttribute, MISPObject
 from stix2.v20.observables import (
+    WindowsPEBinaryExt as WindowsPEBinaryExt_v20,
     WindowsRegistryValueType as WindowsRegistryValueType_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
 from stix2.v21.observables import (
     Artifact, AutonomousSystem, Directory, DomainName, File, IPv4Address,
     IPv6Address, MACAddress, Mutex, Process, Software, URL, UserAccount,
     WindowsRegistryKey, X509Certificate,
+    WindowsPEBinaryExt as WindowsPEBinaryExt_v21,
     WindowsRegistryValueType as WindowsRegistryValueType_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
 from typing import Optional, TYPE_CHECKING, Union
@@ -43,6 +45,9 @@ _OBSERVABLE_OBJECTS_TYPING = Union[
 ]
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20, ObservedData_v21
+]
+_WINDOWS_PE_BINARY_EXT_TYPING = Union[
+    WindowsPEBinaryExt_v20, WindowsPEBinaryExt_v21
 ]
 _WINDOWS_REGISTRY_VALUE_TYPING = Union[
     WindowsRegistryValueType_v20, WindowsRegistryValueType_v21
@@ -792,6 +797,29 @@ class ExternalSTIX2ObservedDataConverter(
                     misp_object.add_reference(contained_uuid, 'contains')
             if object_type == 'directory':
                 continue
+            if hasattr(observable_object, 'extensions'):
+                extensions = observable_object.extensions
+                if extensions.get('archive-ext'):
+                    archive_ext = extensions['archive-ext']
+                    if hasattr(archive_ext, 'comment'):
+                        misp_object.from_dict(
+                            comment=' - '.join(
+                                (archive_ext.comment, misp_object.comment)
+                            )
+                        )
+                    contained_uuids = self._parse_contained_object_refs(
+                        observed_data, misp_object.uuid,
+                        *archive_ext.contains_refs
+                    )
+                    for contained_uuid in contained_uuids:
+                        misp_object.add_reference(contained_uuid, 'contains')
+                if extensions.get('windows-pebinary-ext'):
+                    windows_pe_ext = extensions['windows-pebinary-ext']
+                    pe_object_uuid = self._parse_pe_extension_observable(
+                        windows_pe_ext, observed_data,
+                        f'{observable_object.id} - windows-pebinary-ext'
+                    )
+                    misp_object.add_reference(pe_object_uuid, 'includes')
             if hasattr(observable_object, 'parent_directory_ref'):
                 parent_ref = observable_object.parent_directory_ref
                 if parent_ref not in observed_data.object_refs:
@@ -860,6 +888,30 @@ class ExternalSTIX2ObservedDataConverter(
                     misp_object.add_reference(contained_uuid, 'contains')
             if object_type == 'directory':
                 continue
+            if hasattr(observable_object, 'extensions'):
+                extensions = observable_object.extensions
+                if extensions.get('archive-ext'):
+                    archive_ext = extensions['archive-ext']
+                    if hasattr(archive_ext, 'comment'):
+                        misp_object.from_dict(
+                            comment=' - '.join(
+                                (archive_ext.comment, misp_object.comment)
+                            )
+                        )
+                    contained_uuids = self._parse_contained_objects(
+                        observed_data, observable_objects,
+                        *archive_ext.contains_refs
+                    )
+                    for contained_uuid in contained_uuids:
+                        misp_object.add_reference(contained_uuid, 'contains')
+                if extensions.get('windows-pebinary-ext'):
+                    windows_pe_ext = extensions['windows-pebinary-ext']
+                    pe_object_uuid = self._parse_pe_extension_observable(
+                        windows_pe_ext, observed_data,
+                        f'{observable_object.id} - windows-pebinary-ext'
+                        f' - {object_id}'
+                    )
+                    misp_object.add_reference(pe_object_uuid, 'includes')
             if hasattr(observable_object, 'parent_directory_ref'):
                 parent_ref = observable_object.parent_directory_ref
                 parent_object = self._handle_observable_objects_parsing(
@@ -873,6 +925,35 @@ class ExternalSTIX2ObservedDataConverter(
                     'artifact', False
                 )
                 artifact.add_reference(misp_object.uuid, 'content-of')
+
+    def _parse_file_pe_extension_observable(
+            self, pe_extension: _WINDOWS_PE_BINARY_EXT_TYPING,
+            observed_data: _OBSERVED_DATA_TYPING, object_id: str) -> str:
+        pe_object = self._create_misp_object_from_observable_object(
+            'pe', observed_data, object_id
+        )
+        attributes = self._parse_pe_extension_observable(
+            pe_extension, object_id
+        )
+        for attribute in attributes:
+            pe_object.add_attribute(**attribute)
+        misp_object = self.main_parser._add_misp_object(
+            pe_object, observed_data
+        )
+        if hasattr(pe_extension, 'sections'):
+            for section_id, section in enumerate(pe_extension.sections):
+                section_reference = f'{object_id} - section - {section_id}'
+                section_object = self._create_misp_object_from_observable_object(
+                    'pe-section', observed_data, section_reference
+                )
+                attributes = self._parse_pe_section_observable(
+                    section, section_reference
+                )
+                for attribute in attributes:
+                    section_object.add_attribute(**attribute)
+                self.main_parser._add_misp_object(section_object, observed_data)
+                misp_object.add_reference(section_object.uuid, 'includes')
+        return misp_object.uuid
 
     def _parse_generic_observable_object(
             self, observed_data: _OBSERVED_DATA_TYPING, object_id: str,
@@ -1397,7 +1478,7 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _parse_registry_key_value_observable(
             self, registry_value: _WINDOWS_REGISTRY_VALUE_TYPING,
-            observed_data: _OBSERVED_DATA_TYPING, object_id) -> str:
+            observed_data: _OBSERVED_DATA_TYPING, object_id: str) -> str:
         misp_object = self._create_misp_object_from_observable_object(
             'registry-key-value', observed_data, object_id
         )
