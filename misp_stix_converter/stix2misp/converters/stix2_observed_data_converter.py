@@ -89,7 +89,11 @@ class ExternalSTIX2ObservedDataConverter(
             object_uuid = misp_object.uuid
             if object_uuid in self.observable_relationships:
                 for relationship in self.observable_relationships[object_uuid]:
-                    misp_object.add_reference(*relationship)
+                    referenced_uuid, relationship_type = relationship
+                    self._handle_misp_object_references(
+                        misp_object, referenced_uuid,
+                        relationship_type=relationship_type
+                    )
 
     def _set_observable_relationships(self):
         self._observable_relationships = defaultdict(set)
@@ -524,11 +528,13 @@ class ExternalSTIX2ObservedDataConverter(
             )
             directory = observable['observable']
             if hasattr(directory, 'contains_refs'):
-                contained_uuids = self._parse_contained_object_refs(
-                    observed_data, misp_object.uuid, *directory.contains_refs
+                self._handle_misp_object_references(
+                    misp_object,
+                    *self._parse_contained_object_refs(
+                        observed_data, misp_object.uuid,
+                        *directory.contains_refs
+                    )
                 )
-                for contained_uuid in contained_uuids:
-                    misp_object.add_reference(contained_uuid, 'contains')
 
     def _parse_directory_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING,
@@ -548,11 +554,13 @@ class ExternalSTIX2ObservedDataConverter(
             )
             directory = observed_data.objects[object_id]
             if hasattr(directory, 'contains_refs'):
-                contained_uuids = self._parse_contained_objects(
-                    observed_data, observable_objects, *directory.contains_refs
+                self._handle_object_reference(
+                    misp_object,
+                    *self._parse_contained_objects(
+                        observed_data, observable_objects,
+                        *directory.contains_refs
+                    )
                 )
-                for contained_uuid in contained_uuids:
-                    misp_object.add_reference(contained_uuid, 'contains')
 
     def _parse_domain_observable_object_refs(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
@@ -789,12 +797,13 @@ class ExternalSTIX2ObservedDataConverter(
                 continue
             observable_object = observable['observable']
             if hasattr(observable_object, 'contains_refs'):
-                contained_uuids = self._parse_contained_object_refs(
-                    observed_data, misp_object.uuid,
-                    *observable_object.contains_refs
+                self._handle_misp_object_references(
+                    misp_object,
+                    *self._parse_contained_object_refs(
+                        observed_data, misp_object.uuid,
+                        *observable_object.contains_refs
+                    )
                 )
-                for contained_uuid in contained_uuids:
-                    misp_object.add_reference(contained_uuid, 'contains')
             if object_type == 'directory':
                 continue
             if hasattr(observable_object, 'extensions'):
@@ -807,12 +816,13 @@ class ExternalSTIX2ObservedDataConverter(
                                 (archive_ext.comment, misp_object.comment)
                             )
                         )
-                    contained_uuids = self._parse_contained_object_refs(
-                        observed_data, misp_object.uuid,
-                        *archive_ext.contains_refs
+                    self._handle_misp_object_references(
+                        misp_object,
+                        *self._parse_contained_object_refs(
+                            observed_data, misp_object.uuid,
+                            *archive_ext.contains_refs
+                        )
                     )
-                    for contained_uuid in contained_uuids:
-                        misp_object.add_reference(contained_uuid, 'contains')
                 if extensions.get('windows-pebinary-ext'):
                     windows_pe_ext = extensions['windows-pebinary-ext']
                     pe_object_uuid = self._parse_file_pe_extension_observable(
@@ -834,8 +844,9 @@ class ExternalSTIX2ObservedDataConverter(
                     parent_object = self._handle_observable_object_refs_parsing(
                         parent, observed_data, 'directory'
                     )
-                    misp_object.add_reference(
-                        parent_object.uuid, 'contained-in'
+                    self._handle_misp_object_references(
+                        misp_object, parent_object.uuid,
+                        relationship_type='contained-in'
                     )
             if hasattr(observable_object, 'content_ref'):
                 content_ref = observable_object.content_ref
@@ -849,7 +860,10 @@ class ExternalSTIX2ObservedDataConverter(
                     artifact = self._handle_observable_object_refs_parsing(
                         content, observed_data, 'artifact', False
                     )
-                    artifact.add_reference(misp_object.uuid, 'content-of')
+                    self._handle_misp_object_references(
+                        artifact, misp_object.uuid,
+                        relationship_type='content-of'
+                    )
 
     def _parse_file_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING,
@@ -880,12 +894,13 @@ class ExternalSTIX2ObservedDataConverter(
                 object_type, (object_type == 'directory')
             )
             if hasattr(observable_object, 'contains_refs'):
-                contained_uuids = self._parse_contained_objects(
-                    observed_data, observable_objects,
-                    *observable_object.contains_refs
+                self._handle_misp_object_references(
+                    misp_object,
+                    *self._parse_contained_objects(
+                        observed_data, observable_objects,
+                        *observable_object.contains_refs
+                    )
                 )
-                for contained_uuid in contained_uuids:
-                    misp_object.add_reference(contained_uuid, 'contains')
             if object_type == 'directory':
                 continue
             if hasattr(observable_object, 'extensions'):
@@ -898,12 +913,13 @@ class ExternalSTIX2ObservedDataConverter(
                                 (archive_ext.comment, misp_object.comment)
                             )
                         )
-                    contained_uuids = self._parse_contained_objects(
-                        observed_data, observable_objects,
-                        *archive_ext.contains_refs
+                    self._handle_misp_object_references(
+                        misp_object,
+                        *self._parse_contained_objects(
+                            observed_data, observable_objects,
+                            *archive_ext.contains_refs
+                        )
                     )
-                    for contained_uuid in contained_uuids:
-                        misp_object.add_reference(contained_uuid, 'contains')
                 if extensions.get('windows-pebinary-ext'):
                     windows_pe_ext = extensions['windows-pebinary-ext']
                     pe_object_uuid = self._parse_file_pe_extension_observable(
@@ -917,14 +933,19 @@ class ExternalSTIX2ObservedDataConverter(
                 parent_object = self._handle_observable_objects_parsing(
                     observable_objects, parent_ref, observed_data, 'directory'
                 )
-                misp_object.add_reference(parent_object.uuid, 'contained-in')
+                self._handle_misp_object_references(
+                    misp_object, parent_object.uuid,
+                    relationship_type='contained-in'
+                )
             if hasattr(observable_object, 'content_ref'):
                 content_ref = observable_object.content_ref
                 artifact = self._handle_observable_objects_parsing(
                     observable_objects, content_ref, observed_data,
                     'artifact', False
                 )
-                artifact.add_reference(misp_object.uuid, 'content-of')
+                self._handle_misp_object_references(
+                    artifact, misp_object.uuid, relationship_type='content-of'
+                )
 
     def _parse_file_pe_extension_observable(
             self, pe_extension: _WINDOWS_PE_BINARY_EXT_TYPING,
@@ -1282,14 +1303,18 @@ class ExternalSTIX2ObservedDataConverter(
             observable: dict, reference: str, relationship_type: str,
             name: Optional[str] = 'process'):
         if observable['used']:
-            misp_object.add_reference(
-                observable['misp_object'].uuid, relationship_type
+            self._handle_misp_object_references(
+                misp_object, observable['misp_object'].uuid,
+                relationship_type=relationship_type
             )
             return
         referenced_object = self._parse_generic_observable_object(
             observed_data, reference, name, False
         )
-        misp_object.add_reference(referenced_object.uuid, relationship_type)
+        self._handle_misp_object_references(
+            misp_object, referenced_object.uuid,
+            relationship_type=relationship_type
+        )
         observable.update({'used': True, 'misp_object': referenced_object})
 
     def _parse_process_reference_observable_object_ref(
@@ -1299,8 +1324,9 @@ class ExternalSTIX2ObservedDataConverter(
         observable = self._fetch_observable(reference)
         if observable['used'].get(self.event_uuid, False):
             self._handle_misp_object_fields(misp_object, observed_data)
-            misp_object.add_reference(
-                observable['misp_object'].uuid, relationship_type
+            self._handle_misp_object_references(
+                misp_object, observable['misp_object'].uuid,
+                relationship_type=relationship_type
             )
             return
         if reference in observed_data.object_refs:
@@ -1309,7 +1335,10 @@ class ExternalSTIX2ObservedDataConverter(
             )
             observable['misp_object'] = referenced_object
             observable['used'][self.event_uuid] = True
-            misp_object.add_reference(referenced_object.uuid, relationship_type)
+            self._handle_misp_object_references(
+                misp_object, referenced_object.uuid,
+                relationship_type=relationship_type
+            )
         else:
             self.observable_relationships[misp_object.uuid].add(
                 (
@@ -1343,7 +1372,9 @@ class ExternalSTIX2ObservedDataConverter(
                 value_uuid = self._parse_registry_key_value_observable(
                     value, observed_data, f'{object_id} - values - {index}'
                 )
-                misp_object.add_reference(value_uuid, 'contains')
+                self._handle_misp_object_references(
+                    misp_object, value_uuid
+                )
         return misp_object
 
     def _parse_registry_key_observable_object_ref(
@@ -1363,7 +1394,9 @@ class ExternalSTIX2ObservedDataConverter(
                     registry_value, observed_data,
                     f'{registry_key.id} - values - {index}'
                 )
-                misp_object.add_reference(value_uuid, 'contains')
+                self._handle_misp_object_references(
+                    misp_object, value_uuid
+                )
         return misp_object
 
     def _parse_registry_key_observable_object_refs(
@@ -1397,13 +1430,19 @@ class ExternalSTIX2ObservedDataConverter(
                     self._handle_misp_object_fields(
                         creator_object, observed_data
                     )
-                    creator_object.add_reference(misp_object.uuid, 'creates')
+                    self._handle_misp_object_references(
+                        creator_object, misp_object.uuid,
+                        relationship_type='creates'
+                    )
                     continue
                 creator_object = self._parse_generic_observable_object_ref(
                     creator_observable['observable'], observed_data,
                     'user-account', False
                 )
-                creator_object.add_reference(misp_object.uuid, 'creates')
+                self._handle_misp_object_references(
+                    creator_object, misp_object.uuid,
+                    relationship_type='creates'
+                )
                 creator_observable['misp_object'] = creator_object
                 creator_observable['used'][self.event_uuid] = True
 
@@ -1433,7 +1472,9 @@ class ExternalSTIX2ObservedDataConverter(
                         registry_value, observed_data,
                         f'{observed_data.id} - values - {index}'
                     )
-                    misp_object.add_reference(value_uuid, 'contains')
+                    self._handle_misp_object_references(
+                        misp_object, value_uuid
+                    )
             return misp_object
         if observable_objects is None:
             observable_objects = {
@@ -1463,15 +1504,19 @@ class ExternalSTIX2ObservedDataConverter(
                     observable_object.creator_user_ref
                 ]
                 if creator_observable['used']:
-                    creator_observable['misp_object'].add_reference(
-                        misp_object.uuid, 'creates'
+                    self._handle_misp_object_references(
+                        creator_observable['misp_object'], misp_object.uuid,
+                        relationship_type='creates'
                     )
                     continue
                 creator_object = self._parse_generic_observable_object(
                     observed_data, observable_object.creator_user_ref,
                     'user-account', False
                 )
-                creator_object.add_reference(misp_object.uuid, 'creates')
+                self._handle_misp_object_references(
+                    creator_object, misp_object.uuid,
+                    relationship_type='creates'
+                )
                 creator_observable.update(
                     {'misp_object': creator_object, 'used': True}
                 )
@@ -1704,6 +1749,17 @@ class ExternalSTIX2ObservedDataConverter(
             misp_object.comment = comment
         elif comment not in misp_object.comment:
             misp_object.comment = f'{misp_object.comment} - {comment}'
+
+    @staticmethod
+    def _handle_misp_object_references(
+            misp_object: MISPObject, *object_ids: tuple,
+            relationship_type: str = 'contains'):
+        for object_id in object_ids:
+            for reference in misp_object.references:
+                if (reference.referenced_uuid == object_id and
+                    reference.relationship_type == relationship_type):
+                    break
+            misp_object.add_reference(object_id, relationship_type)
 
 
 class InternalSTIX2ObservedDataConverter(
