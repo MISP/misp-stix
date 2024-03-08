@@ -815,7 +815,7 @@ class ExternalSTIX2ObservedDataConverter(
                         misp_object.add_reference(contained_uuid, 'contains')
                 if extensions.get('windows-pebinary-ext'):
                     windows_pe_ext = extensions['windows-pebinary-ext']
-                    pe_object_uuid = self._parse_pe_extension_observable(
+                    pe_object_uuid = self._parse_file_pe_extension_observable(
                         windows_pe_ext, observed_data,
                         f'{observable_object.id} - windows-pebinary-ext'
                     )
@@ -906,7 +906,7 @@ class ExternalSTIX2ObservedDataConverter(
                         misp_object.add_reference(contained_uuid, 'contains')
                 if extensions.get('windows-pebinary-ext'):
                     windows_pe_ext = extensions['windows-pebinary-ext']
-                    pe_object_uuid = self._parse_pe_extension_observable(
+                    pe_object_uuid = self._parse_file_pe_extension_observable(
                         windows_pe_ext, observed_data,
                         f'{observable_object.id} - windows-pebinary-ext'
                         f' - {object_id}'
