@@ -1755,11 +1755,10 @@ class ExternalSTIX2ObservedDataConverter(
             misp_object: MISPObject, *object_ids: tuple,
             relationship_type: str = 'contains'):
         for object_id in object_ids:
-            for reference in misp_object.references:
-                if (reference.referenced_uuid == object_id and
-                    reference.relationship_type == relationship_type):
-                    break
-            misp_object.add_reference(object_id, relationship_type)
+            if not any(reference.referenced_uuid == object_id and
+                   reference.relationship_type == relationship_type
+                   for reference in misp_object.references):
+                misp_object.add_reference(object_id, relationship_type)
 
 
 class InternalSTIX2ObservedDataConverter(
