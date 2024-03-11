@@ -47,6 +47,9 @@ class STIX2Mapping:
     __comment_attribute = Mapping(
         **{'type': 'comment', 'object_relation': 'comment'}
     )
+    __compilation_timestamp_attribute = Mapping(
+        **{'type': 'datetime', 'object_relation': 'compilation-timestamp'}
+    )
     __content_type_attribute = Mapping(
         **{'type': 'other', 'object_relation': 'content-type'}
     )
@@ -344,6 +347,7 @@ class STIX2Mapping:
         socket_type={'type': 'text', 'object_relation': 'socket-type'}
     )
     __pe_object_mapping = Mapping(
+        time_date_stamp=__compilation_timestamp_attribute,
         imphash=__imphash_attribute,
         number_of_sections={'type': 'counter', 'object_relation': 'number-sections'},
         pe_type=__type_attribute
@@ -450,6 +454,10 @@ class STIX2Mapping:
     @classmethod
     def comment_attribute(cls) -> dict:
         return cls.__comment_attribute
+
+    @classmethod
+    def compilation_timestamp_attribute(cls) -> dict:
+        return cls.__compilation_timestamp_attribute
 
     @classmethod
     def connection_protocols(cls, field: str) -> Union[str, None]:
@@ -1049,7 +1057,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     __account_name_attribute = {'type': 'text', 'object_relation': 'account-name'}
     __bio_attribute = {'type': 'text', 'object_relation': 'bio'}
     __community_id_attribute = {'type': 'community-id', 'object_relation': 'community-id'}
-    __compilation_timestamp_attribute = {'type': 'datetime', 'object_relation': 'compilation-timestamp'}
     __followers_attribute = {'type': 'text', 'object_relation': 'followers'}
     __following_attribute = {'type': 'text', 'object_relation': 'following'}
     __fullpath_attribute = {'type': 'text', 'object_relation': 'fullpath'}
@@ -1224,7 +1231,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         **STIX2Mapping.file_object_mapping(),
         x_misp_attachment=__attachment_attribute,
         x_misp_certificate={'type': 'x509-fingerprint-sha1', 'object_relation': 'certificate'},
-        x_misp_compilation_timestamp=__compilation_timestamp_attribute,
+        x_misp_compilation_timestamp=STIX2Mapping.compilation_timestamp_attribute(),
         x_misp_entropy=STIX2Mapping.entropy_attribute(),
         x_misp_fullpath=__fullpath_attribute,
         x_misp_path=STIX2Mapping.path_attribute(),
@@ -1385,7 +1392,7 @@ class InternalSTIX2Mapping(STIX2Mapping):
         **STIX2Mapping.pe_object_mapping(),
         x_misp_authentihash=__authentihash_attribute,
         x_misp_company_name={'type': 'text', 'object_relation': 'company-name'},
-        x_misp_compilation_timestamp=__compilation_timestamp_attribute,
+        x_misp_compilation_timestamp=STIX2Mapping.compilation_timestamp_attribute(),
         x_misp_entrypoint_section_at_position={
             'type': 'text',
             'object_relation': 'entrypoint-section-at-position'
