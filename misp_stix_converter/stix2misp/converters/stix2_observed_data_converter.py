@@ -554,7 +554,7 @@ class ExternalSTIX2ObservedDataConverter(
             )
             directory = observed_data.objects[object_id]
             if hasattr(directory, 'contains_refs'):
-                self._handle_object_reference(
+                self._handle_misp_object_references(
                     misp_object,
                     *self._parse_contained_objects(
                         observed_data, observable_objects,
