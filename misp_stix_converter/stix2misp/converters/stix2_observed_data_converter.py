@@ -869,9 +869,19 @@ class ExternalSTIX2ObservedDataConverter(
             self, observed_data: _OBSERVED_DATA_TYPING,
             observable_objects: Optional[dict] = None):
         if len(observed_data.objects) == 1:
-            return self._parse_generic_single_observable_object(
+            misp_object = self._parse_generic_single_observable_object(
                 observed_data, 'file', False
             )
+            observable = observed_data.objects['0']
+            if getattr(observable, 'extensions', {}).get(
+                    'windows-pebinary-ext'):
+                object_id = getattr(observable, 'id', observed_data.id)
+                pe_object_uuid = self._parse_file_pe_extension_observable(
+                    observable.extensions['windows-pebinary-ext'],
+                    observed_data, f'{object_id} - windows-pebinary-ext'
+                )
+                misp_object.add_reference(pe_object_uuid, 'includes')
+            return misp_object
         if observable_objects is None:
             observable_objects = {
                 object_id: {'used': False}
@@ -921,11 +931,10 @@ class ExternalSTIX2ObservedDataConverter(
                         )
                     )
                 if extensions.get('windows-pebinary-ext'):
-                    windows_pe_ext = extensions['windows-pebinary-ext']
                     pe_object_uuid = self._parse_file_pe_extension_observable(
-                        windows_pe_ext, observed_data,
-                        f'{observable_object.id} - windows-pebinary-ext'
-                        f' - {object_id}'
+                        extensions['windows-pebinary-ext'], observed_data,
+                        f'{observed_data.id} - '
+                        f'{object_id} - windows-pebinary-ext'
                     )
                     misp_object.add_reference(pe_object_uuid, 'includes')
             if hasattr(observable_object, 'parent_directory_ref'):
