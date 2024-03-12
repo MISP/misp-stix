@@ -265,22 +265,55 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             self, observed_data, address, display_name, email_address):
         self._check_misp_object_fields(
             address, observed_data,
-            f'{email_address.id} - email-dst - {email_address.value}', True
+            f'{email_address.id} - email-dst - {email_address.value}',
+            multiple=True
         )
         self.assertEqual(address.type, 'email-dst')
         self.assertEqual(address.value, email_address.value)
         self._check_misp_object_fields(
             display_name, observed_data,
             f'{email_address.id} - email-dst-display-name - {email_address.display_name}',
-            True
+            multiple=True
         )
         self.assertEqual(display_name.type, 'email-dst-display-name')
         self.assertEqual(display_name.value, email_address.display_name)
 
-    def _check_file_object(self, misp_object, observed_data, observable_object):
+    def _check_file_and_pe_objects(self, observed_data, observable_object,
+                                   file_object, pe_object, *sections):
+        self.assertEqual(file_object.name, 'file')
+        self._check_misp_object_fields(file_object, observed_data, observable_object.id)
+        self._check_file_with_pe_fields(
+            file_object, observable_object, observable_object.id
+        )
+        self.assertEqual(len(file_object.references), 1)
+        file_reference = file_object.references[0]
+        self.assertEqual(file_reference.referenced_uuid, pe_object.uuid)
+        self.assertEqual(file_reference.relationship_type, 'includes')
+        self.assertEqual(pe_object.name, 'pe')
+        object_id = f'{observable_object.id} - windows-pebinary-ext'
+        self._check_misp_object_fields(
+            pe_object, observed_data, object_id, multiple=True
+        )
+        extension = observable_object.extensions['windows-pebinary-ext']
+        self._check_pe_fields(pe_object, extension, object_id)
+        self.assertEqual(len(pe_object.references), len(sections))
+        for reference, section in zip(pe_object.references, sections):
+            self.assertEqual(reference.referenced_uuid, section.uuid)
+            self.assertEqual(reference.relationship_type, 'includes')
+        for index, section in enumerate(sections):
+            self.assertEqual(section.name, 'pe-section')
+            section_id = f'{object_id} - section - {index}'
+            self._check_misp_object_fields(
+                section, observed_data, section_id, multiple=True
+            )
+            self._check_pe_section_fields(
+                section, extension.sections[index], section_id
+            )
+
+    def _check_file_object(self, misp_object, observed_data, observable_object, *object_ids):
         self.assertEqual(misp_object.name, 'file')
         self._check_misp_object_fields(
-            misp_object, observed_data, observable_object.id
+            misp_object, observed_data, observable_object.id, *object_ids
         )
         self._check_file_fields(
             misp_object, observable_object, observable_object.id
@@ -293,13 +326,17 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(attribute.type, attribute_type)
         self.assertEqual(attribute.value, getattr(observable_object, feature))
 
-    def _check_misp_object_fields(
-            self, misp_object, observed_data, object_id, multiple=False):
+    def _check_misp_object_fields(self, misp_object, observed_data, object_id,
+                                  *additional_ids, multiple=False):
         if multiple:
             self.assertEqual(misp_object.uuid, uuid5(self._UUIDv4, object_id))
         else:
             self.assertEqual(misp_object.uuid, object_id.split('--')[1])
-        self.assertEqual(misp_object.comment, f'Observed Data ID: {observed_data.id}')
+        pattern = 'Observed Data ID: '
+        self.assertEqual(
+            misp_object.comment,
+            f"{pattern}{f' - {pattern}'.join((observed_data.id, *additional_ids))}"
+        )
         if not (observed_data.modified == observed_data.first_observed == observed_data.last_observed):
             self.assertEqual(misp_object.first_seen, observed_data.first_observed)
             self.assertEqual(misp_object.last_seen, observed_data.last_observed)
@@ -317,7 +354,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
                 object_id = f'{registry_key.id} - values - {index}'
                 self.assertEqual(value_object.name, 'registry-key-value')
                 self._check_misp_object_fields(
-                    value_object, observed_data, object_id, True
+                    value_object, observed_data, object_id, multiple=True
                 )
                 self._check_registry_key_value_fields(
                     value_object, registry_key['values'][index], object_id
@@ -406,7 +443,7 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(od1, domain_2, m_domain2, 'domain')
         self._check_generic_attribute(od2, domain_3, s_domain, 'domain')
 
-    def test_stix21_bundle_with_email_address_objects(self):
+    def test_stix21_bundle_with_email_address_attributes(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_address_attributes()
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
@@ -429,14 +466,13 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, od1, file1, directory, artifact = bundle.objects
+        _, grouping, od1, od2, od3, file1, directory, artifact, file2, file3 = bundle.objects
         misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
-        self.assertEqual(len(misp_objects), 3)
-        file_object, directory_object, artifact_object = misp_objects
-        self._check_file_object(file_object, od1, file1)
+        self.assertEqual(len(misp_objects), 10)
+        file_object1, directory_object, artifact_object, archive, file_object2, pe_object, *sections = misp_objects
+        self._check_file_object(file_object1, od1, file1, od2.id)
         self.assertEqual(directory_object.name, 'directory')
-        self._check_misp_object_fields(directory_object, od1, directory.id)
-        self.assertEqual(len(directory_object.attributes), 1)
+        self._check_misp_object_fields(directory_object, od1, directory.id, od2.id)
         path_attribute = directory_object.attributes[0]
         self.assertEqual(path_attribute.type, 'text')
         self.assertEqual(path_attribute.object_relation, 'path')
@@ -448,14 +484,24 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             )
         )
         self._check_content_ref_object(artifact_object, od1, artifact)
-        self.assertEqual(len(file_object.references), 1)
-        file_reference = file_object.references[0]
+        self.assertEqual(len(file_object1.references), 1)
+        file_reference = file_object1.references[0]
         self.assertEqual(file_reference.referenced_uuid, directory_object.uuid)
         self.assertEqual(file_reference.relationship_type, 'contained-in')
         self.assertEqual(len(artifact_object.references), 1)
         artifact_reference = artifact_object.references[0]
-        self.assertEqual(artifact_reference.referenced_uuid, file_object.uuid)
+        self.assertEqual(artifact_reference.referenced_uuid, file_object1.uuid)
         self.assertEqual(artifact_reference.relationship_type, 'content-of')
+        self._check_archive_file_object(archive, od2, file2)
+        self.assertEqual(len(archive.references), 2)
+        directory_reference, file_reference = archive.references
+        self.assertEqual(
+            directory_reference.referenced_uuid, file_object1.uuid
+        )
+        self.assertEqual(directory_reference.relationship_type, 'contains')
+        self.assertEqual(file_reference.referenced_uuid, directory_object.uuid)
+        self.assertEqual(file_reference.relationship_type, 'contains')
+        self._check_file_and_pe_objects(od3, file3, file_object2, pe_object, *sections)
 
     def test_stix21_bundle_with_ip_address_attributes(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_ip_address_attributes()
