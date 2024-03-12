@@ -326,6 +326,7 @@ class STIX2Mapping:
             'SHA3-256': __sha3_256_attribute,
             'SHA3-512': __sha3_512_attribute,
             'SSDEEP': __ssdeep_attribute,
+            'ssdeep': __ssdeep_attribute,
             'TLSH': __tlsh_attribute
         }
     )
@@ -1223,7 +1224,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
         SHA3384=__sha3_384_attribute,
         SHA384=__sha384_attribute,
         SHA512=STIX2Mapping.sha512_attribute(),
-        ssdeep=STIX2Mapping.ssdeep_attribute(),
         TELFHASH=__telfhash_attribute,
         VHASH=__vhash_attribute
     )
