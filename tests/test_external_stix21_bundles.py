@@ -460,6 +460,36 @@ _FILE_OBJECTS = [
         ],
     },
     {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--1a165e68-ea72-44e6-b821-3b88f2cc46d8",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--b52bc0df-84e3-44bf-8a55-2889e26723fa",
+            "file--5e384ae7-672c-4250-9cda-3b4da964451a",
+            "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "file--6ee289fa-fe03-5ca5-bbdf-451603a31436"
+        ]
+    },
+    {
         "type": "file",
         "spec_version": "2.1",
         "id": "file--5e384ae7-672c-4250-9cda-3b4da964451a",
@@ -490,6 +520,81 @@ _FILE_OBJECTS = [
         },
         "encryption_algorithm": "mime-type-indicated",
         "decryption_key": "infected"
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--b52bc0df-84e3-44bf-8a55-2889e26723fa",
+        "name": "oui.zip",
+        "hashes": {
+            "SHA-256": "35a01331e9ad96f751278b891b6ea09699806faedfa237d40513d92ad1b7100f"
+        },
+        "mime_type": "application/zip",
+        "extensions": {
+            "archive-ext": {
+                "comment": "Zip file containing `oui` in the tmp directory",
+                "contains_refs": [
+                    "file--5e384ae7-672c-4250-9cda-3b4da964451a",
+                    "directory--34cb1a7c-55ec-412a-8684-ba4a88d83a45"
+                ]
+            }
+        }
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--6ee289fa-fe03-5ca5-bbdf-451603a31436",
+        "hashes": {
+            "MD5": "b1de37bf229890ac181bdef1ad8ee0c2",
+            "SHA-1": "ffdb3cc7ab5b01d276d23ac930eb21ffe3202d11",
+            "SHA-256": "99b80c5ac352081a64129772ed5e1543d94cad708ba2adc46dc4ab7a0bd563f1",
+            "SHA-512": "e41df636a36ac0cce38e7db5c2ce4d04a1a7f9bc274bdf808912d14067dc1ef478268035521d0d4b7bcf96facce7f515560b38a7ebe47995d861b9c482e07e25",
+            "SSDEEP": "98304:z2eyMq4PuR5d7wgdo0OFfnFJkEUCGdaQLhpYYEfRTl6sysy:ryxzbdo0ifnoEOdz9pY7j5"
+        },
+        "size": 3712512,
+        "name": "SMSvcService.exe",
+        "extensions": {
+            "windows-pebinary-ext": {
+                "pe_type": "exe",
+                "number_of_sections": 4,
+                "time_date_stamp": "1970-01-01T00:00:00Z",
+                "size_of_optional_header": 512,
+                "sections": [
+                    {
+                        "name": "header",
+                        "size": 512,
+                        "entropy": 2.499747,
+                        "hashes": {
+                            "MD5": "7f8e8722da728b6e834260b5a314cbac"
+                        }
+                    },
+                    {
+                        "name": "UPX0",
+                        "size": 0,
+                        "entropy": 0.0,
+                        "hashes": {
+                            "MD5": "d41d8cd98f00b204e9800998ecf8427e"
+                        }
+                    },
+                    {
+                        "name": "UPX1",
+                        "size": 3711488,
+                        "entropy": 7.890727,
+                        "hashes": {
+                            "MD5": "f9943591918adeeeee7da80e4d985a49"
+                        }
+                    },
+                    {
+                        "name": "UPX2",
+                        "size": 512,
+                        "entropy": 1.371914,
+                        "hashes": {
+                            "MD5": "5c0061445ac2f8e6cadf694e54146914"
+                        }
+                    }
+                ]
+            }
+        }
     }
 ]
 _INTRUSION_SET_OBJECTS = [
@@ -1039,6 +1144,52 @@ _THREAT_ACTOR_OBJECTS = [
         "primary_motivation": "organizational-gain"
     }
 ]
+_TOOL_OBJECTS = [
+    {
+        "type": "tool",
+        "spec_version": "2.1",
+        "id": "tool--ce45f721-af14-4fc0-938c-000c16186418",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "cachedump",
+        "tool_types": [
+            "credential-exploitation"
+        ],
+        "description": "This program extracts cached password hashes from a system’s registry.",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "mandiant-attack-lifecycle-model",
+                "phase_name": "escalate-privileges"
+            }
+        ]
+    },
+    {
+        "type": "tool",
+        "spec_version": "2.1",
+        "id": "tool--e9778c42-bc2f-4eda-9fb4-6a931834f68c",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "name": "fgdump",
+        "tool_types": [
+            "credential-exploitation"
+        ],
+        "description": "Windows password hash dumper",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "mandiant-attack-lifecycle-model",
+                "phase_name": "escalate-privileges"
+            }
+        ],
+        "external_references": [
+            {
+                "source_name": "fgdump",
+                "url": "http://www.foofus.net/fizzgig/fgdump/"
+            }
+        ]
+    }
+]
 _URL_ATTRIBUTES = [
     {
         "type": "observed-data",
@@ -1086,52 +1237,6 @@ _URL_ATTRIBUTES = [
         "spec_version": "2.1",
         "id": "url--f93cb275-0366-4ecc-abf0-a17928d1e177",
         "value": "https://misp-project.org/blog/"
-    }
-]
-_TOOL_OBJECTS = [
-    {
-        "type": "tool",
-        "spec_version": "2.1",
-        "id": "tool--ce45f721-af14-4fc0-938c-000c16186418",
-        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "name": "cachedump",
-        "tool_types": [
-            "credential-exploitation"
-        ],
-        "description": "This program extracts cached password hashes from a system’s registry.",
-        "kill_chain_phases": [
-            {
-                "kill_chain_name": "mandiant-attack-lifecycle-model",
-                "phase_name": "escalate-privileges"
-            }
-        ]
-    },
-    {
-        "type": "tool",
-        "spec_version": "2.1",
-        "id": "tool--e9778c42-bc2f-4eda-9fb4-6a931834f68c",
-        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "name": "fgdump",
-        "tool_types": [
-            "credential-exploitation"
-        ],
-        "description": "Windows password hash dumper",
-        "kill_chain_phases": [
-            {
-                "kill_chain_name": "mandiant-attack-lifecycle-model",
-                "phase_name": "escalate-privileges"
-            }
-        ],
-        "external_references": [
-            {
-                "source_name": "fgdump",
-                "url": "http://www.foofus.net/fizzgig/fgdump/"
-            }
-        ]
     }
 ]
 _USER_ACCOUNT_OBJECTS = [
@@ -1492,7 +1597,7 @@ class TestExternalSTIX21Bundles:
     def get_bundle_with_file_objects(cls):
         observables = deepcopy(_FILE_OBJECTS)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
-            observables[-1]['payload_bin'] = b64encode(f.read()).decode()
+            observables[-3]['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(*observables)
 
     @classmethod

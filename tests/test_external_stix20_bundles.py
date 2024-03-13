@@ -408,6 +408,127 @@ _FILE_OBJECTS = [
                 "decryption_key": "infected"
             }
         }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--1a165e68-ea72-44e6-b821-3b88f2cc46d8",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "name": "oui.zip",
+                "hashes": {
+                    "SHA-256": "35a01331e9ad96f751278b891b6ea09699806faedfa237d40513d92ad1b7100f"
+                },
+                "mime_type": "application/zip",
+                "extensions": {
+                    "archive-ext": {
+                        "comment": "Zip file containing `oui` in the tmp directory",
+                        "contains_refs": [
+                            "1",
+                            "2"
+                        ]
+                    }
+                }
+            },
+            "1": {
+                "type": "file",
+                "hashes": {
+                    "MD5": "8764605c6f388c89096b534d33565802",
+                    "SHA-1": "46aba99aa7158e4609aaa72b50990842fd22ae86",
+                    "SHA-256": "ec5aedf5ecc6bdadd4120932170d1b10f6cfa175cfda22951dfd882928ab279b"
+                },
+                "size": 35,
+                "name": "oui",
+                "name_enc": "UTF-8",
+                "parent_directory_ref": "2",
+                "content_ref": "3"
+            },
+            "2": {
+                "type": "directory",
+                "path": "/var/www/MISP/app/files/scripts/tmp"
+            },
+            "3": {
+                "type": "artifact",
+                "mime_type": "application/zip",
+                "hashes": {
+                    "MD5": "8764605c6f388c89096b534d33565802"
+                },
+                "encryption_algorithm": "mime-type-indicated",
+                "decryption_key": "infected"
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "file",
+                "hashes": {
+                    "MD5": "b1de37bf229890ac181bdef1ad8ee0c2",
+                    "SHA-1": "ffdb3cc7ab5b01d276d23ac930eb21ffe3202d11",
+                    "SHA-256": "99b80c5ac352081a64129772ed5e1543d94cad708ba2adc46dc4ab7a0bd563f1",
+                    "SHA-512": "e41df636a36ac0cce38e7db5c2ce4d04a1a7f9bc274bdf808912d14067dc1ef478268035521d0d4b7bcf96facce7f515560b38a7ebe47995d861b9c482e07e25",
+                    "SSDEEP": "98304:z2eyMq4PuR5d7wgdo0OFfnFJkEUCGdaQLhpYYEfRTl6sysy:ryxzbdo0ifnoEOdz9pY7j5"
+                },
+                "size": 3712512,
+                "name": "SMSvcService.exe",
+                "extensions": {
+                    "windows-pebinary-ext": {
+                        "pe_type": "exe",
+                        "number_of_sections": 4,
+                        "time_date_stamp": "1970-01-01T00:00:00Z",
+                        "size_of_optional_header": 512,
+                        "sections": [
+                            {
+                                "name": "header",
+                                "size": 512,
+                                "entropy": 2.499747,
+                                "hashes": {
+                                    "MD5": "7f8e8722da728b6e834260b5a314cbac"
+                                }
+                            },
+                            {
+                                "name": "UPX0",
+                                "size": 0,
+                                "entropy": 0.0,
+                                "hashes": {
+                                    "MD5": "d41d8cd98f00b204e9800998ecf8427e"
+                                }
+                            },
+                            {
+                                "name": "UPX1",
+                                "size": 3711488,
+                                "entropy": 7.890727,
+                                "hashes": {
+                                    "MD5": "f9943591918adeeeee7da80e4d985a49"
+                                }
+                            },
+                            {
+                                "name": "UPX2",
+                                "size": 512,
+                                "entropy": 1.371914,
+                                "hashes": {
+                                    "MD5": "5c0061445ac2f8e6cadf694e54146914"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
     }
 ]
 _INTRUSION_SET_OBJECTS = [
@@ -1255,7 +1376,9 @@ class TestExternalSTIX20Bundles:
     def get_bundle_with_file_objects(cls):
         observed_data = deepcopy(_FILE_OBJECTS)
         with open(_TESTFILES_PATH / 'malware_sample.zip', 'rb') as f:
-            observed_data[0]['objects']['2']['payload_bin'] = b64encode(f.read()).decode()
+            payload_bin = b64encode(f.read()).decode()
+            observed_data[0]['objects']['2']['payload_bin'] = payload_bin
+            observed_data[1]['objects']['3']['payload_bin'] = payload_bin
         return cls.__assemble_bundle(*observed_data)
 
     @classmethod

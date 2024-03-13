@@ -237,7 +237,7 @@ class STIX2ObservableConverter(STIX2Converter):
             for hash_type, value in observable.hashes.items():
                 attribute = self._mapping.file_hashes_mapping(hash_type)
                 if attribute is None:
-                    self.main_parser.hash_type_error(hash_type)
+                    self.main_parser._hash_type_error(hash_type)
                     continue
                 yield from self._populate_object_attributes(
                     attribute, value, object_id
