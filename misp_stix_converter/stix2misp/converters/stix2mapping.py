@@ -92,6 +92,9 @@ class STIX2Mapping:
     __entrypoint_address_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'entrypoint-address'}
     )
+    __environment_variables_attribute = Mapping(
+        **{"type": "text", "object_relation": "environment-variables"}
+    )
     __file_encoding_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'file-encoding'}
     )
@@ -160,6 +163,9 @@ class STIX2Mapping:
     )
     __path_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'path'}
+    )
+    __payload_bin_attribute = Mapping(
+        **{'type': 'attachment', 'object_relation': 'payload_bin'}
     )
     __pid_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'pid'}
@@ -502,6 +508,10 @@ class STIX2Mapping:
         return cls.__entropy_attribute
 
     @classmethod
+    def environment_variables_attribute(cls) -> dict:
+        return cls.__environment_variables_attribute
+
+    @classmethod
     def entrypoint_address_attribute(cls) -> dict:
         return cls.__entrypoint_address_attribute
 
@@ -604,6 +614,10 @@ class STIX2Mapping:
     @classmethod
     def path_attribute(cls) -> dict:
         return cls.__path_attribute
+
+    @staticmethod
+    def payload_bin_attribute(cls) -> dict:
+        return cls.__payload_bin_attribute
 
     @classmethod
     def pe_object_mapping(cls) -> dict:

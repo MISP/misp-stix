@@ -325,6 +325,10 @@ class TestExternalSTIX2Import(TestSTIX2Import):
     def setUp(self):
         self.parser = ExternalSTIX2toMISPParser()
 
+    ############################################################################
+    #                      MISP GALAXIES CHECKING METHODS                      #
+    ############################################################################
+
     def _check_galaxy_features(self, galaxies, stix_object):
         self.assertEqual(len(galaxies), 1)
         galaxy = galaxies[0]
@@ -356,6 +360,904 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             self.assertEqual(cluster.description, stix_object.description)
         return cluster.meta
 
+    ############################################################################
+    #                  OBSERVED DATA OBJECTS CHECKING METHODS                  #
+    ############################################################################
+
+    def _check_artifact_fields(self, misp_object, artifact, object_id):
+        self.assertEqual(len(misp_object.attributes), 6)
+        payload_bin, md5, sha1, sha256, decryption, mime_type = misp_object.attributes
+        self.assertEqual(payload_bin.type, 'attachment')
+        self.assertEqual(payload_bin.object_relation, 'payload_bin')
+        self.assertEqual(
+            payload_bin.value,
+            getattr(artifact, 'id', object_id.split(' - ')[0]).split('--')[1]
+        )
+        self.assertEqual(self._get_data_value(payload_bin.data), artifact.payload_bin)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - payload_bin - {payload_bin.value}'
+            )
+        )
+        hashes = artifact.hashes
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, hashes['MD5'])
+        self.assertEqual(
+            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+        )
+        self.assertEqual(sha1.type, 'sha1')
+        self.assertEqual(sha1.object_relation, 'sha1')
+        self.assertEqual(sha1.value, hashes['SHA-1'])
+        self.assertEqual(
+            sha1.uuid, uuid5(self._UUIDv4, f'{object_id} - sha1 - {sha1.value}')
+        )
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, hashes['SHA-256'])
+        self.assertEqual(
+            sha256.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - sha256 - {sha256.value}'
+            )
+        )
+        self.assertEqual(decryption.type, 'text')
+        self.assertEqual(decryption.object_relation, 'decryption_key')
+        self.assertEqual(decryption.value, artifact.decryption_key)
+        self.assertEqual(
+            decryption.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - decryption_key - {decryption.value}'
+            )
+        )
+        self.assertEqual(mime_type.type, 'mime-type')
+        self.assertEqual(mime_type.object_relation, 'mime_type')
+        self.assertEqual(mime_type.value, artifact.mime_type)
+        self.assertEqual(
+            mime_type.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - mime_type - {mime_type.value}'
+            )
+        )
+
+    def _check_artifact_with_url_fields(self, misp_object, artifact, object_id):
+        self.assertEqual(misp_object.name, 'artifact')
+        self.assertEqual(len(misp_object.attributes), 3)
+        hashes = artifact.hashes
+        md5, sha256, url = misp_object.attributes
+        self.assertEqual(md5.type, 'md5')
+        self.assertEqual(md5.object_relation, 'md5')
+        self.assertEqual(md5.value, hashes['MD5'])
+        self.assertEqual(
+            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+        )
+        self.assertEqual(sha256.type, 'sha256')
+        self.assertEqual(sha256.object_relation, 'sha256')
+        self.assertEqual(sha256.value, hashes['SHA-256'])
+        self.assertEqual(
+            sha256.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - sha256 - {sha256.value}')
+        )
+        self.assertEqual(url.type, 'url')
+        self.assertEqual(url.object_relation, 'url')
+        self.assertEqual(url.value, artifact.url)
+        self.assertEqual(
+            url.uuid, uuid5(self._UUIDv4, f'{object_id} - url - {url.value}')
+        )
+
+    def _check_as_fields(self, misp_object, autonomous_system, object_id):
+        self.assertEqual(len(misp_object.attributes), 2)
+        asn, name = misp_object.attributes
+        self.assertEqual(asn.type, 'AS')
+        self.assertEqual(asn.object_relation, 'asn')
+        self.assertEqual(asn.value, f'AS{autonomous_system.number}')
+        self.assertEqual(asn.uuid, uuid5(self._UUIDv4, f'{object_id} - asn - {asn.value}'))
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'description')
+        self.assertEqual(name.value, autonomous_system.name)
+        self.assertEqual(name.uuid, uuid5(self._UUIDv4, f'{object_id} - description - {name.value}'))
+
+    def _check_content_ref_fields(self, misp_object, artifact, object_id):
+        self.assertEqual(len(misp_object.attributes), 4)
+        payload_bin, md5, decryption_key, mime_type = misp_object.attributes
+        self.assertEqual(payload_bin.type, 'attachment')
+        self.assertEqual(payload_bin.object_relation, 'payload_bin')
+        self.assertEqual(
+            payload_bin.value,
+            getattr(artifact, 'id', object_id.split(' - ')[0]).split('--')[1]
+        )
+        self.assertEqual(self._get_data_value(payload_bin.data), artifact.payload_bin)
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - payload_bin - {payload_bin.value}'
+            )
+        )
+        self._assert_multiple_equal(md5.type, md5.object_relation, 'md5')
+        self.assertEqual(md5.value, artifact.hashes['MD5'])
+        self.assertEqual(
+            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+        )
+        self.assertEqual(decryption_key.type, 'text')
+        self.assertEqual(decryption_key.object_relation, 'decryption_key')
+        self.assertEqual(decryption_key.value, artifact.decryption_key)
+        self.assertEqual(
+            decryption_key.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - decryption_key - {decryption_key.value}'
+            )
+        )
+        self.assertEqual(mime_type.type, 'mime-type')
+        self.assertEqual(mime_type.object_relation, 'mime_type')
+        self.assertEqual(mime_type.value, artifact.mime_type)
+        self.assertEqual(
+            mime_type.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - mime_type - {mime_type.value}')
+        )
+
+    def _check_creator_user_fields(self, misp_object, user_account, object_id):
+        self.assertEqual(len(misp_object.attributes), 4)
+        username, account_type, privileged, user_id = misp_object.attributes
+        self.assertEqual(username.type, 'text')
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, user_account.account_login)
+        self.assertEqual(
+            username.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - username - {username.value}')
+        )
+        self.assertEqual(account_type.type, 'text')
+        self.assertEqual(account_type.object_relation, 'account-type')
+        self.assertEqual(account_type.value, user_account.account_type)
+        self.assertEqual(
+            account_type.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - account-type - {account_type.value}'
+            )
+        )
+        self.assertEqual(privileged.type, 'boolean')
+        self.assertEqual(privileged.object_relation, 'privileged')
+        self.assertEqual(privileged.value, user_account.is_privileged)
+        self.assertEqual(
+            privileged.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - privileged - {privileged.value}'
+            )
+        )
+        self.assertEqual(user_id.type, 'text')
+        self.assertEqual(user_id.object_relation, 'user-id')
+        self.assertEqual(user_id.value, user_account.user_id)
+        self.assertEqual(
+            user_id.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - user-id - {user_id.value}')
+        )
+
+    def _check_directory_fields(self, misp_object, directory, object_id):
+        self.assertEqual(len(misp_object.attributes), 5)
+        accessed, created, modified, path, path_enc = misp_object.attributes
+        self._assert_multiple_equal(
+            accessed.type, created.type, modified.type, 'datetime'
+        )
+        self.assertEqual(accessed.object_relation, 'access-time')
+        self.assertEqual(
+            accessed.uuid, uuid5(self._UUIDv4, f'{object_id} - access-time - {accessed.value}')
+        )
+        self.assertEqual(created.object_relation, 'creation-time')
+        self.assertEqual(
+            created.uuid, uuid5(self._UUIDv4, f'{object_id} - creation-time - {created.value}')
+        )
+        self.assertEqual(modified.object_relation, 'modification-time')
+        self.assertEqual(
+            modified.uuid, uuid5(self._UUIDv4, f'{object_id} - modification-time - {modified.value}')
+        )
+        self.assertEqual(path.type, 'text')
+        self.assertEqual(path.object_relation, 'path')
+        self.assertEqual(path.value, directory.path)
+        self.assertEqual(
+            path.uuid, uuid5(self._UUIDv4, f'{object_id} - path - {path.value}')
+        )
+        self.assertEqual(path_enc.type, 'text')
+        self.assertEqual(path_enc.object_relation, 'path-encoding')
+        self.assertEqual(path_enc.value, directory.path_enc)
+        self.assertEqual(
+            path_enc.uuid, uuid5(self._UUIDv4, f'{object_id} - path-encoding - {path_enc.value}')
+        )
+        return accessed.value, created.value, modified.value
+
+    def _check_file_fields(self, misp_object, observable_object, object_id):
+        self.assertEqual(len(misp_object.attributes), 6)
+        md5, sha1, sha256, filename, encoding, size = misp_object.attributes
+        hashes = observable_object.hashes
+        self._assert_multiple_equal(md5.type, md5.object_relation, 'md5')
+        self.assertEqual(md5.value, hashes['MD5'])
+        self.assertEqual(
+            md5.uuid, uuid5(self._UUIDv4, f'{object_id} - md5 - {md5.value}')
+        )
+        self._assert_multiple_equal(sha1.type, sha1.object_relation, 'sha1')
+        self.assertEqual(sha1.value, hashes['SHA-1'])
+        self.assertEqual(
+            sha1.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - sha1 - {sha1.value}')
+        )
+        self._assert_multiple_equal(
+            sha256.type, sha256.object_relation, 'sha256'
+        )
+        self.assertEqual(sha256.value, hashes['SHA-256'])
+        self.assertEqual(
+            sha256.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - sha256 - {sha256.value}')
+        )
+        self._assert_multiple_equal(
+            filename.type, filename.object_relation, 'filename'
+        )
+        self.assertEqual(filename.value, observable_object.name)
+        self.assertEqual(
+            filename.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - filename - {filename.value}')
+        )
+        self.assertEqual(encoding.type, 'text')
+        self.assertEqual(encoding.object_relation, 'file-encoding')
+        self.assertEqual(encoding.value, observable_object.name_enc)
+        self.assertEqual(
+            encoding.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - file-encoding - {encoding.value}'
+            )
+        )
+        self._assert_multiple_equal(
+            size.type, size.object_relation, 'size-in-bytes'
+        )
+        self.assertEqual(size.value, observable_object.size)
+        self.assertEqual(
+            size.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - size-in-bytes - {size.value}'
+            )
+        )
+
+    def _check_process_child_fields(self, misp_object, process, object_id):
+        self.assertEqual(len(misp_object.attributes), 2)
+        name, pid = misp_object.attributes
+        self._assert_multiple_equal(name.type, pid.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, process.name)
+        self.assertEqual(
+            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        self.assertEqual(pid.object_relation, 'pid')
+        self.assertEqual(pid.value, process.pid)
+        self.assertEqual(
+            pid.uuid, uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
+        )
+
+    def _check_process_image_reference_fields(self, misp_object, file_object, object_id):
+        self.assertEqual(len(misp_object.attributes), 4)
+        mimetype, filename, encoding, size = misp_object.attributes
+        self.assertEqual(mimetype.type, 'mime-type')
+        self.assertEqual(mimetype.object_relation, 'mimetype')
+        self.assertEqual(mimetype.value, file_object.mime_type)
+        self.assertEqual(
+            mimetype.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - mimetype - {mimetype.value}')
+        )
+        self._assert_multiple_equal(
+            filename.type, filename.object_relation, 'filename'
+        )
+        self.assertEqual(filename.value, file_object.name)
+        self.assertEqual(
+            filename.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - filename - {filename.value}')
+        )
+        self.assertEqual(encoding.type, 'text')
+        self.assertEqual(encoding.object_relation, 'file-encoding')
+        self.assertEqual(encoding.value, file_object.name_enc)
+        self.assertEqual(
+            encoding.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - file-encoding - {encoding.value}'
+            )
+        )
+        self._assert_multiple_equal(
+            size.type, size.object_relation, 'size-in-bytes'
+        )
+        self.assertEqual(size.value, file_object.size)
+        self.assertEqual(
+            size.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - size-in-bytes - {size.value}')
+        )
+
+    def _check_process_multiple_fields(self, misp_object, process, object_id):
+        self.assertEqual(len(misp_object.attributes), 3)
+        hidden, name, pid = misp_object.attributes
+        self.assertEqual(hidden.type, 'boolean')
+        self.assertEqual(hidden.object_relation, 'hidden')
+        self.assertEqual(hidden.value, process.is_hidden)
+        self.assertEqual(
+            hidden.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - hidden - {hidden.value}')
+        )
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, process.name)
+        self.assertEqual(
+            name.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        self.assertEqual(pid.type, 'text')
+        self.assertEqual(pid.object_relation, 'pid')
+        self.assertEqual(pid.value, process.pid)
+        self.assertEqual(
+            pid.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
+        )
+
+    def _check_process_parent_fields(self, misp_object, process, object_id):
+        self.assertEqual(len(misp_object.attributes), 6)
+        command_line, creation_time, directory, name, pid, variables = misp_object.attributes
+        self._assert_multiple_equal(
+            command_line.type, directory.type, name.type, pid.type,
+            variables.type, 'text'
+        )
+        self.assertEqual(command_line.object_relation, 'command-line')
+        self.assertEqual(command_line.value, process.command_line)
+        self.assertEqual(
+            command_line.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - command-line - {command_line.value}'
+            )
+        )
+        self.assertEqual(creation_time.type, 'datetime')
+        self.assertEqual(creation_time.object_relation, 'creation-time')
+        self.assertEqual(
+            creation_time.value,
+            process.created if hasattr(process, 'created') else process.created_time
+        )
+        self.assertEqual(
+            creation_time.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - creation-time - {creation_time.value}'
+            )
+        )
+        self.assertEqual(directory.object_relation, 'current-directory')
+        self.assertEqual(directory.value, process.cwd)
+        self.assertEqual(
+            directory.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - current-directory - {directory.value}'
+            )
+        )
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, process.name)
+        self.assertEqual(
+            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        self.assertEqual(pid.object_relation, 'pid')
+        self.assertEqual(pid.value, process.pid)
+        self.assertEqual(
+            pid.uuid, uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
+        )
+        self.assertEqual(variables.object_relation, 'environment-variables')
+        self.assertEqual(
+            variables.value,
+            ' - '.join(
+                f'{key}: {value}' for key, value in
+                process.environment_variables.items()
+            )
+        )
+        self.assertEqual(
+            variables.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - environment-variables - {variables.value}'
+            )
+        )
+
+    def _check_process_single_fields(self, misp_object, process, object_id):
+        self.assertEqual(len(misp_object.attributes), 3)
+        command_line, name, pid = misp_object.attributes
+        self._assert_multiple_equal(command_line.type, name.type, pid.type, 'text')
+        self.assertEqual(command_line.object_relation, 'command-line')
+        self.assertEqual(command_line.value, process.command_line)
+        self.assertEqual(
+            command_line.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - command-line - {command_line.value}'
+            )
+        )
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, process.name)
+        self.assertEqual(
+            name.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        self.assertEqual(pid.object_relation, 'pid')
+        self.assertEqual(pid.value, process.pid)
+        self.assertEqual(
+            pid.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - pid - {pid.value}')
+        )
+
+    def _check_registry_key_fields(self, misp_object, registry_key, object_id):
+        self.assertEqual(len(misp_object.attributes), 2)
+        key, modified = misp_object.attributes
+        self.assertEqual(key.type, 'regkey')
+        self.assertEqual(key.object_relation, 'key')
+        self.assertEqual(key.value, registry_key.key)
+        self.assertEqual(
+            key.uuid, uuid5(self._UUIDv4, f'{object_id} - key - {key.value}')
+        )
+        self.assertEqual(modified.type, 'datetime')
+        self.assertEqual(modified.object_relation, 'last-modified')
+        self.assertEqual(
+            modified.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - last-modified - {modified.value}'
+            )
+        )
+        return modified
+
+    def _check_registry_key_value_fields(self, misp_object, registry_value, object_id):
+        self.assertEqual(len(misp_object.attributes), 3)
+        data, data_type, name = misp_object.attributes
+        self.assertEqual(data.type, 'text')
+        self.assertEqual(data.object_relation, 'data')
+        self.assertEqual(data.value, registry_value.data)
+        self.assertEqual(
+            data.uuid, uuid5(self._UUIDv4, f'{object_id} - data - {data.value}')
+        )
+        self.assertEqual(data_type.type, 'text')
+        self.assertEqual(data_type.object_relation, 'data-type')
+        self.assertEqual(data_type.value, registry_value.data_type)
+        self.assertEqual(
+            data_type.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - data-type - {data_type.value}')
+        )
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, registry_value.name)
+        self.assertEqual(
+            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+
+    def _check_registry_key_with_values_fields(self, misp_object, registry_key, object_id):
+        self.assertEqual(len(misp_object.attributes), 5)
+        key, modified, data, data_type, name = misp_object.attributes
+        self.assertEqual(key.type, 'regkey')
+        self.assertEqual(key.object_relation, 'key')
+        self.assertEqual(key.value, registry_key.key)
+        self.assertEqual(
+            key.uuid, uuid5(self._UUIDv4, f'{object_id} - key - {key.value}')
+        )
+        self.assertEqual(modified.type, 'datetime')
+        self.assertEqual(modified.object_relation, 'last-modified')
+        self.assertEqual(
+            modified.uuid,
+            uuid5(
+                self._UUIDv4, f'{object_id} - last-modified - {modified.value}'
+            )
+        )
+        registry_value = registry_key['values'][0]
+        self.assertEqual(data.type, 'text')
+        self.assertEqual(data.object_relation, 'data')
+        self.assertEqual(data.value, registry_value.data)
+        self.assertEqual(
+            data.uuid, uuid5(self._UUIDv4, f'{object_id} - data - {data.value}')
+        )
+        self.assertEqual(data_type.type, 'text')
+        self.assertEqual(data_type.object_relation, 'data-type')
+        self.assertEqual(data_type.value, registry_value.data_type)
+        self.assertEqual(
+            data_type.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - data-type - {data_type.value}')
+        )
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, registry_value.name)
+        self.assertEqual(
+            name.uuid, uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        return modified
+
+    def _check_software_fields(self, misp_object, software, object_id):
+        self.assertEqual(len(misp_object.attributes), 4)
+        language, name, vendor, version = misp_object.attributes
+        self.assertEqual(language.type, 'text')
+        self.assertEqual(language.object_relation, 'language')
+        self.assertEqual(language.value, software.languages[0])
+        self.assertEqual(
+            language.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - language - {language.value}')
+        )
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, software.name)
+        self.assertEqual(
+            name.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        self.assertEqual(vendor.type, 'text')
+        self.assertEqual(vendor.object_relation, 'vendor')
+        self.assertEqual(vendor.value, software.vendor)
+        self.assertEqual(
+            vendor.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - vendor - {vendor.value}')
+        )
+        self.assertEqual(version.type, 'text')
+        self.assertEqual(version.object_relation, 'version')
+        self.assertEqual(version.value, software.version)
+        self.assertEqual(
+            version.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
+        )
+
+    def _check_software_with_swid_fields(self, misp_object, software, object_id):
+        self.assertEqual(misp_object.name, 'software')
+        self.assertEqual(len(misp_object.attributes), 8)
+        cpe, lang1, lang2, lang3, name, swid, vendor, version = misp_object.attributes
+        self._assert_multiple_equal(cpe.type, cpe.object_relation, 'cpe')
+        self.assertEqual(cpe.value, software.cpe)
+        self.assertEqual(
+            cpe.uuid, uuid5(self._UUIDv4, f'{object_id} - cpe - {cpe.value}')
+        )
+        language1, language2, language3 = software.languages
+        self._assert_multiple_equal(lang1.type, lang2.type, lang3.type, 'text')
+        self._assert_multiple_equal(
+            lang1.object_relation, lang2.object_relation,
+            lang3.object_relation, 'language'
+        )
+        self.assertEqual(lang1.value, language1)
+        self.assertEqual(
+            lang1.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - language - {lang1.value}')
+        )
+        self.assertEqual(lang2.value, language2)
+        self.assertEqual(
+            lang2.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - language - {lang2.value}')
+        )
+        self.assertEqual(lang3.value, language3)
+        self.assertEqual(
+            lang3.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - language - {lang3.value}')
+        )
+        self.assertEqual(name.type, 'text')
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, software.name)
+        self.assertEqual(
+            name.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - name - {name.value}')
+        )
+        self.assertEqual(swid.type, 'text')
+        self.assertEqual(swid.object_relation, 'swid')
+        self.assertEqual(swid.value, software.swid)
+        self.assertEqual(
+            swid.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - swid - {swid.value}')
+        )
+        self.assertEqual(vendor.type, 'text')
+        self.assertEqual(vendor.object_relation, 'vendor')
+        self.assertEqual(vendor.value, software.vendor)
+        self.assertEqual(
+            vendor.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - vendor - {vendor.value}')
+        )
+        self.assertEqual(version.type, 'text')
+        self.assertEqual(version.object_relation, 'version')
+        self.assertEqual(version.value, software.version)
+        self.assertEqual(
+            version.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
+        )
+
+    def _check_user_account_extension_fields(self, attributes, extension, object_id):
+        group_id, group, home_dir, shell = attributes
+        self._assert_multiple_equal(
+            group_id.type, group.type, home_dir.type, shell.type, 'text'
+        )
+        self.assertEqual(group_id.object_relation, 'group-id')
+        self.assertEqual(group_id.value, extension.gid)
+        self.assertEqual(
+            group_id.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - group-id - {group_id.value}')
+        )
+        self.assertEqual(group.object_relation, 'group')
+        self.assertEqual(group.value, extension.groups[0])
+        self.assertEqual(
+            group.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - group - {group.value}')
+        )
+        self.assertEqual(home_dir.object_relation, 'home_dir')
+        self.assertEqual(home_dir.value, extension.home_dir)
+        self.assertEqual(
+            home_dir.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - home_dir - {home_dir.value}')
+        )
+        self.assertEqual(shell.object_relation, 'shell')
+        self.assertEqual(shell.value, extension.shell)
+        self.assertEqual(
+            shell.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - shell - {shell.value}')
+        )
+
+    def _check_user_account_fields(self, attributes, user_account, object_id):
+        username, account_type, escalate, display_name, privileged, service, user_id = attributes
+        self._assert_multiple_equal(
+            username.type, account_type.type, display_name.type, user_id.type, 'text'
+        )
+        self._assert_multiple_equal(
+            escalate.type, privileged.type, service.type, 'boolean'
+        )
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, user_account.account_login)
+        self.assertEqual(
+            username.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - username - {username.value}')
+        )
+        self.assertEqual(account_type.object_relation, 'account-type')
+        self.assertEqual(account_type.value, user_account.account_type)
+        self.assertEqual(
+            account_type.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - account-type - {account_type.value}'
+            )
+        )
+        self.assertEqual(escalate.object_relation, 'can_escalate_privs')
+        self.assertEqual(escalate.value, user_account.can_escalate_privs)
+        self.assertEqual(
+            escalate.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - can_escalate_privs - {escalate.value}'
+            )
+        )
+        self.assertEqual(display_name.object_relation, 'display-name')
+        self.assertEqual(display_name.value, user_account.display_name)
+        self.assertEqual(
+            display_name.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - display-name - {display_name.value}'
+            )
+        )
+        self.assertEqual(privileged.object_relation, 'privileged')
+        self.assertEqual(privileged.value, user_account.is_privileged)
+        self.assertEqual(
+            privileged.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - privileged - {privileged.value}'
+            )
+        )
+        self.assertEqual(service.object_relation, 'is_service_account')
+        self.assertEqual(service.value, user_account.is_service_account)
+        self.assertEqual(
+            service.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - is_service_account - {service.value}'
+            )
+        )
+        self.assertEqual(user_id.object_relation, 'user-id')
+        self.assertEqual(user_id.value, user_account.user_id)
+        self.assertEqual(
+            user_id.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - user-id - {user_id.value}')
+        )
+
+    def _check_user_account_timeline_fields(self, attributes, user_account, object_id):
+        created, first_login, last_login = attributes
+        self._assert_multiple_equal(
+            created.type, first_login.type, last_login.type, 'datetime'
+        )
+        self.assertEqual(created.object_relation, 'created')
+        self.assertEqual(created.value, user_account.account_created)
+        self.assertEqual(
+            created.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - created - {created.value}')
+        )
+        self.assertEqual(first_login.object_relation, 'first_login')
+        self.assertEqual(first_login.value, user_account.account_first_login)
+        self.assertEqual(
+            first_login.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - first_login - {first_login.value}'
+            )
+        )
+        self.assertEqual(last_login.object_relation, 'last_login')
+        self.assertEqual(last_login.value, user_account.account_last_login)
+        self.assertEqual(
+            last_login.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - last_login - {last_login.value}'
+            )
+        )
+
+    def _check_user_account_twitter_fields(self, misp_object, user_account, object_id):
+        self.assertEqual(len(misp_object.attributes), 4)
+        username, account_type, display_name, user_id = misp_object.attributes
+        self._assert_multiple_equal(
+            username.type, account_type.type, display_name.type,
+            user_id.type, 'text'
+        )
+        self.assertEqual(username.object_relation, 'username')
+        self.assertEqual(username.value, user_account.account_login)
+        self.assertEqual(
+            username.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - username - {username.value}')
+        )
+        self.assertEqual(account_type.object_relation, 'account-type')
+        self.assertEqual(account_type.value, user_account.account_type)
+        self.assertEqual(
+            account_type.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - account-type - {account_type.value}'
+            )
+        )
+        self.assertEqual(display_name.object_relation, 'display-name')
+        self.assertEqual(display_name.value, user_account.display_name)
+        self.assertEqual(
+            display_name.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - display-name - {display_name.value}'
+            )
+        )
+        self.assertEqual(user_id.object_relation, 'user-id')
+        self.assertEqual(user_id.value, user_account.user_id)
+        self.assertEqual(
+            user_id.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - user-id - {user_id.value}')
+        )
+
+    def _check_x509_fields(self, misp_object, x509, object_id):
+        self.assertEqual(len(misp_object.attributes), 14)
+        (md5, sha1, sha256, signed, issuer, serial_number, signature,
+         subject, key_algo, key_exponent, key_modulus, not_after,
+         not_before, version) = misp_object.attributes
+        hashes = x509.hashes
+        self._assert_multiple_equal(
+            md5.type, md5.object_relation, 'x509-fingerprint-md5'
+        )
+        self.assertEqual(md5.value, hashes['MD5'])
+        self.assertEqual(
+            md5.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - x509-fingerprint-md5 - {md5.value}'
+            )
+        )
+        self._assert_multiple_equal(
+            sha1.type, sha1.object_relation, 'x509-fingerprint-sha1'
+        )
+        self.assertEqual(sha1.value, hashes['SHA-1'])
+        self.assertEqual(
+            sha1.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - x509-fingerprint-sha1 - {sha1.value}'
+            )
+        )
+        self._assert_multiple_equal(
+            sha256.type, sha256.object_relation, 'x509-fingerprint-sha256'
+        )
+        self.assertEqual(sha256.value, hashes['SHA-256'])
+        self.assertEqual(
+            sha256.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - x509-fingerprint-sha256 - {sha256.value}'
+            )
+        )
+        self.assertEqual(signed.type, 'boolean')
+        self.assertEqual(signed.object_relation, 'self_signed')
+        self.assertEqual(signed.value, x509.is_self_signed)
+        self.assertEqual(
+            signed.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - self_signed - {signed.value}')
+        )
+        self.assertEqual(issuer.type, 'text')
+        self.assertEqual(issuer.object_relation, 'issuer')
+        self.assertEqual(issuer.value, x509.issuer)
+        self.assertEqual(
+            issuer.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - issuer - {issuer.value}')
+        )
+        self.assertEqual(serial_number.type, 'text')
+        self.assertEqual(serial_number.object_relation, 'serial-number')
+        self.assertEqual(serial_number.value, x509.serial_number)
+        self.assertEqual(
+            serial_number.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - serial-number - {serial_number.value}'
+            )
+        )
+        self.assertEqual(signature.type, 'text')
+        self.assertEqual(signature.object_relation, 'signature_algorithm')
+        self.assertEqual(signature.value, x509.signature_algorithm)
+        self.assertEqual(
+            signature.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - signature_algorithm - {signature.value}'
+            )
+        )
+        self.assertEqual(subject.type, 'text')
+        self.assertEqual(subject.object_relation, 'subject')
+        self.assertEqual(subject.value, x509.subject)
+        self.assertEqual(
+            subject.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - subject - {subject.value}')
+        )
+        self.assertEqual(key_algo.type, 'text')
+        self.assertEqual(key_algo.object_relation, 'pubkey-info-algorithm')
+        self.assertEqual(key_algo.value, x509.subject_public_key_algorithm)
+        self.assertEqual(
+            key_algo.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - pubkey-info-algorithm - {key_algo.value}'
+            )
+        )
+        self.assertEqual(key_exponent.type, 'text')
+        self.assertEqual(key_exponent.object_relation, 'pubkey-info-exponent')
+        self.assertEqual(key_exponent.value, x509.subject_public_key_exponent)
+        self.assertEqual(
+            key_exponent.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - pubkey-info-exponent - {key_exponent.value}'
+            )
+        )
+        self.assertEqual(key_modulus.type, 'text')
+        self.assertEqual(key_modulus.object_relation, 'pubkey-info-modulus')
+        self.assertEqual(key_modulus.value, x509.subject_public_key_modulus)
+        self.assertEqual(
+            key_modulus.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - pubkey-info-modulus - {key_modulus.value}'
+            )
+        )
+        self.assertEqual(not_before.type, 'datetime')
+        self.assertEqual(not_before.object_relation, 'validity-not-before')
+        self.assertEqual(not_before.value, x509.validity_not_before)
+        self.assertEqual(
+            not_before.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - validity-not-before - {not_before.value}'
+            )
+        )
+        self.assertEqual(not_after.type, 'datetime')
+        self.assertEqual(not_after.object_relation, 'validity-not-after')
+        self.assertEqual(not_after.value, x509.validity_not_after)
+        self.assertEqual(
+            not_after.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{object_id} - validity-not-after - {not_after.value}'
+            )
+        )
+        self.assertEqual(version.type, 'text')
+        self.assertEqual(version.object_relation, 'version')
+        self.assertEqual(version.value, x509.version)
+        self.assertEqual(
+            version.uuid,
+            uuid5(self._UUIDv4, f'{object_id} - version - {version.value}')
+        )
 
 class TestInternalSTIX2Import(TestSTIX2Import):
     def setUp(self):
@@ -393,12 +1295,6 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             indicator.modified
         )
         self._check_attribute_labels(attribute, indicator.labels)
-        return indicator.pattern
-
-    def _check_indicator_object(self, misp_object, indicator):
-        self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
-        self.assertEqual(misp_object.timestamp, indicator.modified)
-        self._check_object_labels(misp_object, indicator.labels, True)
         return indicator.pattern
 
     def _check_vulnerability_attribute(self, attribute, vulnerability):
@@ -1449,6 +2345,12 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(url.type, 'url')
         self.assertEqual(url.object_relation, 'url')
         self.assertEqual(url.value, artifact.x_misp_url)
+
+    def _check_indicator_object(self, misp_object, indicator):
+        self.assertEqual(misp_object.uuid, indicator.id.split('--')[1])
+        self.assertEqual(misp_object.timestamp, indicator.modified)
+        self._check_object_labels(misp_object, indicator.labels, True)
+        return indicator.pattern
 
     def _check_intrusion_set_object(self, misp_object, intrusion_set):
         self.assertEqual(misp_object.uuid, intrusion_set.id.split('--')[1])

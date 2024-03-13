@@ -559,6 +559,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             raise ObjectRefLoadingError(object_ref)
 
     def _handle_unparsed_content(self):
+        if hasattr(self, '_observed_data_parser'):
+            if hasattr(self.observed_data_parser, '_observable_relationships'):
+                self.observed_data_parser.parse_relationships()
         if hasattr(self, '_relationship'):
             if hasattr(self, '_sighting'):
                 self._parse_relationships_and_sightings()
@@ -1043,17 +1046,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 attribute.add_tag(tag)
         return self.misp_event.add_object(misp_object)
 
-    def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
-        attribute = self._parse_timeline(stix_object)
-        if hasattr(stix_object, 'description') and stix_object.description:
-            attribute['comment'] = stix_object.description
-        attribute.update(
-            self._sanitise_attribute_uuid(
-                stix_object.id, comment=attribute.get('comment')
-            )
-        )
-        return attribute
-
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
         event_args = {
@@ -1092,19 +1084,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         cluster = MISPGalaxyCluster()
         cluster.from_dict(**cluster_args)
         return cluster
-
-    def _create_misp_object(
-            self, name: str, stix_object: Optional[_SDO_TYPING] = None
-            ) -> MISPObject:
-        misp_object = MISPObject(
-            name,
-            misp_objects_path_custom=_MISP_OBJECTS_PATH,
-            force_timestamps=True
-        )
-        if stix_object is not None:
-            self._sanitise_object_uuid(misp_object, stix_object['id'])
-            misp_object.from_dict(**self._parse_timeline(stix_object))
-        return misp_object
 
     def _handle_tags_from_stix_fields(self, stix_object: _SDO_TYPING):
         if hasattr(stix_object, 'confidence'):
@@ -1177,32 +1156,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             # should be TLP 2.0 definition
             return marking_definition.name.lower()
         raise MarkingDefinitionLoadingError(marking_definition.id)
-
-    def _parse_markings(self, marking_refs: list):
-        for marking_ref in marking_refs:
-            try:
-                marking_definition = self._get_stix_object(marking_ref)
-            except ObjectTypeLoadingError as error:
-                self._object_type_loading_error(error)
-                continue
-            except ObjectRefLoadingError as error:
-                self._object_ref_loading_error(error)
-                continue
-            yield marking_definition
-
-    def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
-        misp_object = {
-            'timestamp': self._timestamp_from_date(stix_object.modified)
-        }
-        object_type = stix_object.type
-        if self._mapping.timeline_mapping(object_type) is not None:
-            first, last = self._mapping.timeline_mapping(object_type)
-            if not self._skip_first_seen_last_seen(stix_object):
-                if hasattr(stix_object, first) and getattr(stix_object, first):
-                    misp_object['first_seen'] = getattr(stix_object, first)
-                if hasattr(stix_object, last) and getattr(stix_object, last):
-                    misp_object['last_seen'] = getattr(stix_object, last)
-        return misp_object
 
     @staticmethod
     def _populate_object_attributes(

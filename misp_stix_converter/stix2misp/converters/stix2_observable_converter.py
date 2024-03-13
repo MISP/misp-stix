@@ -11,10 +11,11 @@ from stix2.v20.observables import (
     Artifact as Artifact_v20, AutonomousSystem as AutonomousSystem_v20,
     Directory as Directory_v20, DomainName as DomainName_v20,
     EmailAddress as EmailAddress_v20, EmailMessage as EmailMessage_v20,
-    File as File_v20, HTTPRequestExt as HTTPRequestExt_v20, Mutex as Mutex_v20, NetworkTraffic as NetworkTraffic_v20,
-    Process as Process_v20, Software as Software_v20,
-    UNIXAccountExt as UNIXAccountExt_v20, URL as URL_v20,
-    UserAccount as UserAccount_v20, WindowsPEBinaryExt as WindowsExtension_v20,
+    File as File_v20, HTTPRequestExt as HTTPRequestExt_v20, Mutex as Mutex_v20,
+    NetworkTraffic as NetworkTraffic_v20, Process as Process_v20,
+    Software as Software_v20, UNIXAccountExt as UNIXAccountExt_v20,
+    URL as URL_v20, UserAccount as UserAccount_v20,
+    WindowsPEBinaryExt as WindowsExtension_v20,
     WindowsPESection as WindowsPESection_v20,
     WindowsRegistryKey as WindowsRegistryKey_v20,
     WindowsRegistryValueType as WindowsRegistryValue_v20,
@@ -113,7 +114,6 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'type': 'text', 'object_relation': 'encryption_algorithm'
         },
         mime_type={'type': 'mime-type', 'object_relation': 'mime_type'},
-        payload_bin={'type': 'text', 'object_relation': 'payload_bin'},
         url=STIX2Mapping.url_attribute()
     )
     __email_additional_header_fields_mapping = Mapping(
@@ -174,6 +174,9 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
 
 
 class STIX2ObservableConverter(STIX2Converter):
+    def _fetch_observable(self, object_ref: str) -> dict:
+        return self.main_parser._observable[object_ref]
+
     def _parse_email_additional_header(
             self, observable: _EMAIL_MESSAGE_TYPING,
             object_id: Optional[str] = None) -> Iterator[dict]:
@@ -357,19 +360,25 @@ class STIX2ObservableConverter(STIX2Converter):
                 yield from self._populate_object_attributes(
                     mapping, getattr(observable, field), object_id
                 )
-        for feature in ('environment_variables', 'arguments'):
-            if hasattr(observable, feature):
-                value = ' '.join(
-                    f'{key} {value}' for key, value in
-                    getattr(observable, feature).items()
+        if hasattr(observable, 'arguments'):
+            value = ' '.join(observable.arguments)
+            yield {
+                **self._mappping.args_attribute(),
+                'value': value, 'uuid': self.main_parser._create_v5_uuid(
+                    f'{object_id} -  args - {value}'
                 )
-                yield {
-                    **self._mapping.args_attribute(),
-                    'value': value, 'uuid': self.main_parser._create_v5_uuid(
-                        f'{object_id} - args - {value}'
-                    )
-                }
-                break
+            }
+        if hasattr(observable, 'environment_variables'):
+            value = ' - '.join(
+                f'{key}: {value}' for key, value in
+                observable.environment_variables.items()
+            )
+            yield {
+                **self._mapping.environment_variables_attribute(),
+                'value': value, 'uuid': self.main_parser._create_v5_uuid(
+                    f'{object_id} - environment-variables - {value}'
+                )
+            }
 
     def _parse_registry_key_observable(
             self, observable: _REGISTRY_KEY_TYPING,
@@ -414,6 +423,7 @@ class ExternalSTIX2ObservableMapping(
         STIX2ObservableMapping, ExternalSTIX2Mapping):
     __observable_mapping = Mapping(
         **{
+            'artifact': 'artifact',
             'autonomous-system': 'as',
             'directory': 'directory',
             'domain-name': 'domain',
@@ -423,7 +433,6 @@ class ExternalSTIX2ObservableMapping(
             'software': 'software',
             'url': 'url',
             'user-account': 'user_account',
-            'windows-registry-key': 'registry_key',
             'x509-certificate': 'x509',
             **dict.fromkeys(
                 (
@@ -497,6 +506,13 @@ class ExternalSTIX2ObservableMapping(
                     'process'
                 ),
                 'process'
+            ),
+            **dict.fromkeys(
+                (
+                    'user-account_windows-registry-key',
+                    'windows-registry-key'
+                ),
+                'registry_key'
             )
         }
     )
@@ -509,10 +525,17 @@ class ExternalSTIX2ObservableMapping(
 class ExternalSTIX2ObservableConverter(
         STIX2ObservableConverter, ExternalSTIX2Converter):
     def _parse_artifact_observable(
-            self, observable: Artifact_v21,
+            self, observable: _ARTIFACT_TYPING,
             object_id: Optional[str] = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
+        if hasattr(observable, 'payload_bin'):
+            value = getattr(observable, 'id', object_id.split(' - ')[0])
+            yield from self._populate_object_attributes_with_data(
+                {'type': 'attachment', 'object_relation': 'payload_bin'},
+                {'data': observable.payload_bin, 'value': value.split('--')[1]},
+                object_id
+            )
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
                 attribute = self._mapping.file_hashes_mapping(hash_type)
@@ -541,17 +564,6 @@ class ExternalSTIX2ObservableConverter(
                 self._mapping.description_attribute(), observable.name,
                 object_id
             )
-
-    def _parse_directory_observable(
-            self, observable: _DIRECTORY_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
-        if object_id is None:
-            object_id = observable.id
-        for field, mapping in self._mapping.directory_object_mapping().items():
-            if hasattr(observable, field):
-                yield from self._populate_object_attributes(
-                    mapping, getattr(observable, field), object_id
-                )
 
     def _parse_domain_observable(self, observable: _DOMAIN_TYPING,
                                  object_id: Optional[str] = None) -> dict:
@@ -610,20 +622,23 @@ class ExternalSTIX2ObservableConverter(
                 )
 
     def _parse_user_account_observable(
-            self, observable: _USER_ACCOUNT_TYPING) -> Iterator[dict]:
+            self, observable: _USER_ACCOUNT_TYPING,
+            object_id: Optional[str] = None) -> Iterator[dict]:
+        if object_id is None:
+            object_id = observable.id
         user_account_mapping = self._mapping.user_account_object_mapping
         for field, attribute in user_account_mapping().items():
             if hasattr(observable, field):
                 yield from self._populate_object_attributes(
-                    attribute, getattr(observable, field), observable.id
+                    attribute, getattr(observable, field), object_id
                 )
         if 'unix-account-ext' in getattr(observable, 'extensions', {}):
             extension = observable.extensions['unix-account-ext']
-            mapping = self._mapping.unix_user_account_extension_mapping
+            mapping = self._mapping.unix_user_account_extension_object_mapping
             for field, attribute in mapping().items():
                 if hasattr(extension, field):
                     yield from self._populate_object_attributes(
-                        attribute, getattr(extension, field), observable.id
+                        attribute, getattr(extension, field), object_id
                     )
 
 
@@ -807,17 +822,17 @@ class InternalSTIX2ObservableConverter(
                 'value': value.split('=').strip("'"),
                 'data': observable.payload_bin
             }
-            mapping = getattr(self._mapping, f'{feature}_attribute')
+            mapping = f'{feature}_attribute'
             if hasattr(observable, 'id'):
                 yield {
-                    **content, **mapping(),
+                    **content, **getattr(self._mapping, mapping)(),
                     'uuid': self.main_parser._sanitise_attribute_uuid(
                         observable.id
                     )
                 }
             else:
-                yield from self._populate_object_attribute_with_data(
-                    mapping(), content, object_id
+                yield from self._populate_object_attributes_with_data(
+                    getattr(self._mapping, mapping)(), content, object_id
                 )
 
     def _parse_file_parent_observable(self, observable: _DIRECTORY_TYPING,

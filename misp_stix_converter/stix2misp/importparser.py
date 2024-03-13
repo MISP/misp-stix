@@ -528,8 +528,8 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             return {
                 'uuid': self.replacement_uuids[attribute_uuid],
                 'comment': (
-                    f'{comment} - {attribute_comment}'
-                    if comment else attribute_comment
+                    attribute_comment if comment is None
+                    else f'{comment} - {attribute_comment}'
                 )
             }
         if UUID(attribute_uuid).version not in _RFC_VERSIONS:
@@ -538,11 +538,14 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             return {
                 'uuid': sanitised_uuid,
                 'comment': (
-                    f'{comment} - {attribute_comment}'
-                    if comment else attribute_comment
+                    attribute_comment if comment is None
+                    else f'{comment} - {attribute_comment}'
                 )
             }
-        return {'uuid': attribute_uuid}
+        attribute = {'uuid': attribute_uuid}
+        if comment is not None:
+            attribute['comment'] = comment
+        return attribute
 
     def _sanitise_object_uuid(
             self, misp_object: Union[MISPEvent, MISPObject], object_id: str):
