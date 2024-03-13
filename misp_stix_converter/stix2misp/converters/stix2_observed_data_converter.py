@@ -58,6 +58,10 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
     def __init__(self, main: _MAIN_PARSER_TYPING):
         self._set_main_parser(main)
 
+    def _fetch_observables(self, object_refs: Union[tuple, str]) -> Generator:
+        for object_ref in object_refs:
+            yield self.main_parser._observable[object_ref]
+
 
 class ExternalSTIX2ObservedDataConverter(
         STIX2ObservedDataConverter, ExternalSTIX2ObservableConverter):
@@ -1736,9 +1740,6 @@ class ExternalSTIX2ObservedDataConverter(
         )
         return misp_object
 
-    def _fetch_observables(self, object_refs: Union[tuple, str]) -> Generator:
-        for object_ref in object_refs:
-            yield self.main_parser._observable[object_ref]
 
     def _handle_misp_object_fields(
             self, misp_object: MISPAttribute | MISPObject,
