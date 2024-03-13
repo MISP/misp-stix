@@ -1831,7 +1831,7 @@ class InternalSTIX2ObservedDataConverter(
     def _attribute_from_AS_observable_v21(
             self, observed_data: ObservedData_v21):
         attribute = self._create_attribute_dict(observed_data)
-        observable = self._fetch_observable(observed_data.object_refs)
+        observable = self._fetch_observable(observed_data.object_refs[0])
         attribute['value'] = self._parse_AS_value(observable.number)
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
