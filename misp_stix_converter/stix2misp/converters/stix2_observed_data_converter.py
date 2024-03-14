@@ -58,6 +58,10 @@ class STIX2ObservedDataConverter(STIX2ObservableConverter, metaclass=ABCMeta):
     def __init__(self, main: _MAIN_PARSER_TYPING):
         self._set_main_parser(main)
 
+    def _fetch_observables(self, object_refs: Union[tuple, str]) -> Generator:
+        for object_ref in object_refs:
+            yield self.main_parser._observable[object_ref]
+
 
 class ExternalSTIX2ObservedDataConverter(
         STIX2ObservedDataConverter, ExternalSTIX2ObservableConverter):
@@ -1736,9 +1740,6 @@ class ExternalSTIX2ObservedDataConverter(
         )
         return misp_object
 
-    def _fetch_observables(self, object_refs: Union[tuple, str]) -> Generator:
-        for object_ref in object_refs:
-            yield self.main_parser._observable[object_ref]
 
     def _handle_misp_object_fields(
             self, misp_object: MISPAttribute | MISPObject,
@@ -1830,7 +1831,7 @@ class InternalSTIX2ObservedDataConverter(
     def _attribute_from_AS_observable_v21(
             self, observed_data: ObservedData_v21):
         attribute = self._create_attribute_dict(observed_data)
-        observable = self._fetch_observable(observed_data.object_refs)
+        observable = self._fetch_observable(observed_data.object_refs[0])
         attribute['value'] = self._parse_AS_value(observable.number)
         self.main_parser._add_misp_attribute(attribute, observed_data)
 
@@ -3054,7 +3055,8 @@ class InternalSTIX2ObservedDataConverter(
         return observables[0] if len(observables) == 1 else observables
 
     def _fetch_observables_v21(self, observed_data: ObservedData_v21):
-        return self._fetch_observables(observed_data.object_refs)
+        observables = tuple(self._fetch_observables(observed_data.object_refs))
+        return observables[0] if len(observables) == 1 else observables
 
     @staticmethod
     def _fetch_observables_with_id_v20(observed_data: ObservedData_v20) -> dict:
