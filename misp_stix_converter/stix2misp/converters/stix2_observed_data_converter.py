@@ -3055,7 +3055,8 @@ class InternalSTIX2ObservedDataConverter(
         return observables[0] if len(observables) == 1 else observables
 
     def _fetch_observables_v21(self, observed_data: ObservedData_v21):
-        return self._fetch_observables(observed_data.object_refs)
+        observables = tuple(self._fetch_observables(observed_data.object_refs))
+        return observables[0] if len(observables) == 1 else observables
 
     @staticmethod
     def _fetch_observables_with_id_v20(observed_data: ObservedData_v20) -> dict:
