@@ -738,8 +738,66 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     #                   MARKING DEFINITIONS PARSING METHODS.                   #
     ############################################################################
 
+    def _parse_acs_marking_definition(
+            self, extension: dict, extension_definition: dict,
+            version: str, object_id: str):
+        galaxy_type = f'stix-{version}-acs-marking'
+        name = f'STIX {version} ACS Marking'
+        if galaxy_type not in self._galaxies:
+            misp_galaxy = MISPGalaxy()
+            misp_galaxy.from_dict(
+                namespace='stix',
+                type=galaxy_type,
+                version=''.join(version.split('.')),
+                uuid=self._create_v5_uuid(name),
+                name=name,
+                description=(
+                    f'STIX {version} Marking Definition extension'
+                    ' to support ACS Markings'
+                )
+            )
+            self._galaxies[galaxy_type] = misp_galaxy
+        meta = {}
+        for key, value in extension.items():
+            if isinstance(value, dict):
+                for field, subvalue in value.items():
+                    meta[f'{key}.{field}'] = subvalue
+                continue
+            if key == 'access_privilege':
+                if len(value) == 1:
+                    for field, subvalue in value[0].items():
+                        meta[f'{key}.{field}'] = subvalue
+                    continue
+                for privilege in value:
+                    feature = f"{key}.{privilege['privilege_action']}"
+                    for field, scope in privilege['privilege_scope'].items():
+                        meta[f'{feature}.privilege_scope.{field}'] = scope
+                    meta[f'{feature}.rule_effect'] = privilege['rule_effect']
+                continue
+            if key == 'further_sharing':
+                if len(value) == 1:
+                    for field, subvalue in value[0].items():
+                        meta[f'{key}.{field}'] = subvalue
+                    continue
+                for sharing in value:
+                    feature = f"{key}.{sharing['rule_effect']}"
+                    meta[f"{feature}.sharing_scope"] = sharing['sharing_scope']
+                continue
+            if key != 'extension_type':
+                meta[key] = value
+        galaxy_cluster = MISPGalaxyCluster()
+        galaxy_cluster.from_dict(
+            type=f'stix-{version}-acs-marking',
+            uuid=self._create_v5_uuid(object_id),
+            version=''.join(version.split('.')),
+            value=extension.get('name', extension['identifier']),
+            meta=meta
+        )
+        extension_definition['cluster'].append(galaxy_cluster)
+
+
     def _parse_marking_definition(
-            self, marking_definition: _MARKING_DEFINITION_TYPING) -> str:
+            self, marking_definition: _MARKING_DEFINITION_TYPING) -> dict | str:
         if hasattr(marking_definition, 'definition_type'):
             definition_type = marking_definition.definition_type
             definition = marking_definition.definition[definition_type]
