@@ -776,8 +776,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 continue
             if key == 'access_privilege':
                 if len(value) == 1:
-                    for field, subvalue in value[0].items():
-                        meta[f'{key}.{field}'] = subvalue
+                    privilege = value[0]
+                    for feature, privilege in value[0].items():
+                        if isinstance(privilege, dict):
+                            for field, scope in privilege.items():
+                                meta[f'{key}.{feature}.{field}'] = scope
+                            continue
+                        meta[f'{key}.{feature}'] = privilege
                     continue
                 for privilege in value:
                     feature = f"{key}.{privilege['privilege_action']}"
@@ -818,7 +823,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return marking_definition.name.lower()
         if hasattr(marking_definition, 'extensions'):
             extension_definition = defaultdict(list)
-            version = getattr(marking_definition, 'version', '2.0')
+            version = getattr(marking_definition, 'spec_version', '2.0')
             for identifier, extension in marking_definition.extensions.items():
                 feature = self._mapping.marking_extension_mapping(identifier)
                 if feature is None:
