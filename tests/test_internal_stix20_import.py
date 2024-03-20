@@ -10,9 +10,9 @@ from ._test_stix_import import TestInternalSTIX2Import, TestSTIX20Import
 
 class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Import):
 
-    ################################################################################
-    #                      MISP ATTRIBUTES CHECKING FUNCTIONS                      #
-    ################################################################################
+    ############################################################################
+    #                   SPECIFIC STIX 2.0 CHECKING FUNCTIONS                   #
+    ############################################################################
 
     def _check_observed_data_attribute(self, attribute, observed_data):
         self.assertEqual(attribute.uuid, observed_data.id.split('--')[1])
@@ -34,9 +34,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_object_labels(misp_object, observed_data.labels, False)
         return observed_data.objects
 
-    ################################################################################
-    #                         MISP ATTRIBUTES IMPORT TESTS                         #
-    ################################################################################
+    ############################################################################
+    #                       MISP ATTRIBUTES IMPORT TESTS                       #
+    ############################################################################
 
     def test_stix20_bundle_with_AS_indicator_attribute(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_AS_indicator_attribute()
@@ -1028,9 +1028,56 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 observed_data = observed_data
             )
 
-    ################################################################################
-    #                           MISP EVENTS IMPORT TESTS                           #
-    ################################################################################
+    ############################################################################
+    #                         MISP EVENTS IMPORT TESTS                         #
+    ############################################################################
+
+    def test_stix20_bundle_with_custom_labels(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_custom_labels()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, indicator, observed_data = bundle.objects
+        misp_object, attribute = self._check_misp_event_features(event, report)
+        self.assertEqual(attribute.uuid, indicator.id.split('--')[1])
+        self._assert_multiple_equal(
+            attribute.timestamp,
+            indicator.created,
+            indicator.modified
+        )
+        type_label, category_label, ids_label, _ = indicator.labels
+        self.assertEqual(ids_label, f'misp:to_ids="{attribute.to_ids}"')
+        self.assertEqual(type_label, f'misp:type="{attribute.type}"')
+        self.assertEqual(category_label, f'misp:category="{attribute.category}"')
+        self.assertEqual(attribute.type, 'domain|ip')
+        domain, address = indicator.pattern[1:-1].split(' AND ')
+        self.assertEqual(
+            attribute.value,
+            f'{self._get_pattern_value(domain)}|{self._get_pattern_value(address)}'
+        )
+        self.assertEqual(misp_object.uuid, observed_data.id.split('--')[1])
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            observed_data.created,
+            observed_data.modified
+        )
+        name_label, category_label, ids_label, _ = observed_data.labels
+        self.assertEqual(ids_label, 'misp:to_ids="False"')
+        self.assertEqual(name_label, f'misp:name="{misp_object.name}"')
+        self.assertEqual(
+            category_label,
+            f'misp:meta-category="{getattr(misp_object, "meta-category")}"'
+        )
+        domain1, ip1, ip2, domain2 = misp_object.attributes
+        observables = observed_data.objects
+        for attribute, index in zip((domain1, domain2), ('2', '3')):
+            self.assertEqual(attribute.type,'domain')
+            self.assertEqual(attribute.object_relation, 'domain')
+            self.assertEqual(attribute.value, observables[index].value)
+        for attribute, index in zip((ip1, ip2), ('0', '1')):
+            self.assertEqual(attribute.type, 'ip-dst')
+            self.assertEqual(attribute.object_relation, 'ip')
+            self.assertEqual(attribute.value, observables[index].value)
 
     def test_stix20_bundle_with_invalid_uuids(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_invalid_uuids()
@@ -1155,9 +1202,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self.parser.parse_stix_bundle()
         self._check_event_from_bundle_with_single_report(bundle.objects[1:])
 
-    ################################################################################
-    #                          MISP GALAXIES IMPORT TESTS                          #
-    ################################################################################
+    ############################################################################
+    #                        MISP GALAXIES IMPORT TESTS                        #
+    ############################################################################
 
     def test_stix20_bundle_with_attack_pattern_galaxy(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_attack_pattern_galaxy()
@@ -1193,18 +1240,23 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         event = self.parser.misp_event
         _, report, attack_pattern, course_of_action, _, malware, _, _ = bundle.objects
         attribute = self._check_misp_event_features(event, report)[0]
-        ap_galaxy, coa_galaxy = attribute.galaxies
-        self._check_galaxy_fields(
-            ap_galaxy, attack_pattern, 'mitre-attack-pattern', 'Attack Pattern'
-        )
-        self.assertEqual(
-            ap_galaxy.clusters[0].meta['external_id'],
-            attack_pattern.external_references[0].external_id
-        )
-        self._check_galaxy_fields(
-            coa_galaxy, course_of_action, 'mitre-course-of-action',
-            'Course of Action'
-        )
+        for galaxy in attribute.galaxies:
+            if galaxy['type'] == 'mitre-attack-pattern':
+                self._check_galaxy_fields_with_external_id(
+                    galaxy, attack_pattern, 'mitre-attack-pattern',
+                    'Attack Pattern'
+                )
+                self.assertEqual(
+                    galaxy.clusters[0].meta['external_id'],
+                    attack_pattern.external_references[0].external_id
+                )
+            elif galaxy['type'] == 'mitre-course-of-action':
+                self._check_galaxy_fields(
+                    galaxy, course_of_action, 'mitre-course-of-action',
+                    'Course of Action'
+                )
+            else:
+                self.fail(f"Wrong MISP Galaxy type: {galaxy['type']}")
         galaxy = event.galaxies[0]
         self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
 
@@ -1262,9 +1314,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._check_misp_event_features(event, report)
         self._check_vulnerability_galaxy(event.galaxies[0], vulnerability)
 
-    ################################################################################
-    #                          MISP OBJECTS IMPORT TESTS.                          #
-    ################################################################################
+    ############################################################################
+    #                        MISP OBJECTS IMPORT TESTS.                        #
+    ############################################################################
 
     def test_stix20_bundle_with_account_indicator_objects(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_account_indicator_objects()
@@ -1399,9 +1451,10 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data = twitter_od
         )
         user_account_observable = self._check_observed_data_object(user_account, user_od)['0']
-        password, last_changed = self._check_user_account_observable_object(
-            user_account.attributes,
-            user_account_observable
+        username, account_type, display_name, user_id, last_changed, password, *attributes = user_account.attributes
+        self._check_user_account_observable_object(
+            user_account_observable,
+            username, account_type, display_name, user_id, *attributes
         )
         self.assertEqual(password.type, 'text')
         self.assertEqual(password.object_relation, 'password')
@@ -1798,6 +1851,21 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
             observed_data = observed_data
         )
 
+    def test_stix20_bundle_with_identity_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_identity_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, identity = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        roles = self._check_identity_object(misp_object, identity)
+        self.assertEqual(roles.object_relation, 'roles')
+        self.assertEqual(roles.value, identity.x_misp_roles)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            identity = identity
+        )
+
     def test_stix20_bundle_with_image_indicator_object(self):
         bundle = TestInternalSTIX20Bundles.get_bundle_with_image_indicator_object()
         self.parser.load_stix_bundle(bundle)
@@ -1824,6 +1892,19 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         self._populate_documentation(
             misp_object = json.loads(misp_object.to_json()),
             observed_data = observed_data
+        )
+
+    def test_stix20_bundle_with_intrusion_set_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_intrusion_set_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, intrusion_set = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        self._check_intrusion_set_object(misp_object, intrusion_set)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            intrusion_set = intrusion_set
         )
 
     def test_stix20_bundle_with_ip_port_indicator_object(self):
@@ -2100,6 +2181,21 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, identity = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         role = self._check_organization_object(misp_object, identity)
+        self.assertEqual(role.value, identity.x_misp_role)
+        self._populate_documentation(
+            misp_object = json.loads(misp_object.to_json()),
+            identity = identity
+        )
+
+    def test_stix20_bundle_with_person_object(self):
+        bundle = TestInternalSTIX20Bundles.get_bundle_with_person_object()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, identity = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)[0]
+        role = self._check_person_object(misp_object, identity)
+        self.assertEqual(role.object_relation, 'role')
         self.assertEqual(role.value, identity.x_misp_role)
         self._populate_documentation(
             misp_object = json.loads(misp_object.to_json()),

@@ -19,6 +19,7 @@ from stix2.v21.bundle import Bundle as Bundle_v21
 from typing import Generator, Optional, Tuple, Union
 
 _label_fields = ('type', 'category', 'to_ids')
+_labelled_object_types = ('malware', 'threat-actor', 'tool')
 _misp_time_fields = ('first_seen', 'last_seen')
 _object_attributes_additional_fields = ('category', 'comment', 'to_ids', 'uuid')
 _object_attributes_fields = ('type', 'object_relation', 'value')
@@ -349,6 +350,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                     'type': 'sighting',
                     'sighting_of_ref': reference_id
                 }
+                if 'x-misp-' in reference_id:
+                    sighting_args['allow_custom'] = True
                 if sighting.get('date_sighting', ''):
                     date_sighting = self._datetime_from_timestamp(sighting['date_sighting'])
                     sighting_args.update(
@@ -1537,6 +1540,29 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         else:
             self._parse_image_object_observable(misp_object)
 
+    def _parse_intrusion_set_object(self, misp_object: Union[MISPObject, dict]):
+        attributes = self._extract_multiple_object_attributes_with_data_escaped(
+            misp_object['Attribute'],
+            force_single=self._mapping.intrusion_set_single_fields()
+        )
+        intrusion_set_args = {}
+        mapping = self._mapping.intrusion_set_object_mapping
+        for key, feature in mapping('features').items():
+            if attributes.get(key):
+                intrusion_set_args[feature] = attributes.pop(key)
+        for key, feature in mapping('timeline').items():
+            if attributes.get(key):
+                intrusion_set_args[feature] = self._datetime_from_str(
+                    attributes.pop(key)
+                )
+        if attributes:
+            intrusion_set_args.update(
+                self._handle_observable_multiple_properties(attributes)
+            )
+        self._handle_non_indicator_object(
+            misp_object, intrusion_set_args, 'intrusion-set'
+        )
+
     def _parse_ip_port_object(self, misp_object: Union[MISPObject, dict]):
         if self._fetch_ids_flag(misp_object['Attribute']):
             prefix = 'network-traffic'
@@ -2342,10 +2368,6 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         )
 
-    def _handle_meta_mapping(self, object_type: str, key: str) -> Union[str, None]:
-        if hasattr(self._mapping, f'{object_type}_meta_mapping'):
-            return getattr(self._mapping, f'{object_type}_meta_mapping')(key)
-
     def _handle_object_refs(self, object_refs: list):
         for object_ref in object_refs:
             if object_ref not in self.__object_refs:
@@ -2416,16 +2438,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             attack_pattern_id = f"attack-pattern--{cluster['uuid']}"
             attack_pattern_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                attack_pattern_id,
-                timestamp
+                cluster, galaxy['name'], attack_pattern_id, timestamp
             )
-            if cluster.get('meta'):
-                attack_pattern_args.update(
-                    self._parse_meta_fields(cluster['meta'], 'attack_pattern')
-                )
             self._append_SDO_without_refs(
                 self._create_attack_pattern(attack_pattern_args)
             )
@@ -2456,16 +2470,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             course_of_action_id = f"course-of-action--{cluster['uuid']}"
             course_of_action_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                course_of_action_id,
-                timestamp
+                cluster, galaxy['name'], course_of_action_id, timestamp
             )
-            if cluster.get('meta'):
-                course_of_action_args.update(
-                    self._parse_meta_fields(cluster['meta'], 'course_of_action')
-                )
             course_of_action = self._create_course_of_action(course_of_action_args)
             self._append_SDO_without_refs(course_of_action)
             object_refs.append(course_of_action_id)
@@ -2482,7 +2488,7 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             'external_id': external_id
         }
 
-    def _parse_external_reference(
+    def _parse_external_references(
             self, meta_args: dict, values: Union[list, str],
             feature: Optional[str] = '_parse_external_id'):
         if isinstance(values, list):
@@ -2517,16 +2523,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             intrusion_set_id = f"intrusion-set--{cluster['uuid']}"
             intrusion_set_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                intrusion_set_id,
-                timestamp
+                cluster, galaxy['name'], intrusion_set_id, timestamp
             )
-            if cluster.get('meta'):
-                intrusion_set_args.update(
-                    self._parse_meta_fields(cluster['meta'], 'intrusion_set')
-                )
             intrusion_set = self._create_intrusion_set(intrusion_set_args)
             self._append_SDO_without_refs(intrusion_set)
             object_refs.append(intrusion_set_id)
@@ -2562,17 +2560,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             malware_id = f"malware--{cluster['uuid']}"
             malware_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                malware_id,
-                timestamp
+                cluster, galaxy['name'], malware_id, timestamp
             )
-            if cluster.get('meta'):
-                meta_args = self._parse_meta_fields(cluster['meta'], 'malware')
-                if 'labels' in meta_args:
-                    malware_args['labels'].extend(meta_args.pop('labels'))
-                malware_args.update(meta_args)
             malware = self._create_malware(malware_args)
             self._append_SDO_without_refs(malware)
             object_refs.append(malware_id)
@@ -2587,32 +2576,54 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         feature = 'malware_types' if self._version == '2.1' else 'labels'
         meta_args[feature] = values if isinstance(values, list) else [values]
 
-    def _parse_meta_fields(self, cluster_meta: dict, object_type: str) -> dict:
+    def _parse_meta_custom_fields(self, cluster_meta: dict) -> dict:
         meta_args = defaultdict(list)
         for key, values in cluster_meta.items():
             feature = self._mapping.external_references_fields(key)
             if feature is not None:
-                self._parse_external_reference(meta_args, values, feature)
-                continue
-            feature = self._handle_meta_mapping(object_type, key)
-            if feature is not None:
-                getattr(self, feature)(
-                    meta_args, values if isinstance(values, list) else [values]
-                )
+                self._parse_external_references(meta_args, values, feature)
             else:
-                feature = self._sanitise_meta_field(key)
-                meta_args[f"x_misp_{feature}"] = values
+                meta_args[f"x_misp_{self._sanitise_meta_field(key)}"] = values
         if any(key.startswith('x_misp_') for key in meta_args.keys()):
             meta_args['allow_custom'] = True
         return meta_args
 
-    def _parse_synonyms_21_meta_field(self, meta_args: dict, values: list):
-        feature = 'aliases' if self._version == '2.1' else 'x_misp_synonyms'
-        meta_args[feature] = values
+    def _parse_meta_fields(
+            self, cluster_meta: dict, object_type: str, value: str) -> dict:
+        meta_args = defaultdict(list)
+        field = f"{object_type.replace('-', '_')}_meta_mapping"
+        for key, values in cluster_meta.items():
+            feature = self._mapping.external_references_fields(key)
+            if feature is not None:
+                self._parse_external_references(meta_args, values, feature)
+                continue
+            to_call = getattr(self._mapping, field)(key)
+            if to_call is not None:
+                args = [
+                    meta_args, values if isinstance(values, list) else [values]
+                ]
+                if 'synonyms' in to_call:
+                    args.append(value)
+                getattr(self, to_call)(*args)
+            else:
+                meta_args[f"x_misp_{self._sanitise_meta_field(key)}"] = values
+        if any(key.startswith('x_misp_') for key in meta_args.keys()):
+            meta_args['allow_custom'] = True
+        return meta_args
+
+    def _parse_synonyms_21_meta_field(
+            self, meta_args: dict, values: list, cluster_value: str):
+        aliases = [value for value in values if value != cluster_value]
+        if aliases:
+            feature = 'aliases' if self._version == '2.1' else 'x_misp_synonyms'
+            meta_args[feature] = aliases
 
     @staticmethod
-    def _parse_synonyms_meta_field(meta_args: dict, values: list):
-        meta_args['aliases'] = values
+    def _parse_synonyms_meta_field(
+        meta_args: dict, values: list, cluster_value: str):
+        aliases = [value for value in values if value != cluster_value]
+        if aliases:
+            meta_args['aliases'] = aliases
 
     def _parse_sector_galaxy(self, galaxy: Union[MISPGalaxy, dict],
                              timestamp: Union[datetime, None]) -> list:
@@ -2687,19 +2698,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             threat_actor_id = f"threat-actor--{cluster['uuid']}"
             threat_actor_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                threat_actor_id,
-                timestamp
+                cluster, galaxy['name'], threat_actor_id, timestamp
             )
-            if cluster.get('meta'):
-                meta_args = self._parse_meta_fields(
-                    cluster['meta'], 'threat_actor'
-                )
-                if 'labels' in meta_args:
-                    threat_actor_args['labels'].extend(meta_args.pop('labels'))
-                threat_actor_args.update(meta_args)
             threat_actor = self._create_threat_actor(threat_actor_args)
             self._append_SDO_without_refs(threat_actor)
             object_refs.append(threat_actor_id)
@@ -2732,17 +2732,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             tool_id = f"tool--{cluster['uuid']}"
             tool_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                tool_id,
-                timestamp
+                cluster, galaxy['name'], tool_id, timestamp
             )
-            if cluster.get('meta'):
-                meta_args = self._parse_meta_fields(cluster['meta'], 'tool')
-                if 'labels' in meta_args:
-                    tool_args['labels'].extend(meta_args.pop('labels'))
-                tool_args.update(meta_args)
             tool = self._create_tool(tool_args)
             self._append_SDO_without_refs(tool)
             object_refs.append(tool_id)
@@ -2792,16 +2783,8 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 continue
             vulnerability_id = f"vulnerability--{cluster['uuid']}"
             vulnerability_args = self._create_galaxy_args(
-                cluster,
-                galaxy['description'],
-                galaxy['name'],
-                vulnerability_id,
-                timestamp
+                cluster, galaxy['name'], vulnerability_id, timestamp
             )
-            if cluster.get('meta'):
-                vulnerability_args.update(
-                    self._parse_meta_fields(cluster['meta'], 'vulnerability')
-                )
             vulnerability = self._create_vulnerability(vulnerability_args)
             self._append_SDO_without_refs(vulnerability)
             object_refs.append(vulnerability_id)
@@ -2855,17 +2838,22 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         )
         return custom_args
 
-    def _create_galaxy_args(self, cluster: Union[MISPGalaxyCluster, dict],
-                            description: str, name: str, object_id: str,
-                            timestamp: Optional[datetime] = None) -> dict:
+    def _create_galaxy_args(
+            self, cluster: Union[MISPGalaxyCluster, dict], name: str,
+            object_id: str, timestamp: Optional[datetime] = None) -> dict:
+        object_type = object_id.split('--')[0]
+        value = cluster['value']
+        if cluster['type'].startswith('mitre-') and ' - ' in value:
+            value = value.split(' - ')[0].strip()
         galaxy_args = {
             'id': object_id,
-            'type': object_id.split('--')[0],
-            'name': cluster['value'],
-            'description': f"{description} | {cluster['description']}",
+            'type': object_type,
+            'name': value,
             'labels': self._create_galaxy_labels(name, cluster),
             'interoperability': True
         }
+        if cluster.get('description') is not None:
+            galaxy_args['description'] = cluster['description']
         if timestamp is None:
             if not cluster.get('timestamp'):
                 return galaxy_args
@@ -2876,6 +2864,16 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 'modified': timestamp
             }
         )
+        if cluster.get('meta'):
+            feature = f"{object_type.replace('-', '_')}_meta_mapping"
+            meta_args = (
+                self._parse_meta_fields(cluster['meta'], object_type, value)
+                if hasattr(self._mapping, feature) else
+                self._parse_meta_custom_fields(cluster['meta'])
+            )
+            if object_type in _labelled_object_types and 'labels' in meta_args:
+                galaxy_args['labels'].extend(meta_args.pop('labels'))
+            galaxy_args.update(meta_args)
         return galaxy_args
 
     @staticmethod

@@ -18,27 +18,6 @@ class TestSTIX20GenericExport(TestSTIX20Export, TestSTIX20):
     def setUp(self):
         self.parser = MISPtoSTIX20Parser()
 
-    @classmethod
-    def tearDownClass(self):
-        attributes_documentation = AttributesDocumentationUpdater(
-            'misp_attributes_to_stix20',
-            self._attributes_v20,
-            'export'
-        )
-        attributes_documentation.check_export_mapping('stix20')
-        objects_documentation = ObjectsDocumentationUpdater(
-            'misp_objects_to_stix20',
-            self._objects_v20,
-            'export'
-        )
-        objects_documentation.check_export_mapping('stix20')
-        galaxies_documentation = GalaxiesDocumentationUpdater(
-            'misp_galaxies_to_stix20',
-            self._galaxies_v20,
-            'export'
-        )
-        galaxies_documentation.check_export_mapping('stix20')
-
     def _check_bundle_features(self, length):
         bundle = self.parser.bundle
         self.assertEqual(bundle.type, 'bundle')
@@ -869,6 +848,15 @@ class TestSTIX20AttributesExport(TestSTIX20GenericExport):
 
 
 class TestSTIX20JSONAttributesExport(TestSTIX20AttributesExport):
+    @classmethod
+    def tearDownClass(self):
+        attributes_documentation = AttributesDocumentationUpdater(
+            'misp_attributes_to_stix20',
+            self._attributes_v20,
+            'export'
+        )
+        attributes_documentation.check_export_mapping('stix20')
+
     def test_embedded_indicator_attribute_galaxy(self):
         event = get_embedded_indicator_attribute_galaxy()
         self._test_embedded_indicator_attribute_galaxy(event['Event'])
@@ -2721,6 +2709,24 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
         self.assertEqual(artifact.x_misp_url, url)
         self.assertEqual(artifact.x_misp_filename, attachment)
 
+    def _test_event_with_intrusion_set_object(self, event):
+        orgc = event['Orgc']
+        misp_object = deepcopy(event['Object'][0])
+        self.parser.parse_misp_event(event)
+        identity, report, intrusion_set = self.parser.stix_objects
+        timestamp = event['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        identity_id = self._check_identity_features(identity, orgc, timestamp)
+        object_ref = self._check_report_features(report, event, identity_id, timestamp)[0]
+        self.assertEqual(report.published, timestamp)
+        self._assert_multiple_equal(
+            intrusion_set.id,
+            f"intrusion-set--{misp_object['uuid']}",
+            object_ref
+        )
+        self._check_intrusion_set_object(intrusion_set, misp_object, identity_id)
+
     def _test_event_with_ip_port_indicator_object(self, event):
         prefix = 'network-traffic'
         attributes, pattern = self._run_indicator_from_object_tests(event)
@@ -3477,6 +3483,15 @@ class TestSTIX20ObjectsExport(TestSTIX20GenericExport):
 
 
 class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
+    @classmethod
+    def tearDownClass(self):
+        objects_documentation = ObjectsDocumentationUpdater(
+            'misp_objects_to_stix20',
+            self._objects_v20,
+            'export'
+        )
+        objects_documentation.check_export_mapping('stix20')
+
     def test_embedded_indicator_object_galaxy(self):
         event = get_embedded_indicator_object_galaxy()
         self._test_embedded_indicator_object_galaxy(event['Event'])
@@ -3746,6 +3761,14 @@ class TestSTIX20JSONObjectsExport(TestSTIX20ObjectsExport):
         self._populate_documentation(
             misp_object = event['Event']['Object'][0],
             observed_data = self.parser.stix_objects[-1]
+        )
+
+    def test_event_with_intrusion_set_object(self):
+        event = get_event_with_intrusion_set_object()
+        self._test_event_with_intrusion_set_object(event['Event'])
+        self._populate_documentation(
+            misp_object = event['Event']['Object'][0],
+            intrusion_set = self.parser.stix_objects[-1]
         )
 
     def test_event_with_ip_port_indicator_object(self):
@@ -4226,6 +4249,12 @@ class TestSTIX20MISPObjectsExport(TestSTIX20ObjectsExport):
         misp_event.from_dict(**event)
         self._test_event_with_image_observable_object(misp_event)
 
+    def test_event_with_intrusion_set_object(self):
+        event = get_event_with_intrusion_set_object()
+        misp_event = MISPEvent()
+        misp_event.from_dict(**event)
+        self._test_event_with_intrusion_set_object(misp_event)
+
     def test_event_with_ip_port_indicator_object(self):
         event = get_event_with_ip_port_object()
         misp_event = MISPEvent()
@@ -4508,6 +4537,15 @@ class TestSTIX20GalaxiesExport(TestSTIX20GenericExport):
 
 class TestSTIX20JSONGalaxiesExport(TestSTIX20GalaxiesExport):
     _mapping_types = MISPtoSTIX20Mapping
+
+    @classmethod
+    def tearDownClass(self):
+        galaxies_documentation = GalaxiesDocumentationUpdater(
+            'misp_galaxies_to_stix20',
+            self._galaxies_v20,
+            'export'
+        )
+        galaxies_documentation.check_export_mapping('stix20')
 
     def test_event_with_attack_pattern_galaxy(self):
         event = get_event_with_attack_pattern_galaxy()

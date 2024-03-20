@@ -3,26 +3,26 @@
 
 from ... import Mapping
 from ..exceptions import UnknownParsingFunctionError
+from .stix2converter import ExternalSTIX2Converter, InternalSTIX2Converter
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
-from .stix2converter import (
-    ExternalSTIX2Converter, InternalSTIX2Converter, STIX2Converter)
 from abc import ABCMeta
 from pymisp import MISPGalaxyCluster
 from stix2.v20.common import ExternalReference as ExternalReference_v20
 from stix2.v20.sdo import AttackPattern as AttackPattern_v20
 from stix2.v21.common import ExternalReference as ExternalReference_v21
 from stix2.v21.sdo import AttackPattern as AttackPattern_v21
-from typing import Optional, Union
+from typing import Optional, TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
+    from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
 
 _ATTACK_PATTERN_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21
 ]
 _EXTERNAL_REFERENCE_TYPING = Union[
     ExternalReference_v20, ExternalReference_v21
-]
-_MAIN_PARSER_TYPING = Union[
-    'ExternalSTIX2toMISPParser', 'InternalSTIX2toMISPParser'
 ]
 
 
@@ -36,15 +36,24 @@ class STIX2AttackPatternMapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__attack_pattern_meta_mapping
 
 
-class STIX2AttackPatternConverter(STIX2Converter, metaclass=ABCMeta):
-    def __init__(self, main: _MAIN_PARSER_TYPING):
+class ExternalSTIX2AttackPatternMapping(
+        STIX2AttackPatternMapping, ExternalSTIX2Mapping):
+    pass
+
+
+class ExternalSTIX2AttackPatternConverter(ExternalSTIX2Converter):
+    def __init__(self, main: 'ExternalSTIX2toMISPParser'):
         self._set_main_parser(main)
+        self._mapping = ExternalSTIX2AttackPatternMapping
+
+    def parse(self, attack_pattern_ref: str):
+        attack_pattern = self.main_parser._get_stix_object(attack_pattern_ref)
+        self._parse_galaxy(attack_pattern)
 
     def _create_cluster(self, attack_pattern: _ATTACK_PATTERN_TYPING,
-                        description: Optional[str] = None,
                         galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
         attack_pattern_args = self._create_cluster_args(
-            attack_pattern, galaxy_type, description=description
+            attack_pattern, galaxy_type
         )
         meta = self._handle_meta_fields(attack_pattern)
         if hasattr(attack_pattern, 'external_references'):
@@ -60,29 +69,6 @@ class STIX2AttackPatternConverter(STIX2Converter, metaclass=ABCMeta):
         if meta:
             attack_pattern_args['meta'] = meta
         return self._create_misp_galaxy_cluster(attack_pattern_args)
-    
-
-class ExternalSTIX2AttackPatternMapping(
-        STIX2AttackPatternMapping, ExternalSTIX2Mapping):
-    __attack_pattern_object_mapping = Mapping(
-        name=STIX2Mapping.name_attribute(),
-        description=STIX2Mapping.summary_attribute()
-    )
-
-    @classmethod
-    def attack_pattern_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__attack_pattern_object_mapping.get(field)
-
-
-class ExternalSTIX2AttackPatternConverter(
-        STIX2AttackPatternConverter, ExternalSTIX2Converter):
-    def __init__(self, main: 'ExternalSTIX2toMISPParser'):
-        super().__init__(main)
-        self._mapping = ExternalSTIX2AttackPatternMapping
-
-    def parse(self, attack_pattern_ref: str):
-        attack_pattern = self.main_parser._get_stix_object(attack_pattern_ref)
-        self._parse_galaxy(attack_pattern)
 
 
 class InternalSTIX2AttackPatternMapping(
@@ -111,15 +97,14 @@ class InternalSTIX2AttackPatternMapping(
         return cls.__attack_pattern_object_mapping
 
 
-class InternalSTIX2AttackPatternConverter(
-        STIX2AttackPatternConverter, InternalSTIX2Converter):
+class InternalSTIX2AttackPatternConverter(InternalSTIX2Converter):
     def __init__(self, main: 'InternalSTIX2toMISPParser'):
-        super().__init__(main)
+        self._set_main_parser(main)
         self._mapping = InternalSTIX2AttackPatternMapping
 
     def parse(self, attack_pattern_ref: str):
         attack_pattern = self.main_parser._get_stix_object(attack_pattern_ref)
-        feature = self._handle_object_mapping(
+        feature = self._handle_mapping_from_labels(
             attack_pattern.labels, attack_pattern.id
         )
         try:
@@ -131,14 +116,34 @@ class InternalSTIX2AttackPatternConverter(
         except Exception as exception:
             self.main_parser._attack_pattern_error(attack_pattern.id, exception)
 
+    def _create_cluster(self, attack_pattern: _ATTACK_PATTERN_TYPING,
+                        description: Optional[str] = None,
+                        galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
+        attack_pattern_args = self._create_cluster_args(
+            attack_pattern, galaxy_type, description=description
+        )
+        meta = self._handle_meta_fields(attack_pattern)
+        if hasattr(attack_pattern, 'external_references'):
+            meta.update(
+                self._handle_external_references(
+                    attack_pattern.external_references
+                )
+            )
+        if meta.get('external_id'):
+            self._handle_cluster_value(attack_pattern_args, meta['external_id'])
+        if hasattr(attack_pattern, 'kill_chain_phases'):
+            meta['kill_chain'] = self._handle_kill_chain_phases(
+                attack_pattern.kill_chain_phases
+            )
+        if meta:
+            attack_pattern_args['meta'] = meta
+        return self._create_misp_galaxy_cluster(attack_pattern_args)
+
     def _parse_attack_pattern_object(
             self, attack_pattern: _ATTACK_PATTERN_TYPING):
         misp_object = self._create_misp_object('attack-pattern', attack_pattern)
-        for key, mapping in self._mapping.attack_pattern_object_mapping().items():
-            if hasattr(attack_pattern, key):
-                self._populate_object_attributes(
-                    misp_object, mapping, getattr(attack_pattern, key)
-                )
+        for attribute in self._generic_parser(attack_pattern):
+            misp_object.add_attribute(**attribute)
         if hasattr(attack_pattern, 'external_references'):
             for reference in attack_pattern.external_references:
                 misp_object.add_attribute(

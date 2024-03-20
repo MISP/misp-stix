@@ -252,11 +252,13 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(stix_object.id, f"{stix_object.type}--{cluster['uuid']}")
         self.assertEqual(stix_object.created, timestamp)
         self.assertEqual(stix_object.modified, timestamp)
-        self.assertEqual(stix_object.name, cluster['value'])
-        description = galaxy['description']
+        self.assertEqual(
+            stix_object.name,
+            cluster['value'].split(' - ')[0] if
+            cluster['type'].startswith('mitre-') else cluster['value']
+        )
         if cluster.get('description'):
-            description = f"{description} | {cluster['description']}"
-        self.assertEqual(stix_object.description, description)
+            self.assertEqual(stix_object.description, cluster['description'])
         self.assertEqual(stix_object.labels[0], f'misp:galaxy-name="{galaxy["name"]}"')
         self.assertEqual(stix_object.labels[1], f'misp:galaxy-type="{galaxy["type"]}"')
         if cluster.get('meta'):
@@ -298,10 +300,41 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(indicator.valid_from, timestamp)
 
     def _check_intrusion_set_meta_fields(self, stix_object, meta):
-        self.assertEqual(stix_object.aliases, meta['synonyms'])
+        aliases = [
+            synonym for synonym in meta['synonyms']
+            if synonym != stix_object.name
+        ]
+        if aliases:
+            self.assertEqual(stix_object.aliases, aliases)
         self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
         for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
             self.assertEqual(external_ref.url, ref)
+
+    def _check_intrusion_set_object(self, intrusion_set, misp_object, identity_id):
+        self.assertEqual(intrusion_set.type, 'intrusion-set')
+        self.assertEqual(intrusion_set.created_by_ref, identity_id)
+        timestamp = misp_object['timestamp']
+        if not isinstance(timestamp, datetime):
+            timestamp = self._datetime_from_timestamp(timestamp)
+        self.assertEqual(intrusion_set.created, timestamp)
+        self.assertEqual(intrusion_set.modified, timestamp)
+        name, description, alias, *goals, level, primary, secondary, first_seen, last_seen = (attribute['value'] for attribute in misp_object['Attribute'])
+        self.assertEqual(intrusion_set.name, name)
+        self.assertEqual(intrusion_set.description, description)
+        self.assertEqual(intrusion_set.aliases, [alias])
+        self.assertTrue(
+            all(goal in intrusion_set.goals for goal in goals) and
+            len(intrusion_set.goals) == len(goals)
+        )
+        self.assertEqual(intrusion_set.resource_level, level)
+        self.assertEqual(intrusion_set.primary_motivation, primary)
+        self.assertEqual(intrusion_set.secondary_motivations, [secondary])
+        if isinstance(first_seen, str):
+            first_seen = self._datetime_from_str(first_seen)
+        self.assertEqual(intrusion_set.first_seen, first_seen)
+        if isinstance(last_seen, str):
+            last_seen = self._datetime_from_str(last_seen)
+        self.assertEqual(intrusion_set.last_seen, last_seen)
 
     def _check_killchain(self, killchain, category):
         self.assertEqual(killchain['kill_chain_name'], 'misp-category')
@@ -340,10 +373,15 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(legal_entity.x_misp_logo['data'], data)
 
     def _check_malware_meta_fields(self, stix_object, meta):
-        if hasattr(stix_object, 'aliases'):
-            self.assertEqual(stix_object.aliases, meta['synonyms'])
-        else:
-            self.assertEqual(stix_object.x_misp_synonyms, meta['synonyms'])
+        aliases = [
+            synonym for synonym in meta['synonyms']
+            if synonym != stix_object.name
+        ]
+        if aliases:
+            if hasattr(stix_object, 'aliases'):
+                self.assertEqual(stix_object.aliases, meta['synonyms'])
+            else:
+                self.assertEqual(stix_object.x_misp_synonyms, meta['synonyms'])
         self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
         for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
             self.assertEqual(external_ref.url, ref)
@@ -542,10 +580,14 @@ class TestSTIX2Export(TestSTIX):
         self.assertEqual(stix_object.aliases, meta['synonyms'])
 
     def _check_tool_meta_fields(self, stix_object, meta):
+        aliases = [
+            synonym for synonym in meta['synonyms']
+            if synonym != stix_object.name
+        ]
         if hasattr(stix_object, 'aliases'):
-            self.assertEqual(stix_object.aliases, meta['synonyms'])
+            self.assertEqual(stix_object.aliases, aliases)
         else:
-            self.assertEqual(stix_object.x_misp_synonyms, meta['synonyms'])
+            self.assertEqual(stix_object.x_misp_synonyms, aliases)
         self.assertEqual(stix_object.external_references[0].external_id, meta['external_id'])
         for external_ref, ref in zip(stix_object.external_references[1:], meta['refs']):
             self.assertEqual(external_ref.url, ref)

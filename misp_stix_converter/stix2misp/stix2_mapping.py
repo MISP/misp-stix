@@ -16,18 +16,18 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         }
     )
     __observable_object_types = (
+        'network-traffic',
+        'file',
+        'email-message',
         'artifact',
         'autonomous-system',
         'directory',
         'domain-name',
         'email-addr',
-        'email-message',
-        'file',
         'ipv4-addr',
         'ipv6-addr',
         'mac-addr',
         'mutex',
-        'network-traffic',
         'process',
         'software',
         'url',
@@ -43,8 +43,9 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     )
     __mac_address_pattern = '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
 
-    __SROs = ('opinion', 'relationship', 'sighting', 'x-misp-opinion')
-    __object_type_refs_to_skip = __observable_object_types + __SROs
+    __object_type_refs_to_skip = (
+        'opinion', 'relationship', 'sighting', 'x-misp-opinion'
+    )
     __stix_object_loading_mapping = Mapping(
         **{
             'attack-pattern': '_load_attack_pattern',
@@ -56,6 +57,7 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'intrusion-set': '_load_intrusion_set',
             'location': '_load_location',
             'malware': '_load_malware',
+            'malware-analysis': '_load_malware_analysis',
             'marking-definition': '_load_marking_definition',
             'note': '_load_note',
             'observed-data': '_load_observed_data',
@@ -87,6 +89,7 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'intrusion-set': '_parse_intrusion_set',
             'location': '_parse_location',
             'malware': '_parse_malware',
+            'malware-analysis': '_parse_malware_analysis',
             'marking-definition': '_parse_marking_definition',
             'note': '_parse_note',
             'observed-data': '_parse_observed_data',
@@ -95,8 +98,8 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'threat-actor': '_parse_threat_actor',
             'tool': '_parse_tool',
             'vulnerability': '_parse_vulnerability',
-            'x-misp-attribute': '_parse_custom_attribute',
-            'x-misp-galaxy-cluster': '_parse_custom_galaxy_cluster',
+            'x-misp-attribute': '_parse_custom_object',
+            'x-misp-galaxy-cluster': '_parse_custom_object',
             'x-misp-object': '_parse_custom_object'
         }
     )
@@ -467,13 +470,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     )
 
     # MISP GALAXIES MAPPING
-    __attack_pattern_meta_mapping = Mapping(
-        aliases='synonyms'
-    )
-    __campaign_meta_mapping = Mapping(
-        aliases='synonyms',
-        objective='objective'
-    )
     __dash_meta_fields = (
         'x_misp_attribution_confidence',
         'x_misp_calling_code',
@@ -498,23 +494,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         'x_misp_territory_type',
         'x_misp_threat_actor_classification',
         'x_misp_top_level_domain'
-    )
-    __intrusion_set_meta_mapping = Mapping(
-        aliases='synonyms',
-        goals='goals',
-        primary_motivation='primary_motivation',
-        resource_level='resource_level',
-        secondary_motivations='secondary_motivations'
-    )
-    __malware_meta_mapping = Mapping(
-        aliases='synonyms',
-        architecture_execution_envs='architecture_execution_envs',
-        capabilities='capabilities',
-        implementation_languages='implementation_languages',
-        is_family='is_family',
-        malware_types='malware_types',
-        operating_system_refs='operating_system_refs',
-        sample_refs='sample_refs'
     )
     __regions_mapping = Mapping(
         **{
@@ -549,22 +528,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'micronesia': '057 - Micronesia',
             'polynesia': '061 - Polynesia'
         }
-    )
-    __threat_actor_meta_mapping = Mapping(
-        aliases='synonyms',
-        goals='goals',
-        personal_motivations='personal_motivations',
-        primary_motivation='primary_motivation',
-        resource_level='resource_level',
-        roles='roles',
-        secondary_motivations='secondary_motivations',
-        sophistication='sophistication',
-        threat_actor_types='threat_actor_types'
-    )
-    __tool_meta_mapping = Mapping(
-        aliases='synonyms',
-        tool_types='tool_types',
-        tool_version='tool_version'
     )
 
     # MISP OBJECTS MAPPING
@@ -644,16 +607,8 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__attack_pattern_id_attribute
 
     @classmethod
-    def attack_pattern_meta_mapping(cls) -> dict:
-        return cls.__attack_pattern_meta_mapping
-
-    @classmethod
     def bundle_to_misp_mapping(cls, field: str) -> Union[str, None]:
         return cls.__bundle_to_misp_mapping.get(field)
-
-    @classmethod
-    def campaign_meta_mapping(cls) -> dict:
-        return cls.__campaign_meta_mapping
 
     @classmethod
     def can_escalate_privs_attribute(cls) -> dict:
@@ -808,10 +763,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__imphash_attribute
 
     @classmethod
-    def intrusion_set_meta_mapping(cls) -> dict:
-        return cls.__intrusion_set_meta_mapping
-
-    @classmethod
     def ip_attribute(cls) -> dict:
         return cls.__ip_attribute
 
@@ -866,10 +817,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     @classmethod
     def mac_address_pattern(cls) -> str:
         return cls.__mac_address_pattern
-
-    @classmethod
-    def malware_meta_mapping(cls) -> dict:
-        return cls.__malware_meta_mapping
 
     @classmethod
     def message_id_attribute(cls) -> dict:
@@ -1092,20 +1039,12 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__text_attribute
 
     @classmethod
-    def threat_actor_meta_mapping(cls) -> dict:
-        return cls.__threat_actor_meta_mapping
-
-    @classmethod
     def timeline_mapping(cls, field: str) -> Union[tuple, None]:
         return cls.__timeline_mapping.get(field)
 
     @classmethod
     def tlsh_attribute(cls) -> dict:
         return cls.__tlsh_attribute
-
-    @classmethod
-    def tool_meta_mapping(cls) -> dict:
-        return cls.__tool_meta_mapping
 
     @classmethod
     def type_attribute(cls) -> dict:

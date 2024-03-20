@@ -757,27 +757,34 @@ _ATTACK_PATTERN_GALAXY = {
     "id": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "name": "Test malware in various execution environments - PRE-T1134",
-    "description": "ATT&CK Tactic | Malware may perform differently on different platforms and different operating systems.",
+    "name": "Access Token Manipulation",
+    "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
     "kill_chain_phases": [
         {
-            "kill_chain_name": "mitre-pre-attack",
-            "phase_name": "test-capabilities"
+            "kill_chain_name": "mitre-attack",
+            "phase_name": "defense-evasion"
+        },
+        {
+            "kill_chain_name": "mitre-attack",
+            "phase_name": "privilege-escalation"
         }
     ],
     "labels": [
-        "misp:galaxy-name=\"Pre Attack - Attack Pattern\"",
-        "misp:galaxy-type=\"mitre-pre-attack-attack-pattern\""
+        "misp:galaxy-name=\"Attack Pattern\"",
+        "misp:galaxy-type=\"mitre-attack-pattern\""
     ],
     "external_references": [
         {
-            "source_name": "mitre-pre-attack",
-            "external_id": "PRE-T1134"
+            "source_name": "mitre-attack",
+            "external_id": "T1134"
         },
         {
             "source_name": "url",
-            "url": "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
+            "url": "https://attack.mitre.org/techniques/T1134"
         }
+    ],
+    "x_misp_mitre_platforms": [
+        "Windows"
     ]
 }
 _ATTACK_PATTERN_OBJECT = {
@@ -814,33 +821,15 @@ _ATTACK_PATTERN_OBJECT = {
     "x_misp_solutions": "Carefully review the service\\'s implementation before making it available to users."
 }
 _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
-    {
-        "type": "attack-pattern",
-        "spec_version": "2.1",
-        "id": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48",
-        "created": "2020-10-25T16:22:00.000Z",
-        "modified": "2020-10-25T16:22:00.000Z",
-        "name": "Access Token Manipulation - T1134",
-        "description": "ATT&CK Tactic | Windows uses access tokens to determine the ownership of a running process.",
-        "labels": [
-            "misp:galaxy-name=\"Attack Pattern\"",
-            "misp:galaxy-type=\"mitre-attack-pattern\""
-        ],
-        "external_references": [
-            {
-                "source_name": "capec",
-                "external_id": "CAPEC-633"
-            }
-        ]
-    },
+    _ATTACK_PATTERN_GALAXY,
     {
         "type": "course-of-action",
         "spec_version": "2.1",
         "id": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "Automated Exfiltration Mitigation - T1020",
-        "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+        "name": "Automated Exfiltration Mitigation",
+        "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
         "labels": [
             "misp:galaxy-name=\"Course of Action\"",
             "misp:galaxy-type=\"mitre-course-of-action\""
@@ -876,12 +865,9 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "BISCUIT - S0017",
-        "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+        "name": "BISCUIT",
+        "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
         "is_family": True,
-        "aliases": [
-            "BISCUIT"
-        ],
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -895,7 +881,7 @@ _ATTRIBUTE_WITH_EMBEDDED_GALAXY = [
         "modified": "2020-10-25T16:22:00.000Z",
         "relationship_type": "indicates",
         "source_ref": "indicator--91ae0a21-c7ae-4c7f-b84b-b84a7ce53d1f",
-        "target_ref": "attack-pattern--dcaa092b-7de9-4a21-977f-7fcb77e89c48"
+        "target_ref": "attack-pattern--e042a41b-5ecf-4f3a-8f1f-1b528c534772"
     },
     {
         "type": "relationship",
@@ -959,19 +945,35 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "id": "attack-pattern--00000000-0000-0000-0000-000000000000",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "Access Token Manipulation - T1134",
-        "description": "ATT&CK Tactic | Windows uses access tokens to determine the ownership of a running process.",
+        "name": "Access Token Manipulation",
+        "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
+        "kill_chain_phases": [
+            {
+                "kill_chain_name": "mitre-attack",
+                "phase_name": "defense-evasion"
+            },
+            {
+                "kill_chain_name": "mitre-attack",
+                "phase_name": "privilege-escalation"
+            }
+        ],
         "labels": [
             "misp:galaxy-name=\"Attack Pattern\"",
             "misp:galaxy-type=\"mitre-attack-pattern\""
         ],
         "external_references": [
             {
-                "source_name": "capec",
-                "external_id": "CAPEC-633"
+                "source_name": "mitre-attack",
+                "external_id": "T1134"
+            },
+            {
+                "source_name": "url",
+                "url": "https://attack.mitre.org/techniques/T1134"
             }
         ],
-        "created_by_ref": "identity--12345678-90ab-cdef-1234-567890abcdef"
+        "x_misp_mitre_platforms": [
+            "Windows"
+        ]
     },
     {
         "type": "course-of-action",
@@ -979,8 +981,8 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "id": "course-of-action--11111111-1111-1111-1111-111111111111",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "Automated Exfiltration Mitigation - T1020",
-        "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+        "name": "Automated Exfiltration Mitigation",
+        "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
         "labels": [
             "misp:galaxy-name=\"Course of Action\"",
             "misp:galaxy-type=\"mitre-course-of-action\""
@@ -1017,12 +1019,9 @@ _BUNDLE_WITH_INVALID_UUIDS = [
         "id": "malware--33333333-3333-3333-3333-333333333333",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "BISCUIT - S0017",
-        "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+        "name": "BISCUIT",
+        "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
         "is_family": True,
-        "aliases": [
-            "BISCUIT"
-        ],
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -1429,12 +1428,9 @@ _BUNDLE_WITH_MULTIPLE_REPORTS = [
         "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "BISCUIT - S0017",
-        "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+        "name": "BISCUIT",
+        "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
         "is_family": True,
-        "aliases": [
-            "BISCUIT"
-        ],
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -1569,12 +1565,9 @@ _BUNDLE_WITH_NO_REPORT = [
         "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
-        "name": "BISCUIT - S0017",
-        "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+        "name": "BISCUIT",
+        "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
         "is_family": True,
-        "aliases": [
-            "BISCUIT"
-        ],
         "labels": [
             "misp:galaxy-name=\"Malware\"",
             "misp:galaxy-type=\"mitre-malware\""
@@ -1841,8 +1834,8 @@ _COURSE_OF_ACTION_GALAXY = {
     "id": "course-of-action--2497ac92-e751-4391-82c6-1b86e34d0294",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "name": "Automated Exfiltration Mitigation - T1020",
-    "description": "ATT&CK Mitigation | Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
+    "name": "Automated Exfiltration Mitigation",
+    "description": "Identify unnecessary system utilities, scripts, or potentially malicious software that may be used to transfer data outside of a network",
     "labels": [
         "misp:galaxy-name=\"Course of Action\"",
         "misp:galaxy-type=\"mitre-course-of-action\""
@@ -2103,7 +2096,7 @@ _CUSTOM_GALAXY = {
         "misp:galaxy-name=\"Tea Matrix\"",
         "misp:galaxy-type=\"tea-matrix\""
     ],
-    "x_misp_description": "Tea Matrix | Milk in tea",
+    "x_misp_description": "Milk in tea",
     "x_misp_name": "Tea Matrix",
     "x_misp_type": "tea-matrix",
     "x_misp_value": "Milk in tea"
@@ -5226,6 +5219,26 @@ _HTTP_REQUEST_OBSERVABLE_OBJECT = [
         ]
     }
 ]
+_IDENTITY_OBJECT = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--a54e32af-5569-4949-b1fe-ad75054cde45",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "John Doe",
+    "description": "Unknown person",
+    "roles": [
+        "Placeholder name"
+    ],
+    "identity_class": "individual",
+    "contact_information": "email-address: jdoe@email.com / phone-number: 0123456789",
+    "labels": [
+        "misp:name=\"identity\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ]
+}
 _IMAGE_INDICATOR_OBJECT = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -5292,11 +5305,8 @@ _INTRUSION_SET_GALAXY = {
     "id": "intrusion-set--d6e88e18-81e8-4709-82d8-973095da1e70",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "name": "APT16 - G0023",
-    "description": "Name of ATT&CK Group | APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
-    "aliases": [
-        "APT16"
-    ],
+    "name": "APT16",
+    "description": "APT16 is a China-based threat group that has launched spearphishing campaigns targeting Japanese and Taiwanese organizations.",
     "labels": [
         "misp:galaxy-name=\"Intrusion Set\"",
         "misp:galaxy-type=\"mitre-intrusion-set\""
@@ -5314,6 +5324,36 @@ _INTRUSION_SET_GALAXY = {
             "source_name": "url",
             "url": "https://www.fireeye.com/blog/threat-research/2015/12/the-eps-awakens-part-two.html"
         }
+    ]
+}
+_INTRUSION_SET_OBJECT = {
+    "type": "intrusion-set",
+    "spec_version": "2.1",
+    "id": "intrusion-set--79a012ce-9eac-4249-9e7c-fadddfb6e93d",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "Bobcat Breakin",
+    "description": "Incidents usually feature a shared TTP of a bobcat being released within the building containing network access, scaring users to leave their computers without locking them first.",
+    "aliases": [
+        "Zookeeper"
+    ],
+    "first_seen": "2016-04-06T20:03:48Z",
+    "last_seen": "2017-05-15T21:05:06Z",
+    "goals": [
+        "acquisition-theft",
+        "harassment",
+        "damage"
+    ],
+    "resource_level": "organization",
+    "primary_motivation": "organizational gain",
+    "secondary_motivations": [
+        "personal gain"
+    ],
+    "labels": [
+        "misp:name=\"intrusion-set\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
     ]
 }
 _IP_INDICATOR_ATTRIBUTES = [
@@ -5733,7 +5773,7 @@ _LOCATION_GALAXIES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "sweden",
-        "description": "Country meta information | Sweden",
+        "description": "Sweden",
         "country": "SE",
         "labels": [
             "misp:galaxy-name=\"Country\"",
@@ -5756,7 +5796,7 @@ _LOCATION_GALAXIES = [
         "created": "2020-10-25T16:22:00.000Z",
         "modified": "2020-10-25T16:22:00.000Z",
         "name": "Northern Europe",
-        "description": "Regions based on UN M49 | Nothern Europe",
+        "description": "Nothern Europe",
         "region": "northern-europe",
         "labels": [
             "misp:galaxy-name=\"Regions UN M49\"",
@@ -5764,7 +5804,7 @@ _LOCATION_GALAXIES = [
         ],
         "x_misp_subregion": [
             "830 - Channel Islands",
-            "248 - \u00c5land Islands",
+            "248 - Åland Islands",
             "208 - Denmark",
             "233 - Estonia",
             "234 - Faroe Islands",
@@ -5836,12 +5876,9 @@ _MALWARE_GALAXY = {
     "id": "malware--b8eb28e4-48a6-40ae-951a-328714f75eda",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "name": "BISCUIT - S0017",
-    "description": "Name of ATT&CK software | BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
+    "name": "BISCUIT",
+    "description": "BISCUIT is a backdoor that has been used by APT1 since as early as 2007.",
     "is_family": False,
-    "aliases": [
-        "BISCUIT"
-    ],
     "labels": [
         "misp:galaxy-name=\"Malware\"",
         "misp:galaxy-type=\"mitre-malware\""
@@ -6695,6 +6732,27 @@ _PATTERNING_LANGUAGE_OBJECTS = [
         ]
     }
 ]
+_PERSON_OBJECT = {
+    "type": "identity",
+    "spec_version": "2.1",
+    "id": "identity--868037d5-d804-4f1d-8016-f296361f9c68",
+    "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+    "created": "2020-10-25T16:22:00.000Z",
+    "modified": "2020-10-25T16:22:00.000Z",
+    "name": "John Smith",
+    "roles": [
+        "Guru"
+    ],
+    "identity_class": "individual",
+    "contact_information": "phone-number: 0123456789",
+    "labels": [
+        "misp:name=\"person\"",
+        "misp:meta-category=\"misc\"",
+        "misp:to_ids=\"False\""
+    ],
+    "x_misp_nationality": "USA",
+    "x_misp_passport_number": "ABA9875413"
+}
 _PORT_INDICATOR_ATTRIBUTE = {
     "type": "indicator",
     "spec_version": "2.1",
@@ -7076,7 +7134,7 @@ _THREAT_ACTOR_GALAXY = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Cutting Kitten",
-    "description": "Threat actors are characteristics of malicious actors. | These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
+    "description": "These convincing profiles form a self-referenced network of seemingly established LinkedIn users.",
     "aliases": [
         "Ghambar"
     ],
@@ -7094,10 +7152,9 @@ _TOOL_GALAXY = {
     "id": "tool--bba595da-b73a-4354-aa6c-224d4de7cb4e",
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
-    "name": "cmd - S0106",
-    "description": "Name of ATT&CK software | cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
+    "name": "cmd",
+    "description": "cmd is the Windows command-line interpreter that can be used to interact with systems and execute other processes and utilities.",
     "aliases": [
-        "cmd",
         "cmd.exe"
     ],
     "labels": [
@@ -7351,7 +7408,7 @@ _VULNERABILITY_GALAXY = {
     "created": "2020-10-25T16:22:00.000Z",
     "modified": "2020-10-25T16:22:00.000Z",
     "name": "Ghost",
-    "description": "List of known vulnerabilities and exploits | The GHOST vulnerability is a serious weakness in the Linux glibc library.",
+    "description": "The GHOST vulnerability is a serious weakness in the Linux glibc library.",
     "labels": [
         "misp:galaxy-name=\"Branded Vulnerability\"",
         "misp:galaxy-type=\"branded-vulnerability\""
@@ -7648,16 +7705,16 @@ class TestInternalSTIX21Bundles:
     def __assemble_bundle(cls, *stix_objects):
         bundle = deepcopy(cls.__bundle)
         bundle['objects'] = [
-            deepcopy(cls.__identity),
-            deepcopy(cls.__grouping),
-            *stix_objects
+            deepcopy(cls.__identity), deepcopy(cls.__grouping), *stix_objects
         ]
-        bundle['objects'][1]['object_refs'] = [stix_object['id'] for stix_object in stix_objects]
+        bundle['objects'][1]['object_refs'] = [
+            stix_object['id'] for stix_object in stix_objects
+        ]
         return dict_to_stix2(bundle, allow_custom=True)
 
-    ################################################################################
-    #                              ATTRIBUTES SAMPLES                              #
-    ################################################################################
+    ############################################################################
+    #                            ATTRIBUTES SAMPLES                            #
+    ############################################################################
 
     @classmethod
     def get_bundle_with_AS_indicator_attribute(cls):
@@ -7937,9 +7994,17 @@ class TestInternalSTIX21Bundles:
     def get_bundle_with_x509_fingerprint_observable_attributes(cls):
         return cls.__assemble_bundle(*_X509_FINGERPRINT_OBSERVABLE_ATTRIBUTES)
 
-    ################################################################################
-    #                                EVENTS SAMPLES                                #
-    ################################################################################
+    ############################################################################
+    #                              EVENTS SAMPLES                              #
+    ############################################################################
+
+    @classmethod
+    def get_bundle_with_custom_labels(cls):
+        indicator = deepcopy(_DOMAIN_IP_INDICATOR_OBJECT)
+        indicator['labels'].append('Object tag')
+        observed_data, domain, ip = deepcopy(_DOMAIN_IP_OBSERVABLE_ATTRIBUTE)
+        observed_data['labels'].append('Attribute tag')
+        return cls.__assemble_bundle(indicator, observed_data, domain, ip)
 
     @classmethod
     def get_bundle_with_invalid_uuids(cls):
@@ -7984,9 +8049,9 @@ class TestInternalSTIX21Bundles:
     def get_bundle_with_single_report(cls):
         return cls.__assemble_bundle(*_BUNDLE_WITH_NO_REPORT)
 
-    ################################################################################
-    #                               GALAXIES SAMPLES                               #
-    ################################################################################
+    ############################################################################
+    #                             GALAXIES SAMPLES                             #
+    ############################################################################
 
     @classmethod
     def get_bundle_with_attack_pattern_galaxy(cls):
@@ -8028,9 +8093,9 @@ class TestInternalSTIX21Bundles:
     def get_bundle_with_vulnerability_galaxy(cls):
         return cls.__assemble_bundle(_VULNERABILITY_GALAXY)
 
-    ################################################################################
-    #                             MISP OBJECTS SAMPLES                             #
-    ################################################################################
+    ############################################################################
+    #                           MISP OBJECTS SAMPLES                           #
+    ############################################################################
 
     @classmethod
     def get_bundle_with_account_indicator_objects(cls):
@@ -8244,6 +8309,10 @@ class TestInternalSTIX21Bundles:
         return cls.__assemble_bundle(*_HTTP_REQUEST_OBSERVABLE_OBJECT)
 
     @classmethod
+    def get_bundle_with_identity_object(cls):
+        return cls.__assemble_bundle(_IDENTITY_OBJECT)
+
+    @classmethod
     def get_bundle_with_image_indicator_object(cls):
         indicator = deepcopy(_IMAGE_INDICATOR_OBJECT)
         with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
@@ -8264,6 +8333,10 @@ class TestInternalSTIX21Bundles:
         with open(_TESTFILES_PATH / 'STIX_logo.png', 'rb') as f:
             observables[-1]['payload_bin'] = b64encode(f.read()).decode()
         return cls.__assemble_bundle(*observables)
+
+    @classmethod
+    def get_bundle_with_intrusion_set_object(cls):
+        return cls.__assemble_bundle(_INTRUSION_SET_OBJECT)
 
     @classmethod
     def get_bundle_with_ip_port_indicator_object(cls):
@@ -8361,6 +8434,10 @@ class TestInternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_patterning_language_objects(cls):
         return cls.__assemble_bundle(*_PATTERNING_LANGUAGE_OBJECTS)
+
+    @classmethod
+    def get_bundle_with_person_object(cls):
+        return cls.__assemble_bundle(_PERSON_OBJECT)
 
     @classmethod
     def get_bundle_with_process_indicator_object(cls):

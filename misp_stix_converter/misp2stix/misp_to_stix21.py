@@ -199,6 +199,8 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             'type': 'opinion',
             'object_refs': [reference_id]
         }
+        if 'x-misp-' in reference_id:
+            opinion_args['allow_custom'] = True
         if sighting.get('date_sighting', ''):
             date_sighting = self._datetime_from_timestamp(sighting['date_sighting'])
             opinion_args.update(
@@ -1483,7 +1485,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
             }
             location_args['country'] = cluster['meta']['ISO']
             location_args.update(
-                self._parse_meta_fields(cluster['meta'], 'location')
+                self._parse_meta_custom_fields(cluster['meta'])
             )
             if timestamp is None:
                 if not cluster.get('timestamp'):
@@ -1538,7 +1540,7 @@ class MISPtoSTIX21Parser(MISPtoSTIX2Parser):
                 cluster, galaxy['description'], galaxy['name'], timestamp
             )
             location_args.update(
-                self._parse_meta_fields(cluster['meta'], 'location')
+                self._parse_meta_custom_fields(cluster['meta'])
             )
             location = self._create_location(location_args)
             self._append_SDO_without_refs(location)

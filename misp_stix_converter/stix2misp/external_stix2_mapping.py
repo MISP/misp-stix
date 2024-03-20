@@ -15,7 +15,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         ' FOLLOWEDBY ',
         ' ISSUBSET ',
         ' ISSUPERSET',
-        ' LIKE ',
         ' MATCHES ',
         ' NOT ',
         ' REPEATS ',
@@ -90,13 +89,14 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
                     'domain-name_ipv4-addr_ipv6-addr_mac-addr_network-traffic',
                     'domain-name_network-traffic',
                     'domain-name_network-traffic_url',
+                    'ipv4-addr_network-traffic',
+                    'ipv6-addr_network-traffic',
+                    'ipv4-addr_ipv6-addr_network-traffic',
                     'mac-addr_network-traffic',
                     'mac-addr_ipv4-addr_network-traffic',
                     'mac-addr_ipv6-addr_network-traffic',
                     'mac-addr_ipv4-addr_ipv6-addr_network-traffic',
-                    'ipv4-addr_network-traffic',
-                    'ipv6-addr_network-traffic',
-                    'ipv4-addr_ipv6-addr_network-traffic'
+                    'network-traffic'
                 ),
                 'network_traffic'
             ),
@@ -180,36 +180,14 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     )
 
     # MISP OBJECTS MAPPING
-    __attack_pattern_object_mapping = Mapping(
-        name=STIX2toMISPMapping.name_attribute(),
-        description=STIX2toMISPMapping.summary_attribute()
-    )
     __course_of_action_object_mapping = Mapping(
         name=STIX2toMISPMapping.name_attribute(),
         description=STIX2toMISPMapping.description_attribute()
-    )
-    __identity_object_multiple_fields = (
-        'roles', 'sectors'
-    )
-    __identity_object_single_fields = (
-        'name',
-        'description',
-        'identity_class',
-        'contact_information'
-    )
-    __organization_object_mapping = Mapping(
-        contact_information='contact_information',
-        description='description',
-        name='name'
     )
     __sigma_object_mapping = Mapping(
         pattern=STIX2toMISPMapping.sigma_attribute(),
         description=STIX2toMISPMapping.comment_attribute(),
         name=STIX2toMISPMapping.sigma_rule_name_attribute()
-    )
-    __vulnerability_object_mapping = Mapping(
-        name=STIX2toMISPMapping.summary_attribute(),
-        description=STIX2toMISPMapping.description_attribute()
     )
     __yara_object_mapping = Mapping(
         pattern=STIX2toMISPMapping.yara_attribute(),
@@ -271,16 +249,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         name=STIX2toMISPMapping.filename_attribute(),
         name_enc=STIX2toMISPMapping.file_encoding_attribute(),
         size=STIX2toMISPMapping.size_in_bytes_attribute()
-    )
-    __location_object_mapping = Mapping(
-        city=STIX2toMISPMapping.city_attribute(),
-        country=STIX2toMISPMapping.country_attribute(),
-        description=STIX2toMISPMapping.text_attribute(),
-        latitude=STIX2toMISPMapping.latitude_attribute(),
-        longitude=STIX2toMISPMapping.longitude_attribute(),
-        postal_code=STIX2toMISPMapping.zipcode_attribute(),
-        region=STIX2toMISPMapping.region_attribute(),
-        street_address=STIX2toMISPMapping.address_attribute()
     )
     __network_connection_object_reference_mapping = Mapping(
         **{
@@ -502,21 +470,10 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
             }
         }
     )
-    __location_object_fields = (
-        'city',
-        'latitude',
-        'longitude',
-        'postal_code',
-        'street_address',
-    )
 
     @classmethod
     def asn_pattern_mapping(cls, field) -> Union[dict, None]:
         return cls.__asn_pattern_mapping.get(field)
-
-    @classmethod
-    def attack_pattern_object_mapping(cls, field) -> Union[dict, None]:
-        return cls.__attack_pattern_object_mapping.get(field)
 
     @classmethod
     def course_of_action_object_mapping(cls) -> dict:
@@ -579,22 +536,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
         return cls.__http_request_extension_mapping.get(field)
 
     @classmethod
-    def identity_object_multiple_fields(cls) -> tuple:
-        return cls.__identity_object_multiple_fields
-
-    @classmethod
-    def identity_object_single_fields(cls) -> tuple:
-        return cls.__identity_object_single_fields
-
-    @classmethod
-    def location_object_fields(cls) -> tuple:
-        return cls.__location_object_fields
-
-    @classmethod
-    def location_object_mapping(cls) -> dict:
-        return cls.__location_object_mapping
-
-    @classmethod
     def network_connection_object_reference_mapping(cls, field) -> Union[str, None]:
         return cls.__network_connection_object_reference_mapping.get(field)
 
@@ -613,10 +554,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def observable_mapping(cls, field) -> Union[str, None]:
         return cls.__observable_mapping.get(field)
-
-    @classmethod
-    def organization_object_mapping(cls) -> dict:
-        return cls.__organization_object_mapping
 
     @classmethod
     def pattern_forbidden_relations(cls) -> tuple:
@@ -689,10 +626,6 @@ class ExternalSTIX2toMISPMapping(STIX2toMISPMapping):
     @classmethod
     def user_account_pattern_mapping(cls, field) -> Union[dict, None]:
         return cls.__user_account_pattern_mapping.get(field)
-
-    @classmethod
-    def vulnerability_object_mapping(cls) -> dict:
-        return cls.__vulnerability_object_mapping
 
     @classmethod
     def x509_hashes_object_mapping(cls) -> dict:

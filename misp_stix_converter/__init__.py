@@ -1,4 +1,4 @@
-__version__ = '2.4.174'
+__version__ = '2.4.182'
 
 import argparse
 from .misp_stix_mapping import Mapping # noqa
@@ -13,7 +13,7 @@ from .misp_stix_converter import ( # noqa
     _from_misp, misp_attribute_collection_to_stix1, misp_collection_to_stix2,
     misp_event_collection_to_stix1, misp_to_stix1, misp_to_stix2,
     stix_1_to_misp, stix_2_to_misp)
-# STIX 1 special halpers
+# STIX 1 special helpers
 from .misp_stix_converter import ( # noqa
     _get_campaigns, _get_courses_of_action, _get_events, _get_indicators,
     _get_observables, _get_threat_actors, _get_ttps, _from_misp)
@@ -30,6 +30,7 @@ from .misp_stix_converter import _misp_to_stix, _stix_to_misp # noqa
 from .stix2misp import ExternalSTIX2toMISPParser, InternalSTIX2toMISPParser # noqa
 from .stix2misp import ExternalSTIX2toMISPMapping, InternalSTIX2toMISPMapping # noqa
 from .stix2misp import STIX2PatternParser # noqa
+from .stix2misp import MISP_org_uuid # noqa
 from pathlib import Path
 
 
@@ -137,7 +138,7 @@ def main():
     )
     import_parser.add_argument(
         '-d', '--distribution', type=int, default=0,
-        help='Distribution level for the imported MIPS content.'
+        help='Distribution level for the imported MISP content.'
     )
     import_parser.add_argument(
         '-sg', '--sharing_group', type=int, default=None,
@@ -146,6 +147,18 @@ def main():
     import_parser.add_argument(
         '--galaxies_as_tags', action='store_true',
         help='Import MISP Galaxies as tag names instead of the standard Galaxy format.'
+    )
+    import_parser.add_argument(
+        '--org_uuid', default=MISP_org_uuid,
+        help='Organisation UUID to use when creating custom Galaxy clusters.'
+    )
+    import_parser.add_argument(
+        '-cd', '--cluster_distribution', type=int, default=0,
+        help='Galaxy Clusters distribution level in case of External STIX 2 content.'
+    )
+    import_parser.add_argument(
+        '-cg', '--cluster_sharing_group', type=int, default=None,
+        help='Galaxy Clusters sharing group ID in case of External STIX 2 content.'
     )
     import_parser.set_defaults(func=_stix_to_misp)
 
@@ -161,9 +174,9 @@ def main():
                 print(f'{field.capitalize()} encountered during the '
                         f'{feature} conversion process:\n {messages}')
         if 'fails' in traceback:
-            fails = '\n - '.join(traceback['fails'])
+            fails = _handle_return_message(traceback['fails'])
             print('Failed parsing the following - and the related error '
-                    f'message:\n - {fails}')
+                    f'message:\n {fails}')
         if 'results' in traceback:
             results = traceback['results']
             if isinstance(results, list):

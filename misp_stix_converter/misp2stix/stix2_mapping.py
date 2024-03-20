@@ -262,7 +262,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     )
     __vulnerability_meta_mapping = Mapping(
         **{
-            'aliases': '_parse_external_reference'
+            'aliases': '_parse_external_references'
         }
     )
 
@@ -286,6 +286,7 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
             'http-request': '_parse_http_request_object',
             'identity': '_parse_identity_object',
             'image': '_parse_image_object',
+            'intrusion-set': '_parse_intrusion_set_object',
             'ip-port': '_parse_ip_port_object',
             'ip|port': '_parse_ip_port_object',
             'legal-entity': '_parse_legal_entity_object',
@@ -529,6 +530,29 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     __image_uuid_fields = (
         'attachment',
         'url'
+    )
+    __intrusion_set_object_mapping = Mapping(
+        features={
+            'aliases': 'aliases',
+            'description': 'description',
+            'goals': 'goals',
+            'name': 'name',
+            'primary-motivation': 'primary_motivation',
+            'resource_level': 'resource_level',
+            'secondary-motivation': 'secondary_motivations'
+        },
+        timeline={
+            'first_seen': 'first_seen',
+            'last_seen': 'last_seen'
+        }
+    )
+    __intrusion_set_single_fields = (
+        'description',
+        'first_seen',
+        'last_seen',
+        'name',
+        'primary-motivation',
+        'resource_level'
     )
     __ip_port_object_mapping = Mapping(
         ip_features={
@@ -1045,6 +1069,14 @@ class MISPtoSTIX2Mapping(MISPtoSTIXMapping):
     @classmethod
     def intrusion_set_meta_mapping(cls, field: str) -> Union[str, None]:
         return cls.__intrusion_set_meta_mapping.get(field)
+
+    @classmethod
+    def intrusion_set_object_mapping(cls, field: str) -> Union[dict, None]:
+        return cls.__intrusion_set_object_mapping.get(field)
+
+    @classmethod
+    def intrusion_set_single_fields(cls) -> tuple:
+        return cls.__intrusion_set_single_fields
 
     @classmethod
     def ip_port_object_mapping(cls, field: str) -> Union[dict, None]:

@@ -3,7 +3,6 @@
 
 import json
 import os
-import re
 import sys
 from .misp2stix.framing import (
     _stix1_attributes_framing, _stix1_framing, _handle_namespaces,
@@ -14,7 +13,9 @@ from .misp2stix.misp_to_stix20 import MISPtoSTIX20Parser
 from .misp2stix.misp_to_stix21 import MISPtoSTIX21Parser
 from .misp2stix.stix1_mapping import NS_DICT, SCHEMALOC_DICT
 from .stix2misp.external_stix1_to_misp import ExternalSTIX1toMISPParser
-from .stix2misp.external_stix2_to_misp import ExternalSTIX2toMISPParser
+from .stix2misp.external_stix2_to_misp import (
+    ExternalSTIX2toMISPParser, MISP_org_uuid)
+from .stix2misp.importparser import _load_stix2_content
 from .stix2misp.internal_stix1_to_misp import InternalSTIX1toMISPParser
 from .stix2misp.internal_stix2_to_misp import InternalSTIX2toMISPParser
 from collections import defaultdict
@@ -27,8 +28,6 @@ from stix.core import (
     Campaigns, CoursesOfAction, Indicators, ThreatActors, STIXPackage)
 from stix.core.ttps import TTPs
 from stix2.base import STIXJSONEncoder
-from stix2.exceptions import InvalidValueError
-from stix2.parsing import parse as stix2_parser, ParseError
 from stix2.v20 import Bundle as Bundle_v20
 from stix2.v21 import Bundle as Bundle_v21
 from typing import List, Optional, Union
@@ -256,7 +255,7 @@ def misp_attribute_collection_to_stix1(
         in_memory: Optional[bool] = False,
         single_output: Optional[bool] = False,
         output_dir: Optional[_files_type] = None,
-        output_name: Optional[_files_type] = None):
+        output_name: Optional[_files_type] = None) -> dict:
     if return_format not in _STIX1_valid_formats:
         return_format = _STIX1_default_format
     if version not in _STIX1_valid_versions:
@@ -386,7 +385,7 @@ def misp_event_collection_to_stix1(
         in_memory: Optional[bool] = False,
         single_output: Optional[bool] = False,
         output_dir: Optional[_files_type] = None,
-        output_name: Optional[_files_type] = None):
+        output_name: Optional[_files_type] = None) -> dict:
     if return_format not in _STIX1_valid_formats:
         return_format = _STIX1_default_format
     if version not in _STIX1_valid_versions:
@@ -482,7 +481,7 @@ def misp_collection_to_stix2(
         in_memory: Optional[bool] = False,
         single_output: Optional[bool] = False,
         output_dir: Optional[_files_type] = None,
-        output_name: Optional[_files_type] = None):
+        output_name: Optional[_files_type] = None) -> dict:
     if version not in _STIX2_valid_versions:
         version = _STIX2_default_version
     parser = MISPtoSTIX21Parser() if version == '2.1' else MISPtoSTIX20Parser()
@@ -591,7 +590,7 @@ def misp_to_stix1(
         org: Optional[str] = _default_org,
         version: Optional[str] = _STIX1_default_version,
         output_dir: Optional[_files_type] = None,
-        output_name: Optional[_files_type] = None):
+        output_name: Optional[_files_type] = None) -> dict:
     if return_format not in _STIX1_valid_formats:
         return_format = _STIX1_default_format
     if version not in _STIX1_valid_versions:
@@ -615,7 +614,7 @@ def misp_to_stix1(
 def misp_to_stix2(filename: _files_type, debug: Optional[bool] = False,
                   version: Optional[str] = _STIX2_default_version,
                   output_dir: Optional[_files_type] = None,
-                  output_name: Optional[_files_type] = None):
+                  output_name: Optional[_files_type] = None) -> dict:
     if version not in _STIX2_valid_versions:
         version = _STIX2_default_version
     parser = MISPtoSTIX21Parser() if version == '2.1' else MISPtoSTIX20Parser()
@@ -643,8 +642,14 @@ def stix_1_to_misp(
     if isinstance(event, str):
         return event
     title = event.stix_header.title
-    from_misp = (title is not None and all(feature in title for feature in ('Export from ', 'MISP')))
-    stix_parser = InternalSTIX1toMISPParser() if from_misp else ExternalSTIX1toMISPParser()
+    from_misp = (
+        title is not None and
+        all(feature in title for feature in ('Export from ', 'MISP'))
+    )
+    stix_parser = (
+        InternalSTIX1toMISPParser() if from_misp
+        else ExternalSTIX1toMISPParser()
+    )
     stix_parser.load_event()
     stix_parser.build_misp_event(event)
     if output_filename is None:
@@ -654,25 +659,29 @@ def stix_1_to_misp(
     return 1
 
 
-def stix_2_to_misp(filename: _files_type, debug: Optional[bool] = False,
+def stix_2_to_misp(filename: _files_type,
+                   cluster_distribution: Optional[int] = 0,
+                   cluster_sharing_group_id: Optional[int] = None,
+                   debug: Optional[bool] = False,
                    distribution: Optional[int] = 0,
                    galaxies_as_tags: Optional[bool] = False,
+                   organisation_uuid: Optional[str] = MISP_org_uuid,
                    output_dir: Optional[_files_type]=None,
                    output_name: Optional[_files_type]=None,
                    sharing_group_id: Optional[int] = None,
-                   single_event: Optional[bool] = False):
+                   single_event: Optional[bool] = False) -> dict:
     if isinstance(filename, str):
         filename = Path(filename).resolve()
     try:
-        with open(filename, 'rt', encoding='utf-8') as f:
-            bundle = stix2_parser(
-                f.read(), allow_custom=True, interoperability=True
-            )
-    except (ParseError, InvalidValueError) as error:
+        bundle = _load_stix2_content(filename)
+    except Exception as error:
         return {'errors': [f'{filename} -  {error.__str__()}']}
-    from_misp = _from_misp(bundle.objects)
-    parser = InternalSTIX2toMISPParser if from_misp else ExternalSTIX2toMISPParser
-    stix_parser = parser(distribution, sharing_group_id, galaxies_as_tags)
+    parser, args = _get_stix2_parser(
+        _from_misp(bundle.objects), distribution, sharing_group_id,
+        galaxies_as_tags, organisation_uuid,
+        cluster_distribution, cluster_sharing_group_id
+    )
+    stix_parser = parser(*args)
     stix_parser.load_stix_bundle(bundle)
     stix_parser.parse_stix_bundle(single_event)
     if output_dir is None:
@@ -702,6 +711,12 @@ def _from_misp(stix_objects):
         if stix_object['type'] in _STIX2_event_types and any(tag in stix_object.get('labels', []) for tag in _MISP_STIX_tags):
             return True
     return False
+
+
+def _get_stix2_parser(from_misp: bool, *args: tuple) -> tuple:
+    if from_misp:
+        return InternalSTIX2toMISPParser, args[:-3]
+    return ExternalSTIX2toMISPParser, args
 
 
 def _load_stix_event(filename, tries=0):
@@ -1001,9 +1016,11 @@ def _stix_to_misp(stix_args):
     success = []
     for filename in stix_args.file:
         traceback = method(
-            filename, debug=stix_args.debug,
-            distribution=stix_args.distribution,
+            filename, cluster_distribution=stix_args.cluster_distribution,
+            cluster_sharing_group_id=stix_args.cluster_sharing_group,
+            debug=stix_args.debug, distribution=stix_args.distribution,
             galaxies_as_tags=stix_args.galaxies_as_tags,
+            organisation_uuid=stix_args.org_uuid,
             output_dir=stix_args.output_dir,
             output_name=stix_args.output_name,
             sharing_group_id=stix_args.sharing_group,
@@ -1016,6 +1033,12 @@ def _stix_to_misp(stix_args):
                     results[key].update(value)
             continue
         for field in ('errors', 'warnings'):
+            if field not in traceback:
+                continue
+            content = traceback[field]
+            if isinstance(content, list):
+                results['fails'][filename.name] = content
+                continue
             for identifier, values in traceback[field].items():
                 results['fails'][identifier] = tuple(values)
     if success:
