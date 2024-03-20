@@ -15,6 +15,15 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             '2': '_parse_bundle_with_multiple_reports'
         }
     )
+    __mac_address_pattern = '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
+    __marking_extension_mapping = Mapping(
+        **{
+            'extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce': 'acs'
+        }
+    )
+    __object_type_refs_to_skip = (
+        'opinion', 'relationship', 'sighting', 'x-misp-opinion'
+    )
     __observable_object_types = (
         'network-traffic',
         'file',
@@ -34,17 +43,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         'user-account',
         'windows-registry-key',
         'x509-certificate'
-    )
-    __timeline_mapping = Mapping(
-        **{
-            'indicator': ('valid_from', 'valid_until'),
-            'observed-data': ('first_observed', 'last_observed')
-        }
-    )
-    __mac_address_pattern = '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
-
-    __object_type_refs_to_skip = (
-        'opinion', 'relationship', 'sighting', 'x-misp-opinion'
     )
     __stix_object_loading_mapping = Mapping(
         **{
@@ -101,6 +99,12 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'x-misp-attribute': '_parse_custom_object',
             'x-misp-galaxy-cluster': '_parse_custom_object',
             'x-misp-object': '_parse_custom_object'
+        }
+    )
+    __timeline_mapping = Mapping(
+        **{
+            'indicator': ('valid_from', 'valid_until'),
+            'observed-data': ('first_observed', 'last_observed')
         }
     )
 
@@ -817,6 +821,10 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     @classmethod
     def mac_address_pattern(cls) -> str:
         return cls.__mac_address_pattern
+
+    @classmethod
+    def marking_extension_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__marking_extension_mapping.get(field)
 
     @classmethod
     def message_id_attribute(cls) -> dict:

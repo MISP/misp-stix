@@ -600,8 +600,19 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _handle_misp_event_tags(
             self, misp_event: MISPEvent, stix_object: _GROUPING_REPORT_TYPING):
-        for tag in  self._handle_tags_from_stix_fields(stix_object):
-            misp_event.add_tag(tag)
+        for marking in self._handle_tags_from_stix_fields(stix_object):
+            if isinstance(marking, str):
+                misp_event.add_tag(tag)
+                continue
+            if not self.galaxies_as_tags:
+                clusters = {
+                    cluster.type: cluster for cluster in marking['cluster']
+                }
+                for galaxy in self._aggregate_galaxy_clusters(clusters):
+                    misp_event.add_galaxy(galaxy)
+            if marking.get('tags'):
+                for tag in marking['tags']:
+                    misp_event.add_tag(tag)
         if hasattr(stix_object, 'labels'):
             self._fetch_tags_from_labels(misp_event, stix_object.labels)
 
@@ -805,6 +816,19 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if hasattr(marking_definition, 'name'):
             # should be TLP 2.0 definition
             return marking_definition.name.lower()
+        if hasattr(marking_definition, 'extensions'):
+            extension_definition = defaultdict(list)
+            version = getattr(marking_definition, 'version', '2.0')
+            for identifier, extension in marking_definition.extensions.items():
+                feature = self._mapping.marking_extension_mapping(identifier)
+                if feature is None:
+                    continue
+                getattr(self, f'_parse_{feature}_marking_definition')(
+                    extension, extension_definition, version,
+                    f"{marking_definition.id} - {identifier}"
+                )
+            if extension_definition:
+                return extension_definition
         raise MarkingDefinitionLoadingError(marking_definition.id)
 
     def _parse_markings(self, marking_refs: list):
@@ -1118,15 +1142,39 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                             stix_object: _SDO_TYPING) -> MISPAttribute:
         misp_attribute = MISPAttribute()
         misp_attribute.from_dict(**attribute)
-        for tag in self._handle_tags_from_stix_fields(stix_object):
-            misp_attribute.add_tag(tag)
+        for marking in self._handle_tags_from_stix_fields(stix_object):
+            if isinstance(marking, str):
+                misp_attribute.add_tag(marking)
+                continue
+            if not self.galaxies_as_tags:
+                clusters = {
+                    cluster.type: cluster for cluster in marking['cluster']
+                }
+                for galaxy in self._aggregate_galaxy_clusters(clusters):
+                    misp_attribute.add_galaxy(galaxy)
+            if marking.get('tags'):
+                for tag in marking['tags']:
+                    misp_attribute.add_tag(tag)
         return self.misp_event.add_attribute(**misp_attribute)
 
     def _add_misp_object(self, misp_object: MISPObject,
                          stix_object: _SDO_TYPING) -> MISPObject:
-        for tag in self._handle_tags_from_stix_fields(stix_object):
-            for attribute in misp_object.attributes:
-                attribute.add_tag(tag)
+        for marking in self._handle_tags_from_stix_fields(stix_object):
+            if isinstance(marking, str):
+                for attribute in misp_object.attributes:
+                    attribute.add_tag(marking)
+                continue
+            if not self.galaxies_as_tags:
+                clusters = {
+                    cluster.type: cluster for cluster in marking['cluster']
+                }
+                for galaxy in self._aggregate_galaxy_clusters(clusters):
+                    for attribute in misp_object.attributes:
+                        attribute.add_galaxy(galaxy)
+            if marking.get('tags'):
+                for tag in marking['tags']:
+                    for attribute in misp_object.attributes:
+                        attribute.add_tag(tag)
         return self.misp_event.add_object(misp_object)
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
