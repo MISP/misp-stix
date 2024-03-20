@@ -602,12 +602,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self, misp_event: MISPEvent, stix_object: _GROUPING_REPORT_TYPING):
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
-                misp_event.add_tag(tag)
+                misp_event.add_tag(marking)
                 continue
             if not self.galaxies_as_tags:
-                clusters = {
-                    cluster.type: cluster for cluster in marking['cluster']
-                }
+                clusters = defaultdict(list)
+                for cluster in marking['cluster']:
+                    clusters[cluster.type].append(cluster)
                 for galaxy in self._aggregate_galaxy_clusters(clusters):
                     misp_event.add_galaxy(galaxy)
             if marking.get('tags'):
@@ -1147,9 +1147,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 misp_attribute.add_tag(marking)
                 continue
             if not self.galaxies_as_tags:
-                clusters = {
-                    cluster.type: cluster for cluster in marking['cluster']
-                }
+                clusters = defaultdict(list)
+                for cluster in marking['cluster']:
+                    clusters[cluster.type].append(cluster)
                 for galaxy in self._aggregate_galaxy_clusters(clusters):
                     misp_attribute.add_galaxy(galaxy)
             if marking.get('tags'):
@@ -1165,9 +1165,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     attribute.add_tag(marking)
                 continue
             if not self.galaxies_as_tags:
-                clusters = {
-                    cluster.type: cluster for cluster in marking['cluster']
-                }
+                clusters = defaultdict(list)
+                for cluster in marking['cluster']:
+                    clusters[cluster.type].append(cluster)
                 for galaxy in self._aggregate_galaxy_clusters(clusters):
                     for attribute in misp_object.attributes:
                         attribute.add_galaxy(galaxy)
