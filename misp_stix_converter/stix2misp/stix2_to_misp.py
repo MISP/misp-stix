@@ -771,17 +771,32 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         meta = {}
         for key, value in extension.items():
             if isinstance(value, dict):
-                for field, subvalue in value.items():
-                    meta[f'{key}.{field}'] = subvalue
+                for field, subvalues in value.items():
+                    if field in self._mapping.marking_vocabularies_fields():
+                        if isinstance(subvalues, list):
+                            for subvalue in subvalues:
+                                extension_definition['tags'].append(
+                                    f'acs-marking:{field}="{subvalue}"'
+                                )
+                        else:
+                            extension_definition['tags'].append(
+                                f'acs-marking:{field}="{subvalues}"'
+                            )
+                    meta[f'{key}.{field}'] = subvalues
                 continue
             if key == 'access_privilege':
                 if len(value) == 1:
-                    privilege = value[0]
-                    for feature, privilege in value[0].items():
+                    access_privilege = value[0]
+                    for feature, privilege in access_privilege.items():
                         if isinstance(privilege, dict):
                             for field, scope in privilege.items():
                                 meta[f'{key}.{feature}.{field}'] = scope
                             continue
+                        if (feature == 'privilege_action' and
+                                access_privilege['rule_effect'] == 'permit'):
+                            extension_definition['tags'].append(
+                                f'acs-marking:{feature}="{privilege}"'
+                            )
                         meta[f'{key}.{feature}'] = privilege
                     continue
                 for privilege in value:
@@ -810,7 +825,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             meta=meta
         )
         extension_definition['cluster'].append(galaxy_cluster)
-
 
     def _parse_marking_definition(
             self, marking_definition: _MARKING_DEFINITION_TYPING) -> dict | str:

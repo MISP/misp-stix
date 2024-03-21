@@ -21,6 +21,10 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce': 'acs'
         }
     )
+    __marking_vocabularies_fields = (
+        'caveat', 'classification', 'entity', 'formal_determination',
+        'sensitivity', 'shareability'
+    )
     __object_type_refs_to_skip = (
         'opinion', 'relationship', 'sighting', 'x-misp-opinion'
     )
@@ -825,6 +829,10 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     @classmethod
     def marking_extension_mapping(cls, field: str) -> Union[str, None]:
         return cls.__marking_extension_mapping.get(field)
+
+    @classmethod
+    def marking_vocabularies_fields(cls) -> tuple:
+        return cls.__marking_vocabularies_fields
 
     @classmethod
     def message_id_attribute(cls) -> dict:
