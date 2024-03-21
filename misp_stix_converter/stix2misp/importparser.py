@@ -9,7 +9,11 @@ from abc import ABCMeta
 from collections import defaultdict
 from pathlib import Path
 from pymisp import AbstractMISP, MISPEvent, MISPObject
+from stix2.exceptions import InvalidValueError
+from stix2.parsing import dict_to_stix2, parse as stix2_parser, ParseError
+from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.sdo import Indicator as Indicator_v20
+from stix2.v21.bundle import Bundle as Bundle_v21
 from stix2.v21.sdo import Indicator as Indicator_v21
 from types import GeneratorType
 from typing import Optional, Union
@@ -24,6 +28,43 @@ _DATA_PATH = Path(__file__).parents[1].resolve() / 'data'
 _VALID_DISTRIBUTIONS = (0, 1, 2, 3, 4)
 _RFC_VERSIONS = (1, 3, 4, 5)
 _UUIDv4 = UUID('76beed5f-7251-457e-8c2a-b45f7b589d3d')
+
+
+def _get_stix2_content_version(stix2_content: dict):
+    for stix_object in stix2_content['objects']:
+        if stix_object.get('spec_version'):
+            return '2.1'
+    return '2.0'
+
+
+def _handle_stix2_loading_error(stix2_content: dict):
+    version = _get_stix2_content_version(stix2_content)
+    if isinstance(stix2_content, dict):
+        if version == '2.1' and stix2_content.get('spec_version') == '2.0':
+            del stix2_content['spec_version']
+            return dict_to_stix2(
+                stix2_content, allow_custom=True, interoperability=True
+            )
+        if version == '2.0' and stix2_content.get('spec_version') == '2.1':
+            stix2_content['spec_version'] = '2.0'
+            return dict_to_stix2(
+                stix2_content, allow_custom=True, interoperability=True
+            )
+        bundle = Bundle_v21 if version == '2.1' else Bundle_v20
+        if 'objects' in stix2_content:
+            stix2_content = stix2_content['objects']
+    return bundle(*stix2_content, allow_custom=True, interoperability=True)
+
+
+def _load_stix2_content(filename):
+    with open(filename, 'rt', encoding='utf-8') as f:
+        stix2_content = f.read()
+    try:
+        return stix2_parser(
+            stix2_content, allow_custom=True, interoperability=True
+        )
+    except (InvalidValueError, ParseError):
+        return _handle_stix2_loading_error(json.loads(stix2_content))
 
 
 class STIXtoMISPParser(metaclass=ABCMeta):
@@ -44,7 +85,6 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         )
         if self.galaxies_as_tags:
             self.__galaxy_feature = 'as_tag_names'
-            self.__synonyms_path = _DATA_PATH / 'synonymsToTagNames.json'
         else:
             self._galaxies: dict = {}
             self.__galaxy_feature = 'as_container'
@@ -98,6 +138,14 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         return self.__galaxies_as_tags
 
     @property
+    def galaxy_definitions(self) -> Path:
+        try:
+            return self.__galaxy_definitions
+        except AttributeError:
+            self.__get_galaxy_definitions()
+            return self.__galaxy_definitions
+
+    @property
     def galaxy_feature(self) -> bool:
         return self.__galaxy_feature
 
@@ -124,10 +172,6 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         except AttributeError:
             self.__get_synonyms_mapping()
             return self.__synonyms_mapping
-
-    @property
-    def synonyms_path(self) -> Path:
-        return self.__synonyms_path
 
     @property
     def warnings(self) -> defaultdict:
@@ -160,6 +204,12 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     def _critical_error(self, exception: Exception):
         self.__errors[self._identifier].add(
             f'The Following exception was raised: {exception}'
+        )
+
+    def _custom_object_error(self, custom_object_id: str, exception: Exception):
+        self.__errors[self._identifier].add(
+            'Error parsing the Custom object with id'
+            f'{custom_object_id}: {self._parse_traceback(exception)}'
         )
 
     def _distribution_error(self, exception: Exception):
@@ -210,6 +260,12 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f'Error parsing the Malware object with id {malware_id}: {tb}'
         )
 
+    def _marking_definition_error(self, marking_definition_id: str):
+        self.__errors[self._identifier].add(
+            f'Error parsing the Marking Definition object with id '
+            f'{marking_definition_id}'
+        )
+
     def _no_converted_content_from_pattern_warning(
             self, indicator: _INDICATOR_TYPING):
         self.__warnings[self._identifier].add(
@@ -235,7 +291,8 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             f": {observable_types.__str__().replace('_', ', ')}"
         )
 
-    def _observable_object_error(self, observable_id: str, exception: Exception):
+    def _observable_object_error(
+            self, observable_id: str, exception: Exception):
         self.__errors[self._identifier].add(
             f'Error parsing the Observable object with id {observable_id}'
             f': {self._parse_traceback(exception)}'
@@ -367,6 +424,13 @@ class STIXtoMISPParser(metaclass=ABCMeta):
     #          SYNONYMS TO GALAXY TAG NAMES MAPPING HANDLING METHODS.          #
     ############################################################################
 
+    def __check_fingerprint(self):
+        latest_fingerprint = self.__get_misp_galaxy_fingerprint()
+        if latest_fingerprint is not None:
+            fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
+            with open(fingerprint_path, 'wt', encoding='utf-8') as f:
+                f.write(latest_fingerprint)
+
     def __galaxies_up_to_date(self) -> bool:
         fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
         if not fingerprint_path.exists():
@@ -377,6 +441,23 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         with open(fingerprint_path, 'rt', encoding='utf-8') as f:
             fingerprint = f.read()
         return fingerprint == latest_fingerprint
+
+    def __get_galaxy_definitions(self):
+        definitions_path = _DATA_PATH / 'galaxyDefinitions.json'
+        if not definitions_path.exists() or not self.__galaxies_up_to_date():
+            data_path = _DATA_PATH / 'misp-galaxy' / 'galaxies'
+            if not data_path.exists():
+                raise UnavailableGalaxyResourcesError(data_path)
+            definitions = {}
+            for filename in data_path.glob('*.json'):
+                with open(filename, 'rt', encoding='utf-8') as f:
+                    galaxy_definition = json.loads(f.read())
+                definitions[galaxy_definition['type']] = galaxy_definition
+            with open(definitions_path, 'wt', encoding='utf-8') as f:
+                f.write(json.dumps(definitions))
+            self.__check_fingerprint()
+        with open(definitions_path, 'rt', encoding='utf-8') as f:
+            self.__galaxy_definitions = json.load(f)
 
     @staticmethod
     def __get_misp_galaxy_fingerprint():
@@ -397,7 +478,8 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             return None
 
     def __get_synonyms_mapping(self):
-        if not self.synonyms_path.exists() or not self.__galaxies_up_to_date():
+        synonyms_path = _DATA_PATH / 'synonymsToTagNames.json'
+        if not synonyms_path.exists() or not self.__galaxies_up_to_date():
             data_path = _DATA_PATH / 'misp-galaxy' / 'clusters'
             if not data_path.exists():
                 raise UnavailableGalaxyResourcesError(data_path)
@@ -413,15 +495,11 @@ class STIXtoMISPParser(metaclass=ABCMeta):
                     if cluster.get('meta', {}).get('synonyms') is not None:
                         for synonym in cluster['meta']['synonyms']:
                             synonyms_mapping[synonym].append(tag_name)
-            with open(self.synonyms_path, 'wt', encoding='utf-8') as f:
+            with open(synonyms_path, 'wt', encoding='utf-8') as f:
                 f.write(json.dumps(synonyms_mapping))
-            latest_fingerprint = self.__get_misp_galaxy_fingerprint()
-            if latest_fingerprint is not None:
-                fingerprint_path = _DATA_PATH / 'synonymsToTagNames.fingerprint'
-                with open(fingerprint_path, 'wt', encoding='utf-8') as f:
-                    f.write(latest_fingerprint)
-        with open(self.synonyms_path, 'rt', encoding='utf-8') as f:
-            self.__synonyms_mapping = json.loads(f.read())
+            self.__check_fingerprint()
+        with open(synonyms_path, 'rt', encoding='utf-8') as f:
+            self.__synonyms_mapping = json.load(f)
 
     ############################################################################
     #                     UUID SANITATION HANDLING METHODS                     #
@@ -429,7 +507,11 @@ class STIXtoMISPParser(metaclass=ABCMeta):
 
     def _check_uuid(self, object_id: str):
         object_uuid = self._extract_uuid(object_id)
-        if UUID(object_uuid).version not in _RFC_VERSIONS and object_uuid not in self.replacement_uuids:
+        replacement = (
+            UUID(object_uuid).version not in _RFC_VERSIONS and
+            object_uuid not in self.replacement_uuids
+        )
+        if replacement:
             self.replacement_uuids[object_uuid] = self._create_v5_uuid(
                 object_uuid
             )
@@ -445,14 +527,20 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         if attribute_uuid in self.replacement_uuids:
             return {
                 'uuid': self.replacement_uuids[attribute_uuid],
-                'comment': f'{comment} - {attribute_comment}' if comment else attribute_comment
+                'comment': (
+                    f'{comment} - {attribute_comment}'
+                    if comment else attribute_comment
+                )
             }
         if UUID(attribute_uuid).version not in _RFC_VERSIONS:
             sanitised_uuid = self._create_v5_uuid(attribute_uuid)
             self.replacement_uuids[attribute_uuid] = sanitised_uuid
             return {
                 'uuid': sanitised_uuid,
-                'comment': f'{comment} - {attribute_comment}' if comment else attribute_comment
+                'comment': (
+                    f'{comment} - {attribute_comment}'
+                    if comment else attribute_comment
+                )
             }
         return {'uuid': attribute_uuid}
 
@@ -461,7 +549,10 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         object_uuid = self._extract_uuid(object_id)
         if object_uuid in self.replacement_uuids:
             comment = f'Original UUID was: {object_uuid}'
-            misp_object.comment = f'{misp_object.comment} - {comment}' if hasattr(misp_object, 'comment') else comment
+            misp_object.comment = (
+                f'{misp_object.comment} - {comment}'
+                if hasattr(misp_object, 'comment') else comment
+            )
             object_uuid = self.replacement_uuids[object_uuid]
         misp_object.uuid = object_uuid
 

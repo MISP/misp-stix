@@ -6,7 +6,7 @@ from base64 import b64encode
 from collections import defaultdict
 from misp_stix_converter import (
     ExternalSTIX2toMISPMapping, ExternalSTIX2toMISPParser,
-    InternalSTIX2toMISPParser)
+    InternalSTIX2toMISPParser, MISP_org_uuid)
 from uuid import UUID, uuid5
 from ._test_stix import TestSTIX
 from .update_documentation import AttributesDocumentationUpdater, ObjectsDocumentationUpdater
@@ -330,7 +330,13 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         galaxy = galaxies[0]
         self.assertEqual(len(galaxy.clusters), 1)
         cluster = galaxy.clusters[0]
-        self.assertEqual(cluster.uuid, stix_object.id.split('--')[1])
+        self.assertEqual(
+            cluster.uuid,
+            uuid5(
+                self._UUIDv4,
+                f"{stix_object.id.split('--')[1]} - {MISP_org_uuid}"
+            )
+        )
         version = getattr(stix_object, 'spec_version', '2.0')
         self._assert_multiple_equal(
             galaxy.type, cluster.type, f'stix-{version}-{stix_object.type}'
@@ -533,26 +539,26 @@ class TestInternalSTIX2Import(TestSTIX2Import):
     ################################################################################
 
     def _check_attack_pattern_galaxy(self, galaxy, attack_pattern):
-        self._check_galaxy_fields(
-            galaxy, attack_pattern, 'mitre-pre-attack-attack-pattern',
-            'Pre Attack - Attack Pattern'
+        meta = self._check_galaxy_fields_with_external_id(
+            galaxy, attack_pattern, 'mitre-attack-pattern', 'Attack Pattern'
         )
-        meta = galaxy.clusters[0].meta
         external_id, url = attack_pattern.external_references
         self.assertEqual(meta['external_id'], external_id.external_id)
         self.assertEqual(meta['refs'], [url.url])
-        kill_chain = attack_pattern.kill_chain_phases[0]
+        evasion, escalation = attack_pattern.kill_chain_phases
         self.assertEqual(
             meta['kill_chain'],
-            [f'{kill_chain.kill_chain_name}:{kill_chain.phase_name}']
+            [
+                f'{evasion.kill_chain_name}:{evasion.phase_name}',
+                f'{escalation.kill_chain_name}:{escalation.phase_name}'
+            ]
         )
 
     def _check_course_of_action_galaxy(self, galaxy, course_of_action):
-        self._check_galaxy_fields(
+        meta = self._check_galaxy_fields_with_external_id(
             galaxy, course_of_action, 'mitre-course-of-action',
             'Course of Action'
         )
-        meta = galaxy.clusters[0].meta
         external_id, *urls = course_of_action.external_references
         self.assertEqual(meta['external_id'], external_id.external_id)
         for ref, url in zip(meta['refs'], urls):
@@ -562,50 +568,72 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         cluster = galaxy.clusters[0]
         self._assert_multiple_equal(galaxy.type, cluster.type, 'tea-matrix')
         self.assertEqual(galaxy.name, 'Tea Matrix')
-        galaxy_description, cluster_description = custom.x_misp_description.split(' | ')
-        self.assertEqual(galaxy.description, galaxy_description)
         self.assertEqual(cluster.value, custom.x_misp_value)
-        self.assertEqual(cluster.description, cluster_description)
+        self.assertEqual(cluster.description, custom.x_misp_description)
 
     def _check_galaxy_fields(self, galaxy, stix_object, galaxy_type, galaxy_name):
         cluster = galaxy.clusters[0]
         self._assert_multiple_equal(galaxy.type, cluster.type, galaxy_type)
         self.assertEqual(galaxy.name, galaxy_name)
-        galaxy_description, cluster_description = stix_object.description.split(' | ')
-        self.assertEqual(galaxy.description, galaxy_description)
         self.assertEqual(cluster.value, stix_object.name)
-        self.assertEqual(cluster.description, cluster_description)
+        self.assertEqual(cluster.description, stix_object.description)
+        return cluster.meta
+
+    def _check_galaxy_fields_with_external_id(self, galaxy, stix_object, galaxy_type, galaxy_name):
+        cluster = galaxy.clusters[0]
+        self._assert_multiple_equal(galaxy.type, cluster.type, galaxy_type)
+        self.assertEqual(galaxy.name, galaxy_name)
+        external_id = None
+        if hasattr(stix_object, 'external_references'):
+            for external_reference in stix_object.external_references:
+                if hasattr(external_reference, 'external_id'):
+                    external_id = external_reference.external_id
+                    break
+        if external_id is None:
+            self.assertEqual(cluster.value, stix_object.name)
+        else:
+            self.assertEqual(
+                cluster.value, f"{stix_object.name} - {external_id}"
+            )
+        self.assertEqual(cluster.description, stix_object.description)
+        return cluster.meta
 
     def _check_generic_malware_galaxy(self, galaxy, malware):
-        self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
-        meta = galaxy.clusters[0].meta
+        meta = self._check_galaxy_fields_with_external_id(
+            galaxy, malware, 'mitre-malware', 'Malware'
+        )
         if hasattr(malware, 'aliases'):
             self.assertEqual(meta['synonyms'], malware.aliases)
         if hasattr(malware, 'is_family'):
             self.assertEqual(meta['is_family'], malware.is_family)
 
     def _check_intrusion_set_galaxy(self, galaxy, intrusion_set):
-        self._check_galaxy_fields(
+        meta = self._check_galaxy_fields_with_external_id(
             galaxy, intrusion_set, 'mitre-intrusion-set', 'Intrusion Set'
         )
-        meta = galaxy.clusters[0].meta
         external_id, *urls = intrusion_set.external_references
         self.assertEqual(meta['external_id'], external_id.external_id)
         for ref, url in zip(meta['refs'], urls):
             self.assertEqual(ref, url.url)
-        self.assertEqual(meta['synonyms'], intrusion_set.aliases)
+        if hasattr(intrusion_set, 'aliases'):
+            self.assertEqual(meta['synonyms'], intrusion_set.aliases)
+        else:
+            self.assertEqual(meta['synonyms'], [intrusion_set.name])
 
     def _check_malware_galaxy(self, galaxy, malware):
-        self._check_galaxy_fields(galaxy, malware, 'mitre-malware', 'Malware')
-        meta = galaxy.clusters[0].meta
+        meta = self._check_galaxy_fields_with_external_id(
+            galaxy, malware, 'mitre-malware', 'Malware'
+        )
         external_id, *urls = malware.external_references
         self.assertEqual(meta['external_id'], external_id.external_id)
         for ref, url in zip(meta['refs'], urls):
             self.assertEqual(ref, url.url)
         if hasattr(malware, 'aliases'):
             self.assertEqual(meta['synonyms'], malware.aliases)
-        else:
+        elif hasattr(malware, 'x_misp_synonyms'):
             self.assertEqual(meta['synonyms'], malware.x_misp_synonyms)
+        else:
+            self.assertEqual(meta['synonyms'], [malware.name])
         if hasattr(malware, 'is_family'):
             self.assertEqual(meta['is_family'], malware.is_family)
         self.assertEqual(meta['mitre_platforms'], malware.x_misp_mitre_platforms)
@@ -618,10 +646,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(cluster.value, identity.name)
 
     def _check_threat_actor_galaxy(self, galaxy, threat_actor):
-        self._check_galaxy_fields(
+        meta = self._check_galaxy_fields(
             galaxy, threat_actor, 'threat-actor', 'Threat Actor'
         )
-        meta = galaxy.clusters[0].meta
         self.assertEqual(meta['synonyms'], threat_actor.aliases)
         self.assertEqual(
             meta['cfr-type-of-incident'],
@@ -629,8 +656,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         )
 
     def _check_tool_galaxy(self, galaxy, tool):
-        self._check_galaxy_fields(galaxy, tool, 'mitre-tool', 'Tool')
-        meta = galaxy.clusters[0].meta
+        meta = self._check_galaxy_fields_with_external_id(
+            galaxy, tool, 'mitre-tool', 'Tool'
+        )
         if hasattr(tool, 'aliases'):
             self.assertEqual(meta['synonyms'], tool.aliases)
         else:
@@ -642,11 +670,10 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(meta['mitre_platforms'], tool.x_misp_mitre_platforms)
 
     def _check_vulnerability_galaxy(self, galaxy, vulnerability):
-        self._check_galaxy_fields(
+        meta = self._check_galaxy_fields(
             galaxy, vulnerability, 'branded-vulnerability',
             'Branded Vulnerability'
         )
-        meta = galaxy.clusters[0].meta
         self.assertEqual(
             meta['aliases'][0],
             vulnerability.external_references[0]['external_id']
@@ -1364,6 +1391,26 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(host.object_relation, 'host')
         self.assertEqual(host.value, domain_name.value)
 
+    def _check_identity_object(self, misp_object, identity):
+        self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        self.assertEqual(misp_object.name, 'identity')
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            identity.created,
+            identity.modified
+        )
+        self._check_object_labels(misp_object, identity.labels, False)
+        name, description, contact, identity_class, roles = misp_object.attributes
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, identity.name)
+        self.assertEqual(description.object_relation, 'description')
+        self.assertEqual(description.value, identity.description)
+        self.assertEqual(contact.object_relation, 'contact_information')
+        self.assertEqual(contact.value, identity.contact_information)
+        self.assertEqual(identity_class.object_relation, 'identity_class')
+        self.assertEqual(identity_class.value, identity.identity_class)
+        return roles
+
     def _check_image_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)
         name, payload_bin, _, x_misp_filename, x_misp_url, x_misp_image_text = pattern[1:-1].split(' AND ')
@@ -1402,6 +1449,36 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(url.type, 'url')
         self.assertEqual(url.object_relation, 'url')
         self.assertEqual(url.value, artifact.x_misp_url)
+
+    def _check_intrusion_set_object(self, misp_object, intrusion_set):
+        self.assertEqual(misp_object.uuid, intrusion_set.id.split('--')[1])
+        self.assertEqual(misp_object.name, intrusion_set.type)
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            intrusion_set.created,
+            intrusion_set.modified
+        )
+        self._check_object_labels(misp_object, intrusion_set.labels, False)
+        name, description, alias, first_seen, *goals, last_seen, level, primary, secondary = misp_object.attributes
+        self.assertEqual(name.object_relation, 'name')
+        self.assertEqual(name.value, intrusion_set.name)
+        self.assertEqual(description.object_relation, 'description')
+        self.assertEqual(description.value, intrusion_set.description)
+        self.assertEqual(alias.object_relation, 'aliases')
+        self.assertEqual(alias.value, intrusion_set.aliases[0])
+        self.assertEqual(first_seen.object_relation, 'first_seen')
+        self.assertEqual(first_seen.value, intrusion_set.first_seen)
+        for n, goal in enumerate(goals):
+            self.assertEqual(goal.object_relation, 'goals')
+            self.assertEqual(goal.value, intrusion_set.goals[n])
+        self.assertEqual(last_seen.object_relation, 'last_seen')
+        self.assertEqual(last_seen.value, intrusion_set.last_seen)
+        self.assertEqual(level.object_relation, 'resource_level')
+        self.assertEqual(level.value, intrusion_set.resource_level)
+        self.assertEqual(primary.object_relation, 'primary-motivation')
+        self.assertEqual(primary.value, intrusion_set.primary_motivation)
+        self.assertEqual(secondary.object_relation, 'secondary-motivation')
+        self.assertEqual(secondary.value, intrusion_set.secondary_motivations[0])
 
     def _check_ip_port_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 4)
@@ -1928,6 +2005,25 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(ssdeep.object_relation, 'ssdeep')
         self.assertEqual(ssdeep.value, self._get_pattern_value(SSDEEP))
 
+    def _check_person_object(self, misp_object, identity):
+        self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
+        self.assertEqual(misp_object.name, 'person')
+        self._assert_multiple_equal(
+            misp_object.timestamp,
+            identity.created,
+            identity.modified
+        )
+        self._check_object_labels(misp_object, identity.labels, False)
+        name, role, nationality, passport, phone = misp_object.attributes
+        self.assertEqual(name.object_relation, 'full-name')
+        self.assertEqual(name.value, identity.name)
+        self.assertEqual(nationality.object_relation, 'nationality')
+        self.assertEqual(nationality.value, identity.x_misp_nationality)
+        self.assertEqual(passport.object_relation, 'passport-number')
+        self.assertEqual(passport.value, identity.x_misp_passport_number)
+        self.assertEqual(identity.contact_information, f'{phone.object_relation}: {phone.value}')
+        return role
+
     def _check_process_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 10)
         name, pid, image, parent_command_line, parent_image, parent_pid, parent_name, child_pid, hidden, port = attributes
@@ -2062,8 +2158,14 @@ class TestInternalSTIX2Import(TestSTIX2Import):
 
     def _check_registry_key_observable_object(self, attributes, observable):
         self.assertEqual(len(attributes), 6)
-        data, data_type, name, key, modified_time, hive = attributes
+        key, modified_time, hive, data, data_type, name = attributes
         values = observable['values'][0]
+        self.assertEqual(key.type, 'regkey')
+        self.assertEqual(key.object_relation, 'key')
+        self.assertEqual(key.value, observable.key)
+        self.assertEqual(hive.type, 'text')
+        self.assertEqual(hive.object_relation, 'hive')
+        self.assertEqual(hive.value, observable.x_misp_hive)
         self.assertEqual(data.type, 'text')
         self.assertEqual(data.object_relation, 'data')
         self.assertEqual(data.value, values.data)
@@ -2073,12 +2175,6 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(name.type, 'text')
         self.assertEqual(name.object_relation, 'name')
         self.assertEqual(name.value, values.name)
-        self.assertEqual(key.type, 'regkey')
-        self.assertEqual(key.object_relation, 'key')
-        self.assertEqual(key.value, observable.key)
-        self.assertEqual(hive.type, 'text')
-        self.assertEqual(hive.object_relation, 'hive')
-        self.assertEqual(hive.value, observable.x_misp_hive)
         return modified_time
 
     def _check_script_object(self, misp_object, stix_object):
@@ -2285,9 +2381,9 @@ class TestInternalSTIX2Import(TestSTIX2Import):
             self._get_pattern_value(user_avatar_data)
         )
 
-    def _check_user_account_observable_object(self, attributes, observable):
-        self.assertEqual(len(attributes), 11)
-        username, account_type, password, display_name, user_id, user_avatar, last_changed, group_id, group1, group2, home_dir = attributes
+    def _check_user_account_observable_object(self, observable, *attributes):
+        self.assertEqual(len(attributes), 9)
+        username, account_type, display_name, user_id, user_avatar, group_id, group1, group2, home_dir = attributes
         self.assertEqual(username.type, 'text'),
         self.assertEqual(username.object_relation, 'username')
         self.assertEqual(username.value, observable.account_login)
@@ -2318,7 +2414,6 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(home_dir.type, 'text')
         self.assertEqual(home_dir.object_relation, 'home_dir')
         self.assertEqual(home_dir.value, extension.home_dir)
-        return password, last_changed
 
     def _check_vulnerability_object(self, misp_object, vulnerability):
         self.assertEqual(misp_object.uuid, vulnerability.id.split('--')[1])

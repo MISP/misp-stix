@@ -1,37 +1,51 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from os import walk
 import sys
 import time
+from .converters import (
+    ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
+    ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter,
+    ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter,
+    ExternalSTIX2IdentityConverter, InternalSTIX2IdentityConverter,
+    ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter,
+    ExternalSTIX2IntrusionSetConverter, InternalSTIX2IntrusionSetConverter,
+    ExternalSTIX2LocationConverter, InternalSTIX2LocationConverter,
+    ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
+    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter,
+    ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter,
+    ExternalSTIX2ToolConverter, InternalSTIX2ToolConverter,
+    ExternalSTIX2VulnerabilityConverter, InternalSTIX2VulnerabilityConverter)
 from .exceptions import (
-    ObjectRefLoadingError, ObjectTypeLoadingError, SynonymsResourceJSONError,
+    MarkingDefinitionLoadingError, ObjectRefLoadingError,
+    ObjectTypeLoadingError, SynonymsResourceJSONError,
     UnavailableGalaxyResourcesError, UnavailableSynonymsResourceError,
     UndefinedIndicatorError, UndefinedSTIXObjectError, UndefinedObservableError,
     UnknownAttributeTypeError, UnknownObjectNameError,
-    UnknownParsingFunctionError, UnknownStixObjectTypeError)
+    UnknownParsingFunctionError, UnknownPatternTypeError,
+    UnknownStixObjectTypeError)
 from .external_stix2_mapping import ExternalSTIX2toMISPMapping
-from .importparser import STIXtoMISPParser, _INDICATOR_TYPING
+from .importparser import (
+    STIXtoMISPParser, _INDICATOR_TYPING, _load_stix2_content)
 from .internal_stix2_mapping import InternalSTIX2toMISPMapping
-from .converters import (
-    ExternalSTIX2AttackPatternConverter, ExternalSTIX2MalwareAnalysisConverter,
-    ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
-    InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter)
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
 from pymisp import (
     AbstractMISP, MISPEvent, MISPAttribute, MISPGalaxy, MISPGalaxyCluster,
     MISPObject, MISPSighting)
-from stix2.parsing import parse as stix2_parser
+from stix2 import TLP_AMBER, TLP_GREEN, TLP_RED, TLP_WHITE
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
 from stix2.v20.observables import NetworkTraffic as NetworkTraffic_v20
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, Campaign as Campaign_v20,
-    CourseOfAction as CourseOfAction_v20, Identity as Identity_v20,
-    Indicator as Indicator_v20, IntrusionSet as IntrusionSet_v20,
-    Malware as Malware_v20, ObservedData as ObservedData_v20,
-    Report as Report_v20, ThreatActor as ThreatActor_v20, Tool as Tool_v20,
+    CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
+    Identity as Identity_v20, Indicator as Indicator_v20,
+    IntrusionSet as IntrusionSet_v20, Malware as Malware_v20,
+    ObservedData as ObservedData_v20, Report as Report_v20,
+    ThreatActor as ThreatActor_v20, Tool as Tool_v20,
     Vulnerability as Vulnerability_v20)
 from stix2.v20.sro import (
     Relationship as Relationship_v20, Sighting as Sighting_v20)
@@ -42,13 +56,14 @@ from stix2.v21.observables import (
     EmailMessage, File, IPv4Address, IPv6Address, MACAddress, Mutex,
     NetworkTraffic as NetworkTraffic_v21, Process, Software, URL, UserAccount,
     WindowsRegistryKey, X509Certificate)
-from stix2.v21.sdo import Grouping, MalwareAnalysis, Note, Opinion
+from stix2.v21.sdo import Grouping, Location, MalwareAnalysis, Note, Opinion
 from stix2.v21.sdo import (
     AttackPattern as AttackPattern_v21, Campaign as Campaign_v21,
-    CourseOfAction as CourseOfAction_v21, Identity as Identity_v21,
-    Indicator as Indicator_v21, IntrusionSet as IntrusionSet_v21, Location,
-    Malware as Malware_v21, ObservedData as ObservedData_v21,
-    Report as Report_v21, ThreatActor as ThreatActor_v21, Tool as Tool_v21,
+    CourseOfAction as CourseOfAction_v21, CustomObject as CustomObject_v21,
+    Identity as Identity_v21, Indicator as Indicator_v21,
+    IntrusionSet as IntrusionSet_v21, Malware as Malware_v21,
+    ObservedData as ObservedData_v21, Report as Report_v21,
+    ThreatActor as ThreatActor_v21, Tool as Tool_v21,
     Vulnerability as Vulnerability_v21)
 from stix2.v21.sro import (
     Relationship as Relationship_v21, Sighting as Sighting_v21)
@@ -88,8 +103,14 @@ _ATTACK_PATTERN_PARSER_TYPING = Union[
 _ATTACK_PATTERN_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21
 ]
+_CAMPAIGN_PARSER_TYPING = Union[
+    ExternalSTIX2CampaignConverter, InternalSTIX2CampaignConverter
+]
 _CAMPAIGN_TYPING = Union[
     Campaign_v20, Campaign_v21
+]
+_COURSE_OF_ACTION_PARSER_TYPING = Union[
+    ExternalSTIX2CourseOfActionConverter, InternalSTIX2CourseOfActionConverter
 ]
 _COURSE_OF_ACTION_TYPING = Union[
     CourseOfAction_v20, CourseOfAction_v21
@@ -108,11 +129,23 @@ _GALAXY_OBJECTS_TYPING = Union[
 _GROUPING_REPORT_TYPING = Union[
     Grouping, Report_v20, Report_v21
 ]
+_IDENTITY_PARSER_TYPING = Union[
+    ExternalSTIX2IdentityConverter, InternalSTIX2IdentityConverter
+]
 _IDENTITY_TYPING = Union[
     Identity_v20, Identity_v21
 ]
+_INDICATOR_PARSER_TYPING = Union[
+    ExternalSTIX2IndicatorConverter, InternalSTIX2IndicatorConverter
+]
+_INTRUSION_SET_PARSER_TYPING = Union[
+    ExternalSTIX2IntrusionSetConverter, InternalSTIX2IntrusionSetConverter
+]
 _INTRUSION_SET_TYPING = Union[
     IntrusionSet_v20, IntrusionSet_v21
+]
+_LOCATION_PARSER_TYPING = Union[
+    ExternalSTIX2LocationConverter, InternalSTIX2LocationConverter
 ]
 _MALWARE_ANALYSIS_PARSER_TYPING = Union[
     ExternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareAnalysisConverter
@@ -142,18 +175,31 @@ _REPORT_TYPING = Union[
     Report_v20, Report_v21
 ]
 _SDO_TYPING = Union[
+    Campaign_v20, Campaign_v21,
+    CustomObject_v20, CustomObject_v21,
+    Grouping,
     Indicator_v20, Indicator_v21,
     ObservedData_v20, ObservedData_v21,
+    Report_v20, Report_v21,
     Vulnerability_v20, Vulnerability_v21
 ]
 _SIGHTING_TYPING = Union[
     Sighting_v20, Sighting_v21
 ]
+_THREAT_ACTOR_PARSER_TYPING = Union[
+    ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter
+]
 _THREAT_ACTOR_TYPING = Union[
     ThreatActor_v20, ThreatActor_v21
 ]
+_TOOL_PARSER_TYPING = Union[
+    ExternalSTIX2ToolConverter, InternalSTIX2ToolConverter
+]
 _TOOL_TYPING = Union[
     Tool_v20, Tool_v21
+]
+_VULNERABILITY_PARSER_TYPING = Union[
+    ExternalSTIX2VulnerabilityConverter, InternalSTIX2VulnerabilityConverter
 ]
 _VULNERABILITY_TYPING = Union[
     Vulnerability_v20, Vulnerability_v21
@@ -209,6 +255,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._creators.add(stix_object.created_by_ref)
             try:
                 getattr(self, feature)(stix_object)
+            except MarkingDefinitionLoadingError as error:
+                self._marking_definition_error(error)
             except AttributeError as exception:
                 self._critical_error(exception)
         self.__n_report = 2 if n_report >= 2 else n_report
@@ -236,40 +284,74 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def parse_stix_content(
             self, filename: str, single_event: Optional[bool] = False):
         try:
-            with open(filename, 'rt', encoding='utf-8') as f:
-                bundle = stix2_parser(
-                    f.read(), allow_custom=True, interoperability=True
-                )
+            bundle = _load_stix2_content(filename)
         except Exception as exception:
             sys.exit(exception)
         self.load_stix_bundle(bundle)
         del bundle
         self.parse_stix_bundle(single_event)
 
-    ################################################################################
-    #                                  PROPERTIES                                  #
-    ################################################################################
+    ############################################################################
+    #                                PROPERTIES                                #
+    ############################################################################
 
     @property
     def attack_pattern_parser(self) -> _ATTACK_PATTERN_PARSER_TYPING:
-        return getattr(
-            self, '_attack_pattern_parser', self._set_attack_pattern_parser()
-        )
+        if not hasattr(self, '_attack_pattern_parser'):
+            self._set_attack_pattern_parser()
+        return self._attack_pattern_parser
+
+    @property
+    def campaign_parser(self) -> _CAMPAIGN_PARSER_TYPING:
+        if not hasattr(self, '_campaign_parser'):
+            self._set_campaign_parser()
+        return self._campaign_parser
+
+    @property
+    def course_of_action_parser(self) -> _COURSE_OF_ACTION_PARSER_TYPING:
+        if not hasattr(self, '_course_of_action_parser'):
+            self._set_course_of_action_parser()
+        return self._course_of_action_parser
 
     @property
     def generic_info_field(self) -> str:
         return f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
 
     @property
+    def identity_parser(self) -> _IDENTITY_PARSER_TYPING:
+        if not hasattr(self, '_identity_parser'):
+            self._set_identity_parser()
+        return self._identity_parser
+
+    @property
+    def indicator_parser(self) -> _INDICATOR_PARSER_TYPING:
+        if not hasattr(self, '_indicator_parser'):
+            self._set_indicator_parser()
+        return self._indicator_parser
+
+    @property
+    def intrusion_set_parser(self) -> _INTRUSION_SET_PARSER_TYPING:
+        if not hasattr(self, '_intrusion_set_parser'):
+            self._set_intrusion_set_parser()
+        return self._intrusion_set_parser
+
+    @property
+    def location_parser(self) -> _LOCATION_PARSER_TYPING:
+        if not hasattr(self, '_location_parser'):
+            self._set_location_parser()
+        return self._location_parser
+
+    @property
     def malware_analysis_parser(self) -> _MALWARE_ANALYSIS_PARSER_TYPING:
-        return getattr(
-            self, '_malware_analysis_parser',
+        if not hasattr(self, '_malware_analysis_parser'):
             self._set_malware_analysis_parser()
-        )
+        return self._malware_analysis_parser
 
     @property
     def malware_parser(self) -> _MALWARE_PARSER_TYPING:
-        return getattr(self, '_malware_parser', self._set_malware_parser())
+        if not hasattr(self, '_malware_parser'):
+            self._set_malware_parser()
+        return self._malware_parser
 
     @property
     def misp_event(self) -> MISPEvent:
@@ -289,9 +371,27 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def stix_version(self) -> str:
         return self.__stix_version
 
-    ################################################################################
-    #                        STIX OBJECTS LOADING FUNCTIONS                        #
-    ################################################################################
+    @property
+    def threat_actor_parser(self) -> _THREAT_ACTOR_PARSER_TYPING:
+        if not hasattr(self, '_threat_actor_parser'):
+            self._set_threat_actor_parser()
+        return self._threat_actor_parser
+
+    @property
+    def tool_parser(self) -> _TOOL_PARSER_TYPING:
+        if not hasattr(self, '_tool_parser'):
+            self._set_tool_parser()
+        return self._tool_parser
+
+    @property
+    def vulnerability_parser(self) -> _VULNERABILITY_PARSER_TYPING:
+        if not hasattr(self, '_vulnerability_parser'):
+            self._set_vulnerability_parser()
+        return self._vulnerability_parser
+
+    ############################################################################
+    #                       STIX OBJECTS LOADING METHODS                       #
+    ############################################################################
 
     def _load_attack_pattern(self, attack_pattern: _ATTACK_PATTERN_TYPING):
         self._check_uuid(attack_pattern.id)
@@ -307,7 +407,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._campaign = {campaign.id: campaign}
 
-    def _load_course_of_action(self, course_of_action: _COURSE_OF_ACTION_TYPING):
+    def _load_course_of_action(
+            self, course_of_action: _COURSE_OF_ACTION_TYPING):
         self._check_uuid(course_of_action.id)
         try:
             self._course_of_action[course_of_action.id] = course_of_action
@@ -365,11 +466,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _load_marking_definition(
             self, marking_definition: _MARKING_DEFINITION_TYPING):
-        if not hasattr(marking_definition, 'definition_type'):
-            return
-        definition_type = marking_definition.definition_type
-        definition = marking_definition.definition[definition_type]
-        tag = f"{definition_type}:{definition}"
+        tag = self._parse_marking_definition(marking_definition)
         try:
             self._marking_definition[marking_definition.id] = tag
         except AttributeError:
@@ -445,9 +542,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             self._vulnerability = {vulnerability.id: vulnerability}
 
-    ################################################################################
-    #                     MAIN STIX OBJECTS PARSING FUNCTIONS.                     #
-    ################################################################################
+    ############################################################################
+    #                    MAIN STIX OBJECTS PARSING METHODS.                    #
+    ############################################################################
 
     def _get_stix_object(self, object_ref: str):
         object_type = object_ref.split('--')[0]
@@ -498,28 +595,33 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._unknown_object_name_warning(error)
         except UnknownParsingFunctionError as error:
             self._unknown_parsing_function_error(error)
+        except UnknownPatternTypeError as error:
+            self._unknown_pattern_type_error(object_ref, error)
 
     def _handle_misp_event_tags(
             self, misp_event: MISPEvent, stix_object: _GROUPING_REPORT_TYPING):
-        if hasattr(stix_object, 'object_marking_refs'):
-            for marking_ref in stix_object.object_marking_refs:
-                try:
-                    misp_event.add_tag(self._marking_definition[marking_ref])
-                except KeyError:
-                    self._unknown_marking_ref_warning(marking_ref)
-                except AttributeError:
-                    self._unknown_marking_object_warning(marking_ref)
+        for marking in self._handle_tags_from_stix_fields(stix_object):
+            if isinstance(marking, str):
+                misp_event.add_tag(marking)
+                continue
+            if not self.galaxies_as_tags:
+                clusters = defaultdict(list)
+                for cluster in marking['cluster']:
+                    clusters[cluster.type].append(cluster)
+                for galaxy in self._aggregate_galaxy_clusters(clusters):
+                    misp_event.add_galaxy(galaxy)
+            if marking.get('tags'):
+                for tag in marking['tags']:
+                    misp_event.add_tag(tag)
         if hasattr(stix_object, 'labels'):
             self._fetch_tags_from_labels(misp_event, stix_object.labels)
 
     def _misp_event_from_grouping(self, grouping: Grouping) -> MISPEvent:
-        self.__single_event = True
         misp_event = self._create_misp_event(grouping)
         misp_event.published = False
         return misp_event
 
     def _misp_event_from_report(self, report: _REPORT_TYPING) -> MISPEvent:
-        self.__single_event = True
         misp_event = self._create_misp_event(report)
         if report.published != report.modified:
             misp_event.published = True
@@ -544,20 +646,19 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     self._handle_object_refs(grouping.object_refs)
             self._handle_unparsed_content()
         else:
-            events = []
+            self.__misp_events = []
             if hasattr(self, '_report') and self._report is not None:
                 for report in self._report.values():
                     self.__misp_event = self._misp_event_from_report(report)
                     self._handle_object_refs(report.object_refs)
                     self._handle_unparsed_content()
-                    events.append(self.misp_event)
+                    self.__misp_events.append(self.misp_event)
             if hasattr(self, '_grouping') and self._grouping is not None:
                 for grouping in self._grouping.values():
                     self.__misp_event = self._misp_event_from_grouping(grouping)
                     self._handle_object_refs(grouping.object_refs)
                     self._handle_unparsed_content()
-                    events.append(self.misp_event)
-            self.__misp_events = events
+                    self.__misp_events.append(self.misp_event)
 
     def _parse_bundle_with_no_report(self):
         self.__single_event = True
@@ -566,6 +667,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         self._handle_unparsed_content()
 
     def _parse_bundle_with_single_report(self):
+        self.__single_event = True
         if hasattr(self, '_report') and self._report is not None:
             for report in self._report.values():
                 self.__misp_event = self._misp_event_from_report(report)
@@ -577,6 +679,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         else:
             self._parse_bundle_with_no_report()
         self._handle_unparsed_content()
+
+    def _parse_campaign(self, campaign_ref: str):
+        self.campaign_parser.parse(campaign_ref)
+
+    def _parse_course_of_action(self, course_of_action_ref: str):
+        self.course_of_action_parser.parse(course_of_action_ref)
 
     def _parse_galaxies_as_container(self):
         clusters = defaultdict(list)
@@ -598,6 +706,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 for tag in tags['tag_names']:
                     self.misp_event.add_tag(tag)
 
+    def _parse_identity(self, identity_ref: str):
+        self.identity_parser.parse(identity_ref)
+
+    def _parse_indicator(self, indicator_ref: str):
+        self.indicator_parser.parse(indicator_ref)
+
+    def _parse_intrusion_set(self, intrusion_set_ref: str):
+        self.intrusion_set_parser.parse(intrusion_set_ref)
+
     def _parse_loaded_features(self):
         for feature in _LOADED_FEATURES:
             if hasattr(self, feature):
@@ -610,26 +727,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     except UnknownParsingFunctionError as error:
                         self._unknown_parsing_function_error(error)
 
-    def _parse_location_object(self, location: Location,
-                               to_return: Optional[bool] = False) -> MISPObject:
-        misp_object = self._create_misp_object('geolocation', location)
-        if hasattr(location, 'description'):
-            misp_object.comment = location.description
-        for feature, attribute in self._mapping.location_object_mapping().items():
-            if hasattr(location, feature):
-                misp_object.add_attribute(
-                    **{'value': getattr(location, feature), **attribute}
-                )
-        if hasattr(location, 'precision'):
-            misp_object.add_attribute(
-                **{
-                    'value': float(location.precision) / 1000,
-                    **self._mapping.accuracy_radius_attribute()
-                }
-            )
-        if to_return:
-            return misp_object
-        self._add_misp_object(misp_object, location)
+    def _parse_location(self, location_ref: str):
+        self.location_parser.parse(location_ref)
 
     def _parse_malware(self, malware_ref: str):
         self.malware_parser.parse(malware_ref)
@@ -637,9 +736,134 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _parse_malware_analysis(self, malware_analysis_ref: str):
         self.malware_analysis_parser.parse(malware_analysis_ref)
 
-    ################################################################################
-    #                  MISP GALAXIES & CLUSTERS PARSING FUNCTIONS                  #
-    ################################################################################
+    def _parse_threat_actor(self, threat_actor_ref: str):
+        self.threat_actor_parser.parse(threat_actor_ref)
+
+    def _parse_tool(self, tool_ref: str):
+        self.tool_parser.parse(tool_ref)
+
+    def _parse_vulnerability(self, vulnerability_ref: str):
+        self.vulnerability_parser.parse(vulnerability_ref)
+
+    ############################################################################
+    #                   MARKING DEFINITIONS PARSING METHODS.                   #
+    ############################################################################
+
+    def _parse_acs_marking_definition(
+            self, extension: dict, extension_definition: dict,
+            version: str, object_id: str):
+        galaxy_type = f'stix-{version}-acs-marking'
+        name = f'STIX {version} ACS Marking'
+        if galaxy_type not in self._galaxies:
+            self._galaxies[galaxy_type] = {
+                'namespace': 'stix',
+                'type': galaxy_type,
+                'version': ''.join(version.split('.')),
+                'uuid': self._create_v5_uuid(name),
+                'name': name,
+                'description': (
+                    f'STIX {version} Marking Definition extension'
+                    ' to support ACS Markings'
+                )
+            }
+        meta = {}
+        for key, value in extension.items():
+            if isinstance(value, dict):
+                for field, subvalues in value.items():
+                    if field in self._mapping.marking_vocabularies_fields():
+                        if isinstance(subvalues, list):
+                            for subvalue in subvalues:
+                                extension_definition['tags'].append(
+                                    f'acs-marking:{field}="{subvalue}"'
+                                )
+                        else:
+                            extension_definition['tags'].append(
+                                f'acs-marking:{field}="{subvalues}"'
+                            )
+                    meta[f'{key}.{field}'] = subvalues
+                continue
+            if key == 'access_privilege':
+                if len(value) == 1:
+                    access_privilege = value[0]
+                    for feature, privilege in access_privilege.items():
+                        if isinstance(privilege, dict):
+                            for field, scope in privilege.items():
+                                meta[f'{key}.{feature}.{field}'] = scope
+                            continue
+                        if (feature == 'privilege_action' and
+                                access_privilege['rule_effect'] == 'permit'):
+                            extension_definition['tags'].append(
+                                f'acs-marking:{feature}="{privilege}"'
+                            )
+                        meta[f'{key}.{feature}'] = privilege
+                    continue
+                for privilege in value:
+                    feature = f"{key}.{privilege['privilege_action']}"
+                    for field, scope in privilege['privilege_scope'].items():
+                        meta[f'{feature}.privilege_scope.{field}'] = scope
+                    meta[f'{feature}.rule_effect'] = privilege['rule_effect']
+                continue
+            if key == 'further_sharing':
+                if len(value) == 1:
+                    for field, subvalue in value[0].items():
+                        meta[f'{key}.{field}'] = subvalue
+                    continue
+                for sharing in value:
+                    feature = f"{key}.{sharing['rule_effect']}"
+                    meta[f"{feature}.sharing_scope"] = sharing['sharing_scope']
+                continue
+            if key != 'extension_type':
+                meta[key] = value
+        galaxy_cluster = self._create_misp_galaxy_cluster(
+            type=f'stix-{version}-acs-marking',
+            uuid=self._create_v5_uuid(object_id),
+            collection_uuid=self._create_v5_uuid(name),
+            version=''.join(version.split('.')),
+            value=extension.get('name', extension['identifier']),
+            meta=meta
+        )
+        extension_definition['cluster'].append(galaxy_cluster)
+
+    def _parse_marking_definition(
+            self, marking_definition: _MARKING_DEFINITION_TYPING
+            ) -> Union[dict, str]:
+        if hasattr(marking_definition, 'definition_type'):
+            definition_type = marking_definition.definition_type
+            definition = marking_definition.definition[definition_type]
+            return f"{definition_type}:{definition}"
+        if hasattr(marking_definition, 'name'):
+            # should be TLP 2.0 definition
+            return marking_definition.name.lower()
+        if hasattr(marking_definition, 'extensions'):
+            extension_definition = defaultdict(list)
+            version = getattr(marking_definition, 'spec_version', '2.0')
+            for identifier, extension in marking_definition.extensions.items():
+                feature = self._mapping.marking_extension_mapping(identifier)
+                if feature is None:
+                    continue
+                getattr(self, f'_parse_{feature}_marking_definition')(
+                    extension, extension_definition, version,
+                    f"{marking_definition.id} - {identifier}"
+                )
+            if extension_definition:
+                return extension_definition
+        raise MarkingDefinitionLoadingError(marking_definition.id)
+
+    def _parse_markings(self, marking_refs: list):
+        for marking_ref in marking_refs:
+            try:
+                marking_definition = self._get_stix_object(marking_ref)
+            except ObjectTypeLoadingError as error:
+                self._object_type_loading_error(error)
+                continue
+            except ObjectRefLoadingError as error:
+                self._object_ref_loading_error(error)
+                continue
+            yield marking_definition
+
+    ############################################################################
+    #                 MISP GALAXIES & CLUSTERS PARSING METHODS                 #
+    ############################################################################
 
     def _aggregate_galaxy_clusters(self, galaxies: dict):
         for galaxy_type, clusters in galaxies.items():
@@ -712,186 +936,52 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return meta
         return dict(self._extract_custom_fields(stix_object))
 
-    def _parse_attack_pattern_cluster(
-            self, attack_pattern: _ATTACK_PATTERN_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        attack_pattern_args = self._create_cluster_args(
-            attack_pattern, galaxy_type, description=description
-        )
-        meta = self._handle_meta_fields(attack_pattern)
-        if hasattr(attack_pattern, 'external_references'):
-            meta.update(
-                self._handle_external_references(
-                    attack_pattern.external_references
-                )
-            )
-        if hasattr(attack_pattern, 'kill_chain_phases'):
-            meta['kill_chain'] = self._handle_kill_chain_phases(
-                attack_pattern.kill_chain_phases
-            )
-        if meta:
-            attack_pattern_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(attack_pattern_args)
+    ############################################################################
+    #                RELATIONSHIPS & SIGHTINGS PARSING METHODS.                #
+    ############################################################################
 
-    def _parse_campaign_cluster(
-            self, campaign: _CAMPAIGN_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        campaign_args = self._create_cluster_args(
-            campaign, galaxy_type, description=description
-        )
-        meta = self._handle_meta_fields(campaign)
-        if hasattr(campaign, 'external_references'):
-            meta.update(
-                self._handle_external_references(campaign.external_references)
-            )
-        if meta:
-            campaign_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(campaign_args)
-
-    def _parse_course_of_action_cluster(
-            self, course_of_action: _COURSE_OF_ACTION_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        course_of_action_args = self._create_cluster_args(
-            course_of_action, galaxy_type, description=description
-        )
-        meta = dict(self._extract_custom_fields(course_of_action))
-        if hasattr(course_of_action, 'external_references'):
-            meta.update(
-                self._handle_external_references(
-                    course_of_action.external_references
-                )
-            )
-        if meta:
-            course_of_action_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(course_of_action_args)
-
-    def _parse_intrusion_set_cluster(
-            self, intrusion_set: _INTRUSION_SET_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        intrusion_set_args = self._create_cluster_args(
-            intrusion_set, galaxy_type, description=description
-        )
-        meta = self._handle_meta_fields(intrusion_set)
-        if hasattr(intrusion_set, 'external_references'):
-            meta.update(
-                self._handle_external_references(
-                    intrusion_set.external_references
-                )
-            )
-        if meta:
-            intrusion_set_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(intrusion_set_args)
-
-    def _parse_malware_cluster(
-            self, malware: _MALWARE_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        malware_args = self._create_cluster_args(
-            malware, galaxy_type, description=description
-        )
-        meta = self._handle_meta_fields(malware)
-        if hasattr(malware, 'external_references'):
-            meta.update(
-                self._handle_external_references(malware.external_references)
-            )
-        if hasattr(malware, 'kill_chain_phases'):
-            meta['kill_chain'] = self._handle_kill_chain_phases(
-                malware.kill_chain_phases
-            )
-        if hasattr(malware, 'labels'):
-            self._handle_labels(meta, malware.labels)
-        if meta:
-            malware_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(malware_args)
-
-    def _parse_threat_actor_cluster(
-            self, threat_actor: _THREAT_ACTOR_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        threat_actor_args = self._create_cluster_args(
-            threat_actor, galaxy_type, description=description
-        )
-        meta = self._handle_meta_fields(threat_actor)
-        if hasattr(threat_actor, 'external_references'):
-            meta.update(
-                self._handle_external_references(
-                    threat_actor.external_references
-                )
-            )
-        if hasattr(threat_actor, 'labels'):
-            self._handle_labels(meta, threat_actor.labels)
-        if meta:
-            threat_actor_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(threat_actor_args)
-
-    def _parse_tool_cluster(
-            self, tool: _TOOL_TYPING, description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        tool_args = self._create_cluster_args(
-            tool, galaxy_type, description=description
-        )
-        meta = self._handle_meta_fields(tool)
-        if hasattr(tool, 'kill_chain_phases'):
-            meta['kill_chain'] = self._handle_kill_chain_phases(
-                tool.kill_chain_phases
-            )
-        if hasattr(tool, 'external_references'):
-            meta.update(
-                self._handle_external_references(tool.external_references)
-            )
-        if hasattr(tool, 'kill_chain_phases'):
-            meta['kill_chain'] = self._handle_kill_chain_phases(
-                tool.kill_chain_phases
-            )
-        if hasattr(tool, 'labels'):
-            self._handle_labels(meta, tool.labels)
-        if meta:
-            tool_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(tool_args)
-
-    def _parse_vulnerability_cluster(
-            self, vulnerability: _VULNERABILITY_TYPING,
-            description: Optional[str] = None,
-            galaxy_type: Optional[str] = None) -> MISPGalaxyCluster:
-        vulnerability_args = self._create_cluster_args(
-            vulnerability, galaxy_type, description=description
-        )
-        meta = dict(self._extract_custom_fields(vulnerability))
-        if hasattr(vulnerability, 'external_references'):
-            meta.update(
-                self._handle_external_references(
-                    vulnerability.external_references
-                )
-            )
-        if meta:
-            vulnerability_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(vulnerability_args)
-
-    ################################################################################
-    #                 RELATIONSHIPS & SIGHTINGS PARSING FUNCTIONS.                 #
-    ################################################################################
+    def _check_sighting_replacements(
+            self, parent_uuid: str, replaced_uuid: str):
+        for field in ('opinion_refs', 'sighting'):
+            if parent_uuid in getattr(self, '_sighting', {}).get(field, {}):
+                self.replacement_uuids[replaced_uuid] = parent_uuid
 
     def _handle_attribute_sightings(self, attribute: MISPAttribute):
         attribute_uuid = attribute.uuid
+        if attribute_uuid in self.replacement_uuids:
+            attribute_uuid = self.replacement_uuids[attribute_uuid]
         if attribute_uuid in self._sighting.get('sighting', {}):
-            self._parse_attribute_sightings(attribute)
+            for sighting in self._sighting['sighting'][attribute_uuid]:
+                attribute.add_sighting(self._parse_sighting(sighting))
         if attribute_uuid in self._sighting.get('opinion_refs', {}):
-            self._parse_attribute_opinions(attribute)
+            for opinion_ref in self._sighting['opinion_refs'][attribute_uuid]:
+                attribute.add_sighting(
+                    self._parse_opinion(self._sighting['opinion'][opinion_ref])
+                )
         elif attribute_uuid in self._sighting.get('custom_opinion', {}):
-            self._parse_attribute_custom_opinions(attribute)
+            for sighting in self._sighting['custom_opinion'][attribute_uuid]:
+                attribute.add_sighting(sighting)
 
     def _handle_object_sightings(self, misp_object: MISPObject):
         object_uuid = misp_object.uuid
+        if object_uuid in self.replacement_uuids:
+            object_uuid = self.replacement_uuids[object_uuid]
         if object_uuid in self._sighting.get('sighting', {}):
-            self._parse_object_sightings(misp_object)
+            for sighting in self._sighting['sighting'][object_uuid]:
+                misp_sighting = self._parse_sighting(sighting)
+                for attribute in misp_object.attributes:
+                    attribute.add_sighting(misp_sighting)
         if object_uuid in self._sighting.get('opinion_refs', {}):
-            self._parse_object_opinions(misp_object)
+            for opinion_ref in self._sighting['opinion_refs'][object_uuid]:
+                misp_sighting = self._parse_opinion(
+                    self._sighting['opinion'][opinion_ref]
+                )
+                for attribute in misp_object.attributes:
+                    attribute.add_sighting(misp_sighting)
         elif misp_object.uuid in self._sighting.get('custom_opinion', {}):
-            self._parse_object_custom_opinion(misp_object)
+            for sighting in self._sighting['custom_opinion'][object_uuid]:
+                for attribute in misp_object.attributes:
+                    attribute.add_sighting(sighting)
 
     def _handle_opposite_reference(
             self, relationship_type: str, source_uuid: str, target_uuid: str):
@@ -899,23 +989,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         reference = (source_uuid, self.relationship_types[relationship_type])
         self._relationship[sanitised_uuid].add(reference)
 
-    def _parse_attribute_custom_opinions(self, attribute: MISPAttribute):
-        for sighting in self._sighting['custom_opinion'][attribute.uuid]:
-            attribute.add_sighting(sighting)
-
-    def _parse_attribute_opinions(self, attribute: MISPAttribute):
-        for opinion_ref in self._sighting['opinion_refs'][attribute.uuid]:
-            attribute.add_sighting(self._sighting['opinion'][opinion_ref])
-
     def _parse_attribute_relationships_as_container(
             self, attribute: MISPAttribute):
         clusters = defaultdict(list)
         for relationship in self._relationship[attribute.uuid]:
             referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
-                cluster = self._clusters[referenced_uuid]['cluster']
-                clusters[cluster['type']].append(cluster)
-                self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+                cluster = self._clusters[referenced_uuid]
+                clusters[cluster['cluster']['type']].append(cluster['cluster'])
+                cluster['used'][self.misp_event.uuid] = True
                 continue
             if relationship_type in self.relationship_types:
                 self._handle_opposite_reference(
@@ -930,18 +1012,15 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for relationship in self._relationship[attribute.uuid]:
             referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
-                for tag in self._clusters[referenced_uuid]['tag_names']:
+                cluster = self._clusters[referenced_uuid]
+                for tag in cluster['tag_names']:
                     attribute.add_tag(tag)
-                self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+                cluster['used'][self.misp_event.uuid] = True
                 continue
             if relationship_type in self.relationship_types:
                 self._handle_opposite_reference(
                     relationship_type, attribute.uuid, referenced_uuid
                 )
-
-    def _parse_attribute_sightings(self, attribute: MISPAttribute):
-        for sighting in self._sighting['sighting'][attribute.uuid]:
-            attribute.add_sighting(self._parse_sighting(sighting))
 
     def _parse_cluster_relationships(self, cluster: MISPGalaxyCluster):
         for relationship in self._relationship[cluster.uuid]:
@@ -958,25 +1037,14 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 if cluster.uuid in self._relationship:
                     self._parse_cluster_relationships(cluster)
 
-    def _parse_object_custom_opinion(self, misp_object: MISPObject):
-        for sighting in self._sighting['custom_opinion'][misp_object.uuid]:
-            for attribute in misp_object.attributes:
-                attribute.add_sighting(sighting)
-
-    def _parse_object_opinions(self, misp_object: MISPObject):
-        for opinion_ref in self._sighting['opinion_refs'][misp_object.uuid]:
-            sighting = self._sighting['opinion'][opinion_ref]
-            for attribute in misp_object.attributes:
-                attribute.add_sighting(sighting)
-
     def _parse_object_relationships_as_container(self, misp_object: MISPObject):
         clusters = defaultdict(list)
         for relationship in self._relationship[misp_object.uuid]:
             referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
-                cluster = self._clusters[referenced_uuid]['cluster']
-                clusters[cluster['type']].append(cluster)
-                self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+                cluster = self._clusters[referenced_uuid]
+                clusters[cluster['cluster']['type']].append(cluster['cluster'])
+                cluster['used'][self.misp_event.uuid] = True
             else:
                 misp_object.add_reference(
                     self._sanitise_uuid(referenced_uuid), relationship_type
@@ -990,26 +1058,21 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for relationship in self._relationship[misp_object.uuid]:
             referenced_uuid, relationship_type = relationship
             if referenced_uuid in self._clusters:
+                cluster = self._clusters[referenced_uuid]
                 for attribute in misp_object.attributes:
-                    for tag in self._clusters[referenced_uuid]['tag_names']:
+                    for tag in cluster['tag_names']:
                         attribute.add_tag(tag)
-                self._clusters[referenced_uuid]['used'][self.misp_event.uuid] = True
+                cluster['used'][self.misp_event.uuid] = True
             else:
                 misp_object.add_reference(
                     self._sanitise_uuid(referenced_uuid), relationship_type
                 )
 
-    def _parse_object_sightings(self, misp_object: MISPObject):
-        for sighting in self._sighting['sighting'][misp_object.uuid]:
-            misp_sighting = self._parse_sighting(sighting)
-            for attribute in misp_object.attributes:
-                attribute.add_sighting(misp_sighting)
-
     def _parse_opinion(self, opinion: Opinion) -> MISPSighting:
-        sighting = MISPSighting()
+        misp_sighting = MISPSighting()
         sighting_args = {
             'date_sighting': self._timestamp_from_date(opinion.modified),
-            'type': '1'
+            'type': '1' if 'disagree' in opinion.opinion else '0'
         }
         if hasattr(opinion, 'x_misp_source'):
             sighting_args['source'] = opinion.x_misp_source
@@ -1019,8 +1082,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 'uuid': self._sanitise_uuid(identity.id),
                 'name': identity.name
             }
-        sighting.from_dict(**sighting_args)
-        return sighting
+        misp_sighting.from_dict(**sighting_args)
+        return misp_sighting
 
     def _parse_relationships(self):
         for attribute in self.misp_event.attributes:
@@ -1043,8 +1106,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._parse_galaxy_relationships()
 
     def _parse_relationships_and_sightings(self):
-        for opinion_id, opinion in self._sighting['opinion'].items():
-            self._sighting['opinion'][opinion_id] = self._parse_opinion(opinion)
         for attribute in self.misp_event.attributes:
             if attribute.uuid in self._relationship:
                 getattr(
@@ -1084,35 +1145,53 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return misp_sighting
 
     def _parse_sightings(self):
-        for opinion_id, opinion in self._sighting['opinion'].items():
-            self._sighting['opinion'][opinion_id] = self._parse_opinion(opinion)
         for attribute in self.misp_event.attributes:
             self._handle_attribute_sightings(attribute)
         for misp_object in self.misp_event.objects:
             self._handle_object_sightings(misp_object)
         getattr(self, f'_parse_galaxies_{self.galaxy_feature}')()
 
-    ################################################################################
-    #                       MISP FEATURES CREATION FUNCTIONS                       #
-    ################################################################################
+    ############################################################################
+    #                      MISP FEATURES CREATION METHODS                      #
+    ############################################################################
 
     def _add_misp_attribute(self, attribute: dict,
                             stix_object: _SDO_TYPING) -> MISPAttribute:
         misp_attribute = MISPAttribute()
         misp_attribute.from_dict(**attribute)
-        tags = tuple(self._handle_tags_from_stix_fields(stix_object))
-        if tags:
-            for tag in tags:
-                misp_attribute.add_tag(tag)
+        for marking in self._handle_tags_from_stix_fields(stix_object):
+            if isinstance(marking, str):
+                misp_attribute.add_tag(marking)
+                continue
+            if not self.galaxies_as_tags:
+                clusters = defaultdict(list)
+                for cluster in marking['cluster']:
+                    clusters[cluster.type].append(cluster)
+                for galaxy in self._aggregate_galaxy_clusters(clusters):
+                    misp_attribute.add_galaxy(galaxy)
+            if marking.get('tags'):
+                for tag in marking['tags']:
+                    misp_attribute.add_tag(tag)
         return self.misp_event.add_attribute(**misp_attribute)
 
     def _add_misp_object(self, misp_object: MISPObject,
                          stix_object: _SDO_TYPING) -> MISPObject:
-        tags = tuple(self._handle_tags_from_stix_fields(stix_object))
-        if tags:
-            for attribute in misp_object.attributes:
-                for tag in tags:
-                    attribute.add_tag(tag)
+        for marking in self._handle_tags_from_stix_fields(stix_object):
+            if isinstance(marking, str):
+                for attribute in misp_object.attributes:
+                    attribute.add_tag(marking)
+                continue
+            if not self.galaxies_as_tags:
+                clusters = defaultdict(list)
+                for cluster in marking['cluster']:
+                    clusters[cluster.type].append(cluster)
+                for galaxy in self._aggregate_galaxy_clusters(clusters):
+                    for attribute in misp_object.attributes:
+                        attribute.add_galaxy(galaxy)
+            if marking.get('tags'):
+                for tag in marking['tags']:
+                    for attribute in misp_object.attributes:
+                        attribute.add_tag(tag)
         return self.misp_event.add_object(misp_object)
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
@@ -1154,15 +1233,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return misp_event
 
     @staticmethod
-    def _create_misp_galaxy(galaxy_args: dict) -> MISPGalaxy:
-        galaxy = MISPGalaxy()
-        galaxy.from_dict(**galaxy_args)
-        return galaxy
-
-    @staticmethod
-    def _create_misp_galaxy_cluster(cluster_args: dict) -> MISPGalaxyCluster:
+    def _create_misp_galaxy_cluster(**cluster_args: dict) -> MISPGalaxyCluster:
         cluster = MISPGalaxyCluster()
         cluster.from_dict(**cluster_args)
+        cluster.parse_meta_as_elements()
         return cluster
 
     def _create_misp_object(
@@ -1182,11 +1256,26 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if hasattr(stix_object, 'confidence'):
             yield self._parse_confidence_level(stix_object.confidence)
         if hasattr(stix_object, 'object_marking_refs'):
-            yield from self._parse_markings(stix_object.object_marking_refs)
+            for marking_ref in stix_object.object_marking_refs:
+                try:
+                    marking_definition = self._get_stix_object(marking_ref)
+                except ObjectTypeLoadingError as error:
+                    if self._is_tlp_marking(marking_ref):
+                        yield self._get_stix_object(marking_ref)
+                    else:
+                        self._object_type_loading_error(error)
+                    continue
+                except ObjectRefLoadingError as error:
+                    if self._is_tlp_marking(marking_ref):
+                        yield self._get_stix_object(marking_ref)
+                    else:
+                        self._object_ref_loading_error(error)
+                    continue
+                yield marking_definition
 
-    ################################################################################
-    #                              UTILITY FUNCTIONS.                              #
-    ################################################################################
+    ############################################################################
+    #                             UTILITY METHODS.                             #
+    ############################################################################
 
     @staticmethod
     def _extract_uuid(object_id: str) -> str:
@@ -1198,6 +1287,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for label in (label for label in labels
                       if label.lower() != 'threat-report'):
             misp_feature.add_tag(label)
+
+    def _is_tlp_marking(self, marking_ref: str) -> bool:
+        for marking in (TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED):
+            if marking_ref == marking.id:
+                self._load_marking_definition(marking)
+                return True
+        return False
 
     @staticmethod
     def _parse_AS_value(number: Union[int, str]) -> str:
@@ -1216,18 +1312,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if confidence_level >= 25:
             return 'misp:confidence-level="rarely-confident"'
         return 'misp:confidence-level="unconfident"'
-
-    def _parse_markings(self, marking_refs: list):
-        for marking_ref in marking_refs:
-            try:
-                marking_definition = self._get_stix_object(marking_ref)
-            except ObjectTypeLoadingError as error:
-                self._object_type_loading_error(error)
-                continue
-            except ObjectRefLoadingError as error:
-                self._object_ref_loading_error(error)
-                continue
-            yield(marking_definition)
 
     def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
         misp_object = {

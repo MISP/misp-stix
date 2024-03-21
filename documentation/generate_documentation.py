@@ -160,7 +160,7 @@ class DocumentationGenerator():
         # Galaxies documentation
         with open(self._misp_galaxies_to_stix20_mapping, 'rt', encoding='utf-8') as f:
             mapping = json.loads(f.read())
-        mapping = self._parse_mapping(mapping, 'stix2_custom', data_format)
+        mapping = self._parse_mapping(mapping, 'stix2', data_format)
         with open(self._galaxies_to_stix20_content, 'rt', encoding='utf-8') as f:
             galaxies_mapping = f.read().format(_galaxies_to_stix20_mapping_=mapping)
         with open(self._misp_galaxies_to_stix20, 'wt', encoding='utf-8') as f:
@@ -210,7 +210,7 @@ class DocumentationGenerator():
         # Galaxies documentation
         with open(self._misp_galaxies_to_stix21_mapping, 'rt', encoding='utf-8') as f:
             mapping = json.loads(f.read())
-        mapping = self._parse_mapping(mapping, 'stix2_custom', data_format)
+        mapping = self._parse_mapping(mapping, 'stix2', data_format)
         with open(self._galaxies_to_stix21_content, 'rt', encoding='utf-8') as f:
             galaxies_mapping = f.read().format(_galaxies_to_stix21_mapping_=mapping)
         with open(self._misp_galaxies_to_stix21, 'wt', encoding='utf-8') as f:

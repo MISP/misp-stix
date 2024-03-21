@@ -753,22 +753,26 @@ _TEST_EVENT_REPORT = {
 
 _TEST_ATTACK_PATTERN_GALAXY = {
     "uuid": "c4e851fa-775f-11e7-8163-b774922098cd",
-    "name": "Pre Attack - Attack Pattern",
-    "type": "mitre-pre-attack-attack-pattern",
+    "name": "Attack Pattern",
+    "type": "mitre-attack-pattern",
     "description": "ATT&CK Tactic",
     "GalaxyCluster": [
         {
             "uuid": "e042a41b-5ecf-4f3a-8f1f-1b528c534772",
-            "type": "mitre-pre-attack-attack-pattern",
-            "value": "Test malware in various execution environments - PRE-T1134",
-            "description": "Malware may perform differently on different platforms and different operating systems.",
+            "type": "mitre-attack-pattern",
+            "value": "Access Token Manipulation - T1134",
+            "description": "Adversaries may modify access tokens to operate under a different user or system security context to perform actions and bypass access controls.",
             "meta": {
-                "external_id": "PRE-T1134",
+                "external_id": "T1134",
                 "kill_chain": [
-                    "mitre-pre-attack:pre-attack:test-capabilities"
+                    "mitre-attack:defense-evasion",
+                    "mitre-attack:privilege-escalation"
+                ],
+                "mitre_platforms": [
+                    "Windows"
                 ],
                 "refs": [
-                    "https://attack.mitre.org/pre-attack/index.php/Technique/PRE-T1134"
+                    "https://attack.mitre.org/techniques/T1134"
                 ]
             }
         }
@@ -827,7 +831,7 @@ _TEST_COURSE_OF_ACTION_GALAXY = {
     ]
 }
 
-_TEST_INTRUSION_SET = {
+_TEST_INTRUSION_SET_GALAXY = {
     "uuid": "1023f364-7831-11e7-8318-43b5531983ab",
     "name": "Intrusion Set",
     "type": "mitre-intrusion-set",
@@ -1992,6 +1996,71 @@ _TEST_HTTP_REQUEST_OBJECT = {
     ]
 }
 
+_TEST_INTRUSION_SET_OBJECT = {
+    "name": "intrusion-set",
+    "meta-category": "misc",
+    "description": "An Intrusion Set is a grouped set of adversarial behaviors and resources with common properties that is believed to be orchestrated by a single organization",
+    "uuid": "79a012ce-9eac-4249-9e7c-fadddfb6e93d",
+    "timestamp": "1603642920",
+    "Attribute": [
+        {
+            "type": "text",
+            "object_relation": "name",
+            "value": "Bobcat Breakin"
+        },
+        {
+            "type": "text",
+            "object_relation": "description",
+            "value": "Incidents usually feature a shared TTP of a bobcat being released within the building containing network access, scaring users to leave their computers without locking them first."
+        },
+        {
+            "type": "text",
+            "object_relation": "aliases",
+            "value": "Zookeeper"
+        },
+        {
+            "type": "text",
+            "object_relation": "goals",
+            "value": "acquisition-theft"
+        },
+        {
+            "type": "text",
+            "object_relation": "goals",
+            "value": "harassment"
+        },
+        {
+            "type": "text",
+            "object_relation": "goals",
+            "value": "damage"
+        },
+        {
+            "type": "text",
+            "object_relation": "resource_level",
+            "value": "organization"
+        },
+        {
+            "type": "text",
+            "object_relation": "primary-motivation",
+            "value": "organizational gain"
+        },
+        {
+            "type": "text",
+            "object_relation": "secondary-motivation",
+            "value": "personal gain"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "first_seen",
+            "value": "2016-04-06T20:03:48.000Z"
+        },
+        {
+            "type": "datetime",
+            "object_relation": "last_seen",
+            "value": "2017-05-15T21:05:06.000Z"
+        }
+    ]
+}
+
 _TEST_IP_PORT_OBJECT = {
     "name": "ip-port",
     "meta-category": "network",
@@ -3081,7 +3150,7 @@ def get_event_with_tags():
         {"name": "tlp:white"},
         {"name": 'misp:tool="misp2stix"'},
         {"name": 'misp-galaxy:mitre-attack-pattern="Code Signing - T1116"'},
-        {"name": 'misp-galaxy:mitre-pre-attack-attack-pattern="Test malware in various execution environments - PRE-T1134"'}
+        {"name": 'misp-galaxy:mitre-attack-pattern="Access Token Manipulation - T1134"'}
     ]
     event['Event']['Galaxy'] = [
         deepcopy(_TEST_ATTACK_PATTERN_GALAXY)
@@ -3129,7 +3198,7 @@ def get_event_with_custom_galaxy():
 def get_event_with_intrusion_set_galaxy():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Galaxy'] = [
-        deepcopy(_TEST_INTRUSION_SET)
+        deepcopy(_TEST_INTRUSION_SET_GALAXY)
     ]
     return event
 
@@ -4599,6 +4668,14 @@ def get_event_with_image_object():
     return event
 
 
+def get_event_with_intrusion_set_object():
+    event = deepcopy(_BASE_EVENT)
+    event['Event']['Object'] = [
+        deepcopy(_TEST_INTRUSION_SET_OBJECT)
+    ]
+    return event
+
+
 def get_event_with_ip_port_object():
     event = deepcopy(_BASE_EVENT)
     event['Event']['Object'] = [
@@ -5400,7 +5477,8 @@ def get_attributes_feed():
                 "value": "1.1.1.1"
             },
             "Event": {
-                "uuid": "a6ef17d6-91cb-4a05-b10b-2f045daf874c","info": "MISP-STIX-Converter test event",
+                "uuid": "a6ef17d6-91cb-4a05-b10b-2f045daf874c",
+                "info": "MISP-STIX-Converter test event",
                 "date": "2020-10-25",
                 "timestamp": "1603642920",
                 "Orgc": {
