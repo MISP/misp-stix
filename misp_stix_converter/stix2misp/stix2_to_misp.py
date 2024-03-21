@@ -814,8 +814,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 continue
             if key != 'extension_type':
                 meta[key] = value
-        galaxy_cluster = MISPGalaxyCluster()
-        galaxy_cluster.from_dict(
+        galaxy_cluster = self._create_misp_galaxy_cluster(
             type=f'stix-{version}-acs-marking',
             uuid=self._create_v5_uuid(object_id),
             collection_uuid=self._create_v5_uuid(name),
@@ -1234,9 +1233,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return misp_event
 
     @staticmethod
-    def _create_misp_galaxy_cluster(cluster_args: dict) -> MISPGalaxyCluster:
+    def _create_misp_galaxy_cluster(**cluster_args: dict) -> MISPGalaxyCluster:
         cluster = MISPGalaxyCluster()
         cluster.from_dict(**cluster_args)
+        cluster.parse_meta_as_elements()
         return cluster
 
     def _create_misp_object(

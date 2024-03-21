@@ -68,7 +68,9 @@ class ExternalSTIX2AttackPatternConverter(ExternalSTIX2Converter):
             )
         if meta:
             attack_pattern_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(attack_pattern_args)
+        return self.main_parser._create_misp_galaxy_cluster(
+            **attack_pattern_args
+        )
 
 
 class InternalSTIX2AttackPatternMapping(
@@ -137,7 +139,9 @@ class InternalSTIX2AttackPatternConverter(InternalSTIX2Converter):
             )
         if meta:
             attack_pattern_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(attack_pattern_args)
+        return self.main_parser._create_misp_galaxy_cluster(
+            **attack_pattern_args
+        )
 
     def _parse_attack_pattern_object(
             self, attack_pattern: _ATTACK_PATTERN_TYPING):

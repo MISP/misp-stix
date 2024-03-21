@@ -63,7 +63,9 @@ class ExternalSTIX2IntrusionSetConverter(ExternalSTIX2Converter):
             )
         if meta:
             intrusion_set_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(intrusion_set_args)
+        return self.main_parser._create_misp_galaxy_cluster(
+            **intrusion_set_args
+        )
 
 
 class InternalSTIX2IntrusionSetMapping(
@@ -125,7 +127,9 @@ class InternalSTIX2IntrusionSetConverter(InternalSTIX2Converter):
             self._handle_cluster_value_with_synonyms(intrusion_set_args, meta)
         if meta:
             intrusion_set_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(intrusion_set_args)
+        return self.main_parser._create_misp_galaxy_cluster(
+            **intrusion_set_args
+        )
 
     def _parse_intrusion_set_object(self, intrusion_set: _INTRUSION_SET_TYPING):
         misp_object = self._create_misp_object('intrusion-set', intrusion_set)

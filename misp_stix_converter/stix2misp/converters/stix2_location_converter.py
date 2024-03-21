@@ -98,7 +98,7 @@ class STIX2LocationConverter(STIX2Converter, metaclass=ABCMeta):
         meta = self._handle_meta_fields(location)
         if meta:
             location_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(location_args)
+        return self.main_parser._create_misp_galaxy_cluster(**location_args)
 
     def _parse_location_object(self, location: Location):
         misp_object = self._create_misp_object('geolocation', location)

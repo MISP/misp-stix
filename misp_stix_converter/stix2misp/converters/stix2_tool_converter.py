@@ -64,7 +64,7 @@ class ExternalSTIX2ToolConverter(ExternalSTIX2Converter):
             self._handle_labels(meta, tool.labels)
         if meta:
             tool_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(tool_args)
+        return self.main_parser._create_misp_galaxy_cluster(**tool_args)
 
 
 class InternalSTIX2ToolMapping(
@@ -120,7 +120,7 @@ class InternalSTIX2ToolConverter(InternalSTIX2Converter):
             self._handle_labels(meta, tool.labels)
         if meta:
             tool_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(tool_args)
+        return self.main_parser._create_misp_galaxy_cluster(**tool_args)
 
     def _parse_script_object(self, tool: _TOOL_TYPING):
         misp_object = self._create_misp_object('script', tool)

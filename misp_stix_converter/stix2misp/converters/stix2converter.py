@@ -73,12 +73,6 @@ class STIX2Converter(metaclass=ABCMeta):
             misp_object.from_dict(**self._parse_timeline(stix_object))
         return misp_object
 
-    @staticmethod
-    def _create_misp_galaxy_cluster(cluster_args: dict) -> MISPGalaxyCluster:
-        cluster = MISPGalaxyCluster()
-        cluster.from_dict(**cluster_args)
-        return cluster
-
     ############################################################################
     #                     STIX OBJECTS CONVERSION METHODS.                     #
     ############################################################################

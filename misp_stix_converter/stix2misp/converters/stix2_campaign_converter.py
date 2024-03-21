@@ -51,7 +51,7 @@ class ExternalSTIX2CampaignConverter(ExternalSTIX2Converter):
             )
         if meta:
             campaign_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(campaign_args)
+        return self.main_parser._create_misp_galaxy_cluster(**campaign_args)
 
 
 class InternalSTIX2CampaignConverter(InternalSTIX2Converter):
