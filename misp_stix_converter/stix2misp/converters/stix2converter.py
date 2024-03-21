@@ -6,7 +6,7 @@ from ..exceptions import (
 from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
-from pymisp import AbstractMISP, MISPGalaxy, MISPGalaxyCluster, MISPObject
+from pymisp import AbstractMISP, MISPGalaxyCluster, MISPObject
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, Malware as Malware_v20)
 from stix2.v21.sdo import (
@@ -286,7 +286,6 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
 
     def _create_galaxy_args(self, stix_object: _GALAXY_OBJECTS_TYPING,
                             galaxy_type: Optional[str] = None):
-        misp_galaxy = MISPGalaxy()
         if galaxy_type is None:
             galaxy_type = stix_object.type
         mapping = self._mapping.galaxy_name_mapping(galaxy_type)
@@ -305,12 +304,8 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
                 }
             )
             galaxy_type = f'stix-{version}-{galaxy_type}'
-        misp_galaxy.from_dict(
-            **{
-                'type': galaxy_type, 'name': name, **galaxy_args
-            }
-        )
-        self.main_parser._galaxies[galaxy_type] = misp_galaxy
+        galaxy_args.update({'type': galaxy_type, 'name': name})
+        self.main_parser._galaxies[galaxy_type] = galaxy_args
 
     def _handle_meta_fields(self, stix_object: _GALAXY_OBJECTS_TYPING) -> dict:
         mapping = f"{stix_object.type.replace('-', '_')}_meta_mapping"
@@ -437,21 +432,12 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         cluster_args['description'] = value.capitalize()
         return cluster_args
 
-    def _create_galaxy_args(
-            self, galaxy_type: str, galaxy_name: str):
-        misp_galaxy = MISPGalaxy()
-        if galaxy_type in self.main_parser.galaxy_definitions:
-            misp_galaxy.from_dict(
-                **self.main_parser.galaxy_definitions[galaxy_type]
-            )
-        else:
-            misp_galaxy.from_dict(
-                **{
-                    'type': galaxy_type,
-                    'name': galaxy_name
-                }
-            )
-        self.main_parser._galaxies[galaxy_type] = misp_galaxy
+    def _create_galaxy_args(self, galaxy_type: str, galaxy_name: str):
+        self.main_parser._galaxies[galaxy_type] = (
+            self.main_parser.galaxy_definitions[galaxy_type]
+            if galaxy_type in self.main_parser.galaxy_definitions
+            else {'type': galaxy_type, 'name': galaxy_name}
+        )
 
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
         for key, value in stix_object.items():

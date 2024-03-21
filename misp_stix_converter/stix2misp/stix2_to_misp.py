@@ -755,19 +755,17 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         galaxy_type = f'stix-{version}-acs-marking'
         name = f'STIX {version} ACS Marking'
         if galaxy_type not in self._galaxies:
-            misp_galaxy = MISPGalaxy()
-            misp_galaxy.from_dict(
-                namespace='stix',
-                type=galaxy_type,
-                version=''.join(version.split('.')),
-                uuid=self._create_v5_uuid(name),
-                name=name,
-                description=(
+            self._galaxies[galaxy_type] = {
+                'namespace': 'stix',
+                'type': galaxy_type,
+                'version': ''.join(version.split('.')),
+                'uuid': self._create_v5_uuid(name),
+                'name': name,
+                'description': (
                     f'STIX {version} Marking Definition extension'
                     ' to support ACS Markings'
                 )
-            )
-            self._galaxies[galaxy_type] = misp_galaxy
+            }
         meta = {}
         for key, value in extension.items():
             if isinstance(value, dict):
@@ -1234,12 +1232,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         misp_event.from_dict(**event_args)
         self._handle_misp_event_tags(misp_event, stix_object)
         return misp_event
-
-    @staticmethod
-    def _create_misp_galaxy(galaxy_args: dict) -> MISPGalaxy:
-        galaxy = MISPGalaxy()
-        galaxy.from_dict(**galaxy_args)
-        return galaxy
 
     @staticmethod
     def _create_misp_galaxy_cluster(cluster_args: dict) -> MISPGalaxyCluster:
