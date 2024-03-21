@@ -820,6 +820,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         galaxy_cluster.from_dict(
             type=f'stix-{version}-acs-marking',
             uuid=self._create_v5_uuid(object_id),
+            collection_uuid=self._create_v5_uuid(name),
             version=''.join(version.split('.')),
             value=extension.get('name', extension['identifier']),
             meta=meta
