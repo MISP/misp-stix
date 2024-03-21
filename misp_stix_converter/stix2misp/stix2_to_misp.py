@@ -827,7 +827,8 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         extension_definition['cluster'].append(galaxy_cluster)
 
     def _parse_marking_definition(
-            self, marking_definition: _MARKING_DEFINITION_TYPING) -> dict | str:
+            self, marking_definition: _MARKING_DEFINITION_TYPING
+            ) -> Union[dict, str]:
         if hasattr(marking_definition, 'definition_type'):
             definition_type = marking_definition.definition_type
             definition = marking_definition.definition[definition_type]
@@ -861,7 +862,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 self._object_ref_loading_error(error)
                 continue
             yield marking_definition
-
 
     ############################################################################
     #                 MISP GALAXIES & CLUSTERS PARSING METHODS                 #
