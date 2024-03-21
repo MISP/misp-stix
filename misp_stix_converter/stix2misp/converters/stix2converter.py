@@ -394,16 +394,9 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _handle_object_case(self, stix_object: _SDO_TYPING, attributes: list,
                             name: str) -> MISPObject:
         misp_object = self._create_misp_object(name, stix_object)
-        tags = tuple(self._handle_tags_from_stix_fields(stix_object))
-        if tags:
-            for attribute in attributes:
-                misp_attribute = misp_object.add_attribute(**attribute)
-                for tag in tags:
-                    misp_attribute.add_tag(tag)
-            return self.main_parser.misp_event.add_object(misp_object)
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
-        return self.main_parser.misp_event.add_object(misp_object)
+        return self.main_parser._add_misp_object(misp_object, stix_object)
 
 
 class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
