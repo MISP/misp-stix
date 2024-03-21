@@ -46,7 +46,9 @@ class ExternalSTIX2CourseOfActionConverter(ExternalSTIX2Converter):
             )
         if meta:
             course_of_action_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(course_of_action_args)
+        return self.main_parser._create_misp_galaxy_cluster(
+            **course_of_action_args
+        )
 
 
 class InternalSTIX2CourseOfActionMapping(InternalSTIX2Mapping):
@@ -108,7 +110,9 @@ class InternalSTIX2CourseOfActionConverter(InternalSTIX2Converter):
             )
         if meta:
             course_of_action_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(course_of_action_args)
+        return self.main_parser._create_misp_galaxy_cluster(
+            **course_of_action_args
+        )
 
     def _parse_course_of_action_object(
             self, course_of_action: _COURSE_OF_ACTION_TYPING):
