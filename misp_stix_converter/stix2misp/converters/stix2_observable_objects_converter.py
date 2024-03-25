@@ -328,9 +328,29 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
             self._parse_directory_observable_object(
                 _file.parent_directory_ref, child=_file.id
             )
-        if getattr(_file, 'extensions', {}).get('windows-pebinary-ext'):
-            pe_object = self._parse_file_pe_extension_observable_object(_file)
-            misp_object.add_reference(pe_object.uuid, 'includes')
+        if hasattr(_file, 'extensions'):
+            extensions = _file.extensions
+            if extensions.get('archive-ext'):
+                archive_ext = extensions['archive-ext']
+                if hasattr(archive_ext, 'comment'):
+                    comment = archive_ext.comment
+                    if hasattr(misp_object, 'comment'):
+                        comment = f'{comment} - {misp_object.comment}'
+                    misp_object.comment = comment
+                for contains_ref in archive_ext.contains_refs:
+                    object_type = contains_ref.split('--')[0]
+                    contained_object = getattr(
+                        self,
+                        f'_parse_{object_type}_observable_object'
+                    )(
+                        contains_ref
+                    )
+                    misp_object.add_reference(contained_object.uuid, 'contains')
+            if extensions.get('windows-pebinary-ext'):
+                pe_object = self._parse_file_pe_extension_observable_object(
+                    _file
+                )
+                misp_object.add_reference(pe_object.uuid, 'includes')
         return misp_object
 
     def _parse_file_pe_extension_observable_object(
