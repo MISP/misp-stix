@@ -270,7 +270,7 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
         email_object = self._create_misp_object_from_observable_object(
             'email', email_message
         )
-        for attribute in self._parse_generic_observable(email_message, 'email'):
+        for attribute in self._parse_email_observable(email_message):
             email_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
@@ -298,12 +298,6 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
                         misp_object.add_attribute(**attribute)
                     observable['used'][self.event_uuid] = True
                     observable['misp_object'] = misp_object
-        if hasattr(email_message, 'additional_header_fields'):
-            attributes = self._parse_email_additional_header(
-                email_message.additional_header_fields
-            )
-            for attribute in attributes:
-                misp_object.add_attribute(**attribute)
         return misp_object
 
     def _parse_file_observable_object(self, file_ref: str) -> MISPObject:

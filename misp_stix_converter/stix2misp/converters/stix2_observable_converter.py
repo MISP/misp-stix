@@ -177,18 +177,24 @@ class STIX2ObservableConverter(STIX2Converter):
     def _fetch_observable(self, object_ref: str) -> dict:
         return self.main_parser._observable[object_ref]
 
-    def _parse_email_additional_header(
+    def _parse_email_observable(
             self, observable: _EMAIL_MESSAGE_TYPING,
             object_id: Optional[str] = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
-        mapping = self._mapping.email_additional_header_fields_mapping
-        email_header = observable.additional_header_fields
-        for field, attribute in mapping().items():
-            if email_header.get(field):
+        for field, attribute in self._mapping.email_object_mapping.items():
+            if hasattr(observable, field):
                 yield from self._populate_object_attributes(
-                    attribute, email_header[field], object_id
+                    attribute, getattr(observable, field), object_id
                 )
+        if hasattr(observable, 'additional_header_fields'):
+            mapping = self._mapping.email_additional_header_fields_mapping
+            email_header = observable.additional_header_fields
+            for field, attribute in mapping().items():
+                if email_header.get(field):
+                    yield from self._populate_object_attributes(
+                        attribute, email_header[field], object_id
+                    )
 
     def _parse_email_reference_observable(
             self, observable: _EMAIL_ADDRESS_TYPING, feature: str,
