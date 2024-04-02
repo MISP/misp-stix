@@ -76,6 +76,14 @@ class ExternalSTIX2ObservedDataConverter(
             self._set_observable_relationships()
         return self._observable_relationships
 
+    @property
+    def referenced_ids(self):
+        try:
+            return self.__referenced_ids
+        except AttributeError:
+            self._extract_referenced_ids_from_observable_object_refs()
+            return self.__referenced_ids
+
     def parse(self, observed_data_ref: str):
         observed_data = self.main_parser._get_stix_object(observed_data_ref)
         try:
@@ -145,6 +153,16 @@ class ExternalSTIX2ObservedDataConverter(
     ############################################################################
     #               MULTIPLE OBSERVABLE OBJECTS PARSING METHODS.               #
     ############################################################################
+
+    def _extract_referenced_ids_from_observable_object_refs(self):
+        self.__referenced_ids = defaultdict(set)
+        for object_id, observable_object in self._observable.items():
+            for key, value in observable_object['observable'].items():
+                if key.endswith('_ref'):
+                    self.referenced_ids[value].add(object_id)
+                if key.endswith('_refs'):
+                    for reference in value:
+                        self.referenced_ids[reference].add(object_id)
 
     @staticmethod
     def _extract_referenced_ids_from_observable_objects(
@@ -565,6 +583,104 @@ class ExternalSTIX2ObservedDataConverter(
                         *directory.contains_refs
                     )
                 )
+
+    def _parse_domain_ip_observable_object_refs(
+            self, observed_data: ObservedData_v21, *object_refs: tuple):
+        for object_ref in object_refs or observed_data.object_refs:
+            if object_ref in self.referenced_ids:
+                continue
+            observable = self._fetch_observable(object_ref)
+            domain = observable['observable']
+            if hasattr(domain, 'resolves_to_refs'):
+                if observable['used'].get(self.event_uuid, False):
+                    self._handle_misp_object_fields(
+                        observable['misp_object'], observed_data
+                    )
+                    continue
+                domain_object = self._create_misp_object('domain-ip')
+                domain_object.from_dict(
+                    comment=f'Observed Data ID: {observed_data.id}',
+                    **self._parse_timeline(observed_data)
+                )
+                self.main_parser._check_sighting_replacements(
+                    self.main_parser._sanitise_uuid(observed_data.id),
+                    domain_object.uuid
+                )
+                domain_object.uuid = self.main_parser._create_v5_uuid(
+                    ' - '.join((domain.id, *domain.resolves_to_refs))
+                )
+                domain_object.add_attribute(
+                    'domain', domain.value,
+                    uuid=self.main_parser._sanitise_attribute_uuid(domain.id)
+                )
+                misp_object = self.main_parser._add_misp_object(
+                    domain_object, observed_data
+                )
+                observable['used'][self.event_uuid] = True
+                observable['misp_object'] = misp_object
+                for resolved_ref in domain.resolves_to_refs:
+                    resolved_observable = self._fetch_observable(resolved_ref)
+                    resolved_object= resolved_observable['observable']
+                    misp_object.add_attribute(
+                        (
+                            'domain' if resolved_object.type == 'domain-name'
+                            else 'ip'
+                        ),
+                        resolved_object.value,
+                        uuid=self.main_parser._sanitise_attribute_uuid(
+                            resolved_ref
+                        )
+                    )
+                    resolved_observable['used'][self.event_uuid] = True
+                    resolved_observable['misp_object'] = misp_object
+                continue
+            if observable['used'].get(self.event_uuid, False):
+                self._handle_misp_object_fields(
+                    observable['misp_attribute'], observed_data
+                )
+                continue
+            attribute = self._parse_generic_observable_object_ref_as_attribute(
+                domain, observed_data, 'domain'
+            )
+            observable['misp_attribute'] = attribute
+            observable['used'][self.event_uuid] = True
+
+    def _parse_domain_ip_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        referenced_ids = self._extract_referenced_ids_from_observable_objects(
+            **observed_data.objects
+        )
+        for identifier, observable_object in observed_data.objects:
+            if identifier in referenced_ids:
+                continue
+            if hasattr(observable_object, 'resolves_to_refs'):
+                object_id = f'{observed_data.id} - {identifier}'
+                misp_object = self._create_misp_object_from_observable_object(
+                    'domain-ip', observed_data, ' - '.join(
+                        (object_id, *observable_object.resolves_to_refs)
+                    )
+                )
+                misp_object.add_attribute(
+                    'domain', observable_object.value,
+                    uuid=self.main_parser._create_v5_uuid(object_id)
+                )
+                for resolved_ref in observable_object.resolves_to_refs:
+                    resolved_object = observed_data.objects[resolved_ref]
+                    misp_object.add_attribute(
+                        (
+                            'domain' if resolved_object.type == 'domain-name'
+                            else 'ip'
+                        ),
+                        resolved_object.value,
+                        uuid=self.main_parser._create_v5_uuid(
+                            f'{observed_data.id} - {resolved_ref}'
+                        )
+                    )
+                self.main_parser._add_misp_object(misp_object, observed_data)
+                continue
+            self._parse_generic_observable_object_as_attribute(
+                observed_data, identifier, 'domain'
+            )
 
     def _parse_domain_observable_object_refs(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
