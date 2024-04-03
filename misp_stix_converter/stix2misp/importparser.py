@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 
 import json
-import subprocess
 import traceback
 from .exceptions import UnavailableGalaxyResourcesError
 from abc import ABCMeta
@@ -460,22 +458,23 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             self.__galaxy_definitions = json.load(f)
 
     @staticmethod
-    def __get_misp_galaxy_fingerprint():
-        galaxy_path = _DATA_PATH / 'misp-galaxy'
-        status = subprocess.Popen(
-            [
-                'git',
-                'submodule',
-                'status',
-                galaxy_path
-            ],
-            stdout=subprocess.PIPE
-        )
-        stdout = status.communicate()[0]
-        try:
-            return stdout.decode().split(' ')[1]
-        except IndexError:
-            return None
+    def __get_misp_galaxy_fingerprint() -> Optional[str]:
+        galaxy_git = _DATA_PATH / 'misp-galaxy' / '.git'
+
+        if galaxy_git.is_file():
+            with open(galaxy_git, 'rt') as f:
+                git_file_content = f.read()
+                if git_file_content.startswith('gitdir:'):
+                    galaxy_git = _DATA_PATH / 'misp-galaxy' / git_file_content.split(':')[1].strip()
+                else:
+                    return None
+
+        head_file = galaxy_git / 'HEAD'
+        if head_file.is_file():
+            with open(head_file, 'rt') as f:
+                return f.read().strip()
+
+        return None
 
     def __get_synonyms_mapping(self):
         synonyms_path = _DATA_PATH / 'synonymsToTagNames.json'
