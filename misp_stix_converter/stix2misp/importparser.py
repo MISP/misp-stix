@@ -65,6 +65,11 @@ def _load_stix2_content(filename):
         return _handle_stix2_loading_error(json.loads(stix2_content))
 
 
+def _load_json_file(path):
+    with open(path, 'rb') as f:
+        return json.load(f)
+
+
 class STIXtoMISPParser(metaclass=ABCMeta):
     def __init__(self, distribution: int, sharing_group_id: Union[int, None],
                  galaxies_as_tags: bool):
@@ -411,8 +416,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         relationships_path = Path(
             AbstractMISP().resources_path / 'misp-objects' / 'relationships'
         )
-        with open(relationships_path / 'definition.json', 'r') as f:
-            relationships = json.load(f)
+        relationships = _load_json_file(relationships_path / 'definition.json')
         self.__relationship_types = {
             relationship['name']: relationship['opposite'] for relationship
             in relationships['values'] if 'opposite' in relationship
@@ -448,14 +452,12 @@ class STIXtoMISPParser(metaclass=ABCMeta):
                 raise UnavailableGalaxyResourcesError(data_path)
             definitions = {}
             for filename in data_path.glob('*.json'):
-                with open(filename, 'rt', encoding='utf-8') as f:
-                    galaxy_definition = json.loads(f.read())
+                galaxy_definition = _load_json_file(filename)
                 definitions[galaxy_definition['type']] = galaxy_definition
             with open(definitions_path, 'wt', encoding='utf-8') as f:
                 f.write(json.dumps(definitions))
             self.__check_fingerprint()
-        with open(definitions_path, 'rt', encoding='utf-8') as f:
-            self.__galaxy_definitions = json.load(f)
+        self.__galaxy_definitions = _load_json_file(definitions_path)
 
     @staticmethod
     def __get_misp_galaxy_fingerprint() -> Optional[str]:
@@ -484,8 +486,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
                 raise UnavailableGalaxyResourcesError(data_path)
             synonyms_mapping = defaultdict(list)
             for filename in data_path.glob('*.json'):
-                with open(filename, 'rt', encoding='utf-8') as f:
-                    cluster_definition = json.loads(f.read())
+                cluster_definition = _load_json_file(filename)
                 cluster_type = f"misp-galaxy:{cluster_definition['type']}"
                 for cluster in cluster_definition['values']:
                     value = cluster['value']
@@ -497,8 +498,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             with open(synonyms_path, 'wt', encoding='utf-8') as f:
                 f.write(json.dumps(synonyms_mapping))
             self.__check_fingerprint()
-        with open(synonyms_path, 'rt', encoding='utf-8') as f:
-            self.__synonyms_mapping = json.load(f)
+        self.__synonyms_mapping = _load_json_file(synonyms_path)
 
     ############################################################################
     #                     UUID SANITATION HANDLING METHODS                     #
