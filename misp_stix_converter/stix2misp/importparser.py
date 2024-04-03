@@ -144,7 +144,7 @@ class STIXtoMISPParser(metaclass=ABCMeta):
             return self.__galaxy_definitions
 
     @property
-    def galaxy_feature(self) -> bool:
+    def galaxy_feature(self) -> str:
         return self.__galaxy_feature
 
     @property
