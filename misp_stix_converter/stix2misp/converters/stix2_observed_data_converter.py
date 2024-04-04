@@ -16,13 +16,13 @@ from collections.abc import Generator
 from datetime import datetime
 from pymisp import MISPAttribute, MISPObject
 from stix2.v20.observables import (
-    WindowsPEBinaryExt as WindowsPEBinaryExt_v20,
+    File as File_v20, WindowsPEBinaryExt as WindowsPEBinaryExt_v20,
     WindowsRegistryValueType as WindowsRegistryValueType_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
 from stix2.v21.observables import (
-    Artifact, AutonomousSystem, Directory, DomainName, File, IPv4Address,
+    Artifact, AutonomousSystem, Directory, DomainName, IPv4Address,
     IPv6Address, MACAddress, Mutex, Process, Software, URL, UserAccount,
-    WindowsRegistryKey, X509Certificate,
+    File as File_v21, WindowsRegistryKey, X509Certificate,
     WindowsPEBinaryExt as WindowsPEBinaryExt_v21,
     WindowsRegistryValueType as WindowsRegistryValueType_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
@@ -32,15 +32,18 @@ if TYPE_CHECKING:
     from ..external_stix2_to_misp import ExternalSTIX2toMISPParser
     from ..internal_stix2_to_misp import InternalSTIX2toMISPParser
 
+_FILE_TYPING = Union[
+    File_v20, File_v21
+]
 _GENERIC_OBSERVABLE_OBJECT_TYPING = Union[
-    Artifact, Directory, File, Process, Software, UserAccount,
+    Artifact, Directory, File_v21, Process, Software, UserAccount,
     WindowsRegistryKey, X509Certificate
 ]
 _GENERIC_OBSERVABLE_TYPING = Union[
     DomainName, IPv4Address, IPv6Address, MACAddress, Mutex, URL
 ]
 _OBSERVABLE_OBJECTS_TYPING = Union[
-    Artifact, AutonomousSystem, Directory, File, Process, Software,
+    Artifact, AutonomousSystem, Directory, File_v21, Process, Software,
     UserAccount, WindowsRegistryKey, X509Certificate
 ]
 _OBSERVED_DATA_TYPING = Union[
@@ -904,6 +907,270 @@ class ExternalSTIX2ObservedDataConverter(
                     maxlen=0
                 )
 
+    def _parse_email_message_observable_object_refs(
+            self, observed_data: ObservedData_v21, *object_refs: tuple):
+        for object_ref in object_refs or observed_data.object_refs:
+            if object_ref.split('--')[0] != 'email-message':
+                continue
+            observable = self._fetch_observable(object_ref)
+            email_message = observable['observable']
+            misp_object = self._parse_generic_observable_object_ref(
+                email_message, observed_data, 'email', False
+            )
+            observable['used'][self.event_uuid] = True
+            observable['misp_object'] = misp_object
+            if hasattr(email_message, 'from_ref'):
+                observable = self._fetch_observable(email_message.from_ref)
+                attributes = self._parse_email_reference_observable(
+                    observable['observable'], 'from'
+                )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
+                observable['used'][self.event_uuid] = True
+                observable['misp_object'] = misp_object
+            for feature in ('to', 'cc', 'bcc'):
+                field = f'{feature}_refs'
+                if hasattr(email_message, field):
+                    for reference in getattr(email_message, field):
+                        observable = self._fetch_observable(reference)
+                        attributes = self._parse_email_reference_observable(
+                            observable['observable'], feature
+                        )
+                        for attribute in attributes:
+                            misp_object.add_attribute(**attribute)
+                        observable['used'][self.event_uuid] = True
+                        observable['misp_object'] = misp_object
+            if hasattr(email_message, 'body_multipart'):
+                for index, multipart in enumerate(email_message.body_multipart):
+                    if hasattr(multipart, 'body'):
+                        misp_object.add_attribute(
+                            'email-body', multipart.body,
+                            uuid=self.main_parser._create_v5_uuid(
+                                f'{email_message.id} - body_multipart - {index}'
+                                f' - email-body - {multipart.body}'
+                            )
+                        )
+                        continue
+                    observable = self._fetch_observable(
+                        multipart.body_raw_ref
+                    )
+                    if observable['used'].get(self.event_uuid, False):
+                        referenced_object = observable['misp_object']
+                        self._handle_misp_object_fields(
+                            referenced_object, observed_data
+                        )
+                        misp_object.add_reference(
+                            referenced_object.uuid, 'contains'
+                        )
+                        continue
+                    observable_object = observable['observable']
+                    if observable_object.type == 'artifact':
+                        artifact = self._parse_generic_observable_object_ref(
+                            observable_object, observed_data, 'artifact', False
+                        )
+                        misp_object.add_reference(artifact.uuid, 'contains')
+                        observable['misp_object'] = artifact
+                        observable['used'][self.event_uuid] = True
+                        continue
+                    file_object = self._parse_generic_observable_object_ref(
+                        observable_object, observed_data, 'file', False
+                    )
+                    misp_object.add_reference(file_object.uuid, 'contains')
+                    observable['misp_object'] = file_object
+                    observable['used'][self.event_uuid] = True
+                    self._parse_file_observable_object_ref_references(
+                        file_object, observable_object, observed_data
+                    )
+
+    def _parse_email_message_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        if len(observed_data.objects) == 1:
+            misp_object = self._parse_generic_single_observable_object(
+                observed_data, 'email', False
+            )
+            email_message = observed_data.objects['0']
+            if hasattr(email_message, 'body_multipart'):
+                for index, multipart in enumerate(email_message.body_multipart):
+                    if hasattr(multipart, 'body'):
+                        misp_object.add_attribute(
+                            'email-body', multipart.body,
+                            uuid=self.main_parser._create_v5_uuid(
+                                f'{observed_data.id} - body_multipart - {index}'
+                                f' - email-body - {multipart.body}'
+                            )
+                        )
+                        continue
+        observable_objects = {
+            object_id: {'used': False}
+            for object_id, observable in observed_data.objects.items()
+            if observable.type in ('file', 'artifact')
+        }
+        for identifier, observable in observed_data.objects.items():
+            if observable.type != 'email-message':
+                continue
+            misp_object = self._parse_generic_observable_object(
+                observed_data, identifier, 'email', False
+            )
+            object_id = f'{observed_data.id} - {identifier}'
+            if hasattr(observable, 'from_ref'):
+                attributes = self._parse_email_reference_observable(
+                    observed_data.objects[observable.from_ref],
+                    'from', object_id
+                )
+                for attribute in attributes:
+                    misp_object.add_attribute(**attribute)
+            for feature in ('to', 'cc', 'bcc'):
+                field = f'{feature}_refs'
+                if hasattr(observable, field):
+                    for reference in getattr(observable, field):
+                        attributes = self._parse_email_reference_observable(
+                            observed_data.objects[reference],
+                            feature, object_id
+                        )
+                        for attribute in attributes:
+                            misp_object.add_attribute(**attribute)
+            if hasattr(observable, 'body_multipart'):
+                for index, multipart in enumerate(observable.body_multipart):
+                    if hasattr(multipart, 'body'):
+                        misp_object.add_attribute(
+                            'email-body', multipart.body,
+                            uuid=self.main_parser._create_v5_uuid(
+                                f'{object_id} - body_multipart - {index}'
+                                f' - email-body - {multipart.body}'
+                            )
+                        )
+                        continue
+                    body_ref = multipart.body_raw_ref
+                    if observable_objects[body_ref]['used']:
+                        misp_object.add_reference(
+                            observable_objects[body_ref]['misp_object'].uuid,
+                            'contains'
+                        )
+                        continue
+                    if observed_data.objects[body_ref].type == 'artifact':
+                        artifact = self._parse_generic_observable_object(
+                            observed_data, body_ref, 'artifact', False
+                        )
+                        misp_object.add_reference(artifact.uuid, 'contains')
+                        continue
+                    file_object = self._parse_generic_observable_object(
+                        observed_data, body_ref, 'file', False
+                    )
+                    misp_object.add_reference(file_object.uuid, 'contains')
+                    self._parse_file_observable_object_references(
+                        file_object, observable, observed_data,
+                        observable_objects, body_ref
+                    )
+
+    def _parse_file_observable_object_ref_references(
+            self, misp_object: MISPObject, observable_object: File_v21,
+            observed_data: ObservedData_v21):
+        if hasattr(observable_object, 'extensions'):
+            extensions = observable_object.extensions
+            if extensions.get('archive-ext'):
+                archive_ext = extensions['archive-ext']
+                if hasattr(archive_ext, 'comment'):
+                    misp_object.from_dict(
+                        comment=' - '.join(
+                            (archive_ext.comment, misp_object.comment)
+                        )
+                    )
+                self._handle_misp_object_references(
+                    misp_object,
+                    *self._parse_contained_object_refs(
+                        observed_data, misp_object.uuid,
+                        *archive_ext.contains_refs
+                    )
+                )
+            if extensions.get('windows-pebinary-ext'):
+                windows_pe_ext = extensions['windows-pebinary-ext']
+                pe_object_uuid = self._parse_file_pe_extension_observable(
+                    windows_pe_ext, observed_data,
+                    f'{observable_object.id} - windows-pebinary-ext'
+                )
+                misp_object.add_reference(pe_object_uuid, 'includes')
+        if hasattr(observable_object, 'parent_directory_ref'):
+            parent_ref = observable_object.parent_directory_ref
+            if parent_ref not in observed_data.object_refs:
+                self.observable_relationships[misp_object.uuid].add(
+                    (
+                        self.main_parser._sanitise_uuid(parent_ref),
+                        'contained-in'
+                    )
+                )
+            else:
+                parent = self._fetch_observable(parent_ref)
+                parent_object = self._handle_observable_object_refs_parsing(
+                    parent, observed_data, 'directory'
+                )
+                self._handle_misp_object_references(
+                    misp_object, parent_object.uuid,
+                    relationship_type='contained-in'
+                )
+        if hasattr(observable_object, 'content_ref'):
+            content_ref = observable_object.content_ref
+            if content_ref not in observed_data.object_refs:
+                content_uuid = self.main_parser._sanitise_uuid(content_ref)
+                self.observable_relationships[content_uuid].add(
+                    (misp_object.uuid, 'content-of')
+                )
+            else:
+                content = self._fetch_observable(content_ref)
+                artifact = self._handle_observable_object_refs_parsing(
+                    content, observed_data, 'artifact', False
+                )
+                self._handle_misp_object_references(
+                    artifact, misp_object.uuid,
+                    relationship_type='content-of'
+                )
+
+    def _parse_file_observable_object_references(
+            self, misp_object: MISPObject, file_object: _FILE_TYPING,
+            observed_data: _OBSERVED_DATA_TYPING,
+            observable_objects: dict, object_id: str):
+        if hasattr(file_object, 'extensions'):
+            extensions = file_object.extensions
+            if extensions.get('archive-ext'):
+                archive_ext = extensions['archive-ext']
+                if hasattr(archive_ext, 'comment'):
+                    misp_object.from_dict(
+                        comment=' - '.join(
+                            (archive_ext.comment, misp_object.comment)
+                        )
+                    )
+                self._handle_misp_object_references(
+                    misp_object,
+                    *self._parse_contained_objects(
+                        observed_data, observable_objects,
+                        *archive_ext.contains_refs
+                    )
+                )
+            if extensions.get('windows-pebinary-ext'):
+                pe_object_uuid = self._parse_file_pe_extension_observable(
+                    extensions['windows-pebinary-ext'], observed_data,
+                    f'{observed_data.id} - '
+                    f'{object_id} - windows-pebinary-ext'
+                )
+                misp_object.add_reference(pe_object_uuid, 'includes')
+        if hasattr(file_object, 'parent_directory_ref'):
+            parent_ref = file_object.parent_directory_ref
+            parent_object = self._handle_observable_objects_parsing(
+                observable_objects, parent_ref, observed_data, 'directory'
+            )
+            self._handle_misp_object_references(
+                misp_object, parent_object.uuid,
+                relationship_type='contained-in'
+            )
+        if hasattr(file_object, 'content_ref'):
+            content_ref = file_object.content_ref
+            artifact = self._handle_observable_objects_parsing(
+                observable_objects, content_ref, observed_data,
+                'artifact', False
+            )
+            self._handle_misp_object_references(
+                artifact, misp_object.uuid, relationship_type='content-of'
+            )
+
     def _parse_file_observable_object_refs(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
@@ -926,64 +1193,9 @@ class ExternalSTIX2ObservedDataConverter(
                 )
             if object_type == 'directory':
                 continue
-            if hasattr(observable_object, 'extensions'):
-                extensions = observable_object.extensions
-                if extensions.get('archive-ext'):
-                    archive_ext = extensions['archive-ext']
-                    if hasattr(archive_ext, 'comment'):
-                        misp_object.from_dict(
-                            comment=' - '.join(
-                                (archive_ext.comment, misp_object.comment)
-                            )
-                        )
-                    self._handle_misp_object_references(
-                        misp_object,
-                        *self._parse_contained_object_refs(
-                            observed_data, misp_object.uuid,
-                            *archive_ext.contains_refs
-                        )
-                    )
-                if extensions.get('windows-pebinary-ext'):
-                    windows_pe_ext = extensions['windows-pebinary-ext']
-                    pe_object_uuid = self._parse_file_pe_extension_observable(
-                        windows_pe_ext, observed_data,
-                        f'{observable_object.id} - windows-pebinary-ext'
-                    )
-                    misp_object.add_reference(pe_object_uuid, 'includes')
-            if hasattr(observable_object, 'parent_directory_ref'):
-                parent_ref = observable_object.parent_directory_ref
-                if parent_ref not in observed_data.object_refs:
-                    self.observable_relationships[misp_object.uuid].add(
-                        (
-                            self.main_parser._sanitise_uuid(parent_ref),
-                            'contained-in'
-                        )
-                    )
-                else:
-                    parent = self._fetch_observable(parent_ref)
-                    parent_object = self._handle_observable_object_refs_parsing(
-                        parent, observed_data, 'directory'
-                    )
-                    self._handle_misp_object_references(
-                        misp_object, parent_object.uuid,
-                        relationship_type='contained-in'
-                    )
-            if hasattr(observable_object, 'content_ref'):
-                content_ref = observable_object.content_ref
-                if content_ref not in observed_data.object_refs:
-                    content_uuid = self.main_parser._sanitise_uuid(content_ref)
-                    self.observable_relationships[content_uuid].add(
-                        (misp_object.uuid, 'content-of')
-                    )
-                else:
-                    content = self._fetch_observable(content_ref)
-                    artifact = self._handle_observable_object_refs_parsing(
-                        content, observed_data, 'artifact', False
-                    )
-                    self._handle_misp_object_references(
-                        artifact, misp_object.uuid,
-                        relationship_type='content-of'
-                    )
+            self._parse_file_observable_object_ref_references(
+                misp_object, observable_object, observed_data
+            )
 
     def _parse_file_observable_objects(
             self, observed_data: _OBSERVED_DATA_TYPING,

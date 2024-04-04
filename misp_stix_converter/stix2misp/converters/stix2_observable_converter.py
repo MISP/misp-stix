@@ -466,7 +466,7 @@ class ExternalSTIX2ObservableMapping(
                     'email-message',
                     'email-message_file'
                 ),
-                'email'
+                'email_message'
             ),
             **dict.fromkeys(
                 (
