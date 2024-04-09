@@ -1255,48 +1255,10 @@ class ExternalSTIX2ObservedDataConverter(
                 )
             if object_type == 'directory':
                 continue
-            if hasattr(observable_object, 'extensions'):
-                extensions = observable_object.extensions
-                if extensions.get('archive-ext'):
-                    archive_ext = extensions['archive-ext']
-                    if hasattr(archive_ext, 'comment'):
-                        misp_object.from_dict(
-                            comment=' - '.join(
-                                (archive_ext.comment, misp_object.comment)
-                            )
-                        )
-                    self._handle_misp_object_references(
-                        misp_object,
-                        *self._parse_contained_objects(
-                            observed_data, observable_objects,
-                            *archive_ext.contains_refs
-                        )
-                    )
-                if extensions.get('windows-pebinary-ext'):
-                    pe_object_uuid = self._parse_file_pe_extension_observable(
-                        extensions['windows-pebinary-ext'], observed_data,
-                        f'{observed_data.id} - '
-                        f'{object_id} - windows-pebinary-ext'
-                    )
-                    misp_object.add_reference(pe_object_uuid, 'includes')
-            if hasattr(observable_object, 'parent_directory_ref'):
-                parent_ref = observable_object.parent_directory_ref
-                parent_object = self._handle_observable_objects_parsing(
-                    observable_objects, parent_ref, observed_data, 'directory'
-                )
-                self._handle_misp_object_references(
-                    misp_object, parent_object.uuid,
-                    relationship_type='contained-in'
-                )
-            if hasattr(observable_object, 'content_ref'):
-                content_ref = observable_object.content_ref
-                artifact = self._handle_observable_objects_parsing(
-                    observable_objects, content_ref, observed_data,
-                    'artifact', False
-                )
-                self._handle_misp_object_references(
-                    artifact, misp_object.uuid, relationship_type='content-of'
-                )
+            self._parse_file_observable_object_references(
+                misp_object, observable_object, observed_data,
+                observable_objects, object_id
+            )
 
     def _parse_file_pe_extension_observable(
             self, pe_extension: _WINDOWS_PE_BINARY_EXT_TYPING,
