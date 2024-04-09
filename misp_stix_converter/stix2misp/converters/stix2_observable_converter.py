@@ -182,7 +182,7 @@ class STIX2ObservableConverter(STIX2Converter):
             object_id: Optional[str] = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
-        for field, attribute in self._mapping.email_object_mapping.items():
+        for field, attribute in self._mapping.email_object_mapping().items():
             if hasattr(observable, field):
                 yield from self._populate_object_attributes(
                     attribute, getattr(observable, field), object_id

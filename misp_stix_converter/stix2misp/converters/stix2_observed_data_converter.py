@@ -2619,17 +2619,9 @@ class InternalSTIX2ObservedDataConverter(
                         for attribute in attributes:
                             misp_object.add_attribute(**attribute)
             object_id = getattr(observable, 'id', observed_data.id)
-            attributes = self._parse_generic_observable(
-                observable, 'email', object_id
-            )
+            attributes = self._parse_email_observable(observable, object_id)
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
-            if hasattr(observable, 'additional_header_fields'):
-                attributes = self._parse_email_additional_header(
-                    observable, object_id
-                )
-                for attribute in attributes:
-                    misp_object.add_attribute(**attribute)
             if hasattr(observable, 'body_multipart'):
                 for body_part in observable.body_multipart:
                     relation, value = body_part.content_disposition.split(';')
