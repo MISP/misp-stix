@@ -618,6 +618,13 @@ class ExternalSTIX2ObservableConverter(
         )
         return attribute
 
+    @staticmethod
+    def _parse_network_traffic_observable_fields(
+            observable: NetworkTraffic_v21) -> str:
+        if getattr(observable, 'extensions', {}).get('socket-ext'):
+            return 'network-socket'
+        return 'network-connection'
+
     def _parse_url_observable(self, observable: _URL_TYPING,
                               observed_data_id: str) -> Iterator[dict]:
         object_id = getattr(observable, 'id', observed_data_id)

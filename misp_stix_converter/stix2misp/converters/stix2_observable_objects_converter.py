@@ -428,42 +428,24 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
         observable['misp_attribute'] = misp_attribute
         return misp_attribute
 
-    def _parse_network_connection_observable_object(
-            self, observable: NetworkTraffic) -> MISPObject:
-        connection_object = self._create_misp_object_from_observable_object(
-            'network-connection', observable
-        )
-        attributes = self._parse_generic_observable(
-            observable, 'network_traffic'
-        )
-        for attribute in attributes:
-            connection_object.add_attribute(**attribute)
-        for attribute in self._parse_network_connection_observable(observable):
-            connection_object.add_attribute(**attribute)
-        return connection_object
-
-    def _parse_network_socket_observable_object(
-            self, observable: NetworkTraffic) -> MISPObject:
-        socket_object = self._create_misp_object_from_observable_object(
-            'network-socket', observable
-        )
-        attributes = self._parse_generic_observable(
-            observable, 'network_traffic'
-        )
-        for attribute in attributes:
-            socket_object.add_attribute(**attribute)
-        for attribute in self._parse_network_socket_observable(observable):
-            socket_object.add_attribute(**attribute)
-        return socket_object
-
     def _parse_network_traffic_observable_object(
             self, network_traffic_ref: str) -> MISPObject:
         observable = self._fetch_observable(network_traffic_ref)
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         network_traffic = observable['observable']
-        feature = self._parse_network_traffic_observable_fields(network_traffic)
-        network_object = getattr(self, feature)(network_traffic)
+        name = self._parse_network_traffic_observable_fields(network_traffic)
+        network_object = self._create_misp_object_from_observable_object(
+            name, network_traffic
+        )
+        attributes = self._parse_generic_observable(
+            network_traffic, 'network_traffic'
+        )
+        for attribute in attributes:
+            network_object.add_attribute(**attribute)
+        feature = f"_parse_{name.replace('-', '_')}_observable"
+        for attribute in getattr(self, feature)(network_traffic):
+            network_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
             network_object, network_traffic
@@ -493,13 +475,6 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
             )
             misp_object.add_reference(referenced.uuid, 'encapsulated-by')
         return misp_object
-
-    @staticmethod
-    def _parse_network_traffic_observable_fields(
-            observable: NetworkTraffic) -> str:
-        if getattr(observable, 'extensions', {}).get('socket-ext'):
-            return '_parse_network_socket_observable_object'
-        return '_parse_network_connection_observable_object'
 
     def _parse_process_observable_object(self, process_ref: str) -> MISPObject:
         observable = self._fetch_observable(process_ref)
