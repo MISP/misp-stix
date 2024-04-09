@@ -20,9 +20,9 @@ from stix2.v20.observables import (
     WindowsRegistryValueType as WindowsRegistryValueType_v20)
 from stix2.v20.sdo import ObservedData as ObservedData_v20
 from stix2.v21.observables import (
-    Artifact, AutonomousSystem, Directory, DomainName, IPv4Address,
-    IPv6Address, MACAddress, Mutex, Process, Software, URL, UserAccount,
-    File as File_v21, WindowsRegistryKey, X509Certificate,
+    Artifact, AutonomousSystem, Directory, DomainName, File as File_v21,
+    IPv4Address, IPv6Address, MACAddress, Mutex, Process, Software, URL,
+    UserAccount, WindowsRegistryKey, X509Certificate,
     WindowsPEBinaryExt as WindowsPEBinaryExt_v21,
     WindowsRegistryValueType as WindowsRegistryValueType_v21)
 from stix2.v21.sdo import ObservedData as ObservedData_v21
@@ -281,6 +281,16 @@ class ExternalSTIX2ObservedDataConverter(
     ############################################################################
     #                    OBSERVABLE OBJECTS PARSING METHODS                    #
     ############################################################################
+
+    def _handle_misp_object_storage(
+            self, observable: dict, misp_object: MISPObject):
+        observable['used'][self.event_uuid] = True
+        if observable.get('misp_object') is None:
+            observable['misp_object'] = misp_object
+        elif isinstance(observable['misp_object'], list):
+            observable['misp_object'].append(misp_object)
+        else:
+            observable['misp_object'] = [observable['misp_object'], misp_object]
 
     def _handle_observable_object_refs_parsing(
             self, observable: dict, observed_data: ObservedData_v21,
@@ -926,8 +936,7 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
-                observable['used'][self.event_uuid] = True
-                observable['misp_object'] = misp_object
+                self._handle_misp_object_storage(observable, misp_object)
             for feature in ('to', 'cc', 'bcc'):
                 field = f'{feature}_refs'
                 if hasattr(email_message, field):
@@ -938,8 +947,9 @@ class ExternalSTIX2ObservedDataConverter(
                         )
                         for attribute in attributes:
                             misp_object.add_attribute(**attribute)
-                        observable['used'][self.event_uuid] = True
-                        observable['misp_object'] = misp_object
+                        self._handle_misp_object_storage(
+                            observable, misp_object
+                        )
             if hasattr(email_message, 'body_multipart'):
                 for index, multipart in enumerate(email_message.body_multipart):
                     if hasattr(multipart, 'body'):
@@ -1365,14 +1375,16 @@ class ExternalSTIX2ObservedDataConverter(
     def _parse_generic_observable_object_ref(
             self, observable_object: _GENERIC_OBSERVABLE_OBJECT_TYPING,
             observed_data: ObservedData_v21, name: str,
-            generic: Optional[bool] = True) -> MISPObject:
+            generic: Optional[bool] = True,
+            mapping_name: Optional[str] = None) -> MISPObject:
         misp_object = self._create_misp_object_from_observable_object_ref(
             name, observable_object, observed_data
         )
-        _name = name.replace('-', '_')
+        if mapping_name is None:
+            mapping_name = name.replace('-', '_')
         attributes = (
-            self._parse_generic_observable(observable_object, _name)
-            if generic else getattr(self, f'_parse_{_name}_observable')(
+            self._parse_generic_observable(observable_object, mapping_name)
+            if generic else getattr(self, f'_parse_{mapping_name}_observable')(
                 observable_object
             )
         )
@@ -1563,6 +1575,135 @@ class ExternalSTIX2ObservedDataConverter(
             self._parse_generic_observable_object_as_attribute(
                 observed_data, identifier, 'mutex', feature='name'
             )
+
+    def _parse_network_traffic_observable_object(
+            self, observable_objects: dict, object_id: str,
+            observed_data: _OBSERVED_DATA_TYPING, name: str) -> MISPObject:
+        observable = observable_objects[object_id]
+        if observable['used']:
+            return observable['misp_object']
+        misp_object = self._parse_generic_observable_object(
+            observed_data, object_id, name, True, 'network_traffic'
+        )
+        feature = f"_parse_{name.replace('-', '_')}_observable"
+        attributes = getattr(self, feature)(observed_data.objects[object_id])
+        for attribute in attributes:
+            misp_object.add_attribute(**attribute)
+        observable.update({'misp_object': misp_object, 'used': True})
+        return misp_object
+
+    def _parse_network_traffic_observable_object_ref(
+            self, observable: dict, observed_data: ObservedData_v21,
+            name: str) -> MISPObject:
+        if observable['used'].get(self.event_uuid, False):
+            misp_object = observable['misp_object']
+            self._handle_misp_object_fields(misp_object, observed_data)
+            return misp_object
+        misp_object = self._parse_generic_observable_object_ref(
+            observable['observable'], observed_data, name,
+            True, 'network_traffic'
+        )
+        feature = f"_parse_{name.replace('-', '_')}_observable"
+        attributes = getattr(self, feature)(observable['observable'])
+        for attribute in attributes:
+            misp_object.add_attribute(**attribute)
+        observable['used'][self.event_uuid] = True
+        observable['misp_object'] = misp_object
+        return misp_object
+
+    def _parse_network_traffic_observable_object_refs(
+            self, observed_data: ObservedData_v21, *object_refs: tuple):
+        for object_ref in object_refs or observed_data.object_refs:
+            if object_ref.split('--')[0] != 'network-traffic':
+                continue
+            observable = self._fetch_observable(object_ref)
+            network_traffic = observable['observable']
+            name = self._parse_network_traffic_observable_fields(
+                network_traffic
+            )
+            misp_object = self._parse_network_traffic_observable_object_ref(
+                observable, observed_data, name
+            )
+            for asset in ('src', 'dst'):
+                if hasattr(network_traffic, f'{asset}_ref'):
+                    referenced = self._fetch_observable(
+                        getattr(network_traffic, f'{asset}_ref')
+                    )
+                    attributes = self._parse_network_traffic_reference_observable(
+                        asset, referenced['observable']
+                    )
+                    for attribute in attributes:
+                        misp_object.add_attribute(**attribute)
+                    self._handle_misp_object_storage(referenced, misp_object)
+            if hasattr(network_traffic, 'encapsulates_refs'):
+                for reference in network_traffic.encapsulates_refs:
+                    encapsulated_observable = self._fetch_observable(reference)
+                    name = self._parse_network_traffic_observable_fields(
+                        encapsulated_observable['observable']
+                    )
+                    encapsulated = self._parse_network_traffic_observable_object_ref(
+                        encapsulated_observable, observed_data, name
+                    )
+                    misp_object.add_reference(encapsulated.uuid, 'encapsulates')
+            if hasattr(network_traffic, 'encapsulated_by_ref'):
+                referenced_observable = self._fetch_observable(
+                    network_traffic.encapsulated_by_ref
+                )
+                name = self._parse_network_traffic_observable_fields(
+                    referenced_observable['observable']
+                )
+                referenced = self._parse_network_traffic_observable_object_ref(
+                    referenced_observable, observed_data, name
+                )
+                misp_object.add_reference(referenced.uuid, 'encapsulated-by')
+
+    def _parse_network_traffic_observable_objects(
+            self, observed_data: _OBSERVED_DATA_TYPING):
+        observable_objects = {
+            object_id: {'used': False}
+            for object_id, observable in observed_data.objects.items()
+            if observable.type == 'network-traffic'
+        }
+        for object_id in observed_data.objects.values():
+            network_traffic = observed_data.objects[object_id]
+            name = self._parse_network_traffic_observable_fields(
+                network_traffic
+            )
+            misp_object = self._parse_network_traffic_observable_object(
+                observable_objects, object_id, observed_data, name
+            )
+            for asset in ('src', 'dst'):
+                if hasattr(network_traffic, f'{asset}_ref'):
+                    referenced = observed_data.objects[
+                        getattr(network_traffic, f'{asset}_ref')
+                    ]
+                    attributes = self._parse_network_traffic_reference_observable(
+                        asset, referenced, f'{observed_data.id} - {object_id}'
+                    )
+                    for attribute in attributes:
+                        misp_object.add_attribute(**attribute)
+            if hasattr(network_traffic, 'encapsulates_refs'):
+                for reference in network_traffic.encapsulates_refs:
+                    observable = observed_data.objects[reference]
+                    name = self._parse_network_traffic_observable_fields(
+                        observable
+                    )
+                    encapsulated = self._parse_network_traffic_observable_object(
+                        observable_objects, reference, observed_data, name
+                    )
+                    misp_object.add_reference(encapsulated.uuid, 'encapsulates')
+            if hasattr(network_traffic, 'encapsulated_by_ref'):
+                referenced = observed_data.objects[
+                    network_traffic.encapsulated_by_ref
+                ]
+                name = self._parse_network_traffic_observable_fields(referenced)
+                referenced_object = self._parse_network_traffic_observable_object(
+                    observable_objects, network_traffic.encapsulated_by_ref,
+                    observed_data, name
+                )
+                misp_object.add_reference(
+                    referenced_object.uuid, 'encapsulated-by'
+                )
 
     def _parse_process_observable_object_refs(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
