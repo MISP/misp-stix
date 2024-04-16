@@ -266,22 +266,6 @@ class STIX2ObservableConverter(STIX2Converter):
                     mapping, getattr(observable, field), object_id
                 )
 
-    def _parse_network_connection_observable(
-            self, observable: _NETWORK_TRAFFIC_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
-        if object_id is None:
-            object_id = observable.id
-        for protocol in observable.protocols:
-            layer = self._mapping.connection_protocols(protocol)
-            if layer is not None:
-                yield {
-                    'object_relation': f'layer{layer}-protocol',
-                    'type': 'text', 'value': protocol.upper(),
-                    'uuid': self.main_parser._create_v5_uuid(
-                        f'{object_id} - layer{layer}-protocol - {protocol}'
-                    )
-                }
-
     def _parse_network_socket_observable(
             self, observable: _NETWORK_TRAFFIC_TYPING,
             object_id: Optional[str] = None) -> Iterator[dict]:
@@ -309,6 +293,25 @@ class STIX2ObservableConverter(STIX2Converter):
                         f'{object_id} - state - {feature}'
                     )
                 }
+
+    def _parse_network_traffic_observable(
+            self, observable: _NETWORK_TRAFFIC_TYPING,
+            object_id: Optional[str] = None) -> Iterator[dict]:
+        if object_id is None:
+            object_id = observable.id
+        mapping = self._mapping.network_traffic_object_mapping()
+        for field, attribute in mapping.items():
+            if hasattr(observable, field):
+                yield from self._populate_object_attributes(
+                    attribute, getattr(observable, field), object_id
+                )
+        for protocol in observable.protocols:
+            yield {
+                'value': protocol.upper(), **self._mapping.protocol_attribute(),
+                'uuid': self.main_parser._create_v5_uuid(
+                    f'{object_id} - protocol - {protocol}'
+                )
+            }
 
     def _parse_network_traffic_reference_observable(
             self, asset: str, observable: _NETWORK_TRAFFIC_REFERENCE_TYPING,
@@ -623,7 +626,7 @@ class ExternalSTIX2ObservableConverter(
             observable: NetworkTraffic_v21) -> str:
         if getattr(observable, 'extensions', {}).get('socket-ext'):
             return 'network-socket'
-        return 'network-connection'
+        return 'network-traffic'
 
     def _parse_url_observable(self, observable: _URL_TYPING,
                               observed_data_id: str) -> Iterator[dict]:
@@ -1015,5 +1018,30 @@ class InternalSTIX2ObservableConverter(
                 'value': value, **as_attribute(),
                 'uuid': self.main_parser._create_v5_uuid(
                     f'{observed_data_id} - {feature}-as - {value}'
+                )
+            }
+
+    def _parse_network_connection_observable(
+            self, observable: _NETWORK_TRAFFIC_TYPING,
+            object_id: Optional[str] = None) -> Iterator[dict]:
+        if object_id is None:
+            object_id = observable.id
+        for protocol in observable.protocols:
+            layer = self._mapping.connection_protocols(protocol)
+            if layer is None:
+                args = (
+                    (object_id.split(' - ')[0].split('--')[1], 'Observed Data')
+                    if ' - ' in object_id else
+                    (object_id.split('--')[1], 'Network Traffic observable')
+                )
+                self.main_parser._unknown_network_protocol_warning(
+                    protocol, *args
+                )
+                continue
+            yield {
+                'object_relation': f'layer{layer}-protocol',
+                'type': 'text', 'value': protocol.upper(),
+                'uuid': self.main_parser._create_v5_uuid(
+                    f'{object_id} - layer{layer}-protocol - {protocol}'
                 )
             }

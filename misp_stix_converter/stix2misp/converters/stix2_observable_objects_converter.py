@@ -438,11 +438,6 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
         network_object = self._create_misp_object_from_observable_object(
             name, network_traffic
         )
-        attributes = self._parse_generic_observable(
-            network_traffic, 'network_traffic'
-        )
-        for attribute in attributes:
-            network_object.add_attribute(**attribute)
         feature = f"_parse_{name.replace('-', '_')}_observable"
         for attribute in getattr(self, feature)(network_traffic):
             network_object.add_attribute(**attribute)

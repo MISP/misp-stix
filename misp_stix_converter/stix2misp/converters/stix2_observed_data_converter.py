@@ -1544,15 +1544,15 @@ class ExternalSTIX2ObservedDataConverter(
         observable = observable_objects[object_id]
         if observable['used']:
             return observable['misp_object']
-        misp_object = self._parse_generic_observable_object(
-            observed_data, object_id, name, True, 'network_traffic'
+        misp_object = self._create_misp_object_from_observable_object(
+            name, observed_data, object_id
         )
         feature = f"_parse_{name.replace('-', '_')}_observable"
         attributes = getattr(self, feature)(observed_data.objects[object_id])
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
         observable.update({'misp_object': misp_object, 'used': True})
-        return misp_object
+        return self.main_parser._add_misp_object(misp_object, observed_data)
 
     def _parse_network_traffic_observable_object_ref(
             self, observable: dict, observed_data: ObservedData_v21,
@@ -1561,9 +1561,8 @@ class ExternalSTIX2ObservedDataConverter(
             misp_object = observable['misp_object']
             self._handle_misp_object_fields(misp_object, observed_data)
             return misp_object
-        misp_object = self._parse_generic_observable_object_ref(
-            observable['observable'], observed_data, name,
-            True, 'network_traffic'
+        misp_object = self._create_misp_object_from_observable_object_ref(
+            name, observable['observable'], observed_data
         )
         feature = f"_parse_{name.replace('-', '_')}_observable"
         attributes = getattr(self, feature)(observable['observable'])
@@ -1571,7 +1570,7 @@ class ExternalSTIX2ObservedDataConverter(
             misp_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         observable['misp_object'] = misp_object
-        return misp_object
+        return self.main_parser._add_misp_object(misp_object, observed_data)
 
     def _parse_network_traffic_observable_object_refs(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
