@@ -448,16 +448,17 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
         observable['misp_object'] = misp_object
         for asset in ('src', 'dst'):
             if hasattr(network_traffic, f'{asset}_ref'):
-                referenced_object = self._fetch_observable(
+                referenced = self._fetch_observable(
                     getattr(network_traffic, f'{asset}_ref')
                 )
+                referenced_observable = referenced['observable']
                 attributes = self._parse_network_traffic_reference_observable(
-                    asset, referenced_object['observable']
+                    asset, referenced_observable,
+                    f'{network_traffic.id} - {referenced_observable.id}'
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
-                referenced_object['used'][self.event_uuid] = True
-                referenced_object['misp_object'] = misp_object
+                self._handle_misp_object_storage(referenced, misp_object)
         if hasattr(network_traffic, 'encapsulates_refs'):
             for reference in network_traffic.encapsulates_refs:
                 referenced = self._parse_network_traffic_observable_object(

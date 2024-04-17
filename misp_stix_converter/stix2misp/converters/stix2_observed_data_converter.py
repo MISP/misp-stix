@@ -282,16 +282,6 @@ class ExternalSTIX2ObservedDataConverter(
     #                    OBSERVABLE OBJECTS PARSING METHODS                    #
     ############################################################################
 
-    def _handle_misp_object_storage(
-            self, observable: dict, misp_object: MISPObject):
-        observable['used'][self.event_uuid] = True
-        if observable.get('misp_object') is None:
-            observable['misp_object'] = misp_object
-        elif isinstance(observable['misp_object'], list):
-            observable['misp_object'].append(misp_object)
-        else:
-            observable['misp_object'] = [observable['misp_object'], misp_object]
-
     def _handle_observable_object_refs_parsing(
             self, observable: dict, observed_data: ObservedData_v21,
             *args: tuple) -> MISPObject:
@@ -1585,13 +1575,16 @@ class ExternalSTIX2ObservedDataConverter(
             misp_object = self._parse_network_traffic_observable_object_ref(
                 observable, observed_data, name
             )
+            feature = f"_parse_{name.replace('-', '_')}_reference_observable"
             for asset in ('src', 'dst'):
                 if hasattr(network_traffic, f'{asset}_ref'):
                     referenced = self._fetch_observable(
                         getattr(network_traffic, f'{asset}_ref')
                     )
-                    attributes = self._parse_network_traffic_reference_observable(
-                        asset, referenced['observable']
+                    referenced_observable = referenced['observable']
+                    attributes = getattr(self, feature)(
+                        asset, referenced_observable,
+                        f'{network_traffic.id} - {referenced_observable.id}'
                     )
                     for attribute in attributes:
                         misp_object.add_attribute(**attribute)

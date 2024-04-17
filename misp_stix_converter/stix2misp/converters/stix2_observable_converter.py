@@ -7,6 +7,7 @@ from .stix2converter import (
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
+from pymisp import MISPObject
 from stix2.v20.observables import (
     Artifact as Artifact_v20, AutonomousSystem as AutonomousSystem_v20,
     Directory as Directory_v20, DomainName as DomainName_v20,
@@ -122,8 +123,20 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'X-Mailer': STIX2Mapping.x_mailer_attribute()
         }
     )
-    __mac_dst_attribute = {'type': 'mac-address', 'object_relation': 'mac-dst'}
-    __mac_src_attribute = {'type': 'mac-address', 'object_relation': 'mac-src'}
+    __dst_ip_attribute = {'type': 'ip-dst', 'object_relation': 'dst_ip'}
+    __src_ip_attribute = {'type': 'ip-src', 'object_relation': 'src_ip'}
+    __generic_network_traffic_reference_mapping = Mapping(
+        **{
+            'domain-name_dst': {'type': 'hostname', 'object_relation': 'dst_hostname'},
+            'domain-name_src': {'type': 'hostname', 'object_relation': 'src_hostname'},
+            'ipv4-addr_dst': __dst_ip_attribute,
+            'ipv4-addr_src': __src_ip_attribute,
+            'ipv6-addr_dst': __dst_ip_attribute,
+            'ipv6-addr_src': __src_ip_attribute,
+            'mac-address_dst': {'type': 'mac-address', 'object_relation': 'dst_mac'},
+            'mac-address_src': {'type': 'mac-address', 'object_relation': 'src_mac'}
+        }
+    )
     __network_traffic_reference_mapping = Mapping(
         **{
             'domain-name_dst': STIX2Mapping.hostname_dst_attribute(),
@@ -132,8 +145,8 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'ipv4-addr_src': STIX2Mapping.ip_src_attribute(),
             'ipv6-addr_dst': STIX2Mapping.ip_dst_attribute(),
             'ipv6-addr_src': STIX2Mapping.ip_src_attribute(),
-            'mac-address_dst': __mac_dst_attribute,
-            'mac-address_src': __mac_src_attribute
+            'mac-address_dst': {'type': 'mac-address', 'object_relation': 'mac-dst'},
+            'mac-address_src': {'type': 'mac-address', 'object_relation': 'mac-src'}
         }
     )
     __software_object_mapping = Mapping(
@@ -161,8 +174,16 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__email_additional_header_fields_mapping
 
     @classmethod
-    def network_traffic_reference_mapping(cls, field) -> dict:
+    def network_traffic_reference_mapping(cls, field: str) -> dict:
+        return cls.__generic_network_traffic_reference_mapping.get(field)
+
+    @classmethod
+    def network_socket_reference_mapping(cls, field: str) -> dict:
         return cls.__network_traffic_reference_mapping.get(field)
+
+    @classmethod
+    def network_traffic_references(cls) -> dict:
+        return cls.__network_traffic_reference_mapping
 
     @classmethod
     def software_object_mapping(cls) -> dict:
@@ -176,6 +197,16 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
 class STIX2ObservableConverter(STIX2Converter):
     def _fetch_observable(self, object_ref: str) -> dict:
         return self.main_parser._observable[object_ref]
+
+    def _handle_misp_object_storage(
+            self, observable: dict, misp_object: MISPObject):
+        observable['used'][self.event_uuid] = True
+        if observable.get('misp_object') is None:
+            observable['misp_object'] = misp_object
+        elif isinstance(observable['misp_object'], list):
+            observable['misp_object'].append(misp_object)
+        else:
+            observable['misp_object'] = [observable['misp_object'], misp_object]
 
     def _parse_email_observable(
             self, observable: _EMAIL_MESSAGE_TYPING,
@@ -272,10 +303,11 @@ class STIX2ObservableConverter(STIX2Converter):
         if object_id is None:
             object_id = observable.id
         for protocol in observable.protocols:
+            protocol_value = protocol.upper()
             yield {
-                'value': protocol.upper(), **self._mapping.protocol_attribute(),
+                'value': protocol_value, **self._mapping.protocol_attribute(),
                 'uuid': self.main_parser._create_v5_uuid(
-                    f'{object_id} - protocol - {protocol}'
+                    f'{object_id} - protocol - {protocol_value}'
                 )
             }
         socket_extension = observable.extensions['socket-ext']
@@ -306,25 +338,27 @@ class STIX2ObservableConverter(STIX2Converter):
                     attribute, getattr(observable, field), object_id
                 )
         for protocol in observable.protocols:
+            protocol_value = protocol.upper()
             yield {
-                'value': protocol.upper(), **self._mapping.protocol_attribute(),
+                'value': protocol_value, **self._mapping.protocol_attribute(),
                 'uuid': self.main_parser._create_v5_uuid(
-                    f'{object_id} - protocol - {protocol}'
+                    f'{object_id} - protocol - {protocol_value}'
                 )
             }
 
     def _parse_network_traffic_reference_observable(
             self, asset: str, observable: _NETWORK_TRAFFIC_REFERENCE_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
-        mapping = self._mapping.network_traffic_reference_mapping(
+            object_id: str) -> Iterator[dict]:
+        attribute = self._mapping.network_traffic_reference_mapping(
             f'{observable.type}_{asset}'
         )
-        if mapping is not None:
-            if object_id is None:
-                object_id = observable.id
+        if attribute is not None:
             yield {
-                'value': observable.value, **mapping,
-                **self.main_parser._sanitise_attribute_uuid(object_id)
+                'value': observable.value, **attribute,
+                'uuid': self.main_parser._create_v5_uuid(
+                    f"{object_id} - {attribute['object_relation']}"
+                    f' - {observable.value}'
+                )
             }
 
     def _parse_pe_extension_observable(self, extension: _EXTENSION_TYPING,
@@ -769,6 +803,10 @@ class InternalSTIX2ObservableMapping(
     @classmethod
     def malware_sample_attribute(cls) -> dict:
         return cls.__malware_sample_attribute
+
+    @classmethod
+    def network_connection_reference_mapping(cls, field: str) -> dict:
+        return cls.network_traffic_references.get(field)
 
     @classmethod
     def parent_process_object_mapping(cls) -> dict:
