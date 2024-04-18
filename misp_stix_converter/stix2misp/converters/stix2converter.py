@@ -495,7 +495,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _parse_galaxy_cluster(
             self, stix_object: _GALAXY_OBJECTS_TYPING, galaxy_type: str,
             description: Optional[str] = None) -> Tuple[MISPGalaxyCluster, str]:
-        if ' | ' in getattr(stix_object, 'description', ''):
+        if getattr(stix_object, 'description', '').count(' | ') == 1:
             _, description = stix_object.description.split(' | ')
         return self._create_cluster(
             stix_object, description=description, galaxy_type=galaxy_type
