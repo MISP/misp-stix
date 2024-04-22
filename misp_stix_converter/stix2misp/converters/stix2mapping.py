@@ -654,6 +654,10 @@ class STIX2Mapping:
         return cls.__pid_attribute
 
     @classmethod
+    def protocol_attribute(cls) -> dict:
+        return cls.__protocol_attribute
+
+    @classmethod
     def references_attribute(cls) -> dict:
         return cls.__references_attribute
 
