@@ -1529,16 +1529,22 @@ class ExternalSTIX2ObservedDataConverter(
             )
 
     def _parse_network_traffic_observable_object(
-            self, observable_objects: dict, object_id: str,
+            self, observable_objects: dict, identifier: str,
             observed_data: _OBSERVED_DATA_TYPING, name: str) -> MISPObject:
-        observable = observable_objects[object_id]
+        network_traffic = observed_data.objects[identifier]
+        if hasattr(network_traffic, 'id'):
+            return self._parse_network_traffic_observable_object_ref(
+                network_traffic, observed_data, name
+            )
+        observable = observable_objects[identifier]
         if observable['used']:
             return observable['misp_object']
+        object_id = f'{observed_data.id} - {identifier}'
         misp_object = self._create_misp_object_from_observable_object(
             name, observed_data, object_id
         )
         feature = f"_parse_{name.replace('-', '_')}_observable"
-        attributes = getattr(self, feature)(observed_data.objects[object_id])
+        attributes = getattr(self, feature)(network_traffic, object_id)
         for attribute in attributes:
             misp_object.add_attribute(**attribute)
         observable.update({'misp_object': misp_object, 'used': True})
@@ -1618,7 +1624,7 @@ class ExternalSTIX2ObservedDataConverter(
             for object_id, observable in observed_data.objects.items()
             if observable.type == 'network-traffic'
         }
-        for object_id in observed_data.objects.values():
+        for object_id, observable in observable_objects.items():
             network_traffic = observed_data.objects[object_id]
             name = self._parse_network_traffic_observable_fields(
                 network_traffic
@@ -1628,11 +1634,11 @@ class ExternalSTIX2ObservedDataConverter(
             )
             for asset in ('src', 'dst'):
                 if hasattr(network_traffic, f'{asset}_ref'):
-                    referenced = observed_data.objects[
-                        getattr(network_traffic, f'{asset}_ref')
-                    ]
+                    referenced_id = getattr(network_traffic, f'{asset}_ref')
+                    referenced = observed_data.objects[referenced_id]
                     attributes = self._parse_network_traffic_reference_observable(
-                        asset, referenced, f'{observed_data.id} - {object_id}'
+                        asset, referenced,
+                        f'{observed_data.id} - {object_id} - {referenced_id}'
                     )
                     for attribute in attributes:
                         misp_object.add_attribute(**attribute)
