@@ -838,6 +838,146 @@ _MUTEX_ATTRIBUTES = [
         "name": "sensitive_resource_lock"
     }
 ]
+_NETWORK_TRAFFIC_OBJECTS = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "ipv4-addr--4d22aae0-2bf9-5427-8819-e4f6abf20a53",
+            "ipv4-addr--e42c19c8-f9fe-5ae9-9fc8-22c398f78fb7",
+            "ipv4-addr--ffe65ce3-bf2a-577c-bb7e-947d39198637",
+            "network-traffic--ac267abc-1a41-536d-8e8d-98458d9bf491",
+            "network-traffic--53e0bf48-2eee-5c03-8bde-ed7049d2c0a3"
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "ipv4-addr--e42c19c8-f9fe-5ae9-9fc8-22c398f78fb7",
+            "ipv4-addr--f2d3c796-6c1a-5c4f-8516-d4db54727f89",
+            "ipv4-addr--bb884ffe-f2e4-56bb-a0c3-21f6711cb649",
+            "network-traffic--b4a8c150-e214-57a3-9017-e85dfa345f46",
+            "network-traffic--65a6016d-a91c-5781-baad-178cd55f01d4"
+        ]
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--4d22aae0-2bf9-5427-8819-e4f6abf20a53",
+        "value": "198.51.100.2"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--e42c19c8-f9fe-5ae9-9fc8-22c398f78fb7",
+        "value": "203.0.113.1"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--ffe65ce3-bf2a-577c-bb7e-947d39198637",
+        "value": "203.0.113.2"
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--ac267abc-1a41-536d-8e8d-98458d9bf491",
+        "src_ref": "ipv4-addr--4d22aae0-2bf9-5427-8819-e4f6abf20a53",
+        "dst_ref": "ipv4-addr--e42c19c8-f9fe-5ae9-9fc8-22c398f78fb7",
+        "src_port": 2487,
+        "dst_port": 1723,
+        "protocols": [
+            "ipv4",
+            "pptp"
+        ],
+        "src_byte_count": 35779,
+        "dst_byte_count": 935750,
+        "encapsulates_refs": [
+            "network-traffic--53e0bf48-2eee-5c03-8bde-ed7049d2c0a3"
+        ]
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--53e0bf48-2eee-5c03-8bde-ed7049d2c0a3",
+        "src_ref": "ipv4-addr--4d22aae0-2bf9-5427-8819-e4f6abf20a53",
+        "dst_ref": "ipv4-addr--ffe65ce3-bf2a-577c-bb7e-947d39198637",
+        "src_port": 24678,
+        "dst_port": 80,
+        "protocols": [
+            "ipv4",
+            "tcp",
+            "http"
+        ],
+        "src_packets": 14356,
+        "dst_packets": 14356,
+        "encapsulated_by_ref": "network-traffic--ac267abc-1a41-536d-8e8d-98458d9bf491"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--f2d3c796-6c1a-5c4f-8516-d4db54727f89",
+        "value": "198.51.100.34"
+    },
+    {
+        "type": "ipv4-addr",
+        "spec_version": "2.1",
+        "id": "ipv4-addr--bb884ffe-f2e4-56bb-a0c3-21f6711cb649",
+        "value": "198.51.100.54"
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--b4a8c150-e214-57a3-9017-e85dfa345f46",
+        "src_ref": "ipv4-addr--e42c19c8-f9fe-5ae9-9fc8-22c398f78fb7",
+        "dst_ref": "ipv4-addr--f2d3c796-6c1a-5c4f-8516-d4db54727f89",
+        "src_port": 2487,
+        "dst_port": 53,
+        "protocols": [
+            "ipv4",
+            "udp",
+            "dns"
+        ],
+        "src_byte_count": 35779,
+        "dst_byte_count": 935750,
+        "encapsulates_refs": [
+            "network-traffic--65a6016d-a91c-5781-baad-178cd55f01d4"
+        ]
+    },
+    {
+        "type": "network-traffic",
+        "spec_version": "2.1",
+        "id": "network-traffic--65a6016d-a91c-5781-baad-178cd55f01d4",
+        "src_ref": "ipv4-addr--f2d3c796-6c1a-5c4f-8516-d4db54727f89",
+        "dst_ref": "ipv4-addr--bb884ffe-f2e4-56bb-a0c3-21f6711cb649",
+        "src_port": 24678,
+        "dst_port": 443,
+        "protocols": [
+            "ipv4",
+            "tcp",
+            "ssl",
+            "http"
+        ],
+        "src_packets": 14356,
+        "dst_packets": 14356,
+        "encapsulated_by_ref": "network-traffic--b4a8c150-e214-57a3-9017-e85dfa345f46"
+    }
+]
 _PROCESS_OBJECTS = [
     {
         "type": "observed-data",
@@ -1611,6 +1751,10 @@ class TestExternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_mutex_attributes(cls):
         return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_network_traffic_objects(cls):
+        return cls.__assemble_bundle(*_NETWORK_TRAFFIC_OBJECTS)
 
     @classmethod
     def get_bundle_with_opinion_objects(cls):

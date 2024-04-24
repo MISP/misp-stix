@@ -711,6 +711,120 @@ _MUTEX_ATTRIBUTES = [
         }
     }
 ]
+_NETWORK_TRAFFIC_OBJECTS = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "ipv4-addr",
+                "value": "198.51.100.2"
+            },
+            "1": {
+                "type": "ipv4-addr",
+                "value": "203.0.113.1"
+            },
+            "2": {
+                "type": "ipv4-addr",
+                "value": "203.0.113.2"
+            },
+            "3": {
+                "type": "network-traffic",
+                "src_ref": "0",
+                "dst_ref": "1",
+                "src_port": 2487,
+                "dst_port": 1723,
+                "protocols": [
+                    "ipv4",
+                    "pptp"
+                ],
+                "src_byte_count": 35779,
+                "dst_byte_count": 935750,
+                "encapsulates_refs": [
+                    "4"
+                ]
+            },
+            "4": {
+                "type": "network-traffic",
+                "src_ref": "0",
+                "dst_ref": "2",
+                "src_port": 24678,
+                "dst_port": 80,
+                "protocols": [
+                    "ipv4",
+                    "tcp",
+                    "http"
+                ],
+                "src_packets": 14356,
+                "dst_packets": 14356,
+                "encapsulated_by_ref": "3"
+            }
+        }
+    },
+    {
+        "type": "observed-data",
+        "id": "observed-data--3451329f-2525-4bcb-9659-7bd0e6f1eb0d",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "ipv4-addr",
+                "value": "203.0.113.1"
+            },
+            "1": {
+                "type": "ipv4-addr",
+                "value": "198.51.100.34"
+            },
+            "2": {
+                "type": "ipv4-addr",
+                "value": "198.51.100.54"
+            },
+            "3": {
+                "type": "network-traffic",
+                "src_ref": "0",
+                "dst_ref": "1",
+                "src_port": 2487,
+                "dst_port": 53,
+                "protocols": [
+                    "ipv4",
+                    "udp",
+                    "dns"
+                ],
+                "src_byte_count": 35779,
+                "dst_byte_count": 935750,
+                "encapsulates_refs": [
+                    "4"
+                ]
+            },
+            "4": {
+                "type": "network-traffic",
+                "src_ref": "1",
+                "dst_ref": "2",
+                "src_port": 24678,
+                "dst_port": 443,
+                "protocols": [
+                    "ipv4",
+                    "tcp",
+                    "ssl",
+                    "http"
+                ],
+                "src_packets": 14356,
+                "dst_packets": 14356,
+                "encapsulated_by_ref": "3"
+            }
+        }
+    }
+]
 _PROCESS_OBJECTS = [
     {
         "type": "observed-data",
@@ -1392,6 +1506,10 @@ class TestExternalSTIX20Bundles:
     @classmethod
     def get_bundle_with_mutex_attributes(cls):
         return cls.__assemble_bundle(*_MUTEX_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_network_traffic_objects(cls):
+        return cls.__assemble_bundle(*_NETWORK_TRAFFIC_OBJECTS)
 
     @classmethod
     def get_bundle_with_process_objects(cls):
