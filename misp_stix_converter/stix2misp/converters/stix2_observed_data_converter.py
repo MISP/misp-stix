@@ -2917,7 +2917,8 @@ class InternalSTIX2ObservedDataConverter(
                     ]
                     content = self._parse_network_traffic_reference_observable(
                         feature, address,
-                        getattr(address, 'id', observed_data.id)
+                        getattr(address, 'id', observed_data.id),
+                        name='http_request'
                     )
                     for attribute in content:
                         misp_object.add_attribute(**attribute)
@@ -3205,7 +3206,8 @@ class InternalSTIX2ObservedDataConverter(
             if hasattr(observable, f'{asset}_ref'):
                 address = observables[getattr(observable, f'{asset}_ref')]
                 attributes = self._parse_network_traffic_reference_observable(
-                    asset, address, getattr(address, 'id', observed_data.id)
+                    asset, address, getattr(address, 'id', observed_data.id),
+                    name.replace('-', '_')
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)

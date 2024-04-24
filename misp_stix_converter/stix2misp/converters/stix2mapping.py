@@ -1154,6 +1154,21 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_mp_import={'type': 'text', 'object_relation': 'mp-import'},
         x_misp_subnet_announced={'type': 'ip-src', 'object_relation': 'subnet-announced'}
     )
+    __connection_protocols = Mapping(
+        **{
+            **dict.fromkeys(('tcp', 'TCP', 'udp', 'UDP'), '4'),
+            **dict.fromkeys(
+                (
+                    'arp', 'icmp', 'ip', 'ipv4', 'ipv6',
+                    'ARP', 'ICMP', 'IP', 'IPV4', 'IPV6'
+                ),
+                '3'
+            ),
+            **dict.fromkeys(
+                ('http', 'HTTP', 'https', 'HTTPS', 'ftp', 'FTP'), '7'
+            )
+        }
+    )
     __cpe_asset_object_mapping = Mapping(
         cpe=STIX2Mapping.cpe_attribute(),
         languages=STIX2Mapping.language_attribute(),
@@ -1573,6 +1588,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def comment_text_attribute(cls) -> dict:
         return cls.__comment_text_attribute
+
+    @classmethod
+    def connection_protocols(cls, field: str) -> Union[str, None]:
+        return cls.__connection_protocols.get(field)
 
     @classmethod
     def cpe_asset_object_mapping(cls) -> dict:

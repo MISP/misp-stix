@@ -348,8 +348,8 @@ class STIX2ObservableConverter(STIX2Converter):
 
     def _parse_network_traffic_reference_observable(
             self, asset: str, observable: _NETWORK_TRAFFIC_REFERENCE_TYPING,
-            object_id: str) -> Iterator[dict]:
-        attribute = self._mapping.network_traffic_reference_mapping(
+            object_id: str, name: Optional[str] = 'network_traffic'):
+        attribute = getattr(self._mapping, f'{name}_reference_mapping')(
             f'{observable.type}_{asset}'
         )
         if attribute is not None:
@@ -801,12 +801,16 @@ class InternalSTIX2ObservableMapping(
         return cls.__http_request_header_mapping
 
     @classmethod
+    def http_request_reference_mapping(cls, field: str) -> dict:
+        return cls.network_traffic_references().get(field)
+
+    @classmethod
     def malware_sample_attribute(cls) -> dict:
         return cls.__malware_sample_attribute
 
     @classmethod
     def network_connection_reference_mapping(cls, field: str) -> dict:
-        return cls.network_traffic_references.get(field)
+        return cls.network_traffic_references().get(field)
 
     @classmethod
     def parent_process_object_mapping(cls) -> dict:
