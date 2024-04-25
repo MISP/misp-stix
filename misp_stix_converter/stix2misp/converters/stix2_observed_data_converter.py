@@ -3202,21 +3202,26 @@ class InternalSTIX2ObservedDataConverter(
             observables: dict, observable_id: str) -> MISPObject:
         misp_object = self._create_misp_object(name, observed_data)
         observable = observables[observable_id]
+        attributes = self._parse_generic_observable(
+            observable, name.replace('-', '_'), getattr(
+                observable, 'id', f'{observed_data.id} - {observable_id}'
+            )
+        )
+        for attribute in attributes:
+            misp_object.add_attribute(**attribute)
         for asset in ('src', 'dst'):
             if hasattr(observable, f'{asset}_ref'):
-                address = observables[getattr(observable, f'{asset}_ref')]
+                address_ref = getattr(observable, f'{asset}_ref')
+                address = observables[address_ref]
                 attributes = self._parse_network_traffic_reference_observable(
-                    asset, address, getattr(address, 'id', observed_data.id),
+                    asset, address,
+                    getattr(
+                        address, 'id', f'{observed_data.id} - {address_ref}'
+                    ),
                     name.replace('-', '_')
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
-        attributes = self._parse_generic_observable(
-            observable, name.replace('-', '_'),
-            getattr(observable, 'id', observed_data.id)
-        )
-        for attribute in attributes:
-            misp_object.add_attribute(**attribute)
         return misp_object
 
     def _object_from_parler_account_observable_v20(
