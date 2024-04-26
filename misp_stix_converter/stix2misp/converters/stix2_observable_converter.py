@@ -1084,6 +1084,6 @@ class InternalSTIX2ObservableConverter(
                 'object_relation': f'layer{layer}-protocol',
                 'type': 'text', 'value': protocol.upper(),
                 'uuid': self.main_parser._create_v5_uuid(
-                    f'{object_id} - layer{layer}-protocol - {protocol}'
+                    f'{object_id} - layer{layer}-protocol - {protocol.upper()}'
                 )
             }

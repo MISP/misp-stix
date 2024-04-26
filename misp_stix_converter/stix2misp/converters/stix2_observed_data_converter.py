@@ -3157,7 +3157,9 @@ class InternalSTIX2ObservedDataConverter(
                 observable_id
             )
             attributes = self._parse_network_connection_observable(
-                observable, getattr(observable, 'id', observed_data.id)
+                observable, getattr(
+                    observable, 'id', f'{observed_data.id} - {observable_id}'
+                )
             )
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
@@ -3183,7 +3185,9 @@ class InternalSTIX2ObservedDataConverter(
                 'network-socket', observed_data, observables, observable_id
             )
             attributes = self._parse_network_socket_observable(
-                observable, getattr(observable, 'id', observed_data.id)
+                observable, getattr(
+                    observable, 'id', f'{observed_data.id} - {observable_id}'
+                )
             )
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
