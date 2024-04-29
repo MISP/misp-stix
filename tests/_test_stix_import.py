@@ -2404,35 +2404,81 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(url.object_relation, 'url')
         self.assertEqual(url.value, self._get_pattern_value(request_url))
 
-    def _check_http_request_observable_object(self, attributes, observables):
+    def _check_http_request_observable_object(
+            self, attributes, observables, observed_data_id = None):
         self.assertEqual(len(attributes), 8)
+        network_traffic_id, address1_id, address2_id, domain_id = observables.keys()
+        if observed_data_id is not None:
+            network_traffic_id = f'{observed_data_id} - {network_traffic_id}'
+            address1_id = f'{observed_data_id} - {address1_id}'
+            address2_id = f'{observed_data_id} - {address2_id}'
+            domain_id = f'{observed_data_id} - {domain_id}'
         network_traffic, address1, address2, domain_name = observables.values()
-        ip_src, ip_dst, url, method, uri, content_type, user_agent, host = attributes
+        url, ip_src, ip_dst, method, uri, content_type, user_agent, host = attributes
         self.assertEqual(ip_src.type, 'ip-src')
         self.assertEqual(ip_src.object_relation, 'ip-src')
         self.assertEqual(ip_src.value, address1.value)
+        self.assertEqual(
+            ip_src.uuid,
+            uuid5(self._UUIDv4, f'{address1_id} - ip-src - {ip_src.value}')
+        )
         self.assertEqual(ip_dst.type, 'ip-dst')
         self.assertEqual(ip_dst.object_relation, 'ip-dst')
         self.assertEqual(ip_dst.value, address2.value)
+        self.assertEqual(
+            ip_dst.uuid,
+            uuid5(self._UUIDv4, f'{address2_id} - ip-dst - {ip_dst.value}')
+        )
         self.assertEqual(url.type, 'url')
         self.assertEqual(url.object_relation, 'url')
         self.assertEqual(url.value, network_traffic.x_misp_url)
+        self.assertEqual(
+            url.uuid,
+            uuid5(self._UUIDv4, f'{network_traffic_id} - url - {url.value}')
+        )
         extension = network_traffic.extensions['http-request-ext']
         self.assertEqual(method.type, 'http-method')
         self.assertEqual(method.object_relation, 'method')
         self.assertEqual(method.value, extension.request_method)
+        self.assertEqual(
+            method.uuid,
+            uuid5(
+                self._UUIDv4, f'{network_traffic_id} - method - {method.value}'
+            )
+        )
         self.assertEqual(uri.type, 'uri')
         self.assertEqual(uri.object_relation, 'uri')
         self.assertEqual(uri.value, extension.request_value)
+        self.assertEqual(
+            uri.uuid,
+            uuid5(self._UUIDv4, f'{network_traffic_id} - uri - {uri.value}')
+        )
         self.assertEqual(content_type.type, 'other')
         self.assertEqual(content_type.object_relation, 'content-type')
         self.assertEqual(content_type.value, extension.request_header['Content-Type'])
+        self.assertEqual(
+            content_type.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - content-type - {content_type.value}'
+            )
+        )
         self.assertEqual(user_agent.type, 'text')
         self.assertEqual(user_agent.object_relation, 'user-agent')
         self.assertEqual(user_agent.value, extension.request_header['User-Agent'])
+        self.assertEqual(
+            user_agent.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - user-agent - {user_agent.value}'
+            )
+        )
         self.assertEqual(host.type, 'hostname')
         self.assertEqual(host.object_relation, 'host')
         self.assertEqual(host.value, domain_name.value)
+        self.assertEqual(
+            host.uuid, uuid5(self._UUIDv4, f'{domain_id} - host - {host.value}')
+        )
 
     def _check_identity_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])
@@ -2794,34 +2840,90 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(layer7.object_relation, 'layer7-protocol')
         self.assertEqual(layer7.value, self._get_pattern_value(protocol3).upper())
 
-    def _check_network_connection_observable_object(self, attributes, observables):
+    def _check_network_connection_observable_object(
+            self, attributes, observables, observed_data_id = None):
         self.assertEqual(len(attributes), 8)
-        ip_src, ip_dst, dst_port, src_port, hostname, layer3, layer4, layer7 = attributes
+        src_port, dst_port, hostname, ip_src, ip_dst, layer3, layer4, layer7 = attributes
+        network_traffic_id, address1_id, address2_id = observables.keys()
+        if observed_data_id is not None:
+            network_traffic_id = f'{observed_data_id} - {network_traffic_id}'
+            address1_id = f'{observed_data_id} - {address1_id}'
+            address2_id = f'{observed_data_id} - {address2_id}'
         network_traffic, address1, address2 = observables.values()
         self.assertEqual(ip_src.type, 'ip-src')
         self.assertEqual(ip_src.object_relation, 'ip-src')
         self.assertEqual(ip_src.value, address1.value)
+        self.assertEqual(
+            ip_src.uuid,
+            uuid5(self._UUIDv4, f'{address1_id} - ip-src - {ip_src.value}')
+        )
         self.assertEqual(ip_dst.type, 'ip-dst')
         self.assertEqual(ip_dst.object_relation, 'ip-dst')
         self.assertEqual(ip_dst.value, address2.value)
+        self.assertEqual(
+            ip_dst.uuid,
+            uuid5(self._UUIDv4, f'{address2_id} - ip-dst - {ip_dst.value}')
+        )
         self.assertEqual(dst_port.type, 'port')
         self.assertEqual(dst_port.object_relation, 'dst-port')
         self.assertEqual(dst_port.value, network_traffic.dst_port)
+        self.assertEqual(
+            dst_port.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - dst-port - {dst_port.value}'
+            )
+        )
         self.assertEqual(src_port.type, 'port')
         self.assertEqual(src_port.object_relation, 'src-port')
         self.assertEqual(src_port.value, network_traffic.src_port)
+        self.assertEqual(
+            src_port.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - src-port - {src_port.value}'
+            )
+        )
         self.assertEqual(hostname.type, 'hostname')
         self.assertEqual(hostname.object_relation, 'hostname-dst')
         self.assertEqual(hostname.value, network_traffic.x_misp_hostname_dst)
+        self.assertEqual(
+            hostname.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - hostname-dst - {hostname.value}'
+            )
+        )
         self.assertEqual(layer3.type, 'text')
         self.assertEqual(layer3.object_relation, 'layer3-protocol')
         self.assertEqual(layer3.value, network_traffic.protocols[0].upper())
+        self.assertEqual(
+            layer3.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - layer3-protocol - {layer3.value}'
+            )
+        )
         self.assertEqual(layer4.type, 'text')
         self.assertEqual(layer4.object_relation, 'layer4-protocol')
         self.assertEqual(layer4.value, network_traffic.protocols[1].upper())
+        self.assertEqual(
+            layer4.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - layer4-protocol - {layer4.value}'
+            )
+        )
         self.assertEqual(layer7.type, 'text')
         self.assertEqual(layer7.object_relation, 'layer7-protocol')
         self.assertEqual(layer7.value, network_traffic.protocols[2].upper())
+        self.assertEqual(
+            layer7.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - layer7-protocol - {layer7.value}'
+            )
+        )
 
     def _check_network_socket_indicator_object(self, attributes, pattern):
         self.assertEqual(len(attributes), 10)
@@ -2858,38 +2960,101 @@ class TestInternalSTIX2Import(TestSTIX2Import):
         self.assertEqual(domain_family.object_relation, 'domain-family')
         self.assertEqual(domain_family.value, self._get_pattern_value(protocolFamily))
 
-    def _check_network_socket_observable_object(self, attributes, observables):
+    def _check_network_socket_observable_object(
+            self, attributes, observables, observed_data_id = None):
         self.assertEqual(len(attributes), 10 - 1) # 10 expected attributes minus the one tested separately
-        ip_src, ip_dst, port_dst, port_src, hostname, protocol, address_family, socket_type, listening = attributes
+        port_src, port_dst, hostname, ip_src, ip_dst, protocol, address_family, socket_type, listening = attributes
+        network_traffic_id, address1_id, address2_id = observables.keys()
+        if observed_data_id is not None:
+            network_traffic_id = f'{observed_data_id} - {network_traffic_id}'
+            address1_id = f'{observed_data_id} - {address1_id}'
+            address2_id = f'{observed_data_id} - {address2_id}'
         network_traffic, address1, address2 = observables.values()
         self.assertEqual(ip_src.type, 'ip-src')
         self.assertEqual(ip_src.object_relation, 'ip-src')
         self.assertEqual(ip_src.value, address1.value)
+        self.assertEqual(
+            ip_src.uuid,
+            uuid5(self._UUIDv4, f'{address1_id} - ip-src - {ip_src.value}')
+        )
         self.assertEqual(ip_dst.type, 'ip-dst')
         self.assertEqual(ip_dst.object_relation, 'ip-dst')
         self.assertEqual(ip_dst.value, address2.value)
+        self.assertEqual(
+            ip_dst.uuid,
+            uuid5(self._UUIDv4, f'{address2_id} - ip-dst - {ip_dst.value}')
+        )
         self.assertEqual(port_dst.type, 'port')
         self.assertEqual(port_dst.object_relation, 'dst-port')
         self.assertEqual(port_dst.value, network_traffic.dst_port)
+        self.assertEqual(
+            port_dst.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - dst-port - {port_dst.value}'
+            )
+        )
         self.assertEqual(port_src.type, 'port')
         self.assertEqual(port_src.object_relation, 'src-port')
         self.assertEqual(port_src.value, network_traffic.src_port)
+        self.assertEqual(
+            port_src.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - src-port - {port_src.value}'
+            )
+        )
         self.assertEqual(hostname.type, 'hostname')
         self.assertEqual(hostname.object_relation, 'hostname-dst')
         self.assertEqual(hostname.value, network_traffic.x_misp_hostname_dst)
+        self.assertEqual(
+            hostname.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - hostname-dst - {hostname.value}'
+            )
+        )
         self.assertEqual(protocol.type, 'text')
         self.assertEqual(protocol.object_relation, 'protocol')
         self.assertEqual(protocol.value, network_traffic.protocols[0].upper())
+        self.assertEqual(
+            protocol.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - protocol - {protocol.value}'
+            )
+        )
         socket_ext = network_traffic.extensions['socket-ext']
         self.assertEqual(address_family.type, 'text')
         self.assertEqual(address_family.object_relation, 'address-family')
         self.assertEqual(address_family.value, socket_ext.address_family)
+        self.assertEqual(
+            address_family.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - address-family - {address_family.value}'
+            )
+        )
         self.assertEqual(socket_type.type, 'text')
         self.assertEqual(socket_type.object_relation, 'socket-type')
         self.assertEqual(socket_type.value, socket_ext.socket_type)
+        self.assertEqual(
+            socket_type.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - socket-type - {socket_type.value}'
+            )
+        )
         self.assertEqual(listening.type, 'text')
         self.assertEqual(listening.object_relation, 'state')
         self.assertEqual(listening.value, 'listening')
+        self.assertEqual(
+            listening.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{network_traffic_id} - state - {listening.value}'
+            )
+        )
 
     def _check_news_agency_object(self, misp_object, identity):
         self.assertEqual(misp_object.uuid, identity.id.split('--')[1])

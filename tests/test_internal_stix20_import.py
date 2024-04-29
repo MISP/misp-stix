@@ -1845,7 +1845,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(misp_object, observed_data)
-        self._check_http_request_observable_object(misp_object.attributes, observables)
+        self._check_http_request_observable_object(
+            misp_object.attributes, observables, observed_data.id
+        )
         self._populate_documentation(
             misp_object = json.loads(misp_object.to_json()),
             observed_data = observed_data
@@ -2070,7 +2072,9 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
         _, report, observed_data = bundle.objects
         misp_object = self._check_misp_event_features(event, report)[0]
         observables = self._check_observed_data_object(misp_object, observed_data)
-        self._check_network_connection_observable_object(misp_object.attributes, observables)
+        self._check_network_connection_observable_object(
+            misp_object.attributes, observables, observed_data.id
+        )
         self._populate_documentation(
             misp_object = json.loads(misp_object.to_json()),
             observed_data = observed_data
@@ -2115,7 +2119,7 @@ class TestInternalSTIX20Import(TestInternalSTIX2Import, TestSTIX20, TestSTIX20Im
                 ip_src, ip_dst, port_dst, port_src, hostname, protocol, address_family,
                 socket_type, listening
             ),
-            observables
+            observables, observed_data.id
         )
         self.assertEqual(domain_family.type, 'text')
         self.assertEqual(domain_family.object_relation, 'domain-family')
