@@ -2895,39 +2895,36 @@ class InternalSTIX2ObservedDataConverter(
         observables = getattr(self, f'_fetch_observables_with_id_{version}')(
             observed_data
         )
-        for observable in observables.values():
+        for observable_id, observable in observables.items():
+            object_id = getattr(
+                observable, 'id', f'{observed_data.id} - {observable_id}'
+            )
             if observable.type == 'domain-name':
                 attribute = {
                     'value': observable.value, **self._mapping.host_attribute()
                 }
-                if hasattr(observable, 'id'):
-                    attribute.update(
-                        self.main_parser._sanitise_attribute_uuid(observable.id)
-                    )
-                else:
-                    attribute['uuid'] = self.main_parser._create_v5_uuid(
-                        f'{observed_data.id} - host - {observable.value}'
-                    )
+                attribute['uuid'] = self.main_parser._create_v5_uuid(
+                    f'{object_id} - host - {observable.value}'
+                )
                 misp_object.add_attribute(**attribute)
                 continue
-            for feature in ('src', 'dst'):
-                if hasattr(observable, f'{feature}_ref'):
-                    address = observables[
-                        getattr(observable, f'{feature}_ref')
-                    ]
-                    content = self._parse_network_traffic_reference_observable(
-                        feature, address,
-                        getattr(address, 'id', observed_data.id),
-                        name='http_request'
-                    )
-                    for attribute in content:
-                        misp_object.add_attribute(**attribute)
-            object_id = getattr(observable, 'id', observed_data.id)
             attributes = self._parse_generic_observable(
                 observable, 'http_request', object_id
             )
             for attribute in attributes:
                 misp_object.add_attribute(**attribute)
+            for feature in ('src', 'dst'):
+                if hasattr(observable, f'{feature}_ref'):
+                    address_ref = getattr(observable, f'{feature}_ref')
+                    address = observables[address_ref]
+                    content = self._parse_network_traffic_reference_observable(
+                        feature, address, getattr(
+                            address, 'id', f'{observed_data.id} - {address_ref}'
+                        ),
+                        name='http_request'
+                    )
+                    for attribute in content:
+                        misp_object.add_attribute(**attribute)
             if getattr(observable, 'extensions', {}).get('http-request-ext'):
                 attributes = self._parse_http_request_extension_observable(
                     observable.extensions['http-request-ext'], object_id
