@@ -357,10 +357,15 @@ class STIXtoMISPParser(metaclass=ABCMeta):
         )
 
     def _unknown_network_protocol_warning(
-            self, protocol: str, indicator_id: str):
+            self, protocol: str, object_id: str,
+            object_type: Optional[str] = 'indicator'):
+        message = (
+            'in patterning expression within the indicator with id'
+            if object_type == 'indicator' else
+            f'within the {object_type} object with id'
+        )
         self.__warnings[self._identifier].add(
-            f'Unknown network protocol: {protocol} in the patterning '
-            f'expression describing the Indicator with id {indicator_id}'
+            f'Unknown network protocol: {protocol}, {message} {object_id}'
         )
 
     def _unknown_object_name_warning(self, name: str):
