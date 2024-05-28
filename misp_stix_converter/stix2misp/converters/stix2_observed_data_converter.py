@@ -159,8 +159,8 @@ class ExternalSTIX2ObservedDataConverter(
 
     def _extract_referenced_ids_from_observable_object_refs(self):
         self.__referenced_ids = defaultdict(set)
-        for object_id, observable_object in self._observable.items():
-            for key, value in observable_object['observable'].items():
+        for object_id, observable in self.main_parser._observable.items():
+            for key, value in observable['observable'].items():
                 if key.endswith('_ref'):
                     self.referenced_ids[value].add(object_id)
                 if key.endswith('_refs'):
