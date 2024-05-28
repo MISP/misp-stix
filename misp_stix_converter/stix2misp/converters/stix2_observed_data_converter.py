@@ -614,7 +614,7 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 domain_object.add_attribute(
                     'domain', domain.value,
-                    uuid=self.main_parser._sanitise_attribute_uuid(domain.id)
+                    **self.main_parser._sanitise_attribute_uuid(domain.id)
                 )
                 misp_object = self.main_parser._add_misp_object(
                     domain_object, observed_data
@@ -630,7 +630,7 @@ class ExternalSTIX2ObservedDataConverter(
                             else 'ip'
                         ),
                         resolved_object.value,
-                        uuid=self.main_parser._sanitise_attribute_uuid(
+                        **self.main_parser._sanitise_attribute_uuid(
                             resolved_ref
                         )
                     )
