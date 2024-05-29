@@ -603,6 +603,25 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data2, s_domain, 'domain'
         )
 
+    def test_stix20_bundle_with_domain_ip_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_domain_ip_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_object = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_object), 1)
+        domain_ip_object = misp_object[0]
+        self.assertEqual(domain_ip_object.name, 'domain-ip')
+        self._check_misp_object_fields(
+            domain_ip_object, observed_data, '0 - 1 - 2'
+        )
+        object_id = f'{observed_data.id} - 0'
+        self._check_domain_ip_fields(
+            domain_ip_object, *observed_data.objects.values(),
+            object_id, f'{object_id} - 1', f'{object_id} - 2'
+        )
+
     def test_stix20_bundle_with_email_address_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_email_address_attributes()
         self.parser.load_stix_bundle(bundle)

@@ -314,6 +314,36 @@ _DOMAIN_ATTRIBUTES = [
         }
     }
 ]
+_DOMAIN_IP_OBJECTS = [
+    {
+        "type": "observed-data",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "objects": {
+            "0": {
+                "type": "domain-name",
+                "value": "example.com",
+                "resolves_to_refs": [
+                    "1",
+                    "2"
+                ]
+            },
+            "1": {
+                "type": "ipv4-addr",
+                "value": "198.51.100.3"
+            },
+            "2": {
+                "type": "ipv6-addr",
+                "value": "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+            }
+        }
+    }
+]
 _EMAIL_ADDRESS_ATTRIBUTES = [
     {
         "type": "observed-data",
@@ -1481,6 +1511,10 @@ class TestExternalSTIX20Bundles:
     @classmethod
     def get_bundle_with_domain_attributes(cls):
         return cls.__assemble_bundle(*_DOMAIN_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_domain_ip_objects(cls):
+        return cls.__assemble_bundle(*_DOMAIN_IP_OBJECTS)
 
     @classmethod
     def get_bundle_with_email_address_attributes(cls):

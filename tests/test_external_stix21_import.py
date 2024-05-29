@@ -561,6 +561,26 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self._check_generic_attribute(od1, domain_2, m_domain2, 'domain')
         self._check_generic_attribute(od2, domain_3, s_domain, 'domain')
 
+    def test_stix21_bundle_with_domain_ip_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_domain_ip_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, domain, ipv4, ipv6 = bundle.objects
+        misp_object = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_object), 1)
+        domain_ip_object = misp_object[0]
+        self.assertEqual(domain_ip_object.name, 'domain-ip')
+        self._check_misp_object_fields(
+            domain_ip_object, observed_data,
+            f'{domain.id} - {ipv4.id} - {ipv6.id}',
+            multiple=True
+        )
+        self._check_domain_ip_fields(
+            domain_ip_object, domain, ipv4, ipv6,
+            domain.id, f'{domain.id} - {ipv4.id}', f'{domain.id} - {ipv6.id}'
+        )
+
     def test_stix21_bundle_with_email_address_attributes(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_email_address_attributes()
         self.parser.load_stix_bundle(bundle)

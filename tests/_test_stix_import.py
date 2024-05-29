@@ -609,6 +609,38 @@ class TestExternalSTIX2Import(TestSTIX2Import):
         )
         return accessed.value, created.value, modified.value
 
+    def _check_domain_ip_fields(self, misp_object, domain, ipv4, ipv6, *object_ids):
+        self.assertEqual(len(misp_object.attributes), 3)
+        domain_attribute, ipv4_attribute, ipv6_attribute = misp_object.attributes
+        domain_id, ipv4_id, ipv6_id = object_ids
+        self._assert_multiple_equal(
+            domain_attribute.type, domain_attribute.object_relation, 'domain'
+        )
+        self.assertEqual(domain_attribute.value, domain.value)
+        self.assertEqual(
+            domain_attribute.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{domain_id} - domain - {domain_attribute.value}'
+            )
+        )
+        self._assert_multiple_equal(
+            ipv4_attribute.type, ipv6_attribute.type, 'ip-dst'
+        )
+        self._assert_multiple_equal(
+            ipv4_attribute.object_relation, ipv6_attribute.object_relation, 'ip'
+        )
+        self.assertEqual(ipv4_attribute.value, ipv4.value)
+        self.assertEqual(
+            ipv4_attribute.uuid,
+            uuid5(self._UUIDv4, f'{ipv4_id} - ip - {ipv4_attribute.value}')
+        )
+        self.assertEqual(ipv6_attribute.value, ipv6.value)
+        self.assertEqual(
+            ipv6_attribute.uuid,
+            uuid5(self._UUIDv4, f'{ipv6_id} - ip - {ipv6_attribute.value}')
+        )
+
     def _check_file_fields(self, misp_object, observable_object, object_id):
         self.assertEqual(len(misp_object.attributes), 6)
         md5, sha1, sha256, filename, encoding, size = misp_object.attributes
