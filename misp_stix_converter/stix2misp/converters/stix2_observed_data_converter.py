@@ -614,7 +614,9 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 domain_object.add_attribute(
                     'domain', domain.value,
-                    **self.main_parser._sanitise_attribute_uuid(domain.id)
+                    uuid=self.main_parser._create_v5_uuid(
+                        f'{domain.id} - domain - {domain.value}'
+                    )
                 )
                 misp_object = self.main_parser._add_misp_object(
                     domain_object, observed_data
@@ -624,14 +626,16 @@ class ExternalSTIX2ObservedDataConverter(
                 for resolved_ref in domain.resolves_to_refs:
                     resolved_observable = self._fetch_observable(resolved_ref)
                     resolved_object= resolved_observable['observable']
+                    object_relation = (
+                        'domain' if resolved_object.type == 'domain-name'
+                        else 'ip'
+                    )
+                    value = resolved_object.value
                     misp_object.add_attribute(
-                        (
-                            'domain' if resolved_object.type == 'domain-name'
-                            else 'ip'
-                        ),
-                        resolved_object.value,
-                        **self.main_parser._sanitise_attribute_uuid(
-                            resolved_ref
+                        object_relation, value,
+                        uuid=self.main_parser._create_v5_uuid(
+                            f'{domain.id} - {resolved_ref} - '
+                            f'{object_relation} - {value}'
                         )
                     )
                     resolved_observable['used'][self.event_uuid] = True
@@ -653,7 +657,7 @@ class ExternalSTIX2ObservedDataConverter(
         referenced_ids = self._extract_referenced_ids_from_observable_objects(
             **observed_data.objects
         )
-        for identifier, observable_object in observed_data.objects:
+        for identifier, observable_object in observed_data.objects.items():
             if identifier in referenced_ids:
                 continue
             if hasattr(observable_object, 'resolves_to_refs'):
@@ -665,18 +669,21 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 misp_object.add_attribute(
                     'domain', observable_object.value,
-                    uuid=self.main_parser._create_v5_uuid(object_id)
+                    uuid=self.main_parser._create_v5_uuid(
+                        f'{object_id} - domain - {observable_object.value}'
+                    )
                 )
                 for resolved_ref in observable_object.resolves_to_refs:
                     resolved_object = observed_data.objects[resolved_ref]
+                    object_relation = (
+                        'domain' if resolved_object.type == 'domain-name'
+                        else 'ip'
+                    )
                     misp_object.add_attribute(
-                        (
-                            'domain' if resolved_object.type == 'domain-name'
-                            else 'ip'
-                        ),
-                        resolved_object.value,
+                        object_relation, resolved_object.value,
                         uuid=self.main_parser._create_v5_uuid(
-                            f'{observed_data.id} - {resolved_ref}'
+                            f'{object_id} - {resolved_ref} - '
+                            f'{object_relation} - {resolved_object.value}'
                         )
                     )
                 self.main_parser._add_misp_object(misp_object, observed_data)
