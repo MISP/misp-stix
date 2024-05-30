@@ -590,7 +590,7 @@ class ExternalSTIX2ObservedDataConverter(
     def _parse_domain_ip_observable_object_refs(
             self, observed_data: ObservedData_v21, *object_refs: tuple):
         for object_ref in object_refs or observed_data.object_refs:
-            if object_ref in self.referenced_ids:
+            if not object_ref.startswith('domain-name--'):
                 continue
             observable = self._fetch_observable(object_ref)
             domain = observable['observable']
