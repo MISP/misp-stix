@@ -621,22 +621,36 @@ class ExternalSTIX2ObservedDataConverter(
                 observable['used'][self.event_uuid] = True
                 observable['misp_object'] = misp_object
                 for resolved_ref in domain.resolves_to_refs:
-                    resolved_observable = self._fetch_observable(resolved_ref)
-                    resolved_object= resolved_observable['observable']
-                    object_relation = (
-                        'domain' if resolved_object.type == 'domain-name'
-                        else 'ip'
-                    )
-                    value = resolved_object.value
+                    resolved = self._fetch_observable(resolved_ref)
+                    resolved_observable = resolved['observable']
+                    if resolved_observable.type == 'domain-name':
+                        if resolved['used'].get(self.event_uuid, False):
+                            resolved_object = (
+                                resolved['misp_object']
+                                if resolved.get('misp_object') is not None
+                                else resolved['misp_attribute']
+                            )
+                            misp_object.add_reference(
+                                resolved_object.uuid, 'resolves-to'
+                            )
+                        continue
+                    value = resolved_observable.value
                     misp_object.add_attribute(
-                        object_relation, value,
-                        uuid=self.main_parser._create_v5_uuid(
-                            f'{domain.id} - {resolved_ref} - '
-                            f'{object_relation} - {value}'
+                        'ip', value, uuid=self.main_parser._create_v5_uuid(
+                            f'{domain.id} - {resolved_ref} - ip - {value}'
                         )
                     )
-                    resolved_observable['used'][self.event_uuid] = True
-                    resolved_observable['misp_object'] = misp_object
+                    resolved['used'][self.event_uuid] = True
+                    resolved['misp_object'] = misp_object
+                if object_ref in self.referenced_ids:
+                    for referencing_id in self.referenced_ids[object_ref]:
+                        referencing = self._fetch_observable(referencing_id)
+                        if referencing['observable'].type != 'domain-name':
+                            continue
+                        if referencing['used'].get(self.event_uuid, False):
+                            referencing['misp_object'].add_reference(
+                                misp_object.uuid, 'resolves-to'
+                            )
                 continue
             if observable['used'].get(self.event_uuid, False):
                 self._handle_misp_object_fields(
@@ -699,6 +713,11 @@ class ExternalSTIX2ObservedDataConverter(
                 )
                 continue
             domain = observable['observable']
+            if hasattr(domain, 'resolves_to_refs'):
+                self._parse_domain_ip_observable_object_refs(
+                    observed_data, object_ref
+                )
+                continue
             attribute = self._parse_generic_observable_object_ref_as_attribute(
                 domain, observed_data, 'domain'
             )
