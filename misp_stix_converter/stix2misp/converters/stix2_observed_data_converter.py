@@ -76,7 +76,7 @@ class ExternalSTIX2ObservedDataConverter(
     @property
     def observable_relationships(self):
         if not hasattr(self, '_observable_relationships'):
-            self._set_observable_relationships()
+            self._observable_relationships = defaultdict(set)
         return self._observable_relationships
 
     @property
@@ -109,9 +109,6 @@ class ExternalSTIX2ObservedDataConverter(
                         misp_object, referenced_uuid,
                         relationship_type=relationship_type
                     )
-
-    def _set_observable_relationships(self):
-        self._observable_relationships = defaultdict(set)
 
     ############################################################################
     #                  GENERIC OBSERVED DATA HANDLING METHODS                  #
