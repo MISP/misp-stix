@@ -607,7 +607,16 @@ class ExternalSTIX2ObservedDataConverter(
                     domain_object.uuid
                 )
                 domain_object.uuid = self.main_parser._create_v5_uuid(
-                    ' - '.join((domain.id, *domain.resolves_to_refs))
+                    ' - '.join(
+                        (
+                            domain.id,
+                            *(
+                                resolved_id for resolved_id
+                                in domain.resolves_to_refs
+                                if not resolved_id.startswith('domain-name--')
+                            )
+                        )
+                    )
                 )
                 domain_object.add_attribute(
                     'domain', domain.value,
