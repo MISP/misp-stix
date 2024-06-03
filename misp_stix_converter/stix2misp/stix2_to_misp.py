@@ -750,8 +750,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     ############################################################################
 
     def _parse_acs_marking_definition(
-            self, extension: dict, extension_definition: dict,
-            version: str, object_id: str):
+            self, extension_definition: dict,
+            marking_definition: _MARKING_DEFINITION_TYPING,
+            identifier: str, version: str):
+        extension = marking_definition.extensions[identifier]
         galaxy_type = f'stix-{version}-acs-marking'
         name = f'STIX {version} ACS Marking'
         if galaxy_type not in self._galaxies:
@@ -815,12 +817,18 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if key != 'extension_type':
                 meta[key] = value
         galaxy_cluster = self._create_misp_galaxy_cluster(
-            type=f'stix-{version}-acs-marking',
-            uuid=self._create_v5_uuid(object_id),
             collection_uuid=self._create_v5_uuid(name),
+            meta=meta, type=f'stix-{version}-acs-marking',
             version=''.join(version.split('.')),
             value=extension.get('name', extension['identifier']),
-            meta=meta
+            source=(
+                self._handle_creator(marking_definition.created_by_ref)
+                if hasattr(marking_definition, 'created_by_ref') else
+                extension['responsible_entity_custodian']
+            ),
+            uuid=self._create_v5_uuid(
+                f'{marking_definition.id} - {identifier}'
+            )
         )
         extension_definition['cluster'].append(galaxy_cluster)
 
@@ -837,13 +845,13 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         if hasattr(marking_definition, 'extensions'):
             extension_definition = defaultdict(list)
             version = getattr(marking_definition, 'spec_version', '2.0')
-            for identifier, extension in marking_definition.extensions.items():
+            for identifier in marking_definition.extensions.keys():
                 feature = self._mapping.marking_extension_mapping(identifier)
                 if feature is None:
                     continue
                 getattr(self, f'_parse_{feature}_marking_definition')(
-                    extension, extension_definition, version,
-                    f"{marking_definition.id} - {identifier}"
+                    extension_definition,
+                    marking_definition, identifier, version
                 )
             if extension_definition:
                 return extension_definition
@@ -1287,6 +1295,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         for label in (label for label in labels
                       if label.lower() != 'threat-report'):
             misp_feature.add_tag(label)
+
+    def _handle_creator(self, reference: str) -> str:
+        if reference in getattr(self, '_identity', {}):
+            return self._identity[reference].name
+        return self._mapping.identity_references(reference) or 'misp-stix'
 
     def _is_tlp_marking(self, marking_ref: str) -> bool:
         for marking in (TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED):

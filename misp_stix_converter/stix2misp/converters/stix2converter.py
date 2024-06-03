@@ -255,6 +255,10 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
             'uuid': self.main_parser._create_v5_uuid(
                 f'{self.main_parser._extract_uuid(stix_object.id)} -'
                 f' {self.main_parser.organisation_uuid}'
+            ),
+            'source': (
+                self.main_parser._handle_creator(stix_object.created_by_ref)
+                if hasattr(stix_object, 'created_by_ref') else 'misp-stix'
             )
         }
         if galaxy_type is None:

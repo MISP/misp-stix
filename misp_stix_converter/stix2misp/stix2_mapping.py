@@ -112,6 +112,11 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         }
     )
 
+    # KNOWN IDENTITY REFERENCES
+    __identity_references = {
+        "identity--b3bca3c2-1f3d-4b54-b44f-dac42c3a8f01": "CISA"
+    }
+
     # SINGLE ATTRIBUTES MAPPING
     __access_time_attribute = Mapping(
         **{'type': 'datetime', 'object_relation': 'access-time'}
@@ -765,6 +770,10 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     @classmethod
     def home_dir_attribute(cls) -> dict:
         return cls.__home_dir_attribute
+
+    @classmethod
+    def identity_references(cls, identity_id: str) -> Union[str, None]:
+        return cls.__identity_references.get(identity_id)
 
     @classmethod
     def imphash_attribute(cls) -> dict:
