@@ -566,19 +566,37 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.parser.load_stix_bundle(bundle)
         self.parser.parse_stix_bundle()
         event = self.parser.misp_event
-        _, grouping, observed_data, domain, ipv4, ipv6 = bundle.objects
-        misp_object = self._check_misp_event_features_from_grouping(event, grouping)
-        self.assertEqual(len(misp_object), 1)
-        domain_ip_object = misp_object[0]
-        self.assertEqual(domain_ip_object.name, 'domain-ip')
+        _, grouping, od1, od2, domain1, ipv4, ipv6, domain2 = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 2)
+        domain_object, domain_ip_object = misp_objects
+        self._assert_multiple_equal(
+            domain_object.name, domain_ip_object.name, 'domain-ip'
+        )
         self._check_misp_object_fields(
-            domain_ip_object, observed_data,
-            f'{domain.id} - {ipv4.id} - {ipv6.id}',
+            domain_object, od1, domain2.id, multiple=True
+        )
+        self.assertEqual(len(domain_object.attributes), 1)
+        domain_attribute = domain_object.attributes[0]
+        self._assert_multiple_equal(
+            domain_attribute.type, domain_attribute.object_relation, 'domain'
+        )
+        self.assertEqual(domain_attribute.value, domain2.value)
+        self.assertEqual(
+            domain_attribute.uuid,
+            uuid5(self._UUIDv4, f'{domain2.id} - domain - {domain2.value}')
+        )
+        self.assertEqual(len(domain_object.references), 1)
+        reference = domain_object.references[0]
+        self.assertEqual(reference.referenced_uuid, domain_ip_object.uuid)
+        self.assertEqual(reference.relationship_type, 'resolves-to')
+        self._check_misp_object_fields(
+            domain_ip_object, od2, f'{domain1.id} - {ipv4.id} - {ipv6.id}',
             multiple=True
         )
         self._check_domain_ip_fields(
-            domain_ip_object, domain, ipv4, ipv6,
-            domain.id, f'{domain.id} - {ipv4.id}', f'{domain.id} - {ipv6.id}'
+            domain_ip_object, domain1, ipv4, ipv6,
+            domain1.id, f'{domain1.id} - {ipv4.id}', f'{domain1.id} - {ipv6.id}'
         )
 
     def test_stix21_bundle_with_email_address_attributes(self):

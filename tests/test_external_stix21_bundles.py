@@ -375,6 +375,20 @@ _DOMAIN_IP_OBJECTS = [
     {
         "type": "observed-data",
         "spec_version": "2.1",
+        "id": "observed-data--1a165e68-ea72-44e6-b821-3b88f2cc46d8",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa951",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-10-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-10-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "domain-name--cd890f31-5825-4fea-85ca-0b3ab3872926"
+        ]
+    },
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
         "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
         "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
         "created": "2020-10-25T16:22:00.000Z",
@@ -409,6 +423,15 @@ _DOMAIN_IP_OBJECTS = [
         "spec_version": "2.1",
         "id": "ipv6-addr--1e61d36c-a16c-53b7-a80f-2a00161c96b1",
         "value": "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+    },
+    {
+        "type": "domain-name",
+        "spec_version": "2.1",
+        "id": "domain-name--cd890f31-5825-4fea-85ca-0b3ab3872926",
+        "value": "blog.example.com",
+        "resolves_to_refs": [
+            "domain-name--3c10e93f-798e-5a26-a0c1-08156efab7f5"
+        ]
     }
 ]
 _EMAIL_ADDRESS_ATTRIBUTES = [
