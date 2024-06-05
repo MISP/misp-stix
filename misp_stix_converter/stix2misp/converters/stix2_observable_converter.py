@@ -120,7 +120,8 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
     __email_additional_header_fields_mapping = Mapping(
         **{
             'Reply-To': STIX2Mapping.reply_to_attribute(),
-            'X-Mailer': STIX2Mapping.x_mailer_attribute()
+            'X-Mailer': STIX2Mapping.x_mailer_attribute(),
+            'X-Originating-IP': STIX2Mapping.received_header_ip_attribute(),
         }
     )
     __dst_ip_attribute = {'type': 'ip-dst', 'object_relation': 'dst_ip'}

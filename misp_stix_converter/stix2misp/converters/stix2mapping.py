@@ -116,6 +116,9 @@ class STIX2Mapping:
             'object_relation': 'from-display-name'
         }
     )
+    __header_attribute = Mapping(
+        **{'type': 'email-header', 'object_relation': 'header'}
+    )
     __hidden_attribute = Mapping(
         **{'type': 'boolean', 'object_relation': 'hidden'}
     )
@@ -175,6 +178,9 @@ class STIX2Mapping:
     )
     __protocol_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'protocol'}
+    )
+    __received_header_ip_attribute = Mapping(
+        **{'type': 'ip-src', 'object_relation': 'received-header-ip'}
     )
     __reference_attribute = Mapping(
         **{'type': 'link', 'object_relation': 'reference'}
@@ -303,6 +309,7 @@ class STIX2Mapping:
         body=__email_body_attribute,
         date=__send_date_attribute,
         message_id=__message_id_attribute,
+        received_lines=__header_attribute,
         subject=__email_subject_attribute
     )
     __file_hashes = Mapping(
@@ -558,6 +565,10 @@ class STIX2Mapping:
         return cls.__from_display_name_attribute
 
     @classmethod
+    def header_attribute(cls) -> dict:
+        return cls.__header_attribute
+
+    @classmethod
     def hidden_attribute(cls) -> dict:
         return cls.__hidden_attribute
 
@@ -656,6 +667,10 @@ class STIX2Mapping:
     @classmethod
     def protocol_attribute(cls) -> dict:
         return cls.__protocol_attribute
+
+    @classmethod
+    def received_header_ip_attribute(cls) -> dict:
+        return cls.__received_header_ip_attribute
 
     @classmethod
     def references_attribute(cls) -> dict:
