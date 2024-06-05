@@ -1045,9 +1045,10 @@ class ExternalSTIX2ObservedDataConverter(
             )
             object_id = f'{observed_data.id} - {identifier}'
             if hasattr(observable, 'from_ref'):
+                from_ref = observable.from_ref
                 attributes = self._parse_email_reference_observable(
-                    observed_data.objects[observable.from_ref],
-                    'from', object_id
+                    observed_data.objects[from_ref],
+                    'from', f'{object_id} - {from_ref}'
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
@@ -1057,7 +1058,7 @@ class ExternalSTIX2ObservedDataConverter(
                     for reference in getattr(observable, field):
                         attributes = self._parse_email_reference_observable(
                             observed_data.objects[reference],
-                            feature, object_id
+                            feature, f'{object_id} - {reference}'
                         )
                         for attribute in attributes:
                             misp_object.add_attribute(**attribute)
