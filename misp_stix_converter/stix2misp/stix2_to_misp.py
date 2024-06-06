@@ -1170,10 +1170,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                             stix_object: _SDO_TYPING) -> MISPAttribute:
         misp_attribute = MISPAttribute()
         misp_attribute.from_dict(**attribute)
-<<<<<<< HEAD
-        for tag in self._handle_tags_from_stix_fields(stix_object):
-            misp_attribute.add_tag(tag)
-=======
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
                 misp_attribute.add_tag(marking)
@@ -1187,16 +1183,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             if marking.get('tags'):
                 for tag in marking['tags']:
                     misp_attribute.add_tag(tag)
->>>>>>> b2faea3254a8a98e89bba0a10a511bb1e426696f
         return self.misp_event.add_attribute(**misp_attribute)
 
     def _add_misp_object(self, misp_object: MISPObject,
                          stix_object: _SDO_TYPING) -> MISPObject:
-<<<<<<< HEAD
-        for tag in self._handle_tags_from_stix_fields(stix_object):
-            for attribute in misp_object.attributes:
-                attribute.add_tag(tag)
-=======
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
                 for attribute in misp_object.attributes:
@@ -1213,7 +1203,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 for tag in marking['tags']:
                     for attribute in misp_object.attributes:
                         attribute.add_tag(tag)
->>>>>>> b2faea3254a8a98e89bba0a10a511bb1e426696f
         return self.misp_event.add_object(misp_object)
 
     def _create_generic_event(self) -> MISPEvent:
@@ -1259,10 +1248,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                     marking_definition = self._get_stix_object(marking_ref)
                 except ObjectTypeLoadingError as error:
                     if self._is_tlp_marking(marking_ref):
-<<<<<<< HEAD
-                        marking = self._get_stix_object(marking_ref)
-=======
->>>>>>> b2faea3254a8a98e89bba0a10a511bb1e426696f
                         yield self._get_stix_object(marking_ref)
                     else:
                         self._object_type_loading_error(error)
@@ -1290,14 +1275,11 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                       if label.lower() != 'threat-report'):
             misp_feature.add_tag(label)
 
-<<<<<<< HEAD
-=======
     def _handle_creator(self, reference: str) -> str:
         if reference in getattr(self, '_identity', {}):
             return self._identity[reference].name
         return self._mapping.identity_references(reference) or 'misp-stix'
 
->>>>>>> b2faea3254a8a98e89bba0a10a511bb1e426696f
     def _is_tlp_marking(self, marking_ref: str) -> bool:
         for marking in (TLP_WHITE, TLP_GREEN, TLP_AMBER, TLP_RED):
             if marking_ref == marking.id:
@@ -1323,18 +1305,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             return 'misp:confidence-level="rarely-confident"'
         return 'misp:confidence-level="unconfident"'
 
-<<<<<<< HEAD
-    def _parse_marking_definition(
-            self, marking_definition: _MARKING_DEFINITION_TYPING) -> str:
-        if hasattr(marking_definition, 'definition_type'):
-            definition_type = marking_definition.definition_type
-            definition = marking_definition.definition[definition_type]
-            return f"{definition_type}:{definition}"
-        if hasattr(marking_definition, 'name'):
-            # should be TLP 2.0 definition
-            return marking_definition.name.lower()
-        raise MarkingDefinitionLoadingError(marking_definition.id)
-=======
     def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
         misp_object = {
             'timestamp': self._timestamp_from_date(stix_object.modified)
@@ -1348,7 +1318,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 if hasattr(stix_object, last) and getattr(stix_object, last):
                     misp_object['last_seen'] = getattr(stix_object, last)
         return misp_object
->>>>>>> b2faea3254a8a98e89bba0a10a511bb1e426696f
 
     @staticmethod
     def _populate_object_attributes(
