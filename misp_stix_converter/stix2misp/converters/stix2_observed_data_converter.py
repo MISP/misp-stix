@@ -3529,16 +3529,3 @@ class InternalSTIX2ObservedDataConverter(
             reference: self.main_parser._observable[reference]
             for reference in observed_data.object_refs
         }
-
-    @staticmethod
-    def _handle_external_references(external_references: list) -> dict:
-        meta = defaultdict(list)
-        for reference in external_references:
-            if reference.get('url'):
-                meta['refs'].append(reference['url'])
-            feature = 'aliases' if reference.get('source_name') == 'cve' else 'external_id'
-            if reference.get('external_id'):
-                meta[feature].append(reference['external_id'])
-        if 'external_id' in meta and len(meta['external_id']) == 1:
-            meta['external_id'] = meta.pop('external_id')[0]
-        return meta

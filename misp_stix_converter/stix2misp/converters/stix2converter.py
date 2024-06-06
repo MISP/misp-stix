@@ -8,9 +8,11 @@ from collections import defaultdict
 from datetime import datetime
 from pymisp import AbstractMISP, MISPGalaxyCluster, MISPObject
 from stix2.v20.sdo import (
-    AttackPattern as AttackPattern_v20, Malware as Malware_v20)
+    AttackPattern as AttackPattern_v20, Malware as Malware_v20,
+    ObservedData as ObservedData_v20)
 from stix2.v21.sdo import (
-    AttackPattern as AttackPattern_v21, Malware as Malware_v21)
+    AttackPattern as AttackPattern_v21, Malware as Malware_v21,
+    ObservedData as ObservedData_v21)
 from typing import Iterator, Optional, Tuple, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
@@ -28,7 +30,8 @@ _MAIN_PARSER_TYPING = Union[
 ]
 _SDO_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21,
-    Malware_v20, Malware_v21
+    Malware_v20, Malware_v21,
+    ObservedData_v20, ObservedData_v21
 ]
 
 
@@ -208,6 +211,13 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     #                         GALAXIES PARSING METHODS                         #
     ############################################################################
 
+    def _check_existing_galaxy_name(self, stix_object_name: str) -> Union[list, None]:
+        if stix_object_name in self.synonyms_mapping:
+            return self.synonyms_mapping[stix_object_name]
+        for name, tag_names in self.synonyms_mapping.items():
+            if stix_object_name in name:
+                return tag_names
+
     def _create_cluster_args(
             self, stix_object: _GALAXY_OBJECTS_TYPING, galaxy_type: str,
             description: Optional[str] = None,
@@ -303,7 +313,7 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _parse_galaxy_as_tag_names(self, stix_object: _GALAXY_OBJECTS_TYPING,
                                    object_type: Union[str, None]) -> dict:
         name = stix_object.name
-        tag_names = self.main_parser._check_existing_galaxy_name(name)
+        tag_names = self._check_existing_galaxy_name(name)
         if tag_names is None:
             tag_names = [
                 f'misp-galaxy:{object_type or stix_object.type}="{name}"'
