@@ -7,14 +7,16 @@ from .stix2converter import (
 from .stix2mapping import (
     ExternalSTIX2Mapping, InternalSTIX2Mapping, STIX2Mapping)
 from abc import ABCMeta
+from pymisp import MISPObject
 from stix2.v20.observables import (
     Artifact as Artifact_v20, AutonomousSystem as AutonomousSystem_v20,
     Directory as Directory_v20, DomainName as DomainName_v20,
     EmailAddress as EmailAddress_v20, EmailMessage as EmailMessage_v20,
-    File as File_v20, HTTPRequestExt as HTTPRequestExt_v20, Mutex as Mutex_v20, NetworkTraffic as NetworkTraffic_v20,
-    Process as Process_v20, Software as Software_v20,
-    UNIXAccountExt as UNIXAccountExt_v20, URL as URL_v20,
-    UserAccount as UserAccount_v20, WindowsPEBinaryExt as WindowsExtension_v20,
+    File as File_v20, HTTPRequestExt as HTTPRequestExt_v20, Mutex as Mutex_v20,
+    NetworkTraffic as NetworkTraffic_v20, Process as Process_v20,
+    Software as Software_v20, UNIXAccountExt as UNIXAccountExt_v20,
+    URL as URL_v20, UserAccount as UserAccount_v20,
+    WindowsPEBinaryExt as WindowsExtension_v20,
     WindowsPESection as WindowsPESection_v20,
     WindowsRegistryKey as WindowsRegistryKey_v20,
     WindowsRegistryValueType as WindowsRegistryValue_v20,
@@ -113,17 +115,29 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'type': 'text', 'object_relation': 'encryption_algorithm'
         },
         mime_type={'type': 'mime-type', 'object_relation': 'mime_type'},
-        payload_bin={'type': 'text', 'object_relation': 'payload_bin'},
         url=STIX2Mapping.url_attribute()
     )
     __email_additional_header_fields_mapping = Mapping(
         **{
             'Reply-To': STIX2Mapping.reply_to_attribute(),
-            'X-Mailer': STIX2Mapping.x_mailer_attribute()
+            'X-Mailer': STIX2Mapping.x_mailer_attribute(),
+            'X-Originating-IP': STIX2Mapping.received_header_ip_attribute(),
         }
     )
-    __mac_dst_attribute = {'type': 'mac-address', 'object_relation': 'mac-dst'}
-    __mac_src_attribute = {'type': 'mac-address', 'object_relation': 'mac-src'}
+    __dst_ip_attribute = {'type': 'ip-dst', 'object_relation': 'dst_ip'}
+    __src_ip_attribute = {'type': 'ip-src', 'object_relation': 'src_ip'}
+    __generic_network_traffic_reference_mapping = Mapping(
+        **{
+            'domain-name_dst': {'type': 'hostname', 'object_relation': 'dst_hostname'},
+            'domain-name_src': {'type': 'hostname', 'object_relation': 'src_hostname'},
+            'ipv4-addr_dst': __dst_ip_attribute,
+            'ipv4-addr_src': __src_ip_attribute,
+            'ipv6-addr_dst': __dst_ip_attribute,
+            'ipv6-addr_src': __src_ip_attribute,
+            'mac-address_dst': {'type': 'mac-address', 'object_relation': 'dst_mac'},
+            'mac-address_src': {'type': 'mac-address', 'object_relation': 'src_mac'}
+        }
+    )
     __network_traffic_reference_mapping = Mapping(
         **{
             'domain-name_dst': STIX2Mapping.hostname_dst_attribute(),
@@ -132,8 +146,8 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
             'ipv4-addr_src': STIX2Mapping.ip_src_attribute(),
             'ipv6-addr_dst': STIX2Mapping.ip_dst_attribute(),
             'ipv6-addr_src': STIX2Mapping.ip_src_attribute(),
-            'mac-address_dst': __mac_dst_attribute,
-            'mac-address_src': __mac_src_attribute
+            'mac-address_dst': {'type': 'mac-address', 'object_relation': 'mac-dst'},
+            'mac-address_src': {'type': 'mac-address', 'object_relation': 'mac-src'}
         }
     )
     __software_object_mapping = Mapping(
@@ -161,8 +175,16 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
         return cls.__email_additional_header_fields_mapping
 
     @classmethod
-    def network_traffic_reference_mapping(cls, field) -> dict:
+    def network_traffic_reference_mapping(cls, field: str) -> dict:
+        return cls.__generic_network_traffic_reference_mapping.get(field)
+
+    @classmethod
+    def network_socket_reference_mapping(cls, field: str) -> dict:
         return cls.__network_traffic_reference_mapping.get(field)
+
+    @classmethod
+    def network_traffic_references(cls) -> dict:
+        return cls.__network_traffic_reference_mapping
 
     @classmethod
     def software_object_mapping(cls) -> dict:
@@ -174,18 +196,37 @@ class STIX2ObservableMapping(STIX2Mapping, metaclass=ABCMeta):
 
 
 class STIX2ObservableConverter(STIX2Converter):
-    def _parse_email_additional_header(
+    def _fetch_observable(self, object_ref: str) -> dict:
+        return self.main_parser._observable[object_ref]
+
+    def _handle_misp_object_storage(
+            self, observable: dict, misp_object: MISPObject):
+        observable['used'][self.event_uuid] = True
+        if observable.get('misp_object') is None:
+            observable['misp_object'] = misp_object
+        elif isinstance(observable['misp_object'], list):
+            observable['misp_object'].append(misp_object)
+        else:
+            observable['misp_object'] = [observable['misp_object'], misp_object]
+
+    def _parse_email_observable(
             self, observable: _EMAIL_MESSAGE_TYPING,
             object_id: Optional[str] = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
-        mapping = self._mapping.email_additional_header_fields_mapping
-        email_header = observable.additional_header_fields
-        for field, attribute in mapping().items():
-            if email_header.get(field):
+        for field, attribute in self._mapping.email_object_mapping().items():
+            if hasattr(observable, field):
                 yield from self._populate_object_attributes(
-                    attribute, email_header[field], object_id
+                    attribute, getattr(observable, field), object_id
                 )
+        if hasattr(observable, 'additional_header_fields'):
+            mapping = self._mapping.email_additional_header_fields_mapping
+            email_header = observable.additional_header_fields
+            for field, attribute in mapping().items():
+                if email_header.get(field):
+                    yield from self._populate_object_attributes(
+                        attribute, email_header[field], object_id
+                    )
 
     def _parse_email_reference_observable(
             self, observable: _EMAIL_ADDRESS_TYPING, feature: str,
@@ -234,7 +275,7 @@ class STIX2ObservableConverter(STIX2Converter):
             for hash_type, value in observable.hashes.items():
                 attribute = self._mapping.file_hashes_mapping(hash_type)
                 if attribute is None:
-                    self.main_parser.hash_type_error(hash_type)
+                    self.main_parser._hash_type_error(hash_type)
                     continue
                 yield from self._populate_object_attributes(
                     attribute, value, object_id
@@ -257,32 +298,17 @@ class STIX2ObservableConverter(STIX2Converter):
                     mapping, getattr(observable, field), object_id
                 )
 
-    def _parse_network_connection_observable(
-            self, observable: _NETWORK_TRAFFIC_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
-        if object_id is None:
-            object_id = observable.id
-        for protocol in observable.protocols:
-            layer = self._mapping.connection_protocols(protocol)
-            if layer is not None:
-                yield {
-                    'object_relation': f'layer{layer}-protocol',
-                    'type': 'text', 'value': protocol.upper(),
-                    'uuid': self.main_parser._create_v5_uuid(
-                        f'{object_id} - layer{layer}-protocol - {protocol}'
-                    )
-                }
-
     def _parse_network_socket_observable(
             self, observable: _NETWORK_TRAFFIC_TYPING,
             object_id: Optional[str] = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
         for protocol in observable.protocols:
+            protocol_value = protocol.upper()
             yield {
-                'value': protocol.upper(), **self._mapping.protocol_attribute(),
+                'value': protocol_value, **self._mapping.protocol_attribute(),
                 'uuid': self.main_parser._create_v5_uuid(
-                    f'{object_id} - protocol - {protocol}'
+                    f'{object_id} - protocol - {protocol_value}'
                 )
             }
         socket_extension = observable.extensions['socket-ext']
@@ -301,18 +327,39 @@ class STIX2ObservableConverter(STIX2Converter):
                     )
                 }
 
+    def _parse_network_traffic_observable(
+            self, observable: _NETWORK_TRAFFIC_TYPING,
+            object_id: Optional[str] = None) -> Iterator[dict]:
+        if object_id is None:
+            object_id = observable.id
+        mapping = self._mapping.network_traffic_object_mapping()
+        for field, attribute in mapping.items():
+            if hasattr(observable, field):
+                yield from self._populate_object_attributes(
+                    attribute, getattr(observable, field), object_id
+                )
+        for protocol in observable.protocols:
+            protocol_value = protocol.upper()
+            yield {
+                'value': protocol_value, **self._mapping.protocol_attribute(),
+                'uuid': self.main_parser._create_v5_uuid(
+                    f'{object_id} - protocol - {protocol_value}'
+                )
+            }
+
     def _parse_network_traffic_reference_observable(
             self, asset: str, observable: _NETWORK_TRAFFIC_REFERENCE_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
-        mapping = self._mapping.network_traffic_reference_mapping(
+            object_id: str, name: Optional[str] = 'network_traffic'):
+        attribute = getattr(self._mapping, f'{name}_reference_mapping')(
             f'{observable.type}_{asset}'
         )
-        if mapping is not None:
-            if object_id is None:
-                object_id = observable.id
+        if attribute is not None:
             yield {
-                'value': observable.value, **mapping,
-                **self.main_parser._sanitise_attribute_uuid(object_id)
+                'value': observable.value, **attribute,
+                'uuid': self.main_parser._create_v5_uuid(
+                    f"{object_id} - {attribute['object_relation']}"
+                    f' - {observable.value}'
+                )
             }
 
     def _parse_pe_extension_observable(self, extension: _EXTENSION_TYPING,
@@ -357,19 +404,25 @@ class STIX2ObservableConverter(STIX2Converter):
                 yield from self._populate_object_attributes(
                     mapping, getattr(observable, field), object_id
                 )
-        for feature in ('environment_variables', 'arguments'):
-            if hasattr(observable, feature):
-                value = ' '.join(
-                    f'{key} {value}' for key, value in
-                    getattr(observable, feature).items()
+        if hasattr(observable, 'arguments'):
+            value = ' '.join(observable.arguments)
+            yield {
+                **self._mappping.args_attribute(),
+                'value': value, 'uuid': self.main_parser._create_v5_uuid(
+                    f'{object_id} -  args - {value}'
                 )
-                yield {
-                    **self._mapping.args_attribute(),
-                    'value': value, 'uuid': self.main_parser._create_v5_uuid(
-                        f'{object_id} - args - {value}'
-                    )
-                }
-                break
+            }
+        if hasattr(observable, 'environment_variables'):
+            value = ' - '.join(
+                f'{key}: {value}' for key, value in
+                observable.environment_variables.items()
+            )
+            yield {
+                **self._mapping.environment_variables_attribute(),
+                'value': value, 'uuid': self.main_parser._create_v5_uuid(
+                    f'{object_id} - environment-variables - {value}'
+                )
+            }
 
     def _parse_registry_key_observable(
             self, observable: _REGISTRY_KEY_TYPING,
@@ -414,6 +467,7 @@ class ExternalSTIX2ObservableMapping(
         STIX2ObservableMapping, ExternalSTIX2Mapping):
     __observable_mapping = Mapping(
         **{
+            'artifact': 'artifact',
             'autonomous-system': 'as',
             'directory': 'directory',
             'domain-name': 'domain',
@@ -423,7 +477,6 @@ class ExternalSTIX2ObservableMapping(
             'software': 'software',
             'url': 'url',
             'user-account': 'user_account',
-            'windows-registry-key': 'registry_key',
             'x509-certificate': 'x509',
             **dict.fromkeys(
                 (
@@ -451,7 +504,7 @@ class ExternalSTIX2ObservableMapping(
                     'email-message',
                     'email-message_file'
                 ),
-                'email'
+                'email_message'
             ),
             **dict.fromkeys(
                 (
@@ -497,6 +550,13 @@ class ExternalSTIX2ObservableMapping(
                     'process'
                 ),
                 'process'
+            ),
+            **dict.fromkeys(
+                (
+                    'user-account_windows-registry-key',
+                    'windows-registry-key'
+                ),
+                'registry_key'
             )
         }
     )
@@ -509,10 +569,17 @@ class ExternalSTIX2ObservableMapping(
 class ExternalSTIX2ObservableConverter(
         STIX2ObservableConverter, ExternalSTIX2Converter):
     def _parse_artifact_observable(
-            self, observable: Artifact_v21,
+            self, observable: _ARTIFACT_TYPING,
             object_id: Optional[str] = None) -> Iterator[dict]:
         if object_id is None:
             object_id = observable.id
+        if hasattr(observable, 'payload_bin'):
+            value = getattr(observable, 'id', object_id.split(' - ')[0])
+            yield from self._populate_object_attributes_with_data(
+                {'type': 'attachment', 'object_relation': 'payload_bin'},
+                {'data': observable.payload_bin, 'value': value.split('--')[1]},
+                object_id
+            )
         if hasattr(observable, 'hashes'):
             for hash_type, value in observable.hashes.items():
                 attribute = self._mapping.file_hashes_mapping(hash_type)
@@ -541,17 +608,6 @@ class ExternalSTIX2ObservableConverter(
                 self._mapping.description_attribute(), observable.name,
                 object_id
             )
-
-    def _parse_directory_observable(
-            self, observable: _DIRECTORY_TYPING,
-            object_id: Optional[str] = None) -> Iterator[dict]:
-        if object_id is None:
-            object_id = observable.id
-        for field, mapping in self._mapping.directory_object_mapping().items():
-            if hasattr(observable, field):
-                yield from self._populate_object_attributes(
-                    mapping, getattr(observable, field), object_id
-                )
 
     def _parse_domain_observable(self, observable: _DOMAIN_TYPING,
                                  object_id: Optional[str] = None) -> dict:
@@ -600,6 +656,13 @@ class ExternalSTIX2ObservableConverter(
         )
         return attribute
 
+    @staticmethod
+    def _parse_network_traffic_observable_fields(
+            observable: NetworkTraffic_v21) -> str:
+        if getattr(observable, 'extensions', {}).get('socket-ext'):
+            return 'network-socket'
+        return 'network-traffic'
+
     def _parse_url_observable(self, observable: _URL_TYPING,
                               observed_data_id: str) -> Iterator[dict]:
         object_id = getattr(observable, 'id', observed_data_id)
@@ -610,20 +673,23 @@ class ExternalSTIX2ObservableConverter(
                 )
 
     def _parse_user_account_observable(
-            self, observable: _USER_ACCOUNT_TYPING) -> Iterator[dict]:
+            self, observable: _USER_ACCOUNT_TYPING,
+            object_id: Optional[str] = None) -> Iterator[dict]:
+        if object_id is None:
+            object_id = observable.id
         user_account_mapping = self._mapping.user_account_object_mapping
         for field, attribute in user_account_mapping().items():
             if hasattr(observable, field):
                 yield from self._populate_object_attributes(
-                    attribute, getattr(observable, field), observable.id
+                    attribute, getattr(observable, field), object_id
                 )
         if 'unix-account-ext' in getattr(observable, 'extensions', {}):
             extension = observable.extensions['unix-account-ext']
-            mapping = self._mapping.unix_user_account_extension_mapping
+            mapping = self._mapping.unix_user_account_extension_object_mapping
             for field, attribute in mapping().items():
                 if hasattr(extension, field):
                     yield from self._populate_object_attributes(
-                        attribute, getattr(extension, field), observable.id
+                        attribute, getattr(extension, field), object_id
                     )
 
 
@@ -736,8 +802,16 @@ class InternalSTIX2ObservableMapping(
         return cls.__http_request_header_mapping
 
     @classmethod
+    def http_request_reference_mapping(cls, field: str) -> dict:
+        return cls.network_traffic_references().get(field)
+
+    @classmethod
     def malware_sample_attribute(cls) -> dict:
         return cls.__malware_sample_attribute
+
+    @classmethod
+    def network_connection_reference_mapping(cls, field: str) -> dict:
+        return cls.network_traffic_references().get(field)
 
     @classmethod
     def parent_process_object_mapping(cls) -> dict:
@@ -807,17 +881,17 @@ class InternalSTIX2ObservableConverter(
                 'value': value.split('=').strip("'"),
                 'data': observable.payload_bin
             }
-            mapping = getattr(self._mapping, f'{feature}_attribute')
+            mapping = f'{feature}_attribute'
             if hasattr(observable, 'id'):
                 yield {
-                    **content, **mapping(),
+                    **content, **getattr(self._mapping, mapping)(),
                     'uuid': self.main_parser._sanitise_attribute_uuid(
                         observable.id
                     )
                 }
             else:
-                yield from self._populate_object_attribute_with_data(
-                    mapping(), content, object_id
+                yield from self._populate_object_attributes_with_data(
+                    getattr(self._mapping, mapping)(), content, object_id
                 )
 
     def _parse_file_parent_observable(self, observable: _DIRECTORY_TYPING,
@@ -987,5 +1061,30 @@ class InternalSTIX2ObservableConverter(
                 'value': value, **as_attribute(),
                 'uuid': self.main_parser._create_v5_uuid(
                     f'{observed_data_id} - {feature}-as - {value}'
+                )
+            }
+
+    def _parse_network_connection_observable(
+            self, observable: _NETWORK_TRAFFIC_TYPING,
+            object_id: Optional[str] = None) -> Iterator[dict]:
+        if object_id is None:
+            object_id = observable.id
+        for protocol in observable.protocols:
+            layer = self._mapping.connection_protocols(protocol)
+            if layer is None:
+                args = (
+                    (object_id.split(' - ')[0].split('--')[1], 'Observed Data')
+                    if ' - ' in object_id else
+                    (object_id.split('--')[1], 'Network Traffic observable')
+                )
+                self.main_parser._unknown_network_protocol_warning(
+                    protocol, *args
+                )
+                continue
+            yield {
+                'object_relation': f'layer{layer}-protocol',
+                'type': 'text', 'value': protocol.upper(),
+                'uuid': self.main_parser._create_v5_uuid(
+                    f'{object_id} - layer{layer}-protocol - {protocol.upper()}'
                 )
             }

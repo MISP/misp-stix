@@ -11,7 +11,7 @@ from ._test_stix_import import TestInternalSTIX2Import, TestSTIX21Import
 class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Import):
 
     ############################################################################
-    #                    MISP ATTRIBUTES CHECKING FUNCTIONS                    #
+    #                   STIX 2.1 SPECIFIC CHECKING FUNCTIONS                   #
     ############################################################################
 
     def _check_observed_data_attribute(self, attribute, observed_data):
@@ -2305,27 +2305,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, observed_data, network_traffic, address1, address2, domain_name = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
-        network_traffic_ref, address1_ref, address2_ref, domain_name_ref = self._check_observed_data_object(misp_object, observed_data)
-        self._assert_multiple_equal(
-            misp_object.uuid,
-            network_traffic.id.split('--')[1],
-            network_traffic_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            misp_object.attributes[0].uuid,
-            address1.id.split('--')[1],
-            address1_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            misp_object.attributes[1].uuid,
-            address2.id.split('--')[1],
-            address2_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            misp_object.attributes[-1].uuid,
-            domain_name.id.split('--')[1],
-            domain_name_ref.split('--')[1]
-        )
+        self._check_observed_data_object(misp_object, observed_data)
         self._check_http_request_observable_object(
             misp_object.attributes,
             {
@@ -2649,22 +2629,7 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, observed_data, network_traffic, address1, address2 = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
-        network_ref, address1_ref, address2_ref = self._check_observed_data_object(misp_object, observed_data)
-        self._assert_multiple_equal(
-            misp_object.uuid,
-            network_traffic.id.split('--')[1],
-            network_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            misp_object.attributes[0].uuid,
-            address1.id.split('--')[1],
-            address1_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            misp_object.attributes[1].uuid,
-            address2.id.split('--')[1],
-            address2_ref.split('--')[1]
-        )
+        self._check_observed_data_object(misp_object, observed_data)
         self._check_network_connection_observable_object(
             misp_object.attributes,
             {
@@ -2703,25 +2668,10 @@ class TestInternalSTIX21Import(TestInternalSTIX2Import, TestSTIX21, TestSTIX21Im
         event = self.parser.misp_event
         _, grouping, observed_data, network_traffic, address1, address2 = bundle.objects
         misp_object = self._check_misp_event_features_from_grouping(event, grouping)[0]
-        network_ref, address1_ref, address2_ref = self._check_observed_data_object(misp_object, observed_data)
-        self._assert_multiple_equal(
-            misp_object.uuid,
-            network_traffic.id.split('--')[1],
-            network_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            misp_object.attributes[0].uuid,
-            address1.id.split('--')[1],
-            address1_ref.split('--')[1]
-        )
-        self._assert_multiple_equal(
-            misp_object.attributes[1].uuid,
-            address2.id.split('--')[1],
-            address2_ref.split('--')[1]
-        )
-        ip_src, ip_dst, port_dst, port_src, domain_family, *attributes = misp_object.attributes
+        self._check_observed_data_object(misp_object, observed_data)
+        port_src, port_dst, domain_family, *attributes = misp_object.attributes
         self._check_network_socket_observable_object(
-            (ip_src, ip_dst, port_dst, port_src, *attributes),
+            (port_src, port_dst, *attributes),
             {
                 network_traffic.id: network_traffic,
                 address1.id: address1,

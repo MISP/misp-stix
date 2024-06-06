@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from os import walk
 import sys
 import time
 from .converters import (
@@ -14,6 +13,7 @@ from .converters import (
     ExternalSTIX2LocationConverter, InternalSTIX2LocationConverter,
     ExternalSTIX2MalwareConverter, InternalSTIX2AttackPatternConverter,
     InternalSTIX2MalwareAnalysisConverter, InternalSTIX2MalwareConverter,
+    ExternalSTIX2ObservedDataConverter, InternalSTIX2ObservedDataConverter,
     ExternalSTIX2ThreatActorConverter, InternalSTIX2ThreatActorConverter,
     ExternalSTIX2ToolConverter, InternalSTIX2ToolConverter,
     ExternalSTIX2VulnerabilityConverter, InternalSTIX2VulnerabilityConverter)
@@ -33,12 +33,11 @@ from abc import ABCMeta
 from collections import defaultdict
 from datetime import datetime
 from pymisp import (
-    AbstractMISP, MISPEvent, MISPAttribute, MISPGalaxy, MISPGalaxyCluster,
+    MISPEvent, MISPAttribute, MISPGalaxy, MISPGalaxyCluster,
     MISPObject, MISPSighting)
 from stix2 import TLP_AMBER, TLP_GREEN, TLP_RED, TLP_WHITE
 from stix2.v20.bundle import Bundle as Bundle_v20
 from stix2.v20.common import MarkingDefinition as MarkingDefinition_v20
-from stix2.v20.observables import NetworkTraffic as NetworkTraffic_v20
 from stix2.v20.sdo import (
     AttackPattern as AttackPattern_v20, Campaign as Campaign_v20,
     CourseOfAction as CourseOfAction_v20, CustomObject as CustomObject_v20,
@@ -88,7 +87,6 @@ _LOADED_FEATURES = (
     '_tool',
     '_vulnerability'
 )
-_MISP_OBJECTS_PATH = AbstractMISP().misp_objects_path
 
 # Typing
 _OBSERVABLE_TYPING = Union[
@@ -162,8 +160,8 @@ _MARKING_DEFINITION_TYPING = Union[
 _MISP_FEATURES_TYPING = Union[
     MISPAttribute, MISPEvent, MISPObject
 ]
-_NETWORK_TRAFFIC_TYPING = Union[
-    NetworkTraffic_v20, NetworkTraffic_v21
+_OBSERVED_DATA_PARSER_TYPING = Union[
+    ExternalSTIX2ObservedDataConverter, InternalSTIX2ObservedDataConverter
 ]
 _OBSERVED_DATA_TYPING = Union[
     ObservedData_v20, ObservedData_v21
@@ -364,6 +362,12 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         )
 
     @property
+    def observed_data_parser(self) -> _OBSERVED_DATA_PARSER_TYPING:
+        if not hasattr(self, '_observed_data_parser'):
+            self._set_observed_data_parser()
+        return self._observed_data_parser
+
+    @property
     def single_event(self) -> bool:
         return self.__single_event
 
@@ -559,6 +563,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             raise ObjectRefLoadingError(object_ref)
 
     def _handle_unparsed_content(self):
+        if hasattr(self, '_observed_data_parser'):
+            if hasattr(self.observed_data_parser, '_observable_relationships'):
+                self.observed_data_parser.parse_relationships()
         if hasattr(self, '_relationship'):
             if hasattr(self, '_sighting'):
                 self._parse_relationships_and_sightings()
@@ -578,7 +585,7 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         except AttributeError:
             raise UnknownParsingFunctionError(feature)
         try:
-            parser(object_ref)
+            parser.parse(object_ref)
         except ObjectRefLoadingError as error:
             self._object_ref_loading_error(error)
         except ObjectTypeLoadingError as error:
@@ -632,9 +639,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             misp_event.published = False
         return misp_event
 
-    def _parse_attack_pattern(self, attack_pattern_ref: str):
-        self.attack_pattern_parser.parse(attack_pattern_ref)
-
     def _parse_bundle_with_multiple_reports(self):
         if self.single_event:
             self.__misp_event = self._create_generic_event()
@@ -680,12 +684,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
             self._parse_bundle_with_no_report()
         self._handle_unparsed_content()
 
-    def _parse_campaign(self, campaign_ref: str):
-        self.campaign_parser.parse(campaign_ref)
-
-    def _parse_course_of_action(self, course_of_action_ref: str):
-        self.course_of_action_parser.parse(course_of_action_ref)
-
     def _parse_galaxies_as_container(self):
         clusters = defaultdict(list)
         for cluster in self._clusters.values():
@@ -706,15 +704,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                 for tag in tags['tag_names']:
                     self.misp_event.add_tag(tag)
 
-    def _parse_identity(self, identity_ref: str):
-        self.identity_parser.parse(identity_ref)
-
-    def _parse_indicator(self, indicator_ref: str):
-        self.indicator_parser.parse(indicator_ref)
-
-    def _parse_intrusion_set(self, intrusion_set_ref: str):
-        self.intrusion_set_parser.parse(intrusion_set_ref)
-
     def _parse_loaded_features(self):
         for feature in _LOADED_FEATURES:
             if hasattr(self, feature):
@@ -726,24 +715,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                         self._unknown_stix_object_type_error(error)
                     except UnknownParsingFunctionError as error:
                         self._unknown_parsing_function_error(error)
-
-    def _parse_location(self, location_ref: str):
-        self.location_parser.parse(location_ref)
-
-    def _parse_malware(self, malware_ref: str):
-        self.malware_parser.parse(malware_ref)
-
-    def _parse_malware_analysis(self, malware_analysis_ref: str):
-        self.malware_analysis_parser.parse(malware_analysis_ref)
-
-    def _parse_threat_actor(self, threat_actor_ref: str):
-        self.threat_actor_parser.parse(threat_actor_ref)
-
-    def _parse_tool(self, tool_ref: str):
-        self.tool_parser.parse(tool_ref)
-
-    def _parse_vulnerability(self, vulnerability_ref: str):
-        self.vulnerability_parser.parse(vulnerability_ref)
 
     ############################################################################
     #                   MARKING DEFINITIONS PARSING METHODS.                   #
@@ -1202,17 +1173,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
                         attribute.add_tag(tag)
         return self.misp_event.add_object(misp_object)
 
-    def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
-        attribute = self._parse_timeline(stix_object)
-        if hasattr(stix_object, 'description') and stix_object.description:
-            attribute['comment'] = stix_object.description
-        attribute.update(
-            self._sanitise_attribute_uuid(
-                stix_object.id, comment=attribute.get('comment')
-            )
-        )
-        return attribute
-
     def _create_generic_event(self) -> MISPEvent:
         misp_event = MISPEvent()
         event_args = {
@@ -1246,19 +1206,6 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         cluster.from_dict(**cluster_args)
         cluster.parse_meta_as_elements()
         return cluster
-
-    def _create_misp_object(
-            self, name: str, stix_object: Optional[_SDO_TYPING] = None
-            ) -> MISPObject:
-        misp_object = MISPObject(
-            name,
-            misp_objects_path_custom=_MISP_OBJECTS_PATH,
-            force_timestamps=True
-        )
-        if stix_object is not None:
-            self._sanitise_object_uuid(misp_object, stix_object['id'])
-            misp_object.from_dict(**self._parse_timeline(stix_object))
-        return misp_object
 
     def _handle_tags_from_stix_fields(self, stix_object: _SDO_TYPING):
         if hasattr(stix_object, 'confidence'):

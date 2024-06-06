@@ -8,9 +8,11 @@ from collections import defaultdict
 from datetime import datetime
 from pymisp import AbstractMISP, MISPGalaxyCluster, MISPObject
 from stix2.v20.sdo import (
-    AttackPattern as AttackPattern_v20, Malware as Malware_v20)
+    AttackPattern as AttackPattern_v20, Malware as Malware_v20,
+    ObservedData as ObservedData_v20)
 from stix2.v21.sdo import (
-    AttackPattern as AttackPattern_v21, Malware as Malware_v21)
+    AttackPattern as AttackPattern_v21, Malware as Malware_v21,
+    ObservedData as ObservedData_v21)
 from typing import Iterator, Optional, Tuple, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
@@ -28,7 +30,8 @@ _MAIN_PARSER_TYPING = Union[
 ]
 _SDO_TYPING = Union[
     AttackPattern_v20, AttackPattern_v21,
-    Malware_v20, Malware_v21
+    Malware_v20, Malware_v21,
+    ObservedData_v20, ObservedData_v21
 ]
 
 
@@ -50,11 +53,9 @@ class STIX2Converter(metaclass=ABCMeta):
 
     def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
         attribute = self._parse_timeline(stix_object)
-        if hasattr(stix_object, 'description') and stix_object.description:
-            attribute['comment'] = stix_object.description
         attribute.update(
             self.main_parser._sanitise_attribute_uuid(
-                stix_object.id, comment=attribute.get('comment')
+                stix_object.id, comment=stix_object.get('description')
             )
         )
         return attribute
@@ -88,8 +89,9 @@ class STIX2Converter(metaclass=ABCMeta):
                     attribute, getattr(stix_object, field), stix_object.id
                 )
 
-    def _populate_object_attribute(self, mapping: dict, reference: str,
+    def _populate_object_attribute(self, mapping: dict, object_id: str,
                                    value: Union[dict, str]) -> dict:
+        reference = f"{object_id} - {mapping['object_relation']}"
         if isinstance(value, dict):
             attribute_value = value['value']
             return {
@@ -128,12 +130,11 @@ class STIX2Converter(metaclass=ABCMeta):
     def _populate_object_attributes_with_data(
             self, mapping: dict, values: Union[dict, list, str],
             object_id: str) -> Iterator[dict]:
-        reference = f"{object_id} - {mapping['object_relation']}"
         if isinstance(values, list):
             for value in values:
-                yield self._populate_object_attribute(mapping, reference, value)
+                yield self._populate_object_attribute(mapping, object_id, value)
         else:
-            yield self._populate_object_attribute(mapping, reference, values)
+            yield self._populate_object_attribute(mapping, object_id, values)
 
     ############################################################################
     #                             UTILITY METHODS.                             #
@@ -156,47 +157,15 @@ class STIX2Converter(metaclass=ABCMeta):
         if meta_labels:
             meta['labels'] = meta_labels
 
-    def _handle_tags_from_stix_fields(self, stix_object: _SDO_TYPING):
-        if hasattr(stix_object, 'confidence'):
-            yield self._parse_confidence_level(stix_object.confidence)
-        if hasattr(stix_object, 'object_marking_refs'):
-            yield from self._parse_markings(stix_object.object_marking_refs)
-
     @staticmethod
     def _parse_AS_value(number: Union[int, str]) -> str:
         if isinstance(number, int) or not number.startswith('AS'):
             return f'AS{number}'
         return number
 
-    @staticmethod
-    def _parse_confidence_level(confidence_level: int) -> str:
-        if confidence_level == 100:
-            return 'misp:confidence-level="completely-confident"'
-        if confidence_level >= 75:
-            return 'misp:confidence-level="usually-confident"'
-        if confidence_level >= 50:
-            return 'misp:confidence-level="fairly-confident"'
-        if confidence_level >= 25:
-            return 'misp:confidence-level="rarely-confident"'
-        return 'misp:confidence-level="unconfident"'
-
-    def _parse_markings(self, marking_refs: list):
-        for marking_ref in marking_refs:
-            try:
-                marking_definition = self.main_parser._get_stix_object(
-                    marking_ref
-                )
-            except ObjectTypeLoadingError as error:
-                self.main_parser._object_type_loading_error(error)
-                continue
-            except ObjectRefLoadingError as error:
-                self.main_parser._object_ref_loading_error(error)
-                continue
-            yield(marking_definition)
-
     def _parse_timeline(self, stix_object: _SDO_TYPING) -> dict:
         misp_object = {
-            'timestamp': self._timestamp_from_date(stix_object.modified)
+            'timestamp': stix_object.modified
         }
         object_type = stix_object.type
         if self._mapping.timeline_mapping(object_type) is not None:
@@ -238,12 +207,16 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
         stix_object = self.main_parser._get_stix_object(stix_object_ref)
         self._parse_galaxy(stix_object)
 
-    def _create_attribute_dict(self, stix_object: _SDO_TYPING) -> dict:
-        return super()._create_attribute_dict(stix_object)
-
     ############################################################################
     #                         GALAXIES PARSING METHODS                         #
     ############################################################################
+
+    def _check_existing_galaxy_name(self, stix_object_name: str) -> Union[list, None]:
+        if stix_object_name in self.synonyms_mapping:
+            return self.synonyms_mapping[stix_object_name]
+        for name, tag_names in self.synonyms_mapping.items():
+            if stix_object_name in name:
+                return tag_names
 
     def _create_cluster_args(
             self, stix_object: _GALAXY_OBJECTS_TYPING, galaxy_type: str,
@@ -340,7 +313,7 @@ class ExternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _parse_galaxy_as_tag_names(self, stix_object: _GALAXY_OBJECTS_TYPING,
                                    object_type: Union[str, None]) -> dict:
         name = stix_object.name
-        tag_names = self.main_parser._check_existing_galaxy_name(name)
+        tag_names = self._check_existing_galaxy_name(name)
         if tag_names is None:
             tag_names = [
                 f'misp-galaxy:{object_type or stix_object.type}="{name}"'
@@ -507,7 +480,7 @@ class InternalSTIX2Converter(STIX2Converter, metaclass=ABCMeta):
     def _parse_galaxy_cluster(
             self, stix_object: _GALAXY_OBJECTS_TYPING, galaxy_type: str,
             description: Optional[str] = None) -> Tuple[MISPGalaxyCluster, str]:
-        if ' | ' in getattr(stix_object, 'description', ''):
+        if getattr(stix_object, 'description', '').count(' | ') == 1:
             _, description = stix_object.description.split(' | ')
         return self._create_cluster(
             stix_object, description=description, galaxy_type=galaxy_type

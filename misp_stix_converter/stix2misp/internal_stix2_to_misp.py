@@ -180,12 +180,3 @@ class InternalSTIX2toMISPParser(STIX2toMISPParser):
                 self._unknown_stix_object_type_error(error)
             except UnknownParsingFunctionError as error:
                 self._unknown_parsing_function_error(error)
-
-    def _parse_custom_object(self, custom_object_ref: str):
-        self.custom_object_parser.parse(custom_object_ref)
-
-    def _parse_note(self, note_ref: str):
-        self.note_parser.parse(note_ref)
-
-    def _parse_observed_data(self, observed_data_ref: str):
-        self.observed_data_parser.parse(observed_data_ref)
