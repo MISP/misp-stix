@@ -505,6 +505,105 @@ _EMAIL_ADDRESS_ATTRIBUTES = [
         "value": "donald.duck@gmail.com"
     }
 ]
+_EMAIL_MESSAGE_OBJECTS = [
+    {
+        "type": "observed-data",
+        "spec_version": "2.1",
+        "id": "observed-data--3cd23a7b-a099-49df-b397-189018311d4e",
+        "created_by_ref": "identity--a0c22599-9e58-4da4-96ac-7051603fa952",
+        "created": "2020-10-25T16:22:00.000Z",
+        "modified": "2020-11-25T16:22:00.000Z",
+        "first_observed": "2020-10-25T16:22:00Z",
+        "last_observed": "2020-11-25T16:22:00Z",
+        "number_observed": 1,
+        "object_refs": [
+            "email-message--cf9b4b7f-14c8-5955-8065-020e0316b559",
+            "email-addr--89f52ea8-d6ef-51e9-8fce-6a29236436ed",
+            "email-addr--d1b3bf0c-f02a-51a1-8102-11aba7959868",
+            "email-addr--e4ee5301-b52d-59cd-a8fa-8036738c7194",
+            "artifact--4cce66f8-6eaa-53cb-85d5-3a85fca3a6c5",
+            "file--6ce09d9c-0ad3-5ebf-900c-e3cb288955b5",
+        ]
+    },
+    {
+        "type": "email-message",
+        "spec_version": "2.1",
+        "id": "email-message--cf9b4b7f-14c8-5955-8065-020e0316b559",
+        "is_multipart": True,
+        "received_lines": [
+            "from mail.example.com ([198.51.100.3]) by smtp.gmail.com with ESMTPSA id q23sm23309939wme.17.2016.07.19.07.20.32 (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128); Tue, 19 Jul 2016 07:20:40 -0700 (PDT)"
+        ],
+        "content_type": "multipart/mixed",
+        "date": "2016-06-19T14:20:40.000Z",
+        "from_ref": "email-addr--89f52ea8-d6ef-51e9-8fce-6a29236436ed",
+        "to_refs": ["email-addr--d1b3bf0c-f02a-51a1-8102-11aba7959868"],
+        "cc_refs": ["email-addr--e4ee5301-b52d-59cd-a8fa-8036738c7194"],
+        "subject": "Check out this picture of a cat!",
+        "additional_header_fields": {
+            "Content-Disposition": "inline",
+            "X-Mailer": "Mutt/1.5.23",
+            "X-Originating-IP": "198.51.100.3"
+        },
+        "body_multipart": [
+            {
+                "content_type": "text/plain; charset=utf-8",
+                "content_disposition": "inline",
+                "body": "Cats are funny!"
+            },
+            {
+                "content_type": "image/png",
+                "content_disposition": "attachment; filename=\"tabby.png\"",
+                "body_raw_ref": "artifact--4cce66f8-6eaa-53cb-85d5-3a85fca3a6c5"
+            },
+            {
+                "content_type": "application/zip",
+                "content_disposition": "attachment; filename=\"tabby_pics.zip\"",
+                "body_raw_ref": "file--6ce09d9c-0ad3-5ebf-900c-e3cb288955b5"
+            }
+        ]
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--89f52ea8-d6ef-51e9-8fce-6a29236436ed",
+        "value": "jdoe@example.com",
+        "display_name": "John Doe"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--d1b3bf0c-f02a-51a1-8102-11aba7959868",
+        "value": "bob@example.com",
+        "display_name": "Bob Smith"
+    },
+    {
+        "type": "email-addr",
+        "spec_version": "2.1",
+        "id": "email-addr--e4ee5301-b52d-59cd-a8fa-8036738c7194",
+        "value": "mary@example.com",
+        "display_name": "Mary Smith"
+    },
+    {
+        "type": "artifact",
+        "spec_version": "2.1",
+        "id": "artifact--4cce66f8-6eaa-53cb-85d5-3a85fca3a6c5",
+        "mime_type": "image/jpeg",
+        "payload_bin": "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",
+        "hashes": {
+            "SHA-256": "effb46bba03f6c8aea5c653f9cf984f170dcdd3bbbe2ff6843c3e5da0e698766"
+        }
+    },
+    {
+        "type": "file",
+        "spec_version": "2.1",
+        "id": "file--6ce09d9c-0ad3-5ebf-900c-e3cb288955b5",
+        "name": "tabby_pics.zip",
+        "magic_number_hex": "504B0304",
+        "hashes": {
+            "SHA-256": "fe90a7e910cb3a4739bed9180e807e93fa70c90f25a8915476f5e4bfbac681db"
+        }
+    }
+]
 _FILE_OBJECTS = [
     {
         "type": "observed-data",
@@ -1799,6 +1898,10 @@ class TestExternalSTIX21Bundles:
     @classmethod
     def get_bundle_with_email_address_attributes(cls):
         return cls.__assemble_bundle(*_EMAIL_ADDRESS_ATTRIBUTES)
+
+    @classmethod
+    def get_bundle_with_email_message_objects(cls):
+        return cls.__assemble_bundle(*_EMAIL_MESSAGE_OBJECTS)
 
     @classmethod
     def get_bundle_with_file_objects(cls):

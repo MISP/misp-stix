@@ -274,6 +274,37 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(display_name.type, 'email-dst-display-name')
         self.assertEqual(display_name.value, email_address.display_name)
 
+    def _check_email_artifact_object(
+            self, misp_object, observed_data, artifact_id):
+        self.assertEqual(misp_object.name, 'artifact')
+        self._check_misp_object_fields(misp_object, observed_data, artifact_id)
+        self._check_email_artifact_object_fields(
+            misp_object, observed_data.objects[artifact_id],
+            f'{observed_data.id} - {artifact_id}'
+        )
+
+    def _check_email_file_object(self, misp_object, observed_data, file_id):
+        self.assertEqual(misp_object.name, 'file')
+        self._check_misp_object_fields(misp_object, observed_data, file_id)
+        self._check_email_file_object_fields(
+            misp_object, observed_data.objects[file_id],
+            f'{observed_data.id} - {file_id}'
+        )
+
+    def _check_email_object(self, misp_object, observed_data,
+                            email_message_id, from_id, to_id, cc_id):
+        self.assertEqual(misp_object.name, 'email')
+        self._check_misp_object_fields(
+            misp_object, observed_data, email_message_id
+        )
+        object_id = f'{observed_data.id} - {email_message_id}'
+        self._check_email_object_fields(
+            misp_object, observed_data.objects[email_message_id],
+            observed_data.objects[from_id], observed_data.objects[to_id],
+            observed_data.objects[cc_id], object_id, f'{object_id} - {from_id}',
+            f'{object_id} - {to_id}', f'{object_id} - {cc_id}'
+        )
+
     def _check_file_and_pe_objects(self, observed_data, file_object,
                                    pe_object, *sections):
         self.assertEqual(file_object.name, 'file')
@@ -639,6 +670,26 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             observed_data2, sm_address, sm_display_name
         )
         self._check_email_address_attribute(observed_data3, ss_address)
+
+    def test_stix20_bundle_with_email_message_objects(self):
+        bundle = TestExternalSTIX20Bundles.get_bundle_with_email_message_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, report, observed_data = bundle.objects
+        misp_objects = self._check_misp_event_features(event, report)
+        self.assertEqual(len(misp_objects), 3)
+        email_object, artifact_object, file_object = misp_objects
+        self._check_email_object(email_object, observed_data, '0', '1', '2', '3')
+        email_references = email_object.references
+        self.assertEqual(len(email_references), 2)
+        artifact_reference, file_reference = email_references
+        self.assertEqual(artifact_reference.referenced_uuid, artifact_object.uuid)
+        self.assertEqual(artifact_reference.relationship_type, 'contains')
+        self.assertEqual(file_reference.referenced_uuid, file_object.uuid)
+        self.assertEqual(file_reference.relationship_type, 'contains')
+        self._check_email_artifact_object(artifact_object, observed_data, '4')
+        self._check_email_file_object(file_object, observed_data, '5')
 
     def test_stix20_bundle_with_file_objects(self):
         bundle = TestExternalSTIX20Bundles.get_bundle_with_file_objects()

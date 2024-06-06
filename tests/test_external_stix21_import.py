@@ -278,6 +278,25 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
         self.assertEqual(display_name.type, 'email-dst-display-name')
         self.assertEqual(display_name.value, email_address.display_name)
 
+    def _check_email_artifact_object(self, misp_object, observed_data, artifact):
+        self.assertEqual(misp_object.name, 'artifact')
+        self._check_misp_object_fields(misp_object, observed_data, artifact.id)
+        self._check_email_artifact_object_fields(misp_object, artifact, artifact.id)
+
+    def _check_email_file_object(self, misp_object, observed_data, _file):
+        self.assertEqual(misp_object.name, 'file')
+        self._check_misp_object_fields(misp_object, observed_data, _file.id)
+        self._check_email_file_object_fields(misp_object, _file, _file.id)
+
+    def _check_email_object(self, misp_object, observed_data, email_message,
+                            from_address, to_address, cc_address):
+        self.assertEqual(misp_object.name, 'email')
+        self._check_misp_object_fields(misp_object, observed_data, email_message.id)
+        self._check_email_object_fields(
+            misp_object, email_message, from_address, to_address, cc_address,
+            email_message.id, from_address.id, to_address.id, cc_address.id
+        )
+
     def _check_file_and_pe_objects(self, observed_data, observable_object,
                                    file_object, pe_object, *sections):
         self.assertEqual(file_object.name, 'file')
@@ -616,6 +635,26 @@ class TestExternalSTIX21Import(TestExternalSTIX2Import, TestSTIX21, TestSTIX21Im
             od2, sm_address, sm_display_name, ea3
         )
         self._check_email_address_attribute(od3, ss_address, ea4)
+
+    def test_stix21_bundle_with_email_message_objects(self):
+        bundle = TestExternalSTIX21Bundles.get_bundle_with_email_message_objects()
+        self.parser.load_stix_bundle(bundle)
+        self.parser.parse_stix_bundle()
+        event = self.parser.misp_event
+        _, grouping, observed_data, message, ea1, ea2, ea3, artifact, _file = bundle.objects
+        misp_objects = self._check_misp_event_features_from_grouping(event, grouping)
+        self.assertEqual(len(misp_objects), 3)
+        email_object, artifact_object, file_object = misp_objects
+        self._check_email_object(email_object, observed_data, message, ea1, ea2, ea3)
+        email_references = email_object.references
+        self.assertEqual(len(email_references), 2)
+        artifact_reference, file_reference = email_references
+        self.assertEqual(artifact_reference.referenced_uuid, artifact_object.uuid)
+        self.assertEqual(artifact_reference.relationship_type, 'contains')
+        self.assertEqual(file_reference.referenced_uuid, file_object.uuid)
+        self.assertEqual(file_reference.relationship_type, 'contains')
+        self._check_email_artifact_object(artifact_object, observed_data, artifact)
+        self._check_email_file_object(file_object, observed_data, _file)
 
     def test_stix21_bundle_with_file_objects(self):
         bundle = TestExternalSTIX21Bundles.get_bundle_with_file_objects()

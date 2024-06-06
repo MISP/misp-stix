@@ -641,6 +641,180 @@ class TestExternalSTIX2Import(TestSTIX2Import):
             uuid5(self._UUIDv4, f'{ipv6_id} - ip - {ipv6_attribute.value}')
         )
 
+    def _check_email_artifact_object_fields(self, misp_object, artifact, artifact_id):
+        self.assertEqual(len(misp_object.attributes), 3)
+        payload_bin, sha256, mime_type = misp_object.attributes
+        self.assertEqual(payload_bin.type, 'attachment')
+        self.assertEqual(payload_bin.object_relation, 'payload_bin')
+        self.assertEqual(
+            payload_bin.value, artifact_id.split('--')[1].split(' - ')[0]
+        )
+        self.assertEqual(
+            self._get_data_value(payload_bin.data), artifact.payload_bin
+        )
+        self.assertEqual(
+            payload_bin.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{artifact_id} - payload_bin - {payload_bin.value}'
+            )
+        )
+        self._assert_multiple_equal(
+            sha256.type, sha256.object_relation, 'sha256'
+        )
+        self.assertEqual(sha256.value, artifact.hashes['SHA-256'])
+        self.assertEqual(
+            sha256.uuid,
+            uuid5(self._UUIDv4, f'{artifact_id} - sha256 - {sha256.value}')
+        )
+        self.assertEqual(mime_type.type, 'mime-type')
+        self.assertEqual(mime_type.object_relation, 'mime_type')
+        self.assertEqual(mime_type.value, artifact.mime_type)
+        self.assertEqual(
+            mime_type.uuid,
+            uuid5(
+                self._UUIDv4, f'{artifact_id} - mime_type - {mime_type.value}'
+            )
+        )
+
+    def _check_email_file_object_fields(self, misp_object, _file, file_id):
+        self.assertEqual(len(misp_object.attributes), 2)
+        sha256, filename = misp_object.attributes
+        self._assert_multiple_equal(
+            sha256.type, sha256.object_relation, 'sha256'
+        )
+        self.assertEqual(sha256.value, _file.hashes['SHA-256'])
+        self.assertEqual(
+            sha256.uuid,
+            uuid5(self._UUIDv4, f'{file_id} - sha256 - {sha256.value}')
+        )
+        self._assert_multiple_equal(
+            filename.type, filename.object_relation, 'filename'
+        )
+        self.assertEqual(filename.value, _file.name)
+        self.assertEqual(
+            filename.uuid,
+            uuid5(self._UUIDv4, f'{file_id} - filename - {filename.value}')
+        )
+
+    def _check_email_object_fields(
+            self, misp_object, email_message, from_address, to_address, cc_address,
+            email_message_id, from_address_id, to_address_id, cc_address_id):
+        self.assertEqual(len(misp_object.attributes), 12)
+        send_date, header, subject, x_mailer, received_ip, *addresses, body = misp_object.attributes
+        self.assertEqual(send_date.type, 'datetime')
+        self.assertEqual(send_date.object_relation, 'send-date')
+        self.assertEqual(send_date.value, email_message.date)
+        self.assertEqual(
+            send_date.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{email_message_id} - send-date - {send_date.value}'
+            )
+        )
+        self.assertEqual(header.type, 'email-header')
+        self.assertEqual(header.object_relation, 'header')
+        self.assertEqual(header.value, email_message.received_lines[0])
+        self.assertEqual(
+            header.uuid,
+            uuid5(self._UUIDv4, f'{email_message_id} - header - {header.value}')
+        )
+        self.assertEqual(subject.type, 'email-subject')
+        self.assertEqual(subject.object_relation, 'subject')
+        self.assertEqual(subject.value, email_message.subject)
+        self.assertEqual(
+            subject.uuid,
+            uuid5(
+                self._UUIDv4, f'{email_message_id} - subject - {subject.value}'
+            )
+        )
+        additional_header_fields = email_message.additional_header_fields
+        self.assertEqual(x_mailer.type, 'email-x-mailer')
+        self.assertEqual(x_mailer.object_relation, 'x-mailer')
+        self.assertEqual(x_mailer.value, additional_header_fields.get('X-Mailer'))
+        self.assertEqual(
+            x_mailer.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{email_message_id} - x-mailer - {x_mailer.value}'
+            )
+        )
+        self.assertEqual(received_ip.type, 'ip-src')
+        self.assertEqual(received_ip.object_relation, 'received-header-ip')
+        self.assertEqual(
+            received_ip.value, additional_header_fields['X-Originating-IP']
+        )
+        self.assertEqual(
+            received_ip.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{email_message_id} - received-header-ip - {received_ip.value}'
+            )
+        )
+        _from, from_name, _to, to_name, _cc, cc_name = addresses
+        self.assertEqual(_from.type, 'email-src')
+        self.assertEqual(_from.object_relation, 'from')
+        self.assertEqual(_from.value, from_address.value)
+        self.assertEqual(
+            _from.uuid,
+            uuid5(self._UUIDv4, f'{from_address_id} - from - {_from.value}')
+        )
+        self.assertEqual(from_name.type, 'email-src-display-name')
+        self.assertEqual(from_name.object_relation, 'from-display-name')
+        self.assertEqual(from_name.value, from_address.display_name)
+        self.assertEqual(
+            from_name.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{from_address_id} - from-display-name - {from_name.value}'
+            )
+        )
+        self._assert_multiple_equal(_to.type, _cc.type, 'email-dst')
+        self.assertEqual(_to.object_relation, 'to')
+        self.assertEqual(_to.value, to_address.value)
+        self.assertEqual(
+            _to.uuid,
+            uuid5(self._UUIDv4, f'{to_address_id} - to - {_to.value}')
+        )
+        self._assert_multiple_equal(
+            to_name.type, cc_name.type, 'email-dst-display-name'
+        )
+        self.assertEqual(to_name.object_relation, 'to-display-name')
+        self.assertEqual(to_name.value, to_address.display_name)
+        self.assertEqual(
+            to_name.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{to_address_id} - to-display-name - {to_name.value}'
+            )
+        )
+        self.assertEqual(_cc.object_relation, 'cc')
+        self.assertEqual(_cc.value, cc_address.value)
+        self.assertEqual(
+            _cc.uuid, uuid5(self._UUIDv4, f'{cc_address_id} - cc - {_cc.value}')
+        )
+        self.assertEqual(cc_name.object_relation, 'cc-display-name')
+        self.assertEqual(cc_name.value, cc_address.display_name)
+        self.assertEqual(
+            cc_name.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{cc_address_id} - cc-display-name - {cc_name.value}'
+            )
+        )
+        self._assert_multiple_equal(
+            body.type, body.object_relation, 'email-body'
+        )
+        self.assertEqual(body.value, email_message.body_multipart[0].body)
+        self.assertEqual(
+            body.uuid,
+            uuid5(
+                self._UUIDv4,
+                f'{email_message_id} - body_multipart - 0 - '
+                f'email-body - {body.value}'
+            )
+        )
+
     def _check_file_fields(self, misp_object, observable_object, object_id):
         self.assertEqual(len(misp_object.attributes), 6)
         md5, sha1, sha256, filename, encoding, size = misp_object.attributes
