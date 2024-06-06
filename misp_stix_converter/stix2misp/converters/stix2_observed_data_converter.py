@@ -2232,7 +2232,6 @@ class ExternalSTIX2ObservedDataConverter(
                    for reference in misp_object.references):
                 misp_object.add_reference(object_id, relationship_type)
 
-
 class InternalSTIX2ObservedDataConverter(
         STIX2ObservedDataConverter, InternalSTIX2ObservableConverter):
     def __init__(self, main: 'InternalSTIX2toMISPParser'):

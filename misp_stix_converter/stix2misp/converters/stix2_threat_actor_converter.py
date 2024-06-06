@@ -62,7 +62,7 @@ class STIX2ThreatActorConverter(STIX2Converter, metaclass=ABCMeta):
             self._handle_labels(meta, threat_actor.labels)
         if meta:
             threat_actor_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(threat_actor_args)
+        return self.main_parser._create_misp_galaxy_cluster(**threat_actor_args)
 
 
 class ExternalSTIX2ThreatActorMapping(

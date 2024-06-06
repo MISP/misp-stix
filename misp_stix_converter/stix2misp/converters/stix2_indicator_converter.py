@@ -355,7 +355,11 @@ class ExternalSTIX2IndicatorConverter(
                     return f'_parse_{pattern_type}_pattern'
                 except KeyError:
                     raise UnknownPatternTypeError(pattern_type)
-        if self._is_pattern_too_complex(indicator.pattern):
+        pattern_too_complex = any(
+            keyword in indicator.pattern for keyword
+            in self._mapping.pattern_forbidden_relations()
+        )
+        if pattern_too_complex:
             return '_create_stix_pattern_object'
         return '_parse_stix_pattern'
 
@@ -846,8 +850,8 @@ class ExternalSTIX2IndicatorConverter(
     def _parse_process_pattern(
             self, pattern: PatternData, indicator: _INDICATOR_TYPING):
         attributes = []
-        if any(feature != 'process' for feature in pattern.comparisons.keys()):
-            print(f'Process with non process values: {pattern}')
+        # if any(feature != 'process' for feature in pattern.comparisons.keys()):
+        #    print(f'Process with non process values: {pattern}')
         for keys, assertion, values in pattern.comparisons['process']:
             if assertion not in self._mapping.valid_pattern_assertions():
                 continue
@@ -1137,17 +1141,6 @@ class ExternalSTIX2IndicatorConverter(
                 },
                 indicator
             )
-
-    ############################################################################
-    #                             UTILITY METHODS.                             #
-    ############################################################################
-
-    def _is_pattern_too_complex(self, pattern: str) -> bool:
-        forbidden_relations = any(
-            keyword in pattern for keyword
-            in self._mapping.pattern_forbidden_relations()
-        )
-        return forbidden_relations or (' AND ' in pattern and ' OR ' in pattern)
 
 
 class InternalSTIX2IndicatorMapping(

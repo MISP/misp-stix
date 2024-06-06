@@ -15,6 +15,19 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             '2': '_parse_bundle_with_multiple_reports'
         }
     )
+    __mac_address_pattern = '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
+    __marking_extension_mapping = Mapping(
+        **{
+            'extension-definition--3a65884d-005a-4290-8335-cb2d778a83ce': 'acs'
+        }
+    )
+    __marking_vocabularies_fields = (
+        'caveat', 'classification', 'entity', 'formal_determination',
+        'sensitivity', 'shareability'
+    )
+    __object_type_refs_to_skip = (
+        'opinion', 'relationship', 'sighting', 'x-misp-opinion'
+    )
     __observable_object_types = (
         'network-traffic',
         'file',
@@ -34,17 +47,6 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         'user-account',
         'windows-registry-key',
         'x509-certificate'
-    )
-    __timeline_mapping = Mapping(
-        **{
-            'indicator': ('valid_from', 'valid_until'),
-            'observed-data': ('first_observed', 'last_observed')
-        }
-    )
-    __mac_address_pattern = '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$'
-
-    __object_type_refs_to_skip = (
-        'opinion', 'relationship', 'sighting', 'x-misp-opinion'
     )
     __stix_object_loading_mapping = Mapping(
         **{
@@ -90,7 +92,7 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'location': '_parse_location',
             'malware': '_parse_malware',
             'malware-analysis': '_parse_malware_analysis',
-            'marking-definition': '_parse_marking_definition',
+            # 'marking-definition': '_parse_marking_definition',
             'note': '_parse_note',
             'observed-data': '_parse_observed_data',
             # 'report': '_parse_report',
@@ -103,6 +105,17 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'x-misp-object': '_parse_custom_object'
         }
     )
+    __timeline_mapping = Mapping(
+        **{
+            'indicator': ('valid_from', 'valid_until'),
+            'observed-data': ('first_observed', 'last_observed')
+        }
+    )
+
+    # KNOWN IDENTITY REFERENCES
+    __identity_references = {
+        "identity--b3bca3c2-1f3d-4b54-b44f-dac42c3a8f01": "CISA"
+    }
 
     # SINGLE ATTRIBUTES MAPPING
     __access_time_attribute = Mapping(
@@ -759,6 +772,10 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
         return cls.__home_dir_attribute
 
     @classmethod
+    def identity_references(cls, identity_id: str) -> Union[str, None]:
+        return cls.__identity_references.get(identity_id)
+
+    @classmethod
     def imphash_attribute(cls) -> dict:
         return cls.__imphash_attribute
 
@@ -817,6 +834,14 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     @classmethod
     def mac_address_pattern(cls) -> str:
         return cls.__mac_address_pattern
+
+    @classmethod
+    def marking_extension_mapping(cls, field: str) -> Union[str, None]:
+        return cls.__marking_extension_mapping.get(field)
+
+    @classmethod
+    def marking_vocabularies_fields(cls) -> tuple:
+        return cls.__marking_vocabularies_fields
 
     @classmethod
     def message_id_attribute(cls) -> dict:
