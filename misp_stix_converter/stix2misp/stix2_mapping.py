@@ -82,27 +82,24 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     )
     __stix_to_misp_mapping = Mapping(
         **{
-            'attack-pattern': '_parse_attack_pattern',
-            'campaign': '_parse_campaign',
-            'course-of-action': '_parse_course_of_action',
-            # 'grouping': '_parse_grouping',
-            'identity': '_parse_identity',
-            'indicator': '_parse_indicator',
-            'intrusion-set': '_parse_intrusion_set',
-            'location': '_parse_location',
-            'malware': '_parse_malware',
-            'malware-analysis': '_parse_malware_analysis',
-            # 'marking-definition': '_parse_marking_definition',
-            'note': '_parse_note',
-            'observed-data': '_parse_observed_data',
-            # 'report': '_parse_report',
-            'sighting': '_parse_sighting',
-            'threat-actor': '_parse_threat_actor',
-            'tool': '_parse_tool',
-            'vulnerability': '_parse_vulnerability',
-            'x-misp-attribute': '_parse_custom_object',
-            'x-misp-galaxy-cluster': '_parse_custom_object',
-            'x-misp-object': '_parse_custom_object'
+            'attack-pattern': 'attack_pattern_parser',
+            'campaign': 'campaign_parser',
+            'course-of-action': 'course_of_action_parser',
+            'identity': 'identity_parser',
+            'indicator': 'indicator_parser',
+            'intrusion-set': 'intrusion_set_parser',
+            'location': 'location_parser',
+            'malware': 'malware_parser',
+            'malware-analysis': 'malware_analysis_parser',
+            'note': 'note_parser',
+            'observed-data': 'observed_data_parser',
+            'sighting': 'sighting_parser',
+            'threat-actor': 'threat_actor_parser',
+            'tool': 'tool_parser',
+            'vulnerability': 'vulnerability_parser',
+            'x-misp-attribute': 'custom_object_parser',
+            'x-misp-galaxy-cluster': 'custom_object_parser',
+            'x-misp-object': 'custom_object_parser'
         }
     )
     __timeline_mapping = Mapping(
@@ -111,6 +108,11 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
             'observed-data': ('first_observed', 'last_observed')
         }
     )
+
+    # KNOWN IDENTITY REFERENCES
+    __identity_references = {
+        "identity--b3bca3c2-1f3d-4b54-b44f-dac42c3a8f01": "CISA"
+    }
 
     # SINGLE ATTRIBUTES MAPPING
     __access_time_attribute = Mapping(
@@ -765,6 +767,10 @@ class STIX2toMISPMapping(metaclass=ABCMeta):
     @classmethod
     def home_dir_attribute(cls) -> dict:
         return cls.__home_dir_attribute
+
+    @classmethod
+    def identity_references(cls, identity_id: str) -> Union[str, None]:
+        return cls.__identity_references.get(identity_id)
 
     @classmethod
     def imphash_attribute(cls) -> dict:

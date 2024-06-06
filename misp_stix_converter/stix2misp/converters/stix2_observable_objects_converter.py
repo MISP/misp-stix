@@ -270,7 +270,7 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
         email_object = self._create_misp_object_from_observable_object(
             'email', email_message
         )
-        for attribute in self._parse_generic_observable(email_message, 'email'):
+        for attribute in self._parse_email_observable(email_message):
             email_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
@@ -298,12 +298,6 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
                         misp_object.add_attribute(**attribute)
                     observable['used'][self.event_uuid] = True
                     observable['misp_object'] = misp_object
-        if hasattr(email_message, 'additional_header_fields'):
-            attributes = self._parse_email_additional_header(
-                email_message.additional_header_fields
-            )
-            for attribute in attributes:
-                misp_object.add_attribute(**attribute)
         return misp_object
 
     def _parse_file_observable_object(self, file_ref: str) -> MISPObject:
@@ -328,9 +322,29 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
             self._parse_directory_observable_object(
                 _file.parent_directory_ref, child=_file.id
             )
-        if getattr(_file, 'extensions', {}).get('windows-pebinary-ext'):
-            pe_object = self._parse_file_pe_extension_observable_object(_file)
-            misp_object.add_reference(pe_object.uuid, 'includes')
+        if hasattr(_file, 'extensions'):
+            extensions = _file.extensions
+            if extensions.get('archive-ext'):
+                archive_ext = extensions['archive-ext']
+                if hasattr(archive_ext, 'comment'):
+                    comment = archive_ext.comment
+                    if hasattr(misp_object, 'comment'):
+                        comment = f'{comment} - {misp_object.comment}'
+                    misp_object.comment = comment
+                for contains_ref in archive_ext.contains_refs:
+                    object_type = contains_ref.split('--')[0]
+                    contained_object = getattr(
+                        self,
+                        f'_parse_{object_type}_observable_object'
+                    )(
+                        contains_ref
+                    )
+                    misp_object.add_reference(contained_object.uuid, 'contains')
+            if extensions.get('windows-pebinary-ext'):
+                pe_object = self._parse_file_pe_extension_observable_object(
+                    _file
+                )
+                misp_object.add_reference(pe_object.uuid, 'includes')
         return misp_object
 
     def _parse_file_pe_extension_observable_object(
@@ -414,42 +428,19 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
         observable['misp_attribute'] = misp_attribute
         return misp_attribute
 
-    def _parse_network_connection_observable_object(
-            self, observable: NetworkTraffic) -> MISPObject:
-        connection_object = self._create_misp_object_from_observable_object(
-            'network-connection', observable
-        )
-        attributes = self._parse_generic_observable(
-            observable, 'network_traffic'
-        )
-        for attribute in attributes:
-            connection_object.add_attribute(**attribute)
-        for attribute in self._parse_network_connection_observable(observable):
-            connection_object.add_attribute(**attribute)
-        return connection_object
-
-    def _parse_network_socket_observable_object(
-            self, observable: NetworkTraffic) -> MISPObject:
-        socket_object = self._create_misp_object_from_observable_object(
-            'network-socket', observable
-        )
-        attributes = self._parse_generic_observable(
-            observable, 'network_traffic'
-        )
-        for attribute in attributes:
-            socket_object.add_attribute(**attribute)
-        for attribute in self._parse_network_socket_observable(observable):
-            socket_object.add_attribute(**attribute)
-        return socket_object
-
     def _parse_network_traffic_observable_object(
             self, network_traffic_ref: str) -> MISPObject:
         observable = self._fetch_observable(network_traffic_ref)
         if observable['used'].get(self.event_uuid, False):
             return observable['misp_object']
         network_traffic = observable['observable']
-        feature = self._parse_network_traffic_observable_fields(network_traffic)
-        network_object = getattr(self, feature)(network_traffic)
+        name = self._parse_network_traffic_observable_fields(network_traffic)
+        network_object = self._create_misp_object_from_observable_object(
+            name, network_traffic
+        )
+        feature = f"_parse_{name.replace('-', '_')}_observable"
+        for attribute in getattr(self, feature)(network_traffic):
+            network_object.add_attribute(**attribute)
         observable['used'][self.event_uuid] = True
         misp_object = self.main_parser._add_misp_object(
             network_object, network_traffic
@@ -457,16 +448,17 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
         observable['misp_object'] = misp_object
         for asset in ('src', 'dst'):
             if hasattr(network_traffic, f'{asset}_ref'):
-                referenced_object = self._fetch_observable(
+                referenced = self._fetch_observable(
                     getattr(network_traffic, f'{asset}_ref')
                 )
+                referenced_observable = referenced['observable']
                 attributes = self._parse_network_traffic_reference_observable(
-                    asset, referenced_object['observable']
+                    asset, referenced_observable,
+                    f'{network_traffic.id} - {referenced_observable.id}'
                 )
                 for attribute in attributes:
                     misp_object.add_attribute(**attribute)
-                referenced_object['used'][self.event_uuid] = True
-                referenced_object['misp_object'] = misp_object
+                self._handle_misp_object_storage(referenced, misp_object)
         if hasattr(network_traffic, 'encapsulates_refs'):
             for reference in network_traffic.encapsulates_refs:
                 referenced = self._parse_network_traffic_observable_object(
@@ -479,13 +471,6 @@ class STIX2ObservableObjectConverter(ExternalSTIX2ObservableConverter):
             )
             misp_object.add_reference(referenced.uuid, 'encapsulated-by')
         return misp_object
-
-    @staticmethod
-    def _parse_network_traffic_observable_fields(
-            observable: NetworkTraffic) -> str:
-        if getattr(observable, 'extensions', {}).get('socket-ext'):
-            return '_parse_network_socket_observable_object'
-        return '_parse_network_connection_observable_object'
 
     def _parse_process_observable_object(self, process_ref: str) -> MISPObject:
         observable = self._fetch_observable(process_ref)

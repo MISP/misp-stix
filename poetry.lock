@@ -394,13 +394,13 @@ dev = ["black", "mypy", "pytest"]
 
 [[package]]
 name = "packaging"
-version = "23.2"
+version = "24.0"
 description = "Core utilities for Python packages"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "packaging-23.2-py3-none-any.whl", hash = "sha256:8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7"},
-    {file = "packaging-23.2.tar.gz", hash = "sha256:048fb0e9405036518eaaf48a55953c750c11e1a1b68e0dd1a9d62ed0c092cfc5"},
+    {file = "packaging-24.0-py3-none-any.whl", hash = "sha256:2ddfb553fdf02fb784c234c7ba6ccc288296ceabec964ad2eae3777778130bc5"},
+    {file = "packaging-24.0.tar.gz", hash = "sha256:eb82c5e3e56209074766e6885bb04b8c38a0c015d0a30036ebe7ece34c9989e9"},
 ]
 
 [[package]]
@@ -420,13 +420,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "publicsuffixlist"
-version = "0.10.0.20240214"
+version = "0.10.0.20240312"
 description = "publicsuffixlist implement"
 optional = false
 python-versions = ">=2.6"
 files = [
-    {file = "publicsuffixlist-0.10.0.20240214-py2.py3-none-any.whl", hash = "sha256:2c3b8da819571bb610328bda5b25d27fcbf6bc400896ca3c6502d291a16b32f4"},
-    {file = "publicsuffixlist-0.10.0.20240214.tar.gz", hash = "sha256:45a206c5f9c1eccf138481280cfb0a67c2ccafc782ef89c7fd6dc6c4356230fe"},
+    {file = "publicsuffixlist-0.10.0.20240312-py2.py3-none-any.whl", hash = "sha256:47fd7724b8a7c8d8732d4f5380019f74acd557a406c2a485540d1a4aae6cb359"},
+    {file = "publicsuffixlist-0.10.0.20240312.tar.gz", hash = "sha256:02912f3e084fad67e2463365fd431544921d9db3f51f6d43cea7169c86b1f188"},
 ]
 
 [package.extras]
@@ -457,25 +457,25 @@ files = [
 
 [[package]]
 name = "pymisp"
-version = "2.4.185"
+version = "2.4.187"
 description = "Python API for MISP."
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "pymisp-2.4.185-py3-none-any.whl", hash = "sha256:e2635a2be92321d4f812c7220bd955817e95a286343720f138b87892a827117a"},
-    {file = "pymisp-2.4.185.tar.gz", hash = "sha256:3ccdc6ee48d26d82c77ba3f5d8fd41a79eaaef0ad5619f37a65b060e92f6da4c"},
+    {file = "pymisp-2.4.187-py3-none-any.whl", hash = "sha256:0931bb1e4a693863ef35e6451ab2284c56fef5a41358bd55020cf0662b689810"},
+    {file = "pymisp-2.4.187.tar.gz", hash = "sha256:6880aa07cc6ed08f6d99df74c310839bce229e2031e1aa24311c74d8b01937f3"},
 ]
 
 [package.dependencies]
 deprecated = ">=1.2.14,<2.0.0"
 publicsuffixlist = ">=0.10.0.20231214,<0.11.0.0"
-python-dateutil = ">=2.8.2,<3.0.0"
+python-dateutil = ">=2.9.0.post0,<3.0.0"
 requests = ">=2.31.0,<3.0.0"
 
 [package.extras]
 brotli = ["urllib3[brotli]"]
 docs = ["Sphinx (<7.2)", "Sphinx (>=7.2,<8.0)", "recommonmark (>=0.7.1,<0.8.0)", "sphinx-autodoc-typehints (>=2.0.0,<3.0.0)"]
-email = ["RTFDE (>=0.1.1,<0.2.0)", "extract_msg (>=0.47.0,<0.48.0)", "oletools (>=0.60.1,<0.61.0)"]
+email = ["RTFDE (>=0.1.1,<0.2.0)", "extract_msg (>=0.48.0,<0.49.0)", "oletools (>=0.60.1,<0.61.0)"]
 fileobjects = ["lief (>=0.14.1,<0.15.0)", "pydeep2 (>=0.5.1,<0.6.0)", "python-magic (>=0.4.27,<0.5.0)"]
 openioc = ["beautifulsoup4 (>=4.12.3,<5.0.0)"]
 pdfexport = ["reportlab (>=4.1.0,<5.0.0)"]
@@ -506,13 +506,13 @@ testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "no
 
 [[package]]
 name = "python-dateutil"
-version = "2.8.2"
+version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 files = [
-    {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},
-    {file = "python_dateutil-2.8.2-py2.py3-none-any.whl", hash = "sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9"},
+    {file = "python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3"},
+    {file = "python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"},
 ]
 
 [package.dependencies]
@@ -839,4 +839,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "b92f737cd11b5a438060242b3462b9d33f6540c336db74ceb8e394a3fc2976e6"
+content-hash = "9f9c5a8c288c2a8bfda62afa7117b01ae78cde065bb10abd53040c7da49b46aa"

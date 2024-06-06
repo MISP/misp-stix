@@ -116,6 +116,9 @@ class STIX2Mapping:
             'object_relation': 'from-display-name'
         }
     )
+    __header_attribute = Mapping(
+        **{'type': 'email-header', 'object_relation': 'header'}
+    )
     __hidden_attribute = Mapping(
         **{'type': 'boolean', 'object_relation': 'hidden'}
     )
@@ -172,6 +175,12 @@ class STIX2Mapping:
     )
     __pid_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'pid'}
+    )
+    __protocol_attribute = Mapping(
+        **{'type': 'text', 'object_relation': 'protocol'}
+    )
+    __received_header_ip_attribute = Mapping(
+        **{'type': 'ip-src', 'object_relation': 'received-header-ip'}
     )
     __reference_attribute = Mapping(
         **{'type': 'link', 'object_relation': 'reference'}
@@ -296,25 +305,11 @@ class STIX2Mapping:
     __password_last_changed_attribute = {'type': 'datetime', 'object_relation': 'password_last_changed'}
 
     # MISP OBJECTS MAPPING
-    __connection_protocols = Mapping(
-        **{
-            **dict.fromkeys(('tcp', 'TCP', 'udp', 'UDP'), '4'),
-            **dict.fromkeys(
-                (
-                    'arp', 'icmp', 'ip', 'ipv4', 'ipv6',
-                    'ARP', 'ICMP', 'IP', 'IPV4', 'IPV6'
-                ),
-                '3'
-            ),
-            **dict.fromkeys(
-                ('http', 'HTTP', 'https', 'HTTPS', 'ftp', 'FTP'), '7'
-            )
-        }
-    )
     __email_object_mapping = Mapping(
         body=__email_body_attribute,
         date=__send_date_attribute,
         message_id=__message_id_attribute,
+        received_lines=__header_attribute,
         subject=__email_subject_attribute
     )
     __file_hashes = Mapping(
@@ -346,6 +341,27 @@ class STIX2Mapping:
         address_family=__address_family_attribute,
         protocol_family=__domain_family_attribute,
         socket_type={'type': 'text', 'object_relation': 'socket-type'}
+    )
+    __network_socket_object_mapping = Mapping(
+        src_port=__src_port_attribute,
+        dst_port=__dst_port_attribute,
+        start=__first_packet_seen_attribute,
+        end=__last_packet_seen_attribute,
+        src_byte_count={'type': 'size-in-bytes', 'object_relation': 'src-byte-count'},
+        dst_byte_count={'type': 'size-in-bytes', 'object_relation': 'dst-byte-count'},
+        src_packets={'type': 'counter', 'object_relation': 'src-packets'},
+        dst_packets={'type': 'counter', 'object_relation': 'dst-packets'}
+    )
+    __network_traffic_object_mapping = Mapping(
+        src_port={'type': 'port', 'object_relation': 'src_port'},
+        dst_port={'type': 'port', 'object_relation': 'dst_port'},
+        start={'type': 'datetime', 'object_relation': 'start_time'},
+        end={'type': 'datetime', 'object_relation': 'end_time'},
+        is_active={'type': 'boolean', 'object_relation': 'is_active'},
+        src_byte_count={'type': 'size-in-bytes', 'object_relation': 'src_byte_count'},
+        dst_byte_count={'type': 'size-in-bytes', 'object_relation': 'dst_byte_count'},
+        src_packets={'type': 'counter', 'object_relation': 'src_packets'},
+        dst_packets={'type': 'counter', 'object_relation': 'dst_packets'}
     )
     __pe_object_mapping = Mapping(
         time_date_stamp=__compilation_timestamp_attribute,
@@ -461,10 +477,6 @@ class STIX2Mapping:
         return cls.__compilation_timestamp_attribute
 
     @classmethod
-    def connection_protocols(cls, field: str) -> Union[str, None]:
-        return cls.__connection_protocols.get(field)
-
-    @classmethod
     def content_type_attribute(cls) -> dict:
         return cls.__content_type_attribute
 
@@ -553,6 +565,10 @@ class STIX2Mapping:
         return cls.__from_display_name_attribute
 
     @classmethod
+    def header_attribute(cls) -> dict:
+        return cls.__header_attribute
+
+    @classmethod
     def hidden_attribute(cls) -> dict:
         return cls.__hidden_attribute
 
@@ -617,6 +633,14 @@ class STIX2Mapping:
         return cls.__network_socket_extension_mapping
 
     @classmethod
+    def network_socket_object_mapping(cls) -> dict:
+        return cls.__network_socket_object_mapping
+
+    @classmethod
+    def network_traffic_object_mapping(cls) -> dict:
+        return cls.__network_traffic_object_mapping
+
+    @classmethod
     def password_attribute(cls) -> dict:
         return cls.__password_attribute
 
@@ -639,6 +663,14 @@ class STIX2Mapping:
     @classmethod
     def pid_attribute(cls) -> dict:
         return cls.__pid_attribute
+
+    @classmethod
+    def protocol_attribute(cls) -> dict:
+        return cls.__protocol_attribute
+
+    @classmethod
+    def received_header_ip_attribute(cls) -> dict:
+        return cls.__received_header_ip_attribute
 
     @classmethod
     def references_attribute(cls) -> dict:
@@ -879,16 +911,6 @@ class ExternalSTIX2Mapping(STIX2Mapping):
         path=STIX2Mapping.path_attribute(),
         path_enc={'type': 'text', 'object_relation': 'path-encoding'}
     )
-    __network_traffic_object_mapping = Mapping(
-        src_port=STIX2Mapping.src_port_attribute(),
-        dst_port=STIX2Mapping.dst_port_attribute(),
-        start=STIX2Mapping.first_packet_seen_attribute(),
-        end=STIX2Mapping.last_packet_seen_attribute(),
-        src_byte_count={'type': 'counter', 'object_relation': 'src-bytes-count'},
-        dst_byte_count={'type': 'counter', 'object_relation': 'dst-bytes-count'},
-        src_packets={'type': 'counter', 'object_relation': 'src-packets-count'},
-        dst_packets={'type': 'counter', 'object_relation': 'dst-packets-count'}
-    )
     __process_object_mapping = Mapping(
         command_line=STIX2Mapping.command_line_attribute(),
         created=STIX2Mapping.creation_time_attribute(),
@@ -917,10 +939,6 @@ class ExternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def galaxy_name_mapping(cls, field) -> Union[dict, None]:
         return cls.__galaxy_name_mapping.get(field)
-
-    @classmethod
-    def network_traffic_object_mapping(cls) -> dict:
-        return cls.__network_traffic_object_mapping
 
     @classmethod
     def process_object_mapping(cls) -> dict:
@@ -989,9 +1007,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     )
     __parent_process_path_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'parent-process-path'}
-    )
-    __protocol_attribute = Mapping(
-        **{'type': 'text', 'object_relation': 'protocol'}
     )
     __script_attribute = Mapping(
         **{'type': 'text', 'object_relation': 'script'}
@@ -1153,6 +1168,21 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_mp_export={'type': 'text', 'object_relation': 'mp-export'},
         x_misp_mp_import={'type': 'text', 'object_relation': 'mp-import'},
         x_misp_subnet_announced={'type': 'ip-src', 'object_relation': 'subnet-announced'}
+    )
+    __connection_protocols = Mapping(
+        **{
+            **dict.fromkeys(('tcp', 'TCP', 'udp', 'UDP'), '4'),
+            **dict.fromkeys(
+                (
+                    'arp', 'icmp', 'ip', 'ipv4', 'ipv6',
+                    'ARP', 'ICMP', 'IP', 'IPV4', 'IPV6'
+                ),
+                '3'
+            ),
+            **dict.fromkeys(
+                ('http', 'HTTP', 'https', 'HTTPS', 'ftp', 'FTP'), '7'
+            )
+        }
     )
     __cpe_asset_object_mapping = Mapping(
         cpe=STIX2Mapping.cpe_attribute(),
@@ -1351,16 +1381,20 @@ class InternalSTIX2Mapping(STIX2Mapping):
         x_misp_ip_version={'type': 'counter', 'object_relation': 'ip_version'}
     )
     __network_connection_object_mapping = Mapping(
-        dst_port=STIX2Mapping.dst_port_attribute(),
         src_port=STIX2Mapping.src_port_attribute(),
+        dst_port=STIX2Mapping.dst_port_attribute(),
         start=STIX2Mapping.first_packet_seen_attribute(),
+        end=STIX2Mapping.last_packet_seen_attribute(),
+        src_byte_count={'type': 'size-in-bytes', 'object_relation': 'src-bytes-count'},
+        dst_byte_count={'type': 'size-in-bytes', 'object_relation': 'dst-bytes-count'},
+        src_packets={'type': 'counter', 'object_relation': 'src-packets-count'},
+        dst_packets={'type': 'counter', 'object_relation': 'dst-packets-count'},
         x_misp_community_id=__community_id_attribute,
         x_misp_hostname_dst=STIX2Mapping.hostname_dst_attribute(),
         x_misp_hostname_src=STIX2Mapping.hostname_src_attribute()
     )
     __network_socket_object_mapping = Mapping(
-        dst_port=STIX2Mapping.dst_port_attribute(),
-        src_port=STIX2Mapping.src_port_attribute(),
+        **STIX2Mapping.network_socket_object_mapping(),
         x_misp_address_family=STIX2Mapping.address_family_attribute(),
         x_misp_domain_family=STIX2Mapping.domain_family_attribute(),
         x_misp_filename=STIX2Mapping.filename_attribute(),
@@ -1571,6 +1605,10 @@ class InternalSTIX2Mapping(STIX2Mapping):
         return cls.__comment_text_attribute
 
     @classmethod
+    def connection_protocols(cls, field: str) -> Union[str, None]:
+        return cls.__connection_protocols.get(field)
+
+    @classmethod
     def cpe_asset_object_mapping(cls) -> dict:
         return cls.__cpe_asset_object_mapping
 
@@ -1717,10 +1755,6 @@ class InternalSTIX2Mapping(STIX2Mapping):
     @classmethod
     def process_object_mapping(cls) -> dict:
         return cls.__process_object_mapping
-
-    @classmethod
-    def protocol_attribute(cls) -> dict:
-        return cls.__protocol_attribute
 
     @classmethod
     def reddit_account_object_mapping(cls) -> dict:
