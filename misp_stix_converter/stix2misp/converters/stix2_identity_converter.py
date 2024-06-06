@@ -77,7 +77,7 @@ class STIX2IdentityConverter(STIX2Converter, metaclass=ABCMeta):
         meta = self._handle_meta_fields(identity)
         if meta:
             sector_args['meta'] = meta
-        return self._create_misp_galaxy_cluster(sector_args)
+        return self.main_parser._create_misp_galaxy_cluster(**sector_args)
 
     def _parse_identity_object(self, identity: _IDENTITY_TYPING):
         misp_object = self._create_misp_object('identity', identity)
