@@ -398,9 +398,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         except Exception as exception:
             self._attribute_error(attribute, exception)
 
-    def _handle_attribute_indicator(self, attribute: Union[MISPAttribute, dict],
-                                    pattern: str, indicator_args: Optional[dict] = None):
-        indicator_id = getattr(self, self._id_parsing_function['attribute'])('indicator', attribute)
+    def _handle_attribute_indicator(
+            self, attribute: Union[MISPAttribute, dict], pattern: str,
+            indicator_args: Optional[dict] = None):
+        indicator_id = self._parse_stix_object_id(
+            'attribute', 'indicator', attribute
+        )
         indicator_arguments = {
             'id': indicator_id,
             'type': 'indicator',
@@ -426,9 +429,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         if attribute.get('Sighting'):
             self._handle_sightings(attribute['Sighting'], indicator_id)
 
-    def _handle_attribute_observable(self, attribute: Union[MISPAttribute, dict],
-                                     observable: Union[dict, list]):
-        observable_id = getattr(self, self._id_parsing_function['attribute'])('observed-data', attribute)
+    def _handle_attribute_observable(
+            self, attribute: Union[MISPAttribute, dict],
+            observable: Union[dict, list]):
+        observable_id = self._parse_stix_object_id(
+            'attribute', 'observed-data', attribute
+        )
         observable_args = {
             'id': observable_id,
             'type': 'observed-data',
@@ -496,8 +502,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         else:
             self._parse_autonomous_system_attribute_observable(attribute)
 
-    def _parse_campaign_name_attribute(self, attribute: Union[MISPAttribute, dict]):
-        campaign_id = getattr(self, self._id_parsing_function['attribute'])('campaign', attribute)
+    def _parse_campaign_name_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
+        campaign_id = self._parse_stix_object_id(
+            'attribute', 'campaign', attribute
+        )
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         campaign_args = {
             'id': campaign_id,
@@ -521,7 +530,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             self._handle_sightings(attribute['Sighting'], campaign_id)
 
     def _parse_custom_attribute(self, attribute: Union[MISPAttribute, dict]):
-        custom_id = getattr(self, self._id_parsing_function['attribute'])('x-misp-attribute', attribute)
+        custom_id = self._parse_stix_object_id(
+            'attribute', 'x-misp-attribute', attribute
+        )
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         custom_args = {
             'id': custom_id,
@@ -840,8 +851,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         else:
             self._parse_custom_attribute(attribute)
 
-    def _parse_vulnerability_attribute(self, attribute: Union[MISPAttribute, dict]):
-        vulnerability_id = getattr(self, self._id_parsing_function['attribute'])('vulnerability', attribute)
+    def _parse_vulnerability_attribute(
+            self, attribute: Union[MISPAttribute, dict]):
+        vulnerability_id = self._parse_stix_object_id(
+            'attribute', 'vulnerability', attribute
+        )
         timestamp = self._datetime_from_timestamp(attribute['timestamp'])
         vulnerability_args = {
             'id': vulnerability_id,
@@ -926,9 +940,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _extract_object_attributes_escaped(self, attributes: list) -> dict:
         return {attribute['object_relation']: self._handle_value_for_pattern(attribute['value']) for attribute in attributes}
 
-    def _handle_non_indicator_object(self, misp_object: Union[MISPObject, dict], object_args: dict,
-                                     object_type: str, killchain: bool = False):
-        object_id = getattr(self, self._id_parsing_function['object'])(object_type, misp_object)
+    def _handle_non_indicator_object(
+            self, misp_object: Union[MISPObject, dict], object_args: dict,
+            object_type: str, killchain: bool = False):
+        object_id = self._parse_stix_object_id(
+            'object', object_type, misp_object
+        )
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         object_args.update(
             {
@@ -961,8 +978,11 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         self._append_SDO(getattr(self, f"_create_{object_type.replace('-', '_')}")(object_args))
 
-    def _handle_object_indicator(self, misp_object: Union[MISPObject, dict], pattern: list):
-        indicator_id = getattr(self, self._id_parsing_function['object'])('indicator', misp_object)
+    def _handle_object_indicator(
+            self, misp_object: Union[MISPObject, dict], pattern: list):
+        indicator_id = self._parse_stix_object_id(
+            'object', 'indicator', misp_object
+        )
         indicator_args = {
             'id': indicator_id,
             'type': 'indicator',
@@ -991,8 +1011,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
             )
         self._append_SDO(self._create_indicator(indicator_args))
 
-    def _handle_object_observable(self, misp_object: Union[MISPObject, dict], observable: Union[dict, list]):
-        observable_id = getattr(self, self._id_parsing_function['object'])('observed-data', misp_object)
+    def _handle_object_observable(
+            self, misp_object: Union[MISPObject, dict],
+            observable: Union[dict, list]):
+        observable_id = self._parse_stix_object_id(
+            'object', 'observed-data', misp_object
+        )
         observable_args = {
             'id': observable_id,
             'type': 'observed-data',
@@ -1260,7 +1284,9 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
         }
 
     def _parse_custom_object(self, misp_object: Union[MISPObject, dict]):
-        custom_id = getattr(self, self._id_parsing_function['object'])('x-misp-object', misp_object)
+        custom_id = self._parse_stix_object_id(
+            'object', 'x-misp-object', misp_object
+        )
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         custom_args = {
             'id': custom_id,
@@ -2928,8 +2954,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 contact_information.append(f"{key}: {'; '.join(attributes.pop(key))}")
         return contact_information
 
-    def _parse_identity_args(self, misp_object: Union[MISPObject, dict], identity_class: str) -> dict:
-        identity_id = getattr(self, self._id_parsing_function['object'])('identity', misp_object)
+    def _parse_identity_args(
+            self, misp_object: Union[MISPObject, dict],
+            identity_class: str) -> dict:
+        identity_id = self._parse_stix_object_id(
+            'object', 'identity', misp_object
+        )
         timestamp = self._datetime_from_timestamp(misp_object['timestamp'])
         identity_args = {
             'id': identity_id,
@@ -3431,9 +3461,10 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
     def _create_regkey_pattern(key: str) -> str:
         return f"windows-registry-key:key = '{key}'"
 
-    def _handle_patterning_object_indicator(self, misp_object: Union[MISPObject, dict], indicator_args: dict):
-        indicator_id = getattr(self, self._id_parsing_function['object'])(
-            'indicator', misp_object
+    def _handle_patterning_object_indicator(
+            self, misp_object: Union[MISPObject, dict], indicator_args: dict):
+        indicator_id = self._parse_stix_object_id(
+            'object', 'indicator', misp_object
         )
         indicator_args.update(
             {
@@ -3633,6 +3664,12 @@ class MISPtoSTIX2Parser(MISPtoSTIXParser, metaclass=ABCMeta):
                 'allow_custom': True,
                 'interoperability': True
             }
+        )
+
+    def _parse_stix_object_id(self, feature: str, object_type: str,
+                              misp_object: Union[dict, MISPObject]) -> str:
+        return getattr(self, self._id_parsing_function[feature])(
+            object_type, misp_object
         )
 
     def _parse_object_relationships(self, references: list, source_id: str, timestamp: datetime):
