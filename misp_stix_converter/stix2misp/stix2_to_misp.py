@@ -729,11 +729,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         name = f'STIX {version} ACS Marking'
         if galaxy_type not in self._galaxies:
             self._galaxies[galaxy_type] = {
-                'namespace': 'stix',
-                'type': galaxy_type,
+                'namespace': 'stix', 'type': galaxy_type,
                 'version': ''.join(version.split('.')),
-                'uuid': self._create_v5_uuid(name),
-                'name': name,
+                'uuid': self._create_v5_uuid(name), 'name': name,
                 'description': (
                     f'STIX {version} Marking Definition extension'
                     ' to support ACS Markings'
@@ -884,7 +882,9 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
     def _extract_custom_fields(self, stix_object: _GALAXY_OBJECTS_TYPING):
         for key, value in stix_object.items():
             if key.startswith('x_misp_'):
-                separator = '-' if key in self._mapping.dash_meta_fields() else '_'
+                separator = (
+                    '-' if key in self._mapping.dash_meta_fields() else '_'
+                )
                 yield separator.join(key.split('_')[2:]), value
 
     @staticmethod
