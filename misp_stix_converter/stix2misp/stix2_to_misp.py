@@ -312,6 +312,10 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         return self._course_of_action_parser
 
     @property
+    def event_tags(self) -> list:
+        return self.__event_tags
+
+    @property
     def generic_info_field(self) -> str:
         return f'STIX {self.stix_version} Bundle imported with the MISP-STIX import feature.'
 
@@ -607,18 +611,22 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
 
     def _handle_misp_event_tags(
             self, misp_event: MISPEvent, stix_object: _GROUPING_REPORT_TYPING):
+        self.__event_tags = set()
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
                 misp_event.add_tag(marking)
+                self.event_tags.add(marking)
                 continue
             if not self.galaxies_as_tags:
                 clusters = defaultdict(list)
                 for cluster in marking['cluster']:
                     clusters[cluster.type].append(cluster)
+                    self.event_tags.add(cluster.uuid)
                 for galaxy in self._aggregate_galaxy_clusters(clusters):
                     misp_event.add_galaxy(galaxy)
             if marking.get('tags'):
                 for tag in marking['tags']:
+                    self.event_tags.add(tag)
                     misp_event.add_tag(tag)
         if hasattr(stix_object, 'labels'):
             labels = (
@@ -1080,35 +1088,44 @@ class STIX2toMISPParser(STIXtoMISPParser, metaclass=ABCMeta):
         misp_attribute.from_dict(**attribute)
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
+                if marking in self.event_tags:
+                    continue
                 misp_attribute.add_tag(marking)
                 continue
             if not self.galaxies_as_tags:
                 clusters = defaultdict(list)
                 for cluster in marking['cluster']:
-                    clusters[cluster.type].append(cluster)
+                    if cluster.uuid not in self.event_tags:
+                        clusters[cluster.type].append(cluster)
                 for galaxy in self._aggregate_galaxy_clusters(clusters):
                     misp_attribute.add_galaxy(galaxy)
             if marking.get('tags'):
                 for tag in marking['tags']:
-                    misp_attribute.add_tag(tag)
+                    if tag not in self.event_tags:
+                        misp_attribute.add_tag(tag)
         return self.misp_event.add_attribute(**misp_attribute)
 
     def _add_misp_object(self, misp_object: MISPObject,
                          stix_object: _SDO_TYPING) -> MISPObject:
         for marking in self._handle_tags_from_stix_fields(stix_object):
             if isinstance(marking, str):
+                if marking in self.event_tags:
+                    continue
                 for attribute in misp_object.attributes:
                     attribute.add_tag(marking)
                 continue
             if not self.galaxies_as_tags:
                 clusters = defaultdict(list)
                 for cluster in marking['cluster']:
-                    clusters[cluster.type].append(cluster)
+                    if cluster.uuid not in self.event_tags:
+                        clusters[cluster.type].append(cluster)
                 for galaxy in self._aggregate_galaxy_clusters(clusters):
                     for attribute in misp_object.attributes:
                         attribute.add_galaxy(galaxy)
             if marking.get('tags'):
                 for tag in marking['tags']:
+                    if tag in self.event_tags:
+                        continue
                     for attribute in misp_object.attributes:
                         attribute.add_tag(tag)
         return self.misp_event.add_object(misp_object)
